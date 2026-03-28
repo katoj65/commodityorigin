@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import InputError from '@/Components/InputError.vue';
+import ApplicationMark from '@/Components/ApplicationMark.vue';
 
 const form = useForm({
     first_name: '',
@@ -36,8 +37,8 @@ const submit = () => {
 
         <nav class="relative z-10 border-b border-white/[0.06] bg-bg/88 backdrop-blur-xl">
             <div class="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-6 lg:px-10">
-                <Link :href="route('home')" class="flex items-center gap-2 no-underline">
-                    <div class="h-2 w-2 rounded-full bg-gold auth-glow"></div>
+                <Link :href="route('home')" class="flex items-center gap-3 no-underline">
+                    <ApplicationMark class="h-8 w-8 flex-shrink-0" />
                     <span class="font-display text-base font-bold tracking-tight text-cream">
                         Commodity <span class="text-gold">Origin</span>
                     </span>
@@ -313,10 +314,6 @@ const submit = () => {
         linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
     background-size: 40px 40px;
     mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.45), transparent 85%);
-}
-
-.auth-glow {
-    box-shadow: 0 0 12px rgba(200, 134, 42, 0.95);
 }
 
 .auth-label {

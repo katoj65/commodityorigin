@@ -210,18 +210,18 @@ const filteredLots = computed(() => {
 
 <template>
     <AppLayout title="Dashboard">
-        <div class="flex gap-5">
+        <div class="flex flex-col gap-4 xl:flex-row xl:gap-5">
             <div class="flex min-w-0 flex-1 flex-col gap-4">
-                <div class="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-6 py-4">
-                    <div>
+                <div class="flex flex-col gap-4 rounded-xl border border-[#E5E7EB] bg-white px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="min-w-0">
                         <h1 class="font-display text-[20px] font-bold leading-none tracking-tight text-[#111827]">
                             Trader Dashboard
                         </h1>
-                        <p class="mt-1 text-[13px] text-[#6B7280]">
+                        <p class="mt-1 max-w-2xl text-[13px] leading-relaxed text-[#6B7280]">
                             Uganda Coffee Commodity Exchange · From Farm to Cup, Transparently
                         </p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2 lg:justify-end">
                         <button class="dashboard-secondary-btn">
                             <svg class="dashboard-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -248,7 +248,7 @@ const filteredLots = computed(() => {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-3 xl:grid-cols-4">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div
                         v-for="stat in stats"
                         :key="stat.label"
@@ -288,13 +288,13 @@ const filteredLots = computed(() => {
                     </div>
                 </div>
 
-                <div class="rounded-xl border border-[#E5E7EB] bg-white p-5">
-                    <div class="mb-4 flex items-start justify-between">
-                        <div>
+                <div class="rounded-xl border border-[#E5E7EB] bg-white p-4 sm:p-5">
+                    <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div class="min-w-0">
                             <h2 class="font-display text-[16px] font-bold tracking-tight text-[#111827]">
                                 Lot Price Overview
                             </h2>
-                            <p class="text-[12px] text-[#6B7280]">
+                            <p class="text-[12px] leading-relaxed text-[#6B7280]">
                                 Last 7 days buy and bid overview.
                                 <a href="#" class="font-medium text-[#C8862A] no-underline hover:underline" @click.prevent>
                                     Detailed Stats
@@ -302,7 +302,7 @@ const filteredLots = computed(() => {
                             </p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <div class="flex gap-1">
+                            <div class="flex flex-wrap gap-1">
                                 <button
                                     v-for="range in Object.keys(rangeData)"
                                     :key="range"
@@ -316,24 +316,26 @@ const filteredLots = computed(() => {
                         </div>
                     </div>
 
-                    <div class="grid h-[220px] grid-cols-7 items-end gap-3 rounded-xl bg-[#FAFAFA] px-4 pb-6 pt-4">
-                        <div
-                            v-for="bar in chartBars"
-                            :key="bar.label"
-                            class="flex h-full flex-col justify-end gap-1"
-                        >
-                            <div class="flex h-full items-end gap-1">
-                                <div
-                                    class="w-1/2 rounded-t-[3px] bg-[#1B6E4B]/75"
-                                    :style="{ height: `${(bar.arabica / maxChartValue) * 100}%` }"
-                                ></div>
-                                <div
-                                    class="w-1/2 rounded-t-[3px] bg-[#C8862A]/70"
-                                    :style="{ height: `${(bar.robusta / maxChartValue) * 100}%` }"
-                                ></div>
-                            </div>
-                            <div class="text-center font-mono text-[8px] text-[#8A7A6A]">
-                                {{ bar.label }}
+                    <div class="overflow-x-auto">
+                        <div class="grid h-[220px] min-w-[470px] grid-cols-7 items-end gap-3 rounded-xl bg-[#FAFAFA] px-4 pb-6 pt-4 sm:min-w-0">
+                            <div
+                                v-for="bar in chartBars"
+                                :key="bar.label"
+                                class="flex h-full flex-col justify-end gap-1"
+                            >
+                                <div class="flex h-full items-end gap-1">
+                                    <div
+                                        class="w-1/2 rounded-t-[3px] bg-[#1B6E4B]/75"
+                                        :style="{ height: `${(bar.arabica / maxChartValue) * 100}%` }"
+                                    ></div>
+                                    <div
+                                        class="w-1/2 rounded-t-[3px] bg-[#C8862A]/70"
+                                        :style="{ height: `${(bar.robusta / maxChartValue) * 100}%` }"
+                                    ></div>
+                                </div>
+                                <div class="text-center font-mono text-[8px] text-[#8A7A6A]">
+                                    {{ bar.label }}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -342,7 +344,7 @@ const filteredLots = computed(() => {
                         <div
                             v-for="summary in summaryCards"
                             :key="summary.title"
-                            class="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white p-4"
+                            class="flex flex-col items-start gap-4 rounded-xl border border-[#E5E7EB] bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
                         >
                             <div>
                                 <div class="font-display text-[22px] font-bold leading-none tracking-tight" :class="summary.accentClass">
@@ -366,8 +368,8 @@ const filteredLots = computed(() => {
                 </div>
 
                 <div class="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
-                    <div class="flex items-center justify-between border-b border-[#E5E7EB] px-5 py-3.5">
-                        <div>
+                    <div class="flex flex-col gap-3 border-b border-[#E5E7EB] px-4 py-3.5 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="min-w-0">
                             <h3 class="font-display text-[14px] font-bold tracking-tight text-[#111827]">
                                 Active Market Lots
                             </h3>
@@ -375,7 +377,7 @@ const filteredLots = computed(() => {
                                 Live listings on the exchange · 312 total
                             </p>
                         </div>
-                        <div class="flex gap-1.5">
+                        <div class="flex flex-wrap gap-1.5">
                             <button class="table-filter-btn" :class="{ active: selectedType === 'all' }" @click="selectedType = 'all'">
                                 All
                             </button>
@@ -389,7 +391,7 @@ const filteredLots = computed(() => {
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="w-full border-collapse">
+                        <table class="w-full min-w-[760px] border-collapse">
                             <thead>
                                 <tr class="bg-[#F9FAFB]">
                                     <th class="dashboard-th">Lot ID</th>
@@ -457,7 +459,7 @@ const filteredLots = computed(() => {
                 </div>
             </div>
 
-            <div class="flex w-72 flex-shrink-0 flex-col gap-4">
+            <div class="flex w-full flex-shrink-0 flex-col gap-4 xl:w-72">
                 <div class="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
                     <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3.5">
                         <h3 class="font-display text-[14px] font-bold tracking-tight text-[#111827]">
@@ -508,7 +510,7 @@ const filteredLots = computed(() => {
                         </h3>
                         <p class="font-mono text-[9px] text-[#6B7280]">47,200 kg traded this month</p>
                     </div>
-                    <div class="mx-auto mb-4 flex h-[130px] w-[130px] items-center justify-center rounded-full border-[16px] border-[#F3F4F6]">
+                    <div class="mx-auto mb-4 flex h-[112px] w-[112px] items-center justify-center rounded-full border-[14px] border-[#F3F4F6] sm:h-[130px] sm:w-[130px] sm:border-[16px]">
                         <div class="text-center">
                             <div class="font-display text-[22px] font-bold text-[#111827]">47.2K</div>
                             <div class="font-mono text-[9px] text-[#6B7280]">kg</div>
@@ -560,6 +562,7 @@ const filteredLots = computed(() => {
 .dashboard-secondary-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     border: 1px solid #e5e7eb;
     background: #fff;
@@ -580,6 +583,7 @@ const filteredLots = computed(() => {
 .dashboard-primary-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     border: 1px solid #c8862a;
     background: #c8862a;
@@ -596,6 +600,12 @@ const filteredLots = computed(() => {
     border-color: #e09b3a;
 }
 
+.dashboard-btn-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
 .range-btn,
 .table-filter-btn {
     border: 1px solid #e5e7eb;
@@ -603,7 +613,7 @@ const filteredLots = computed(() => {
     background: #fff;
     border-radius: 0.5rem;
     padding: 0.375rem 0.75rem;
-    font-family: 'DM Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -636,7 +646,7 @@ const filteredLots = computed(() => {
     border-bottom: 1px solid #e5e7eb;
     padding: 0.625rem 1.25rem;
     text-align: left;
-    font-family: 'DM Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 8px;
     font-weight: 400;
     text-transform: uppercase;
@@ -659,7 +669,7 @@ const filteredLots = computed(() => {
     color: #6b7280;
     border-radius: 0.5rem;
     padding: 0.375rem 0.75rem;
-    font-family: 'DM Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -709,9 +719,18 @@ const filteredLots = computed(() => {
     height: 100%;
     border-radius: 2px;
 }
-</style>
-.dashboard-btn-icon {
-    width: 1rem;
-    height: 1rem;
-    flex-shrink: 0;
+
+@media (max-width: 639px) {
+    .dashboard-secondary-btn,
+    .dashboard-primary-btn {
+        flex: 1 1 calc(50% - 0.5rem);
+        min-width: 140px;
+    }
+
+    .dashboard-th,
+    .dashboard-td {
+        padding-left: 0.875rem;
+        padding-right: 0.875rem;
+    }
 }
+</style>

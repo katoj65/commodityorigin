@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import ApplicationMark from '@/Components/ApplicationMark.vue';
 
 const pageRef = ref(null);
 const pageTitle =
@@ -209,8 +210,8 @@ onBeforeUnmount(() => {
         <!-- NAV -->
         <nav class="sticky top-0 z-50 bg-bg/92 backdrop-blur-xl border-b border-white/[0.06] h-[60px] flex items-center justify-between px-10">
             <div class="flex items-center gap-10">
-                <a href="#" class="flex items-center gap-2 font-display font-bold text-base text-cream no-underline tracking-tight">
-                    <div class="w-2 h-2 rounded-full bg-gold" style="box-shadow:0 0 10px #C8862A"></div>
+                <a href="#" class="flex items-center gap-3 font-display font-bold text-base text-cream no-underline tracking-tight">
+                    <ApplicationMark class="h-8 w-8 flex-shrink-0" />
                     Commodity <span class="text-gold">Origin</span>
                 </a>
                 <ul class="flex gap-1 list-none">
