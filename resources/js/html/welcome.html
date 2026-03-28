@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Commodity Origin — Uganda Coffee Exchange · From Farm to Cup, Transparently</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bg:       '#0E0B07',
+          surface:  '#141009',
+          surface2: '#1A150D',
+          surface3: '#221B11',
+          gold:     '#C8862A',
+          gold2:    '#E09B3A',
+          cream:    '#F2EDE4',
+          green:    '#40916C',
+          'green-dark': '#2D6A4F',
+          red:      '#E07070',
+          'up':     '#52B788',
+        },
+        fontFamily: {
+          display: ['Syne', 'sans-serif'],
+          sans:    ['DM Sans', 'sans-serif'],
+          mono:    ['DM Mono', 'monospace'],
+        },
+        keyframes: {
+          ticker:   { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } },
+          fadeUp:   { from: { opacity: '0', transform: 'translateY(16px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+          fadeIn:   { from: { opacity: '0' }, to: { opacity: '1' } },
+          pulseGreen: { '0%,100%': { boxShadow: '0 0 0 0 rgba(82,183,136,0.4)' }, '50%': { boxShadow: '0 0 0 5px rgba(82,183,136,0)' } },
+        },
+        animation: {
+          ticker:      'ticker 30s linear infinite',
+          'fade-up-1': 'fadeUp 0.7s ease both 0.2s',
+          'fade-up-2': 'fadeUp 0.7s ease both 0.4s',
+          'fade-up-3': 'fadeUp 0.7s ease both 0.55s',
+          'fade-up-4': 'fadeUp 0.7s ease both 0.7s',
+          'fade-up-5': 'fadeUp 0.7s ease both 0.85s',
+          'fade-up-6': 'fadeUp 0.7s ease both 1.0s',
+          'fade-in':   'fadeIn 0.9s ease both 0.6s',
+          'pulse-green': 'pulseGreen 2s ease-in-out infinite',
+        },
+        backgroundImage: {
+          'dot-grid': 'radial-gradient(circle, rgba(200,134,42,0.14) 1px, transparent 1px)',
+        },
+        backgroundSize: {
+          'dot-40': '40px 40px',
+        },
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'DM Sans', sans-serif; }
+  .font-display { font-family: 'Syne', sans-serif; }
+  .font-mono  { font-family: 'DM Mono', monospace; }
+
+  /* Scanline grain */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 999; pointer-events: none;
+    background: repeating-linear-gradient(0deg,rgba(0,0,0,0.025) 0px,rgba(0,0,0,0.025) 1px,transparent 1px,transparent 2px);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #0E0B07; }
+  ::-webkit-scrollbar-thumb { background: #C8862A; border-radius: 2px; }
+
+  /* Ticker */
+  .ticker-wrap { display: flex; animation: ticker 30s linear infinite; white-space: nowrap; }
+  @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+  /* Hero dot grid mask */
+  .hero-dots {
+    background-image: radial-gradient(circle, rgba(200,134,42,0.14) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 60% 50%, black 30%, transparent 100%);
+    mask-image: radial-gradient(ellipse 80% 80% at 60% 50%, black 30%, transparent 100%);
+  }
+
+  /* Live dot pulse */
+  @keyframes pulseGreen { 0%,100%{box-shadow:0 0 0 0 rgba(82,183,136,0.4)} 50%{box-shadow:0 0 0 5px rgba(82,183,136,0)} }
+  .pulse-green { animation: pulseGreen 2s ease-in-out infinite; }
+
+  /* Reveal animation */
+  .reveal { opacity: 1; }
+  .reveal.anim { opacity: 0; transform: translateY(14px); transition: opacity 0.55s ease, transform 0.55s ease; }
+  .reveal.anim.visible { opacity: 1; transform: translateY(0); }
+  .delay-1 { transition-delay: 0.08s; }
+  .delay-2 { transition-delay: 0.16s; }
+  .delay-3 { transition-delay: 0.24s; }
+  .delay-4 { transition-delay: 0.32s; }
+
+  /* Pipeline connector line */
+  .pipeline-line::before {
+    content: '';
+    position: absolute; top: 32px;
+    left: calc(10% + 32px); right: calc(10% + 32px);
+    height: 1px; background: rgba(200,134,42,0.15);
+  }
+
+  /* Availability bar */
+  .avail-bar { width: 72px; height: 3px; background: #221B11; border-radius: 2px; overflow: hidden; }
+  .avail-fill { height: 100%; background: #C8862A; border-radius: 2px; }
+  .avail-fill.low { background: #E07070; }
+
+  /* Sparkline */
+  .sparkline { width: 56px; height: 26px; }
+
+  /* Table hover */
+  #mktTable tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Score bar */
+  .score-track { height: 3px; background: #221B11; border-radius: 2px; overflow: hidden; }
+  .score-fill-green { height: 100%; background: linear-gradient(to right, #40916C, #52B788); border-radius: 2px; }
+  .score-fill-gold  { height: 100%; background: linear-gradient(to right, #C8862A, #E09B3A); border-radius: 2px; }
+
+  /* Origin block hover */
+  .origin-block { transition: border-color 0.3s; }
+  .origin-block:hover { border-color: rgba(255,255,255,0.14); }
+
+  /* ob-note hover */
+  .ob-note { transition: all 0.2s; }
+  .ob-note:hover { border-color: #C8862A; color: #C8862A; background: rgba(200,134,42,0.08); }
+
+  /* Bid button feedback */
+  .bid-btn:hover { background: #C8862A; border-color: #C8862A; color: #0E0B07; }
+
+  /* QR box */
+  .qr-box { background: white; border-radius: 4px; display:flex; align-items:center; justify-content:center; }
+
+  /* Chain step connector */
+  .cs-line { width:1px; flex:1; background:rgba(255,255,255,0.06); margin:6px 0; min-height:20px; }
+
+  /* Footnote text */
+  .text-ghost { color: rgba(242,237,228,0.42); }
+
+  /* Table sticky header fix */
+  .mkt-table th { white-space: nowrap; }
+
+  /* Footer link hover */
+  .foot-link { color: rgba(242,237,228,0.65); transition: color 0.2s; }
+  .foot-link:hover { color: #F2EDE4; }
+</style>
+</head>
+
+<body class="bg-bg text-cream overflow-x-hidden">
+
+<!-- ── TICKER ── -->
+<div class="bg-surface border-b border-white/[0.06] h-9 flex items-center overflow-hidden">
+  <div class="flex-shrink-0 bg-gold text-bg font-mono text-[9px] tracking-[0.14em] uppercase px-4 h-full flex items-center font-medium">Live Prices</div>
+  <div class="overflow-hidden flex-1 flex">
+    <div class="ticker-wrap">
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">UGA-ARA-AA</span><span class="font-mono text-[10px] font-medium">$4.82/kg</span><span class="font-mono text-[9px] text-up">▲ +2.3%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">UGA-ROB-G1</span><span class="font-mono text-[10px] font-medium">$2.14/kg</span><span class="font-mono text-[9px] text-up">▲ +0.8%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">BUGISU-AA</span><span class="font-mono text-[10px] font-medium">$5.10/kg</span><span class="font-mono text-[9px] text-red">▼ -0.4%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">RWENZORI-AB</span><span class="font-mono text-[10px] font-medium">$4.65/kg</span><span class="font-mono text-[9px] text-up">▲ +1.1%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">W-NILE-FAQ</span><span class="font-mono text-[10px] font-medium">$1.98/kg</span><span class="font-mono text-[9px] text-up">▲ +0.3%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">KIBALE-FIN</span><span class="font-mono text-[10px] font-medium">$2.40/kg</span><span class="font-mono text-[9px] text-up">▲ +3.1%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">ICE-COFFEE</span><span class="font-mono text-[10px] font-medium">$192.40/lb</span><span class="font-mono text-[9px] text-red">▼ -0.7%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">KISORO-AA</span><span class="font-mono text-[10px] font-medium">$5.34/kg</span><span class="font-mono text-[9px] text-up">▲ +1.8%</span></div>
+      <!-- duplicate -->
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">UGA-ARA-AA</span><span class="font-mono text-[10px] font-medium">$4.82/kg</span><span class="font-mono text-[9px] text-up">▲ +2.3%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">UGA-ROB-G1</span><span class="font-mono text-[10px] font-medium">$2.14/kg</span><span class="font-mono text-[9px] text-up">▲ +0.8%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">BUGISU-AA</span><span class="font-mono text-[10px] font-medium">$5.10/kg</span><span class="font-mono text-[9px] text-red">▼ -0.4%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">RWENZORI-AB</span><span class="font-mono text-[10px] font-medium">$4.65/kg</span><span class="font-mono text-[9px] text-up">▲ +1.1%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">W-NILE-FAQ</span><span class="font-mono text-[10px] font-medium">$1.98/kg</span><span class="font-mono text-[9px] text-up">▲ +0.3%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">KIBALE-FIN</span><span class="font-mono text-[10px] font-medium">$2.40/kg</span><span class="font-mono text-[9px] text-up">▲ +3.1%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">ICE-COFFEE</span><span class="font-mono text-[10px] font-medium">$192.40/lb</span><span class="font-mono text-[9px] text-red">▼ -0.7%</span></div>
+      <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">KISORO-AA</span><span class="font-mono text-[10px] font-medium">$5.34/kg</span><span class="font-mono text-[9px] text-up">▲ +1.8%</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── NAV ── -->
+<nav class="sticky top-0 z-50 bg-bg/92 backdrop-blur-xl border-b border-white/[0.06] h-[60px] flex items-center justify-between px-10">
+  <div class="flex items-center gap-10">
+    <a href="#" class="flex items-center gap-2 font-display font-bold text-base text-cream no-underline tracking-tight">
+      <div class="w-2 h-2 rounded-full bg-gold" style="box-shadow:0 0 10px #C8862A"></div>
+      Commodity <span class="text-gold">Origin</span>
+    </a>
+    <ul class="flex gap-1 list-none">
+      <li><a href="#market" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Market</a></li>
+      <li><a href="#origins" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Origins</a></li>
+      <li><a href="#quality" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Quality</a></li>
+      <li><a href="#traceability" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Traceability</a></li>
+      <li><a href="#subscribe" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Subscribe</a></li>
+    </ul>
+  </div>
+  <div class="flex items-center gap-3">
+    <div class="flex items-center gap-1.5">
+      <div class="w-1.5 h-1.5 rounded-full bg-up pulse-green"></div>
+      <span class="font-mono text-[9px] text-up tracking-[0.1em]">Market open</span>
+    </div>
+    <a href="#" class="font-mono text-[9px] tracking-[0.12em] uppercase px-3.5 py-1.5 border border-white/[0.14] text-cream/70 rounded-sm hover:border-gold hover:text-gold transition-all no-underline">Sign in</a>
+    <a href="#subscribe" class="font-mono text-[9px] tracking-[0.12em] uppercase px-3.5 py-1.5 bg-gold border border-gold text-bg font-medium rounded-sm hover:bg-gold2 transition-all no-underline">Open account</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="grid grid-cols-2 bg-bg relative overflow-hidden">
+  <div class="hero-dots absolute inset-0 pointer-events-none"></div>
+
+  <!-- Left -->
+  <div class="relative z-10 flex flex-col justify-center px-10 py-14 pr-14">
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-2 bg-gold/15 border border-gold/25 px-3.5 py-1.5 rounded-sm mb-7 w-fit animate-fade-up-1">
+      <svg width="28" height="20" viewBox="0 0 28 20"><rect width="28" height="7" fill="#222"/><rect y="7" width="28" height="6" fill="#FCDC04"/><rect y="13" width="28" height="7" fill="#D90000"/></svg>
+      <span class="font-mono text-[9px] tracking-[0.16em] uppercase text-gold">Commodity Origin · Uganda Coffee Exchange · Est. 2024</span>
+    </div>
+
+    <!-- Title -->
+    <h1 class="font-display font-extrabold leading-[0.95] tracking-tight text-cream mb-2 animate-fade-up-2" style="font-size:clamp(46px,5.5vw,84px)">
+      Uganda's<br>
+      <span class="text-gold">Coffee</span><br>
+      <span class="font-normal italic text-cream/60 block" style="font-size:0.72em;letter-spacing:0.02em;">Commodity Origin</span>
+    </h1>
+
+    <!-- Slogan -->
+    <div class="flex items-center gap-3 my-5 animate-fade-up-3">
+      <div class="flex-1 max-w-[36px] h-px bg-gold/30"></div>
+      <span class="font-mono text-[10px] tracking-[0.22em] uppercase text-gold/80">From farm to cup, transparently</span>
+      <div class="flex-1 max-w-[36px] h-px bg-gold/30"></div>
+    </div>
+
+    <!-- Desc -->
+    <p class="text-[15px] leading-relaxed text-cream/78 max-w-[430px] mb-7 animate-fade-up-3">
+      Commodity Origin is the first regulated digital marketplace for Ugandan single-origin coffee — connecting smallholder farmers directly to global roasters. Every lot is UCDA-graded, blockchain-verified, and fully traceable from GPS-tagged farm to roastery door.
+    </p>
+
+    <!-- Actions -->
+    <div class="flex gap-3 mb-8 animate-fade-up-4">
+      <a href="#market" class="inline-flex items-center gap-2 bg-gold border border-gold text-bg font-mono text-[10px] tracking-[0.12em] uppercase font-medium px-7 py-3.5 hover:bg-gold2 transition-all no-underline">
+        View live lots
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#origins" class="inline-flex items-center gap-2 bg-transparent border border-white/[0.14] text-cream/70 font-mono text-[10px] tracking-[0.12em] uppercase px-7 py-3.5 hover:border-cream/40 hover:text-cream transition-all no-underline">Explore origins</a>
+    </div>
+
+    <!-- Stats -->
+    <div class="flex border-t border-white/[0.06] pt-6 animate-fade-up-5">
+      <div class="flex-1 pr-7">
+        <div class="font-display font-bold text-3xl text-cream leading-none mb-1">47<span class="text-lg text-gold">K</span></div>
+        <div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/45">Tonnes traded YTD</div>
+      </div>
+      <div class="flex-1 border-l border-white/[0.06] px-7">
+        <div class="font-display font-bold text-3xl text-cream leading-none mb-1">312</div>
+        <div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/45">Active farm lots</div>
+      </div>
+      <div class="flex-1 border-l border-white/[0.06] pl-7">
+        <div class="font-display font-bold text-3xl text-cream leading-none mb-1">6</div>
+        <div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/45">Growing regions</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Live market panel -->
+  <div class="relative z-10 flex flex-col gap-3 justify-center px-5 py-10 animate-fade-in">
+    <!-- Market panel -->
+    <div class="bg-surface border border-white/[0.06] rounded-sm overflow-hidden">
+      <div class="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+        <span class="font-mono text-[9px] tracking-[0.16em] uppercase text-cream/45">Top lots · today</span>
+        <div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full bg-up pulse-green"></div><span class="font-mono text-[9px] text-up">Live</span></div>
+      </div>
+      <!-- Lot rows -->
+      <div class="px-4 py-2.5 grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors">
+        <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0441</div><div class="text-[13px] font-medium text-cream">Sipi Falls AA</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Bugisu · Mt Elgon · 1,900m</div></div>
+        <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span>
+        <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,20 10,18 20,14 30,16 40,10 50,8 60,6" fill="none" stroke="#52B788" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$5.10<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-up">▲ 1.2%</div></div>
+      </div>
+      <div class="px-4 py-2.5 grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors">
+        <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0438</div><div class="text-[13px] font-medium text-cream">Kasese Natural</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Rwenzori · 2,100m</div></div>
+        <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span>
+        <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,14 10,16 20,12 30,10 40,13 50,9 60,7" fill="none" stroke="#52B788" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$4.65<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-up">▲ 0.8%</div></div>
+      </div>
+      <div class="px-4 py-2.5 grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors">
+        <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0429</div><div class="text-[13px] font-medium text-cream">Kibale Fine Robusta</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Mubende · Forest edge · 1,300m</div></div>
+        <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span>
+        <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,22 10,20 20,22 30,18 40,16 50,14 60,11" fill="none" stroke="#E09B3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$2.40<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-up">▲ 3.1%</div></div>
+      </div>
+      <div class="px-4 py-2.5 grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center hover:bg-surface3 cursor-pointer transition-colors">
+        <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0421</div><div class="text-[13px] font-medium text-cream">West Nile FAQ</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Arua · Savanna · 1,000m</div></div>
+        <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span>
+        <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,18 10,20 20,17 30,18 40,16 50,17 60,15" fill="none" stroke="#E09B3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$1.98<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-red">▼ 0.3%</div></div>
+      </div>
+    </div>
+    <!-- Chain cards -->
+    <div class="bg-surface border border-white/[0.06] rounded-sm px-4 py-3 flex items-center gap-3">
+      <div class="w-8 h-8 flex-shrink-0 bg-gold/15 border border-gold/20 rounded flex items-center justify-center text-gold">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      </div>
+      <div><div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/55 mb-0.5">Latest verified block</div><div class="font-mono text-[11px] text-gold font-medium">0x4f3a...c82e · LOT #0441 · 2m ago</div></div>
+    </div>
+    <div class="bg-surface border border-white/[0.06] rounded-sm px-4 py-3 flex items-center gap-3">
+      <div class="w-8 h-8 flex-shrink-0 bg-gold/15 border border-gold/20 rounded flex items-center justify-center text-gold">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <div><div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/55 mb-0.5">UCDA certified lots active</div><div class="font-mono text-[11px] text-gold font-medium">312 lots · 94.2% verified · Updated hourly</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SLOGAN BAND ── -->
+<div class="bg-surface border-y border-white/[0.06] px-10 py-[18px] flex items-center justify-center gap-8">
+  <span class="font-mono text-[10px] tracking-[0.18em] uppercase text-cream/45">Uganda · East Africa</span>
+  <div class="w-px h-8 bg-white/[0.14]"></div>
+  <div class="font-display font-bold text-xl tracking-tight text-cream text-center">"From <span class="text-gold">Farm</span> to Cup, <span class="text-gold">Transparently</span>"</div>
+  <div class="w-px h-8 bg-white/[0.14]"></div>
+  <span class="font-mono text-[10px] tracking-[0.18em] uppercase text-cream/45">Commodity Origin</span>
+</div>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="px-10 pb-14" id="how">
+  <div class="pt-10 mb-9">
+    <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-3">How the exchange works</span>
+    <h2 class="reveal delay-1 font-display font-bold text-cream mb-4" style="font-size:clamp(30px,3.5vw,48px);letter-spacing:-0.02em;line-height:1.05">Coffee trading, <span class="text-gold">reimagined</span></h2>
+    <p class="reveal delay-2 text-[15px] leading-relaxed text-cream/75 max-w-xl">Every step from harvest to your roastery is tracked, verified, and recorded — eliminating opacity from one of the world's most complex supply chains.</p>
+  </div>
+  <div class="grid grid-cols-5 gap-0 relative pipeline-line">
+    <div class="reveal px-2 text-center">
+      <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all" style="box-shadow:0 0 0 0 transparent">
+        <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">01</span>🌱
+      </div>
+      <div class="font-display font-semibold text-[13px] text-cream mb-2">Farm registration</div>
+      <p class="text-[12px] leading-relaxed text-cream/72">Smallholder farmers register GPS-tagged plots. Identity verified via UCDA. Farm profile published on-chain.</p>
+    </div>
+    <div class="reveal delay-1 px-2 text-center">
+      <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">
+        <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">02</span>⚖️
+      </div>
+      <div class="font-display font-semibold text-[13px] text-cream mb-2">Lot submission</div>
+      <p class="text-[12px] leading-relaxed text-cream/72">Harvested lots submitted with moisture readings, processing method, and harvest date. Each lot receives a unique BOE ID.</p>
+    </div>
+    <div class="reveal delay-2 px-2 text-center">
+      <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">
+        <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">03</span>🧪
+      </div>
+      <div class="font-display font-semibold text-[13px] text-cream mb-2">UCDA grading</div>
+      <p class="text-[12px] leading-relaxed text-cream/72">Physical analysis: screen size, moisture, defect count. Cup score via SCAA protocol. Grade and score recorded immutably.</p>
+    </div>
+    <div class="reveal delay-3 px-2 text-center">
+      <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">
+        <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">04</span>📊
+      </div>
+      <div class="font-display font-semibold text-[13px] text-cream mb-2">Live trading</div>
+      <p class="text-[12px] leading-relaxed text-cream/72">Verified lots listed with real-time bids and asks. Buyers from 40+ countries. Price discovery in public.</p>
+    </div>
+    <div class="reveal delay-4 px-2 text-center">
+      <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">
+        <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">05</span>🚢
+      </div>
+      <div class="font-display font-semibold text-[13px] text-cream mb-2">Delivery &amp; trace</div>
+      <p class="text-[12px] leading-relaxed text-cream/72">Logistics tracked from Kampala to port to roastery. QR code on every bag links to the complete farm-to-cup record.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── MARKET TABLE ── -->
+<section class="bg-surface border-y border-white/[0.06] px-10 py-10" id="market">
+  <div class="flex items-end justify-between mb-4">
+    <div>
+      <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-2">Live market</span>
+      <h2 class="reveal delay-1 font-display font-bold text-cream" style="font-size:clamp(28px,3vw,44px);letter-spacing:-0.02em">Active <span class="text-gold">lots</span></h2>
+    </div>
+    <div class="reveal flex gap-1">
+      <button onclick="filterTable(this,'all')" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-gold/30 bg-gold/12 text-gold rounded-sm transition-all">All</button>
+      <button onclick="filterTable(this,'arabica')" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-white/[0.08] bg-transparent text-cream/45 rounded-sm hover:border-gold/30 hover:text-gold hover:bg-gold/12 transition-all">Arabica</button>
+      <button onclick="filterTable(this,'robusta')" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-white/[0.08] bg-transparent text-cream/45 rounded-sm hover:border-gold/30 hover:text-gold hover:bg-gold/12 transition-all">Robusta</button>
+      <button onclick="filterTable(this,'specialty')" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-white/[0.08] bg-transparent text-cream/45 rounded-sm hover:border-gold/30 hover:text-gold hover:bg-gold/12 transition-all">Specialty 80+</button>
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse mkt-table" id="mktTable">
+      <thead>
+        <tr>
+          <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Lot ID</th>
+          <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Coffee</th>
+          <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Region</th>
+          <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Type</th>
+          <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Score</th>
+          <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Volume</th>
+          <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Price</th>
+          <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">24h</th>
+          <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Avail.</th>
+          <th class="border-b border-white/[0.06]"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-type="arabica" data-score="87">
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[10px] text-gold font-medium">BOE-0441</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="text-[13px] text-cream font-medium mb-0.5">Sipi Falls AA</div><div class="font-mono text-[9px] text-cream/55">Mt. Elgon · Washed · 1,900m</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80">Bugisu</span></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[12px] font-medium text-up">87.2</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] text-cream">2,400 <span class="text-[9px] text-cream/45">kg</span></div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$5.10</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] font-medium text-up">▲ 1.2%</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="avail-bar"><div class="avail-fill" style="width:42%"></div></div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
+        </tr>
+        <tr data-type="arabica" data-score="85">
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[10px] text-gold font-medium">BOE-0438</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="text-[13px] text-cream font-medium mb-0.5">Kasese Natural</div><div class="font-mono text-[9px] text-cream/55">Rwenzori · Natural · 2,100m</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80">Rwenzori</span></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[12px] font-medium text-up">85.8</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] text-cream">800 <span class="text-[9px] text-cream/45">kg</span></div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$4.65</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] font-medium text-up">▲ 0.8%</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="avail-bar"><div class="avail-fill low" style="width:18%"></div></div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
+        </tr>
+        <tr data-type="arabica" data-score="86">
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[10px] text-gold font-medium">BOE-0435</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="text-[13px] text-cream font-medium mb-0.5">Kisoro Highlands AB</div><div class="font-mono text-[9px] text-cream/55">Virunga · Honey · 2,000m</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80">Kisoro</span></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[12px] font-medium text-up">86.4</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] text-cream">1,600 <span class="text-[9px] text-cream/45">kg</span></div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$4.82</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] font-medium text-red">▼ 0.4%</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="avail-bar"><div class="avail-fill" style="width:65%"></div></div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
+        </tr>
+        <tr data-type="robusta" data-score="82">
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[10px] text-gold font-medium">BOE-0429</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="text-[13px] text-cream font-medium mb-0.5">Kibale Fine Robusta</div><div class="font-mono text-[9px] text-cream/55">Mubende · Natural · 1,300m</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80">Mubende</span></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[12px] font-medium text-gold2">82.0</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] text-cream">3,200 <span class="text-[9px] text-cream/45">kg</span></div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$2.40</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] font-medium text-up">▲ 3.1%</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="avail-bar"><div class="avail-fill" style="width:78%"></div></div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
+        </tr>
+        <tr data-type="robusta" data-score="79">
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[10px] text-gold font-medium">BOE-0421</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="text-[13px] text-cream font-medium mb-0.5">West Nile FAQ Grade 1</div><div class="font-mono text-[9px] text-cream/55">Arua · Natural · 1,000m</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80">West Nile</span></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[12px] font-medium text-gold2">79.4</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] text-cream">6,000 <span class="text-[9px] text-cream/45">kg</span></div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$1.98</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] font-medium text-up">▲ 0.3%</div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="avail-bar"><div class="avail-fill" style="width:90%"></div></div></td>
+          <td class="py-3.5 px-4 border-b border-white/[0.06]"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
+        </tr>
+        <tr data-type="robusta" data-score="80">
+          <td class="py-3.5 px-4"><div class="font-mono text-[10px] text-gold font-medium">BOE-0418</div></td>
+          <td class="py-3.5 px-4"><div class="text-[13px] text-cream font-medium mb-0.5">Masaka Lake Robusta</div><div class="font-mono text-[9px] text-cream/55">Masaka · Washed · 1,150m</div></td>
+          <td class="py-3.5 px-4"><span class="font-mono text-[10px] text-cream/80">Central</span></td>
+          <td class="py-3.5 px-4"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span></td>
+          <td class="py-3.5 px-4"><div class="font-mono text-[12px] font-medium text-gold2">80.1</div></td>
+          <td class="py-3.5 px-4"><div class="font-mono text-[11px] text-cream">5,500 <span class="text-[9px] text-cream/45">kg</span></div></td>
+          <td class="py-3.5 px-4"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$2.14</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
+          <td class="py-3.5 px-4"><div class="font-mono text-[11px] font-medium text-up">▲ 0.8%</div></td>
+          <td class="py-3.5 px-4"><div class="avail-bar"><div class="avail-fill" style="width:55%"></div></div></td>
+          <td class="py-3.5 px-4"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── ORIGINS ── -->
+<section class="px-10 py-10" id="origins">
+  <div class="mb-7">
+    <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-2">Uganda's growing regions</span>
+    <h2 class="reveal delay-1 font-display font-bold text-cream" style="font-size:clamp(28px,3.5vw,48px);letter-spacing:-0.02em;line-height:1.05">Two species. <span class="text-gold">Six terroirs.</span></h2>
+  </div>
+  <div class="grid grid-cols-2 gap-0.5">
+    <!-- Robusta -->
+    <div class="origin-block reveal bg-surface border border-white/[0.06] p-8 relative overflow-hidden">
+      <div class="absolute top-0 right-0 font-display font-extrabold text-[140px] text-white/[0.02] leading-none pointer-events-none select-none">ROB</div>
+      <div class="flex items-center gap-2 mb-6">
+        <span class="font-mono text-[9px] tracking-[0.12em] uppercase px-2.5 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span>
+        <span class="font-mono text-[9px] text-cream/55">900 – 1,350m · Coffea canephora · Native species</span>
+      </div>
+      <div class="font-display font-bold text-[34px] text-cream leading-tight mb-1 tracking-tight">Ugandan Robusta</div>
+      <div class="font-mono text-[10px] tracking-[0.12em] uppercase text-gold mb-5">Central · West Nile · Mubende · Masaka</div>
+      <p class="text-[14px] leading-relaxed text-cream/80 mb-6">Uganda is the birthplace of Coffea canephora — wild Robusta still grows in Kibale and Bwindi forests. Ugandan Robusta commands a premium over all other origins: fuller body, lower bitterness, earthy complexity. Grown in lowland lake-basin zones, it forms the backbone of premium espresso blends worldwide and is now achieving specialty grades (Fine Robusta Grade 1, 80+ cup score) reshaping the market.</p>
+      <div class="grid grid-cols-3 gap-3 py-4 border-y border-white/[0.06] mb-4">
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Caffeine</div><div class="text-[13px] text-cream/85">2.2 – 2.7%</div></div>
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Top grade</div><div class="text-[13px] text-cream/85">Fine Robusta G1</div></div>
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">% of crop</div><div class="text-[13px] text-cream/85">~80%</div></div>
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Processing</div><div class="text-[13px] text-cream/85">Natural, Washed</div></div>
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Peak price</div><div class="text-[13px] text-cream/85">$2.40/kg</div></div>
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">UCDA code</div><div class="text-[13px] text-cream/85">UGA-ROB</div></div>
+      </div>
+      <div class="flex flex-wrap gap-1.5 mb-4">
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Dark chocolate</span>
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Earth</span>
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Raw cacao</span>
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Tobacco</span>
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Cedar</span>
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Molasses</span>
+      </div>
+      <div class="flex items-center gap-3 mt-3"><span class="font-mono text-[9px] text-cream/50 w-20">Specialty</span><div class="score-track flex-1"><div class="score-fill-gold" style="width:28%"></div></div><span class="font-mono text-[10px] text-cream font-medium w-8 text-right">28%</span></div>
+      <div class="flex items-center gap-3 mt-2"><span class="font-mono text-[9px] text-cream/50 w-20">Export share</span><div class="score-track flex-1"><div class="score-fill-gold" style="width:80%"></div></div><span class="font-mono text-[10px] text-cream font-medium w-8 text-right">80%</span></div>
+    </div>
+    <!-- Arabica -->
+    <div class="origin-block reveal delay-2 bg-surface border border-white/[0.06] p-8 relative overflow-hidden">
+      <div class="absolute top-0 right-0 font-display font-extrabold text-[140px] text-white/[0.02] leading-none pointer-events-none select-none">ARA</div>
+      <div class="flex items-center gap-2 mb-6">
+        <span class="font-mono text-[9px] tracking-[0.12em] uppercase px-2.5 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span>
+        <span class="font-mono text-[9px] text-cream/55">1,500 – 2,300m · Coffea arabica · Highland grown</span>
+      </div>
+      <div class="font-display font-bold text-[34px] text-cream leading-tight mb-1 tracking-tight">Ugandan Arabica</div>
+      <div class="font-mono text-[10px] tracking-[0.12em] uppercase text-gold mb-5">Bugisu · Rwenzori · Kisoro · Kabale</div>
+      <p class="text-[14px] leading-relaxed text-cream/80 mb-6">Uganda's Arabica is among the most underrated on the specialty circuit. The Bugisu variety — grown on Mt. Elgon's volcanic slopes and marketed as "Sipi" after the iconic waterfalls — exhibits a wine-like acidity and dark-fruit profile rivalling Kenya AA. Rwenzori Arabica from the cloud-forests near the DRC border is more floral and delicate. The Kisoro highlands near Rwanda produce prized honey-process with stone-fruit sweetness.</p>
+      <div class="grid grid-cols-3 gap-3 py-4 border-y border-white/[0.06] mb-4">
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Caffeine</div><div class="text-[13px] text-cream/85">1.1 – 1.4%</div></div>
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Top grade</div><div class="text-[13px] text-cream/85">Bugisu AA</div></div>
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">% of crop</div><div class="text-[13px] text-cream/85">~20%</div></div>
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Processing</div><div class="text-[13px] text-cream/85">Washed, Natural</div></div>
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Peak price</div><div class="text-[13px] text-cream/85">$5.34/kg</div></div>
+        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">UCDA code</div><div class="text-[13px] text-cream/85">UGA-ARA-AA</div></div>
+      </div>
+      <div class="flex flex-wrap gap-1.5 mb-4">
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Blackcurrant</span>
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Red wine</span>
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Jasmine</span>
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Peach</span>
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Bergamot</span>
+        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Citrus</span>
+      </div>
+      <div class="flex items-center gap-3 mt-3"><span class="font-mono text-[9px] text-cream/50 w-20">Specialty</span><div class="score-track flex-1"><div class="score-fill-green" style="width:72%"></div></div><span class="font-mono text-[10px] text-cream font-medium w-8 text-right">72%</span></div>
+      <div class="flex items-center gap-3 mt-2"><span class="font-mono text-[9px] text-cream/50 w-20">Export share</span><div class="score-track flex-1"><div class="score-fill-green" style="width:20%"></div></div><span class="font-mono text-[10px] text-cream font-medium w-8 text-right">20%</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TRACEABILITY ── -->
+<section class="bg-surface border-t border-white/[0.06] px-10 py-10" id="traceability">
+  <div class="grid grid-cols-2 gap-12 items-start">
+    <div>
+      <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-3">Full traceability</span>
+      <h2 class="reveal delay-1 font-display font-bold text-cream mb-4" style="font-size:clamp(28px,3.5vw,48px);letter-spacing:-0.02em;line-height:1.05">Every step, <span class="text-gold">on record</span></h2>
+      <p class="reveal delay-2 text-[14px] leading-relaxed text-cream/78 mb-7">Our blockchain-anchored supply chain creates an immutable audit trail from the moment cherry is picked to the moment the bag lands in your roastery. No intermediary can alter the record.</p>
+      <!-- Chain steps -->
+      <div class="flex flex-col">
+        <div class="reveal flex gap-5 pb-5">
+          <div class="flex flex-col items-center flex-shrink-0">
+            <div class="w-9 h-9 rounded-full border border-white/[0.14] bg-surface2 flex items-center justify-center text-base z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">🌿</div>
+            <div class="cs-line"></div>
+          </div>
+          <div class="pt-1.5"><div class="font-mono text-[8px] tracking-[0.16em] uppercase text-gold mb-1 opacity-80">Step 01 · Farm</div><div class="font-display font-semibold text-[15px] text-cream mb-1">Cherry harvest recorded</div><p class="text-[12px] leading-relaxed text-cream/72">GPS-tagged plot. Farmer ID. Harvest date. Cherry weight. Processing method selected.</p><div class="font-mono text-[9px] text-cream/40 mt-1.5">Block: 0x8f2c...4a1e · 2024-10-14 07:22 UTC</div></div>
+        </div>
+        <div class="reveal delay-1 flex gap-5 pb-5">
+          <div class="flex flex-col items-center flex-shrink-0">
+            <div class="w-9 h-9 rounded-full border border-white/[0.14] bg-surface2 flex items-center justify-center text-base z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">⚗️</div>
+            <div class="cs-line"></div>
+          </div>
+          <div class="pt-1.5"><div class="font-mono text-[8px] tracking-[0.16em] uppercase text-gold mb-1 opacity-80">Step 02 · Processing</div><div class="font-display font-semibold text-[15px] text-cream mb-1">Wet/dry mill certification</div><p class="text-[12px] leading-relaxed text-cream/72">Mill registration number. Processing duration. Water usage. Drying method and days.</p><div class="font-mono text-[9px] text-cream/40 mt-1.5">Block: 0x3d9a...71fb · 2024-10-22 14:55 UTC</div></div>
+        </div>
+        <div class="reveal delay-2 flex gap-5 pb-5">
+          <div class="flex flex-col items-center flex-shrink-0">
+            <div class="w-9 h-9 rounded-full border border-white/[0.14] bg-surface2 flex items-center justify-center text-base z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">🏛️</div>
+            <div class="cs-line"></div>
+          </div>
+          <div class="pt-1.5"><div class="font-mono text-[8px] tracking-[0.16em] uppercase text-gold mb-1 opacity-80">Step 03 · UCDA grading</div><div class="font-display font-semibold text-[15px] text-cream mb-1">Official grade &amp; cup score</div><p class="text-[12px] leading-relaxed text-cream/72">Moisture: 12.1%. Screen: 18. Defects: 0. Cup score: 87.2. Grade: Bugisu AA.</p><div class="font-mono text-[9px] text-cream/40 mt-1.5">Block: 0xc14b...88dc · 2024-11-02 09:10 UTC</div></div>
+        </div>
+        <div class="reveal delay-3 flex gap-5 pb-5">
+          <div class="flex flex-col items-center flex-shrink-0">
+            <div class="w-9 h-9 rounded-full border border-white/[0.14] bg-surface2 flex items-center justify-center text-base z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">📦</div>
+            <div class="cs-line"></div>
+          </div>
+          <div class="pt-1.5"><div class="font-mono text-[8px] tracking-[0.16em] uppercase text-gold mb-1 opacity-80">Step 04 · Export</div><div class="font-display font-semibold text-[15px] text-cream mb-1">Container seal &amp; port departure</div><p class="text-[12px] leading-relaxed text-cream/72">BOE lot sealed, weighed, and loaded. Container number. Vessel. Port of Mombasa departure.</p><div class="font-mono text-[9px] text-cream/40 mt-1.5">Block: 0x5e2f...c30a · 2024-11-18 16:40 UTC</div></div>
+        </div>
+        <div class="reveal delay-4 flex gap-5">
+          <div class="flex flex-col items-center flex-shrink-0">
+            <div class="w-9 h-9 rounded-full border border-white/[0.14] bg-surface2 flex items-center justify-center text-base z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">☕</div>
+          </div>
+          <div class="pt-1.5"><div class="font-mono text-[8px] tracking-[0.16em] uppercase text-gold mb-1 opacity-80">Step 05 · Roastery</div><div class="font-display font-semibold text-[15px] text-cream mb-1">Delivery confirmed · QR activated</div><p class="text-[12px] leading-relaxed text-cream/72">Lot received by buyer. QR code activated. Full record publicly accessible. Farmer payment confirmed.</p><div class="font-mono text-[9px] text-cream/40 mt-1.5">Block: 0xa78c...2d14 · 2024-12-04 11:30 UTC</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- QR card -->
+    <div class="reveal delay-2 bg-surface2 border border-white/[0.06] rounded-sm p-6">
+      <div class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/55 mb-4 text-center">Scan · Lot BOE-2024-0441 · Sipi Falls AA</div>
+      <div class="qr-box w-36 h-36 mx-auto mb-4">
+        <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <rect width="120" height="120" fill="white"/>
+          <rect x="4" y="4" width="32" height="32" fill="black" rx="2"/><rect x="8" y="8" width="24" height="24" fill="white" rx="1"/><rect x="12" y="12" width="16" height="16" fill="black" rx="1"/>
+          <rect x="84" y="4" width="32" height="32" fill="black" rx="2"/><rect x="88" y="8" width="24" height="24" fill="white" rx="1"/><rect x="92" y="12" width="16" height="16" fill="black" rx="1"/>
+          <rect x="4" y="84" width="32" height="32" fill="black" rx="2"/><rect x="8" y="88" width="24" height="24" fill="white" rx="1"/><rect x="12" y="92" width="16" height="16" fill="black" rx="1"/>
+          <rect x="40" y="4" width="4" height="4" fill="black"/><rect x="48" y="4" width="4" height="4" fill="black"/><rect x="56" y="4" width="8" height="4" fill="black"/><rect x="68" y="4" width="4" height="4" fill="black"/><rect x="76" y="4" width="4" height="4" fill="black"/>
+          <rect x="40" y="12" width="8" height="4" fill="black"/><rect x="52" y="12" width="4" height="4" fill="black"/><rect x="60" y="12" width="8" height="4" fill="black"/><rect x="72" y="12" width="8" height="4" fill="black"/>
+          <rect x="4" y="40" width="4" height="4" fill="black"/><rect x="12" y="40" width="4" height="4" fill="black"/><rect x="20" y="40" width="8" height="4" fill="black"/><rect x="44" y="40" width="8" height="4" fill="black"/><rect x="56" y="40" width="4" height="4" fill="black"/><rect x="64" y="40" width="8" height="4" fill="black"/><rect x="84" y="40" width="8" height="4" fill="black"/>
+          <rect x="4" y="48" width="8" height="4" fill="black"/><rect x="16" y="48" width="4" height="4" fill="black"/><rect x="24" y="48" width="8" height="4" fill="black"/><rect x="40" y="48" width="4" height="4" fill="black"/><rect x="56" y="48" width="8" height="4" fill="black"/><rect x="80" y="48" width="8" height="4" fill="black"/>
+          <rect x="50" y="50" width="20" height="20" fill="white"/><rect x="54" y="54" width="12" height="12" fill="#C8862A" rx="2"/>
+        </svg>
+      </div>
+      <div class="flex flex-col gap-0">
+        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Lot ID</span><span class="font-mono text-[9px] text-cream font-medium">BOE-2024-0441</span></div>
+        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Farm</span><span class="font-mono text-[9px] text-cream font-medium">Sebei Cooperative</span></div>
+        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Farmer</span><span class="font-mono text-[9px] text-cream font-medium">Worku Tariku</span></div>
+        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Region</span><span class="font-mono text-[9px] text-cream font-medium">Bugisu · Mt Elgon</span></div>
+        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Altitude</span><span class="font-mono text-[9px] text-cream font-medium">1,900m asl</span></div>
+        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Harvest</span><span class="font-mono text-[9px] text-cream font-medium">Oct 14, 2024</span></div>
+        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Process</span><span class="font-mono text-[9px] text-cream font-medium">Fully washed</span></div>
+        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Grade</span><span class="font-mono text-[9px] text-cream font-medium">Bugisu AA · 87.2pts</span></div>
+        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Verified</span><span class="font-mono text-[9px] text-[#52B788] font-medium">✓ UCDA Certified</span></div>
+        <div class="flex justify-between gap-6 py-2"><span class="font-mono text-[9px] text-cream/55">Block hash</span><span class="font-mono text-[9px] text-cream/60">0x4f3a...c82e</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TRUST ── -->
+<div class="border-t border-white/[0.06] px-10 py-9 flex flex-col items-center gap-5">
+  <span class="font-mono text-[9px] tracking-[0.2em] uppercase text-cream/45">Trusted &amp; certified by</span>
+  <div class="flex items-center gap-12 flex-wrap justify-center">
+    <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">UCDA</span>
+    <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">SCA</span>
+    <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">UTZ</span>
+    <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">Rainforest Alliance</span>
+    <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">Fair Trade</span>
+    <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">ICO</span>
+    <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">Uganda Export Promotions Board</span>
+  </div>
+</div>
+
+<!-- ── CTA ── -->
+<section class="bg-surface border-t border-white/[0.06] px-10 py-14 text-center relative overflow-hidden" id="subscribe">
+  <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse 60% 60% at 50% 50%, rgba(200,134,42,0.07) 0%, transparent 70%)"></div>
+  <div class="relative z-10">
+    <span class="font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-5">Join Uganda's coffee market</span>
+    <h2 class="font-display font-extrabold text-cream mb-5 tracking-tight" style="font-size:clamp(34px,4vw,60px);line-height:1">Trade <span class="text-gold">Ugandan</span><br>coffee, directly</h2>
+    <p class="text-[15px] leading-relaxed text-cream/75 max-w-lg mx-auto mb-8">Join 2,400+ roasters, importers, and traders sourcing Ugandan Arabica and Fine Robusta with full provenance on Commodity Origin. Open a verified account in 5 minutes.</p>
+    <div class="flex gap-3 justify-center mb-4">
+      <a href="#" class="inline-flex items-center gap-2 bg-gold border border-gold text-bg font-mono text-[10px] tracking-[0.12em] uppercase font-medium px-7 py-3.5 hover:bg-gold2 transition-all no-underline">
+        Open trading account
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#market" class="inline-flex items-center gap-2 bg-transparent border border-white/[0.14] text-cream/70 font-mono text-[10px] tracking-[0.12em] uppercase px-7 py-3.5 hover:border-cream/40 hover:text-cream transition-all no-underline">Browse live lots</a>
+    </div>
+    <p class="font-mono text-[9px] tracking-[0.1em] text-cream/35">No minimum order · Free verification · UCDA compliance included</p>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer class="bg-[#0D0804] border-t border-white/[0.06] px-10 pt-10">
+  <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-10 mb-8">
+    <div>
+      <a href="#" class="flex items-center gap-2 mb-3 no-underline">
+        <div class="w-2 h-2 rounded-full bg-gold"></div>
+        <span class="font-display font-bold text-[15px] text-cream">Commodity <span class="text-gold">Origin</span></span>
+      </a>
+      <p class="text-[13px] text-cream/65 leading-relaxed max-w-[220px]">Uganda's blockchain-verified coffee commodity exchange. From farm to cup, transparently.</p>
+    </div>
+    <div>
+      <div class="font-mono text-[9px] tracking-[0.18em] uppercase text-cream/40 mb-4">Exchange</div>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="#market" class="foot-link text-[13px] no-underline">Live market</a></li>
+        <li><a href="#origins" class="foot-link text-[13px] no-underline">Origins</a></li>
+        <li><a href="#quality" class="foot-link text-[13px] no-underline">Grading</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Price history</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">API access</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="font-mono text-[9px] tracking-[0.18em] uppercase text-cream/40 mb-4">Coffee</div>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="#" class="foot-link text-[13px] no-underline">Arabica lots</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Robusta lots</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Fine Robusta</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Seasonal lots</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Brew guides</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="font-mono text-[9px] tracking-[0.18em] uppercase text-cream/40 mb-4">Company</div>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="#" class="foot-link text-[13px] no-underline">About us</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">UCDA partnership</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Farmer partners</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Sustainability</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Careers</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="font-mono text-[9px] tracking-[0.18em] uppercase text-cream/40 mb-4">Legal</div>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="#" class="foot-link text-[13px] no-underline">Terms of trade</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Privacy policy</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Cookie policy</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Compliance</a></li>
+        <li><a href="#" class="foot-link text-[13px] no-underline">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/[0.06] py-5 flex justify-between items-center">
+    <span class="font-mono text-[9px] tracking-[0.08em] text-cream/35">© 2024 Commodity Origin Ltd · Kampala, Uganda · hello@commodityorigin.ug</span>
+    <div class="flex items-center gap-2">
+      <svg width="32" height="22" viewBox="0 0 32 22"><rect width="32" height="7" fill="#1a1a1a"/><rect y="7" width="32" height="8" fill="#FCDC04"/><rect y="15" width="32" height="7" fill="#D90000"/><ellipse cx="16" cy="11" rx="3" ry="3" fill="white" stroke="#888" stroke-width="0.5"/></svg>
+      <span class="font-mono text-[9px] tracking-[0.08em] text-cream/35">Pearl of Africa</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+setTimeout(() => {
+  document.querySelectorAll('.reveal').forEach(el => el.classList.add('anim'));
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); }});
+  }, { threshold: 0.06 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+}, 80);
+
+// Market filter
+function filterTable(btn, type) {
+  document.querySelectorAll('.mf-btn').forEach(b => {
+    b.classList.remove('bg-gold/12','border-gold/30','text-gold');
+    b.classList.add('border-white/[0.08]','bg-transparent','text-cream/45');
+  });
+  btn.classList.add('bg-gold/12','border-gold/30','text-gold');
+  btn.classList.remove('border-white/[0.08]','bg-transparent','text-cream/45');
+  document.querySelectorAll('#mktTable tbody tr').forEach(row => {
+    const rtype = row.dataset.type;
+    const score = parseFloat(row.dataset.score);
+    if(type==='all') row.style.display='';
+    else if(type==='arabica') row.style.display = rtype==='arabica' ? '' : 'none';
+    else if(type==='robusta') row.style.display = rtype==='robusta' ? '' : 'none';
+    else if(type==='specialty') row.style.display = score>=80 ? '' : 'none';
+  });
+}
+
+// Bid buttons
+document.querySelectorAll('.bid-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const orig = this.textContent;
+    this.textContent = 'Bidding…';
+    this.style.background = '#C8862A';
+    this.style.borderColor = '#C8862A';
+    this.style.color = '#0E0B07';
+    setTimeout(() => {
+      this.textContent = 'Bid placed ✓';
+      setTimeout(() => {
+        this.textContent = orig;
+        this.style.background = '';
+        this.style.borderColor = '';
+        this.style.color = '';
+      }, 2000);
+    }, 800);
+  });
+});
+
+// Live price nudge
+function nudgePrices() {
+  document.querySelectorAll('.lot-price-cell').forEach(el => {
+    const base = parseFloat(el.textContent.replace('$',''));
+    if(isNaN(base)) return;
+    const delta = (Math.random()-0.49)*0.02;
+    el.textContent = '$'+(base+delta).toFixed(2);
+  });
+}
+setInterval(nudgePrices, 4000);
+</script>
+</body>
+</html>
