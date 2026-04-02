@@ -2,6 +2,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import InputError from '@/Components/InputError.vue';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
+import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
 defineProps({
     canResetPassword: Boolean,
@@ -49,7 +50,7 @@ const submit = () => {
 
                 <div class="flex items-center gap-3">
                     <span class="font-mono text-[9px] uppercase tracking-[0.18em] text-cream/45">
-                        Uganda coffee exchange
+                        Uganda's coffee exchange
                     </span>
                     <Link
                         :href="route('register')"
@@ -183,15 +184,9 @@ const submit = () => {
                             <span class="text-[13px] text-cream/72">Keep this session signed in on this device</span>
                         </label>
 
-                        <button
-                            type="submit"
-                            class="auth-button"
-                            :class="{ 'cursor-not-allowed opacity-60': form.processing }"
-                            :disabled="form.processing"
-                        >
-                            <span>Enter marketplace</span>
-                            <span class="font-mono text-[10px] tracking-[0.14em]">/LOGIN</span>
-                        </button>
+                        <SubmitButton :loading="form.processing" :disabled="form.processing">
+                            Login
+                        </SubmitButton>
                     </form>
 
                     <div class="mt-6 flex items-center justify-between gap-4 border-t border-white/[0.06] pt-5">
@@ -278,29 +273,4 @@ const submit = () => {
     accent-color: #c8862a;
 }
 
-.auth-button {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    border: 1px solid #c8862a;
-    background: #c8862a;
-    color: #0e0b07;
-    border-radius: 6px;
-    padding: 0.95rem 1rem;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    line-height: 1.2;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    font-weight: 600;
-    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
-}
-
-.auth-button:hover {
-    background: #e09b3a;
-    border-color: #e09b3a;
-    transform: translateY(-1px);
-}
 </style>

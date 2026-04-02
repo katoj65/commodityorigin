@@ -5,7 +5,7 @@ import ApplicationMark from '@/Components/ApplicationMark.vue';
 
 const pageRef = ref(null);
 const pageTitle =
-    'Commodity Origin — Uganda Coffee Exchange · From Farm to Cup, Transparently';
+    "Commodity Origin — Uganda's coffee exchange · From Farm to Cup, Transparently";
 
 let revealObserver;
 let revealTimeout;
@@ -239,7 +239,7 @@ onBeforeUnmount(() => {
             <div class="relative z-10 flex flex-col justify-center px-10 py-14 pr-14">
                 <div class="inline-flex items-center gap-2 bg-gold/15 border border-gold/25 px-3.5 py-1.5 rounded-sm mb-7 w-fit animate-fade-up-1">
                     <svg width="28" height="20" viewBox="0 0 28 20"><rect width="28" height="7" fill="#222"/><rect y="7" width="28" height="6" fill="#FCDC04"/><rect y="13" width="28" height="7" fill="#D90000"/></svg>
-                    <span class="font-mono text-[9px] tracking-[0.16em] uppercase text-gold">Commodity Origin · Uganda Coffee Exchange · Est. 2024</span>
+                    <span class="font-mono text-[9px] tracking-[0.16em] uppercase text-gold">Commodity Origin · Uganda's coffee exchange · Est. 2024</span>
                 </div>
 
                 <h1 class="font-display font-extrabold leading-[0.95] tracking-tight text-cream mb-2 animate-fade-up-2" style="font-size:clamp(46px,5.5vw,84px)">
