@@ -14,7 +14,7 @@ class MarketController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('Market/Index');
+        return Inertia::render('Market/MarketPage');
     }
 
     /**

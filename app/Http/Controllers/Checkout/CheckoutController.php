@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Auction;
+namespace App\Http\Controllers\Checkout;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class AuctionController extends Controller
+class CheckoutController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index(): Response
     {
-        return Inertia::render('Auction/AcutionPage');
+        return Inertia::render('Checkout/CartPage');
     }
 
     /**

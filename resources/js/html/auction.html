@@ -1,206 +1,430 @@
-<section class="rounded-2xl border border-[#E5E7EB] bg-white p-5 sm:p-6">
-  <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-    <div class="max-w-3xl">
-      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-[#C8862A]">Auction</p>
-      <h1 class="mt-3 font-display text-[34px] font-bold leading-none tracking-[-0.03em] text-[#111827] sm:text-[42px]">
-        Live auction board
-      </h1>
-      <p class="mt-4 max-w-2xl text-[14px] leading-relaxed text-[#6B7280] sm:text-[15px]">
-        Follow active bidding windows, compare reserve levels, and place auction bids on verified Ugandan coffee lots with full traceability context.
-      </p>
-    </div>
+<!DOCTYPE html>
 
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:w-[460px]">
-      <div class="rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-4 py-3">
-        <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Live windows</div>
-        <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#111827]">18</div>
-        <div class="mt-1 text-[11px] text-[#6B7280]">currently open</div>
-      </div>
-      <div class="rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-4 py-3">
-        <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Bidders online</div>
-        <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#111827]">76</div>
-        <div class="mt-1 text-[11px] text-[#6B7280]">active this hour</div>
-      </div>
-      <div class="rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-4 py-3">
-        <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Top arabica</div>
-        <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#111827]">$5.42</div>
-        <div class="mt-1 text-[11px] text-[#6B7280]">highest live bid</div>
-      </div>
-      <div class="rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-4 py-3">
-        <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Reserve met</div>
-        <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#111827]">11</div>
-        <div class="mt-1 text-[11px] text-[#6B7280]">lots this session</div>
-      </div>
-    </div>
-  </div>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Coffee Exchange | Global Auctions</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#065f46",
+                        "primary": "#004532",
+                        "surface-container-highest": "#e0e3e5",
+                        "tertiary": "#343c51",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#bfc7e1",
+                        "primary-fixed-dim": "#8bd6b6",
+                        "on-surface": "#191c1e",
+                        "surface-bright": "#f7f9fb",
+                        "on-background": "#191c1e",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary-container": "#796048",
+                        "secondary-fixed": "#fedcbe",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#1b6b51",
+                        "on-secondary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#3f4944",
+                        "tertiary-container": "#4b5369",
+                        "outline-variant": "#bec9c2",
+                        "on-primary-fixed": "#002116",
+                        "outline": "#6f7973",
+                        "surface-variant": "#e0e3e5",
+                        "secondary-container": "#fedcbe",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#e1c1a4",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f2f4f6",
+                        "background": "#f7f9fb",
+                        "surface-container": "#eceef0",
+                        "on-secondary-fixed-variant": "#59422c",
+                        "on-primary-fixed-variant": "#00513b",
+                        "inverse-primary": "#8bd6b6",
+                        "tertiary-fixed": "#dae2fd",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "surface": "#f7f9fb",
+                        "secondary": "#725a42",
+                        "on-tertiary-fixed": "#131b2e",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary-fixed": "#291806",
+                        "primary-fixed": "#a6f2d1",
+                        "surface-dim": "#d8dadc",
+                        "on-primary-container": "#8bd6b7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface antialiased">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/20">
+<div class="flex justify-between items-center px-8 h-16 w-full max-w-[1920px] mx-auto">
+<div class="flex items-center space-x-12">
+<span class="text-xl font-bold tracking-tighter text-emerald-900">Coffee Exchange</span>
+<nav class="hidden md:flex space-x-8">
+<a class="text-slate-500 font-medium hover:text-emerald-700 transition-colors" href="#">Market</a>
+<a class="text-emerald-900 border-b-2 border-emerald-900 pb-1" href="#">Exchange</a>
+<a class="text-slate-500 font-medium hover:text-emerald-700 transition-colors" href="#">Portfolio</a>
+<a class="text-slate-500 font-medium hover:text-emerald-700 transition-colors" href="#">History</a>
+</nav>
+</div>
+<div class="flex items-center space-x-6">
+<div class="relative">
+<span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
+</div>
+<span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-primary transition-colors" data-icon="account_balance_wallet">account_balance_wallet</span>
+<div class="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
+<img alt="User profile" data-alt="Professional headshot of a business male with neutral background for user profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_XVs0nmYz2amMrIuppSspW9xHw0gQR1jQgNHwz7CtEHlJ4_webiPSe6LvPDbc8PCG78uSgjrjV6g3YauRjVleX70B5Euz9I7IVD9_VSCMBTM07dz-ewtacWerMh3PXvWxhohUBqGL4heofmOL6eTLTDwBf7mJV75wkXuEmJXI_9Ybqc5UwWBTwTA2vv1BaOLQ0LOK7apCJawR9PowjWit5HqeJZzrsefo0YWNTLxkbkRRR3OojyNOnHWFnoUClDO_Ilc43DRtQMmx"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Side Navigation Bar -->
+<aside class="h-screen w-64 fixed left-0 top-16 bg-slate-50 flex flex-col p-4 space-y-2 border-r border-slate-100">
+<div class="pb-6 pt-2 px-2">
+<h2 class="text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-4">Trading Desk</h2>
+<button class="w-full bg-primary text-white py-3 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 shadow-sm hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+<span>New Bid Request</span>
+</button>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center space-x-3 px-3 py-2 bg-emerald-900 text-white rounded-md shadow-sm" href="#">
+<span class="material-symbols-outlined" data-icon="gavel" style="font-variation-settings: 'FILL' 1;">gavel</span>
+<span class="font-semibold text-sm">Live Auctions</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-600 hover:bg-slate-200/50 transition-all rounded-md" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span class="font-semibold text-sm">Upcoming</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-600 hover:bg-slate-200/50 transition-all rounded-md" href="#">
+<span class="material-symbols-outlined" data-icon="lock">lock</span>
+<span class="font-semibold text-sm">Private Sales</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-600 hover:bg-slate-200/50 transition-all rounded-md" href="#">
+<span class="material-symbols-outlined" data-icon="public">public</span>
+<span class="font-semibold text-sm">Origins</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-600 hover:bg-slate-200/50 transition-all rounded-md" href="#">
+<span class="material-symbols-outlined" data-icon="verified">verified</span>
+<span class="font-semibold text-sm">Quality Reports</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-600 hover:bg-slate-200/50 transition-all rounded-md" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-semibold text-sm">Analytics</span>
+</a>
+</nav>
+<div class="border-t border-slate-200 pt-4 space-y-1">
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-600 hover:bg-slate-200/50 transition-all rounded-md" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-semibold text-sm">Settings</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-600 hover:bg-slate-200/50 transition-all rounded-md" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span class="font-semibold text-sm">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 pt-16 min-h-screen bg-white">
+<div class="p-8 lg:p-12 max-w-[1600px] mx-auto grid grid-cols-12 gap-10">
+<!-- Left: Auctions Table and Filters -->
+<div class="col-span-12 xl:col-span-9 space-y-10">
+<!-- Page Header -->
+<div class="flex flex-col space-y-2">
+<span class="text-secondary font-bold tracking-widest text-[0.6875rem] uppercase tracking-[0.05em]">Institutional Exchange</span>
+<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-on-surface">Global Coffee Auctions</h1>
+</div>
+<!-- Interaction Bar -->
+<div class="bg-surface-container-low p-6 rounded-xl flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center space-x-4 overflow-x-auto hide-scrollbar">
+<button class="bg-primary text-white px-5 py-2 rounded-md text-sm font-semibold shadow-sm">All Lots</button>
+<button class="bg-surface-container-lowest text-on-surface-variant px-5 py-2 rounded-md text-sm font-semibold hover:bg-surface-container-high transition-colors">Arabica</button>
+<button class="bg-surface-container-lowest text-on-surface-variant px-5 py-2 rounded-md text-sm font-semibold hover:bg-surface-container-high transition-colors">Robusta</button>
+<div class="h-6 w-[1px] bg-outline-variant/30 mx-2"></div>
+<button class="bg-surface-container-lowest text-on-surface-variant px-5 py-2 rounded-md text-sm font-semibold hover:bg-surface-container-high transition-colors flex items-center space-x-2">
+<span>Region</span>
+<span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+<div class="relative flex-1 min-w-[300px] max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" data-icon="search">search</span>
+<input class="w-full bg-surface-container-lowest border-none focus:ring-1 focus:ring-primary rounded-md pl-10 py-2 text-sm" placeholder="Search Lot ID, origin, or farm name..." type="text"/>
+</div>
+</div>
+<!-- Data Dense Table -->
+<div class="bg-surface-container-lowest overflow-hidden">
+<table class="w-full text-left border-separate border-spacing-0">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-widest text-slate-500">Lot ID</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-widest text-slate-500">Origin</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-widest text-slate-500">Variety</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-widest text-slate-500 text-center">SCAA Score</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-widest text-slate-500 text-right">Current Bid</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-widest text-slate-500 text-right">Time Left</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-widest text-slate-500"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<!-- Row 1 -->
+<tr class="group hover:bg-slate-50/50 transition-colors">
+<td class="py-5 px-6">
+<span class="font-bold text-sm text-primary">#ETH-2024-082</span>
+</td>
+<td class="py-5 px-6">
+<div class="flex items-center space-x-3">
+<div class="w-6 h-4 bg-slate-200 rounded-sm overflow-hidden relative">
+<img alt="Ethiopia Flag" class="object-cover w-full h-full" data-alt="Small representation of Ethiopian flag or landscape for origin identification" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc5oyZFwhdBja3znggfzewi6pZIsSgPSxGnRR9AjBnFApHnwpA0Gv3tGZEcDRqGo1fUbgvgNwHRAOdQMQe7_LVQMMDlaky7dpeO93piSSH2rdRLP0Se6rwbIGsQp75xbR339IRIx0tBS3CJBpn1MoEcdZLPVPCvrA1ZG5EgV6O14KbFcsz_0r-JRgmVpGhMlC3Qc4Zj4PtoDaT06RUZ3wXu-mGJwKtvsbR65-BYVKENpB5ha5qi-68Z69mH737UhhwVF5DgkToiBLQ"/>
+</div>
+<span class="font-semibold text-sm">Yirgacheffe, Ethiopia</span>
+</div>
+</td>
+<td class="py-5 px-6">
+<span class="px-2 py-1 rounded text-[0.625rem] font-bold bg-primary-fixed text-on-primary-fixed uppercase">Heirloom Arabica</span>
+</td>
+<td class="py-5 px-6 text-center">
+<span class="font-extrabold text-primary text-lg tracking-tight">89.5</span>
+</td>
+<td class="py-5 px-6 text-right">
+<div class="flex flex-col">
+<span class="font-bold text-sm">$4.85 / lb</span>
+<span class="text-[0.625rem] text-slate-400">12 Bids</span>
+</div>
+</td>
+<td class="py-5 px-6 text-right">
+<span class="text-error font-bold text-sm">02h 45m</span>
+</td>
+<td class="py-5 px-6 text-right">
+<button class="text-primary hover:bg-primary hover:text-white px-4 py-2 rounded border border-primary text-xs font-bold transition-all">BID NOW</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-slate-50/50 transition-colors">
+<td class="py-5 px-6">
+<span class="font-bold text-sm text-primary">#COL-2024-115</span>
+</td>
+<td class="py-5 px-6">
+<div class="flex items-center space-x-3">
+<div class="w-6 h-4 bg-slate-200 rounded-sm overflow-hidden relative">
+<img alt="Colombia Flag" class="object-cover w-full h-full" data-alt="Small representation of Colombian flag or landscape for origin identification" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDLpMAFuhcvfI8NUuar9IoqaKa-eZKcUZB0GlsCAGdoSXU_GLegYkeV86BAD61y7FNRDcne-dbGT4Ac_JdL5mtbGnuGQ2Fp7FRlRCoJI5mSkrldqFmN3oOPmZUQt7c3YO7xvKDRCZRpeENzFjs999NYBgmHjjgoDS1Yv61NxDrHt08vtWDw1mQk4qadOXanWdXRP1YzMjmf1tD0P1hl4_4-vutJsmS-vEM6S3ypkmoJer_w6T1vQqQUiMk3n3eiHXT3-l8n-bOLdmY"/>
+</div>
+<span class="font-semibold text-sm">Huila, Colombia</span>
+</div>
+</td>
+<td class="py-5 px-6">
+<span class="px-2 py-1 rounded text-[0.625rem] font-bold bg-primary-fixed text-on-primary-fixed uppercase">Caturra Arabica</span>
+</td>
+<td class="py-5 px-6 text-center">
+<span class="font-extrabold text-primary text-lg tracking-tight">87.2</span>
+</td>
+<td class="py-5 px-6 text-right">
+<div class="flex flex-col">
+<span class="font-bold text-sm">$3.12 / lb</span>
+<span class="text-[0.625rem] text-slate-400">8 Bids</span>
+</div>
+</td>
+<td class="py-5 px-6 text-right">
+<span class="text-on-surface-variant font-bold text-sm">1d 12h</span>
+</td>
+<td class="py-5 px-6 text-right">
+<button class="text-primary hover:bg-primary hover:text-white px-4 py-2 rounded border border-primary text-xs font-bold transition-all">BID NOW</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-slate-50/50 transition-colors">
+<td class="py-5 px-6">
+<span class="font-bold text-sm text-primary">#UGA-2024-004</span>
+</td>
+<td class="py-5 px-6">
+<div class="flex items-center space-x-3">
+<div class="w-6 h-4 bg-slate-200 rounded-sm overflow-hidden relative">
+<img alt="Uganda Flag" class="object-cover w-full h-full" data-alt="Small representation of Ugandan flag or landscape for origin identification" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD10InMCuMGy_pZ6HIIkeeEvbIKp9lTOdqUgvcJA28OU8Ldzv70dxp3Ah0weyg7pO9Bf1UbrGKe-filwCqd609GgL5yjxEvE3yMtgjaHbtz4E8cG9vK3dLxvNYidTzPgm3e4aCUT5Y3q1qE63D_dKnYz6TQaFPDm1N7tyBmS8dXQXrXZdj6EjMiWeyclHmKmcEkYjcvVfPsSWedGLBB5l14Y3PVEBKGQZ56UbqWo6Ab92-jywfGe-9wCzlwWpPxAVARRRzkwA20sjhX"/>
+</div>
+<span class="font-semibold text-sm">Mount Elgon, Uganda</span>
+</div>
+</td>
+<td class="py-5 px-6">
+<span class="px-2 py-1 rounded text-[0.625rem] font-bold bg-secondary-fixed text-on-secondary-fixed uppercase">High Grade Robusta</span>
+</td>
+<td class="py-5 px-6 text-center">
+<span class="font-extrabold text-primary text-lg tracking-tight">83.8</span>
+</td>
+<td class="py-5 px-6 text-right">
+<div class="flex flex-col">
+<span class="font-bold text-sm">$2.05 / lb</span>
+<span class="text-[0.625rem] text-slate-400">24 Bids</span>
+</div>
+</td>
+<td class="py-5 px-6 text-right">
+<span class="text-error font-bold text-sm">00h 15m</span>
+</td>
+<td class="py-5 px-6 text-right">
+<button class="bg-primary text-white px-4 py-2 rounded text-xs font-bold transition-all">WATCHING</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="group hover:bg-slate-50/50 transition-colors">
+<td class="py-5 px-6">
+<span class="font-bold text-sm text-primary">#BRA-2024-991</span>
+</td>
+<td class="py-5 px-6">
+<div class="flex items-center space-x-3">
+<div class="w-6 h-4 bg-slate-200 rounded-sm overflow-hidden relative">
+<img alt="Brazil Flag" class="object-cover w-full h-full" data-alt="Small representation of Brazilian flag or landscape for origin identification" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtugCMKXJAiMhzbgZSYsyDs9hLK16bydF3q1K6Yp0_emfEBZsqD4zSWfXYvNZmTsk-dRB_HwWkwewGpDmLqhzx0qbG21TzVVMKRBEeL7Xx3rPrsRdcAiCTGCgsa41TZgHjBvnnpH1cLChZzzQRpthsDnaraRFQnCcBjkX4adWHxC8bLsfhwWdR3Py1wamIyZ1HQ9cYXQ_4H_7LxyWeXZlcMC5jdkp1p2-rB92QAQHxKqCH1eNduS-Z1ZOmLMdxEGaWy6u-LvFC-W0C"/>
+</div>
+<span class="font-semibold text-sm">Minas Gerais, Brazil</span>
+</div>
+</td>
+<td class="py-5 px-6">
+<span class="px-2 py-1 rounded text-[0.625rem] font-bold bg-primary-fixed text-on-primary-fixed uppercase">Bourbon Arabica</span>
+</td>
+<td class="py-5 px-6 text-center">
+<span class="font-extrabold text-primary text-lg tracking-tight">85.9</span>
+</td>
+<td class="py-5 px-6 text-right">
+<div class="flex flex-col">
+<span class="font-bold text-sm">$2.85 / lb</span>
+<span class="text-[0.625rem] text-slate-400">3 Bids</span>
+</div>
+</td>
+<td class="py-5 px-6 text-right">
+<span class="text-on-surface-variant font-bold text-sm">4d 08h</span>
+</td>
+<td class="py-5 px-6 text-right">
+<button class="text-primary hover:bg-primary hover:text-white px-4 py-2 rounded border border-primary text-xs font-bold transition-all">BID NOW</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Bento Grid Content (Market Insights) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+<div class="md:col-span-2 bg-surface-container-low rounded-2xl p-8 relative overflow-hidden flex flex-col justify-end min-h-[300px]">
+<div class="absolute inset-0 opacity-20 mix-blend-overlay">
+<img alt="Coffee beans background" class="object-cover w-full h-full" data-alt="High-resolution close up of dark roasted coffee beans with rich textures and professional studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBb1T0R8dy-JwcbuCzPu4RQBliYw-8sjj6Xcq5eyD-chFUUdMr_D-TCtcMzwbuNHcV-OBwoQ_T1BCoHUQF4M3OAMsAYnM4myYF1YSGOzXbH-V2TV_YvCZToR1afDuurAQuV1a5HLHSWs73POzkv4L-66660CEd3inm9LpNbiKTQZ5ZJa3GvpGSvrBa50FYccVMv1461KDe6c0zrOFvYmObIIwaFD1Pup0GGswJMBHEXzJ8_wGNNMonKnRmSs6tF6KKEQ1ZbW-iTvHHi"/>
+</div>
+<div class="relative z-10 space-y-4">
+<h3 class="text-3xl font-extrabold text-primary tracking-tight">Weekly Origin Insight: Ethiopia</h3>
+<p class="text-on-surface-variant max-w-md leading-relaxed">Early harvest yields from the Gedeo zone show exceptional berry clarity and jasmine notes. Market volatility remains low.</p>
+<button class="bg-secondary text-on-secondary py-2 px-6 rounded-md font-bold text-sm hover:opacity-90 transition-all">Download Report</button>
+</div>
+</div>
+<div class="bg-primary text-white rounded-2xl p-8 flex flex-col justify-between">
+<span class="material-symbols-outlined text-4xl opacity-50" data-icon="trending_up">trending_up</span>
+<div class="space-y-1">
+<span class="text-xs font-bold uppercase tracking-widest opacity-70">Benchmark Price</span>
+<h4 class="text-4xl font-extrabold tracking-tighter">$3.42</h4>
+<p class="text-xs font-medium text-primary-fixed">+4.2% vs Last Session</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Market Summary -->
+<div class="col-span-12 xl:col-span-3 space-y-8">
+<!-- Market Summary Card -->
+<section class="bg-surface-container-low rounded-2xl p-6 space-y-6 sticky top-24">
+<div class="flex items-center justify-between">
+<h2 class="text-lg font-extrabold tracking-tight">Market Summary</h2>
+<span class="material-symbols-outlined text-primary" data-icon="query_stats">query_stats</span>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center py-2">
+<span class="text-sm font-semibold text-slate-500">Active Auctions</span>
+<span class="font-bold text-primary">142</span>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="text-sm font-semibold text-slate-500">24h Trade Volume</span>
+<span class="font-bold text-primary">$1.2M</span>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="text-sm font-semibold text-slate-500">Active Traders</span>
+<span class="font-bold text-primary">894</span>
+</div>
+</div>
+<div class="pt-4 border-t border-slate-200">
+<h3 class="text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-4">My Bid Activity</h3>
+<div class="space-y-4">
+<div class="flex items-start space-x-4">
+<div class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5"></div>
+<div class="flex-1">
+<p class="text-xs font-bold">Leading: #ETH-2024-082</p>
+<p class="text-[0.625rem] text-slate-500">Current: $4.85 / lb</p>
+</div>
+</div>
+<div class="flex items-start space-x-4">
+<div class="w-2 h-2 rounded-full bg-error mt-1.5"></div>
+<div class="flex-1">
+<p class="text-xs font-bold">Outbid: #COL-2024-051</p>
+<p class="text-[0.625rem] text-slate-500">High: $3.90 / lb</p>
+</div>
+<button class="text-[0.625rem] font-bold text-primary hover:underline">REVIVE</button>
+</div>
+</div>
+</div>
+<div class="pt-6">
+<div class="bg-white p-4 rounded-xl shadow-sm space-y-2">
+<p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-widest">Market Sentiment</p>
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-emerald-600 text-lg" data-icon="sentiment_very_satisfied">sentiment_very_satisfied</span>
+<span class="font-bold text-sm text-on-surface">Strongly Bullish</span>
+</div>
+<div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full w-[85%]"></div>
+</div>
+</div>
+</div>
+<button class="w-full bg-surface-container-high text-primary py-3 rounded-md font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                        View Detailed Analytics
+                    </button>
 </section>
-
-<section class="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-  <div class="rounded-2xl border border-[#E5E7EB] bg-white p-5 sm:p-6">
-    <div class="mb-4">
-      <h2 class="font-display text-[20px] font-bold tracking-tight text-[#111827]">Active auction windows</h2>
-      <p class="mt-1 text-[13px] text-[#6B7280]">Lots with live bidding activity and reserve visibility.</p>
-    </div>
-
-    <div class="space-y-3">
-      <article class="rounded-2xl border border-[#E5E7EB] bg-[#FCFCFC] p-4">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">AUC-301</div>
-            <h3 class="mt-2 font-display text-[18px] font-bold tracking-tight text-[#111827]">Bugisu Reserve AA</h3>
-            <p class="mt-1 text-[13px] text-[#6B7280]">Mt Elgon · Washed · 1,960m</p>
-          </div>
-          <span class="w-fit rounded-full bg-[#ECFDF5] px-2.5 py-1 text-[10px] font-medium text-[#1B6E4B]">Live</span>
-        </div>
-        <div class="mt-4 grid gap-3 sm:grid-cols-4">
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Current bid</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#1B6E4B]">$5.42/kg</div>
-          </div>
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Reserve</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#111827]">$5.20/kg</div>
-          </div>
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Time left</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#C0392B]">01h 24m</div>
-          </div>
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Bidders</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#111827]">12</div>
-          </div>
-        </div>
-      </article>
-
-      <article class="rounded-2xl border border-[#E5E7EB] bg-[#FCFCFC] p-4">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">AUC-304</div>
-            <h3 class="mt-2 font-display text-[18px] font-bold tracking-tight text-[#111827]">Rwenzori Natural Select</h3>
-            <p class="mt-1 text-[13px] text-[#6B7280]">Kasese · Natural · 2,040m</p>
-          </div>
-          <span class="w-fit rounded-full bg-[#FFF8F0] px-2.5 py-1 text-[10px] font-medium text-[#9A5A10]">Competitive</span>
-        </div>
-        <div class="mt-4 grid gap-3 sm:grid-cols-4">
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Current bid</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#C8862A]">$4.88/kg</div>
-          </div>
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Reserve</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#111827]">$4.75/kg</div>
-          </div>
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Time left</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#C0392B]">03h 08m</div>
-          </div>
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Bidders</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#111827]">8</div>
-          </div>
-        </div>
-      </article>
-
-      <article class="rounded-2xl border border-[#E5E7EB] bg-[#FCFCFC] p-4">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">AUC-309</div>
-            <h3 class="mt-2 font-display text-[18px] font-bold tracking-tight text-[#111827]">West Nile Robusta Grade 1</h3>
-            <p class="mt-1 text-[13px] text-[#6B7280]">Arua · Natural · 1,020m</p>
-          </div>
-          <span class="w-fit rounded-full bg-[#EFF6FF] px-2.5 py-1 text-[10px] font-medium text-[#1D4ED8]">Open</span>
-        </div>
-        <div class="mt-4 grid gap-3 sm:grid-cols-4">
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Current bid</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#1D4ED8]">$2.31/kg</div>
-          </div>
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Reserve</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#111827]">$2.20/kg</div>
-          </div>
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Time left</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#C0392B]">05h 41m</div>
-          </div>
-          <div class="rounded-xl border border-[#E5E7EB] bg-white px-3 py-3">
-            <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">Bidders</div>
-            <div class="mt-2 font-display text-[22px] font-bold leading-none text-[#111827]">5</div>
-          </div>
-        </div>
-      </article>
-    </div>
-  </div>
-
-  <div class="space-y-4">
-    <section class="rounded-2xl border border-[#E5E7EB] bg-white p-5 sm:p-6">
-      <h2 class="font-display text-[20px] font-bold tracking-tight text-[#111827]">How to bid</h2>
-      <div class="mt-4 space-y-3">
-        <div class="flex items-start gap-3 rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] p-4">
-          <div class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#FFF8F0] font-mono text-[10px] font-medium text-[#C8862A]">01</div>
-          <p class="text-[14px] leading-relaxed text-[#4B5563]">Review the live bid ladder and reserve threshold before entering.</p>
-        </div>
-        <div class="flex items-start gap-3 rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] p-4">
-          <div class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#FFF8F0] font-mono text-[10px] font-medium text-[#C8862A]">02</div>
-          <p class="text-[14px] leading-relaxed text-[#4B5563]">Confirm quality details, process method, and origin traceability for the lot.</p>
-        </div>
-        <div class="flex items-start gap-3 rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] p-4">
-          <div class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#FFF8F0] font-mono text-[10px] font-medium text-[#C8862A]">03</div>
-          <p class="text-[14px] leading-relaxed text-[#4B5563]">Place your bid before the timer closes to remain in the active round.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="rounded-2xl border border-[#E5E7EB] bg-white p-5 sm:p-6">
-      <div class="flex items-center justify-between gap-3">
-        <div>
-          <h2 class="font-display text-[20px] font-bold tracking-tight text-[#111827]">Bid ladder</h2>
-          <p class="mt-1 text-[13px] text-[#6B7280]">Latest movement on the lead auction window.</p>
-        </div>
-        <span class="rounded-full bg-[#ECFDF5] px-3 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#1B6E4B]">Live</span>
-      </div>
-      <div class="mt-4 space-y-3">
-        <div class="flex items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-[#FCFCFC] px-4 py-3">
-          <div>
-            <div class="text-[14px] font-medium text-[#111827]">Export House A</div>
-            <div class="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">14:02</div>
-          </div>
-          <div class="text-right">
-            <div class="font-display text-[20px] font-bold leading-none text-[#111827]">$5.42/kg</div>
-            <div class="mt-1 text-[11px] text-[#6B7280]">Leading</div>
-          </div>
-        </div>
-        <div class="flex items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-[#FCFCFC] px-4 py-3">
-          <div>
-            <div class="text-[14px] font-medium text-[#111827]">Roaster Union</div>
-            <div class="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">13:58</div>
-          </div>
-          <div class="text-right">
-            <div class="font-display text-[20px] font-bold leading-none text-[#111827]">$5.38/kg</div>
-            <div class="mt-1 text-[11px] text-[#6B7280]">Outbid</div>
-          </div>
-        </div>
-        <div class="flex items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-[#FCFCFC] px-4 py-3">
-          <div>
-            <div class="text-[14px] font-medium text-[#111827]">Kampala Trader Co.</div>
-            <div class="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">13:47</div>
-          </div>
-          <div class="text-right">
-            <div class="font-display text-[20px] font-bold leading-none text-[#111827]">$5.31/kg</div>
-            <div class="mt-1 text-[11px] text-[#6B7280]">Outbid</div>
-          </div>
-        </div>
-        <div class="flex items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-[#FCFCFC] px-4 py-3">
-          <div>
-            <div class="text-[14px] font-medium text-[#111827]">Origin Buyer Desk</div>
-            <div class="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">13:39</div>
-          </div>
-          <div class="text-right">
-            <div class="font-display text-[20px] font-bold leading-none text-[#111827]">$5.24/kg</div>
-            <div class="mt-1 text-[11px] text-[#6B7280]">Reserve met</div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </div>
-</section>
+<!-- Featured Producer Promo -->
+<div class="bg-secondary-container p-6 rounded-2xl relative overflow-hidden">
+<div class="relative z-10 space-y-3">
+<span class="px-2 py-0.5 bg-white/40 text-[0.625rem] font-bold uppercase rounded">Featured Origin</span>
+<h4 class="text-xl font-bold text-on-secondary-fixed leading-tight">Huila Reserve Special Batch</h4>
+<p class="text-xs text-on-secondary-fixed-variant">Limited harvest of 10 lots coming this Friday. Certified organic.</p>
+<a class="inline-block text-xs font-bold text-on-secondary-fixed underline underline-offset-4" href="#">Register for Alert</a>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB -->
+<button class="fixed bottom-8 right-8 bg-primary text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</body></html>

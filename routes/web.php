@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Bid\BidController;
 use App\Http\Controllers\Auction\AuctionController;
+use App\Http\Controllers\Checkout\CheckoutController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Farmer\FarmerController;
@@ -42,6 +43,11 @@ Route::middleware([
     // Auction workspace routes.
     Route::prefix('auction')->name('auction.')->group(function () {
         Route::get('/', [AuctionController::class, 'index'])->name('index');
+    });
+
+    // Checkout workspace routes.
+    Route::prefix('checkout')->name('checkout.')->group(function () {
+        Route::get('/', [CheckoutController::class, 'index'])->name('index');
     });
 
     // Marketplace routes.

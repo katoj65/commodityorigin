@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OriginExchange | Live Market Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#3f4944",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e6e8ea",
+                        "primary-container": "#065f46",
+                        "outline": "#6f7973",
+                        "secondary-container": "#fedcbe",
+                        "on-tertiary-fixed": "#131b2e",
+                        "background": "#f7f9fb",
+                        "on-secondary-fixed": "#291806",
+                        "on-secondary-fixed-variant": "#59422c",
+                        "secondary": "#725a42",
+                        "primary-fixed-dim": "#8bd6b6",
+                        "on-secondary-container": "#796048",
+                        "inverse-primary": "#8bd6b6",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f2f4f6",
+                        "on-error": "#ffffff",
+                        "tertiary": "#343c51",
+                        "on-primary-container": "#8bd6b7",
+                        "surface-tint": "#1b6b51",
+                        "primary": "#004532",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed": "#dae2fd",
+                        "outline-variant": "#bec9c2",
+                        "on-surface": "#191c1e",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface": "#f7f9fb",
+                        "on-background": "#191c1e",
+                        "on-primary-fixed-variant": "#00513b",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "surface-bright": "#f7f9fb",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary-container": "#bfc7e1",
+                        "surface-variant": "#e0e3e5",
+                        "secondary-fixed": "#fedcbe",
+                        "primary-fixed": "#a6f2d1",
+                        "tertiary-container": "#4b5369",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-container": "#eceef0",
+                        "secondary-fixed-dim": "#e1c1a4",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#002116",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-white font-body text-on-surface">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 glass-header bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl">
+<div class="flex justify-between items-center w-full px-6 h-16">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-emerald-900 dark:text-emerald-50">OriginExchange</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="font-manrope text-sm font-medium tracking-tight text-emerald-900 dark:text-emerald-400 border-b-2 border-emerald-900 dark:border-emerald-400 pb-1" href="#">Market Data</a>
+<a class="font-manrope text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-emerald-800 transition-colors" href="#">Auction Desk</a>
+<a class="font-manrope text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-emerald-800 transition-colors" href="#">Logistics</a>
+<a class="font-manrope text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-emerald-800 transition-colors" href="#">Analytics</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined text-slate-500 p-2 rounded-full hover:bg-slate-50 cursor-pointer">notifications</span>
+</div>
+<div class="relative group">
+<span class="material-symbols-outlined text-slate-500 p-2 rounded-full hover:bg-slate-50 cursor-pointer">settings</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="professional male corporate executive headshot with neutral background and soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzLPnSGn-HQRiirzGogBFkkwygsfTUqcP9jFU0JX1-oMeve3lR12dmBTNCTSSeEiIxeYvrEKWi2I-35nkupIMlpfBE8v1Rxoes1XsHc2CuXIMiHcfz0QQ5HO0aBohvb0HmqmDYHKQhJrKGyiEVzNaNXDMWKkfYBeS10FMjhcedtA862CxFCdZb4FSiUTdIWxG09RJHynpp5P0nGLN6RxTNGu4VTC70As5nqi0C_Sh2Kbnk6qqDHRx2MjAF04NbF8V2iRziDAp8M27E"/>
+</div>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 hidden md:flex flex-col">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 bg-primary flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">coffee</span>
+</div>
+<div>
+<h3 class="text-lg font-black text-emerald-900 leading-none">Institutional Terminal</h3>
+<p class="text-[10px] uppercase tracking-widest text-slate-400 mt-1">Direct Trade Node</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800 text-emerald-900 dark:text-emerald-400 rounded-md shadow-sm font-manrope text-sm font-semibold hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span> Dashboard
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-md font-manrope text-sm font-semibold hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">gavel</span> Active Auctions
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-md font-manrope text-sm font-semibold hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span> Inventory
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-md font-manrope text-sm font-semibold hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span> Contracts
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-md font-manrope text-sm font-semibold hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">verified_user</span> Compliance
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-md font-manrope text-sm font-semibold hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">analytics</span> Reports
+                </a>
+</nav>
+<button class="w-full mt-8 bg-primary text-white py-3 rounded-md font-bold text-sm uppercase tracking-wider hover:bg-primary-container transition-all">
+                New Listing
+            </button>
+</div>
+<div class="mt-auto p-4 flex flex-col gap-1 border-t border-slate-200/50">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 font-manrope text-sm font-semibold hover:bg-slate-100 rounded-md" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span> Support
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-error font-manrope text-sm font-semibold hover:bg-error-container/20 rounded-md" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span> Sign Out
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 pt-16 min-h-screen bg-white">
+<!-- Ticker Section -->
+<div class="bg-surface-container-low px-6 py-3 border-b border-outline-variant/15 overflow-hidden whitespace-nowrap">
+<div class="flex items-center gap-12 animate-scroll">
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Arabica C-Future</span>
+<span class="text-sm font-bold text-emerald-900">$2.4540</span>
+<span class="text-xs font-bold text-emerald-600">+1.24%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Robusta London</span>
+<span class="text-sm font-bold text-emerald-900">$4,812.00</span>
+<span class="text-xs font-bold text-error">-0.42%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ethiopian Yirgacheffe Index</span>
+<span class="text-sm font-bold text-emerald-900">$3.1200</span>
+<span class="text-xs font-bold text-emerald-600">+0.85%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Colombian Excelso</span>
+<span class="text-sm font-bold text-emerald-900">$2.9450</span>
+<span class="text-xs font-bold text-slate-400">0.00%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Brazilian Santos 2/3</span>
+<span class="text-sm font-bold text-emerald-900">$2.1800</span>
+<span class="text-xs font-bold text-emerald-600">+2.11%</span>
+</div>
+</div>
+</div>
+<div class="p-8">
+<div class="flex flex-col lg:flex-row gap-8">
+<!-- Main Market View -->
+<div class="flex-1 flex flex-col gap-8">
+<!-- Dashboard Header -->
+<div class="flex justify-between items-end">
+<div>
+<p class="text-primary font-bold text-xs uppercase tracking-widest mb-2">Market Status: Open</p>
+<h1 class="text-4xl font-bold tracking-tight text-on-surface">Coffee Futures &amp; Live Auctions</h1>
+</div>
+<div class="flex gap-2">
+<button class="bg-surface-container-low px-4 py-2 rounded text-xs font-bold uppercase tracking-widest text-slate-600 hover:bg-surface-container-high transition-colors">Export CSV</button>
+<button class="bg-primary text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">sync</span> Refresh Live
+                            </button>
+</div>
+</div>
+<!-- Filters -->
+<div class="flex flex-wrap gap-4 items-center bg-surface-container-low p-4 rounded-xl">
+<div class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Commodity Type</label>
+<div class="flex bg-white rounded p-1">
+<button class="px-4 py-1 bg-primary text-white text-xs font-bold rounded">Arabica</button>
+<button class="px-4 py-1 text-slate-600 text-xs font-bold">Robusta</button>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Origin Region</label>
+<select class="bg-white border-none rounded text-xs font-medium py-2 pr-10 focus:ring-1 focus:ring-primary">
+<option>All Global Origins</option>
+<option>East Africa</option>
+<option>Central America</option>
+<option>South America</option>
+<option>Southeast Asia</option>
+</select>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-slate-400 uppercase ml-1">SCAA Minimum</label>
+<select class="bg-white border-none rounded text-xs font-medium py-2 pr-10 focus:ring-1 focus:ring-primary">
+<option>80+ Specialty</option>
+<option>84+ Premium</option>
+<option>88+ Rare</option>
+</select>
+</div>
+<div class="ml-auto flex flex-col gap-1">
+<label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Sort By</label>
+<select class="bg-white border-none rounded text-xs font-medium py-2 pr-10 focus:ring-1 focus:ring-primary">
+<option>Highest Score</option>
+<option>Ending Soon</option>
+<option>Price: Low to High</option>
+</select>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-white overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+<th class="px-6 py-4">Lot ID</th>
+<th class="px-6 py-4">Origin / Farm</th>
+<th class="px-6 py-4">Variety</th>
+<th class="px-6 py-4 text-center">SCAA Score</th>
+<th class="px-6 py-4">Current Bid</th>
+<th class="px-6 py-4">Time Remaining</th>
+<th class="px-6 py-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<!-- Row 1 -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-5 font-mono text-xs text-slate-500">ETH-2024-081</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<span class="text-xl">🇪🇹</span>
+<div>
+<p class="text-sm font-bold text-on-surface">Yirgacheffe G1</p>
+<p class="text-[10px] text-slate-400">Heirloom / Washed</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium bg-primary-fixed text-on-primary-fixed px-2 py-1 rounded">Heirloom</span>
+</td>
+<td class="px-6 py-5 text-center">
+<span class="text-sm font-black text-emerald-900">89.5</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-bold text-on-surface">$4.12 <span class="text-[10px] text-slate-400">/lb</span></p>
+<p class="text-[10px] text-emerald-600">↑ 12 bids</p>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="text-xs font-bold">02h 14m 10s</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="bg-primary text-white px-4 py-1.5 rounded text-xs font-bold">Place Bid</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-5 font-mono text-xs text-slate-500">COL-2024-114</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<span class="text-xl">🇨🇴</span>
+<div>
+<p class="text-sm font-bold text-on-surface">Huila Pink Bourbon</p>
+<p class="text-[10px] text-slate-400">Anaerobic / Finca El Mirador</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium bg-primary-fixed text-on-primary-fixed px-2 py-1 rounded">Pink Bourbon</span>
+</td>
+<td class="px-6 py-5 text-center">
+<span class="text-sm font-black text-emerald-900">91.2</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-bold text-on-surface">$7.45 <span class="text-[10px] text-slate-400">/lb</span></p>
+<p class="text-[10px] text-emerald-600">↑ 24 bids</p>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-slate-600">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="text-xs font-bold">14h 45m 02s</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="bg-primary text-white px-4 py-1.5 rounded text-xs font-bold">Place Bid</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-5 font-mono text-xs text-slate-500">BRA-2024-002</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<span class="text-xl">🇧🇷</span>
+<div>
+<p class="text-sm font-bold text-on-surface">Mogiana NY 2/3</p>
+<p class="text-[10px] text-slate-400">Natural / Cooperative</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium bg-primary-fixed text-on-primary-fixed px-2 py-1 rounded">Catuai</span>
+</td>
+<td class="px-6 py-5 text-center">
+<span class="text-sm font-black text-emerald-900">82.5</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-bold text-on-surface">$2.18 <span class="text-[10px] text-slate-400">/lb</span></p>
+<p class="text-[10px] text-slate-400">― 0 bids</p>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-slate-600">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="text-xs font-bold">01d 08h 12s</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="bg-primary text-white px-4 py-1.5 rounded text-xs font-bold">Place Bid</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-5 font-mono text-xs text-slate-500">PAN-2024-055</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<span class="text-xl">🇵🇦</span>
+<div>
+<p class="text-sm font-bold text-on-surface">Esmeralda Geisha</p>
+<p class="text-[10px] text-slate-400">Washed / Private Collection</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium bg-primary-fixed text-on-primary-fixed px-2 py-1 rounded">Geisha</span>
+</td>
+<td class="px-6 py-5 text-center">
+<span class="text-sm font-black text-emerald-900">94.8</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-bold text-on-surface">$42.00 <span class="text-[10px] text-slate-400">/lb</span></p>
+<p class="text-[10px] text-emerald-600">↑ 102 bids</p>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="text-xs font-bold">00h 12m 45s</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="bg-primary text-white px-4 py-1.5 rounded text-xs font-bold">Place Bid</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Sidebar Action Center -->
+<aside class="w-full lg:w-80 flex flex-col gap-6">
+<!-- Market Sentiment Card -->
+<div class="bg-surface-container-low rounded-xl p-6">
+<h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Market Sentiment</h4>
+<div class="flex items-center justify-between mb-4">
+<span class="text-xl font-bold text-emerald-900">Strongly Bullish</span>
+<span class="material-symbols-outlined text-emerald-600" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+</div>
+<div class="w-full bg-slate-200 h-1.5 rounded-full mb-6 overflow-hidden">
+<div class="bg-emerald-600 h-full w-4/5"></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="text-[10px] text-slate-400 uppercase font-bold">24h Vol</p>
+<p class="text-sm font-bold text-on-surface">1.2M Lbs</p>
+</div>
+<div>
+<p class="text-[10px] text-slate-400 uppercase font-bold">Volatility</p>
+<p class="text-sm font-bold text-on-surface">Low (4.2%)</p>
+</div>
+</div>
+</div>
+<!-- Origin Visualizer -->
+<div class="bg-primary rounded-xl p-6 text-white overflow-hidden relative min-h-[240px]">
+<img class="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay" data-alt="close up of roasted coffee beans in a wooden scoop with soft cinematic lighting and bokeh background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS887NIN4be9-_oSo9zD1pYSeYic8J9IZcxbMKXpnvX2XBpApYH70HQl7wY_SUvqFQQFMI9Z9Q3ebJQRDDwTwR6a9vb7hpCm9PuRV3vhUVqzGlKlUKKQRYqj0Q5cc7dS6T-1Gelgi1bE8X4Rf84MMUhmBirxU5Czyifh_RgOFRktXsnQ_i8hpVgGeQpveP-7NQwk2YjCAnKcRwR-gGH8llWqyZsom13EG8Ch1cBi3w2_K4NPOB_RHoprvnaYlyaZQDju5X-_ubTrgq"/>
+<div class="relative z-10 h-full flex flex-col">
+<h4 class="text-[10px] font-bold text-emerald-200 uppercase tracking-widest mb-2">Regional Insight</h4>
+<p class="text-lg font-bold mb-4 leading-tight">East African Harvest Yields Peak Quality</p>
+<p class="text-xs text-emerald-100 mb-6 leading-relaxed">Early samples from Rwanda and Kenya show a 15% increase in Specialty Grade (85+) compared to previous season.</p>
+<button class="mt-auto bg-white/20 backdrop-blur-md text-white py-2 rounded text-xs font-bold uppercase tracking-widest border border-white/20 hover:bg-white/30 transition-all">Read Report</button>
+</div>
+</div>
+<!-- Trade Alerts -->
+<div class="bg-white border border-outline-variant/15 rounded-xl p-6">
+<h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Live Alerts</h4>
+<div class="flex flex-col gap-4">
+<div class="flex gap-3">
+<div class="w-2 h-2 rounded-full bg-emerald-500 mt-1"></div>
+<div>
+<p class="text-xs font-bold text-on-surface leading-tight">Large Transaction: Arabica</p>
+<p class="text-[10px] text-slate-400 mt-0.5">50,000 lbs exchanged at $2.44</p>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="w-2 h-2 rounded-full bg-emerald-500 mt-1"></div>
+<div>
+<p class="text-xs font-bold text-on-surface leading-tight">Auction Closed: Lot G-12</p>
+<p class="text-[10px] text-slate-400 mt-0.5">Final bid: $3.95/lb (Panama)</p>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary-container mt-1"></div>
+<div>
+<p class="text-xs font-bold text-on-surface leading-tight">Supply Alert: Vietnam</p>
+<p class="text-[10px] text-slate-400 mt-0.5">Heavy rainfall impacting Robusta drying</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Support Quick Link -->
+<div class="bg-surface-container-low rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:bg-surface-container-high transition-all">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-white rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-lg">support_agent</span>
+</div>
+<span class="text-xs font-bold text-on-surface uppercase">Live Desk Support</span>
+</div>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</aside>
+</div>
+</div>
+</main>
+<!-- Mobile Navigation Shell (Bottom Bar) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-xl border-t border-slate-100 flex justify-around py-3 z-50">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[10px] font-bold uppercase">Market</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span class="text-[10px] font-bold uppercase">Bids</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-[10px] font-bold uppercase">Assets</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-bold uppercase">Data</span>
+</a>
+</nav>
+<!-- Floating Action Button (Only for context-specific screens) -->
+<div class="fixed bottom-24 right-8 z-40 hidden md:block">
+<button class="w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group">
+<span class="material-symbols-outlined text-2xl group-hover:rotate-90 transition-transform">add</span>
+</button>
+</div>
+</body></html>

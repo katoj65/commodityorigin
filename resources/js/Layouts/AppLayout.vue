@@ -418,13 +418,13 @@ onBeforeUnmount(() => {
                         </svg>
                     </button>
 
-                    <button type="button" class="shell-icon-button">
+                    <Link :href="route('checkout.index')" class="shell-icon-button">
                         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <circle cx="9" cy="20" r="1.5" />
                             <circle cx="17" cy="20" r="1.5" />
                             <path d="M3 4h2l2.2 10.2a1 1 0 00.98.8h8.72a1 1 0 00.97-.76L21 8H7" />
                         </svg>
-                    </button>
+                    </Link>
 
                     <button type="button" class="shell-icon-button relative hidden sm:inline-flex">
                         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
