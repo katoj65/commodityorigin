@@ -238,7 +238,6 @@ onBeforeUnmount(() => {
 
             <div class="relative z-10 flex flex-col justify-center px-10 py-14 pr-14">
                 <div class="inline-flex items-center gap-2 bg-gold/15 border border-gold/25 px-3.5 py-1.5 rounded-sm mb-7 w-fit animate-fade-up-1">
-                    <svg width="28" height="20" viewBox="0 0 28 20"><rect width="28" height="7" fill="#222"/><rect y="7" width="28" height="6" fill="#FCDC04"/><rect y="13" width="28" height="7" fill="#D90000"/></svg>
                     <span class="font-mono text-[9px] tracking-[0.16em] uppercase text-gold">Commodity Origin · Uganda's coffee exchange · Est. 2024</span>
                 </div>
 
@@ -718,7 +717,6 @@ onBeforeUnmount(() => {
             <div class="border-t border-white/[0.06] py-5 flex justify-between items-center">
                 <span class="font-mono text-[9px] tracking-[0.08em] text-cream/35">© 2024 Commodity Origin Ltd · Kampala, Uganda · hello@commodityorigin.ug</span>
                 <div class="flex items-center gap-2">
-                    <svg width="32" height="22" viewBox="0 0 32 22"><rect width="32" height="7" fill="#1a1a1a"/><rect y="7" width="32" height="8" fill="#FCDC04"/><rect y="15" width="32" height="7" fill="#D90000"/><ellipse cx="16" cy="11" rx="3" ry="3" fill="white" stroke="#888" stroke-width="0.5"/></svg>
                     <span class="font-mono text-[9px] tracking-[0.08em] text-cream/35">Pearl of Africa</span>
                 </div>
             </div>
