@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const selectedRange = ref('1W');
@@ -238,13 +239,13 @@ const filteredLots = computed(() => {
                             </svg>
                             Reports
                         </button>
-                        <button class="dashboard-primary-btn">
+                        <Link :href="route('bid.index')" class="dashboard-primary-btn no-underline">
                             <svg class="dashboard-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 5v14" />
                                 <path d="M5 12l7 7 7-7" />
                             </svg>
                             Place Bid
-                        </button>
+                        </Link>
                     </div>
                 </div>
 

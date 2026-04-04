@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
+import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
 const page = usePage();
 
@@ -186,14 +187,11 @@ const submit = () => {
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3 border-t border-[#E5E7EB] pt-5">
-                        <button
-                            type="submit"
-                            class="farmer-submit"
-                            :class="{ 'cursor-not-allowed opacity-60': form.processing }"
-                            :disabled="form.processing"
-                        >
-                            Save farmer intake
-                        </button>
+                        <div class="w-full sm:w-auto sm:min-w-[220px]">
+                            <SubmitButton :loading="form.processing" :disabled="form.processing">
+                                Save farmer intake
+                            </SubmitButton>
+                        </div>
 
                         <div class="font-mono text-[10px] uppercase tracking-[0.12em] text-[#9CA3AF]">
                             Traceability-ready farmer profile
@@ -235,22 +233,5 @@ const submit = () => {
 .farmer-textarea {
     min-height: 124px;
     resize: vertical;
-}
-
-.farmer-submit {
-    border: 0;
-    border-radius: 9999px;
-    background: linear-gradient(135deg, #c8862a, #e09b3a);
-    padding: 0.85rem 1.25rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #ffffff;
-    box-shadow: 0 16px 36px rgba(200, 134, 42, 0.24);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.farmer-submit:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 18px 40px rgba(200, 134, 42, 0.28);
 }
 </style>

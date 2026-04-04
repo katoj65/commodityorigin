@@ -41,8 +41,8 @@ const topNavLinks = computed(() => [
     },
     {
         label: 'Auction',
-        href: route('market.auction'),
-        active: route().current('market.auction'),
+        href: route('auction.index'),
+        active: route().current('auction.index'),
         inertia: true,
     },
 ]);

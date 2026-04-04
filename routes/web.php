@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Bid\BidController;
+use App\Http\Controllers\Auction\AuctionController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Farmer\FarmerController;
@@ -32,8 +34,15 @@ Route::middleware([
         Route::post('/', [FarmerController::class, 'store'])->name('store');
     });
 
+    // Bid workspace routes.
+    Route::prefix('bid')->name('bid.')->group(function () {
+        Route::get('/', [BidController::class, 'index'])->name('index');
+    });
 
-
+    // Auction workspace routes.
+    Route::prefix('auction')->name('auction.')->group(function () {
+        Route::get('/', [AuctionController::class, 'index'])->name('index');
+    });
 
     // Marketplace routes.
     Route::prefix('market')->name('market.')->group(function () {
