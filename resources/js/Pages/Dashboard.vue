@@ -2,9 +2,18 @@
 import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import CreateProfileModal from '@/Components/Modals/CreateProfileModal.vue';
+
+const props = defineProps({
+    hasProfile: {
+        type: Boolean,
+        default: false,
+    },
+});
 
 const selectedRange = ref('1W');
 const selectedType = ref('all');
+const showCreateProfileModal = ref(!props.hasProfile);
 
 const stats = [
     {
@@ -207,6 +216,7 @@ const filteredLots = computed(() => {
 
     return lots.filter((lot) => lot.type === selectedType.value);
 });
+
 </script>
 
 <template>
@@ -547,6 +557,8 @@ const filteredLots = computed(() => {
                     </div>
                 </div>
             </div>
+
+            <CreateProfileModal v-if="!props.hasProfile" v-model="showCreateProfileModal" />
         </div>
     </AppLayout>
 </template>

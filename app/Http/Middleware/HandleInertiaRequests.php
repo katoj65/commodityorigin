@@ -35,8 +35,26 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $authenticatedUser = $request->user()?->loadMissing('profile');
+
         return [
             ...parent::share($request),
+            'auth' => [
+                'user' => $authenticatedUser ? [
+                    'id' => $authenticatedUser->id,
+                    'first_name' => $authenticatedUser->first_name,
+                    'last_name' => $authenticatedUser->last_name,
+                    'name' => $authenticatedUser->name,
+                    'email' => $authenticatedUser->email,
+                    'role' => $authenticatedUser->role,
+                    'telephone' => $authenticatedUser->telephone,
+                    'profile_photo_path' => $authenticatedUser->profile_photo_path,
+                    'profile_photo_url' => $authenticatedUser->profile_photo_url,
+                    'email_verified_at' => $authenticatedUser->email_verified_at,
+                    'two_factor_enabled' => ! is_null($authenticatedUser->two_factor_secret),
+                    'profile' => $authenticatedUser->profile,
+                ] : null,
+            ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
             ],

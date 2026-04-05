@@ -19,7 +19,11 @@ class HomeController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return Inertia::render('Welcome');
+        return Inertia::render('Welcome',[
+
+
+        
+        ]);
     }
 
     /**

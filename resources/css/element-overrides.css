@@ -1,0 +1,91 @@
+.el-input__wrapper,
+.el-select__wrapper,
+.el-date-editor.el-input__wrapper {
+    min-height: 48px !important;
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+}
+
+.el-date-editor.el-input {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+.el-input__inner,
+.el-select__selected-item,
+.el-select__placeholder,
+.el-textarea__inner {
+    font-size: 14px !important;
+}
+
+.el-textarea__inner {
+    min-height: 120px;
+    padding: 0.85rem 0.95rem !important;
+    line-height: 1.55;
+}
+
+.el-input__wrapper.is-focus,
+.el-input.is-focus .el-input__wrapper,
+.el-input.is-active .el-input__wrapper,
+.el-select__wrapper.is-focused,
+.el-select__wrapper:focus-within,
+.el-textarea__inner:focus,
+.el-date-editor.is-focus .el-input__wrapper,
+.el-date-editor.is-active .el-input__wrapper,
+.el-date-editor:focus-within .el-input__wrapper,
+.el-date-editor.el-input.is-active .el-input__wrapper,
+.el-date-editor.el-input.is-focus .el-input__wrapper,
+.el-input__wrapper:focus-within,
+.el-date-editor:focus-within,
+.el-date-editor.el-input__wrapper:focus-within {
+    border-color: #dbe1e6 !important;
+    box-shadow: 0 0 0 1px #dbe1e6 inset !important;
+    outline: none !important;
+}
+
+.el-select__wrapper.is-focused .el-select__caret,
+.el-date-editor.is-focus .el-input__prefix-inner,
+.el-date-editor.is-active .el-input__prefix-inner {
+    color: #9ca3af !important;
+}
+
+.el-input__inner:focus,
+.el-select__input:focus,
+.el-input__wrapper,
+.el-select__wrapper,
+.el-date-editor .el-input__wrapper,
+.el-textarea__inner {
+    outline: none !important;
+}
+
+.el-input__inner:focus,
+.el-select__input:focus {
+    box-shadow: none !important;
+}
+
+.el-input__wrapper::before,
+.el-input__wrapper::after,
+.el-select__wrapper::before,
+.el-select__wrapper::after,
+.el-date-editor .el-input__wrapper::before,
+.el-date-editor .el-input__wrapper::after {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.el-form-item.is-error .el-input__wrapper,
+.el-form-item.is-error .el-input__wrapper:hover,
+.el-form-item.is-error .el-input__wrapper:focus,
+.el-form-item.is-error .el-input__wrapper.is-focus,
+.el-form-item.is-error .el-textarea__inner,
+.el-form-item.is-error .el-textarea__inner:hover,
+.el-form-item.is-error .el-textarea__inner:focus,
+.el-form-item.is-error .el-textarea__inner.is-focus,
+.el-form-item.is-error .el-select__wrapper,
+.el-form-item.is-error .el-select__wrapper:hover,
+.el-form-item.is-error .el-select__wrapper:focus,
+.el-form-item.is-error .el-select__wrapper.is-focused {
+    box-shadow: 0 0 0 1px var(--el-color-danger) inset !important;
+}

@@ -1,5 +1,6 @@
 import './bootstrap';
 import 'element-plus/dist/index.css';
+import '../css/element-overrides.css';
 
 import { createApp, h } from 'vue';
 import ElementPlus from 'element-plus';

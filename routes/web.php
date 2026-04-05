@@ -7,6 +7,7 @@ use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Farmer\FarmerController;
 use App\Http\Controllers\Market\MarketController;
+use App\Http\Controllers\Profile\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 // Public landing page.
@@ -25,6 +26,9 @@ Route::middleware([
 
     // Main dashboard.
     Route::get('/dashboard', [DashboardController::class, 'userDashboard'])->name('dashboard');
+
+    // User profile routes.
+    Route::post('/profile', [ProfileController::class, 'store'])->name('profile.store');
 
 
 
