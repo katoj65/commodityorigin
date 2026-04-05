@@ -29,6 +29,7 @@ Route::middleware([
 
     // User profile routes.
     Route::post('/profile', [ProfileController::class, 'store'])->name('profile.store');
+    Route::post('/profile/role', [ProfileController::class, 'updateRole'])->name('profile.role');
 
 
 

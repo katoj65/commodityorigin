@@ -24,7 +24,7 @@ const form = useForm({
     address_line_2: '',
     city: '',
     state: '',
-    country: 'Uganda',
+    country: '',
     postal_code: '',
 });
 

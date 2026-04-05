@@ -3,9 +3,22 @@ import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CreateProfileModal from '@/Components/Modals/CreateProfileModal.vue';
+import SelectRoleModal from '@/Components/Modals/SelectRoleModal.vue';
 
 const props = defineProps({
     hasProfile: {
+        type: Boolean,
+        default: false,
+    },
+    currentRole: {
+        type: String,
+        default: '',
+    },
+    roles: {
+        type: Array,
+        default: () => [],
+    },
+    showSelectRoleModal: {
         type: Boolean,
         default: false,
     },
@@ -14,6 +27,7 @@ const props = defineProps({
 const selectedRange = ref('1W');
 const selectedType = ref('all');
 const showCreateProfileModal = ref(!props.hasProfile);
+const showSelectRoleModal = ref(props.showSelectRoleModal);
 
 const stats = [
     {
@@ -559,6 +573,12 @@ const filteredLots = computed(() => {
             </div>
 
             <CreateProfileModal v-if="!props.hasProfile" v-model="showCreateProfileModal" />
+            <SelectRoleModal
+                v-if="props.showSelectRoleModal"
+                v-model="showSelectRoleModal"
+                :roles="props.roles"
+                :current-role="props.currentRole"
+            />
         </div>
     </AppLayout>
 </template>
