@@ -32,8 +32,8 @@ const submit = () => {
 <template>
     <AppLayout title="Register Farmer">
         <div class="space-y-4">
-            <section class="rounded-2xl border border-[#E5E7EB] bg-white p-5 sm:p-6">
-                <div class="mb-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <section class="rounded-2xl border border-[#E5E7EB] bg-white p-4 sm:p-5">
+                <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                         <h2 class="font-display text-[22px] font-bold tracking-tight text-[#111827]">
                             Farmer intake form
@@ -55,15 +55,15 @@ const submit = () => {
                     {{ flashSuccess }}
                 </div>
 
-                <form class="space-y-5" @submit.prevent="submit">
-                    <div class="grid gap-5 sm:grid-cols-2">
+                <form class="space-y-4" @submit.prevent="submit">
+                    <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label for="first_name" class="farmer-label">First name</label>
-                            <input
+                            <el-input
                                 id="first_name"
                                 v-model="form.first_name"
                                 type="text"
-                                class="farmer-input mt-2"
+                                class="mt-2"
                                 placeholder="Joshua"
                             />
                             <InputError class="mt-2" :message="form.errors.first_name" />
@@ -71,25 +71,25 @@ const submit = () => {
 
                         <div>
                             <label for="last_name" class="farmer-label">Last name</label>
-                            <input
+                            <el-input
                                 id="last_name"
                                 v-model="form.last_name"
                                 type="text"
-                                class="farmer-input mt-2"
+                                class="mt-2"
                                 placeholder="Kato"
                             />
                             <InputError class="mt-2" :message="form.errors.last_name" />
                         </div>
                     </div>
 
-                    <div class="grid gap-5 sm:grid-cols-2">
+                    <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label for="telephone" class="farmer-label">Telephone</label>
-                            <input
+                            <el-input
                                 id="telephone"
                                 v-model="form.telephone"
                                 type="tel"
-                                class="farmer-input mt-2"
+                                class="mt-2"
                                 placeholder="+256752567534"
                             />
                             <InputError class="mt-2" :message="form.errors.telephone" />
@@ -97,25 +97,25 @@ const submit = () => {
 
                         <div>
                             <label for="email" class="farmer-label">Email</label>
-                            <input
+                            <el-input
                                 id="email"
                                 v-model="form.email"
                                 type="email"
-                                class="farmer-input mt-2"
+                                class="mt-2"
                                 placeholder="farmer@example.com"
                             />
                             <InputError class="mt-2" :message="form.errors.email" />
                         </div>
                     </div>
 
-                    <div class="grid gap-5 sm:grid-cols-2">
+                    <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label for="district" class="farmer-label">District</label>
-                            <input
+                            <el-input
                                 id="district"
                                 v-model="form.district"
                                 type="text"
-                                class="farmer-input mt-2"
+                                class="mt-2"
                                 placeholder="Mbale"
                             />
                             <InputError class="mt-2" :message="form.errors.district" />
@@ -123,40 +123,40 @@ const submit = () => {
 
                         <div>
                             <label for="sub_county" class="farmer-label">Sub-county</label>
-                            <input
+                            <el-input
                                 id="sub_county"
                                 v-model="form.sub_county"
                                 type="text"
-                                class="farmer-input mt-2"
+                                class="mt-2"
                                 placeholder="Buginyanya"
                             />
                             <InputError class="mt-2" :message="form.errors.sub_county" />
                         </div>
                     </div>
 
-                    <div class="grid gap-5 sm:grid-cols-3">
+                    <div class="grid gap-4 sm:grid-cols-3">
                         <div>
                             <label for="coffee_type" class="farmer-label">Coffee type</label>
-                            <select
+                            <el-select
                                 id="coffee_type"
                                 v-model="form.coffee_type"
-                                class="farmer-input mt-2"
+                                class="mt-2 !w-full"
+                                placeholder="Select type"
                             >
-                                <option value="">Select type</option>
-                                <option value="arabica">Arabica</option>
-                                <option value="robusta">Robusta</option>
-                                <option value="mixed">Mixed</option>
-                            </select>
+                                <el-option label="Arabica" value="arabica" />
+                                <el-option label="Robusta" value="robusta" />
+                                <el-option label="Mixed" value="mixed" />
+                            </el-select>
                             <InputError class="mt-2" :message="form.errors.coffee_type" />
                         </div>
 
                         <div>
                             <label for="cooperative" class="farmer-label">Cooperative</label>
-                            <input
+                            <el-input
                                 id="cooperative"
                                 v-model="form.cooperative"
                                 type="text"
-                                class="farmer-input mt-2"
+                                class="mt-2"
                                 placeholder="Sipi Farmers Coop"
                             />
                             <InputError class="mt-2" :message="form.errors.cooperative" />
@@ -164,11 +164,11 @@ const submit = () => {
 
                         <div>
                             <label for="farm_size" class="farmer-label">Farm size</label>
-                            <input
+                            <el-input
                                 id="farm_size"
                                 v-model="form.farm_size"
                                 type="text"
-                                class="farmer-input mt-2"
+                                class="mt-2"
                                 placeholder="2.4 acres"
                             />
                             <InputError class="mt-2" :message="form.errors.farm_size" />
@@ -177,16 +177,19 @@ const submit = () => {
 
                     <div>
                         <label for="notes" class="farmer-label">Notes</label>
-                        <textarea
+                        <el-input
                             id="notes"
                             v-model="form.notes"
-                            class="farmer-input farmer-textarea mt-2"
+                            type="textarea"
+                            :rows="5"
+                            resize="vertical"
+                            class="mt-2"
                             placeholder="Add any origin, traceability, or onboarding notes..."
-                        ></textarea>
+                        />
                         <InputError class="mt-2" :message="form.errors.notes" />
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-3 border-t border-[#E5E7EB] pt-5">
+                    <div class="flex flex-wrap items-center gap-3 border-t border-[#E5E7EB] pt-4">
                         <div class="w-full sm:w-auto sm:min-w-[220px]">
                             <SubmitButton :loading="form.processing" :disabled="form.processing">
                                 Save farmer intake
@@ -211,27 +214,5 @@ const submit = () => {
     text-transform: uppercase;
     letter-spacing: 0.14em;
     color: #6b7280;
-}
-
-.farmer-input {
-    width: 100%;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.875rem;
-    background: #ffffff;
-    padding: 0.8rem 0.9rem;
-    font-size: 0.95rem;
-    color: #111827;
-    outline: 0;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.farmer-input:focus {
-    border-color: rgba(200, 134, 42, 0.45);
-    box-shadow: 0 0 0 3px rgba(200, 134, 42, 0.12);
-}
-
-.farmer-textarea {
-    min-height: 124px;
-    resize: vertical;
 }
 </style>

@@ -9,7 +9,6 @@ const tickerItems = [
     { label: 'Robusta London', value: '$4,812.00', delta: '-0.42%', deltaClass: 'text-[#BA1A1A]' },
     { label: 'Ethiopian Yirgacheffe Index', value: '$3.1200', delta: '+0.85%', deltaClass: 'text-emerald-600' },
     { label: 'Colombian Excelso', value: '$2.9450', delta: '0.00%', deltaClass: 'text-slate-400' },
-    { label: 'Brazilian Santos 2/3', value: '$2.1800', delta: '+2.11%', deltaClass: 'text-emerald-600' },
 ];
 
 const marketRows = [
@@ -79,30 +78,30 @@ const alerts = [
 </script>
 
 <template>
-    <AppLayout title="Market">
+    <AppLayout title="Market" full-width>
         <div class="space-y-4">
             <section class="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#F2F4F6] px-5 py-3">
-                <div class="flex flex-wrap items-center gap-8 whitespace-nowrap">
+                <div class="flex flex-wrap items-center gap-5 xl:gap-8">
                     <div
                         v-for="item in tickerItems"
                         :key="item.label"
-                        class="flex items-center gap-3"
+                        class="flex min-w-0 items-center gap-3"
                     >
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">{{ item.label }}</span>
-                        <span class="text-sm font-bold text-emerald-900">{{ item.value }}</span>
+                        <span class="truncate text-[10px] font-bold uppercase tracking-widest text-slate-400">{{ item.label }}</span>
+                        <span class="whitespace-nowrap text-sm font-bold text-emerald-900">{{ item.value }}</span>
                         <span class="text-xs font-bold" :class="item.deltaClass">{{ item.delta }}</span>
                     </div>
                 </div>
             </section>
 
-            <div class="flex flex-col gap-8 lg:flex-row">
-                <div class="flex-1 space-y-8">
+            <div class="flex flex-col gap-8 xl:flex-row">
+                <div class="min-w-0 flex-1 space-y-8">
                     <section class="flex flex-col gap-4 rounded-2xl border border-[#E5E7EB] bg-white p-6 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <p class="mb-2 text-xs font-bold uppercase tracking-widest text-[#004532]">Market Status: Open</p>
                             <h1 class="text-[28px] font-bold tracking-tight text-[#191C1E] sm:text-[32px]">Coffee Futures &amp; Live Auctions</h1>
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex flex-wrap gap-2 sm:justify-end">
                             <button class="rounded bg-[#F2F4F6] px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-600 transition-colors hover:bg-[#E6E8EA]">
                                 Export CSV
                             </button>
@@ -116,10 +115,10 @@ const alerts = [
                         </div>
                     </section>
 
-                    <section class="flex flex-wrap items-end gap-4 rounded-2xl border border-[#E5E7EB] bg-[#F2F4F6] p-4">
-                        <div class="flex flex-col gap-1">
+                    <section class="grid gap-4 rounded-2xl border border-[#E5E7EB] bg-[#F2F4F6] p-4 md:grid-cols-2 xl:grid-cols-[max-content,max-content,max-content,minmax(0,1fr)] xl:items-end">
+                        <div class="min-w-0 flex flex-col gap-1">
                             <label class="ml-1 text-[10px] font-bold uppercase text-slate-400">Commodity Type</label>
-                            <div class="flex rounded bg-white p-1">
+                            <div class="flex w-full rounded bg-white p-1 sm:w-max">
                                 <button
                                     type="button"
                                     class="rounded px-4 py-1 text-xs font-bold"
@@ -139,9 +138,9 @@ const alerts = [
                             </div>
                         </div>
 
-                        <div class="flex flex-col gap-1">
+                        <div class="min-w-0 flex flex-col gap-1">
                             <label class="ml-1 text-[10px] font-bold uppercase text-slate-400">Origin Region</label>
-                            <select class="rounded border-none bg-white py-2 pr-10 text-xs font-medium focus:ring-1 focus:ring-[#004532]">
+                            <select class="w-full rounded border-none bg-white py-2 pr-10 text-xs font-medium focus:ring-1 focus:ring-[#004532]">
                                 <option>All Global Origins</option>
                                 <option>East Africa</option>
                                 <option>Central America</option>
@@ -150,18 +149,18 @@ const alerts = [
                             </select>
                         </div>
 
-                        <div class="flex flex-col gap-1">
+                        <div class="min-w-0 flex flex-col gap-1">
                             <label class="ml-1 text-[10px] font-bold uppercase text-slate-400">SCAA Minimum</label>
-                            <select class="rounded border-none bg-white py-2 pr-10 text-xs font-medium focus:ring-1 focus:ring-[#004532]">
+                            <select class="w-full rounded border-none bg-white py-2 pr-10 text-xs font-medium focus:ring-1 focus:ring-[#004532]">
                                 <option>80+ Specialty</option>
                                 <option>84+ Premium</option>
                                 <option>88+ Rare</option>
                             </select>
                         </div>
 
-                        <div class="ml-auto flex flex-col gap-1">
+                        <div class="min-w-0 flex flex-col gap-1 xl:justify-self-end">
                             <label class="ml-1 text-[10px] font-bold uppercase text-slate-400">Sort By</label>
-                            <select class="rounded border-none bg-white py-2 pr-10 text-xs font-medium focus:ring-1 focus:ring-[#004532]">
+                            <select class="w-full rounded border-none bg-white py-2 pr-10 text-xs font-medium focus:ring-1 focus:ring-[#004532] xl:min-w-[180px]">
                                 <option>Highest Score</option>
                                 <option>Ending Soon</option>
                                 <option>Price: Low to High</option>
@@ -313,7 +312,7 @@ const alerts = [
                     </section>
                 </div>
 
-                <aside class="w-full space-y-6 lg:w-80">
+                <aside class="w-full space-y-6 xl:w-80 xl:flex-shrink-0">
                     <section class="rounded-xl border border-[#E5E7EB] bg-[#F2F4F6] p-6">
                         <h4 class="mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Market Sentiment</h4>
                         <div class="mb-4 flex items-center justify-between">

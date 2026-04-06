@@ -12,7 +12,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'success']);
 const page = usePage();
 const existingProfile = computed(() => page.props.auth?.user?.profile ?? null);
 
@@ -60,6 +60,7 @@ const submitProfile = () => {
         preserveState: true,
         onSuccess: () => {
             ElMessage.success('Profile saved successfully.');
+            emit('success');
             closeDialog();
             hydrateForm();
         },

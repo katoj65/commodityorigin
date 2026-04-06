@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Farmer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Farmer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -31,7 +32,7 @@ class FarmerController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'telephone' => ['required', 'string', 'max:50'],
@@ -44,17 +45,37 @@ class FarmerController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
+        $farmer = Farmer::query()->create([
+            ...$validated,
+            'user_id' => $request->user()?->id,
+        ]);
+
         return redirect()
-            ->route('farmer.create')
-            ->with('success', 'Farmer intake captured. Persistence can be connected next.');
+            ->route('farmer.show', $farmer)
+            ->with('success', 'Farmer intake saved successfully.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Farmer $farmer): Response
     {
-        //
+        return Inertia::render('Farmer/FarmerProfile', [
+            'farmer' => [
+                'id' => $farmer->id,
+                'first_name' => $farmer->first_name,
+                'last_name' => $farmer->last_name,
+                'telephone' => $farmer->telephone,
+                'email' => $farmer->email,
+                'district' => $farmer->district,
+                'sub_county' => $farmer->sub_county,
+                'coffee_type' => $farmer->coffee_type,
+                'cooperative' => $farmer->cooperative,
+                'farm_size' => $farmer->farm_size,
+                'notes' => $farmer->notes,
+                'created_at' => optional($farmer->created_at)?->toDateTimeString(),
+            ],
+        ]);
     }
 
     /**

@@ -7,6 +7,10 @@ import Dropdown from '@/Components/Dropdown.vue';
 
 const props = defineProps({
     title: String,
+    fullWidth: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const page = usePage();
@@ -323,7 +327,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="dashboard-shell flex min-h-screen flex-col overflow-hidden bg-page text-ink lg:h-screen">
+    <div class="dashboard-shell flex min-h-screen flex-col overflow-x-hidden bg-page text-ink">
         <Head :title="title">
             <link rel="preconnect" href="https://fonts.googleapis.com" />
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
@@ -335,7 +339,7 @@ onBeforeUnmount(() => {
 
         <Banner />
 
-        <header class="z-30 flex h-14 flex-shrink-0 items-stretch bg-card">
+        <header class="fixed inset-x-0 top-0 z-30 flex h-14 flex-shrink-0 items-stretch bg-card">
             <div class="hidden h-full w-16 flex-shrink-0 items-center justify-center bg-[#212529] lg:flex">
                 <div class="flex h-9 w-9 items-center justify-center">
                     <ApplicationMark class="h-8 w-8" />
@@ -694,8 +698,8 @@ onBeforeUnmount(() => {
             </div>
         </aside>
 
-        <div class="flex min-h-0 flex-1 overflow-visible lg:overflow-hidden">
-            <div class="dashboard-rail hidden w-16 flex-shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-white/[0.08] py-3 lg:flex">
+        <div class="flex flex-1 overflow-visible pt-14">
+            <div class="dashboard-rail fixed left-0 top-14 hidden h-[calc(100vh-3.5rem)] w-16 flex-shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-white/[0.08] py-3 lg:flex">
                 <template v-for="link in railLinks" :key="link.label">
                     <div v-if="link.dividerBefore" class="my-1 h-px w-8 bg-white/10"></div>
                     <Link
@@ -760,7 +764,7 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <aside class="hidden w-56 flex-shrink-0 flex-col overflow-y-auto border-r border-line bg-sidebar lg:flex">
+            <aside class="fixed left-16 top-14 hidden h-[calc(100vh-3.5rem)] w-56 flex-shrink-0 flex-col overflow-y-auto border-r border-line bg-sidebar lg:flex">
                 <div class="px-4 pb-2 pt-4">
                     <div class="mb-3 flex items-center gap-2">
                         <div class="flex h-6 w-6 items-center justify-center rounded-md border border-line bg-golddim">
@@ -881,8 +885,11 @@ onBeforeUnmount(() => {
                 </div>
             </aside>
 
-            <main class="flex-1 overflow-y-visible lg:overflow-y-auto">
-                <div class="p-3 sm:p-5 lg:p-6">
+            <main class="min-w-0 flex-1 overflow-visible lg:ml-72">
+                <div
+                    class="min-w-0"
+                    :class="props.fullWidth ? 'w-full max-w-none p-3 sm:p-5 lg:p-6' : 'p-3 sm:p-5 lg:p-6'"
+                >
                     <slot />
                 </div>
             </main>

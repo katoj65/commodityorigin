@@ -1,3 +1,19 @@
+.card,
+.card-header,
+.card-body,
+.card-footer,
+.card-img-overlay {
+    padding: 0 !important;
+}
+
+.card {
+    --bs-card-spacer-y: 0 !important;
+    --bs-card-spacer-x: 0 !important;
+    --bs-card-cap-padding-y: 0 !important;
+    --bs-card-cap-padding-x: 0 !important;
+    --bs-card-img-overlay-padding: 0 !important;
+}
+
 .el-input__wrapper,
 .el-select__wrapper,
 .el-date-editor.el-input__wrapper {

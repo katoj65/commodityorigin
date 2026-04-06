@@ -38,6 +38,7 @@ Route::middleware([
         Route::get('/', [FarmerController::class, 'index'])->name('index');
         Route::get('/create', [FarmerController::class, 'create'])->name('create');
         Route::post('/', [FarmerController::class, 'store'])->name('store');
+        Route::get('/{farmer}', [FarmerController::class, 'show'])->name('show');
     });
 
     // Bid workspace routes.

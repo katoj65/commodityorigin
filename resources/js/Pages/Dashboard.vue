@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CreateProfileModal from '@/Components/Modals/CreateProfileModal.vue';
@@ -26,8 +26,48 @@ const props = defineProps({
 
 const selectedRange = ref('1W');
 const selectedType = ref('all');
+const hasProfile = ref(props.hasProfile);
 const showCreateProfileModal = ref(!props.hasProfile);
 const showSelectRoleModal = ref(props.showSelectRoleModal);
+
+const shouldShowSelectRoleModal = computed(() =>
+    hasProfile.value && props.currentRole === 'user',
+);
+
+const handleProfileCreated = () => {
+    hasProfile.value = true;
+    showCreateProfileModal.value = false;
+    showSelectRoleModal.value = props.currentRole === 'user';
+};
+
+watch(
+    () => props.hasProfile,
+    (value) => {
+        hasProfile.value = value;
+
+        if (value) {
+            showCreateProfileModal.value = false;
+        }
+    },
+);
+
+watch(
+    () => props.showSelectRoleModal,
+    (value) => {
+        if (props.currentRole === 'user') {
+            showSelectRoleModal.value = value;
+        }
+    },
+);
+
+watch(
+    () => props.currentRole,
+    (value) => {
+        if (value !== 'user') {
+            showSelectRoleModal.value = false;
+        }
+    },
+);
 
 const stats = [
     {
@@ -572,9 +612,13 @@ const filteredLots = computed(() => {
                 </div>
             </div>
 
-            <CreateProfileModal v-if="!props.hasProfile" v-model="showCreateProfileModal" />
+            <CreateProfileModal
+                v-if="!hasProfile"
+                v-model="showCreateProfileModal"
+                @success="handleProfileCreated"
+            />
             <SelectRoleModal
-                v-if="props.showSelectRoleModal"
+                v-if="shouldShowSelectRoleModal"
                 v-model="showSelectRoleModal"
                 :roles="props.roles"
                 :current-role="props.currentRole"

@@ -1,4 +1,5 @@
 import './bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import 'element-plus/dist/index.css';
 import '../css/element-overrides.css';
 

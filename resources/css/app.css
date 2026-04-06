@@ -5,3 +5,19 @@
 [x-cloak] {
     display: none;
 }
+
+:root {
+    --bs-card-spacer-y: 0;
+    --bs-card-spacer-x: 0;
+    --bs-card-cap-padding-y: 0;
+    --bs-card-cap-padding-x: 0;
+    --bs-card-img-overlay-padding: 0;
+}
+
+.card,
+.card-header,
+.card-body,
+.card-footer,
+.card-img-overlay {
+    padding: 0;
+}
