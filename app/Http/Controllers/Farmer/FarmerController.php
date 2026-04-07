@@ -63,6 +63,7 @@ class FarmerController extends Controller
         return Inertia::render('Farmer/FarmerProfile', [
             'farmer' => [
                 'id' => $farmer->id,
+                'user_id' => $farmer->user_id,
                 'first_name' => $farmer->first_name,
                 'last_name' => $farmer->last_name,
                 'telephone' => $farmer->telephone,
@@ -74,6 +75,7 @@ class FarmerController extends Controller
                 'farm_size' => $farmer->farm_size,
                 'notes' => $farmer->notes,
                 'created_at' => optional($farmer->created_at)?->toDateTimeString(),
+                'updated_at' => optional($farmer->updated_at)?->toDateTimeString(),
             ],
         ]);
     }

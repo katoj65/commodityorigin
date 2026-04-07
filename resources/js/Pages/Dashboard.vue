@@ -275,9 +275,9 @@ const filteredLots = computed(() => {
 
 <template>
     <AppLayout title="Dashboard">
-        <div class="flex flex-col gap-4 xl:flex-row xl:gap-5">
-            <div class="flex min-w-0 flex-1 flex-col gap-4">
-                <div class="flex flex-col gap-4 rounded-xl border border-[#E5E7EB] bg-white px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-col gap-3 xl:flex-row xl:gap-4">
+            <div class="flex min-w-0 flex-1 flex-col gap-3">
+                <div class="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
                     <div class="min-w-0">
                         <h1 class="font-display text-[20px] font-bold leading-none tracking-tight text-[#111827]">
                             Trader Dashboard
@@ -313,11 +313,11 @@ const filteredLots = computed(() => {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                     <div
                         v-for="stat in stats"
                         :key="stat.label"
-                        class="stat-card rounded-xl border border-[#E5E7EB] bg-white p-4"
+                        class="stat-card rounded-xl border border-[#E5E7EB] bg-white p-3.5"
                     >
                         <div class="mb-2 flex items-start justify-between">
                             <span class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#6B7280]">
@@ -353,8 +353,8 @@ const filteredLots = computed(() => {
                     </div>
                 </div>
 
-                <div class="rounded-xl border border-[#E5E7EB] bg-white p-4 sm:p-5">
-                    <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div class="rounded-xl border border-[#E5E7EB] bg-white p-3.5 sm:p-4">
+                    <div class="mb-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div class="min-w-0">
                             <h2 class="font-display text-[16px] font-bold tracking-tight text-[#111827]">
                                 Lot Price Overview
@@ -382,7 +382,7 @@ const filteredLots = computed(() => {
                     </div>
 
                     <div class="overflow-x-auto">
-                        <div class="grid h-[220px] min-w-[470px] grid-cols-7 items-end gap-3 rounded-xl bg-[#FAFAFA] px-4 pb-6 pt-4 sm:min-w-0">
+                        <div class="grid h-[208px] min-w-[470px] grid-cols-7 items-end gap-2.5 rounded-xl bg-[#FAFAFA] px-3.5 pb-5 pt-3.5 sm:min-w-0">
                             <div
                                 v-for="bar in chartBars"
                                 :key="bar.label"
@@ -405,11 +405,11 @@ const filteredLots = computed(() => {
                         </div>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
+                    <div class="mt-3 grid grid-cols-1 gap-2.5 xl:grid-cols-2">
                         <div
                             v-for="summary in summaryCards"
                             :key="summary.title"
-                            class="flex flex-col items-start gap-4 rounded-xl border border-[#E5E7EB] bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                            class="flex flex-col items-start gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3.5 sm:flex-row sm:items-center sm:justify-between"
                         >
                             <div>
                                 <div class="font-display text-[22px] font-bold leading-none tracking-tight" :class="summary.accentClass">
@@ -433,7 +433,7 @@ const filteredLots = computed(() => {
                 </div>
 
                 <div class="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
-                    <div class="flex flex-col gap-3 border-b border-[#E5E7EB] px-4 py-3.5 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="flex flex-col gap-3 border-b border-[#E5E7EB] px-3.5 py-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between">
                         <div class="min-w-0">
                             <h3 class="font-display text-[14px] font-bold tracking-tight text-[#111827]">
                                 Active Market Lots
@@ -524,9 +524,9 @@ const filteredLots = computed(() => {
                 </div>
             </div>
 
-            <div class="flex w-full flex-shrink-0 flex-col gap-4 xl:w-72">
+            <div class="flex w-full flex-shrink-0 flex-col gap-3 xl:w-72">
                 <div class="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
-                    <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3.5">
+                    <div class="flex items-center justify-between border-b border-[#E5E7EB] px-3.5 py-3">
                         <h3 class="font-display text-[14px] font-bold tracking-tight text-[#111827]">
                             Action Center
                         </h3>
@@ -535,7 +535,7 @@ const filteredLots = computed(() => {
                         v-for="item in actionItems"
                         :key="item.title"
                         href="#"
-                        class="action-row flex items-start gap-3 border-b border-[#E5E7EB]/60 px-4 py-3.5 no-underline last:border-b-0"
+                        class="action-row flex items-start gap-3 border-b border-[#E5E7EB]/60 px-3.5 py-3 no-underline last:border-b-0"
                         @click.prevent
                     >
                         <div class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-[#E5E7EB]" :class="item.bg">
@@ -568,7 +568,7 @@ const filteredLots = computed(() => {
                     </a>
                 </div>
 
-                <div class="rounded-xl border border-[#E5E7EB] bg-white p-4">
+                <div class="rounded-xl border border-[#E5E7EB] bg-white p-3.5">
                     <div class="mb-3">
                         <h3 class="font-display text-[13px] font-bold tracking-tight text-[#111827]">
                             Volume by Region
@@ -597,7 +597,7 @@ const filteredLots = computed(() => {
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 rounded-xl border border-[#E5E7EB] bg-white p-4">
+                <div class="flex items-center gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3.5">
                     <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#C8862A] text-white">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M9 12l2 2 4-4" />
@@ -645,7 +645,7 @@ const filteredLots = computed(() => {
     background: #fff;
     color: #6b7280;
     border-radius: 0.5rem;
-    padding: 0.5rem 0.875rem;
+    padding: 0.425rem 0.75rem;
     font-size: 13px;
     font-weight: 500;
     transition: all 0.15s ease;
@@ -666,7 +666,7 @@ const filteredLots = computed(() => {
     background: #c8862a;
     color: #fff;
     border-radius: 0.5rem;
-    padding: 0.5rem 1rem;
+    padding: 0.425rem 0.875rem;
     font-size: 13px;
     font-weight: 500;
     transition: all 0.15s ease;
@@ -689,7 +689,7 @@ const filteredLots = computed(() => {
     color: #6b7280;
     background: #fff;
     border-radius: 0.5rem;
-    padding: 0.375rem 0.75rem;
+    padding: 0.3rem 0.625rem;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
     letter-spacing: 0.08em;
@@ -721,7 +721,7 @@ const filteredLots = computed(() => {
 
 .dashboard-th {
     border-bottom: 1px solid #e5e7eb;
-    padding: 0.625rem 1.25rem;
+    padding: 0.55rem 1rem;
     text-align: left;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 8px;
@@ -733,7 +733,7 @@ const filteredLots = computed(() => {
 
 .dashboard-td {
     border-bottom: 1px solid rgba(229, 231, 235, 0.6);
-    padding: 0.75rem 1.25rem;
+    padding: 0.625rem 1rem;
 }
 
 .lot-row:hover td {
@@ -745,7 +745,7 @@ const filteredLots = computed(() => {
     background: #fff;
     color: #6b7280;
     border-radius: 0.5rem;
-    padding: 0.375rem 0.75rem;
+    padding: 0.3rem 0.625rem;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
     text-transform: uppercase;

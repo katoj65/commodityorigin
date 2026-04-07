@@ -16,6 +16,10 @@ defineProps({
         type: String,
         default: 'submit',
     },
+    fullWidth: {
+        type: Boolean,
+        default: true,
+    },
 });
 </script>
 
@@ -26,6 +30,7 @@ defineProps({
         :loading="loading"
         :disabled="disabled"
         class="submit-button"
+        :class="{ 'submit-button--full': fullWidth }"
     >
         <span class="submit-button__content">
             <slot>Submit</slot>
@@ -35,7 +40,6 @@ defineProps({
 
 <style scoped>
 .submit-button.el-button {
-    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -51,6 +55,10 @@ defineProps({
     letter-spacing: 0.14em;
     font-weight: 600;
     transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.submit-button--full.el-button {
+    width: 100%;
 }
 
 .submit-button__content {

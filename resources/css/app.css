@@ -21,3 +21,37 @@
 .card-img-overlay {
     padding: 0;
 }
+
+:where(.dashboard-shell, .welcome-page, .auth-shell, .cart-page, .market-page, .bid-page, .farmer-bootstrap-page) :where(.card, .card-header, .card-body, .card-footer, .card-img-overlay) {
+    padding: 0 !important;
+}
+
+:where(.dashboard-shell, .welcome-page, .auth-shell, .cart-page, .market-page, .bid-page, .farmer-bootstrap-page) :where(.card) {
+    --bs-card-spacer-y: 0 !important;
+    --bs-card-spacer-x: 0 !important;
+    --bs-card-cap-padding-y: 0 !important;
+    --bs-card-cap-padding-x: 0 !important;
+    --bs-card-img-overlay-padding: 0 !important;
+}
+
+:where(.dashboard-shell, .welcome-page, .auth-shell, .cart-page, .market-page, .bid-page, .farmer-bootstrap-page) :where(h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure) {
+    margin-block: 0 !important;
+}
+
+:where(.dashboard-shell, .welcome-page, .auth-shell, .cart-page, .market-page, .bid-page, .farmer-bootstrap-page) :where(button, input, select, textarea) {
+    font: inherit;
+}
+
+:where(.dashboard-shell, .welcome-page, .auth-shell, .cart-page, .market-page, .bid-page, .farmer-bootstrap-page) :where(button, [type='button'], [type='submit'], [type='reset']) {
+    margin: 0 !important;
+    line-height: 1 !important;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    vertical-align: middle;
+    background-image: none;
+    box-shadow: none;
+}
+
+:where(.dashboard-shell, .welcome-page, .auth-shell, .cart-page, .market-page, .bid-page, .farmer-bootstrap-page) :where(.btn, .btn-group > .btn, .table > :not(caption) > * > *) {
+    margin: 0 !important;
+}

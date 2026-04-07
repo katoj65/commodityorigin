@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleMetadataSeeder::class,
+            CropMetadataSeeder::class,
+            CropVarietyMetadataSeeder::class,
         ]);
 
         // User::factory(10)->create();

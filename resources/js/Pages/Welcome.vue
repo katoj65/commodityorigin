@@ -738,6 +738,10 @@ onBeforeUnmount(() => {
     font-family: 'IBM Plex Mono', monospace;
 }
 
+.welcome-page [class*='border-white/'] {
+    border-color: transparent !important;
+}
+
 .welcome-page .hero-prefix {
     font-weight: 700;
     letter-spacing: -0.03em;

@@ -317,11 +317,15 @@ const syncMobileNavState = () => {
 };
 
 onMounted(() => {
+    document.documentElement.classList.add('app-layout-scrollless');
+    document.body.classList.add('app-layout-scrollless');
     syncMobileNavState();
     window.addEventListener('resize', syncMobileNavState);
 });
 
 onBeforeUnmount(() => {
+    document.documentElement.classList.remove('app-layout-scrollless');
+    document.body.classList.remove('app-layout-scrollless');
     window.removeEventListener('resize', syncMobileNavState);
 });
 </script>
@@ -339,14 +343,14 @@ onBeforeUnmount(() => {
 
         <Banner />
 
-        <header class="fixed inset-x-0 top-0 z-30 flex h-14 flex-shrink-0 items-stretch bg-card">
+        <header class="fixed inset-x-0 top-0 z-30 flex h-14 flex-shrink-0 items-stretch bg-white">
             <div class="hidden h-full w-16 flex-shrink-0 items-center justify-center bg-[#212529] lg:flex">
                 <div class="flex h-9 w-9 items-center justify-center">
                     <ApplicationMark class="h-8 w-8" />
                 </div>
             </div>
 
-            <div class="flex min-w-0 flex-1 items-center border-b border-line bg-card">
+            <div class="flex min-w-0 flex-1 items-center border-b border-line bg-white">
                 <button
                     v-if="showMobileMenuButton"
                     type="button"
@@ -362,12 +366,12 @@ onBeforeUnmount(() => {
 
                 <Link
                     :href="route('dashboard')"
-                    class="flex h-full min-w-0 items-center gap-2 px-3 no-underline sm:min-w-[170px] sm:px-4"
+                    class="flex h-full min-w-0 items-center gap-2 px-3 no-underline text-[#111827] sm:min-w-[170px] sm:px-4"
                     @click="closeMobileMenu"
                 >
                     <div>
-                        <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-ink3">Commodity</div>
-                        <div class="font-display text-[13px] font-bold leading-tight text-ink">Origin</div>
+                        <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#111827]">Commodity</div>
+                        <div class="font-display text-[13px] font-bold leading-tight text-[#111827]">Origin</div>
                     </div>
                 </Link>
 
@@ -699,7 +703,7 @@ onBeforeUnmount(() => {
         </aside>
 
         <div class="flex flex-1 overflow-visible pt-14">
-            <div class="dashboard-rail fixed left-0 top-14 hidden h-[calc(100vh-3.5rem)] w-16 flex-shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-white/[0.08] py-3 lg:flex">
+            <div class="dashboard-rail shell-scrollless fixed left-0 top-14 hidden h-[calc(100vh-3.5rem)] w-16 flex-shrink-0 flex-col items-center gap-1 overflow-x-hidden overflow-y-auto border-r border-white/[0.08] py-3 lg:flex">
                 <template v-for="link in railLinks" :key="link.label">
                     <div v-if="link.dividerBefore" class="my-1 h-px w-8 bg-white/10"></div>
                     <Link
@@ -764,7 +768,7 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <aside class="fixed left-16 top-14 hidden h-[calc(100vh-3.5rem)] w-56 flex-shrink-0 flex-col overflow-y-auto border-r border-line bg-sidebar lg:flex">
+            <aside class="shell-scrollless fixed left-16 top-14 hidden h-[calc(100vh-3.5rem)] w-56 flex-shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r border-line bg-sidebar lg:flex">
                 <div class="px-4 pb-2 pt-4">
                     <div class="mb-3 flex items-center gap-2">
                         <div class="flex h-6 w-6 items-center justify-center rounded-md border border-line bg-golddim">
@@ -1016,6 +1020,17 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+:global(html.app-layout-scrollless),
+:global(body.app-layout-scrollless) {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+:global(html.app-layout-scrollless::-webkit-scrollbar),
+:global(body.app-layout-scrollless::-webkit-scrollbar) {
+    display: none;
+}
+
 .dashboard-shell {
     font-family: 'Source Sans 3', sans-serif;
 }
@@ -1040,6 +1055,17 @@ onBeforeUnmount(() => {
 .dashboard-shell :deep(::-webkit-scrollbar-thumb) {
     background: #d1d5db;
     border-radius: 2px;
+}
+
+.dashboard-shell :deep(.shell-scrollless) {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.dashboard-shell :deep(.shell-scrollless::-webkit-scrollbar) {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 .dashboard-rail {

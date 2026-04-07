@@ -236,6 +236,10 @@ const submit = () => {
     mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.45), transparent 85%);
 }
 
+.auth-shell [class*='border-white/'] {
+    border-color: transparent !important;
+}
+
 .auth-label {
     display: block;
     font-family: 'IBM Plex Mono', monospace;

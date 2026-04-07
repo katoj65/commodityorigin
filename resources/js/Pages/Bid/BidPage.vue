@@ -127,9 +127,9 @@ const footerStats = [
 
 <template>
     <AppLayout title="Live Auctions">
-        <div class="space-y-4">
-            <section class="rounded-2xl border border-[#E5E7EB] bg-white p-5 sm:p-6">
-                <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div class="bid-page space-y-3">
+            <section class="rounded-2xl border border-[#E5E7EB] bg-white p-4 sm:p-[18px]">
+                <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                     <div>
                         <h2 class="text-[24px] font-bold tracking-[-0.03em] text-[#111827]">Bid board</h2>
                         <p class="mt-1 text-[13px] text-[#6B7280]">
@@ -137,12 +137,12 @@ const footerStats = [
                         </p>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-1.5">
                         <button
                             v-for="filter in filters"
                             :key="filter.label"
                             type="button"
-                            class="rounded-full px-4 py-2 text-[13px] font-medium transition-colors"
+                            class="rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors"
                             :class="
                                 filter.active
                                     ? 'bg-[#0F2A24] text-white'
@@ -154,7 +154,7 @@ const footerStats = [
 
                         <button
                             type="button"
-                            class="flex items-center gap-2 rounded-full border border-[#D0D7DE] px-4 py-2 text-[13px] font-medium text-[#475569]"
+                            class="flex items-center gap-1.5 rounded-full border border-[#D0D7DE] px-3.5 py-1.5 text-[12px] font-medium text-[#475569]"
                         >
                             <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                 <path d="M4 6h16M7 12h10M10 18h4" />
@@ -165,10 +165,10 @@ const footerStats = [
                 </div>
             </section>
 
-            <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <section class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_332px]">
                 <div class="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
-                    <div class="border-b border-[#EEF2F7] bg-[linear-gradient(180deg,#FCFDFC_0%,#F8FBF8_100%)] px-5 py-5 sm:px-6">
-                        <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                    <div class="border-b border-[#EEF2F7] bg-[linear-gradient(180deg,#FCFDFC_0%,#F8FBF8_100%)] px-4 py-4 sm:px-5">
+                        <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                             <div class="min-w-0">
                                 <div class="font-mono text-[10px] uppercase tracking-[0.16em] text-[#94A3B8]">Trading table</div>
                                 <div class="mt-1 text-[18px] font-semibold tracking-tight text-[#111827]">Live auction windows</div>
@@ -177,11 +177,11 @@ const footerStats = [
                                 </p>
                             </div>
 
-                            <div class="grid gap-2 sm:grid-cols-3 xl:min-w-[420px]">
+                            <div class="grid gap-2 sm:grid-cols-3 xl:min-w-[390px]">
                                 <div
                                     v-for="metric in tableMetrics"
                                     :key="metric.label"
-                                    class="rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3"
+                                    class="rounded-2xl border border-[#E5E7EB] bg-white px-3 py-2.5"
                                 >
                                     <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">{{ metric.label }}</div>
                                     <div class="mt-2 text-[16px] font-semibold tracking-tight" :class="metric.tone">
@@ -191,8 +191,8 @@ const footerStats = [
                             </div>
                         </div>
 
-                        <div class="mt-4 rounded-[20px] border border-[#E5E7EB] bg-white px-4 py-4 sm:px-5">
-                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="mt-3 rounded-[20px] border border-[#E5E7EB] bg-white px-3.5 py-3.5 sm:px-4">
+                            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                 <div class="min-w-0">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <span class="rounded-full bg-[#0F2A24] px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-white">
@@ -210,20 +210,20 @@ const footerStats = [
                                     </div>
                                 </div>
 
-                                <div class="grid gap-2 sm:grid-cols-4 lg:min-w-[520px]">
-                                    <div class="rounded-2xl bg-[#F8FAFC] px-3 py-3">
+                                <div class="grid gap-2 sm:grid-cols-4 lg:min-w-[500px]">
+                                    <div class="rounded-2xl bg-[#F8FAFC] px-3 py-2.5">
                                         <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Current bid</div>
                                         <div class="mt-2 text-[18px] font-bold leading-none text-[#111827]">{{ featuredLot.currentBid }}</div>
                                     </div>
-                                    <div class="rounded-2xl bg-[#F8FAFC] px-3 py-3">
+                                    <div class="rounded-2xl bg-[#F8FAFC] px-3 py-2.5">
                                         <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Reserve</div>
                                         <div class="mt-2 text-[18px] font-bold leading-none text-[#111827]">{{ featuredLot.reserve }}</div>
                                     </div>
-                                    <div class="rounded-2xl bg-[#F8FAFC] px-3 py-3">
+                                    <div class="rounded-2xl bg-[#F8FAFC] px-3 py-2.5">
                                         <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Cup score</div>
                                         <div class="mt-2 text-[18px] font-bold leading-none text-[#065F46]">{{ featuredLot.score }}</div>
                                     </div>
-                                    <div class="rounded-2xl bg-[#F8FAFC] px-3 py-3">
+                                    <div class="rounded-2xl bg-[#F8FAFC] px-3 py-2.5">
                                         <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Closes</div>
                                         <div class="mt-2 text-[18px] font-bold leading-none text-[#B91C1C]">{{ featuredLot.closes }}</div>
                                     </div>
@@ -232,11 +232,11 @@ const footerStats = [
                         </div>
                     </div>
 
-                    <div class="space-y-3 p-4 sm:p-5 lg:hidden">
+                    <div class="space-y-2.5 p-3.5 sm:p-4 lg:hidden">
                         <article
                             v-for="lot in auctionLots"
                             :key="`mobile-${lot.id}`"
-                            class="rounded-2xl border border-[#E5E7EB] bg-[#FCFCFC] p-4"
+                            class="rounded-2xl border border-[#E5E7EB] bg-[#FCFCFC] p-3.5"
                         >
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
@@ -256,12 +256,12 @@ const footerStats = [
                                 </span>
                             </div>
 
-                            <div class="mt-4 grid grid-cols-2 gap-3">
-                                <div class="rounded-xl bg-white px-3 py-3">
+                            <div class="mt-3 grid grid-cols-2 gap-2.5">
+                                <div class="rounded-xl bg-white px-3 py-2.5">
                                     <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Score</div>
                                     <div class="mt-2 text-[16px] font-bold text-[#065F46]">{{ lot.score }}</div>
                                 </div>
-                                <div class="rounded-xl bg-white px-3 py-3">
+                                <div class="rounded-xl bg-white px-3 py-2.5">
                                     <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Current bid</div>
                                     <div class="mt-2 text-[16px] font-bold text-[#111827]">{{ lot.bid }}</div>
                                     <div
@@ -271,7 +271,7 @@ const footerStats = [
                                         {{ lot.movement }}
                                     </div>
                                 </div>
-                                <div class="rounded-xl bg-white px-3 py-3">
+                                <div class="rounded-xl bg-white px-3 py-2.5">
                                     <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Reserve</div>
                                     <div class="mt-2">
                                         <span class="rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em]" :class="lot.reserveClass">
@@ -279,7 +279,7 @@ const footerStats = [
                                         </span>
                                     </div>
                                 </div>
-                                <div class="rounded-xl bg-white px-3 py-3">
+                                <div class="rounded-xl bg-white px-3 py-2.5">
                                     <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Time left</div>
                                     <div class="mt-2 flex items-center gap-1.5 text-[13px] font-semibold" :class="lot.timeClass">
                                         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -305,12 +305,12 @@ const footerStats = [
                             </colgroup>
                             <thead>
                                 <tr class="border-b border-[#EEF2F7] bg-[#F8FAFC] text-[11px] uppercase tracking-[0.18em] text-[#64748B]">
-                                    <th class="px-6 py-4 font-bold">Lot</th>
-                                    <th class="px-4 py-4 font-bold">Profile</th>
-                                    <th class="px-4 py-4 text-center font-bold">Score</th>
-                                    <th class="px-4 py-4 text-right font-bold">Current bid</th>
-                                    <th class="px-4 py-4 text-center font-bold">Reserve</th>
-                                    <th class="px-4 py-4 text-center font-bold">Time left</th>
+                                    <th class="px-5 py-3.5 font-bold">Lot</th>
+                                    <th class="px-3.5 py-3.5 font-bold">Profile</th>
+                                    <th class="px-3.5 py-3.5 text-center font-bold">Score</th>
+                                    <th class="px-3.5 py-3.5 text-right font-bold">Current bid</th>
+                                    <th class="px-3.5 py-3.5 text-center font-bold">Reserve</th>
+                                    <th class="px-3.5 py-3.5 text-center font-bold">Time left</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-[#F1F5F9]">
@@ -319,7 +319,7 @@ const footerStats = [
                                     :key="lot.id"
                                     class="group align-top transition-colors hover:bg-[#FBFDFC]"
                                 >
-                                    <td class="px-6 py-5">
+                                    <td class="px-5 py-4">
                                         <div class="flex items-start gap-3">
                                             <div
                                                 class="mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full"
@@ -332,7 +332,7 @@ const footerStats = [
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-5">
+                                    <td class="px-3.5 py-4">
                                         <div class="space-y-2">
                                             <span class="inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em]" :class="lot.badgeClass">
                                                 {{ lot.type }}
@@ -340,11 +340,11 @@ const footerStats = [
                                             <div class="text-[11px] text-[#94A3B8]">Lot profile</div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-5 text-center">
+                                    <td class="px-3.5 py-4 text-center">
                                         <div class="text-[16px] font-bold leading-none text-[#065F46]">{{ lot.score }}</div>
                                         <div class="mt-2 text-[11px] text-[#94A3B8]">cup score</div>
                                     </td>
-                                    <td class="px-4 py-5 text-right">
+                                    <td class="px-3.5 py-4 text-right">
                                         <div class="text-[16px] font-bold leading-none text-[#111827]">{{ lot.bid }}</div>
                                         <div
                                             class="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
@@ -353,12 +353,12 @@ const footerStats = [
                                             {{ lot.movement }}
                                         </div>
                                     </td>
-                                    <td class="px-4 py-5 text-center">
+                                    <td class="px-3.5 py-4 text-center">
                                         <span class="inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em]" :class="lot.reserveClass">
                                             {{ lot.reserve }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-5 text-center">
+                                    <td class="px-3.5 py-4 text-center">
                                         <span class="inline-flex items-center gap-1.5 text-[12px] font-semibold" :class="lot.timeClass">
                                             <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                                 <circle cx="12" cy="12" r="8" />
@@ -373,8 +373,8 @@ const footerStats = [
                     </div>
                 </div>
 
-                <aside class="space-y-4">
-                    <section class="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
+                <aside class="space-y-3">
+                    <section class="rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
                         <div class="flex items-center justify-between gap-3">
                             <div>
                                 <div class="font-mono text-[10px] uppercase tracking-[0.16em] text-[#94A3B8]">Desk summary</div>
@@ -387,19 +387,19 @@ const footerStats = [
                             </div>
                         </div>
 
-                        <div class="mt-5 space-y-3">
-                            <div class="rounded-2xl bg-[#F8FAFC] p-4">
+                        <div class="mt-4 space-y-2.5">
+                            <div class="rounded-2xl bg-[#F8FAFC] p-3.5">
                                 <div class="font-mono text-[9px] uppercase tracking-[0.16em] text-[#94A3B8]">Active bids</div>
                                 <div class="mt-2 text-[28px] font-bold leading-none text-[#111827]">12 <span class="text-[13px] font-normal text-[#64748B]">lots</span></div>
                             </div>
-                            <div class="rounded-2xl bg-[#F8FAFC] p-4">
+                            <div class="rounded-2xl bg-[#F8FAFC] p-3.5">
                                 <div class="font-mono text-[9px] uppercase tracking-[0.16em] text-[#94A3B8]">Winning</div>
                                 <div class="mt-2 flex items-center justify-between gap-3">
                                     <div class="text-[28px] font-bold leading-none text-[#166534]">08</div>
                                     <span class="rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[10px] font-bold uppercase text-[#166534]">Top bid</span>
                                 </div>
                             </div>
-                            <div class="rounded-2xl bg-[#F8FAFC] p-4">
+                            <div class="rounded-2xl bg-[#F8FAFC] p-3.5">
                                 <div class="font-mono text-[9px] uppercase tracking-[0.16em] text-[#94A3B8]">Total exposure</div>
                                 <div class="mt-2 text-[28px] font-bold leading-none text-[#111827]">$248,500</div>
                             </div>
@@ -407,21 +407,21 @@ const footerStats = [
 
                         <button
                             type="button"
-                            class="mt-5 w-full rounded-full bg-[#0F2A24] px-4 py-3 text-[13px] font-semibold text-white transition-opacity hover:opacity-92"
+                            class="mt-4 w-full rounded-full bg-[#0F2A24] px-4 py-2.5 text-[12px] font-semibold text-white transition-opacity hover:opacity-92"
                         >
                             Manage all bids
                         </button>
                     </section>
 
-                    <section class="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
+                    <section class="rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
                         <div class="font-mono text-[10px] uppercase tracking-[0.16em] text-[#94A3B8]">Lead ladder</div>
                         <h3 class="mt-1 text-[18px] font-bold tracking-tight text-[#111827]">Bid movement</h3>
 
-                        <div class="mt-5 space-y-3">
+                        <div class="mt-4 space-y-2.5">
                             <div
                                 v-for="entry in bidLadder"
                                 :key="`${entry.time}-${entry.bidder}`"
-                                class="rounded-2xl border border-[#EEF2F7] bg-[#FCFDFC] px-4 py-3"
+                                class="rounded-2xl border border-[#EEF2F7] bg-[#FCFDFC] px-3.5 py-2.5"
                             >
                                 <div class="flex items-start justify-between gap-3">
                                     <div>
@@ -437,15 +437,15 @@ const footerStats = [
                         </div>
                     </section>
 
-                    <section class="rounded-2xl border border-[#E5E7EB] bg-[linear-gradient(180deg,#FFF9F0_0%,#FFFFFF_100%)] p-5 shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
+                    <section class="rounded-2xl border border-[#E5E7EB] bg-[linear-gradient(180deg,#FFF9F0_0%,#FFFFFF_100%)] p-4 shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
                         <div class="font-mono text-[10px] uppercase tracking-[0.16em] text-[#9A5A10]">Watchlist pulse</div>
                         <h3 class="mt-1 text-[18px] font-bold tracking-tight text-[#111827]">What needs attention</h3>
 
-                        <div class="mt-5 space-y-3">
+                        <div class="mt-4 space-y-2.5">
                             <div
                                 v-for="item in watchlist"
                                 :key="item.lot"
-                                class="rounded-2xl border border-[#F1E7D3] bg-white/90 px-4 py-4"
+                                class="rounded-2xl border border-[#F1E7D3] bg-white/90 px-3.5 py-3.5"
                             >
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="text-[14px] font-semibold text-[#111827]">{{ item.lot }}</div>
@@ -458,7 +458,7 @@ const footerStats = [
                 </aside>
             </section>
 
-            <section class="grid gap-4 rounded-2xl border border-[#E5E7EB] bg-white p-5 sm:grid-cols-2 lg:grid-cols-4 sm:p-6">
+            <section class="grid gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 sm:grid-cols-2 lg:grid-cols-4 sm:p-5">
                 <div v-for="stat in footerStats" :key="stat.label" class="space-y-1">
                     <div class="font-mono text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]">{{ stat.label }}</div>
                     <div class="text-[24px] font-bold tracking-tight text-[#111827]">{{ stat.value }}</div>
@@ -467,3 +467,20 @@ const footerStats = [
         </div>
     </AppLayout>
 </template>
+
+<style scoped>
+.bid-page :deep(section),
+.bid-page :deep(article),
+.bid-page :deep(table),
+.bid-page :deep(thead),
+.bid-page :deep(tbody),
+.bid-page :deep(tr),
+.bid-page :deep(th),
+.bid-page :deep(td) {
+    margin: 0;
+}
+
+.bid-page :deep(button) {
+    line-height: inherit;
+}
+</style>
