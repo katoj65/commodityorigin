@@ -128,6 +128,12 @@ const fabActions = [
         inertia: true,
     },
     {
+        label: 'Register cooperative',
+        icon: 'cooperative',
+        href: route('cooperative.create'),
+        inertia: true,
+    },
+    {
         label: 'Add lot',
         icon: 'lot',
         href: '#',
@@ -938,6 +944,22 @@ onBeforeUnmount(() => {
                         <path d="M9 13h6" />
                     </svg>
                     <svg
+                        v-else-if="action.icon === 'cooperative'"
+                        class="fab-action-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                    >
+                        <path d="M4 20h16" />
+                        <path d="M6 20v-7" />
+                        <path d="M12 20V9" />
+                        <path d="M18 20v-5" />
+                        <path d="M3 9l9-5 9 5" />
+                        <path d="M8.5 12h1" />
+                        <path d="M14.5 12h1" />
+                    </svg>
+                    <svg
                         v-else
                         class="fab-action-icon"
                         viewBox="0 0 24 24"
@@ -985,6 +1007,22 @@ onBeforeUnmount(() => {
                         <path d="M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
                         <path d="M12 10v6" />
                         <path d="M9 13h6" />
+                    </svg>
+                    <svg
+                        v-else-if="action.icon === 'cooperative'"
+                        class="fab-action-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                    >
+                        <path d="M4 20h16" />
+                        <path d="M6 20v-7" />
+                        <path d="M12 20V9" />
+                        <path d="M18 20v-5" />
+                        <path d="M3 9l9-5 9 5" />
+                        <path d="M8.5 12h1" />
+                        <path d="M14.5 12h1" />
                     </svg>
                     <svg
                         v-else

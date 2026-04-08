@@ -3,6 +3,7 @@
 use App\Http\Controllers\Bid\BidController;
 use App\Http\Controllers\Auction\AuctionController;
 use App\Http\Controllers\Checkout\CheckoutController;
+use App\Http\Controllers\Cooperative\CooperativeController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
@@ -42,11 +43,20 @@ Route::middleware([
         Route::get('/{farmer}', [FarmerController::class, 'show'])->name('show');
     });
 
+    // Cooperative workspace routes.
+    Route::prefix('cooperative')->name('cooperative.')->group(function () {
+        Route::get('/', [CooperativeController::class, 'index'])->name('index');
+        Route::get('/create', [CooperativeController::class, 'create'])->name('create');
+        Route::post('/', [CooperativeController::class, 'store'])->name('store');
+        Route::get('/{cooperative}', [CooperativeController::class, 'show'])->name('show');
+    });
+
     // Farm workspace routes.
     Route::prefix('farm')->name('farm.')->group(function () {
         Route::get('/', [FarmController::class, 'index'])->name('index');
         Route::get('/create/{farmer}', [FarmController::class, 'create'])->name('create');
         Route::post('/', [FarmController::class, 'store'])->name('store');
+        Route::get('/{farm}', [FarmController::class, 'show'])->name('show');
     });
 
     // Bid workspace routes.
