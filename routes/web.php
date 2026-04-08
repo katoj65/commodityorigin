@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\Bid\BidController;
 use App\Http\Controllers\Auction\AuctionController;
+use App\Http\Controllers\Batch\BatchController;
 use App\Http\Controllers\Checkout\CheckoutController;
 use App\Http\Controllers\Cooperative\CooperativeController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Farmer\FarmerController;
+use App\Http\Controllers\Lot\LotController;
 use App\Http\Controllers\Market\MarketController;
 use App\Http\Controllers\Profile\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +59,18 @@ Route::middleware([
         Route::get('/create/{farmer}', [FarmController::class, 'create'])->name('create');
         Route::post('/', [FarmController::class, 'store'])->name('store');
         Route::get('/{farm}', [FarmController::class, 'show'])->name('show');
+    });
+
+    // Lot workspace routes.
+    Route::prefix('lot')->name('lot.')->group(function () {
+        Route::get('/create', [LotController::class, 'create'])->name('create');
+        Route::post('/', [LotController::class, 'store'])->name('store');
+    });
+
+    // Batch workspace routes.
+    Route::prefix('batch')->name('batch.')->group(function () {
+        Route::get('/create', [BatchController::class, 'create'])->name('create');
+        Route::post('/', [BatchController::class, 'store'])->name('store');
     });
 
     // Bid workspace routes.

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Cooperative;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CooperativeResource;
 use App\Models\Cooperative;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,11 +12,17 @@ use Inertia\Response;
 class CooperativeController extends Controller
 {
     /**
-     * Redirect cooperative root traffic to the create page.
+     * Display the cooperative directory.
      */
-    public function index(): RedirectResponse
+    public function index(): Response
     {
-        return redirect()->route('cooperative.create');
+        $cooperatives = Cooperative::query()
+            ->latest()
+            ->get();
+
+        return Inertia::render('Cooperative/CooperativesPage', [
+            'cooperatives' => CooperativeResource::collection($cooperatives)->resolve(),
+        ]);
     }
 
     /**

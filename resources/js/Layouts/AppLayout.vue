@@ -136,14 +136,14 @@ const fabActions = [
     {
         label: 'Add lot',
         icon: 'lot',
-        href: '#',
-        inertia: false,
+        href: route('lot.create'),
+        inertia: true,
     },
     {
         label: 'Add batch',
         icon: 'batch',
-        href: '#',
-        inertia: false,
+        href: route('batch.create'),
+        inertia: true,
     },
 ];
 
@@ -186,6 +186,15 @@ const sideSections = computed(() => [
                 show: true,
                 badge: null,
                 icon: 'farm',
+            },
+            {
+                label: 'Cooperatives',
+                href: route('cooperative.index'),
+                active: route().current('cooperative.*'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'cooperative',
             },
         ],
     },
@@ -653,6 +662,15 @@ onBeforeUnmount(() => {
                             <path d="M13 20V9l3-2 3 2v11" />
                             <path d="M8 10V6h2v3" />
                         </svg>
+                        <svg v-else-if="item.icon === 'cooperative'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 20h16" />
+                            <path d="M6 20v-7" />
+                            <path d="M12 20V9" />
+                            <path d="M18 20v-5" />
+                            <path d="M3 9l9-5 9 5" />
+                            <path d="M8.5 12h1" />
+                            <path d="M14.5 12h1" />
+                        </svg>
                         <span class="snav-label">{{ item.label }}</span>
                         <span v-if="item.badge" class="snav-trailing">
                             <span class="snav-badge">{{ item.badge }}</span>
@@ -860,6 +878,15 @@ onBeforeUnmount(() => {
                             <path d="M5 20v-6l4-2 4 2v6" />
                             <path d="M13 20V9l3-2 3 2v11" />
                             <path d="M8 10V6h2v3" />
+                        </svg>
+                        <svg v-else-if="item.icon === 'cooperative'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 20h16" />
+                            <path d="M6 20v-7" />
+                            <path d="M12 20V9" />
+                            <path d="M18 20v-5" />
+                            <path d="M3 9l9-5 9 5" />
+                            <path d="M8.5 12h1" />
+                            <path d="M14.5 12h1" />
                         </svg>
                         <span class="snav-label">{{ item.label }}</span>
                         <span v-if="item.badge" class="snav-trailing">
