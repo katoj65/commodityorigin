@@ -1,304 +1,853 @@
 <script setup>
+import { Head } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import {
+    Clock,
+    DataBoard,
+    Download,
+    Lightning,
+    Plus,
+    Trophy,
+} from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
-const overviewStats = [
-    { label: 'Active windows', value: '142', hint: 'live now', tone: 'text-[#111827]' },
-    { label: 'Bid volume', value: '$1.2M', hint: '24h turnover', tone: 'text-[#004532]' },
-    { label: 'Top clearing price', value: '$4.85', hint: 'per lb', tone: 'text-[#725A42]' },
-    { label: 'Urgent closes', value: '09', hint: 'under 3h', tone: 'text-[#BA1A1A]' },
+const tickerItems = [
+    { label: 'Arabica (KC)', value: '242.15', delta: '+1.2%', tone: 'up' },
+    { label: 'Robusta (RC)', value: '4,412.00', delta: '-0.4%', tone: 'down' },
+    { label: 'Brazil NY 2/3', value: '198.40', delta: '+0.8%', tone: 'up' },
+    { label: 'Colombia Excelso', value: '265.00', delta: '0.0%', tone: 'flat' },
 ];
 
 const lots = [
     {
-        id: '#ETH-2024-082',
-        origin: 'Yirgacheffe, Ethiopia',
-        producer: 'Halo washing station',
-        flag: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBc5oyZFwhdBja3znggfzewi6pZIsSgPSxGnRR9AjBnFApHnwpA0Gv3tGZEcDRqGo1fUbgvgNwHRAOdQMQe7_LVQMMDlaky7dpeO93piSSH2rdRLP0Se6rwbIGsQp75xbR339IRIx0tBS3CJBpn1MoEcdZLPVPCvrA1ZG5EgV6O14KbFcsz_0r-JRgmVpGhMlC3Qc4Zj4PtoDaT06RUZ3wXu-mGJwKtvsbR65-BYVKENpB5ha5qi-68Z69mH737UhhwVF5DgkToiBLQ',
-        variety: 'Heirloom Arabica',
-        type: 'arabica',
-        varietyClass: 'bg-[#A6F2D1] text-[#002116]',
+        id: '#ETH-2024-042',
+        originCountry: 'Ethiopia',
+        originRegion: 'Yirgacheffe',
+        flag: 'ET',
+        process: 'Natural Process',
+        varietal: 'Heirloom',
         score: '89.5',
-        bid: '$4.85 / lb',
-        bids: '12 bids',
-        time: '02h 45m',
-        timeClass: 'text-[#BA1A1A]',
-        status: 'Lead lot',
-        statusClass: 'bg-[#FFF3E0] text-[#8A4B08]',
-        watching: false,
-        urgent: true,
+        bid: '$12.45',
+        unit: '/lb',
+        time: '04:12',
+        timeTone: 'urgent',
     },
     {
-        id: '#COL-2024-115',
-        origin: 'Huila, Colombia',
-        producer: 'La Esperanza estate',
-        flag: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCDLpMAFuhcvfI8NUuar9IoqaKa-eZKcUZB0GlsCAGdoSXU_GLegYkeV86BAD61y7FNRDcne-dbGT4Ac_JdL5mtbGnuGQ2Fp7FRlRCoJI5mSkrldqFmN3oOPmZUQt7c3YO7xvKDRCZRpeENzFjs999NYBgmHjjgoDS1Yv61NxDrHt08vtWDw1mQk4qadOXanWdXRP1YzMjmf1tD0P1hl4_4-vutJsmS-vEM6S3ypkmoJer_w6T1vQqQUiMk3n3eiHXT3-l8n-bOLdmY',
-        variety: 'Caturra Arabica',
-        type: 'arabica',
-        varietyClass: 'bg-[#A6F2D1] text-[#002116]',
-        score: '87.2',
-        bid: '$3.12 / lb',
-        bids: '8 bids',
-        time: '1d 12h',
-        timeClass: 'text-[#3F4944]',
-        status: 'Steady',
-        statusClass: 'bg-[#EEF2FF] text-[#3730A3]',
-        watching: false,
-        urgent: false,
+        id: '#COL-2024-118',
+        originCountry: 'Colombia',
+        originRegion: 'Huila',
+        flag: 'CO',
+        process: 'Anaerobic Honey',
+        varietal: 'Pink Bourbon',
+        score: '91.0',
+        bid: '$18.20',
+        unit: '/lb',
+        time: '12:45:02',
+        timeTone: 'normal',
     },
     {
-        id: '#UGA-2024-004',
-        origin: 'Mount Elgon, Uganda',
-        producer: 'Sipi Falls cooperative',
-        flag: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD10InMCuMGy_pZ6HIIkeeEvbIKp9lTOdqUgvcJA28OU8Ldzv70dxp3Ah0weyg7pO9Bf1UbrGKe-filwCqd609GgL5yjxEvE3yMtgjaHbtz4E8cG9vK3dLxvNYidTzPgm3e4aCUT5Y3q1qE63D_dKnYz6TQaFPDm1N7tyBmS8dXQXrXZdj6EjMiWeyclHmKmcEkYjcvVfPsSWedGLBB5l14Y3PVEBKGQZ56UbqWo6Ab92-jywfGe-9wCzlwWpPxAVARRRzkwA20sjhX',
-        variety: 'High Grade Robusta',
-        type: 'robusta',
-        varietyClass: 'bg-[#FEDCBE] text-[#291806]',
-        score: '83.8',
-        bid: '$2.05 / lb',
-        bids: '24 bids',
-        time: '00h 15m',
-        timeClass: 'text-[#BA1A1A]',
-        status: 'Watching',
-        statusClass: 'bg-[#004532] text-white',
-        watching: true,
-        urgent: true,
+        id: '#PAN-2024-001',
+        originCountry: 'Panama',
+        originRegion: 'Boquete',
+        flag: 'PA',
+        process: 'Washed',
+        varietal: 'Geisha',
+        score: '94.5',
+        bid: '$84.00',
+        unit: '/lb',
+        time: '01:15:30',
+        timeTone: 'normal',
     },
     {
-        id: '#BRA-2024-991',
-        origin: 'Minas Gerais, Brazil',
-        producer: 'Boa Vista farm',
-        flag: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBtugCMKXJAiMhzbgZSYsyDs9hLK16bydF3q1K6Yp0_emfEBZsqD4zSWfXYvNZmTsk-dRB_HwWkwewGpDmLqhzx0qbG21TzVVMKRBEeL7Xx3rPrsRdcAiCTGCgsa41TZgHjBvnnpH1cLChZzzQRpthsDnaraRFQnCcBjkX4adWHxC8bLsfhwWdR3Py1wamIyZ1HQ9cYXQ_4H_7LxyWeXZlcMC5jdkp1p2-rB92QAQHxKqCH1eNduS-Z1ZOmLMdxEGaWy6u-LvFC-W0C',
-        variety: 'Bourbon Arabica',
-        type: 'arabica',
-        varietyClass: 'bg-[#A6F2D1] text-[#002116]',
-        score: '85.9',
-        bid: '$2.85 / lb',
-        bids: '3 bids',
-        time: '4d 08h',
-        timeClass: 'text-[#3F4944]',
-        status: 'New listing',
-        statusClass: 'bg-[#FFF7ED] text-[#9A3412]',
-        watching: false,
-        urgent: false,
+        id: '#BRA-2024-902',
+        originCountry: 'Brazil',
+        originRegion: 'Cerrado',
+        flag: 'BR',
+        process: 'Natural',
+        varietal: 'Catuai',
+        score: '84.0',
+        bid: '$3.45',
+        unit: '/lb',
+        time: '00:55:12',
+        timeTone: 'normal',
     },
 ];
 
-const marketSummary = [
-    { label: 'Active Auctions', value: '142' },
-    { label: '24h Trade Volume', value: '$1.2M' },
-    { label: 'Active Traders', value: '894' },
+const insightCards = [
+    { label: 'Active bids', value: '04', icon: Lightning, tone: 'mint' },
+    { label: 'Recent wins', value: '12', icon: Trophy, tone: 'sand' },
+    { label: 'Total exposure', value: '$42,500.80', icon: DataBoard, tone: 'wide' },
 ];
 
-const bidActivity = [
-    { label: 'Leading', lot: '#ETH-2024-082', detail: 'Current: $4.85 / lb', color: 'bg-emerald-500' },
-    { label: 'Outbid', lot: '#COL-2024-051', detail: 'High: $3.90 / lb', color: 'bg-[#BA1A1A]' },
+const recentActivity = [
+    {
+        title: 'New high bid on Lot #PAN-001',
+        detail: 'By institutional buyer #04 · 2m ago',
+    },
+    {
+        title: 'Lot #ETH-042 entered final 5 mins',
+        detail: 'Bidding frequency increasing · 4m ago',
+    },
+    {
+        title: 'Auction finalized: Lot #COL-090',
+        detail: 'Final price $24.50/lb · 1h ago',
+    },
 ];
 
-const quickNotes = [
-    'Export desks are most active in the final 90 minutes.',
-    'Robusta windows are drawing more bids this session.',
-    'High-score arabica lots are clearing above reserve early.',
-];
+const featuredOrigin = computed(() => ({
+    title: 'Colombia: Huila Harvest',
+    copy: 'Ultra-premium anaerobic experiments from the Acevedo region are yielding exceptional cup scores above 90 this session.',
+    score: '88.4',
+    lots: '14',
+}));
 
+const flagEmoji = {
+    ET: '🇪🇹',
+    CO: '🇨🇴',
+    PA: '🇵🇦',
+    BR: '🇧🇷',
+};
 </script>
 
 <template>
-    <AppLayout title="Auction">
-        <div class="grid grid-cols-12 gap-6 xl:gap-10">
-            <div class="col-span-12 space-y-8 xl:col-span-9 xl:space-y-10">
-                <section class="overflow-hidden rounded-2xl border border-[#E6E8EA] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
-                    <div class="border-b border-[#EEF2F7] bg-[#F8FAFC] px-6 py-5">
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <AppLayout title="Auction Terminal" full-width>
+        <Head title="Auction Terminal" />
+
+        <div class="auction-terminal-page">
+            <div class="auction-terminal-shell">
+                <section class="auction-ticker-strip">
+                    <article v-for="item in tickerItems" :key="item.label" class="auction-ticker-item">
+                        <span class="auction-ticker-label">{{ item.label }}</span>
+                        <span class="auction-ticker-value">{{ item.value }}</span>
+                        <span
+                            class="auction-ticker-delta"
+                            :class="{
+                                'is-up': item.tone === 'up',
+                                'is-down': item.tone === 'down',
+                                'is-flat': item.tone === 'flat',
+                            }"
+                        >
+                            {{ item.delta }}
+                        </span>
+                    </article>
+                </section>
+
+                <div class="auction-layout-grid">
+                    <div class="auction-main-column">
+                        <section class="auction-heading-card">
                             <div>
-                                <div class="text-[18px] font-bold tracking-tight text-[#191C1E]">Live auction board</div>
-                                <p class="mt-1 text-[13px] text-[#64748B]">
-                                    Organized by lot identity, origin quality, bid depth, and time pressure.
+                                <h1 class="auction-heading-title">Live Auction Terminal</h1>
+                                <p class="auction-heading-copy">
+                                    Institutional-grade coffee lot bidding and real-time execution across verified origins.
                                 </p>
                             </div>
-                            <div class="font-mono text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]">
-                                {{ lots.length }} visible windows
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="hidden overflow-x-auto lg:block">
-                        <table class="min-w-full border-separate border-spacing-0 text-left">
-                            <thead>
-                                <tr class="bg-[#F8FAFC]">
-                                    <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Lot ID</th>
-                                    <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Origin</th>
-                                    <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Variety</th>
-                                    <th class="px-6 py-4 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">SCAA Score</th>
-                                    <th class="px-6 py-4 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Current Bid</th>
-                                    <th class="px-6 py-4 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Time Left</th>
-                                    <th class="px-6 py-4"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <tr
-                                    v-for="lot in lots"
-                                    :key="lot.id"
-                                    class="group transition-colors hover:bg-slate-50/50"
-                                >
-                                    <td class="px-6 py-5 align-top">
-                                        <div class="space-y-2">
-                                            <span class="text-sm font-bold text-[#004532]">{{ lot.id }}</span>
-                                            <div>
-                                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]" :class="lot.statusClass">
-                                                    {{ lot.status }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-5 align-top">
-                                        <div class="flex items-start gap-3">
-                                            <div class="mt-0.5 h-4 w-6 overflow-hidden rounded-sm bg-slate-200">
-                                                <img :src="lot.flag" :alt="lot.origin" class="h-full w-full object-cover" />
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-[#191C1E]">{{ lot.origin }}</div>
-                                                <div class="mt-1 text-[11px] text-[#64748B]">{{ lot.producer }}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-5 align-top">
-                                        <span class="rounded px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]" :class="lot.varietyClass">
-                                            {{ lot.variety }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-5 text-center align-top">
-                                        <span class="text-lg font-extrabold tracking-tight text-[#004532]">{{ lot.score }}</span>
-                                    </td>
-                                    <td class="px-6 py-5 text-right align-top">
-                                        <div class="flex flex-col">
-                                            <span class="text-sm font-bold text-[#191C1E]">{{ lot.bid }}</span>
-                                            <span class="mt-1 text-[10px] text-slate-400">{{ lot.bids }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-5 text-right align-top">
-                                        <span class="text-sm font-bold" :class="lot.timeClass">{{ lot.time }}</span>
-                                    </td>
-                                    <td class="px-6 py-5 text-right align-top">
-                                        <button
-                                            class="rounded px-4 py-2 text-xs font-bold transition-all"
-                                            :class="lot.watching ? 'bg-[#004532] text-white' : 'border border-[#004532] text-[#004532] hover:bg-[#004532] hover:text-white'"
-                                        >
-                                            {{ lot.watching ? 'WATCHING' : 'BID NOW' }}
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="space-y-3 p-4 sm:p-5 lg:hidden">
-                        <article
-                            v-for="lot in lots"
-                            :key="`mobile-${lot.id}`"
-                            class="rounded-2xl border border-[#E5E7EB] bg-[#FCFCFC] p-4"
-                        >
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <div class="text-sm font-bold text-[#004532]">{{ lot.id }}</div>
-                                    <div class="mt-2 text-[14px] font-semibold text-[#191C1E]">{{ lot.origin }}</div>
-                                    <div class="mt-1 text-[12px] text-[#64748B]">{{ lot.producer }}</div>
-                                </div>
-                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]" :class="lot.statusClass">
-                                    {{ lot.status }}
-                                </span>
-                            </div>
-
-                            <div class="mt-4 grid grid-cols-2 gap-3">
-                                <div class="rounded-xl bg-white px-3 py-3">
-                                    <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Variety</div>
-                                    <div class="mt-2 text-[13px] font-semibold text-[#191C1E]">{{ lot.variety }}</div>
-                                </div>
-                                <div class="rounded-xl bg-white px-3 py-3">
-                                    <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Cup score</div>
-                                    <div class="mt-2 text-[16px] font-bold text-[#004532]">{{ lot.score }}</div>
-                                </div>
-                                <div class="rounded-xl bg-white px-3 py-3">
-                                    <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Current bid</div>
-                                    <div class="mt-2 text-[15px] font-bold text-[#191C1E]">{{ lot.bid }}</div>
-                                    <div class="mt-1 text-[10px] text-slate-400">{{ lot.bids }}</div>
-                                </div>
-                                <div class="rounded-xl bg-white px-3 py-3">
-                                    <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-[#94A3B8]">Time left</div>
-                                    <div class="mt-2 text-[14px] font-bold" :class="lot.timeClass">{{ lot.time }}</div>
-                                </div>
-                            </div>
-                        </article>
-                    </div>
-                </section>
-
-            </div>
-
-            <div class="col-span-12 space-y-6 xl:col-span-3">
-                <section class="space-y-6 rounded-2xl border border-[#E6E8EA] bg-[#F2F4F6] p-6 xl:sticky xl:top-24">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-[18px] font-bold tracking-tight text-[#191C1E]">Market Summary</h2>
-                        <svg class="size-5 text-[#004532]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M4 18h16" />
-                            <path d="M7 14l3-3 3 2 4-5" />
-                        </svg>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div
-                            v-for="item in marketSummary"
-                            :key="item.label"
-                            class="flex items-center justify-between rounded-xl bg-white px-4 py-3"
-                        >
-                            <span class="text-sm font-semibold text-slate-500">{{ item.label }}</span>
-                            <span class="font-bold text-[#004532]">{{ item.value }}</span>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-slate-200 pt-4">
-                        <h3 class="mb-4 text-xs font-extrabold uppercase tracking-widest text-slate-400">My Bid Activity</h3>
-                        <div class="space-y-4">
-                            <div
-                                v-for="item in bidActivity"
-                                :key="item.lot"
-                                class="flex items-start gap-4 rounded-xl bg-white px-4 py-3"
-                            >
-                                <div class="mt-1.5 h-2 w-2 rounded-full" :class="item.color"></div>
-                                <div class="flex-1">
-                                    <p class="text-xs font-bold text-[#191C1E]">{{ item.label }}: {{ item.lot }}</p>
-                                    <p class="mt-1 text-[10px] text-slate-500">{{ item.detail }}</p>
-                                </div>
-                                <button
-                                    v-if="item.label === 'Outbid'"
-                                    class="text-[10px] font-bold text-[#004532] hover:underline"
-                                >
-                                    REVIVE
+                            <div class="auction-heading-buttons">
+                                <button type="button" class="auction-secondary-button">
+                                    <el-icon><Setting /></el-icon>
+                                    <span>Filter Lots</span>
+                                </button>
+                                <button type="button" class="auction-secondary-button">
+                                    <el-icon><Download /></el-icon>
+                                    <span>Export Data</span>
                                 </button>
                             </div>
-                        </div>
+                        </section>
+
+                        <section class="auction-board-card">
+                            <div class="auction-table-wrap">
+                                <table class="auction-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Lot ID</th>
+                                            <th>Origin</th>
+                                            <th>Varietal Process</th>
+                                            <th>Cup Score</th>
+                                            <th>Current High Bid</th>
+                                            <th>Time Left</th>
+                                            <th class="text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="lot in lots" :key="lot.id">
+                                            <td>
+                                                <div class="auction-lot-id">{{ lot.id }}</div>
+                                            </td>
+                                            <td>
+                                                <div class="auction-origin-cell">
+                                                    <span class="auction-flag">{{ flagEmoji[lot.flag] }}</span>
+                                                    <div>
+                                                        <div class="auction-origin-country">{{ lot.originCountry }}</div>
+                                                        <div class="auction-origin-region">{{ lot.originRegion }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="auction-varietal-name">{{ lot.varietal }}</div>
+                                                <div class="auction-varietal-process">{{ lot.process }}</div>
+                                            </td>
+                                            <td>
+                                                <span class="auction-score-pill">{{ lot.score }}</span>
+                                            </td>
+                                            <td>
+                                                <div class="auction-bid-value">{{ lot.bid }}</div>
+                                                <div class="auction-bid-unit">{{ lot.unit }}</div>
+                                            </td>
+                                            <td>
+                                                <div
+                                                    class="auction-time-value"
+                                                    :class="{ 'is-urgent': lot.timeTone === 'urgent' }"
+                                                >
+                                                    <el-icon><Clock /></el-icon>
+                                                    <span>{{ lot.time }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="text-right">
+                                                <button type="button" class="auction-place-bid-button">Place Bid</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <section class="auction-feature-card">
+                            <div class="auction-feature-media">
+                                <div class="auction-feature-badge">Featured Origin</div>
+                                <div class="auction-feature-content">
+                                    <div>
+                                        <h2 class="auction-feature-title">{{ featuredOrigin.title }}</h2>
+                                        <p class="auction-feature-copy">{{ featuredOrigin.copy }}</p>
+                                    </div>
+
+                                    <div class="auction-feature-metrics">
+                                        <div class="auction-feature-metric">
+                                            <span class="auction-feature-metric__label">Avg. score</span>
+                                            <span class="auction-feature-metric__value">{{ featuredOrigin.score }}</span>
+                                        </div>
+                                        <div class="auction-feature-metric">
+                                            <span class="auction-feature-metric__label">Lots available</span>
+                                            <span class="auction-feature-metric__value">{{ featuredOrigin.lots }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
                     </div>
 
-                    <div class="rounded-xl bg-white p-4 shadow-sm">
-                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Market Sentiment</p>
-                        <div class="mt-2 flex items-center gap-2">
-                            <svg class="size-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                <circle cx="12" cy="12" r="8" />
-                                <path d="M8.5 14c.8 1 2 1.5 3.5 1.5s2.7-.5 3.5-1.5" />
-                                <path d="M9 10h.01" />
-                                <path d="M15 10h.01" />
-                            </svg>
-                            <span class="text-sm font-bold text-[#191C1E]">Strongly Bullish</span>
-                        </div>
-                        <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                            <div class="h-full w-[85%] bg-emerald-600"></div>
-                        </div>
-                    </div>
+                    <aside class="auction-side-column">
+                        <section class="auction-insights-card">
+                            <div class="auction-side-title">Bidding Insights</div>
 
-                    <button class="w-full rounded-md bg-[#E6E8EA] py-3 text-xs font-bold uppercase tracking-widest text-[#004532] transition-colors hover:bg-slate-200">
-                        View Detailed Analytics
-                    </button>
-                </section>
+                            <div class="auction-insights-grid">
+                                <article
+                                    v-for="card in insightCards"
+                                    :key="card.label"
+                                    class="auction-insight-item"
+                                    :class="`is-${card.tone}`"
+                                >
+                                    <div class="auction-insight-item__head">
+                                        <span>{{ card.label }}</span>
+                                        <el-icon><component :is="card.icon" /></el-icon>
+                                    </div>
+                                    <div class="auction-insight-item__value">{{ card.value }}</div>
+                                    <div v-if="card.tone === 'wide'" class="auction-insight-progress">
+                                        <span class="auction-insight-progress__fill"></span>
+                                    </div>
+                                </article>
+                            </div>
 
+                            <button type="button" class="auction-report-button">Download Report</button>
+                        </section>
+
+                        <section class="auction-activity-card">
+                            <div class="auction-side-title">Recent Terminal Activity</div>
+
+                            <div class="auction-activity-list">
+                                <article v-for="item in recentActivity" :key="item.title" class="auction-activity-item">
+                                    <div class="auction-activity-dot"></div>
+                                    <div>
+                                        <div class="auction-activity-title">{{ item.title }}</div>
+                                        <div class="auction-activity-detail">{{ item.detail }}</div>
+                                    </div>
+                                </article>
+                            </div>
+
+                            <button type="button" class="auction-plus-button" aria-label="Add terminal note">
+                                <el-icon><Plus /></el-icon>
+                            </button>
+                        </section>
+
+                        <section class="auction-alert-card">
+                            <div class="auction-side-title auction-side-title--light">Terminal Alert</div>
+                            <h3 class="auction-alert-title">Supply constraints in Brazil pushing C-price upwards.</h3>
+                            <p class="auction-alert-copy">
+                                Analysts suggest locking origin contracts before next week’s ICO report.
+                            </p>
+                        </section>
+                    </aside>
+                </div>
             </div>
         </div>
     </AppLayout>
 </template>
+
+<style scoped>
+.auction-terminal-page {
+    background: #fff;
+}
+
+.auction-terminal-shell {
+    margin: 0 auto;
+    max-width: 1320px;
+    padding: 10px 10px 28px;
+}
+
+.auction-ticker-strip {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #ebeff3;
+    border-radius: 14px;
+    display: grid;
+    gap: 10px 18px;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    margin-bottom: 14px;
+    padding: 10px 14px;
+}
+
+.auction-ticker-item {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.auction-ticker-label {
+    color: #94a3b8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.auction-ticker-value {
+    color: #191c1e;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.auction-ticker-delta {
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.auction-ticker-delta.is-up {
+    color: #0f9f5d;
+}
+
+.auction-ticker-delta.is-down {
+    color: #dc2626;
+}
+
+.auction-ticker-delta.is-flat {
+    color: #64748b;
+}
+
+.auction-layout-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.auction-main-column,
+.auction-side-column {
+    min-width: 0;
+}
+
+.auction-heading-card,
+.auction-board-card,
+.auction-insights-card,
+.auction-activity-card {
+    background: #fff;
+    border: 1px solid #ebeff3;
+    border-radius: 16px;
+}
+
+.auction-heading-card {
+    align-items: end;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
+    margin-bottom: 14px;
+    padding: 18px;
+}
+
+.auction-heading-title {
+    color: #191c1e;
+    font-size: clamp(1.35rem, 1.75vw, 1.95rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin: 0 0 8px;
+}
+
+.auction-heading-copy {
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 520px;
+}
+
+.auction-heading-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.auction-secondary-button {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    color: #475569;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 700;
+    gap: 8px;
+    height: 40px;
+    justify-content: center;
+    padding: 0 14px;
+    text-transform: uppercase;
+}
+
+.auction-board-card {
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+
+.auction-table-wrap {
+    overflow-x: auto;
+    padding: 0 16px;
+}
+
+.auction-table {
+    border-collapse: collapse;
+    min-width: 940px;
+    width: 100%;
+}
+
+.auction-table th {
+    color: #94a3b8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 14px 0 12px;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.auction-table td {
+    border-top: 1px solid #eef2f7;
+    color: #191c1e;
+    font-size: 14px;
+    padding: 16px 0;
+    vertical-align: middle;
+}
+
+.auction-lot-id {
+    color: #14532d;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.35;
+    max-width: 90px;
+    word-break: break-word;
+}
+
+.auction-origin-cell {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+}
+
+.auction-flag {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.auction-origin-country {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.auction-origin-region,
+.auction-varietal-process,
+.auction-bid-unit {
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.4;
+    margin-top: 3px;
+}
+
+.auction-varietal-name {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.auction-score-pill {
+    align-items: center;
+    background: #bdf3d4;
+    border-radius: 8px;
+    color: #0f6b4c;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 800;
+    height: 28px;
+    justify-content: center;
+    min-width: 46px;
+    padding: 0 10px;
+}
+
+.auction-bid-value {
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.auction-time-value {
+    align-items: center;
+    color: #334155;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 700;
+    gap: 6px;
+}
+
+.auction-time-value.is-urgent {
+    color: #dc2626;
+}
+
+.auction-place-bid-button {
+    align-items: center;
+    background: #0f6b4c;
+    border: 0;
+    border-radius: 10px;
+    color: #fff;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 800;
+    height: 38px;
+    justify-content: center;
+    min-width: 92px;
+    padding: 0 14px;
+    text-transform: uppercase;
+}
+
+.auction-feature-card {
+    overflow: hidden;
+}
+
+.auction-feature-media {
+    background:
+        linear-gradient(180deg, rgba(11, 17, 32, 0.16) 0%, rgba(11, 17, 32, 0.74) 100%),
+        radial-gradient(circle at 75% 18%, rgba(195, 240, 158, 0.14), transparent 28%),
+        linear-gradient(135deg, #1f4d2e 0%, #284227 42%, #16212e 100%);
+    border-radius: 18px;
+    min-height: 256px;
+    padding: 18px;
+    position: relative;
+}
+
+.auction-feature-media::before {
+    background:
+        radial-gradient(circle at 25% 25%, rgba(116, 196, 118, 0.22), transparent 18%),
+        radial-gradient(circle at 72% 40%, rgba(255, 220, 137, 0.08), transparent 16%),
+        repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.025) 7px, transparent 7px, transparent 16px);
+    content: '';
+    inset: 0;
+    position: absolute;
+}
+
+.auction-feature-badge,
+.auction-feature-content {
+    position: relative;
+    z-index: 1;
+}
+
+.auction-feature-badge {
+    background: rgba(255, 237, 178, 0.16);
+    border-radius: 999px;
+    color: #ffe8b3;
+    display: inline-flex;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 110px;
+    padding: 7px 10px;
+    text-transform: uppercase;
+}
+
+.auction-feature-content {
+    align-items: end;
+    display: grid;
+    gap: 18px;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.auction-feature-title {
+    color: #fff;
+    font-size: clamp(1.6rem, 2.1vw, 2.3rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 0.95;
+    margin: 0 0 10px;
+    max-width: 420px;
+}
+
+.auction-feature-copy {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 420px;
+}
+
+.auction-feature-metrics {
+    display: flex;
+    gap: 14px;
+}
+
+.auction-feature-metric {
+    min-width: 96px;
+}
+
+.auction-feature-metric__label {
+    color: rgba(255, 255, 255, 0.58);
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.auction-feature-metric__value {
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+.auction-side-column {
+    display: grid;
+    gap: 14px;
+}
+
+.auction-insights-card,
+.auction-activity-card {
+    padding: 18px;
+}
+
+.auction-side-title {
+    color: #94a3b8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+}
+
+.auction-side-title--light {
+    color: rgba(255, 255, 255, 0.66);
+}
+
+.auction-insights-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.auction-insight-item {
+    border-radius: 14px;
+    padding: 14px;
+}
+
+.auction-insight-item.is-mint {
+    background: #eefbf4;
+}
+
+.auction-insight-item.is-sand {
+    background: #fff6ea;
+}
+
+.auction-insight-item.is-wide {
+    background: #f8fafc;
+}
+
+.auction-insight-item__head {
+    align-items: center;
+    color: #94a3b8;
+    display: flex;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    justify-content: space-between;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.auction-insight-item__value {
+    color: #191c1e;
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+.auction-insight-progress {
+    background: #d9e7de;
+    border-radius: 999px;
+    height: 4px;
+    margin-top: 12px;
+    overflow: hidden;
+}
+
+.auction-insight-progress__fill {
+    background: #0f6b4c;
+    display: block;
+    height: 100%;
+    width: 85%;
+}
+
+.auction-report-button {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    color: #334155;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 800;
+    height: 40px;
+    justify-content: center;
+    margin-top: 14px;
+    padding: 0 14px;
+    text-transform: uppercase;
+    width: 100%;
+}
+
+.auction-activity-list {
+    display: grid;
+    gap: 14px;
+}
+
+.auction-activity-item {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 8px minmax(0, 1fr);
+}
+
+.auction-activity-dot {
+    background: #0f6b4c;
+    border-radius: 999px;
+    height: 8px;
+    margin-top: 6px;
+    width: 8px;
+}
+
+.auction-activity-title {
+    color: #191c1e;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.5;
+    margin-bottom: 4px;
+}
+
+.auction-activity-detail {
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.auction-plus-button {
+    align-items: center;
+    background: #0f6b4c;
+    border: 0;
+    border-radius: 12px;
+    color: #fff;
+    display: inline-flex;
+    font-size: 18px;
+    height: 42px;
+    justify-content: center;
+    margin-top: 14px;
+    width: 42px;
+}
+
+.auction-alert-card {
+    background: linear-gradient(180deg, #0f6b4c 0%, #0b5139 100%);
+    border-radius: 16px;
+    color: #fff;
+    padding: 18px;
+}
+
+.auction-alert-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    margin: 0 0 10px;
+}
+
+.auction-alert-copy {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 13px;
+    line-height: 1.65;
+    margin: 0;
+}
+
+@media (min-width: 900px) {
+    .auction-ticker-strip {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .auction-heading-card {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .auction-feature-content {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+}
+
+@media (min-width: 1200px) {
+    .auction-layout-grid {
+        align-items: start;
+        grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.78fr);
+    }
+}
+
+@media (max-width: 767px) {
+    .auction-terminal-shell {
+        padding: 10px 8px 22px;
+    }
+
+    .auction-heading-title {
+        font-size: 1.55rem;
+    }
+
+    .auction-heading-buttons {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .auction-feature-badge {
+        margin-bottom: 72px;
+    }
+}
+</style>

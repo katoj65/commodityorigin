@@ -169,6 +169,24 @@ const sideSections = computed(() => [
                 badge: null,
                 icon: 'pulse',
             },
+            {
+                label: 'Farmers',
+                href: route('farmer.index'),
+                active: route().current('farmer.index'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'farmer',
+            },
+            {
+                label: 'Coffee Farms',
+                href: route('farm.index'),
+                active: route().current('farm.*'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'farm',
+            },
         ],
     },
     {
@@ -622,6 +640,19 @@ onBeforeUnmount(() => {
                         <svg v-else-if="item.icon === 'pulse'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                         </svg>
+                        <svg v-else-if="item.icon === 'farmer'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="9" cy="8" r="3" />
+                            <path d="M4 19a5 5 0 0110 0" />
+                            <path d="M16 7h4" />
+                            <path d="M16 11h4" />
+                            <path d="M16 15h4" />
+                        </svg>
+                        <svg v-else-if="item.icon === 'farm'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M3 20h18" />
+                            <path d="M5 20v-6l4-2 4 2v6" />
+                            <path d="M13 20V9l3-2 3 2v11" />
+                            <path d="M8 10V6h2v3" />
+                        </svg>
                         <span class="snav-label">{{ item.label }}</span>
                         <span v-if="item.badge" class="snav-trailing">
                             <span class="snav-badge">{{ item.badge }}</span>
@@ -816,6 +847,19 @@ onBeforeUnmount(() => {
                         </svg>
                         <svg v-else-if="item.icon === 'pulse'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                        <svg v-else-if="item.icon === 'farmer'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="9" cy="8" r="3" />
+                            <path d="M4 19a5 5 0 0110 0" />
+                            <path d="M16 7h4" />
+                            <path d="M16 11h4" />
+                            <path d="M16 15h4" />
+                        </svg>
+                        <svg v-else-if="item.icon === 'farm'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M3 20h18" />
+                            <path d="M5 20v-6l4-2 4 2v6" />
+                            <path d="M13 20V9l3-2 3 2v11" />
+                            <path d="M8 10V6h2v3" />
                         </svg>
                         <span class="snav-label">{{ item.label }}</span>
                         <span v-if="item.badge" class="snav-trailing">

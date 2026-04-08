@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Farmer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\FarmerResource;
 use App\Models\Farmer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,11 +13,18 @@ use Inertia\Response;
 class FarmerController extends Controller
 {
     /**
-     * Redirect farmer root traffic to the registration form.
+     * Display the farmer directory.
      */
-    public function index(): RedirectResponse
+    public function index(): Response
     {
-        return redirect()->route('farmer.create');
+        $farmers = Farmer::query()
+            ->withCount('farms')
+            ->latest()
+            ->get();
+
+        return Inertia::render('Farmer/FarmersPage', [
+            'farmers' => FarmerResource::collection($farmers)->resolve(),
+        ]);
     }
 
     /**
@@ -60,23 +68,10 @@ class FarmerController extends Controller
      */
     public function show(Farmer $farmer): Response
     {
+        $farmer->load('farms');
+
         return Inertia::render('Farmer/FarmerProfile', [
-            'farmer' => [
-                'id' => $farmer->id,
-                'user_id' => $farmer->user_id,
-                'first_name' => $farmer->first_name,
-                'last_name' => $farmer->last_name,
-                'telephone' => $farmer->telephone,
-                'email' => $farmer->email,
-                'district' => $farmer->district,
-                'sub_county' => $farmer->sub_county,
-                'coffee_type' => $farmer->coffee_type,
-                'cooperative' => $farmer->cooperative,
-                'farm_size' => $farmer->farm_size,
-                'notes' => $farmer->notes,
-                'created_at' => optional($farmer->created_at)?->toDateTimeString(),
-                'updated_at' => optional($farmer->updated_at)?->toDateTimeString(),
-            ],
+            'farmer' => FarmerResource::make($farmer)->resolve(),
         ]);
     }
 

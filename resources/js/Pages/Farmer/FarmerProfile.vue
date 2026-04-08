@@ -94,40 +94,30 @@ const productionDetails = computed(() => [
     { label: 'Member Since', value: memberSince.value },
 ]);
 
-const gardenMapQuery = computed(() => {
-    const query = [props.farmer.sub_county, props.farmer.district, 'Uganda'].filter(Boolean).join(', ');
-
-    return query || 'Uganda coffee farm';
-});
-
-const gardenMapUrl = computed(
-    () => `https://www.google.com/maps?q=${encodeURIComponent(gardenMapQuery.value)}&z=12&output=embed`,
-);
-
 const credentials = [
     { title: 'Rainforest Alliance', id: 'RA-2024-8832', icon: 'leaf', iconClass: 'text-success-custom' },
     { title: 'Organic Certified', id: 'ORG-ETH-9912', icon: 'award', iconClass: 'text-warning-custom' },
     { title: 'UCDA Licensed', id: 'UCDA-EXP-440', icon: 'shield', iconClass: 'text-primary-soft' },
 ];
 
-const estates = computed(() => [
-    {
-        title: props.farmer.cooperative || 'Chelchele Washing Station',
-        subtitle: '1,950 - 2,100m',
-        tags: ['Washed / Natural', '12 containers ready'],
-        identifier: 'ET-GED-001',
-        image:
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuAy4IHPcGUOP1f7W51aY3feFSMZrN5Nr4Y4EhtiFRcYqp3qB-w1Gsz_BpcHEoWUOinkofYUs0SUBqxV3GUaPAykPqNpdga60QZUEVxFgRsxAEM6iEY1KgEBzKfhYzvtnTnVgxopwnS-8iYWo3If9skyzXGlXGD2ACKJT6Bm-P-wmQ6aVNF-F3f1zVX2s4Pwc6HZLk4_uFtFdpjuo_ojH56rzgfxBjN-zd6u3Co6noNishCEMF6pUtnJjRGLCDjXccR9ZX_gQWrTRM1H',
-    },
-    {
-        title: `${fullName.value} Forest`,
-        subtitle: '2,000 - 2,200m',
-        tags: ['Honey Process', 'In Harvest'],
-        identifier: 'ET-GED-844',
-        image:
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuCJbqUBQZctPHEUZpbB38Ig3KRmrILEcB_cJzXoEENV8n5B5c29dSOjGHgu-dVfsrO7dQassv0XXkILXPQOKfi0p12-tI6H-GQIzG9qmRJ41hqcNk3_MMqn9cIuBo0-3485JIfQj5NBbZ8WLmaGIlMSrePYP_BI-o8fbVHlx37SsvEHyYLiS6HyMAAlnQowOYORWIcQf3Yf_YHQ1EQAMTaHo-xMNepB99vuwWV9zHcyX2qZJOsrZQfWQxcdIS7NlAzO2wQkXsRgd8na',
-    },
-]);
+const estateImages = [
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuAy4IHPcGUOP1f7W51aY3feFSMZrN5Nr4Y4EhtiFRcYqp3qB-w1Gsz_BpcHEoWUOinkofYUs0SUBqxV3GUaPAykPqNpdga60QZUEVxFgRsxAEM6iEY1KgEBzKfhYzvtnTnVgxopwnS-8iYWo3If9skyzXGlXGD2ACKJT6Bm-P-wmQ6aVNF-F3f1zVX2s4Pwc6HZLk4_uFtFdpjuo_ojH56rzgfxBjN-zd6u3Co6noNishCEMF6pUtnJjRGLCDjXccR9ZX_gQWrTRM1H',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCJbqUBQZctPHEUZpbB38Ig3KRmrILEcB_cJzXoEENV8n5B5c29dSOjGHgu-dVfsrO7dQassv0XXkILXPQOKfi0p12-tI6H-GQIzG9qmRJ41hqcNk3_MMqn9cIuBo0-3485JIfQj5NBbZ8WLmaGIlMSrePYP_BI-o8fbVHlx37SsvEHyYLiS6HyMAAlnQowOYORWIcQf3Yf_YHQ1EQAMTaHo-xMNepB99vuwWV9zHcyX2qZJOsrZQfWQxcdIS7NlAzO2wQkXsRgd8na',
+];
+
+const estates = computed(() =>
+    (props.farmer.farms || []).map((farm, index) => ({
+        id: farm.id,
+        title: farm.name || `Farm ${farm.id}`,
+        subtitle: farm.altitude || farm.location || 'Altitude pending',
+        tags: [farm.variety || 'Variety pending', farm.status || 'Active'],
+        identifier: `FARM-${String(farm.id).padStart(3, '0')}`,
+        image: estateImages[index % estateImages.length],
+        size: farm.size,
+        location: farm.location,
+        notes: farm.notes,
+    })),
+);
 
 const iconPaths = {
     verified:
@@ -154,6 +144,10 @@ const iconPaths = {
 
 const goToAddFarm = () => {
     router.visit(route('farm.create', props.farmer.id));
+};
+
+const goToFarmProfile = (farmId) => {
+    router.visit(route('farm.show', farmId));
 };
 </script>
 
@@ -284,8 +278,13 @@ const goToAddFarm = () => {
                                 <button type="button" class="producer-link-button">View All Stations</button>
                             </div>
 
-                            <div class="producer-estate-stack">
-                                <article v-for="estate in estates" :key="estate.title" class="producer-estate-card">
+                            <div v-if="estates.length" class="producer-estate-stack">
+                                <article
+                                    v-for="estate in estates"
+                                    :key="estate.id"
+                                    class="producer-estate-card"
+                                    @click="goToFarmProfile(estate.id)"
+                                >
                                     <div class="producer-estate-media">
                                         <img :alt="estate.title" class="producer-estate-image" :src="estate.image" />
                                     </div>
@@ -295,7 +294,8 @@ const goToAddFarm = () => {
                                             <div>
                                                 <h3 class="producer-estate-title">{{ estate.title }}</h3>
                                                 <div class="producer-estate-specs">
-                                                    <span>{{ estate.subtitle }}</span>
+                                                    <span>{{ estate.location || estate.subtitle }}</span>
+                                                    <span v-if="estate.size">{{ estate.size }}</span>
                                                     <span>{{ estate.tags[0] }}</span>
                                                     <span>{{ estate.tags[1] }}</span>
                                                 </div>
@@ -304,37 +304,24 @@ const goToAddFarm = () => {
                                         </div>
                                     </div>
 
-                                    <button type="button" class="producer-estate-arrow" aria-label="Open estate">
+                                    <button type="button" class="producer-estate-arrow" aria-label="Open estate" @click.stop="goToFarmProfile(estate.id)">
                                         <svg viewBox="0 0 24 24" aria-hidden="true">
                                             <path :d="iconPaths.chevronRight" />
                                         </svg>
                                     </button>
                                 </article>
                             </div>
+
+                            <div v-else class="producer-empty-estates">
+                                <div class="producer-empty-estates__title">No farms added yet</div>
+                                <p class="producer-empty-estates__copy">
+                                    Start by registering a farm for this farmer and it will appear here under managed estates.
+                                </p>
+                            </div>
                         </section>
                     </div>
 
                     <aside class="producer-side-column">
-                        <section class="producer-map-card">
-                            <div class="producer-map-wrap">
-                                <iframe
-                                    :src="gardenMapUrl"
-                                    loading="lazy"
-                                    referrerpolicy="no-referrer-when-downgrade"
-                                    title="Garden location map"
-                                ></iframe>
-                            </div>
-                            <div class="producer-map-overlay">
-                                <svg class="producer-map-overlay-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path :d="iconPaths.location" />
-                                </svg>
-                                <div>
-                                    <div class="producer-map-overlay-title">{{ props.farmer.district || 'Gedeo Zone' }}</div>
-                                    <div class="producer-map-overlay-copy">{{ locationLabel }}</div>
-                                </div>
-                            </div>
-                        </section>
-
                         <section class="producer-credentials-card">
                             <div class="producer-card-heading">
                                 <svg class="producer-card-heading-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -445,7 +432,6 @@ const goToAddFarm = () => {
 
 .producer-hero-card,
 .producer-info-card,
-.producer-map-card,
 .producer-credentials-card,
 .producer-estate-card {
     border: 1px solid #e5ece7;
@@ -785,55 +771,6 @@ const goToAddFarm = () => {
     color: #5f7a6e;
 }
 
-.producer-map-card {
-    position: relative;
-    overflow: hidden;
-    min-height: 330px;
-}
-
-.producer-map-wrap,
-.producer-map-wrap iframe {
-    width: 100%;
-    height: 100%;
-}
-
-.producer-map-wrap iframe {
-    border: 0;
-    display: block;
-}
-
-.producer-map-overlay {
-    position: absolute;
-    left: 1rem;
-    right: 1rem;
-    bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    border-radius: 0.9rem;
-    background: rgba(11, 31, 23, 0.72);
-    backdrop-filter: blur(8px);
-    padding: 0.8rem 0.9rem;
-    color: #ffffff;
-}
-
-.producer-map-overlay-icon {
-    width: 1rem;
-    height: 1rem;
-    fill: #c5f2d8;
-    flex-shrink: 0;
-}
-
-.producer-map-overlay-title {
-    font-size: 0.84rem;
-    font-weight: 800;
-}
-
-.producer-map-overlay-copy {
-    font-size: 0.72rem;
-    color: rgba(255, 255, 255, 0.78);
-}
-
 .producer-credential-list {
     display: flex;
     flex-direction: column;
@@ -941,6 +878,26 @@ const goToAddFarm = () => {
     gap: 0.9rem;
 }
 
+.producer-empty-estates {
+    border: 1px dashed #d8e1dc;
+    border-radius: 1rem;
+    background: #fbfcfb;
+    padding: 1.1rem 1.15rem;
+}
+
+.producer-empty-estates__title {
+    color: #1f3d31;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.producer-empty-estates__copy {
+    margin: 0.35rem 0 0;
+    color: #6b7280;
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
 .producer-estate-card {
     display: grid;
     grid-template-columns: 76px minmax(0, 1fr) 40px;
@@ -1029,10 +986,6 @@ const goToAddFarm = () => {
     .producer-top-grid,
     .producer-content-grid {
         grid-template-columns: 1fr;
-    }
-
-    .producer-map-card {
-        min-height: 280px;
     }
 }
 

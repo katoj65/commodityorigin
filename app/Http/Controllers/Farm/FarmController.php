@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Farm;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\FarmResource;
 use App\Models\CropVarietyMetadata;
 use App\Models\Farm;
 use App\Models\Farmer;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -17,9 +17,16 @@ class FarmController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): RedirectResponse
+    public function index(): Response
     {
-        return redirect()->route('farmer.index');
+        $farms = Farm::query()
+            ->with('farmer')
+            ->latest()
+            ->get();
+
+        return Inertia::render('Farm/FamsPage', [
+            'farms' => FarmResource::collection($farms)->resolve(),
+        ]);
     }
 
     /**
@@ -76,9 +83,13 @@ class FarmController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Farm $farm): Response
     {
-        //
+        $farm->load('farmer');
+
+        return Inertia::render('Farm/FarmProfile', [
+            'farm' => FarmResource::make($farm)->resolve(),
+        ]);
     }
 
     /**
