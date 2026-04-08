@@ -1,393 +1,474 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { Head } from '@inertiajs/vue3';
+import { Operation } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
-const commodityType = ref('arabica');
+const region = ref('global');
+const grade = ref('specialty');
 
-const tickerItems = [
-    { label: 'Arabica C-Future', value: '$2.4540', delta: '+1.24%', deltaClass: 'text-emerald-600' },
-    { label: 'Robusta London', value: '$4,812.00', delta: '-0.42%', deltaClass: 'text-[#BA1A1A]' },
-    { label: 'Ethiopian Yirgacheffe Index', value: '$3.1200', delta: '+0.85%', deltaClass: 'text-emerald-600' },
-    { label: 'Colombian Excelso', value: '$2.9450', delta: '0.00%', deltaClass: 'text-slate-400' },
-];
-
-const marketRows = [
+const marketLots = [
     {
-        id: 'ETH-2024-081',
-        icon: '🇪🇹',
-        name: 'Yirgacheffe G1',
-        meta: 'Heirloom / Washed',
-        variety: 'Heirloom',
+        id: '#ETH-23094',
+        flag: '🇪🇹',
+        origin: 'Yirgacheffe G1',
+        estate: 'Chelchele, Gedio',
+        tags: ['Heirloom', 'Washed'],
         score: '89.5',
-        bid: '$4.12',
-        bids: '12 bids',
-        time: '02h 14m 10s',
-        timeClass: 'text-[#BA1A1A]',
-        type: 'arabica',
+        bid: '$5.85',
+        bidMeta: '14 bids · 2h 14m left',
+        region: 'global',
+        grade: 'specialty',
     },
     {
-        id: 'COL-2024-114',
-        icon: '🇨🇴',
-        name: 'Huila Pink Bourbon',
-        meta: 'Anaerobic / Finca El Mirador',
-        variety: 'Pink Bourbon',
-        score: '91.2',
-        bid: '$7.45',
-        bids: '24 bids',
-        time: '14h 45m 02s',
-        timeClass: 'text-slate-600',
-        type: 'arabica',
+        id: '#COL-45122',
+        flag: '🇨🇴',
+        origin: 'Huila Pink Bourbon',
+        estate: 'Finca El Diviso',
+        tags: ['Bourbon', 'Anaerobic'],
+        score: '91.0',
+        bid: '$12.40',
+        bidMeta: '32 bids · 45m left',
+        region: 'global',
+        grade: 'specialty',
     },
     {
-        id: 'BRA-2024-002',
-        icon: '🇧🇷',
-        name: 'Mogiana NY 2/3',
-        meta: 'Natural / Cooperative',
-        variety: 'Catuai',
-        score: '82.5',
-        bid: '$2.18',
-        bids: '0 bids',
-        time: '01d 08h 12s',
-        timeClass: 'text-slate-600',
-        type: 'robusta',
+        id: '#KEN-88102',
+        flag: '🇰🇪',
+        origin: 'Nyeri SL-28',
+        estate: 'Gatuyaini Factory',
+        tags: ['SL28/34', 'Washed'],
+        score: '88.2',
+        bid: '$7.15',
+        bidMeta: '0 bids · 1d 4h left',
+        region: 'africa',
+        grade: 'specialty',
     },
     {
-        id: 'PAN-2024-055',
-        icon: '🇵🇦',
-        name: 'Esmeralda Geisha',
-        meta: 'Washed / Private Collection',
-        variety: 'Geisha',
-        score: '94.8',
-        bid: '$42.00',
-        bids: '102 bids',
-        time: '00h 12m 45s',
-        timeClass: 'text-[#BA1A1A]',
-        type: 'arabica',
+        id: '#BRA-10022',
+        flag: '🇧🇷',
+        origin: 'Cerrado Mineiro',
+        estate: 'Fazenda Rainha',
+        tags: ['Catuai', 'Natural'],
+        score: '84.5',
+        bid: '$2.95',
+        bidMeta: '5 bids · 3h 10m left',
+        region: 'global',
+        grade: 'premium',
     },
 ];
 
-const filteredRows = computed(() =>
-    marketRows.filter((row) => commodityType.value === 'all' || row.type === commodityType.value),
+const filteredLots = computed(() =>
+    marketLots.filter((lot) => {
+        const matchesRegion = region.value === 'global' || lot.region === region.value;
+        const matchesGrade =
+            grade.value === 'all' ||
+            (grade.value === 'specialty' && lot.grade === 'specialty') ||
+            (grade.value === 'premium' && lot.grade === 'premium');
+
+        return matchesRegion && matchesGrade;
+    }),
 );
-
-const alerts = [
-    { title: 'Large Transaction: Arabica', detail: '50,000 lbs exchanged at $2.44', dot: 'bg-emerald-500' },
-    { title: 'Auction Closed: Lot G-12', detail: 'Final bid: $3.95/lb (Panama)', dot: 'bg-emerald-500' },
-    { title: 'Supply Alert: Vietnam', detail: 'Heavy rainfall impacting Robusta drying', dot: 'bg-[#FEDCBE]' },
-];
 </script>
 
 <template>
-    <AppLayout title="Market" full-width>
-        <div class="market-page space-y-3">
-            <div class="flex flex-col gap-6 xl:flex-row">
-                <div class="min-w-0 flex-1 space-y-6">
-                    <section class="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                            <p class="mb-2 text-xs font-bold uppercase tracking-widest text-[#004532]">Market Status: Open</p>
-                            <h1 class="text-[24px] font-bold tracking-tight text-[#191C1E] sm:text-[28px]">Coffee Futures &amp; Live Auctions</h1>
-                        </div>
-                        <div class="flex flex-wrap gap-2 sm:justify-end">
-                            <button class="rounded-md border border-[#D7DDE4] bg-white px-3 py-1.5 text-[12px] font-medium tracking-[0.01em] text-slate-600 transition-colors hover:bg-[#F8FAFC]">
-                                Export CSV
-                            </button>
-                            <button class="flex items-center gap-1.5 rounded-md border border-[#004532] bg-[#004532] px-3 py-1.5 text-[12px] font-medium tracking-[0.01em] text-white transition-colors hover:bg-[#03513c]">
-                                <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <path d="M21 12a9 9 0 11-2.64-6.36" />
-                                    <path d="M21 3v6h-6" />
-                                </svg>
-                                Refresh Live
-                            </button>
-                        </div>
-                    </section>
+    <AppLayout title="Market Terminal" full-width>
+        <Head title="Market Terminal" />
 
-                    <section class="grid gap-3 rounded-2xl border border-[#E5E7EB] bg-[#F2F4F6] p-3 md:grid-cols-2 xl:grid-cols-[max-content,max-content,max-content,minmax(0,1fr)] xl:items-end">
-                        <div class="min-w-0 flex flex-col gap-1">
-                            <label class="ml-1 text-[10px] font-bold uppercase text-slate-400">Commodity Type</label>
-                            <div class="flex w-full rounded bg-white p-1 sm:w-max">
-                                <button
-                                    type="button"
-                                    class="rounded px-4 py-1 text-xs font-bold"
-                                    :class="commodityType === 'arabica' ? 'bg-[#004532] text-white' : 'text-slate-600'"
-                                    @click="commodityType = 'arabica'"
-                                >
-                                    Arabica
-                                </button>
-                                <button
-                                    type="button"
-                                    class="rounded px-4 py-1 text-xs font-bold"
-                                    :class="commodityType === 'robusta' ? 'bg-[#004532] text-white' : 'text-slate-600'"
-                                    @click="commodityType = 'robusta'"
-                                >
-                                    Robusta
-                                </button>
-                            </div>
-                        </div>
+        <div class="market-terminal-page">
+            <div class="market-terminal-shell">
+                <section class="market-terminal-topnav">
+                    <nav class="market-terminal-tabs">
+                        <a href="#" class="market-terminal-tab is-active">Markets</a>
+                        <a href="#" class="market-terminal-tab">Analytics</a>
+                        <a href="#" class="market-terminal-tab">Portfolio</a>
+                    </nav>
+                </section>
 
-                        <div class="min-w-0 flex flex-col gap-1">
-                            <label class="ml-1 text-[10px] font-bold uppercase text-slate-400">Origin Region</label>
-                            <select class="w-full rounded border-none bg-white py-2 pr-10 text-xs font-medium focus:ring-1 focus:ring-[#004532]">
-                                <option>All Global Origins</option>
-                                <option>East Africa</option>
-                                <option>Central America</option>
-                                <option>South America</option>
-                                <option>Southeast Asia</option>
-                            </select>
-                        </div>
+                <section class="market-heading-card">
+                    <div>
+                        <h1 class="market-heading-title">Market Terminal</h1>
+                        <p class="market-heading-copy">
+                            Real-time auction of institutional-grade specialty lots.
+                        </p>
+                    </div>
 
-                        <div class="min-w-0 flex flex-col gap-1">
-                            <label class="ml-1 text-[10px] font-bold uppercase text-slate-400">SCAA Minimum</label>
-                            <select class="w-full rounded border-none bg-white py-2 pr-10 text-xs font-medium focus:ring-1 focus:ring-[#004532]">
-                                <option>80+ Specialty</option>
-                                <option>84+ Premium</option>
-                                <option>88+ Rare</option>
-                            </select>
-                        </div>
+                    <div class="market-heading-filters">
+                        <el-select v-model="region" placeholder="Region">
+                            <el-option label="Region: Global" value="global" />
+                            <el-option label="Africa" value="africa" />
+                        </el-select>
 
-                        <div class="min-w-0 flex flex-col gap-1 xl:justify-self-end">
-                            <label class="ml-1 text-[10px] font-bold uppercase text-slate-400">Sort By</label>
-                            <select class="w-full rounded border-none bg-white py-2 pr-10 text-xs font-medium focus:ring-1 focus:ring-[#004532] xl:min-w-[180px]">
-                                <option>Highest Score</option>
-                                <option>Ending Soon</option>
-                                <option>Price: Low to High</option>
-                            </select>
-                        </div>
-                    </section>
+                        <el-select v-model="grade" placeholder="Grade">
+                            <el-option label="Grade: Specialty (86+)" value="specialty" />
+                            <el-option label="Grade: Premium" value="premium" />
+                            <el-option label="Grade: All" value="all" />
+                        </el-select>
 
-                    <section class="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
-                        <div class="border-b border-[#EEF2F7] bg-[#F8FAFC] px-4 py-4">
-                            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                                <div>
-                                    <div class="text-[18px] font-bold tracking-tight text-[#191C1E]">Live market board</div>
-                                    <p class="mt-1 text-[13px] text-[#64748B]">
-                                        Structured by lot identity, producer profile, cup quality, bid level, and time pressure.
-                                    </p>
-                                </div>
-                                <div class="font-mono text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]">
-                                    {{ filteredRows.length }} active listings
-                                </div>
-                            </div>
-                        </div>
+                        <button type="button" class="market-filter-icon" aria-label="Advanced filters">
+                            <el-icon><Operation /></el-icon>
+                        </button>
+                    </div>
+                </section>
 
-                        <div v-if="filteredRows.length" class="space-y-3 p-3.5 sm:p-4 lg:hidden">
-                            <article
-                                v-for="row in filteredRows"
-                                :key="`mobile-${row.id}`"
-                                class="rounded-2xl border border-[#E5E7EB] bg-[#FCFCFC] p-3.5"
-                            >
-                                <div class="flex items-start justify-between gap-3">
-                                    <div class="min-w-0">
-                                        <div class="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400">{{ row.id }}</div>
-                                        <div class="mt-2 flex items-center gap-3">
-                                            <span class="text-xl">{{ row.icon }}</span>
-                                            <div class="min-w-0">
-                                                <p class="text-[14px] font-bold text-[#191C1E]">{{ row.name }}</p>
-                                                <p class="text-[11px] text-slate-400">{{ row.meta }}</p>
+                <section class="market-board-card">
+                    <div class="market-table-wrap">
+                        <table class="market-board-table">
+                            <thead>
+                                <tr>
+                                    <th>Lot ID</th>
+                                    <th>Origin</th>
+                                    <th>Variety / Process</th>
+                                    <th>SCAA Score</th>
+                                    <th>Current Bid</th>
+                                    <th class="text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody v-if="filteredLots.length">
+                                <tr v-for="lot in filteredLots" :key="lot.id">
+                                    <td>
+                                        <div class="market-lot-id">{{ lot.id }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="market-origin-cell">
+                                            <span class="market-origin-flag">{{ lot.flag }}</span>
+                                            <div>
+                                                <div class="market-origin-name">{{ lot.origin }}</div>
+                                                <div class="market-origin-estate">{{ lot.estate }}</div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <span class="rounded bg-[#A6F2D1] px-2 py-1 text-[10px] font-medium text-[#002116]">
-                                        {{ row.variety }}
-                                    </span>
-                                </div>
-
-                                <div class="mt-4 grid grid-cols-2 gap-3">
-                                    <div class="rounded-xl bg-white px-3 py-2.5">
-                                        <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-slate-400">Cup score</div>
-                                        <div class="mt-2 text-[16px] font-black text-emerald-900">{{ row.score }}</div>
-                                    </div>
-                                    <div class="rounded-xl bg-white px-3 py-2.5">
-                                        <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-slate-400">Current bid</div>
-                                        <div class="mt-2 text-[15px] font-bold text-[#191C1E]">{{ row.bid }} <span class="text-[10px] text-slate-400">/lb</span></div>
-                                        <div class="mt-1 text-[10px]" :class="row.bids === '0 bids' ? 'text-slate-400' : 'text-emerald-600'">{{ row.bids }}</div>
-                                    </div>
-                                    <div class="rounded-xl bg-white px-3 py-2.5">
-                                        <div class="font-mono text-[9px] uppercase tracking-[0.14em] text-slate-400">Time remaining</div>
-                                        <div class="mt-2 flex items-center gap-2 text-[12px] font-bold" :class="row.timeClass">
-                                            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                                <circle cx="12" cy="12" r="8" />
-                                                <path d="M12 8v4.5l3 2" />
-                                            </svg>
-                                            <span>{{ row.time }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-end">
-                                        <button class="w-full rounded bg-[#004532] px-4 py-2.5 text-xs font-bold text-white">
-                                            Place Bid
-                                        </button>
-                                    </div>
-                                </div>
-                            </article>
-                        </div>
-
-                        <div v-else class="p-8 text-center">
-                            <div class="text-[15px] font-semibold text-[#191C1E]">No market listings available</div>
-                            <p class="mt-1 text-[13px] text-[#64748B]">Change the commodity filter to see more lots.</p>
-                        </div>
-
-                        <div v-if="filteredRows.length" class="hidden overflow-x-auto lg:block">
-                            <table class="min-w-full table-fixed border-collapse text-left">
-                                <colgroup>
-                                    <col class="w-[12%]" />
-                                    <col class="w-[32%]" />
-                                    <col class="w-[15%]" />
-                                    <col class="w-[10%]" />
-                                    <col class="w-[14%]" />
-                                    <col class="w-[10%]" />
-                                    <col class="w-[7%]" />
-                                </colgroup>
-                                <thead>
-                                    <tr class="bg-[#F8FAFC] text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                        <th class="px-4 py-3">Lot ID</th>
-                                        <th class="px-4 py-3">Origin / Farm</th>
-                                        <th class="px-4 py-3">Variety</th>
-                                        <th class="px-3 py-3 text-center">SCAA Score</th>
-                                        <th class="px-4 py-3">Current Bid</th>
-                                        <th class="px-3 py-3">Time Remaining</th>
-                                        <th class="px-4 py-3 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100">
-                                    <tr
-                                        v-for="row in filteredRows"
-                                        :key="row.id"
-                                        class="align-top transition-colors hover:bg-slate-50"
-                                    >
-                                        <td class="px-4 py-3.5">
-                                            <div class="font-mono text-[11px] font-medium text-slate-500">{{ row.id }}</div>
-                                        </td>
-                                        <td class="px-4 py-3.5">
-                                            <div class="flex items-start gap-3">
-                                                <span class="mt-0.5 text-xl">{{ row.icon }}</span>
-                                                <div class="min-w-0">
-                                                    <p class="truncate text-sm font-bold text-[#191C1E]">{{ row.name }}</p>
-                                                    <p class="mt-1 text-[11px] leading-relaxed text-slate-400">{{ row.meta }}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-3.5">
-                                            <span class="inline-flex rounded bg-[#A6F2D1] px-2 py-1 text-[11px] font-medium text-[#002116]">
-                                                {{ row.variety }}
+                                    </td>
+                                    <td>
+                                        <div class="market-tag-row">
+                                            <span
+                                                v-for="tag in lot.tags"
+                                                :key="`${lot.id}-${tag}`"
+                                                class="market-tag-chip"
+                                                :class="{ 'market-tag-chip--amber': tag === 'Anaerobic' || tag === 'Natural' }"
+                                            >
+                                                {{ tag }}
                                             </span>
-                                        </td>
-                                        <td class="px-3 py-3.5 text-center">
-                                            <span class="text-[15px] font-black text-emerald-900">{{ row.score }}</span>
-                                        </td>
-                                        <td class="px-4 py-3.5">
-                                            <p class="text-sm font-bold text-[#191C1E]">{{ row.bid }} <span class="text-[10px] text-slate-400">/lb</span></p>
-                                            <p class="mt-1 text-[10px]" :class="row.bids === '0 bids' ? 'text-slate-400' : 'text-emerald-600'">{{ row.bids }}</p>
-                                        </td>
-                                        <td class="px-3 py-3.5">
-                                            <div class="flex items-center gap-2 text-[12px] font-bold" :class="row.timeClass">
-                                                <svg class="size-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                                    <circle cx="12" cy="12" r="8" />
-                                                    <path d="M12 8v4.5l3 2" />
-                                                </svg>
-                                                <span>{{ row.time }}</span>
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-3.5 text-right">
-                                            <button class="rounded bg-[#004532] px-3.5 py-2 text-[11px] font-bold text-white">
-                                                Place Bid
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-                </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="market-score-value">{{ lot.score }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="market-bid-value">{{ lot.bid }} <span>/ lb</span></div>
+                                        <div class="market-bid-meta">{{ lot.bidMeta }}</div>
+                                    </td>
+                                    <td class="text-right">
+                                        <button type="button" class="market-bid-button">Bid</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                <aside class="w-full space-y-5 xl:w-80 xl:flex-shrink-0">
-                    <section class="rounded-xl border border-[#E5E7EB] bg-[#F2F4F6] p-4">
-                        <h4 class="mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Market Sentiment</h4>
-                        <div class="mb-4 flex items-center justify-between">
-                            <span class="text-xl font-bold text-emerald-900">Strongly Bullish</span>
-                            <svg class="size-6 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M4 18h16" />
-                                <path d="M7 14l3-3 3 2 4-5" />
-                            </svg>
-                        </div>
-                        <div class="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-                            <div class="h-full w-4/5 bg-emerald-600"></div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <p class="text-[10px] font-bold uppercase text-slate-400">24h Vol</p>
-                                <p class="text-sm font-bold text-[#191C1E]">1.2M Lbs</p>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold uppercase text-slate-400">Volatility</p>
-                                <p class="text-sm font-bold text-[#191C1E]">Low (4.2%)</p>
-                            </div>
-                        </div>
-                    </section>
+                    <div v-if="!filteredLots.length" class="market-empty-state">
+                        <div class="market-empty-state__title">No lots in this market view</div>
+                        <p class="market-empty-state__copy">
+                            Try a different region or grade filter to load more auction inventory.
+                        </p>
+                    </div>
+                </section>
 
-                    <section class="relative min-h-[240px] overflow-hidden rounded-xl bg-[#004532] p-4 text-white">
-                        <img
-                            class="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-overlay"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS887NIN4be9-_oSo9zD1pYSeYic8J9IZcxbMKXpnvX2XBpApYH70HQl7wY_SUvqFQQFMI9Z9Q3ebJQRDDwTwR6a9vb7hpCm9PuRV3vhUVqzGlKlUKKQRYqj0Q5cc7dS6T-1Gelgi1bE8X4Rf84MMUhmBirxU5Czyifh_RgOFRktXsnQ_i8hpVgGeQpveP-7NQwk2YjCAnKcRwR-gGH8llWqyZsom13EG8Ch1cBi3w2_K4NPOB_RHoprvnaYlyaZQDju5X-_ubTrgq"
-                            alt="Coffee beans background"
-                        />
-                        <div class="relative z-10 flex h-full flex-col">
-                            <h4 class="mb-2 text-[10px] font-bold uppercase tracking-widest text-emerald-200">Regional Insight</h4>
-                            <p class="mb-4 text-lg font-bold leading-tight">East African Harvest Yields Peak Quality</p>
-                            <p class="mb-6 text-xs leading-relaxed text-emerald-100">
-                                Early samples from Rwanda and Kenya show a 15% increase in Specialty Grade (85+) compared to previous season.
-                            </p>
-                            <button class="mt-auto rounded border border-white/20 bg-white/20 py-2 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-md transition-all hover:bg-white/30">
-                                Read Report
-                            </button>
-                        </div>
-                    </section>
+                <footer class="market-terminal-footer">
+                    <div class="market-terminal-footer__left">
+                        <span>© 2024 Scientific Atelier Trading AG</span>
+                        <span>Terms of Settlement</span>
+                        <span>Quality Assurance Protocol</span>
+                    </div>
 
-                    <section class="rounded-xl border border-[#E5E7EB] bg-white p-4">
-                        <h4 class="mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Live Alerts</h4>
-                        <div class="flex flex-col gap-4">
-                            <div
-                                v-for="alert in alerts"
-                                :key="alert.title"
-                                class="flex gap-3"
-                            >
-                                <div class="mt-1 h-2 w-2 rounded-full" :class="alert.dot"></div>
-                                <div>
-                                    <p class="text-xs font-bold leading-tight text-[#191C1E]">{{ alert.title }}</p>
-                                    <p class="mt-0.5 text-[10px] text-slate-400">{{ alert.detail }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="group flex cursor-pointer items-center justify-between rounded-xl bg-[#F2F4F6] p-4 transition-all hover:bg-[#E6E8EA]">
-                        <div class="flex items-center gap-3">
-                            <div class="flex h-8 w-8 items-center justify-center rounded bg-white">
-                                <svg class="size-5 text-[#004532]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
-                                    <path d="M9.5 12.5l1.5 1.5 3.5-3.5" />
-                                </svg>
-                            </div>
-                            <span class="text-xs font-bold uppercase text-[#191C1E]">Live Desk Support</span>
-                        </div>
-                        <svg class="size-5 text-slate-300 transition-colors group-hover:text-[#004532]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M9 6l6 6-6 6" />
-                        </svg>
-                    </section>
-                </aside>
+                    <div class="market-terminal-footer__right">
+                        <span class="market-terminal-footer__dot"></span>
+                        <span>Direct Node Connected · Latency 14ms</span>
+                    </div>
+                </footer>
             </div>
         </div>
     </AppLayout>
 </template>
 
 <style scoped>
-.market-page :where(h1, h2, h3, h4, p) {
+.market-terminal-page {
+    background: #fff;
+}
+
+.market-terminal-shell {
+    margin: 0 auto;
+    max-width: 1320px;
+    padding: 10px 10px 30px;
+}
+
+.market-terminal-topnav {
+    margin-bottom: 16px;
+}
+
+.market-terminal-tabs {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+.market-terminal-tab {
+    border-bottom: 2px solid transparent;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 0 8px;
+    text-decoration: none;
+}
+
+.market-terminal-tab.is-active {
+    border-color: #14532d;
+    color: #14532d;
+}
+
+.market-heading-card {
+    align-items: end;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
+    margin-bottom: 16px;
+}
+
+.market-heading-title {
+    color: #14532d;
+    font-size: clamp(1.65rem, 2.15vw, 2.5rem);
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    margin: 0 0 8px;
+}
+
+.market-heading-copy {
+    color: #4b5563;
+    font-size: 14px;
+    line-height: 1.6;
     margin: 0;
 }
 
-.market-page :where(button, select, table) {
-    font: inherit;
+.market-heading-filters {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
 }
 
-.market-page table {
-    margin-bottom: 0;
+.market-filter-icon {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    color: #475569;
+    display: inline-flex;
+    font-size: 15px;
+    height: 42px;
+    justify-content: center;
+    width: 100%;
+}
+
+.market-board-card {
+    background: #fff;
+    border: 1px solid #e9eef3;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.market-table-wrap {
+    overflow-x: auto;
+    padding: 0 14px;
+}
+
+.market-board-table {
+    border-collapse: collapse;
+    min-width: 920px;
+    width: 100%;
+}
+
+.market-board-table th {
+    color: #64748b;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 14px 0 12px;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.market-board-table td {
+    border-top: 1px solid #eef2f7;
+    color: #111827;
+    font-size: 14px;
+    padding: 16px 0;
+    vertical-align: middle;
+}
+
+.market-lot-id {
+    color: #14532d;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.market-origin-cell {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+}
+
+.market-origin-flag {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.market-origin-name {
+    color: #1f2937;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 3px;
+}
+
+.market-origin-estate {
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.market-tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.market-tag-chip {
+    background: #dff8ea;
+    border-radius: 6px;
+    color: #157347;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 4px 7px;
+    text-transform: uppercase;
+}
+
+.market-tag-chip--amber {
+    background: #fff1db;
+    color: #b66b0f;
+}
+
+.market-score-value {
+    color: #14532d;
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+.market-bid-value {
+    color: #1f2937;
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 4px;
+}
+
+.market-bid-value span,
+.market-bid-meta {
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.market-bid-button {
+    align-items: center;
+    background: #0f6b4c;
+    border: 0;
+    border-radius: 10px;
+    color: #fff;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 800;
+    height: 38px;
+    justify-content: center;
+    min-width: 68px;
+    padding: 0 14px;
+    text-transform: uppercase;
+}
+
+.market-empty-state {
+    padding: 26px 18px;
+    text-align: center;
+}
+
+.market-empty-state__title {
+    color: #111827;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.market-empty-state__copy {
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.market-terminal-footer {
+    align-items: center;
+    color: #94a3b8;
+    display: flex;
+    flex-wrap: wrap;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    gap: 14px;
+    justify-content: space-between;
+    letter-spacing: 0.08em;
+    margin-top: 14px;
+    text-transform: uppercase;
+}
+
+.market-terminal-footer__left,
+.market-terminal-footer__right {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.market-terminal-footer__dot {
+    background: #86b19a;
+    border-radius: 999px;
+    display: inline-block;
+    height: 7px;
+    width: 7px;
+}
+
+@media (min-width: 900px) {
+    .market-heading-card {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .market-heading-filters {
+        grid-template-columns: repeat(2, minmax(170px, 1fr)) 44px;
+    }
+
+    .market-filter-icon {
+        width: 44px;
+    }
+}
+
+@media (max-width: 767px) {
+    .market-terminal-shell {
+        padding: 10px 8px 24px;
+    }
+
+    .market-heading-title {
+        font-size: 1.95rem;
+    }
 }
 </style>
