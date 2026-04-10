@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             RoleMetadataSeeder::class,
             CropMetadataSeeder::class,
             CropVarietyMetadataSeeder::class,
+            RipenessGradeMetadataSeeder::class,
+            PickMethodMetadataSeeder::class,
         ]);
 
         // User::factory(10)->create();

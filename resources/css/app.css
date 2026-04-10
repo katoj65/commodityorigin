@@ -55,3 +55,45 @@
 :where(.dashboard-shell, .welcome-page, .auth-shell, .cart-page, .market-page, .bid-page, .farmer-bootstrap-page) :where(.btn, .btn-group > .btn, .table > :not(caption) > * > *) {
     margin: 0 !important;
 }
+
+.app-form-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.app-form-label {
+    margin-bottom: 0.5rem;
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.app-form-required {
+    color: #dc2626;
+}
+
+.app-form-control {
+    display: block;
+    width: 100%;
+}
+
+.app-form-control--spaced {
+    width: 100%;
+    margin-bottom: 14px;
+}
+
+.app-form-field .el-date-editor,
+.app-form-field .el-select,
+.app-form-field .el-input {
+    width: 100% !important;
+    max-width: 100%;
+}
+
+.app-form-field .el-date-editor {
+    display: flex !important;
+}
+
+.app-form-field .el-input__wrapper {
+    width: 100%;
+}

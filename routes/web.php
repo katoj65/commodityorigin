@@ -6,6 +6,7 @@ use App\Http\Controllers\Batch\BatchController;
 use App\Http\Controllers\Checkout\CheckoutController;
 use App\Http\Controllers\Cooperative\CooperativeController;
 use App\Http\Controllers\Farm\FarmController;
+use App\Http\Controllers\Harvest\HarvestController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Farmer\FarmerController;
@@ -71,6 +72,14 @@ Route::middleware([
     Route::prefix('batch')->name('batch.')->group(function () {
         Route::get('/create', [BatchController::class, 'create'])->name('create');
         Route::post('/', [BatchController::class, 'store'])->name('store');
+        Route::get('/{batch}', [BatchController::class, 'show'])->name('show');
+    });
+
+    // Harvest workspace routes.
+    Route::prefix('harvest')->name('harvest.')->group(function () {
+        Route::get('/create', [HarvestController::class, 'create'])->name('create');
+        Route::post('/', [HarvestController::class, 'store'])->name('store');
+        Route::get('/{harvest}', [HarvestController::class, 'show'])->name('show');
     });
 
     // Bid workspace routes.
