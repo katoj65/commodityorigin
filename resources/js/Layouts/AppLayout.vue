@@ -246,6 +246,15 @@ const sideSections = computed(() => [
                 icon: 'card',
             },
             {
+                label: 'Harvests',
+                href: route('harvest.index'),
+                active: route().current('harvest.*'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'harvest',
+            },
+            {
                 label: 'Grade Guide',
                 href: '#',
                 active: false,
@@ -677,6 +686,11 @@ onBeforeUnmount(() => {
                             <path d="M8.5 12h1" />
                             <path d="M14.5 12h1" />
                         </svg>
+                        <svg v-else-if="item.icon === 'harvest'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M18.5 3C13 3 8.8 4.8 6.4 7.3A8.8 8.8 0 004 13.7c0 2.2.7 4.3 2.1 6.1" />
+                            <path d="M7.1 19.8c1.3-1.9 3.2-3.1 5.3-3.1 4 0 7.3-3.3 7.3-7.3V3.9" />
+                            <path d="M8 20h8" />
+                        </svg>
                         <span class="snav-label">{{ item.label }}</span>
                         <span v-if="item.badge" class="snav-trailing">
                             <span class="snav-badge">{{ item.badge }}</span>
@@ -893,6 +907,11 @@ onBeforeUnmount(() => {
                             <path d="M3 9l9-5 9 5" />
                             <path d="M8.5 12h1" />
                             <path d="M14.5 12h1" />
+                        </svg>
+                        <svg v-else-if="item.icon === 'harvest'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M18.5 3C13 3 8.8 4.8 6.4 7.3A8.8 8.8 0 004 13.7c0 2.2.7 4.3 2.1 6.1" />
+                            <path d="M7.1 19.8c1.3-1.9 3.2-3.1 5.3-3.1 4 0 7.3-3.3 7.3-7.3V3.9" />
+                            <path d="M8 20h8" />
                         </svg>
                         <span class="snav-label">{{ item.label }}</span>
                         <span v-if="item.badge" class="snav-trailing">

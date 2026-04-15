@@ -16,6 +16,7 @@ class HarvestResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id,
             'farm_id' => $this->farm_id,
             'variety' => $this->variety,
             'date_planted' => optional($this->date_planted)?->toDateString(),

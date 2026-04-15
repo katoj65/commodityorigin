@@ -16,6 +16,7 @@ class Harvest extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'user_id',
         'farm_id',
         'variety',
         'date_planted',
@@ -44,5 +45,13 @@ class Harvest extends Model
     public function farm(): BelongsTo
     {
         return $this->belongsTo(Farm::class);
+    }
+
+    /**
+     * Get the user who created the harvest record.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

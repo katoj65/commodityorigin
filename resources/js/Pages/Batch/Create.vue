@@ -1,9 +1,12 @@
 <script setup>
-import { Head, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { Box, Document, Location, OfficeBuilding } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
+
+const page = usePage();
 
 const form = useForm({
     batch_number: '',
@@ -11,19 +14,19 @@ const form = useForm({
     quantity_bags: '',
     net_weight_kg: '',
     moisture_content: '',
-    status: 'received',
     notes: '',
 });
 
-const props = defineProps({
-    statusOptions: {
-        type: Array,
-        default: () => [],
-    },
-});
+const successMessage = computed(() => page.props.flash?.success ?? '');
+const hasErrors = computed(() => Object.keys(form.errors).length > 0);
 
 const submit = () => {
-    form.post(route('batch.store'));
+    form.post(route('batch.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset();
+        },
+    });
 };
 </script>
 
@@ -39,6 +42,7 @@ const submit = () => {
                         Register a warehouse batch against an existing lot and capture the operational details needed for inventory and settlement.
                     </p>
                 </div>
+
             </section>
 
             <section class="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_320px]">
@@ -75,18 +79,6 @@ const submit = () => {
                                 <InputError class="mt-2 text-sm" :message="form.errors.moisture_content" />
                             </div>
 
-                            <div class="md:col-span-2">
-                                <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Status</label>
-                                <el-select v-model="form.status" class="w-full" placeholder="Select batch status">
-                                    <el-option
-                                        v-for="status in props.statusOptions"
-                                        :key="status"
-                                        :label="status.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase())"
-                                        :value="status"
-                                    />
-                                </el-select>
-                                <InputError class="mt-2 text-sm" :message="form.errors.status" />
-                            </div>
                         </div>
 
                         <div>
@@ -143,7 +135,6 @@ const submit = () => {
                                     { label: 'Warehouse', value: form.warehouse_location || 'Not set' },
                                     { label: 'Net Weight', value: form.net_weight_kg ? `${form.net_weight_kg} kg` : 'Not set' },
                                     { label: 'Moisture', value: form.moisture_content ? `${form.moisture_content}%` : 'Pending test' },
-                                    { label: 'Status', value: form.status ? form.status.replaceAll('_', ' ') : 'Not set' },
                                 ]"
                                 :key="item.label"
                                 class="rounded-lg border border-[#E5E7EB] px-3.5 py-3"
@@ -152,8 +143,7 @@ const submit = () => {
                                     <el-icon class="text-[#0F5D3B]">
                                         <OfficeBuilding v-if="item.label === 'Warehouse'" />
                                         <Location v-else-if="item.label === 'Net Weight'" />
-                                        <Document v-else-if="item.label === 'Moisture'" />
-                                        <Box v-else />
+                                        <Document v-else />
                                     </el-icon>
                                     <span>{{ item.label }}</span>
                                 </div>

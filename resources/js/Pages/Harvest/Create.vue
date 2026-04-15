@@ -241,7 +241,7 @@ const submit = () => {
                                     Price <span class="app-form-required">*</span>
                                 </label>
                                 <el-input v-model="form.price" class="app-form-control" type="number" min="0.01" step="0.01" placeholder="e.g. 4.85">
-                                    <template #prefix>$</template>
+                                    <template #prefix>Shs.</template>
                                 </el-input>
                                 <InputError class="mt-2 text-sm" :message="form.errors.price" />
                             </div>

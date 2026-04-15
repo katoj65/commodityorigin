@@ -12,6 +12,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -96,5 +97,31 @@ class User extends Authenticatable
     public function profile(): HasOne
     {
         return $this->hasOne(UserProfile::class);
+    }
+
+    /**
+     * Determine whether the user has the given role.
+     */
+    public function hasRole(string $role): bool
+    {
+        return Str::lower((string) $this->role) === Str::lower($role);
+    }
+
+    /**
+     * Determine whether the user has any of the given roles.
+     *
+     * @param  array<int, string>  $roles
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        return collect($roles)->contains(fn (string $role): bool => $this->hasRole($role));
+    }
+
+    /**
+     * Determine whether the user is an administrator.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
     }
 }

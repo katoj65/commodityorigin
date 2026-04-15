@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#eff1f3",
+                    "error-container": "#ffdad6",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#f2f4f6",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed-variant": "#59422c",
+                    "on-secondary-fixed": "#291806",
+                    "on-primary-fixed": "#002116",
+                    "primary-fixed": "#a6f2d1",
+                    "on-surface-variant": "#3f4944",
+                    "surface-container-high": "#e6e8ea",
+                    "secondary": "#725a42",
+                    "primary-container": "#065f46",
+                    "tertiary-container": "#4b5369",
+                    "outline-variant": "#bec9c2",
+                    "on-secondary-container": "#796048",
+                    "surface-tint": "#1b6b51",
+                    "on-surface": "#191c1e",
+                    "on-primary-container": "#8bd6b7",
+                    "on-secondary": "#ffffff",
+                    "primary": "#004532",
+                    "inverse-surface": "#2d3133",
+                    "on-primary-fixed-variant": "#00513b",
+                    "on-error": "#ffffff",
+                    "background": "#f7f9fb",
+                    "on-background": "#191c1e",
+                    "secondary-fixed": "#fedcbe",
+                    "on-tertiary-container": "#bfc7e1",
+                    "on-tertiary-fixed-variant": "#3f465c",
+                    "inverse-primary": "#8bd6b6",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#bec6e0",
+                    "secondary-fixed-dim": "#e1c1a4",
+                    "primary-fixed-dim": "#8bd6b6",
+                    "surface": "#ffffff",
+                    "surface-dim": "#d8dadc",
+                    "surface-bright": "#ffffff",
+                    "tertiary": "#343c51",
+                    "surface-container-highest": "#e0e3e5",
+                    "outline": "#6f7973",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed": "#131b2e",
+                    "secondary-fixed": "#fedcbe",
+                    "tertiary-fixed": "#dae2fd",
+                    "surface-container": "#eceef0",
+                    "surface-variant": "#e0e3e5",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.4rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar Component -->
+<aside class="h-screen w-64 fixed left-0 top-0 flex flex-col bg-slate-50 border-r border-slate-100 z-50">
+<div class="flex flex-col h-full p-6">
+<div class="mb-10">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined">eco</span>
+</div>
+<div>
+<h2 class="text-lg font-black text-emerald-900 leading-tight">Origin Estates</h2>
+<p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Premium Grade A</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-slate-100 transition-all rounded-lg font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined">dashboard</span> Dashboard
+                </a>
+<a class="flex items-center gap-3 bg-emerald-50 text-emerald-900 px-4 py-3 rounded-lg font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined">eco</span> My Harvests
+                </a>
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-slate-100 transition-all rounded-lg font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined">verified</span> Certifications
+                </a>
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-slate-100 transition-all rounded-lg font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined">description</span> Contracts
+                </a>
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-slate-100 transition-all rounded-lg font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined">payments</span> Finances
+                </a>
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-slate-100 transition-all rounded-lg font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined">psychology</span> Origin Insights
+                </a>
+</nav>
+<div class="mt-auto pt-6 space-y-1">
+<button class="w-full bg-secondary-fixed text-on-secondary-fixed py-3 rounded-xl font-bold text-sm mb-6 transition-transform active:scale-95">
+                    Request Audit
+                </button>
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-slate-100 transition-all rounded-lg font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined">help_outline</span> Help Center
+                </a>
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-slate-100 transition-all rounded-lg font-manrope text-sm font-semibold text-error" href="#">
+<span class="material-symbols-outlined">logout</span> Log Out
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen">
+<!-- TopNavBar Component -->
+<header class="w-full sticky top-0 z-40 bg-white/80 backdrop-blur-md">
+<div class="flex justify-between items-center px-8 py-3 w-full">
+<div class="flex items-center gap-8">
+<h1 class="text-xl font-bold tracking-tighter text-emerald-900">CoffeeExchange</h1>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="bg-surface-container-low border-none rounded-full py-1.5 pl-9 pr-4 text-sm w-64 focus:ring-1 focus:ring-primary" placeholder="Search exchange..." type="text"/>
+</div>
+<nav class="hidden lg:flex items-center gap-6 font-manrope text-sm font-medium tracking-tight">
+<a class="text-slate-500 hover:text-emerald-700 transition-colors" href="#">Market</a>
+<a class="text-slate-500 hover:text-emerald-700 transition-colors" href="#">Logistics</a>
+<a class="text-slate-500 hover:text-emerald-700 transition-colors" href="#">Analytics</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-white px-5 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity">
+                        New Order
+                    </button>
+<div class="flex items-center gap-2 border-l pl-4 ml-2 border-slate-100">
+<span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-primary">notifications</span>
+<span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-primary">settings</span>
+<img alt="Farmer Profile Avatar" class="w-8 h-8 rounded-full ml-2 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDqmblpZ9YBNd1AtdgzsSZRgjCljoMaaMNPI_QFAGDJRJEuc5BsKJbrqFuehKGdX9ijevp3VsZ85nIWJJ4k02H967AnDjwB13eDTSN2r-iYEWEHwFYEWe9BXDudqg_LFvtSjizhHXeoDPEh_Rdw0AYMUODrTDmSPawqUnik5iC_xBRS1y1E3_0NyCiDHWZdNDD_AfJdDtIfTR9uLJOKYrx1DG0PA5iqZSbFwVQS3wtyCEbIL9CbEXuaXuAHZBmU_eQH5yVor5TZ8kE"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<div class="p-10 space-y-10 max-w-7xl mx-auto">
+<!-- Dashboard Header Section -->
+<div class="flex justify-between items-end">
+<div>
+<p class="text-primary font-bold text-sm tracking-widest uppercase mb-2">Producer Directory</p>
+<h2 class="text-4xl font-extrabold text-on-surface tracking-tight">Farmer Profile</h2>
+</div>
+<button class="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold hover:opacity-95 transition-all shadow-lg shadow-emerald-900/10">
+<span class="material-symbols-outlined">add_business</span> Add New Farm
+                </button>
+</div>
+<!-- Bento Profile Section -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Farmer Info Card -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-slate-100 rounded-xl p-8 flex flex-col md:flex-row gap-10">
+<div class="flex-shrink-0">
+<div class="relative">
+<img alt="Abebe Bikila" class="w-48 h-64 object-cover rounded-xl shadow-xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB94OMZEIWgA_NdUWh0ba9dcvznVS5vQgcYtcnJP0bVgOqLQvCziYfRrbnLBLz311rzUPQXFzbEACeoYhBGLw5W0ekedS6XQa0qD35zf24vTX7QIkYfVDHBUfJFy7_2frQ6a0BazOZ_vucFN5tcXoUJPgadMXz3GGsJ9fCMprW2XhqUz0fNT9tHK28SiMd8_sZbYG2RlTM93sjo-85e3XfK-vSIwRp2UgZbRC8MXEcL8Y1QJLPXtbHFC_i8LaYGi6UvFpzq6DXmpXEN"/>
+<div class="absolute -bottom-4 -right-4 bg-primary-fixed text-on-primary-fixed px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-md">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">verified</span> Verified
+                            </div>
+</div>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-3xl font-extrabold text-emerald-900 tracking-tight">Abebe Bikila</h3>
+<p class="text-secondary font-semibold">Master Producer • Yirgacheffe, Ethiopia</p>
+</div>
+<div class="flex gap-2">
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Specialty Grade</span>
+</div>
+</div>
+<div class="mt-6">
+<h4 class="text-xs uppercase font-black text-slate-400 tracking-[0.2em] mb-3">Farmer Brief</h4>
+<p class="text-on-surface-variant leading-relaxed text-lg italic">
+                                "Coffee is not just our export; it is our heritage. As a 3rd-generation producer in the Gedeo Zone, my commitment remains to the soil and the complex flavors it yields."
+                            </p>
+</div>
+</div>
+</div>
+<!-- Technical Stats Grid -->
+<div class="col-span-12 lg:col-span-4 grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low rounded-xl p-6 flex flex-col justify-between border border-transparent hover:border-emerald-100 transition-colors">
+<span class="material-symbols-outlined text-primary mb-2">analytics</span>
+<div>
+<p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Est. Yield</p>
+<p class="text-2xl font-black text-on-surface">420<span class="text-sm font-medium ml-1">MT</span></p>
+</div>
+</div>
+<div class="bg-primary rounded-xl p-6 flex flex-col justify-between text-white shadow-lg shadow-emerald-900/10">
+<span class="material-symbols-outlined text-primary-fixed mb-2">award_star</span>
+<div>
+<p class="text-[10px] uppercase font-bold text-emerald-200 tracking-wider">Avg Cup Score</p>
+<p class="text-2xl font-black">87.2</p>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-xl p-6 flex flex-col justify-between border border-transparent hover:border-emerald-100 transition-colors">
+<span class="material-symbols-outlined text-secondary mb-2">energy_savings_leaf</span>
+<div>
+<p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Sustainability</p>
+<p class="text-2xl font-black text-on-surface">94%</p>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-xl p-6 flex flex-col justify-between border border-transparent hover:border-emerald-100 transition-colors">
+<span class="material-symbols-outlined text-slate-500 mb-2">history_edu</span>
+<div>
+<p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Experience</p>
+<p class="text-2xl font-black text-on-surface">20+<span class="text-sm font-medium ml-1">Yrs</span></p>
+</div>
+</div>
+</div>
+</div>
+<!-- New Sections: Contact, Cooperative & Map -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Contact & Location Section -->
+<div class="col-span-12 md:col-span-4 bg-white border border-slate-100 rounded-xl p-6">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">contact_page</span>
+<h3 class="text-sm font-black uppercase tracking-widest text-slate-400">Contact &amp; Location</h3>
+</div>
+<div class="space-y-4">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Telephone</span>
+<span class="font-bold text-on-surface">+256 772 123 456</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Email</span>
+<span class="font-bold text-on-surface">abebe.bikila@originestates.com</span>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-2">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">District</span>
+<span class="font-bold text-on-surface">Gedeo</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Subcounty</span>
+<span class="font-bold text-on-surface">Yirgacheffe</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Cooperative & Production Section -->
+<div class="col-span-12 md:col-span-4 bg-white border border-slate-100 rounded-xl p-6">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">groups</span>
+<h3 class="text-sm font-black uppercase tracking-widest text-slate-400">Cooperative &amp; Production</h3>
+</div>
+<div class="space-y-4">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Cooperative</span>
+<span class="font-bold text-emerald-900 leading-snug">Yirgacheffe Coffee Farmers Cooperative Union (YCFCU)</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Coffee Variety</span>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold border border-emerald-100">Native Heirloom</span>
+<span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold border border-emerald-100">Kurume</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Integrated Visual Map Component -->
+<div class="col-span-12 md:col-span-4 bg-surface-container-high rounded-xl overflow-hidden relative group h-full min-h-[220px]">
+<img alt="Gedeo Zone Map" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTwT9s20_HZzW4ipmeY53hX-8tGNxk2Pem-S9I_MyaeLPvd726TP-ymgNiyByV3jFtrl4yIlvAgFmXHxu9pa__Hv2xGWStg0WoQk4kS-uHrPED1nQnVgsxKjLwzpsfiA3LI1iE1f1ItxFvJucVzRLYzebpVOdQwUsUaLxBlP2xs1BAoafkd2Sja86ggqvtHy0pGlBaffuvecqOqM9z5fMZoKA0HeDsjuje6alP_uL6fSReoJS_Ck3f6ojmyCHaSfcGciFmfvdFXpPQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-emerald-900/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-4 left-4 right-4">
+<div class="flex items-center gap-2 text-white">
+<span class="material-symbols-outlined text-primary-fixed" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<div>
+<p class="text-xs font-bold leading-none">Gedeo Zone</p>
+<p class="text-[10px] opacity-80 font-medium">Southern Nations, Ethiopia</p>
+</div>
+</div>
+</div>
+<div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-lg">
+<span class="material-symbols-outlined text-primary">map</span>
+</div>
+</div>
+</div>
+<!-- Main Content Rows -->
+<div class="grid grid-cols-12 gap-8 items-start">
+<!-- Managed Estates Section -->
+<div class="col-span-12 lg:col-span-8">
+<div class="mb-6 flex items-center justify-between">
+<h3 class="text-2xl font-bold tracking-tight">Managed Estates</h3>
+<a class="text-sm font-bold text-primary hover:underline" href="#">View All Stations</a>
+</div>
+<div class="space-y-4">
+<!-- Estate Card 1 -->
+<div class="bg-white border border-slate-100 p-5 rounded-xl flex items-center gap-6 group hover:border-emerald-200 transition-all shadow-sm">
+<div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+<img alt="Chelchele Station" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhvA6YRJvDrFhLelUPVrkEw-CtBvtUAeu2Td666CIWIu68QwqyqfbIFMQy8Mxw_lZ8vU7YHJL563V2PNnOFdCsty5uOR0_6BOxJx6JbMZjTMC1xwHmFqODLtoMeIK7ewgE4vQm9_wXG8hxRUQ76WHI_gIxlDzI7XsPUM5DDuP0Fi3WrEyqn_gJ9D0wVfRmHm7TYU2uVYorVpzm4qcwzJ5JqC1SZiTZsBkwq6s9wHAQN_OLYXqRJNalAuR-TkSxC5ri9aarwIWpAFGV"/>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-lg text-emerald-900">Chelchele Washing Station</h4>
+<span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded">ID: ET-GED-001</span>
+</div>
+<div class="flex gap-4 mt-2 text-sm text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">altitude</span> 1,950 - 2,100m</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">opacity</span> Washed / Natural</span>
+<span class="flex items-center gap-1 font-semibold text-primary"><span class="material-symbols-outlined text-xs">local_shipping</span> 12 containers ready</span>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<!-- Estate Card 2 -->
+<div class="bg-white border border-slate-100 p-5 rounded-xl flex items-center gap-6 group hover:border-emerald-200 transition-all shadow-sm">
+<div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+<img alt="Worka Sakaro" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6iMHlkfsvDLuMIPg-lEj7-QeJjZYL0wmyNh17bGUiFG-K65asf2yvcue3AcHXLumtcn3u7rFCsybiz4PXry6Sz-piHA6z28R52oTYBWRS_x1rjZYYVUSjRUix9Nt5XRBu5JJwt4zrjC0QZLs8yMT7rBKDkz9SwPQgeYdsg8-0ic6N16A2MQDkebVDK_4e-jxpWdrp2V1dzYweu3EIc3O6uNheOluwFNaHHNwHR4As3bK5YFTO9P0TRg37LLKwMSIW92iCDatQROFx"/>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-lg text-emerald-900">Worka Sakaro Forest</h4>
+<span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded">ID: ET-GED-044</span>
+</div>
+<div class="flex gap-4 mt-2 text-sm text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">altitude</span> 2,000 - 2,200m</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">opacity</span> Honey Process</span>
+<span class="flex items-center gap-1 font-semibold text-slate-500"><span class="material-symbols-outlined text-xs">schedule</span> In Harvest</span>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Sidebar Credentials Widget -->
+<div class="col-span-12 lg:col-span-4">
+<div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+<h4 class="text-xs uppercase font-black text-slate-400 tracking-[0.2em] mb-6">Credentials &amp; Certs</h4>
+<div class="space-y-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<div class="flex-grow">
+<p class="font-bold text-sm">Rainforest Alliance</p>
+<p class="text-[10px] text-slate-500 font-mono">ID: RFA-2024-8832</p>
+</div>
+<span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-orange-600" style="font-variation-settings: 'FILL' 1;">fluid_med</span>
+</div>
+<div class="flex-grow">
+<p class="font-bold text-sm">Organic Certified</p>
+<p class="text-[10px] text-slate-500 font-mono">ID: ORG-ETH-9912</p>
+</div>
+<span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-slate-50 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-600" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div class="flex-grow">
+<p class="font-bold text-sm">UCDA Licensed</p>
+<p class="text-[10px] text-slate-500 font-mono">ID: UCDA-EXP-440</p>
+</div>
+<span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span>
+</div>
+</div>
+<button class="w-full mt-8 py-3 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 font-bold text-xs hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">upload_file</span> Update Credentials
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,27 +1,34 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { Delete, Document, Van } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const cartItems = ref([
     {
-        id: 'LOT-UG-001',
-        name: 'Mount Elgon Sipi Falls',
-        score: 'SCAA 88.5',
-        region: 'UGANDA',
-        description: 'Notes of dark chocolate, brown sugar, and lemon zest. Harvested at 1,800m elevation. Grade A Micro-lot.',
-        units: 2,
-        unitPrice: 620,
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDv_vhmIorxO5TXHfY4x3mvxWbuX9RQy83ltILS7_Znxq5fvxI-Af9qAPgN5wgaIFsW3SpILtw5fP4_4RHBnrAN1hoGJ6K_oJPDsrhpRlJPQrHsyJqVXi7bRF1VJONSOLAiG2hff_cRXPZx30imH9z7qDIOPwif1o6pzkCvQVLbJMvIcJO6YoRd1gm0kWJd-m8xEmRAUHSdv-XePrjlP-jNVr3X7AggNZkF5_rFaGloIp9BhynvWLg4uk1mj71GfuBx5Hmi1FzxFK-_',
+        id: 'LOT-ET-001',
+        name: 'Ethiopia Yirgacheffe G1',
+        producer: 'Aramo Washing Station',
+        profile: 'Special Reserve',
+        score: '91.5',
+        variety: 'Heirloom',
+        process: 'Washed',
+        unitWeight: '60kg Bag',
+        quantity: 12,
+        pricePerLb: 4.85,
+        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVNPRKcnvtgsayf1-HlE1xA92LWW1C56Io3VMreh4aujnZTgd7RVNEZOyEqFGcffC6O3JdFFEczJbLDdWYhY3SPZ_97Ep-mSdEA6EpSHOYxQ4YC-9rWllkkDGEgrkRhX8fdY9yD34FR8UBs42K4RgVHEi6OXDt4QvP-hJgG1uWAZlyFMQ7HCYg9NcS7oQW5HysDvCK3FiXBDRpfkupmdW5tIy7o5GV8ZL8feaXnYtU6ZpDEAJvS_XKRffdezzJJCSUQeF2AHlDDapn',
     },
     {
-        id: 'LOT-ET-002',
-        name: 'Yirgacheffe G1 Chelchele',
-        score: 'SCAA 91.0',
-        region: 'ETHIOPIA',
-        description: 'Exceptional clarity with floral jasmine aroma and a vibrant berry acidity. High-altitude heirloom varieties.',
-        units: 1,
-        unitPrice: 890,
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVNPRKcnvtgsayf1-HlE1xA92LWW1C56Io3VMreh4aujnZTgd7RVNEZOyEqFGcffC6O3JdFFEczJbLDdWYhY3SPZ_97Ep-mSdEA6EpSHOYxQ4YC-9rWllkkDGEgrkRhX8fdY9yD34FR8UBs42K4RgVHEi6OXDt4QvP-hJgG1uWAZlyFMQ7HCYg9NcS7oQW5HysDvCK3FiXBDRpfkupmdW5tIy7o5GV8ZL8feaXnYtU6ZpDEAJvS_XKRffdezzJJCSUQeF2AHlDDapn',
+        id: 'LOT-CO-014',
+        name: 'Colombia Huila Pitalito',
+        producer: 'El Diviso Estate',
+        profile: 'Sidra Variety',
+        score: '89.2',
+        variety: 'Sidra',
+        process: 'Anaerobic',
+        unitWeight: '60kg Bag',
+        quantity: 8,
+        pricePerLb: 5.2,
+        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDv_vhmIorxO5TXHfY4x3mvxWbuX9RQy83ltILS7_Znxq5fvxI-Af9qAPgN5wgaIFsW3SpILtw5fP4_4RHBnrAN1hoGJ6K_oJPDsrhpRlJPQrHsyJqVXi7bRF1VJONSOLAiG2hff_cRXPZx30imH9z7qDIOPwif1o6pzkCvQVLbJMvIcJO6YoRd1gm0kWJd-m8xEmRAUHSdv-XePrjlP-jNVr3X7AggNZkF5_rFaGloIp9BhynvWLg4uk1mj71GfuBx5Hmi1FzxFK-_',
     },
 ]);
 
@@ -32,26 +39,28 @@ const formatCurrency = (value) =>
         minimumFractionDigits: 2,
     }).format(value);
 
-const lineTotal = (item) => item.units * item.unitPrice;
-const itemCount = computed(() => cartItems.value.length);
-const subtotal = computed(() => cartItems.value.reduce((sum, item) => sum + lineTotal(item), 0));
-const shipping = computed(() => (cartItems.value.length ? 45 : 0));
-const tax = computed(() => subtotal.value * 0.06);
-const total = computed(() => subtotal.value + shipping.value + tax.value);
+const subtotal = computed(() =>
+    cartItems.value.reduce((sum, item) => sum + item.quantity * item.pricePerLb * 154, 0),
+);
+const logistics = computed(() => (cartItems.value.length ? 642 : 0));
+const complianceFees = computed(() => 112.5);
+const total = computed(() => subtotal.value + logistics.value + complianceFees.value);
+const selectedVolume = computed(() => cartItems.value.reduce((sum, item) => sum + item.quantity * 60, 0));
+const totalBags = computed(() => cartItems.value.reduce((sum, item) => sum + item.quantity, 0));
 
-const increaseUnits = (id) => {
+const increaseQuantity = (id) => {
     const item = cartItems.value.find((entry) => entry.id === id);
 
     if (item) {
-        item.units += 1;
+        item.quantity += 1;
     }
 };
 
-const decreaseUnits = (id) => {
+const decreaseQuantity = (id) => {
     const item = cartItems.value.find((entry) => entry.id === id);
 
-    if (item && item.units > 1) {
-        item.units -= 1;
+    if (item && item.quantity > 1) {
+        item.quantity -= 1;
     }
 };
 
@@ -61,212 +70,624 @@ const removeItem = (id) => {
 </script>
 
 <template>
-    <AppLayout title="Shopping Cart">
-        <div class="cart-page bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] py-1 font-['Manrope',sans-serif] text-[#1f2937]">
-            <section class="mb-3 rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 shadow-[0_10px_28px_-26px_rgba(15,23,42,0.22)] sm:px-5">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <AppLayout title="Acquisition Basket" full-width>
+        <div class="basket-page">
+            <div class="basket-shell">
+                <section class="basket-header">
                     <div>
-                        <h1 class="font-display text-[20px] font-bold leading-none tracking-tight text-[#111827]">
-                            Shopping Cart
-                        </h1>
-                        <p class="mt-2 max-w-2xl text-[13px] leading-relaxed text-[#6B7280]">
-                            Review selected coffee lots, adjust unit quantities, and finalize the transaction from the settlement summary.
+                        <div class="basket-kicker">Exchange Pipeline</div>
+                        <h1 class="basket-title">Acquisition Basket</h1>
+                        <p class="basket-copy">
+                            Review institutional coffee lots currently staged for trade execution. All pricing reflects
+                            direct-trade transparency standards.
                         </p>
                     </div>
+                </section>
 
-                    <div class="flex flex-wrap gap-2">
-                        <div class="rounded-md border border-[#E5E7EB] bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
-                            {{ itemCount }} Lots
-                        </div>
-                        <div class="rounded-md border border-[#D7EEE4] bg-[#ECF8F1] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#2F6F58]">
-                            Trader Ready
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-5 xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-6">
-                <section class="rounded-[18px] border border-[#e8edf3] bg-white px-4 py-2.5 shadow-[0_16px_36px_-30px_rgba(15,23,42,0.24)] sm:px-6 sm:py-4">
-                    <div
-                        v-for="(item, index) in cartItems"
-                        :key="item.id"
-                        class="grid gap-4 py-4 transition-all duration-200 hover:translate-y-[-1px] lg:grid-cols-[150px_minmax(0,1fr)_118px] lg:gap-5"
-                        :class="index !== cartItems.length - 1 ? 'border-b border-[#f3f4f6]' : ''"
-                    >
-                        <div class="relative h-[154px] overflow-hidden rounded-[10px] border border-[#edf2f7] bg-[#f8fafc] shadow-[0_12px_24px_-20px_rgba(15,23,42,0.24)]">
-                            <img
-                                :src="item.image"
-                                :alt="item.name"
-                                class="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
-                            />
-                            <div class="absolute left-3 top-3 rounded-md bg-white/92 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#667085] shadow-sm">
-                                {{ item.id }}
+                <div class="basket-grid">
+                    <section class="basket-items-column">
+                        <article
+                            v-for="item in cartItems"
+                            :key="item.id"
+                            class="basket-item-card"
+                        >
+                            <div class="basket-item-media">
+                                <img :src="item.image" :alt="item.name" class="basket-item-image" />
                             </div>
-                        </div>
 
-                        <div class="min-w-0 lg:col-span-2 lg:grid lg:grid-cols-[minmax(0,1fr)_118px] lg:gap-5">
-                            <div>
-                                <div class="flex flex-col gap-3">
-                                    <div class="min-w-0">
-                                        <h2 class="text-[18px] font-semibold tracking-[-0.03em] text-[#1f2937]">
-                                            {{ item.name }}
-                                        </h2>
+                            <div class="basket-item-content">
+                                <div class="basket-item-top">
+                                    <div class="basket-item-main">
+                                        <h2 class="basket-item-title">{{ item.name }}</h2>
+                                        <p class="basket-item-subtitle">
+                                            {{ item.producer }} <span>•</span> {{ item.profile }}
+                                        </p>
+                                    </div>
 
-                                        <div class="mt-2.5 flex flex-wrap gap-2">
-                                            <span class="rounded-md bg-[#e8f7ef] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#2f6f58]">
-                                                {{ item.score }}
-                                            </span>
-                                            <span class="rounded-md bg-[#f3f4f6] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#8c919b]">
-                                                {{ item.region }}
-                                            </span>
+                                    <div class="basket-score-card">
+                                        <div class="basket-score-card__label">SCAA Score</div>
+                                        <div class="basket-score-card__value">{{ item.score }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="basket-spec-grid">
+                                    <div class="basket-spec">
+                                        <div class="basket-spec__label">Variety</div>
+                                        <div class="basket-spec__value">{{ item.variety }}</div>
+                                    </div>
+                                    <div class="basket-spec">
+                                        <div class="basket-spec__label">Process</div>
+                                        <div class="basket-spec__value">{{ item.process }}</div>
+                                    </div>
+                                    <div class="basket-spec">
+                                        <div class="basket-spec__label">Unit weight</div>
+                                        <div class="basket-spec__value">{{ item.unitWeight }}</div>
+                                    </div>
+                                    <div class="basket-spec basket-spec--quantity">
+                                        <div class="basket-spec__label">Quantity</div>
+                                        <div class="basket-quantity-picker">
+                                            <button type="button" @click="decreaseQuantity(item.id)">-</button>
+                                            <span>{{ item.quantity }}</span>
+                                            <button type="button" @click="increaseQuantity(item.id)">+</button>
                                         </div>
                                     </div>
                                 </div>
 
-                                <p class="mt-4 max-w-2xl text-[13px] leading-[1.75] text-[#6b7280]">
-                                    {{ item.description }}
-                                </p>
+                                <div class="basket-item-footer">
+                                    <div class="basket-item-actions">
+                                        <el-button class="basket-secondary-action" @click="removeItem(item.id)">
+                                            <el-icon><Delete /></el-icon>
+                                            <span>Remove</span>
+                                        </el-button>
+                                        <button type="button" class="basket-link-action">Save For Later</button>
+                                    </div>
 
-                                <div class="mt-3.5 flex flex-wrap gap-2">
-                                    <span class="rounded-md bg-[#F8FAFC] px-2.5 py-1 text-[10px] font-medium text-[#64748B]">Institutional Lot</span>
-                                    <span class="rounded-md bg-[#F8FAFC] px-2.5 py-1 text-[10px] font-medium text-[#64748B]">Export Verified</span>
-                                </div>
-
-                                <div class="mt-5 inline-flex items-center rounded-[10px] border border-[#e5e7eb] bg-white px-2 py-1 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.2)]">
-                                    <button
-                                        type="button"
-                                        class="flex h-8 w-8 items-center justify-center rounded-md text-[#6b7280] transition hover:bg-[#f8fafc] hover:text-[#1f2937]"
-                                        @click="decreaseUnits(item.id)"
-                                    >
-                                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M5 12h14" />
-                                        </svg>
-                                    </button>
-                                    <span class="min-w-9 px-2.5 text-center text-[19px] font-semibold tracking-[-0.04em] text-[#1f2937]">
-                                        {{ String(item.units).padStart(2, '0') }}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        class="flex h-8 w-8 items-center justify-center rounded-md text-[#6b7280] transition hover:bg-[#f8fafc] hover:text-[#1f2937]"
-                                        @click="increaseUnits(item.id)"
-                                    >
-                                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M12 5v14" />
-                                            <path d="M5 12h14" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="flex flex-col justify-between gap-4 lg:items-end">
-                                <div class="rounded-[12px] border border-[#edf2f7] bg-[#F8FAFC] px-3 py-2.5 text-left lg:min-w-[112px]">
-                                    <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-[#98A2B3]">Line Total</div>
-                                    <div class="mt-1 text-[18px] font-medium tracking-[-0.02em] text-[#1f2937]">
-                                    {{ formatCurrency(lineTotal(item)) }}
+                                    <div class="basket-price-block">
+                                        <div class="basket-price-block__label">Price per lb</div>
+                                        <div class="basket-price-block__value">${{ item.pricePerLb.toFixed(2) }}</div>
                                     </div>
                                 </div>
-                                <el-button
-                                    class="cart-remove-button lg:mb-1"
-                                    @click="removeItem(item.id)"
-                                >
-                                    <el-icon><Delete /></el-icon>
-                                    <span>Remove</span>
-                                </el-button>
+                            </div>
+                        </article>
+
+                        <div class="basket-return-row">
+                            <button type="button" class="basket-return-link">← Return to Marketplace</button>
+                            <div class="basket-volume-meta">
+                                <span>Selected Volume</span>
+                                <strong>{{ selectedVolume.toLocaleString() }}kg ({{ totalBags }} Bags)</strong>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
-                <aside class="xl:pt-0">
-                    <div class="sticky top-24 rounded-[18px] border border-[#e8edf3] bg-[#fcfcfb] px-4 py-4 shadow-[0_18px_42px_-32px_rgba(15,23,42,0.24)]">
-                        <p class="text-[15px] font-bold uppercase tracking-[0.24em] text-[#a0a7b3]">Summary</p>
-
-                        <div class="mt-4 rounded-[14px] border border-[#e3efe8] bg-[linear-gradient(135deg,#F8FBF9_0%,#EEF7F2_100%)] px-3.5 py-3">
-                            <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-[#7A8A85]">Order Overview</div>
-                            <div class="mt-2 flex items-end justify-between gap-3">
-                                <span class="text-[14px] text-[#6B7280]">{{ itemCount }} selected lots</span>
-                                <span class="text-[18px] font-semibold text-[#2f6f58]">{{ formatCurrency(subtotal) }}</span>
+                    <aside class="basket-summary-column">
+                        <section class="basket-summary-card">
+                            <div class="basket-summary-title">
+                                <span>Order Summary</span>
+                                <span class="basket-summary-badge"></span>
                             </div>
-                        </div>
 
-                        <div class="mt-5 space-y-4">
-                            <div class="flex items-center justify-between text-[15px] text-[#6b7280]">
-                                <span>Subtotal</span>
-                                <span class="font-semibold text-[#1f2937]">{{ formatCurrency(subtotal) }}</span>
+                            <div class="basket-summary-rows">
+                                <div class="basket-summary-row">
+                                    <span>Gross Commodity Total</span>
+                                    <strong>{{ formatCurrency(subtotal) }}</strong>
+                                </div>
+                                <div class="basket-summary-row">
+                                    <span>Logistics &amp; Insurance (Est.)</span>
+                                    <strong>{{ formatCurrency(logistics) }}</strong>
+                                </div>
+                                <div class="basket-summary-row">
+                                    <span>Compliance Fees &amp; Tax</span>
+                                    <strong>{{ formatCurrency(complianceFees) }}</strong>
+                                </div>
                             </div>
-                            <div class="flex items-center justify-between text-[15px] text-[#6b7280]">
-                                <span>Shipping</span>
-                                <span class="font-semibold text-[#1f2937]">{{ formatCurrency(shipping) }}</span>
+
+                            <div class="basket-total-block">
+                                <div class="basket-total-block__label">Estimated Total</div>
+                                <div class="basket-total-block__value">{{ formatCurrency(total) }}</div>
+                                <div class="basket-total-block__currency">USD</div>
                             </div>
-                            <div class="flex items-center justify-between text-[15px] text-[#6b7280]">
-                                <span>Tax</span>
-                                <span class="font-semibold text-[#1f2937]">{{ formatCurrency(tax) }}</span>
-                            </div>
-                        </div>
 
-                        <div class="my-5 border-t border-[#edf2f7]"></div>
-
-                        <div class="flex items-end justify-between gap-4">
-                            <span class="text-[16px] font-bold uppercase tracking-[0.14em] text-[#1f2937]">Total</span>
-                            <span class="text-[30px] font-extrabold leading-none tracking-[-0.05em] text-[#2f6f58]">
-                                {{ formatCurrency(total) }}
-                            </span>
-                        </div>
-
-                        <div class="pt-6">
-                            <el-button class="cart-finalize-button !inline-flex !w-full !items-center !justify-center !rounded-lg !border-[#2f6f58] !bg-[#2f6f58] !px-6 !py-3 !text-center !text-[13px] !font-bold !uppercase !tracking-[0.16em] !text-white hover:!border-[#285d4b] hover:!bg-[#285d4b]">
-                                Finalize Transaction
+                            <el-button class="basket-finalize-button">
+                                Finalize Order
+                                <span class="basket-finalize-arrow">→</span>
                             </el-button>
-                        </div>
 
-                        <div class="mt-4 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#a0a7b3]">
-                            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="5" y="11" width="14" height="9" rx="2" />
-                                <path d="M8 11V8a4 4 0 118 0v3" />
-                            </svg>
-                            <span>Secure Institutional Protocol</span>
-                        </div>
-                    </div>
-                </aside>
+                            <p class="basket-summary-note">
+                                By finalizing, you agree to the institutional trade protocols and standard shipping terms
+                                defined in the Master Service Agreement.
+                            </p>
+                        </section>
+
+                        <section class="basket-side-card">
+                            <div class="basket-side-card__title">
+                                <el-icon><Van /></el-icon>
+                                <span>Shipping Estimate</span>
+                            </div>
+                            <p class="basket-side-card__copy">
+                                Standard ocean freight ex-works. Estimated departure window: 7-10 business days.
+                            </p>
+                        </section>
+
+                        <section class="basket-side-card">
+                            <div class="basket-side-card__title">
+                                <el-icon><Document /></el-icon>
+                                <span>Line of Credit</span>
+                            </div>
+                            <p class="basket-side-card__copy">
+                                Tier 1 credit status active. Net-30 terms applied to this transaction.
+                            </p>
+                        </section>
+                    </aside>
+                </div>
             </div>
         </div>
     </AppLayout>
 </template>
 
 <style scoped>
-.cart-page :where(h1, h2, p) {
+.basket-page {
+    background: #fff;
+}
+
+.basket-shell {
+    margin: 0 auto;
+    max-width: 1320px;
+    padding: 10px 10px 30px;
+}
+
+.basket-header {
+    margin-bottom: 18px;
+}
+
+.basket-kicker {
+    color: #c28a3d;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.basket-title {
+    color: #111827;
+    font-size: clamp(1.6rem, 2vw, 2.35rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin: 0 0 10px;
+}
+
+.basket-copy {
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.65;
+    margin: 0;
+    max-width: 640px;
+}
+
+.basket-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.basket-items-column {
+    min-width: 0;
+}
+
+.basket-item-card {
+    background: #fff;
+    border: 1px solid #e9eef3;
+    border-radius: 16px;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 120px minmax(0, 1fr);
+    margin-bottom: 16px;
+    padding: 14px;
+}
+
+.basket-item-media {
+    overflow: hidden;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    height: 154px;
+}
+
+.basket-item-image {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.basket-item-content {
+    min-width: 0;
+}
+
+.basket-item-top {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    margin-bottom: 14px;
+}
+
+.basket-item-title {
+    color: #1f2937;
+    font-size: 1.12rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 8px;
+}
+
+.basket-item-subtitle {
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.55;
     margin: 0;
 }
 
-.cart-page :where(button) {
-    font: inherit;
+.basket-item-subtitle span {
+    margin: 0 5px;
 }
 
-.cart-finalize-button :deep(.el-button__text) {
-    width: 100%;
+.basket-score-card {
+    align-items: center;
+    background: #bdf3d4;
+    border-radius: 10px;
+    display: inline-flex;
+    gap: 10px;
+    justify-self: start;
+    padding: 9px 12px;
+}
+
+.basket-score-card__label {
+    color: #0f6b4c;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.basket-score-card__value {
+    color: #0f6b4c;
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.basket-spec-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 16px;
+}
+
+.basket-spec__label {
+    color: #94a3b8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.basket-spec__value {
+    color: #374151;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.basket-quantity-picker {
+    align-items: center;
+    display: inline-flex;
+    gap: 10px;
+}
+
+.basket-quantity-picker button {
+    background: transparent;
+    border: 0;
+    color: #64748b;
+    font-size: 18px;
+    height: 24px;
+    line-height: 1;
+    padding: 0;
+    width: 18px;
+}
+
+.basket-quantity-picker span {
+    color: #1f2937;
+    font-size: 14px;
+    font-weight: 800;
+    min-width: 16px;
     text-align: center;
 }
 
-.cart-remove-button {
-    --el-button-bg-color: #ffffff;
-    --el-button-border-color: #eef2f7;
-    --el-button-text-color: #6b7280;
-    --el-button-hover-bg-color: #f8fafc;
-    --el-button-hover-border-color: #e2e8f0;
-    --el-button-hover-text-color: #475569;
-    --el-button-active-bg-color: #f8fafc;
-    --el-button-active-border-color: #e2e8f0;
-    --el-button-active-text-color: #475569;
-    height: 34px;
-    padding: 0 12px;
-    border-radius: 0.5rem;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+.basket-item-footer {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: space-between;
 }
 
-.cart-remove-button :deep(.el-icon) {
-    margin-right: 0.15rem;
-    font-size: 0.9rem;
+.basket-item-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+:deep(.basket-secondary-action) {
+    --el-button-bg-color: #fff;
+    --el-button-border-color: transparent;
+    --el-button-text-color: #94a3b8;
+    --el-button-hover-bg-color: #f8fafc;
+    --el-button-hover-border-color: transparent;
+    --el-button-hover-text-color: #64748b;
+    --el-button-active-bg-color: #f8fafc;
+    --el-button-active-border-color: transparent;
+    --el-button-active-text-color: #64748b;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    height: 28px;
+    letter-spacing: 0.08em;
+    padding: 0 2px;
+    text-transform: uppercase;
+}
+
+.basket-link-action {
+    background: transparent;
+    border: 0;
+    color: #94a3b8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0;
+    text-transform: uppercase;
+}
+
+.basket-price-block {
+    text-align: right;
+}
+
+.basket-price-block__label {
+    color: #94a3b8;
+    font-size: 10px;
+    margin-bottom: 4px;
+}
+
+.basket-price-block__value {
+    color: #0f6b4c;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+.basket-summary-column {
+    display: grid;
+    gap: 14px;
+}
+
+.basket-summary-card {
+    background: #f8fafc;
+    border: 1px solid #e9eef3;
+    border-radius: 16px;
+    padding: 18px;
+}
+
+.basket-summary-title {
+    align-items: center;
+    color: #1f2937;
+    display: flex;
+    font-size: 1.35rem;
+    font-weight: 800;
+    justify-content: space-between;
+    letter-spacing: -0.03em;
+    margin-bottom: 18px;
+}
+
+.basket-summary-badge {
+    background: #0f6b4c;
+    border-radius: 999px;
+    display: inline-block;
+    height: 10px;
+    width: 10px;
+}
+
+.basket-summary-rows {
+    display: grid;
+    gap: 14px;
+}
+
+.basket-summary-row {
+    align-items: start;
+    color: #6b7280;
+    display: flex;
+    font-size: 13px;
+    justify-content: space-between;
+    gap: 16px;
+    line-height: 1.5;
+}
+
+.basket-summary-row strong {
+    color: #374151;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.basket-total-block {
+    border-top: 1px solid #e5e7eb;
+    margin-top: 16px;
+    padding-top: 16px;
+}
+
+.basket-total-block__label {
+    color: #94a3b8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.basket-total-block__value {
+    color: #1f2937;
+    font-size: 2.35rem;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    line-height: 1;
+}
+
+.basket-total-block__currency {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 4px;
+    text-transform: uppercase;
+}
+
+:deep(.basket-finalize-button) {
+    --el-button-bg-color: #0f6b4c;
+    --el-button-border-color: #0f6b4c;
+    --el-button-text-color: #ffffff;
+    --el-button-hover-bg-color: #0b5139;
+    --el-button-hover-border-color: #0b5139;
+    --el-button-active-bg-color: #0b5139;
+    --el-button-active-border-color: #0b5139;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    height: 46px;
+    margin-top: 18px;
+    text-transform: uppercase;
+    width: 100%;
+}
+
+.basket-finalize-arrow {
+    margin-left: 8px;
+}
+
+.basket-summary-note {
+    color: #9ca3af;
+    font-size: 11px;
+    line-height: 1.6;
+    margin: 14px 0 0;
+}
+
+.basket-side-card {
+    background: #fff;
+    border: 1px solid #e9eef3;
+    border-radius: 14px;
+    padding: 14px 16px;
+}
+
+.basket-side-card__title {
+    align-items: center;
+    color: #374151;
+    display: inline-flex;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    gap: 8px;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.basket-side-card__copy {
+    color: #6b7280;
+    font-size: 12px;
+    line-height: 1.65;
+    margin: 0;
+}
+
+.basket-return-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: space-between;
+    padding: 10px 2px 0;
+}
+
+.basket-return-link {
+    background: transparent;
+    border: 0;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 0;
+}
+
+.basket-volume-meta {
+    color: #94a3b8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-align: right;
+    text-transform: uppercase;
+}
+
+.basket-volume-meta strong {
+    color: #374151;
+    display: block;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0;
+    margin-top: 4px;
+    text-transform: none;
+}
+
+@media (min-width: 1024px) {
+    .basket-grid {
+        align-items: start;
+        grid-template-columns: minmax(0, 1.55fr) 330px;
+    }
+
+    .basket-summary-column {
+        position: sticky;
+        top: 92px;
+    }
+
+    .basket-item-top {
+        align-items: start;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .basket-spec-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767px) {
+    .basket-shell {
+        padding: 10px 8px 24px;
+    }
+
+    .basket-item-card {
+        grid-template-columns: 1fr;
+    }
+
+    .basket-item-media {
+        height: 220px;
+    }
+
+    .basket-title {
+        font-size: 1.85rem;
+    }
+
+    .basket-total-block__value {
+        font-size: 2rem;
+    }
 }
 </style>

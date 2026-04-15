@@ -408,9 +408,9 @@ const contactPerson = computed(() => props.cooperative.contact_person || 'Operat
 
 .coop-stat-value {
     color: #0f6b4c;
-    font-size: 1.55rem;
+    font-size: 1.18rem;
     font-weight: 800;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.02em;
     line-height: 1;
     margin-bottom: 6px;
 }

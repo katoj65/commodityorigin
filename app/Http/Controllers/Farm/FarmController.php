@@ -7,6 +7,7 @@ use App\Http\Resources\FarmResource;
 use App\Models\CropVarietyMetadata;
 use App\Models\Farm;
 use App\Models\Farmer;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;

@@ -118,21 +118,38 @@ const stationLabel = computed(() => {
 
     return location || 'Field Station';
 });
+const formatRangeLabel = (start, end) => {
+    const startDate = new Date(`${start}-01`);
+    const endDate = new Date(`${end}-01`);
+
+    if (start === end) {
+        return new Intl.DateTimeFormat('en-UG', {
+            month: 'short',
+        }).format(startDate);
+    }
+
+    const startMonth = new Intl.DateTimeFormat('en-UG', { month: 'short' }).format(startDate);
+    const endMonth = new Intl.DateTimeFormat('en-UG', { month: 'short' }).format(endDate);
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+
+    if (startYear === endYear) {
+        return `${startMonth}-${endMonth} ${endYear}`;
+    }
+
+    return `${startMonth} ${startYear}-${endMonth} ${endYear}`;
+};
+const usesLongRangeBuckets = computed(() => props.dateRange.some((range) => range.start !== range.end));
 const analyticsMonthLabels = computed(() => {
     if (props.dateRange.length > 0) {
-        return props.dateRange.map((month) => {
-            const [year, monthNumber] = month.split('-');
-
-            return new Intl.DateTimeFormat('en-UG', {
-                month: 'short',
-            }).format(new Date(Number(year), Number(monthNumber) - 1, 1));
-        });
+        return props.dateRange.map((range) => formatRangeLabel(range.start, range.end));
     }
 
     if (props.harvest.harvest_date) {
         return [
             new Intl.DateTimeFormat('en-UG', {
                 month: 'short',
+                ...(usesLongRangeBuckets.value ? { year: 'numeric' } : {}),
             }).format(new Date(props.harvest.harvest_date)),
         ];
     }
@@ -229,15 +246,12 @@ watch(
         <Head :title="harvestCode" />
         <div class="harvest-profile-page">
             <div class="harvest-profile-shell">
-
-                {{ props }}
-
                 <div class="harvest-profile-layout">
                     <main class="harvest-profile-main">
                         <section class="harvest-hero-card">
                             <div class="harvest-hero-card__content">
                                 <div class="harvest-hero-card__eyebrow">Farm Harvest Detail</div>
-                                <h1 class="harvest-hero-card__title">Harvest {{ props.harvest.id }}</h1>
+                                <h1 class="harvest-hero-card__title">H-{{ props.harvest.id }}</h1>
                                 <p class="harvest-hero-card__description">
                                     Institutional harvest intake from {{ farmName }} verified for quality and field traceability through the Commodity Origin workflow.
                                 </p>
@@ -269,9 +283,14 @@ watch(
                                 <div class="harvest-panel__header">
                                     <div>
                                         <div class="harvest-panel__title">Harvest Analytics</div>
-                                        <div class="harvest-panel__subtitle">Monthly progression from planted date to harvest date (kg)</div>
+                                        <div class="harvest-panel__subtitle">
+                                            {{ usesLongRangeBuckets ? 'Progression from planted date to harvest date (kg)' : 'Monthly progression from planted date to harvest date (kg)' }}
+                                        </div>
                                     </div>
-                                    <div class="harvest-panel__chip">{{ analyticsMonthLabels.length }}M <strong>{{ latestAnalyticsMonth }}</strong></div>
+                                    <!-- <div class="harvest-panel__chip">
+
+                                        <strong>{{ latestAnalyticsMonth }}</strong>
+                                    </div> -->
                                 </div>
 
                                 <div class="harvest-chart">
@@ -348,7 +367,7 @@ watch(
                         <div class="harvest-terminal-card__title">Execution Terminal</div>
 
                         <div class="harvest-terminal-card__price-label">Current Market Price</div>
-                        <div class="harvest-terminal-card__price">${{ currentPrice.toFixed(2) }}<span>/lb</span></div>
+                        <div class="harvest-terminal-card__price">Shs. {{ currentPrice.toFixed(2) }}<span></span></div>
                         <div class="harvest-terminal-card__delta">{{ priceChange }} since morning</div>
 
                         <div class="harvest-terminal-card__volume-block">

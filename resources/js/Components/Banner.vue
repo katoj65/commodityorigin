@@ -8,8 +8,20 @@ const style = ref('success');
 const message = ref('');
 
 watchEffect(async () => {
-    style.value = page.props.jetstream.flash?.bannerStyle || 'success';
-    message.value = page.props.jetstream.flash?.banner || '';
+    const appFlash = page.props.flash || {};
+    const jetstreamFlash = page.props.jetstream?.flash || {};
+
+    if (appFlash.error) {
+        style.value = 'danger';
+        message.value = appFlash.error;
+    } else if (appFlash.success) {
+        style.value = 'success';
+        message.value = appFlash.success;
+    } else {
+        style.value = jetstreamFlash.bannerStyle || 'success';
+        message.value = jetstreamFlash.banner || '';
+    }
+
     show.value = true;
 });
 </script>

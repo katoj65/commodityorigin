@@ -16,10 +16,11 @@ class Batch extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'user_id',
         'batch_number',
         'warehouse_location',
-        'quantity_bags',
-        'net_weight_kg',
+        'quantity',
+        'weight',
         'moisture_content',
         'status',
         'notes',

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Estate Intelligence | Mount Elgon Heights</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface": "#f7f9fb",
+                    "surface-container-low": "#f2f4f6",
+                    "on-tertiary-fixed-variant": "#3f465c",
+                    "surface-container-high": "#e6e8ea",
+                    "secondary-container": "#fedcbe",
+                    "on-error-container": "#93000a",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-tertiary-fixed": "#131b2e",
+                    "tertiary-fixed-dim": "#bec6e0",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#291806",
+                    "on-primary": "#ffffff",
+                    "on-surface-variant": "#3f4944",
+                    "primary-fixed": "#a6f2d1",
+                    "on-secondary-fixed-variant": "#59422c",
+                    "inverse-primary": "#8bd6b6",
+                    "surface-variant": "#e0e3e5",
+                    "on-secondary": "#ffffff",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-primary-container": "#8bd6b7",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#bfc7e1",
+                    "on-primary-fixed-variant": "#00513b",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-container": "#796048",
+                    "surface-container": "#eceef0",
+                    "inverse-surface": "#2d3133",
+                    "secondary": "#725a42",
+                    "surface-dim": "#d8dadc",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#f7f9fb",
+                    "tertiary": "#343c51",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#4b5369",
+                    "primary-fixed-dim": "#8bd6b6",
+                    "tertiary-fixed": "#dae2fd",
+                    "on-surface": "#191c1e",
+                    "primary-container": "#065f46",
+                    "outline": "#6f7973",
+                    "background": "#f7f9fb",
+                    "secondary-fixed": "#fedcbe",
+                    "primary": "#004532",
+                    "outline-variant": "#bec9c2",
+                    "surface-tint": "#1b6b51",
+                    "on-background": "#191c1e",
+                    "secondary-fixed-dim": "#e1c1a4",
+                    "on-primary-fixed": "#002116"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- Top Navigation -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm">
+<div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-emerald-900 dark:text-emerald-50 tracking-tight font-manrope">Estate Intelligence</span>
+<div class="hidden md:flex items-center space-gap-6 gap-6">
+<a class="text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors font-medium text-sm" href="#">Dashboard</a>
+<a class="text-emerald-900 dark:text-emerald-400 border-b-2 border-emerald-900 dark:border-emerald-400 pb-1 font-medium text-sm" href="#">Inventory</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors font-medium text-sm" href="#">Harvests</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors font-medium text-sm" href="#">Marketplace</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">settings</span>
+<img alt="Owner Profile" class="w-8 h-8 rounded-full border border-outline-variant/20" data-alt="close-up portrait of a professional farm owner in a clean linen shirt with soft natural lighting and blurred greenery" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqAZY3sUX6UniVPrJXY9uA9c1VbL8xN9Ugung3545B1WIU9BLUKsEqI2e_8SJbdLXPCvyce9dtMUqtrWyiY0pIaRTLY8wrE5yhIrdaLVPY3jn7KExIM2v4aLQGnreTiYfMsCKNrhDLFvR-0Hqy2s0KNwwB9Qvkj-OQBPuda_zSkowPbUYGsHU2zfck4O1uHawWW19QjvMFpydlMbFskoMm0X4NbuYnHaygBuH9bUNrA1Tfzrl0j8BbhZA343pykywXUa65ovxCweDE"/>
+</div>
+</div>
+</nav>
+<!-- Main Content Shell -->
+<div class="flex pt-16 min-h-screen">
+<!-- Sidebar -->
+<aside class="hidden lg:flex h-[calc(100vh-4rem)] w-64 bg-slate-50 dark:bg-slate-950 flex-col p-4 space-y-2 border-r border-slate-200 dark:border-slate-800 sticky top-16">
+<div class="flex items-center gap-3 px-3 py-4 mb-4">
+<div class="w-10 h-10 bg-primary-container flex items-center justify-center rounded-xl">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<div>
+<p class="text-sm font-extrabold text-emerald-900 leading-tight">Farm Profile</p>
+<p class="text-[10px] uppercase tracking-widest text-slate-500">Institutional Grade</p>
+</div>
+</div>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-200 transition-all rounded-lg font-medium text-sm" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span> Overview
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 bg-emerald-50 text-emerald-900 rounded-lg font-medium text-sm" href="#">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">eco</span> Sustainability
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-200 transition-all rounded-lg font-medium text-sm" href="#">
+<span class="material-symbols-outlined text-lg">assignment</span> Harvest Logs
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-200 transition-all rounded-lg font-medium text-sm" href="#">
+<span class="material-symbols-outlined text-lg">map</span> Estate Maps
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-200 transition-all rounded-lg font-medium text-sm" href="#">
+<span class="material-symbols-outlined text-lg">payments</span> Financials
+                </a>
+</nav>
+<div class="mt-auto p-4 bg-primary-container rounded-xl text-white">
+<p class="text-xs font-semibold mb-2 opacity-80">Active Season Report</p>
+<button class="w-full bg-white text-primary font-bold py-2 rounded text-xs transition-opacity hover:opacity-90">Export Report</button>
+</div>
+</aside>
+<!-- Canvas -->
+<main class="flex-1 overflow-x-hidden">
+<!-- Hero Section -->
+<section class="relative h-[614px] w-full overflow-hidden">
+<div class="absolute inset-0">
+<img alt="Mount Elgon Heights Hero" class="w-full h-full object-cover" data-alt="wide panoramic view of a lush coffee plantation on a mountain slope in Ethiopia at sunrise with mist in the valleys" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDejhEo26X_Jtgp8aODIczYkZe57GTQhTFs6D3QjWbc54CmFYsyBOu1mIAD7DIxYg-YnyBTKHe9tyXNtzz9Gwf-RJ05kIE_EPoBVv3bUswE9QdE0FMvBf2a__RNtQ9EEFy_2aTrmvx7uJCDqGIByAfgo8mNiQKQ2TJAipWGS02wHAIHP4bSvCEC7dMNhwtLwK_Xl6vVafTd2ciTEKs8ailZszGWZJalITF2DyjlpaS9crLiHzrxtEIpa6GNufF6hw2H4V5x8yDGSvOw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+</div>
+<div class="absolute bottom-0 left-0 p-12 w-full max-w-7xl mx-auto">
+<div class="flex items-end justify-between">
+<div>
+<span class="inline-block px-3 py-1 bg-primary-fixed text-on-primary-fixed text-[10px] font-bold uppercase tracking-widest rounded-sm mb-4">Origin Verified</span>
+<h1 class="text-6xl font-extrabold text-white tracking-tighter mb-2">Mount Elgon Heights</h1>
+<p class="text-white/80 font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">location_on</span> Gedeo Zone, Ethiopia
+                            </p>
+</div>
+<div class="hidden md:flex gap-4">
+<div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20">
+<p class="text-white/60 text-[10px] uppercase font-bold mb-1">Average Cup Score</p>
+<p class="text-2xl font-extrabold text-white">88.5</p>
+</div>
+<div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20">
+<p class="text-white/60 text-[10px] uppercase font-bold mb-1">Total Production</p>
+<p class="text-2xl font-extrabold text-white">420 Bags</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Content Grid -->
+<div class="max-w-7xl mx-auto px-6 py-20">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Intelligence & Profile -->
+<div class="lg:col-span-8 space-y-12">
+<!-- Estate Intelligence Bento -->
+<div class="space-y-6">
+<h2 class="text-3xl font-extrabold tracking-tight text-on-surface">Estate Intelligence</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+<div class="flex items-center gap-3 mb-4 text-primary">
+<span class="material-symbols-outlined">terrain</span>
+<span class="text-xs font-bold uppercase tracking-widest">Altitude Range</span>
+</div>
+<p class="text-2xl font-bold text-on-surface">1,950m – 2,100m</p>
+<p class="text-sm text-on-surface-variant mt-2">Optimal high-elevation growth profiles.</p>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+<div class="flex items-center gap-3 mb-4 text-primary">
+<span class="material-symbols-outlined">forest</span>
+<span class="text-xs font-bold uppercase tracking-widest">Tree Density</span>
+</div>
+<p class="text-2xl font-bold text-on-surface">2,800 Trees/Ha</p>
+<p class="text-sm text-on-surface-variant mt-2">Intensive agroforestry management.</p>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+<div class="flex items-center gap-3 mb-4 text-primary">
+<span class="material-symbols-outlined">layers</span>
+<span class="text-xs font-bold uppercase tracking-widest">Soil Composition</span>
+</div>
+<p class="text-2xl font-bold text-on-surface">Volcanic Red Clay</p>
+<p class="text-sm text-on-surface-variant mt-2">High mineral density &amp; drainage.</p>
+</div>
+</div>
+</div>
+<!-- Micro-climate & Interactive Map -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="bg-surface-container-low p-8 rounded-xl">
+<h3 class="text-xl font-bold mb-6">Micro-climate Data</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/10">
+<span class="text-on-surface-variant">Annual Rainfall</span>
+<span class="font-bold">1,850 mm</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/10">
+<span class="text-on-surface-variant">Avg. Temperature</span>
+<span class="font-bold">18.5°C - 24.2°C</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/10">
+<span class="text-on-surface-variant">Sunlight Exposure</span>
+<span class="font-bold">2,100 Hrs/Year</span>
+</div>
+<div class="flex justify-between items-center py-3">
+<span class="text-on-surface-variant">Humidity Index</span>
+<span class="font-bold">62%</span>
+</div>
+</div>
+</div>
+<div class="h-full min-h-[300px] rounded-xl overflow-hidden grayscale relative">
+<div class="absolute inset-0 bg-slate-200">
+<img alt="Map Location" class="w-full h-full object-cover" data-alt="abstract stylized topographic map showing elevation contours of a mountainous region in deep greens and slate grays" data-location="Gedeo Zone, Ethiopia" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAda0hL5hflwmdrwQ9zCZPJk8EvS0xN0mXNqLnY6qxZSowT_9LNAyN0KL-oZJGMNf-hexJFuNtyY8tJuvmA7shje6RkL_ZsPfO-kinuM82KoAg2Hrt4LIgJ7HWs8vrESddolZHcJOlHF1ORMeIakrS7Gae8fanctva_-GfxoyuBCtCrqW4KouuO7hzXmDKUJT5v2hJzM1_yxQVXDpfp7UCgTCOHCWqb48aC_XqpMrvEyjbijFPU4dTAzYzi8suQ78vkTcVixTZRmCZ0"/>
+</div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+<div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center border-4 border-white shadow-xl">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+</div>
+<div class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur p-3 rounded-lg flex items-center justify-between">
+<p class="text-xs font-bold text-on-surface">6.1245° N, 38.2144° E</p>
+<button class="text-primary font-bold text-[10px] uppercase tracking-wider">Open in Maps</button>
+</div>
+</div>
+</div>
+<!-- Production Data Table -->
+<div class="space-y-6">
+<h2 class="text-2xl font-extrabold tracking-tight text-on-surface">Harvests &amp; Production</h2>
+<div class="overflow-x-auto bg-surface-container-lowest rounded-xl shadow-sm">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Batch ID</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Variety</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center">Cup Score</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Volume</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 font-bold text-sm">#MEH-2024-01</td>
+<td class="px-6 py-4 text-sm"><span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed rounded text-xs font-medium">Heirloom</span></td>
+<td class="px-6 py-4 text-sm text-center font-bold">89.2</td>
+<td class="px-6 py-4 text-sm">120 bags</td>
+<td class="px-6 py-4 text-sm text-emerald-600 font-semibold">Shipped</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 font-bold text-sm">#MEH-2024-02</td>
+<td class="px-6 py-4 text-sm"><span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed rounded text-xs font-medium">74110</span></td>
+<td class="px-6 py-4 text-sm text-center font-bold">88.5</td>
+<td class="px-6 py-4 text-sm">150 bags</td>
+<td class="px-6 py-4 text-sm text-orange-600 font-semibold">In Storage</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 font-bold text-sm">#MEH-2024-03</td>
+<td class="px-6 py-4 text-sm"><span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed rounded text-xs font-medium">Heirloom</span></td>
+<td class="px-6 py-4 text-sm text-center font-bold">87.8</td>
+<td class="px-6 py-4 text-sm">150 bags</td>
+<td class="px-6 py-4 text-sm text-slate-400 font-semibold">Processing</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Column: Owner & Sustainability -->
+<div class="lg:col-span-4 space-y-8">
+<!-- Owner Profile Card -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
+<div class="flex flex-col items-center text-center mb-8">
+<img alt="Abebe Bikila" class="w-32 h-32 rounded-full object-cover mb-6 border-4 border-surface-container-low shadow-sm" data-alt="professional passport-style headshot of a dignified Ethiopian man in his 50s smiling warmly in front of a neutral backdrop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4e10COqZFqhDfHz35lAKUT8hXfii91DuNAUhu9GAOwakugizTgH0tMtPy9FG1K5lpBh-RhXYXMAH04PbJ1-y3nVfkAOq2nfVQTQOFGN05Q2M7yL4yZ1no1hXfNHanmHj9V3HF8M0neyLtEXiX8BhqwuJW-Jvq1I7Lv7qEXkRmDEHFEI4QPXJA5OmWThe7DUP3rqyFzTwHehEcJb_pojrSUzupto1OTUcQwD8rBFMpx1pi5oMeEWLFBBIVsbTh-rvBRVXQp7a8Z7Rf"/>
+<h3 class="text-2xl font-bold text-on-surface">Abebe Bikila</h3>
+<p class="text-primary font-bold text-xs uppercase tracking-widest">3rd Gen Producer</p>
+</div>
+<div class="space-y-6">
+<p class="text-sm text-on-surface-variant leading-relaxed italic">
+                                    "Carrying forward the legacy of high-elevation coffee since 1952. My grandfather planted the first trees on this ridge, and today we merge that tradition with technical precision."
+                                </p>
+<div class="pt-6 border-t border-outline-variant/10 space-y-3">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg">mail</span>
+<span class="text-sm font-medium">abebe.b@mountelgon.et</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg">call</span>
+<span class="text-sm font-medium">+251 911 555 123</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sustainability Scorecard -->
+<div class="bg-primary text-white p-8 rounded-xl shadow-lg relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+<h3 class="text-xl font-bold mb-8 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-fixed">verified</span> Sustainability Scorecard
+                            </h3>
+<div class="space-y-8">
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="text-xs font-bold uppercase tracking-widest opacity-80">Shade-grown Index</span>
+<span class="font-bold">94%</span>
+</div>
+<div class="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary-fixed w-[94%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="text-xs font-bold uppercase tracking-widest opacity-80">Water Intensity</span>
+<span class="font-bold">Low Impact</span>
+</div>
+<div class="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary-fixed w-[25%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="text-xs font-bold uppercase tracking-widest opacity-80">Carbon Footprint</span>
+<span class="font-bold">-2.4 CO2e/kg</span>
+</div>
+<div class="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary-fixed w-[15%]"></div>
+</div>
+</div>
+</div>
+<div class="mt-10 p-4 bg-white/5 border border-white/10 rounded-lg">
+<p class="text-[10px] leading-tight text-white/70">Mount Elgon Heights operates as a net-negative carbon estate utilizing natural wastewater filtration systems.</p>
+</div>
+</div>
+<!-- Quick Origin Tags -->
+<div class="bg-surface-container-low p-6 rounded-xl">
+<h3 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Farm Certification</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed text-[10px] font-bold rounded-full">Rainforest Alliance</span>
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed text-[10px] font-bold rounded-full">Organic Certified</span>
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed text-[10px] font-bold rounded-full">Fair Trade</span>
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed text-[10px] font-bold rounded-full">Bird Friendly</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-white dark:bg-slate-900 w-full py-12 border-t border-slate-100 dark:border-slate-800 mt-20">
+<div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="flex flex-col md:items-start items-center">
+<span class="text-xl font-bold text-emerald-900 dark:text-emerald-50 mb-2">Estate Intelligence</span>
+<p class="text-slate-400 font-manrope text-xs">© 2024 Coffee Exchange Platform. All rights reserved.</p>
+</div>
+<div class="flex gap-8">
+<a class="text-slate-400 hover:underline font-manrope text-xs" href="#">Privacy Policy</a>
+<a class="text-slate-400 hover:underline font-manrope text-xs" href="#">Terms of Service</a>
+<a class="text-emerald-800 dark:text-emerald-400 font-semibold font-manrope text-xs" href="#">Sustainability Standards</a>
+</div>
+</div>
+</footer>
+</body></html>

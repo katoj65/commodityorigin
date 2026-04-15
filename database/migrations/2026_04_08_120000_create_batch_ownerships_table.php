@@ -13,12 +13,10 @@ return new class extends Migration
     {
         Schema::create('batch_ownerships', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('batch_id')->constrained('batches')->cascadeOnDelete();
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('owner_id');
             $table->string('owner_type');
             $table->timestamps();
-
             $table->index('user_id');
             $table->index(['owner_id', 'owner_type']);
         });
