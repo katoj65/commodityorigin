@@ -1,58 +1,159 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Commodity Origin 🫘
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> **Crop to cup, fully traceable.** Commodity Origin is a coffee traceability platform that connects Ugandan coffee farmers to international buyers — with full supply chain transparency, compliance documentation, and origin verification at every step.
 
-## About Laravel
+![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=flat&logo=laravel&logoColor=white)
+![Vue.js](https://img.shields.io/badge/Vue.js-4FC08D?style=flat&logo=vuedotjs&logoColor=white)
+![Inertia.js](https://img.shields.io/badge/Inertia.js-7C3AED?style=flat&logo=inertia&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38BDF8?style=flat&logo=tailwindcss&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat&logo=mysql&logoColor=white)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+🌐 **Live:** [beanorigin.com](https://beanorigin.com) &nbsp;|&nbsp; 📁 **Repo:** [github.com/yourusername/commodity-origin](https://github.com/yourusername/commodity-origin)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## The Problem
 
-## Learning Laravel
+Uganda is one of Africa's top coffee producers, yet most farmers have no visibility beyond the farm gate — and buyers have no reliable way to verify the origin, quality, or compliance status of the coffee they purchase. This disconnect erodes trust, reduces farmer income, and makes export compliance a manual, error-prone process.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## What Commodity Origin Does
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Commodity Origin digitises the entire coffee supply chain — from farm registration to export documentation — giving every stakeholder a single source of truth.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+| Who | What they get |
+|---|---|
+| **Farmers** | Farm registration, harvest logging, income tracking |
+| **Exporters / Buyers** | Origin-verified batches, compliance documents, direct farmer profiles |
+| **Regulators / Auditors** | Full traceability records and export compliance reports |
 
-## Agentic Development
+### Core Features
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- **Farm & Farmer Registry** — Onboard farmers with geo-tagged farm profiles, variety and acreage data
+- **Harvest & Batch Tracking** — Log harvests, processing methods, and batch weights at every stage
+- **Origin Verification** — Each coffee batch gets a unique traceability ID linking it back to a specific farm and farmer
+- **Buyer–Farmer Marketplace** — Connects verified farmers directly to buyers with transparent pricing
+- **Export Compliance** — Generates and manages export documentation to meet Uganda Coffee Development Authority (UCDA) standards
+- **Reporting & Analytics** — Dashboard for production trends, batch histories, and farmer earnings
 
-```bash
-composer require laravel/boost --dev
+---
 
-php artisan boost:install
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Laravel 10 |
+| Frontend | Vue.js 3 + Inertia.js |
+| Styling | Tailwind CSS |
+| Database | MySQL |
+| Architecture | Monolith SPA via Inertia (no separate API layer) |
+
+---
+
+## Screenshots
+
+> *(Add screenshots here — farm dashboard, batch tracking view, buyer marketplace)*
+
+```
+/screenshots
+  ├── dashboard.png
+  ├── farm-profile.png
+  ├── batch-tracking.png
+  └── marketplace.png
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## Getting Started
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Prerequisites
 
-## Code of Conduct
+- PHP >= 8.1
+- Composer
+- Node.js >= 18
+- MySQL
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Installation
 
-## Security Vulnerabilities
+```bash
+# 1. Clone the repository
+git clone https://github.com/yourusername/commodity-origin.git
+cd commodity-origin
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 2. Install PHP dependencies
+composer install
+
+# 3. Install JS dependencies
+npm install
+
+# 4. Set up environment
+cp .env.example .env
+php artisan key:generate
+
+# 5. Configure your database in .env
+DB_DATABASE=bean_origin
+DB_USERNAME=your_db_user
+DB_PASSWORD=your_db_password
+
+# 6. Run migrations and seed sample data
+php artisan migrate --seed
+
+# 7. Build frontend assets
+npm run dev
+
+# 8. Start the development server
+php artisan serve
+```
+
+Visit `http://localhost:8000`
+
+---
+
+## Project Structure
+
+```
+commodity-origin/
+├── app/
+│   ├── Http/Controllers/     # Laravel controllers
+│   ├── Models/               # Eloquent models (Farmer, Batch, Farm, etc.)
+│   └── Services/             # Business logic layer
+├── resources/
+│   ├── js/
+│   │   ├── Pages/            # Vue.js page components (Inertia)
+│   │   └── Components/       # Reusable UI components
+│   └── css/                  # Tailwind CSS entry
+├── routes/
+│   └── web.php               # All routes (Inertia-driven)
+└── database/
+    ├── migrations/
+    └── seeders/
+```
+
+---
+
+## Roadmap
+
+- [ ] Mobile app (Ionic + Capacitor) for farmer field agents
+- [ ] QR code scanning for batch verification by end buyers
+- [ ] SMS notifications for farmers (via Africa's Talking API)
+- [ ] Integration with UCDA export registry API
+- [ ] Multi-language support (English + Luganda)
+
+---
+
+## About the Developer
+
+Built by **[Your Name]** — a full-stack developer based in Uganda with 6 years of experience building web and mobile applications for African markets.
+
+- 🌍 [yourportfolio.dev](https://yourportfolio.dev)
+- 💼 [linkedin.com/in/yourprofile](https://linkedin.com/in/yourprofile)
+- 🐙 [github.com/yourusername](https://github.com/yourusername)
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is proprietary software. All rights reserved © 2024 Commodity Origin.
+
+---
+
+> *"Traceability is not just about compliance — it's about dignity for the farmer and trust for the buyer."*
