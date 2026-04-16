@@ -27,18 +27,7 @@ class HarvestResource extends JsonResource
             'ripeness_grade' => $this->ripeness_grade,
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
-            'farm' => $this->whenLoaded('farm', function (): array {
-                return [
-                    'id' => $this->farm?->id,
-                    'name' => $this->farm?->name,
-                    'location' => $this->farm?->location,
-                    'variety' => $this->farm?->variety,
-                    'farmer_name' => trim(collect([
-                        $this->farm?->farmer?->first_name,
-                        $this->farm?->farmer?->last_name,
-                    ])->filter()->implode(' ')) ?: null,
-                ];
-            }),
+            'farm' => $this->whenLoaded('farm', fn (): array => FarmResource::make($this->farm)->resolve()),
         ];
     }
 }

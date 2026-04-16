@@ -128,9 +128,12 @@ class HarvestController extends Controller
     public function show(Harvest $harvest): Response
     {
         $harvest->load('farm.farmer', 'creator');
-
         Gate::authorize('view', $harvest);
 
+
+
+
+        
         return Inertia::render('Harvest/HarvestProfile', [
             'harvest' => HarvestResource::make($harvest)->resolve(),
             'dateRange' => self::getRangeOfDates(

@@ -2,6 +2,13 @@
 import { computed, watch } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
+import {
+    CollectionTag,
+    Location,
+    PriceTag,
+    Tickets,
+    User,
+} from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -16,6 +23,7 @@ const props = defineProps({
 });
 
 const page = usePage();
+const farms = computed(() => (props.harvest.farm ? [props.harvest.farm] : []));
 const flashSuccess = computed(() => page.props.flash?.success ?? '');
 
 const scoreByGrade = {
@@ -35,7 +43,6 @@ const harvestCode = computed(() => {
 
 const farmName = computed(() => props.harvest.farm?.name || `${props.harvest.id}`);
 const farmLocation = computed(() => props.harvest.farm?.location || 'Origin pending');
-const farmerName = computed(() => props.harvest.farm?.farmer_name || 'Assigned field operator');
 const qualityScore = computed(() => scoreByGrade[props.harvest.ripeness_grade] ?? 82.8);
 const varietyLabel = computed(() => props.harvest.variety || props.harvest.farm?.variety || 'Heirloom');
 const volumeKg = computed(() => Number(props.harvest.weight || 0));
@@ -113,11 +120,6 @@ const createdDateLabel = computed(() => {
         year: 'numeric',
     }).format(new Date(props.harvest.created_at));
 });
-const stationLabel = computed(() => {
-    const location = farmLocation.value.split(',')[0]?.trim();
-
-    return location || 'Field Station';
-});
 const formatRangeLabel = (start, end) => {
     const startDate = new Date(`${start}-01`);
     const endDate = new Date(`${end}-01`);
@@ -189,32 +191,6 @@ const microClimateCards = computed(() => [
         label: 'Moisture',
         value: qualityScore.value >= 87 ? '18.5%' : '20.4%',
         state: qualityScore.value >= 87 ? 'Optimal' : 'Warning',
-    },
-]);
-const ledgerRows = computed(() => [
-    {
-        id: `#HB-${String(props.harvest.id).padStart(4, '0')}`,
-        time: '08:42 AM',
-        picker: farmerName.value,
-        weight: Number(props.harvest.weight || 0).toFixed(1),
-        score: props.harvest.ripeness_grade,
-        status: 'Processed',
-    },
-    {
-        id: `#HB-${String(props.harvest.id).padStart(4, '0')}-A`,
-        time: '09:18 AM',
-        picker: 'Field QA',
-        weight: Math.max(volumeKg.value * 0.94, 1).toFixed(1),
-        score: `Score ${qualityScore.value.toFixed(1)}`,
-        status: 'Review',
-    },
-    {
-        id: `#HB-${String(props.harvest.id).padStart(4, '0')}-B`,
-        time: '10:02 AM',
-        picker: stationLabel.value,
-        weight: Math.max(volumeKg.value * 0.88, 1).toFixed(1),
-        score: props.harvest.pick_method,
-        status: 'Queued',
     },
 ]);
 
@@ -326,47 +302,84 @@ watch(
                         <section class="harvest-panel">
                             <div class="harvest-ledger-head">
                                 <div>
-                                    <div class="harvest-panel__title">Daily Batch Ledger</div>
-                                    <div class="harvest-panel__subtitle">Detailed log of individual bin entries for today’s harvest intake.</div>
+                                    <div class="harvest-panel__title">Farms</div>
+                                    <div class="harvest-panel__subtitle">Farm linked to this harvest record.</div>
                                 </div>
-                                <div class="harvest-ledger-search">Search bin ID...</div>
                             </div>
 
                             <div class="harvest-ledger-table-wrap">
                                 <table class="harvest-ledger-table">
                                     <thead>
                                         <tr>
-                                            <th>Bin ID</th>
-                                            <th>Entry Time</th>
-                                            <th>Picker</th>
-                                            <th>Weight (kg)</th>
-                                            <th>Quality Score</th>
+                                            <th>Farm ID</th>
+                                            <th>Name</th>
+                                            <th>Location</th>
+                                            <th>Variety</th>
+                                            <th>Farmer</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="row in ledgerRows" :key="row.id">
-                                            <td>{{ row.id }}</td>
-                                            <td>{{ row.time }}</td>
-                                            <td>{{ row.picker }}</td>
-                                            <td>{{ row.weight }}</td>
-                                            <td>{{ row.score }}</td>
+                                        <tr v-for="row in farms" :key="row.id">
                                             <td>
-                                                <span class="harvest-ledger-status" :class="row.status.toLowerCase()">{{ row.status }}</span>
+                                                <span class="harvest-ledger-cell">
+                                                    <el-icon class="harvest-ledger-cell__icon"><Tickets /></el-icon>
+                                                    <span>{{ row.id }}</span>
+                                                </span>
                                             </td>
+                                            <td>
+                                                <span class="harvest-ledger-cell">
+                                                    <el-icon class="harvest-ledger-cell__icon"><CollectionTag /></el-icon>
+                                                    <span>{{ row.name }}</span>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="harvest-ledger-cell">
+                                                    <el-icon class="harvest-ledger-cell__icon"><Location /></el-icon>
+                                                    <span>{{ row.location || 'Origin pending' }}</span>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="harvest-ledger-cell">
+                                                    <el-icon class="harvest-ledger-cell__icon"><PriceTag /></el-icon>
+                                                    <span>{{ row.variety || props.harvest.variety || 'Unknown' }}</span>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="harvest-ledger-cell">
+                                                    <el-icon class="harvest-ledger-cell__icon"><User /></el-icon>
+                                                    <span>
+                                                        {{
+                                                            [row.farmer?.first_name, row.farmer?.last_name].filter(Boolean).join(' ')
+                                                            || row.farmer?.cooperative
+                                                            || 'Assigned field operator'
+                                                        }}
+                                                    </span>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="harvest-ledger-status" :class="String(row.status || 'active').toLowerCase()">
+                                                    {{ row.status || 'Active' }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="!farms.length">
+                                            <td colspan="6">No farm payload attached to this harvest.</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </section>
-
-
                     </main>
 
-                    <aside class="harvest-terminal-card">
-                        <div class="harvest-terminal-card__title">Execution Terminal</div>
+                    <aside class="harvest-terminal-card h-100">
+                        <div class="harvest-terminal-card__title">
+                            Price
+                        </div>
 
-                        <div class="harvest-terminal-card__price-label">Current Market Price</div>
+                        <div class="harvest-terminal-card__price-label">
+                            Current Market Price
+                        </div>
                         <div class="harvest-terminal-card__price">Shs. {{ currentPrice.toFixed(2) }}<span></span></div>
                         <div class="harvest-terminal-card__delta">{{ priceChange }} since morning</div>
 
@@ -393,10 +406,7 @@ watch(
                             </div>
                         </div>
 
-                        <div class="harvest-terminal-card__origin">
-                            <span class="harvest-terminal-card__origin-label">Geographical Origin</span>
-                            <strong>{{ farmLocation }}</strong>
-                        </div>
+
                     </aside>
                 </div>
             </div>
@@ -751,15 +761,6 @@ watch(
     color: #b46d1c;
 }
 
-.harvest-ledger-search {
-    min-width: 132px;
-    border-radius: 10px;
-    background: #f7f9f8;
-    padding: 10px 12px;
-    color: #9aa6a2;
-    font-size: 12px;
-}
-
 .harvest-ledger-table-wrap {
     margin-top: 18px;
     overflow-x: auto;
@@ -785,6 +786,18 @@ watch(
     font-size: 13px;
 }
 
+.harvest-ledger-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.harvest-ledger-cell__icon {
+    color: #6f847b;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
 .harvest-ledger-status {
     display: inline-flex;
     border-radius: 999px;
@@ -795,6 +808,7 @@ watch(
     letter-spacing: 0.08em;
 }
 
+.harvest-ledger-status.active,
 .harvest-ledger-status.processed {
     background: #def3e8;
     color: #0e6a46;
