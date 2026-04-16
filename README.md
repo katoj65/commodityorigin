@@ -8,7 +8,7 @@
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38BDF8?style=flat&logo=tailwindcss&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat&logo=mysql&logoColor=white)
 
-🌐 **Live:** [beanorigin.com](https://beanorigin.com) &nbsp;|&nbsp; 📁 **Repo:** [github.com/yourusername/commodity-origin](https://github.com/yourusername/commodity-origin)
+🌐 **Live:** [commodityorigin.com](https://commodityorigin.com/) &nbsp;|&nbsp; 📁 **Repo:** [github.com/yourusername/commodity-origin](https://github.com/yourusername/commodity-origin)
 
 ---
 
@@ -76,7 +76,7 @@ Commodity Origin digitises the entire coffee supply chain — from farm registra
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/commodity-origin.git
+git clone https://github.com/yourusername/commodityorigin.git
 cd commodity-origin
 
 # 2. Install PHP dependencies
@@ -90,7 +90,7 @@ cp .env.example .env
 php artisan key:generate
 
 # 5. Configure your database in .env
-DB_DATABASE=bean_origin
+DB_DATABASE=commodity_origin
 DB_USERNAME=your_db_user
 DB_PASSWORD=your_db_password
 
@@ -142,11 +142,10 @@ commodity-origin/
 
 ## About the Developer
 
-Built by **[Your Name]** — a full-stack developer based in Uganda with 6 years of experience building web and mobile applications for African markets.
+Built by **[Joshua Kato]** — a full-stack developer based in Uganda with 6 years of experience building web and mobile applications.
 
-- 🌍 [yourportfolio.dev](https://yourportfolio.dev)
-- 💼 [linkedin.com/in/yourprofile](https://linkedin.com/in/yourprofile)
-- 🐙 [github.com/yourusername](https://github.com/yourusername)
+- 💼 [linkedin.com/in/yourprofile](https://www.linkedin.com/in/joshua-kato-3b09966a/)
+- 🐙 [github.com/yourusername](https://github.com/katoj65)
 
 ---
 
