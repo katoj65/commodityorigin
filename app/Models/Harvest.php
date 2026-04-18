@@ -21,10 +21,15 @@ class Harvest extends Model
         'variety',
         'date_planted',
         'harvest_date',
+        'harvest_season',
         'pick_method',
         'price',
         'weight',
-        'ripeness_grade',
+        'ripeness_percentage',
+        'foreign_matter_present',
+        'pest_damage',
+        'disease_signs',
+        'visible_defects',
     ];
 
     /**
@@ -37,6 +42,11 @@ class Harvest extends Model
         'harvest_date' => 'date',
         'price' => 'decimal:2',
         'weight' => 'decimal:2',
+        'ripeness_percentage' => 'decimal:2',
+        'foreign_matter_present' => 'boolean',
+        'pest_damage' => 'boolean',
+        'disease_signs' => 'boolean',
+        'visible_defects' => 'boolean',
     ];
 
     /**

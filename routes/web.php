@@ -80,6 +80,7 @@ Route::middleware([
         Route::get('/', [HarvestController::class, 'index'])->name('index');
         Route::get('/create', [HarvestController::class, 'create'])->name('create');
         Route::post('/', [HarvestController::class, 'store'])->name('store');
+        Route::patch('/{harvest}', [HarvestController::class, 'update'])->name('update');
         Route::get('/{harvest}', [HarvestController::class, 'show'])->name('show');
     });
 

@@ -7,11 +7,11 @@ use App\Http\Resources\HarvestResource;
 use App\Models\Farm;
 use App\Models\Harvest;
 use App\Models\PickMethodMetadata;
-use App\Models\RipenessGradeMetadata;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -40,15 +40,15 @@ class HarvestController extends Controller
                 'variety' => $harvest->variety,
                 'processing_method' => self::processingMethodFromPickMethod($harvest->pick_method),
                 'yield_kg' => (float) $harvest->weight,
-                'scaa_score' => self::scoreForRipeness($harvest->ripeness_grade),
+                'scaa_score' => self::scoreForRipeness($harvest->ripeness_percentage),
                 'status' => self::statusForHarvest($harvest),
                 'status_tone' => self::statusToneForHarvest($harvest),
                 'show_url' => route('harvest.show', $harvest),
             ]);
 
-        $harvestCollection = Harvest::query()->get(['id', 'weight', 'ripeness_grade', 'pick_method', 'harvest_date']);
+        $harvestCollection = Harvest::query()->get(['id', 'weight', 'ripeness_percentage', 'pick_method', 'harvest_date']);
         $averageQuality = $harvestCollection->count() > 0
-            ? round($harvestCollection->avg(fn (Harvest $harvest): float => self::scoreForRipeness($harvest->ripeness_grade)), 1)
+            ? round($harvestCollection->avg(fn (Harvest $harvest): float => self::scoreForRipeness($harvest->ripeness_percentage)), 1)
             : 0;
         $processingCount = $harvestCollection
             ->filter(fn (Harvest $harvest): bool => self::statusToneForHarvest($harvest) === 'processing')
@@ -107,18 +107,8 @@ class HarvestController extends Controller
 
         return Inertia::render('Harvest/Create', [
             'farmOptions' => $farms,
-            'pickMethodOptions' => PickMethodMetadata::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->pluck('name')
-                ->values(),
-            'ripenessGradeOptions' => RipenessGradeMetadata::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->pluck('name')
-                ->values(),
+            'pickMethodOptions' => self::pickMethodOptions(),
+            'harvestSeasonOptions' => self::harvestSeasonOptions(),
         ]);
     }
 
@@ -140,6 +130,8 @@ class HarvestController extends Controller
                 $harvest->date_planted?->toDateString() ?? '',
                 $harvest->harvest_date?->toDateString() ?? '',
             ),
+            'pickMethodOptions' => self::pickMethodOptions(),
+            'harvestSeasonOptions' => self::harvestSeasonOptions(),
         ]);
     }
 
@@ -150,31 +142,90 @@ class HarvestController extends Controller
     {
         Gate::authorize('create', Harvest::class);
 
+        $pickMethodOptions = self::pickMethodOptions()->all();
+        $harvestSeasonOptions = self::harvestSeasonOptions();
+
         $validated = $request->validate(
             [
                 'farm_id' => ['required', 'exists:farms,id'],
                 'variety' => ['required', 'string', 'max:255'],
                 'date_planted' => ['required', 'date', 'before_or_equal:today'],
                 'harvest_date' => ['required', 'date', 'before_or_equal:today'],
-                'pick_method' => ['required', 'string', 'max:255'],
+                'harvest_season' => ['required', 'string', 'max:255', Rule::in($harvestSeasonOptions)],
+                'pick_method' => ['required', 'string', 'max:255', Rule::in($pickMethodOptions)],
                 'price' => ['required', 'numeric', 'min:0.01'],
                 'weight' => ['required', 'numeric', 'min:0.01'],
-                'ripeness_grade' => ['required', 'string', 'max:255'],
+                'ripeness_percentage' => ['required', 'numeric', 'between:0,100'],
+                'foreign_matter_present' => ['required', 'boolean'],
+                'pest_damage' => ['required', 'boolean'],
+                'disease_signs' => ['required', 'boolean'],
+                'visible_defects' => ['required', 'boolean'],
             ],
             [
                 'date_planted.before_or_equal' => 'Date planted must not be greater than today.',
                 'harvest_date.before_or_equal' => 'Harvest date must not be greater than today.',
+                'foreign_matter_present.required' => 'Please confirm whether foreign matter is present.',
+                'pest_damage.required' => 'Please confirm whether pest damage is present.',
+                'disease_signs.required' => 'Please confirm whether disease signs are present.',
+                'visible_defects.required' => 'Please confirm whether visible defects are present.',
             ],
         );
 
         $harvest = Harvest::query()->create([
             ...$validated,
             'user_id' => $request->user()->id,
+            'foreign_matter_present' => $request->boolean('foreign_matter_present'),
+            'pest_damage' => $request->boolean('pest_damage'),
+            'disease_signs' => $request->boolean('disease_signs'),
+            'visible_defects' => $request->boolean('visible_defects'),
         ]);
 
         return redirect()
             ->route('harvest.show', $harvest)
             ->with('success', "Harvest {$harvest->id} recorded successfully.");
+    }
+
+    /**
+     * Update the specified harvest quality data.
+     */
+    public function update(Request $request, Harvest $harvest): RedirectResponse
+    {
+        Gate::authorize('update', $harvest);
+
+        $pickMethodOptions = self::pickMethodOptions()->all();
+        $harvestSeasonOptions = self::harvestSeasonOptions();
+
+        $validated = $request->validate(
+            [
+                'harvest_date' => ['required', 'date', 'before_or_equal:today'],
+                'harvest_season' => ['required', 'string', 'max:255', Rule::in($harvestSeasonOptions)],
+                'pick_method' => ['required', 'string', 'max:255', Rule::in($pickMethodOptions)],
+                'price' => ['required', 'numeric', 'min:0.01'],
+                'weight' => ['required', 'numeric', 'min:0.01'],
+                'ripeness_percentage' => ['required', 'numeric', 'between:0,100'],
+                'foreign_matter_present' => ['required', 'boolean'],
+                'pest_damage' => ['required', 'boolean'],
+                'disease_signs' => ['required', 'boolean'],
+                'visible_defects' => ['required', 'boolean'],
+            ],
+            [
+                'harvest_date.before_or_equal' => 'Harvest date must not be greater than today.',
+                'foreign_matter_present.required' => 'Please confirm whether foreign matter is present.',
+                'pest_damage.required' => 'Please confirm whether pest damage is present.',
+                'disease_signs.required' => 'Please confirm whether disease signs are present.',
+                'visible_defects.required' => 'Please confirm whether visible defects are present.',
+            ],
+        );
+
+        $harvest->update([
+            ...$validated,
+            'foreign_matter_present' => $request->boolean('foreign_matter_present'),
+            'pest_damage' => $request->boolean('pest_damage'),
+            'disease_signs' => $request->boolean('disease_signs'),
+            'visible_defects' => $request->boolean('visible_defects'),
+        ]);
+
+        return back();
     }
     /**
      * Return the inclusive monthly range buckets between the planted and harvest dates.
@@ -220,15 +271,13 @@ class HarvestController extends Controller
         return $ranges;
     }
 
-    protected static function scoreForRipeness(?string $ripenessGrade): float
+    protected static function scoreForRipeness(mixed $ripenessPercentage): float
     {
-        return match ($ripenessGrade) {
-            'Premium Red Cherry' => 88.5,
-            'Mostly Red Cherry' => 86.2,
-            'Mixed Ripeness' => 84.4,
-            'Under-ripe Screening' => 80.8,
-            default => 82.0,
-        };
+        if ($ripenessPercentage === null || $ripenessPercentage === '') {
+            return 82.0;
+        }
+
+        return round(max(0, min(100, (float) $ripenessPercentage)), 1);
     }
 
     protected static function processingMethodFromPickMethod(?string $pickMethod): string
@@ -240,6 +289,26 @@ class HarvestController extends Controller
             'Hand Sorting' => 'Anaerobic',
             default => 'Washed',
         };
+    }
+
+    protected static function pickMethodOptions()
+    {
+        return PickMethodMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name')
+            ->values();
+    }
+
+    protected static function harvestSeasonOptions(): array
+    {
+        return [
+            'Main Crop',
+            'Fly Crop',
+            'Early Harvest',
+            'Late Harvest',
+        ];
     }
 
     protected static function statusForHarvest(Harvest $harvest): string

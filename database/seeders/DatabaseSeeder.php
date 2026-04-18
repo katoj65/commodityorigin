@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,16 +23,37 @@ class DatabaseSeeder extends Seeder
             CropVarietyMetadataSeeder::class,
             RipenessGradeMetadataSeeder::class,
             PickMethodMetadataSeeder::class,
+            QualityMetadataSeeder::class,
+            FarmingPracticeMetadataSeeder::class,
+            SustainableMetadataSeeder::class,
+            ComplianceMetadataSeeder::class,
+            FarmInputMetadataSeeder::class,
+            FarmCultivationMetadataSeeder::class,
+            FarmManagementMetadataSeeder::class,
+            CertificationMetadataSeeder::class,
+            RegulatoryComplianceMetadataSeeder::class,
+            DocumentationMetadataSeeder::class,
+            SocialImpactMetadataSeeder::class,
+            EnvironmentMetadataSeeder::class,
+            LandMetadataSeeder::class,
+            ClimateMetadataSeeder::class,
+            HarvestingMetadataSeeder::class,
+            SensoryMetadataSeeder::class,
         ]);
 
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'first_name' => 'Test',
-            'last_name' => 'User',
-            'role' => 'user',
-            'telephone' => '+1234567890',
-            'email' => 'test@example.com',
-        ]);
+        User::query()->firstOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'first_name' => 'Test',
+                'last_name' => 'User',
+                'role' => 'user',
+                'telephone' => '+1234567890',
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'remember_token' => Str::random(10),
+            ],
+        );
     }
 }

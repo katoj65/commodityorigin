@@ -11,6 +11,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    flush: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const page = usePage();
@@ -994,7 +998,7 @@ onBeforeUnmount(() => {
             <main class="min-w-0 flex-1 overflow-visible lg:ml-72">
                 <div
                     class="min-w-0"
-                    :class="props.fullWidth ? 'w-full max-w-none p-3 sm:p-5 lg:p-6' : 'p-3 sm:p-5 lg:p-6'"
+                    :class="props.flush ? 'w-full max-w-none' : (props.fullWidth ? 'w-full max-w-none p-3 sm:p-5 lg:p-6' : 'p-3 sm:p-5 lg:p-6')"
                 >
                     <slot />
                 </div>

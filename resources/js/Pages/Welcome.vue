@@ -208,13 +208,13 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- NAV -->
-        <nav class="sticky top-0 z-50 bg-bg/92 backdrop-blur-xl border-b border-white/[0.06] h-[60px] flex items-center justify-between px-10">
-            <div class="flex items-center gap-10">
+        <nav class="sticky top-0 z-50 bg-bg/92 backdrop-blur-xl border-b border-white/[0.06] flex flex-col items-start justify-between gap-4 px-4 py-3 sm:px-6 md:h-[60px] md:flex-row md:items-center md:gap-6 md:px-10 md:py-0">
+            <div class="flex w-full flex-col items-start gap-4 md:w-auto md:flex-row md:items-center md:gap-10">
                 <a href="#" class="flex items-center gap-3 font-display font-bold text-base text-cream no-underline tracking-tight">
                     <ApplicationMark class="h-8 w-8 flex-shrink-0" />
                     Commodity <span class="text-gold">Origin</span>
                 </a>
-                <ul class="flex gap-1 list-none">
+                <ul class="flex flex-wrap gap-1 list-none">
                     <li><a href="#market" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Market</a></li>
                     <li><a href="#origins" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Origins</a></li>
                     <li><a href="#quality" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Quality</a></li>
@@ -222,7 +222,7 @@ onBeforeUnmount(() => {
                     <li><a href="#subscribe" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Subscribe</a></li>
                 </ul>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex w-full flex-wrap items-center gap-3 md:w-auto md:justify-end">
                 <div class="flex items-center gap-1.5">
                     <div class="w-1.5 h-1.5 rounded-full bg-up pulse-green"></div>
                     <span class="font-mono text-[9px] text-up tracking-[0.1em]">Market open</span>
@@ -233,10 +233,10 @@ onBeforeUnmount(() => {
         </nav>
 
         <!-- HERO -->
-        <section class="grid grid-cols-2 bg-bg relative overflow-hidden">
+        <section class="grid grid-cols-1 bg-bg relative overflow-hidden md:grid-cols-2">
             <div class="hero-dots absolute inset-0 pointer-events-none"></div>
 
-            <div class="relative z-10 flex flex-col justify-center px-10 py-14 pr-14">
+            <div class="relative z-10 flex flex-col justify-center px-4 py-10 sm:px-6 md:px-10 md:py-14 md:pr-14">
                 <div class="inline-flex items-center gap-2 bg-gold/15 border border-gold/25 px-3.5 py-1.5 rounded-sm mb-7 w-fit animate-fade-up-1">
                     <span class="font-mono text-[9px] tracking-[0.16em] uppercase text-gold">Commodity Origin · Uganda's coffee exchange · Est. 2024</span>
                 </div>
@@ -249,7 +249,7 @@ onBeforeUnmount(() => {
 
                 <div class="flex items-center gap-3 my-5 animate-fade-up-3">
                     <div class="flex-1 max-w-[36px] h-px bg-gold/30"></div>
-                    <span class="font-mono text-[10px] tracking-[0.22em] uppercase text-gold/80">From farm to cup, transparently</span>
+                    <span class="text-center font-mono text-[10px] tracking-[0.16em] sm:tracking-[0.22em] uppercase text-gold/80">From farm to cup, transparently</span>
                     <div class="flex-1 max-w-[36px] h-px bg-gold/30"></div>
                 </div>
 
@@ -257,7 +257,7 @@ onBeforeUnmount(() => {
                     Commodity Origin is the first regulated digital marketplace for Ugandan single-origin coffee — connecting smallholder farmers directly to global roasters. Every lot is UCDA-graded, blockchain-verified, and fully traceable from GPS-tagged farm to roastery door.
                 </p>
 
-                <div class="flex gap-3 mb-8 animate-fade-up-4">
+                <div class="flex flex-col gap-3 mb-8 animate-fade-up-4 sm:flex-row">
                     <a href="#market" class="inline-flex items-center gap-2 bg-gold border border-gold text-bg font-mono text-[10px] tracking-[0.12em] uppercase font-medium px-7 py-3.5 hover:bg-gold2 transition-all no-underline">
                         View live lots
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -265,47 +265,47 @@ onBeforeUnmount(() => {
                     <a href="#origins" class="inline-flex items-center gap-2 bg-transparent border border-white/[0.14] text-cream/70 font-mono text-[10px] tracking-[0.12em] uppercase px-7 py-3.5 hover:border-cream/40 hover:text-cream transition-all no-underline">Explore origins</a>
                 </div>
 
-                <div class="flex border-t border-white/[0.06] pt-6 animate-fade-up-5">
-                    <div class="flex-1 pr-7">
+                <div class="grid grid-cols-1 gap-4 border-t border-white/[0.06] pt-6 animate-fade-up-5 sm:grid-cols-3 sm:gap-0">
+                    <div class="sm:pr-7">
                         <div class="font-display font-bold text-3xl text-cream leading-none mb-1">47<span class="text-lg text-gold">K</span></div>
                         <div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/45">Tonnes traded YTD</div>
                     </div>
-                    <div class="flex-1 border-l border-white/[0.06] px-7">
+                    <div class="sm:border-l sm:border-white/[0.06] sm:px-7">
                         <div class="font-display font-bold text-3xl text-cream leading-none mb-1">312</div>
                         <div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/45">Active farm lots</div>
                     </div>
-                    <div class="flex-1 border-l border-white/[0.06] pl-7">
+                    <div class="sm:border-l sm:border-white/[0.06] sm:pl-7">
                         <div class="font-display font-bold text-3xl text-cream leading-none mb-1">6</div>
                         <div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/45">Growing regions</div>
                     </div>
                 </div>
             </div>
 
-            <div class="relative z-10 flex flex-col gap-3 justify-center px-5 py-10 animate-fade-in">
+            <div class="relative z-10 flex flex-col gap-3 justify-center px-4 py-8 sm:px-6 md:px-5 md:py-10 animate-fade-in">
                 <div class="bg-surface border border-white/[0.06] rounded-sm overflow-hidden">
                     <div class="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
                         <span class="font-mono text-[9px] tracking-[0.16em] uppercase text-cream/45">Top lots · today</span>
                         <div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full bg-up pulse-green"></div><span class="font-mono text-[9px] text-up">Live</span></div>
                     </div>
-                    <div class="px-4 py-2.5 grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors">
+                    <div class="px-4 py-3 grid grid-cols-1 gap-3 items-start border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors sm:grid-cols-[1fr_auto_auto_auto] sm:items-center sm:gap-4">
                         <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0441</div><div class="text-[13px] font-medium text-cream">Sipi Falls AA</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Bugisu · Mt Elgon · 1,900m</div></div>
                         <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span>
                         <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,20 10,18 20,14 30,16 40,10 50,8 60,6" fill="none" stroke="#52B788" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$5.10<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-up">▲ 1.2%</div></div>
                     </div>
-                    <div class="px-4 py-2.5 grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors">
+                    <div class="px-4 py-3 grid grid-cols-1 gap-3 items-start border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors sm:grid-cols-[1fr_auto_auto_auto] sm:items-center sm:gap-4">
                         <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0438</div><div class="text-[13px] font-medium text-cream">Kasese Natural</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Rwenzori · 2,100m</div></div>
                         <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span>
                         <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,14 10,16 20,12 30,10 40,13 50,9 60,7" fill="none" stroke="#52B788" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$4.65<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-up">▲ 0.8%</div></div>
                     </div>
-                    <div class="px-4 py-2.5 grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors">
+                    <div class="px-4 py-3 grid grid-cols-1 gap-3 items-start border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors sm:grid-cols-[1fr_auto_auto_auto] sm:items-center sm:gap-4">
                         <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0429</div><div class="text-[13px] font-medium text-cream">Kibale Fine Robusta</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Mubende · Forest edge · 1,300m</div></div>
                         <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span>
                         <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,22 10,20 20,22 30,18 40,16 50,14 60,11" fill="none" stroke="#E09B3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$2.40<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-up">▲ 3.1%</div></div>
                     </div>
-                    <div class="px-4 py-2.5 grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center hover:bg-surface3 cursor-pointer transition-colors">
+                    <div class="px-4 py-3 grid grid-cols-1 gap-3 items-start hover:bg-surface3 cursor-pointer transition-colors sm:grid-cols-[1fr_auto_auto_auto] sm:items-center sm:gap-4">
                         <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0421</div><div class="text-[13px] font-medium text-cream">West Nile FAQ</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Arua · Savanna · 1,000m</div></div>
                         <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span>
                         <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,18 10,20 20,17 30,18 40,16 50,17 60,15" fill="none" stroke="#E09B3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -328,22 +328,22 @@ onBeforeUnmount(() => {
         </section>
 
         <!-- SLOGAN BAND -->
-        <div class="bg-surface border-y border-white/[0.06] px-10 py-[18px] flex items-center justify-center gap-8">
+        <div class="bg-surface border-y border-white/[0.06] px-4 py-[18px] sm:px-6 md:px-10 flex flex-col items-center justify-center gap-4 md:flex-row md:gap-8">
             <span class="font-mono text-[10px] tracking-[0.18em] uppercase text-cream/45">Uganda · East Africa</span>
-            <div class="w-px h-8 bg-white/[0.14]"></div>
-            <div class="font-display font-bold text-xl tracking-tight text-cream text-center">"From <span class="text-gold">Farm</span> to Cup, <span class="text-gold">Transparently</span>"</div>
-            <div class="w-px h-8 bg-white/[0.14]"></div>
+            <div class="hidden h-8 w-px bg-white/[0.14] md:block"></div>
+            <div class="font-display font-bold text-lg sm:text-xl tracking-tight text-cream text-center">"From <span class="text-gold">Farm</span> to Cup, <span class="text-gold">Transparently</span>"</div>
+            <div class="hidden h-8 w-px bg-white/[0.14] md:block"></div>
             <span class="font-mono text-[10px] tracking-[0.18em] uppercase text-cream/45">Commodity Origin</span>
         </div>
 
         <!-- HOW IT WORKS -->
-        <section class="px-10 pb-14" id="how">
+        <section class="px-4 pb-14 sm:px-6 md:px-10" id="how">
             <div class="pt-10 mb-9">
                 <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-3">How the exchange works</span>
                 <h2 class="reveal delay-1 font-display font-bold text-cream mb-4" style="font-size:clamp(30px,3.5vw,48px);letter-spacing:-0.02em;line-height:1.05">Coffee trading, <span class="text-gold">reimagined</span></h2>
                 <p class="reveal delay-2 text-[15px] leading-relaxed text-cream/75 max-w-xl">Every step from harvest to your roastery is tracked, verified, and recorded — eliminating opacity from one of the world's most complex supply chains.</p>
             </div>
-            <div class="grid grid-cols-5 gap-0 relative pipeline-line">
+            <div class="grid grid-cols-1 gap-8 relative pipeline-line md:grid-cols-5 md:gap-0">
                 <div class="reveal px-2 text-center">
                     <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all" style="box-shadow:0 0 0 0 transparent">
                         <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">01</span>🌱
@@ -383,13 +383,13 @@ onBeforeUnmount(() => {
         </section>
 
         <!-- MARKET TABLE -->
-        <section class="bg-surface border-y border-white/[0.06] px-10 py-10" id="market">
-            <div class="flex items-end justify-between mb-4">
+        <section class="bg-surface border-y border-white/[0.06] px-4 py-10 sm:px-6 md:px-10" id="market">
+            <div class="flex flex-col items-start justify-between gap-4 mb-4 md:flex-row md:items-end">
                 <div>
                     <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-2">Live market</span>
                     <h2 class="reveal delay-1 font-display font-bold text-cream" style="font-size:clamp(28px,3vw,44px);letter-spacing:-0.02em">Active <span class="text-gold">lots</span></h2>
                 </div>
-                <div class="reveal flex gap-1">
+                <div class="reveal flex flex-wrap gap-1">
                     <button @click.prevent="setMarketFilter('all', $event)" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-gold/30 bg-gold/12 text-gold rounded-sm transition-all">All</button>
                     <button @click.prevent="setMarketFilter('arabica', $event)" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-white/[0.08] bg-transparent text-cream/45 rounded-sm hover:border-gold/30 hover:text-gold hover:bg-gold/12 transition-all">Arabica</button>
                     <button @click.prevent="setMarketFilter('robusta', $event)" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-white/[0.08] bg-transparent text-cream/45 rounded-sm hover:border-gold/30 hover:text-gold hover:bg-gold/12 transition-all">Robusta</button>
@@ -491,22 +491,22 @@ onBeforeUnmount(() => {
         </section>
 
         <!-- ORIGINS -->
-        <section class="px-10 py-10" id="origins">
+        <section class="px-4 py-10 sm:px-6 md:px-10" id="origins">
             <div class="mb-7">
                 <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-2">Uganda's growing regions</span>
                 <h2 class="reveal delay-1 font-display font-bold text-cream" style="font-size:clamp(28px,3.5vw,48px);letter-spacing:-0.02em;line-height:1.05">Two species. <span class="text-gold">Six terroirs.</span></h2>
             </div>
-            <div class="grid grid-cols-2 gap-0.5">
-                <div class="origin-block reveal bg-surface border border-white/[0.06] p-8 relative overflow-hidden">
+            <div class="grid grid-cols-1 gap-3 xl:grid-cols-2 xl:gap-0.5">
+                <div class="origin-block reveal bg-surface border border-white/[0.06] p-5 sm:p-6 md:p-8 relative overflow-hidden">
                     <div class="absolute top-0 right-0 font-display font-extrabold text-[140px] text-white/[0.02] leading-none pointer-events-none select-none">ROB</div>
                     <div class="flex items-center gap-2 mb-6">
                         <span class="font-mono text-[9px] tracking-[0.12em] uppercase px-2.5 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span>
                         <span class="font-mono text-[9px] text-cream/55">900 – 1,350m · Coffea canephora · Native species</span>
                     </div>
-                    <div class="font-display font-bold text-[34px] text-cream leading-tight mb-1 tracking-tight">Ugandan Robusta</div>
+                    <div class="font-display font-bold text-[28px] sm:text-[34px] text-cream leading-tight mb-1 tracking-tight">Ugandan Robusta</div>
                     <div class="font-mono text-[10px] tracking-[0.12em] uppercase text-gold mb-5">Central · West Nile · Mubende · Masaka</div>
                     <p class="text-[14px] leading-relaxed text-cream/80 mb-6">Uganda is the birthplace of Coffea canephora — wild Robusta still grows in Kibale and Bwindi forests. Ugandan Robusta commands a premium over all other origins: fuller body, lower bitterness, earthy complexity. Grown in lowland lake-basin zones, it forms the backbone of premium espresso blends worldwide and is now achieving specialty grades (Fine Robusta Grade 1, 80+ cup score) reshaping the market.</p>
-                    <div class="grid grid-cols-3 gap-3 py-4 border-y border-white/[0.06] mb-4">
+                    <div class="grid grid-cols-2 gap-3 py-4 border-y border-white/[0.06] mb-4 md:grid-cols-3">
                         <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Caffeine</div><div class="text-[13px] text-cream/85">2.2 – 2.7%</div></div>
                         <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Top grade</div><div class="text-[13px] text-cream/85">Fine Robusta G1</div></div>
                         <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">% of crop</div><div class="text-[13px] text-cream/85">~80%</div></div>
@@ -525,16 +525,16 @@ onBeforeUnmount(() => {
                     <div class="flex items-center gap-3 mt-3"><span class="font-mono text-[9px] text-cream/50 w-20">Specialty</span><div class="score-track flex-1"><div class="score-fill-gold" style="width:28%"></div></div><span class="font-mono text-[10px] text-cream font-medium w-8 text-right">28%</span></div>
                     <div class="flex items-center gap-3 mt-2"><span class="font-mono text-[9px] text-cream/50 w-20">Export share</span><div class="score-track flex-1"><div class="score-fill-gold" style="width:80%"></div></div><span class="font-mono text-[10px] text-cream font-medium w-8 text-right">80%</span></div>
                 </div>
-                <div class="origin-block reveal delay-2 bg-surface border border-white/[0.06] p-8 relative overflow-hidden">
+                <div class="origin-block reveal delay-2 bg-surface border border-white/[0.06] p-5 sm:p-6 md:p-8 relative overflow-hidden">
                     <div class="absolute top-0 right-0 font-display font-extrabold text-[140px] text-white/[0.02] leading-none pointer-events-none select-none">ARA</div>
                     <div class="flex items-center gap-2 mb-6">
                         <span class="font-mono text-[9px] tracking-[0.12em] uppercase px-2.5 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span>
                         <span class="font-mono text-[9px] text-cream/55">1,500 – 2,300m · Coffea arabica · Highland grown</span>
                     </div>
-                    <div class="font-display font-bold text-[34px] text-cream leading-tight mb-1 tracking-tight">Ugandan Arabica</div>
+                    <div class="font-display font-bold text-[28px] sm:text-[34px] text-cream leading-tight mb-1 tracking-tight">Ugandan Arabica</div>
                     <div class="font-mono text-[10px] tracking-[0.12em] uppercase text-gold mb-5">Bugisu · Rwenzori · Kisoro · Kabale</div>
                     <p class="text-[14px] leading-relaxed text-cream/80 mb-6">Uganda's Arabica is among the most underrated on the specialty circuit. The Bugisu variety — grown on Mt. Elgon's volcanic slopes and marketed as "Sipi" after the iconic waterfalls — exhibits a wine-like acidity and dark-fruit profile rivalling Kenya AA. Rwenzori Arabica from the cloud-forests near the DRC border is more floral and delicate. The Kisoro highlands near Rwanda produce prized honey-process with stone-fruit sweetness.</p>
-                    <div class="grid grid-cols-3 gap-3 py-4 border-y border-white/[0.06] mb-4">
+                    <div class="grid grid-cols-2 gap-3 py-4 border-y border-white/[0.06] mb-4 md:grid-cols-3">
                         <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Caffeine</div><div class="text-[13px] text-cream/85">1.1 – 1.4%</div></div>
                         <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Top grade</div><div class="text-[13px] text-cream/85">Bugisu AA</div></div>
                         <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">% of crop</div><div class="text-[13px] text-cream/85">~20%</div></div>
@@ -557,8 +557,8 @@ onBeforeUnmount(() => {
         </section>
 
         <!-- TRACEABILITY -->
-        <section class="bg-surface border-t border-white/[0.06] px-10 py-10" id="traceability">
-            <div class="grid grid-cols-2 gap-12 items-start">
+        <section class="bg-surface border-t border-white/[0.06] px-4 py-10 sm:px-6 md:px-10" id="traceability">
+            <div class="grid grid-cols-1 gap-8 items-start md:grid-cols-2 md:gap-12">
                 <div>
                     <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-3">Full traceability</span>
                     <h2 class="reveal delay-1 font-display font-bold text-cream mb-4" style="font-size:clamp(28px,3.5vw,48px);letter-spacing:-0.02em;line-height:1.05">Every step, <span class="text-gold">on record</span></h2>
@@ -600,9 +600,9 @@ onBeforeUnmount(() => {
                         </div>
                     </div>
                 </div>
-                <div class="reveal delay-2 bg-surface2 border border-white/[0.06] rounded-sm p-6">
+                    <div class="reveal delay-2 bg-surface2 border border-white/[0.06] rounded-sm p-5 sm:p-6">
                     <div class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/55 mb-4 text-center">Scan · Lot BOE-2024-0441 · Sipi Falls AA</div>
-                    <div class="qr-box w-36 h-36 mx-auto mb-4">
+                    <div class="qr-box w-28 h-28 sm:w-36 sm:h-36 mx-auto mb-4">
                         <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
                             <rect width="120" height="120" fill="white"/>
                             <rect x="4" y="4" width="32" height="32" fill="black" rx="2"/><rect x="8" y="8" width="24" height="24" fill="white" rx="1"/><rect x="12" y="12" width="16" height="16" fill="black" rx="1"/>
@@ -632,7 +632,7 @@ onBeforeUnmount(() => {
         </section>
 
         <!-- TRUST -->
-        <div class="border-t border-white/[0.06] px-10 py-9 flex flex-col items-center gap-5">
+        <div class="border-t border-white/[0.06] px-4 py-9 sm:px-6 md:px-10 flex flex-col items-center gap-5">
             <span class="font-mono text-[9px] tracking-[0.2em] uppercase text-cream/45">Trusted &amp; certified by</span>
             <div class="flex items-center gap-12 flex-wrap justify-center">
                 <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">UCDA</span>
@@ -646,13 +646,13 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- CTA -->
-        <section class="bg-surface border-t border-white/[0.06] px-10 py-14 text-center relative overflow-hidden" id="subscribe">
+        <section class="bg-surface border-t border-white/[0.06] px-4 py-14 sm:px-6 md:px-10 text-center relative overflow-hidden" id="subscribe">
             <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse 60% 60% at 50% 50%, rgba(200,134,42,0.07) 0%, transparent 70%)"></div>
             <div class="relative z-10">
                 <span class="font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-5">Join Uganda's coffee market</span>
                 <h2 class="font-display font-extrabold text-cream mb-5 tracking-tight" style="font-size:clamp(34px,4vw,60px);line-height:1">Trade <span class="text-gold">Ugandan</span><br>coffee, directly</h2>
                 <p class="text-[15px] leading-relaxed text-cream/75 max-w-lg mx-auto mb-8">Join 2,400+ roasters, importers, and traders sourcing Ugandan Arabica and Fine Robusta with full provenance on Commodity Origin. Open a verified account in 5 minutes.</p>
-                <div class="flex gap-3 justify-center mb-4">
+                <div class="flex flex-col gap-3 justify-center mb-4 sm:flex-row">
                     <Link :href="route('register')" class="inline-flex items-center gap-2 bg-gold border border-gold text-bg font-mono text-[10px] tracking-[0.12em] uppercase font-medium px-7 py-3.5 hover:bg-gold2 transition-all no-underline">
                         Open trading account
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -664,8 +664,8 @@ onBeforeUnmount(() => {
         </section>
 
         <!-- FOOTER -->
-        <footer class="bg-[#0D0804] border-t border-white/[0.06] px-10 pt-10">
-            <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-10 mb-8">
+        <footer class="bg-[#0D0804] border-t border-white/[0.06] px-4 pt-10 sm:px-6 md:px-10">
+            <div class="grid grid-cols-1 gap-8 mb-8 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] lg:gap-10">
                 <div>
                     <a href="#" class="flex items-center gap-2 mb-3 no-underline">
                         <div class="w-2 h-2 rounded-full bg-gold"></div>
@@ -714,7 +714,7 @@ onBeforeUnmount(() => {
                     </ul>
                 </div>
             </div>
-            <div class="border-t border-white/[0.06] py-5 flex justify-between items-center">
+            <div class="border-t border-white/[0.06] py-5 flex flex-col gap-3 justify-between items-start md:flex-row md:items-center">
                 <span class="font-mono text-[9px] tracking-[0.08em] text-cream/35">© 2024 Commodity Origin Ltd · Kampala, Uganda · hello@commodityorigin.ug</span>
                 <div class="flex items-center gap-2">
                     <span class="font-mono text-[9px] tracking-[0.08em] text-cream/35">Pearl of Africa</span>
@@ -1019,5 +1019,23 @@ onBeforeUnmount(() => {
 
 .welcome-page .foot-link:hover {
     color: #f2ede4;
+}
+
+@media (max-width: 767px) {
+    .welcome-page .pipeline-line::before {
+        display: none;
+    }
+
+    .welcome-page .ticker-wrap {
+        animation-duration: 42s;
+    }
+
+    .welcome-page .origin-block {
+        min-width: 0;
+    }
+
+    .welcome-page #mktTable {
+        min-width: 760px;
+    }
 }
 </style>

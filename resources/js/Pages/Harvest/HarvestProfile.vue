@@ -1,15 +1,18 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import {
+    Calendar,
     CollectionTag,
+    DataAnalysis,
     Location,
     PriceTag,
     Tickets,
     User,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import EditHarvestQualityModel from '@/Components/Modals/EditHarvestQualityModel.vue';
 
 const props = defineProps({
     harvest: {
@@ -20,18 +23,20 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    pickMethodOptions: {
+        type: Array,
+        default: () => [],
+    },
+    harvestSeasonOptions: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const page = usePage();
+const qualityModalOpen = ref(false);
 const farms = computed(() => (props.harvest.farm ? [props.harvest.farm] : []));
 const flashSuccess = computed(() => page.props.flash?.success ?? '');
-
-const scoreByGrade = {
-    'Premium Red Cherry': 91.5,
-    'Mostly Red Cherry': 88.4,
-    'Mixed Ripeness': 84.2,
-    'Under-ripe Screening': 79.6,
-};
 
 const harvestCode = computed(() => {
     const year = props.harvest.harvest_date
@@ -43,7 +48,7 @@ const harvestCode = computed(() => {
 
 const farmName = computed(() => props.harvest.farm?.name || `${props.harvest.id}`);
 const farmLocation = computed(() => props.harvest.farm?.location || 'Origin pending');
-const qualityScore = computed(() => scoreByGrade[props.harvest.ripeness_grade] ?? 82.8);
+const qualityScore = computed(() => Number(props.harvest.ripeness_percentage ?? 82.8));
 const varietyLabel = computed(() => props.harvest.variety || props.harvest.farm?.variety || 'Heirloom');
 const volumeKg = computed(() => Number(props.harvest.weight || 0));
 const bagCount = computed(() => Math.max(1, Math.round(volumeKg.value / 60)));
@@ -176,21 +181,37 @@ const analyticsBars = computed(() => {
     }));
 });
 const latestAnalyticsMonth = computed(() => analyticsMonthLabels.value[analyticsMonthLabels.value.length - 1] || 'Current');
-const microClimateCards = computed(() => [
+const harvestSeasonLabel = computed(() => props.harvest.harvest_season || 'Pending');
+const qualityDataCards = computed(() => [
     {
-        label: 'Temperature',
-        value: qualityScore.value >= 90 ? '24.2°C' : '23.6°C',
-        state: 'Optimal',
+        label: 'Ripeness Percentage',
+        value: `${qualityScore.value.toFixed(1)}%`,
+        state: qualityScore.value >= 85 ? 'Strong' : 'Review',
+        tone: qualityScore.value >= 85 ? 'optimal' : 'warning',
     },
     {
-        label: 'Humidity',
-        value: volumeKg.value >= 1000 ? '62%' : '58%',
-        state: 'Optimal',
+        label: 'Foreign Matter',
+        value: props.harvest.foreign_matter_present ? 'Present' : 'None detected',
+        state: props.harvest.foreign_matter_present ? 'Flagged' : 'Clear',
+        tone: props.harvest.foreign_matter_present ? 'warning' : 'optimal',
     },
     {
-        label: 'Moisture',
-        value: qualityScore.value >= 87 ? '18.5%' : '20.4%',
-        state: qualityScore.value >= 87 ? 'Optimal' : 'Warning',
+        label: 'Pest Damage',
+        value: props.harvest.pest_damage ? 'Present' : 'None detected',
+        state: props.harvest.pest_damage ? 'Flagged' : 'Clear',
+        tone: props.harvest.pest_damage ? 'warning' : 'optimal',
+    },
+    {
+        label: 'Disease Signs',
+        value: props.harvest.disease_signs ? 'Visible' : 'None detected',
+        state: props.harvest.disease_signs ? 'Flagged' : 'Clear',
+        tone: props.harvest.disease_signs ? 'warning' : 'optimal',
+    },
+    {
+        label: 'Visible Defects',
+        value: props.harvest.visible_defects ? 'Visible' : 'None detected',
+        state: props.harvest.visible_defects ? 'Flagged' : 'Clear',
+        tone: props.harvest.visible_defects ? 'warning' : 'optimal',
     },
 ]);
 
@@ -219,35 +240,53 @@ watch(
 
 <template>
     <AppLayout :title="harvestCode">
-        <Head :title="harvestCode" />
+        <!-- <Head :title="harvestCode" /> -->
         <div class="harvest-profile-page">
             <div class="harvest-profile-shell">
                 <div class="harvest-profile-layout">
                     <main class="harvest-profile-main">
                         <section class="harvest-hero-card">
                             <div class="harvest-hero-card__content">
-                                <div class="harvest-hero-card__eyebrow">Farm Harvest Detail</div>
+                                <div class="harvest-hero-card__eyebrow-row">
+                                    <div class="harvest-hero-card__eyebrow">
+                                        <el-icon><Tickets /></el-icon>
+                                        <span>Farm Harvest Detail</span>
+                                    </div>
+                                    <span class="harvest-hero-card__season-badge">{{ harvestSeasonLabel }} Season</span>
+                                </div>
                                 <h1 class="harvest-hero-card__title">H-{{ props.harvest.id }}</h1>
                                 <p class="harvest-hero-card__description">
-                                    Institutional harvest intake from {{ farmName }} verified for quality and field traceability through the Commodity Origin workflow.
+                                    Quality-checked harvest intake from {{ farmName }}.
                                 </p>
                             </div>
 
                             <div class="harvest-hero-card__stats">
                                 <div class="harvest-hero-card__stat">
-                                    <span class="harvest-hero-card__stat-label">Date Harvested</span>
+                                    <span class="harvest-hero-card__stat-label">
+                                        <el-icon><Calendar /></el-icon>
+                                        <span>Date Harvested</span>
+                                    </span>
                                     <strong>{{ harvestDateLabel }}</strong>
                                 </div>
                                 <div class="harvest-hero-card__stat">
-                                    <span class="harvest-hero-card__stat-label">Weight</span>
+                                    <span class="harvest-hero-card__stat-label">
+                                        <el-icon><Tickets /></el-icon>
+                                        <span>Weight</span>
+                                    </span>
                                     <strong>{{ Number(props.harvest.weight || 0).toLocaleString() }} kg</strong>
                                 </div>
                                 <div class="harvest-hero-card__stat">
-                                    <span class="harvest-hero-card__stat-label">Date Planted</span>
+                                    <span class="harvest-hero-card__stat-label">
+                                        <el-icon><Calendar /></el-icon>
+                                        <span>Date Planted</span>
+                                    </span>
                                     <strong>{{ plantedDateLabel }}</strong>
                                 </div>
                                 <div class="harvest-hero-card__stat">
-                                    <span class="harvest-hero-card__stat-label">Variety</span>
+                                    <span class="harvest-hero-card__stat-label">
+                                        <el-icon><PriceTag /></el-icon>
+                                        <span>Variety</span>
+                                    </span>
                                     <strong>{{ varietyLabel }}</strong>
                                 </div>
                             </div>
@@ -258,7 +297,10 @@ watch(
                             <article class="harvest-panel harvest-panel--analytics">
                                 <div class="harvest-panel__header">
                                     <div>
-                                        <div class="harvest-panel__title">Harvest Analytics</div>
+                                        <div class="harvest-panel__title">
+                                            <el-icon><DataAnalysis /></el-icon>
+                                            <span>Harvest Analytics</span>
+                                        </div>
                                         <div class="harvest-panel__subtitle">
                                             {{ usesLongRangeBuckets ? 'Progression from planted date to harvest date (kg)' : 'Monthly progression from planted date to harvest date (kg)' }}
                                         </div>
@@ -284,15 +326,20 @@ watch(
                             </article>
 
                             <aside class="harvest-micro-climate-card">
-                                <div class="harvest-panel__title">Micro-Climate Data</div>
+                                <div>
+                                    <div class="harvest-panel__title">
+                                        <el-icon><DataAnalysis /></el-icon>
+                                        <span>Quality Data</span>
+                                    </div>
+                                </div>
 
                                 <div class="harvest-micro-climate-card__rows">
-                                    <div v-for="item in microClimateCards" :key="item.label" class="harvest-micro-climate-card__row">
+                                    <div v-for="item in qualityDataCards" :key="item.label" class="harvest-micro-climate-card__row">
                                         <div>
                                             <div class="harvest-micro-climate-card__label">{{ item.label }}</div>
                                             <div class="harvest-micro-climate-card__value">{{ item.value }}</div>
                                         </div>
-                                        <span class="harvest-micro-climate-card__badge" :class="item.state.toLowerCase()">{{ item.state }}</span>
+                                        <span class="harvest-micro-climate-card__badge" :class="item.tone">{{ item.state }}</span>
                                     </div>
                                 </div>
 
@@ -302,7 +349,10 @@ watch(
                         <section class="harvest-panel">
                             <div class="harvest-ledger-head">
                                 <div>
-                                    <div class="harvest-panel__title">Farms</div>
+                                    <div class="harvest-panel__title">
+                                        <el-icon><CollectionTag /></el-icon>
+                                        <span>Farms</span>
+                                    </div>
                                     <div class="harvest-panel__subtitle">Farm linked to this harvest record.</div>
                                 </div>
                             </div>
@@ -374,21 +424,23 @@ watch(
 
                     <aside class="harvest-terminal-card h-100">
                         <div class="harvest-terminal-card__title">
-                            Price
+                            <el-icon><PriceTag /></el-icon>
+                            <span>Price</span>
                         </div>
 
                         <div class="harvest-terminal-card__price-label">
                             Current Market Price
                         </div>
                         <div class="harvest-terminal-card__price">Shs. {{ currentPrice.toFixed(2) }}<span></span></div>
-                        <div class="harvest-terminal-card__delta">{{ priceChange }} since morning</div>
+                     
+
 
                         <div class="harvest-terminal-card__volume-block">
                             <div class="harvest-terminal-card__volume-label">Bidding Volume (Bags)</div>
                             <div class="harvest-terminal-card__volume-value">{{ bagCount }}</div>
                         </div>
 
-                        <button type="button" class="harvest-terminal-card__primary">Place Bid</button>
+                        <button type="button" class="harvest-terminal-card__primary" @click="qualityModalOpen = true">Edit Harvest Profile</button>
                         <button type="button" class="harvest-terminal-card__secondary">Request Sample</button>
 
                         <div class="harvest-terminal-card__meta">
@@ -411,6 +463,12 @@ watch(
                 </div>
             </div>
         </div>
+        <EditHarvestQualityModel
+            v-model="qualityModalOpen"
+            :harvest="props.harvest"
+            :pick-method-options="props.pickMethodOptions"
+            :harvest-season-options="props.harvestSeasonOptions"
+        />
     </AppLayout>
 </template>
 
@@ -514,9 +572,33 @@ watch(
 }
 
 .harvest-hero-card__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     color: #9aa6a2;
     font-size: 10px;
     font-weight: 700;
+}
+
+.harvest-hero-card__eyebrow-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.harvest-hero-card__season-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: #eef6f2;
+    color: #0e6a46;
+    padding: 5px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: 'IBM Plex Mono', monospace;
 }
 
 .harvest-hero-card__title {
@@ -548,9 +630,16 @@ watch(
 }
 
 .harvest-hero-card__stat-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     color: #9aa6a2;
     font-size: 9px;
     font-weight: 700;
+}
+
+.harvest-hero-card__stat-label :deep(svg) {
+    font-size: 12px;
 }
 
 .harvest-hero-card__stat strong {
@@ -633,9 +722,18 @@ watch(
 
 .harvest-panel__title,
 .harvest-terminal-card__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     color: #253b35;
     font-size: 12px;
     font-weight: 800;
+}
+
+.harvest-panel__title :deep(svg),
+.harvest-terminal-card__title :deep(svg),
+.harvest-hero-card__eyebrow :deep(svg) {
+    font-size: 14px;
 }
 
 .harvest-panel__subtitle {
@@ -730,15 +828,15 @@ watch(
 
 .harvest-micro-climate-card__label {
     color: #99a5a1;
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
 }
 
 .harvest-micro-climate-card__value {
     margin-top: 4px;
     color: #18342d;
-    font-size: 18px;
-    font-weight: 800;
+    font-size: 15px;
+    font-weight: 700;
 }
 
 .harvest-micro-climate-card__badge {
@@ -887,6 +985,24 @@ watch(
     color: #0e6a46;
     font-size: 12px;
     font-weight: 700;
+}
+
+.harvest-terminal-card__season {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-radius: 12px;
+    background: #f6f8f7;
+    padding: 12px 14px;
+    color: #7d8784;
+    font-size: 11px;
+}
+
+.harvest-terminal-card__season strong {
+    color: #17322c;
+    font-size: 12px;
+    font-weight: 800;
 }
 
 .harvest-terminal-card__volume-block {

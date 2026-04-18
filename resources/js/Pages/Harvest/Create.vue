@@ -15,7 +15,7 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
-    ripenessGradeOptions: {
+    harvestSeasonOptions: {
         type: Array,
         default: () => [],
     },
@@ -46,10 +46,15 @@ const form = useForm({
     date_planted_month: '',
     date_planted_year: '',
     harvest_date: '',
+    harvest_season: '',
     pick_method: '',
     price: '',
     weight: '',
-    ripeness_grade: '',
+    ripeness_percentage: '',
+    foreign_matter_present: false,
+    pest_damage: false,
+    disease_signs: false,
+    visible_defects: false,
 });
 
 const selectedFarm = computed(() => {
@@ -109,10 +114,15 @@ const submit = () => {
                 ? `${data.date_planted_year}-${data.date_planted_month}-01`
                 : '',
             harvest_date: data.harvest_date,
+            harvest_season: data.harvest_season,
             pick_method: data.pick_method,
             price: data.price,
             weight: data.weight,
-            ripeness_grade: data.ripeness_grade,
+            ripeness_percentage: data.ripeness_percentage,
+            foreign_matter_present: data.foreign_matter_present,
+            pest_damage: data.pest_damage,
+            disease_signs: data.disease_signs,
+            visible_defects: data.visible_defects,
         }))
         .post(route('harvest.store'));
 };
@@ -197,6 +207,21 @@ const submit = () => {
 
                             <div class="app-form-field">
                                 <label class="app-form-label">
+                                    Harvest season <span class="app-form-required">*</span>
+                                </label>
+                                <el-select v-model="form.harvest_season" class="app-form-control" placeholder="Select harvest season">
+                                    <el-option
+                                        v-for="option in props.harvestSeasonOptions"
+                                        :key="option"
+                                        :label="option"
+                                        :value="option"
+                                    />
+                                </el-select>
+                                <InputError class="mt-2 text-sm" :message="form.errors.harvest_season" />
+                            </div>
+
+                            <div class="app-form-field">
+                                <label class="app-form-label">
                                     Pick method <span class="app-form-required">*</span>
                                 </label>
                                 <el-select v-model="form.pick_method" class="app-form-control" placeholder="Select pick method">
@@ -220,23 +245,25 @@ const submit = () => {
 
 
 
-                            <div class="app-form-field ">
+                            <div class="app-form-field">
                                 <label class="app-form-label">
-                                    Ripeness grade <span class="app-form-required">*</span>
+                                    Ripeness percentage <span class="app-form-required">*</span>
                                 </label>
-                                <el-select v-model="form.ripeness_grade" class="app-form-control" placeholder="Select ripeness grade">
-                                    <el-option
-                                        v-for="option in props.ripenessGradeOptions"
-                                        :key="option"
-                                        :label="option"
-                                        :value="option"
-                                    />
-                                </el-select>
-                                <InputError class="mt-2 text-sm" :message="form.errors.ripeness_grade" />
+                                <el-input
+                                    v-model="form.ripeness_percentage"
+                                    class="app-form-control"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    placeholder="e.g. 92.50"
+                                >
+                                    <template #suffix>%</template>
+                                </el-input>
+                                <InputError class="mt-2 text-sm" :message="form.errors.ripeness_percentage" />
                             </div>
 
-
-                               <div class="app-form-field">
+                            <div class="app-form-field md:col-span-2">
                                 <label class="app-form-label">
                                     Price <span class="app-form-required">*</span>
                                 </label>
@@ -244,6 +271,61 @@ const submit = () => {
                                     <template #prefix>Shs.</template>
                                 </el-input>
                                 <InputError class="mt-2 text-sm" :message="form.errors.price" />
+                            </div>
+
+                            <div class="app-form-field md:col-span-2">
+                                <div class="flex flex-col gap-1">
+                                    <label class="app-form-label">Quality indicators</label>
+                                    <p class="text-[12px] leading-5 text-[#6B7280]">
+                                        Capture visible intake issues before the batch moves into pricing and downstream quality review.
+                                    </p>
+                                </div>
+
+                                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                                    <label class="flex min-h-[88px] items-start justify-between gap-4 rounded-lg border border-[#E5E7EB] bg-[#FCFDFD] px-4 py-3.5">
+                                        <span class="space-y-1">
+                                            <span class="block text-[13px] font-semibold text-[#111827]">Foreign matter present</span>
+                                            <span class="block text-[12px] leading-5 text-[#6B7280]">
+                                                Stones, sticks, husk residue, or other unwanted material found in the lot.
+                                            </span>
+                                            <InputError class="pt-1 text-sm" :message="form.errors.foreign_matter_present" />
+                                        </span>
+                                        <el-switch v-model="form.foreign_matter_present" />
+                                    </label>
+
+                                    <label class="flex min-h-[88px] items-start justify-between gap-4 rounded-lg border border-[#E5E7EB] bg-[#FCFDFD] px-4 py-3.5">
+                                        <span class="space-y-1">
+                                            <span class="block text-[13px] font-semibold text-[#111827]">Pest damage</span>
+                                            <span class="block text-[12px] leading-5 text-[#6B7280]">
+                                                Signs of insect attack or cherry damage visible during intake inspection.
+                                            </span>
+                                            <InputError class="pt-1 text-sm" :message="form.errors.pest_damage" />
+                                        </span>
+                                        <el-switch v-model="form.pest_damage" />
+                                    </label>
+
+                                    <label class="flex min-h-[88px] items-start justify-between gap-4 rounded-lg border border-[#E5E7EB] bg-[#FCFDFD] px-4 py-3.5">
+                                        <span class="space-y-1">
+                                            <span class="block text-[13px] font-semibold text-[#111827]">Disease signs</span>
+                                            <span class="block text-[12px] leading-5 text-[#6B7280]">
+                                                Mold, rot, discoloration, or other symptoms that affect harvest quality.
+                                            </span>
+                                            <InputError class="pt-1 text-sm" :message="form.errors.disease_signs" />
+                                        </span>
+                                        <el-switch v-model="form.disease_signs" />
+                                    </label>
+
+                                    <label class="flex min-h-[88px] items-start justify-between gap-4 rounded-lg border border-[#E5E7EB] bg-[#FCFDFD] px-4 py-3.5">
+                                        <span class="space-y-1">
+                                            <span class="block text-[13px] font-semibold text-[#111827]">Visible defects</span>
+                                            <span class="block text-[12px] leading-5 text-[#6B7280]">
+                                                Broken, immature, or clearly inconsistent cherries noticed during handling.
+                                            </span>
+                                            <InputError class="pt-1 text-sm" :message="form.errors.visible_defects" />
+                                        </span>
+                                        <el-switch v-model="form.visible_defects" />
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
