@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Harvest extends Model
 {
@@ -22,6 +23,7 @@ class Harvest extends Model
         'date_planted',
         'harvest_date',
         'harvest_season',
+        'status',
         'pick_method',
         'price',
         'weight',
@@ -63,5 +65,13 @@ class Harvest extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Get the documents attached to this harvest.
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(HarvestDocument::class);
     }
 }

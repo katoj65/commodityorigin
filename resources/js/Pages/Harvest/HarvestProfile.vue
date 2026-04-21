@@ -6,12 +6,14 @@ import {
     Calendar,
     CollectionTag,
     DataAnalysis,
+    Document,
     Location,
     PriceTag,
     Tickets,
     User,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import AddHarvestDocumentModal from '@/Components/Modals/AddHarvestDocumentModal.vue';
 import EditHarvestQualityModel from '@/Components/Modals/EditHarvestQualityModel.vue';
 
 const props = defineProps({
@@ -31,11 +33,24 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    documentTypeOptions: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const page = usePage();
 const qualityModalOpen = ref(false);
+const documentModalOpen = ref(false);
 const farms = computed(() => (props.harvest.farm ? [props.harvest.farm] : []));
+const harvestDocuments = computed(() => (
+    Array.isArray(props.harvest.harvest_documents)
+        ? props.harvest.harvest_documents
+        : []
+));
+const documentCountLabel = computed(() => (
+    `${harvestDocuments.value.length} ${harvestDocuments.value.length === 1 ? 'file' : 'files'}`
+));
 const flashSuccess = computed(() => page.props.flash?.success ?? '');
 
 const harvestCode = computed(() => {
@@ -125,6 +140,17 @@ const createdDateLabel = computed(() => {
         year: 'numeric',
     }).format(new Date(props.harvest.created_at));
 });
+const formatDocumentDate = (value) => {
+    if (!value) {
+        return 'Recently added';
+    }
+
+    return new Intl.DateTimeFormat('en-UG', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(new Date(value));
+};
 const formatRangeLabel = (start, end) => {
     const startDate = new Date(`${start}-01`);
     const endDate = new Date(`${end}-01`);
@@ -441,20 +467,62 @@ watch(
                         </div>
 
                         <button type="button" class="harvest-terminal-card__primary" @click="qualityModalOpen = true">Edit Harvest Profile</button>
-                        <button type="button" class="harvest-terminal-card__secondary">Request Sample</button>
+                        <button type="button" class="harvest-terminal-card__secondary" @click="documentModalOpen = true">
+                            Add Document
+                        </button>
 
-                        <div class="harvest-terminal-card__meta">
-                            <div class="harvest-terminal-card__meta-row">
-                                <span>Lot #</span>
-                                <strong>HT-{{ String(props.harvest.id).padStart(4, '0') }}</strong>
+                        <div class="harvest-terminal-card__documents">
+                            <div class="harvest-terminal-card__documents-header">
+                                <div>
+                                    <div class="harvest-terminal-card__documents-label">Documents</div>
+                                </div>
+                                <span class="harvest-terminal-card__documents-badge">{{ documentCountLabel }}</span>
                             </div>
-                            <div class="harvest-terminal-card__meta-row">
-                                <span>Shipping Estimate</span>
-                                <strong>14-21 Days</strong>
+
+                            <div v-if="harvestDocuments.length" class="harvest-terminal-card__documents-list">
+                                <article
+                                    v-for="document in harvestDocuments"
+                                    :key="document.id"
+                                    class="harvest-terminal-card__document-item"
+                                >
+                                    <div class="harvest-terminal-card__document-icon">
+                                        <el-icon><Document /></el-icon>
+                                    </div>
+
+                                    <div class="harvest-terminal-card__document-copy">
+                                        <div class="harvest-terminal-card__document-meta">
+                                            <span class="harvest-terminal-card__document-type">
+                                                {{ document.document_type || 'Harvest document' }}
+                                            </span>
+                                            <span class="harvest-terminal-card__document-date">
+                                                {{ formatDocumentDate(document.created_at) }}
+                                            </span>
+                                        </div>
+
+                                        <span class="harvest-terminal-card__document-title">{{ document.title }}</span>
+                                        <span class="harvest-terminal-card__document-name">
+                                            {{ document.original_name }}
+                                        </span>
+                                    </div>
+
+                                    <a
+                                        class="harvest-terminal-card__document-link"
+                                        :href="document.file_url"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Open
+                                    </a>
+                                </article>
                             </div>
-                            <div class="harvest-terminal-card__meta-row">
-                                <span>Available Stock</span>
-                                <strong>{{ bagCount }}/{{ bagCount + 6 }} Bags</strong>
+
+                            <div v-else class="harvest-terminal-card__documents-empty">
+                                <div>
+                                    <div class="harvest-terminal-card__documents-empty-title">No documents yet</div>
+                                    <p class="harvest-terminal-card__documents-empty-copy">
+                                        Add intake sheets, compliance files, or supporting records to keep this harvest verifiable.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
@@ -468,6 +536,11 @@ watch(
             :harvest="props.harvest"
             :pick-method-options="props.pickMethodOptions"
             :harvest-season-options="props.harvestSeasonOptions"
+        />
+        <AddHarvestDocumentModal
+            v-model="documentModalOpen"
+            :harvest="props.harvest"
+            :document-type-options="props.documentTypeOptions"
         />
     </AppLayout>
 </template>
@@ -1046,22 +1119,145 @@ watch(
     color: #8a5c27;
 }
 
-.harvest-terminal-card__meta {
+.harvest-terminal-card__documents {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.harvest-terminal-card__documents-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.harvest-terminal-card__documents-label {
+    color: #18342d;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.harvest-terminal-card__documents-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: #f3f5f4;
+    color: #5f6f69;
+    padding: 5px 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+
+.harvest-terminal-card__documents-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.harvest-terminal-card__meta-row {
+.harvest-terminal-card__document-item {
     display: flex;
-    justify-content: space-between;
+    align-items: flex-start;
     gap: 12px;
-    color: #7d8784;
-    font-size: 12px;
+    padding: 0 0 12px;
+    border-bottom: 1px solid #eef2f0;
 }
 
-.harvest-terminal-card__meta-row strong {
+.harvest-terminal-card__document-item:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.harvest-terminal-card__document-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f6f5;
+    color: #64746e;
+    font-size: 16px;
+}
+
+.harvest-terminal-card__document-copy {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.harvest-terminal-card__document-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.harvest-terminal-card__document-title {
     color: #16312b;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.harvest-terminal-card__document-type {
+    color: #6f847b;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.harvest-terminal-card__document-date,
+.harvest-terminal-card__document-name {
+    color: #7d8784;
+    font-size: 11px;
+}
+
+.harvest-terminal-card__document-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    color: #16312b;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-decoration: none;
+    padding: 6px 0;
+}
+
+.harvest-terminal-card__document-link:hover {
+    text-decoration: underline;
+}
+
+.harvest-terminal-card__documents-empty {
+    padding: 4px 0 0;
+}
+
+.harvest-terminal-card__documents-empty-title {
+    color: #16312b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.harvest-terminal-card__documents-empty-copy {
+    margin: 6px 0 0;
+    color: #70807a;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 .harvest-terminal-card__origin {

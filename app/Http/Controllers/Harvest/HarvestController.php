@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\HarvestResource;
 use App\Models\Farm;
 use App\Models\Harvest;
+use App\Models\DocumentMetadata;
+use App\Models\HarvestDocument;
 use App\Models\PickMethodMetadata;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -36,13 +38,14 @@ class HarvestController extends Controller
             ->through(fn (Harvest $harvest): array => [
                 'id' => $harvest->id,
                 'code' => self::formatHarvestCode($harvest),
-                'estate_name' => $harvest->farm?->name ?? "Farm #{$harvest->farm_id}",
-                'variety' => $harvest->variety,
-                'processing_method' => self::processingMethodFromPickMethod($harvest->pick_method),
-                'yield_kg' => (float) $harvest->weight,
-                'scaa_score' => self::scoreForRipeness($harvest->ripeness_percentage),
-                'status' => self::statusForHarvest($harvest),
-                'status_tone' => self::statusToneForHarvest($harvest),
+                'farm_name' => $harvest->farm?->name ?? "Farm #{$harvest->farm_id}",
+                'date_planted' => $harvest->date_planted?->toDateString(),
+                'harvest_date' => $harvest->harvest_date?->toDateString(),
+                'harvest_season' => $harvest->harvest_season,
+                'status' => $harvest->status,
+                'weight' => (float) $harvest->weight,
+                'price' => $harvest->price !== null ? (float) $harvest->price : null,
+                'pick_method' => $harvest->pick_method,
                 'show_url' => route('harvest.show', $harvest),
             ]);
 
@@ -117,13 +120,13 @@ class HarvestController extends Controller
      */
     public function show(Harvest $harvest): Response
     {
-        $harvest->load('farm.farmer', 'creator');
+        $harvest->load([
+            'farm.farmer',
+            'creator',
+            'documents' => fn ($query) => $query->latest(),
+        ]);
         Gate::authorize('view', $harvest);
 
-
-
-
-        
         return Inertia::render('Harvest/HarvestProfile', [
             'harvest' => HarvestResource::make($harvest)->resolve(),
             'dateRange' => self::getRangeOfDates(
@@ -132,6 +135,7 @@ class HarvestController extends Controller
             ),
             'pickMethodOptions' => self::pickMethodOptions(),
             'harvestSeasonOptions' => self::harvestSeasonOptions(),
+            'documentTypeOptions' => self::documentTypeOptions(),
         ]);
     }
 
@@ -227,6 +231,38 @@ class HarvestController extends Controller
 
         return back();
     }
+
+    /**
+     * Store a document for the specified harvest.
+     */
+    public function storeDocument(Request $request, Harvest $harvest): RedirectResponse
+    {
+        Gate::authorize('update', $harvest);
+
+        $documentTypeOptions = self::documentTypeOptions()->all();
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'document_type' => ['required', 'string', 'max:255', Rule::in($documentTypeOptions)],
+            'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:10240'],
+        ]);
+
+        $file = $request->file('document');
+        $path = $file->store('harvest-documents', 'public');
+
+        HarvestDocument::query()->create([
+            'harvest_id' => $harvest->id,
+            'user_id' => $request->user()->id,
+            'title' => $validated['title'],
+            'document_type' => $validated['document_type'] ?? null,
+            'file_path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getClientMimeType(),
+            'file_size' => $file->getSize(),
+        ]);
+
+        return back();
+    }
     /**
      * Return the inclusive monthly range buckets between the planted and harvest dates.
      *
@@ -294,6 +330,16 @@ class HarvestController extends Controller
     protected static function pickMethodOptions()
     {
         return PickMethodMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name')
+            ->values();
+    }
+
+    protected static function documentTypeOptions()
+    {
+        return DocumentMetadata::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('name')

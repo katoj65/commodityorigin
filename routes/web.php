@@ -70,8 +70,11 @@ Route::middleware([
 
     // Batch workspace routes.
     Route::prefix('batch')->name('batch.')->group(function () {
+        Route::get('/', [BatchController::class, 'index'])->name('index');
         Route::get('/create', [BatchController::class, 'create'])->name('create');
         Route::post('/', [BatchController::class, 'store'])->name('store');
+        Route::patch('/{batch}', [BatchController::class, 'update'])->name('update');
+        Route::post('/{batch}/compliance', [BatchController::class, 'storeCompliance'])->name('compliance.store');
         Route::get('/{batch}', [BatchController::class, 'show'])->name('show');
     });
 
@@ -80,6 +83,7 @@ Route::middleware([
         Route::get('/', [HarvestController::class, 'index'])->name('index');
         Route::get('/create', [HarvestController::class, 'create'])->name('create');
         Route::post('/', [HarvestController::class, 'store'])->name('store');
+        Route::post('/{harvest}/documents', [HarvestController::class, 'storeDocument'])->name('documents.store');
         Route::patch('/{harvest}', [HarvestController::class, 'update'])->name('update');
         Route::get('/{harvest}', [HarvestController::class, 'show'])->name('show');
     });

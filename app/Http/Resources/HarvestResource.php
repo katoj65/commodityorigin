@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class HarvestResource extends JsonResource
 {
@@ -22,6 +23,7 @@ class HarvestResource extends JsonResource
             'date_planted' => optional($this->date_planted)?->toDateString(),
             'harvest_date' => optional($this->harvest_date)?->toDateString(),
             'harvest_season' => $this->harvest_season,
+            'status' => $this->status,
             'pick_method' => $this->pick_method,
             'price' => $this->price,
             'weight' => $this->weight,
@@ -33,6 +35,16 @@ class HarvestResource extends JsonResource
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
             'farm' => $this->whenLoaded('farm', fn (): array => FarmResource::make($this->farm)->resolve()),
+            'harvest_documents' => $this->whenLoaded('documents', fn () => $this->documents->map(
+                fn ($document): array => [
+                    'id' => $document->id,
+                    'title' => $document->title,
+                    'document_type' => $document->document_type,
+                    'original_name' => $document->original_name,
+                    'file_url' => Storage::disk('public')->url($document->file_path),
+                    'created_at' => optional($document->created_at)?->toDateTimeString(),
+                ],
+            )->values()->all()),
         ];
     }
 }

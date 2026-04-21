@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             CertificationMetadataSeeder::class,
             RegulatoryComplianceMetadataSeeder::class,
             DocumentationMetadataSeeder::class,
+            DocumentMetadataSeeder::class,
             SocialImpactMetadataSeeder::class,
             EnvironmentMetadataSeeder::class,
             LandMetadataSeeder::class,

@@ -47,6 +47,31 @@ const rangeSummary = computed(() => {
 
 let searchDebounceId = null;
 
+const formatDate = (value) => {
+    if (!value) {
+        return 'Pending';
+    }
+
+    return new Intl.DateTimeFormat('en-UG', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(new Date(value));
+};
+
+const formatWeight = (value) => `${Number(value || 0).toLocaleString()} kg`;
+
+const formatPrice = (value) => {
+    if (value === null || value === undefined || value === '') {
+        return 'Pending';
+    }
+
+    return `Shs. ${Number(value).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}`;
+};
+
 const visitHarvestIndex = (page = 1) => {
     router.get(
         route('harvest.index'),
@@ -153,28 +178,28 @@ onBeforeUnmount(() => {
                             <thead>
                                 <tr>
                                     <th>Harvest ID</th>
-                                    <th>Estate Name</th>
-                                    <th>Variety</th>
-                                    <th>Processing Method</th>
-                                    <th>Yield (kg)</th>
-                                    <th>SCAA Score</th>
-                                    <th>Status</th>
+                                    <th>Farm</th>
+                                    <th>Date Planted</th>
+                                    <th>Harvest Date</th>
+                                    <th>Harvest Season</th>
+                                    <th>Weight</th>
+                                    <th>Price</th>
+                                    <th>Picking Method</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody v-if="hasHarvests">
                                 <tr v-for="harvest in harvests.data" :key="harvest.id">
                                     <td class="harvest-directory-code">H-{{ harvest.id }}</td>
-                                    <td class="harvest-directory-estate">{{ harvest.estate_name }}</td>
+                                    <td class="harvest-directory-estate">{{ harvest.farm_name }}</td>
+                                    <td>{{ formatDate(harvest.date_planted) }}</td>
+                                    <td>{{ formatDate(harvest.harvest_date) }}</td>
                                     <td>
-                                        <span class="harvest-directory-variety">{{ harvest.variety }}</span>
+                                        <span class="harvest-directory-variety">{{ harvest.harvest_season || 'Pending' }}</span>
                                     </td>
-                                    <td>{{ harvest.processing_method }}</td>
-                                    <td>{{ Number(harvest.yield_kg).toLocaleString() }}</td>
-                                    <td>{{ Number(harvest.scaa_score).toFixed(1) }}</td>
-                                    <td>
-                                        <span class="harvest-directory-status" :class="harvest.status_tone">{{ harvest.status }}</span>
-                                    </td>
+                                    <td>{{ formatWeight(harvest.weight) }}</td>
+                                    <td>{{ formatPrice(harvest.price) }}</td>
+                                    <td>{{ harvest.pick_method || 'Pending' }}</td>
                                     <td>
                                         <Link :href="harvest.show_url" class="harvest-directory-action-link">Open</Link>
                                     </td>
@@ -182,7 +207,7 @@ onBeforeUnmount(() => {
                             </tbody>
                             <tbody v-else>
                                 <tr>
-                                    <td colspan="8" class="harvest-directory-empty">
+                                    <td colspan="9" class="harvest-directory-empty">
                                         No harvests have been recorded yet.
                                     </td>
                                 </tr>
@@ -223,25 +248,6 @@ onBeforeUnmount(() => {
                     </div>
                 </section>
 
-                <section class="harvest-directory-insights">
-                    <article class="harvest-directory-insight-card dark">
-                        <div class="harvest-directory-insight-eyebrow">Regional Quality Trends</div>
-                        <h2>Regional Quality Trends</h2>
-                        <p>
-                            The harvest portfolio is showing stronger SCAA stability this season, with washed lots leading consistency across estate groups.
-                        </p>
-                        <button type="button">View Full Analysis</button>
-                    </article>
-
-                    <article class="harvest-directory-insight-card warm">
-                        <div class="harvest-directory-insight-eyebrow">Efficiency Tip</div>
-                        <h2>Optimizing Natural Lots</h2>
-                        <p>
-                            Natural method lots can reduce holding time when early drying interventions are scheduled within the first export prep window.
-                        </p>
-                        <a href="#" @click.prevent>Learn More</a>
-                    </article>
-                </section>
             </div>
         </div>
     </AppLayout>
@@ -271,23 +277,20 @@ onBeforeUnmount(() => {
 }
 
 .harvest-directory-filter-wrap,
-.harvest-directory-pagination,
-.harvest-directory-insights {
+.harvest-directory-pagination {
     display: flex;
     gap: 14px;
 }
 
 .harvest-directory-eyebrow,
 .harvest-directory-table th,
-.harvest-directory-insight-eyebrow,
 .harvest-directory-section-title {
     font-family: 'IBM Plex Mono', monospace;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
-.harvest-directory-log-button,
-.harvest-directory-insight-card button {
+.harvest-directory-log-button {
     text-decoration: none;
 }
 
@@ -480,66 +483,7 @@ onBeforeUnmount(() => {
     opacity: 0.5;
 }
 
-.harvest-directory-insight-card {
-    flex: 1;
-    border-radius: 18px;
-    padding: 24px;
-}
-
-.harvest-directory-insight-card.dark {
-    background:
-        radial-gradient(circle at top right, rgba(18, 160, 121, 0.22), transparent 36%),
-        linear-gradient(135deg, #0e6949 0%, #065f46 100%);
-    color: #eafff7;
-}
-
-.harvest-directory-insight-card.warm {
-    background: #ffd9b3;
-    color: #4f3115;
-}
-
-.harvest-directory-insight-eyebrow {
-    font-size: 10px;
-    font-weight: 700;
-    opacity: 0.75;
-}
-
-.harvest-directory-insight-card h2 {
-    margin-top: 10px;
-    font-size: 32px;
-    font-weight: 800;
-    line-height: 1.05;
-}
-
-.harvest-directory-insight-card p {
-    margin-top: 10px;
-    max-width: 460px;
-    font-size: 13px;
-    line-height: 1.7;
-}
-
-.harvest-directory-insight-card button {
-    margin-top: 18px;
-    border: 0;
-    padding: 10px 14px;
-}
-
-.harvest-directory-insight-card a {
-    display: inline-flex;
-    margin-top: 18px;
-    color: inherit;
-    font-size: 12px;
-    font-weight: 800;
-    text-decoration: none;
-    text-transform: uppercase;
-}
-
 @media (max-width: 1080px) {
-    .harvest-directory-insights {
-        grid-template-columns: 1fr;
-        display: grid;
-    }
-
     .harvest-directory-toolbar,
     .harvest-directory-hero,
     .harvest-directory-footer {

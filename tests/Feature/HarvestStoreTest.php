@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Farm;
 use App\Models\Farmer;
 use App\Models\Harvest;
+use App\Models\HarvestDocument;
 use App\Models\PickMethodMetadata;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -146,6 +147,63 @@ class HarvestStoreTest extends TestCase
         $response = $this->actingAs($user)->get(route('harvest.show', $harvest));
 
         $response->assertOk();
+    }
+
+    public function test_harvest_profile_includes_uploaded_document_title_and_link(): void
+    {
+        $user = User::factory()->create();
+
+        $farmer = Farmer::query()->create([
+            'user_id' => $user->id,
+            'first_name' => 'Amina',
+            'last_name' => 'Nabirye',
+            'telephone' => '+256700000001',
+            'email' => 'amina@example.com',
+            'district' => 'Mbale',
+            'sub_county' => 'Bungokho',
+            'coffee_type' => 'Arabica',
+            'cooperative' => 'Bugisu Cooperative',
+            'farm_size' => '6 acres',
+        ]);
+
+        $farm = Farm::query()->create([
+            'farmer_id' => $farmer->id,
+            'name' => 'Bukonde Farm',
+            'location' => 'Mbale, Uganda',
+            'size' => '6 acres',
+            'altitude' => '1,850 masl',
+            'variety' => 'SL28',
+        ]);
+
+        $harvest = Harvest::query()->create([
+            'user_id' => $user->id,
+            'farm_id' => $farm->id,
+            'variety' => 'SL28',
+            'date_planted' => '2025-05-01',
+            'harvest_date' => '2026-04-09',
+            'harvest_season' => 'Main Crop',
+            'pick_method' => 'Selective Picking',
+            'price' => 4.85,
+            'weight' => 1250.75,
+            'ripeness_percentage' => 95.00,
+        ]);
+
+        HarvestDocument::query()->create([
+            'harvest_id' => $harvest->id,
+            'user_id' => $user->id,
+            'title' => 'Harvest intake sheet',
+            'document_type' => 'Compliance',
+            'file_path' => 'harvest-documents/intake-sheet.pdf',
+            'original_name' => 'intake-sheet.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 2048,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('harvest.show', $harvest));
+
+        $response->assertOk();
+        $response->assertSee('Harvest intake sheet');
+        $response->assertSee('intake-sheet.pdf');
     }
 
     public function test_non_admin_users_cannot_view_another_users_harvest_profile(): void
@@ -311,6 +369,7 @@ class HarvestStoreTest extends TestCase
         $this->assertSame('2025-05-01', $harvest->date_planted?->toDateString());
         $this->assertSame('2026-04-09', $harvest->harvest_date?->toDateString());
         $this->assertSame('Main Crop', $harvest->harvest_season);
+        $this->assertSame('pending', $harvest->status);
         $this->assertSame('Selective Picking', $harvest->pick_method);
         $this->assertSame('4.85', $harvest->price);
         $this->assertSame('1250.75', $harvest->weight);

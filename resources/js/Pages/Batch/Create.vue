@@ -10,19 +10,33 @@ const page = usePage();
 
 const form = useForm({
     batch_number: '',
+    variety: '',
     warehouse_location: '',
     quantity_bags: '',
     net_weight_kg: '',
+    price: '',
     moisture_content: '',
+    processing_date: '',
+    processing_method: '',
+    drying_method: '',
+    drying_duration: '',
+    milling_status: '',
+    screen_size: '',
+    defect_count: '',
+    cup_score: '',
     notes: '',
 });
 
 const successMessage = computed(() => page.props.flash?.success ?? '');
 const hasErrors = computed(() => Object.keys(form.errors).length > 0);
 
+const processingMethods = ['Washed', 'Natural', 'Honey', 'Anaerobic', 'Semi-washed'];
+const dryingMethods = ['Raised beds', 'Patio', 'Mechanical dryer', 'Greenhouse'];
+const millingStatuses = ['Pending', 'In milling', 'Milled', 'Ready for grading'];
+
 const submit = () => {
     form.post(route('batch.store'), {
-        preserveScroll: true,
+        preserveScroll: 'errors',
         onSuccess: () => {
             form.reset();
         },
@@ -47,36 +61,138 @@ const submit = () => {
 
             <section class="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_320px]">
                 <div class="rounded-xl border border-[#E5E7EB] bg-white px-4 py-4 sm:px-5 sm:py-5">
-                    <form class="space-y-5" @submit.prevent="submit">
+                    <form class="batch-create-form space-y-5" @submit.prevent="submit">
                         <div class="grid gap-4 md:grid-cols-2">
                             <div>
                                 <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Batch number</label>
                                 <el-input v-model="form.batch_number" placeholder="e.g. BATCH-2026-001" />
-                                <InputError class="mt-2 text-sm" :message="form.errors.batch_number" />
+                                <InputError class="batch-create-input-error" :message="form.errors.batch_number" />
                             </div>
 
                             <div>
+                                <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Variety <span class="text-red-500">*</span></label>
+                                <el-input v-model="form.variety" placeholder="e.g. Bourbon, Geisha, SL-28" />
+                                <InputError class="batch-create-input-error" :message="form.errors.variety" />
+                            </div>
+
+                            <div class="md:col-span-2">
                                 <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Warehouse location</label>
                                 <el-input v-model="form.warehouse_location" placeholder="Warehouse or collection point" />
-                                <InputError class="mt-2 text-sm" :message="form.errors.warehouse_location" />
+                                <InputError class="batch-create-input-error" :message="form.errors.warehouse_location" />
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Quantity (bags)</label>
                                 <el-input v-model="form.quantity_bags" type="number" min="1" placeholder="e.g. 12" />
-                                <InputError class="mt-2 text-sm" :message="form.errors.quantity_bags" />
+                                <InputError class="batch-create-input-error" :message="form.errors.quantity_bags" />
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Net weight (kg)</label>
                                 <el-input v-model="form.net_weight_kg" type="number" min="1" step="0.01" placeholder="e.g. 720" />
-                                <InputError class="mt-2 text-sm" :message="form.errors.net_weight_kg" />
+                                <InputError class="batch-create-input-error" :message="form.errors.net_weight_kg" />
                             </div>
 
-                            <div class="md:col-span-2">
+                            <div>
                                 <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Moisture content</label>
                                 <el-input v-model="form.moisture_content" type="number" min="0" max="100" step="0.01" placeholder="Optional moisture percentage" />
-                                <InputError class="mt-2 text-sm" :message="form.errors.moisture_content" />
+                                <InputError class="batch-create-input-error" :message="form.errors.moisture_content" />
+                            </div>
+
+                            <div>
+                                <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Price <span class="text-red-500">*</span></label>
+                                <el-input v-model="form.price" type="number" min="0" step="0.01" placeholder="e.g. 2450" />
+                                <InputError class="batch-create-input-error" :message="form.errors.price" />
+                            </div>
+                        </div>
+
+                        <div class="border-t border-[#EEF2F0] pt-5">
+                            <div class="mb-4">
+                                <h2 class="text-[15px] font-semibold text-[#111827]">Processing details</h2>
+                                <p class="mt-1 text-[13px] leading-5 text-[#6B7280]">
+                                    Add the quality and processing notes available at intake.
+                                </p>
+                            </div>
+
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="batch-create-field">
+                                    <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Processing date <span class="text-red-500">*</span></label>
+                                    <div class="batch-create-control-row">
+                                        <el-date-picker
+                                            v-model="form.processing_date"
+                                            type="date"
+                                            value-format="YYYY-MM-DD"
+                                            placeholder="Select date"
+                                            class="batch-create-date-picker !w-full"
+                                        />
+                                    </div>
+                                    <div v-if="form.errors.processing_date" class="batch-create-date-error-slot">
+                                        <InputError :message="form.errors.processing_date" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Processing method <span class="text-red-500">*</span></label>
+                                    <el-select v-model="form.processing_method" clearable filterable placeholder="Select method" class="!w-full">
+                                        <el-option
+                                            v-for="method in processingMethods"
+                                            :key="method"
+                                            :label="method"
+                                            :value="method"
+                                        />
+                                    </el-select>
+                                    <InputError class="batch-create-input-error" :message="form.errors.processing_method" />
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Drying method <span class="text-red-500">*</span></label>
+                                    <el-select v-model="form.drying_method" clearable filterable placeholder="Select drying method" class="!w-full">
+                                        <el-option
+                                            v-for="method in dryingMethods"
+                                            :key="method"
+                                            :label="method"
+                                            :value="method"
+                                        />
+                                    </el-select>
+                                    <InputError class="batch-create-input-error" :message="form.errors.drying_method" />
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Drying duration (days)</label>
+                                    <el-input v-model="form.drying_duration" type="number" min="0" placeholder="e.g. 14" />
+                                    <InputError class="batch-create-input-error" :message="form.errors.drying_duration" />
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Milling status</label>
+                                    <el-select v-model="form.milling_status" clearable filterable placeholder="Select status" class="!w-full">
+                                        <el-option
+                                            v-for="status in millingStatuses"
+                                            :key="status"
+                                            :label="status"
+                                            :value="status"
+                                        />
+                                    </el-select>
+                                    <InputError class="batch-create-input-error" :message="form.errors.milling_status" />
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Screen size</label>
+                                    <el-input v-model="form.screen_size" placeholder="e.g. 16/18" />
+                                    <InputError class="batch-create-input-error" :message="form.errors.screen_size" />
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Defect count</label>
+                                    <el-input v-model="form.defect_count" type="number" min="0" placeholder="e.g. 8" />
+                                    <InputError class="batch-create-input-error" :message="form.errors.defect_count" />
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Cup score</label>
+                                    <el-input v-model="form.cup_score" type="number" min="0" max="100" step="0.01" placeholder="e.g. 86.75" />
+                                    <InputError class="batch-create-input-error" :message="form.errors.cup_score" />
+                                </div>
                             </div>
 
                         </div>
@@ -89,7 +205,7 @@ const submit = () => {
                                 resize="vertical"
                                 placeholder="Add warehouse, quality, or traceability notes"
                             />
-                            <InputError class="mt-2 text-sm" :message="form.errors.notes" />
+                            <InputError class="batch-create-input-error" :message="form.errors.notes" />
                         </div>
 
                         <div class="flex justify-end pt-1">
@@ -133,8 +249,10 @@ const submit = () => {
                             <div
                                 v-for="item in [
                                     { label: 'Warehouse', value: form.warehouse_location || 'Not set' },
+                                    { label: 'Variety', value: form.variety || 'Not set' },
                                     { label: 'Net Weight', value: form.net_weight_kg ? `${form.net_weight_kg} kg` : 'Not set' },
-                                    { label: 'Moisture', value: form.moisture_content ? `${form.moisture_content}%` : 'Pending test' },
+                                    { label: 'Price', value: form.price ? `$${form.price}` : 'Not set' },
+                                    { label: 'Cup Score', value: form.cup_score || 'Pending test' },
                                 ]"
                                 :key="item.label"
                                 class="rounded-lg border border-[#E5E7EB] px-3.5 py-3"
@@ -142,6 +260,7 @@ const submit = () => {
                                 <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
                                     <el-icon class="text-[#0F5D3B]">
                                         <OfficeBuilding v-if="item.label === 'Warehouse'" />
+                                        <Document v-else-if="item.label === 'Variety'" />
                                         <Location v-else-if="item.label === 'Net Weight'" />
                                         <Document v-else />
                                     </el-icon>
@@ -169,3 +288,43 @@ const submit = () => {
         </div>
     </AppLayout>
 </template>
+
+<style scoped>
+.batch-create-field {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.batch-create-date-picker {
+    width: 100%;
+}
+
+.batch-create-control-row {
+    width: 100%;
+}
+
+.batch-create-form :deep(.el-input),
+.batch-create-form :deep(.el-input-number),
+.batch-create-form :deep(.el-textarea),
+.batch-create-form :deep(.el-select),
+.batch-create-form :deep(.el-date-editor) {
+    width: 100%;
+}
+
+.batch-create-input-error {
+    display: block;
+    margin-top: 15px;
+    line-height: 1.35;
+}
+
+.batch-create-date-error-slot {
+    margin-top: 30px;
+    line-height: 1.35;
+}
+
+.batch-create-date-error-slot :deep(p) {
+    margin: 0;
+
+}
+</style>

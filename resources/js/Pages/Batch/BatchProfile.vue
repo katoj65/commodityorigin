@@ -1,8 +1,10 @@
 <script setup>
-import { computed, watch } from 'vue';
-import { Head, usePage } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import BatchComplianceModal from '@/Components/Modals/BatchComplianceModal.vue';
+import UpdateBatchModal from '@/Components/Modals/UpdateBatchModal.vue';
 
 const props = defineProps({
     batch: {
@@ -12,8 +14,11 @@ const props = defineProps({
 });
 
 const page = usePage();
+const complianceModalOpen = ref(false);
+const updateBatchModalOpen = ref(false);
 
 const flashSuccess = computed(() => page.props.flash?.success ?? '');
+const canManageBatch = computed(() => Boolean(props.batch.can_manage));
 
 const numericWeight = computed(() => Number(props.batch.net_weight_kg ?? 0));
 const numericBags = computed(() => Number(props.batch.quantity_bags ?? 0));
@@ -22,6 +27,10 @@ const numericMoisture = computed(() => Number(props.batch.moisture_content));
 const batchCode = computed(() => props.batch.batch_number || `BATCH-${props.batch.id}`);
 const warehouseLabel = computed(() => props.batch.warehouse_location || 'Origin location pending');
 const varietyLabel = computed(() => {
+    if (props.batch.variety) {
+        return props.batch.variety;
+    }
+
     if ((props.batch.notes || '').toLowerCase().includes('robusta')) {
         return 'Robusta';
     }
@@ -29,11 +38,18 @@ const varietyLabel = computed(() => {
     return 'Heirloom';
 });
 const processLabel = computed(() => (
-    Number.isFinite(numericMoisture.value) && numericMoisture.value > 0
+    props.batch.processing_method ||
+    (Number.isFinite(numericMoisture.value) && numericMoisture.value > 0
         ? 'Washed / Wet Process'
-        : 'Institutional Intake'
+        : 'Institutional Intake')
 ));
 const scoreLabel = computed(() => {
+    const cupScore = Number(props.batch.cup_score);
+
+    if (Number.isFinite(cupScore) && cupScore > 0) {
+        return cupScore.toFixed(1);
+    }
+
     if (!Number.isFinite(numericMoisture.value)) {
         return '91.5';
     }
@@ -86,8 +102,9 @@ const originDetails = computed(() => [
 ]);
 const processDetails = computed(() => [
     { label: 'Method', value: processLabel.value },
-    { label: 'Fermentation', value: Number.isFinite(numericMoisture.value) ? `${Math.max(18, Math.round(numericMoisture.value * 3.2))} Hours` : '36 Hours' },
-    { label: 'Drying', value: numericWeight.value >= 500 ? 'Raised Beds' : 'Mechanical Finish' },
+    { label: 'Drying', value: props.batch.drying_method || (numericWeight.value >= 500 ? 'Raised Beds' : 'Mechanical Finish') },
+    { label: 'Milling', value: props.batch.milling_status || 'Pending' },
+    { label: 'Screen', value: props.batch.screen_size || 'Pending' },
 ]);
 const sustainabilityStats = computed(() => [
     { label: 'Carbon Footprint', value: (Math.max(0.62, (numericBags.value || 8) * 0.041)).toFixed(2), unit: 'kg CO2e' },
@@ -138,7 +155,11 @@ watch(
         lastShownSuccess = message;
 
         ElNotification({
-            title: 'Batch Created',
+            title: message.toLowerCase().includes('compliance')
+                ? 'Compliance Saved'
+                : message.toLowerCase().includes('updated')
+                    ? 'Batch Updated'
+                    : 'Batch Created',
             message,
             type: 'success',
             duration: 3200,
@@ -150,8 +171,7 @@ watch(
 </script>
 
 <template>
-    <AppLayout :title="batchCode">
-        <Head :title="batchCode" />
+    <AppLayout :title="batchCode" :show-banner="false">
 
         <div class="batch-dashboard-page">
             <div class="batch-dashboard-shell">
@@ -238,7 +258,7 @@ watch(
                         </div>
                     </section>
 
-                    <section class="batch-registry-grid">
+                    <!-- <section class="batch-registry-grid">
                         <div v-for="group in registryRows" :key="group.label" class="batch-registry-grid__column">
                             <div class="batch-registry-grid__title">{{ group.label }}</div>
                             <div
@@ -250,7 +270,7 @@ watch(
                                 {{ value }}
                             </div>
                         </div>
-                    </section>
+                    </section> -->
                 </main>
 
                 <aside class="batch-dashboard-side">
@@ -258,7 +278,7 @@ watch(
                         <div class="batch-terminal-card__title">Execution Terminal</div>
 
                         <div class="batch-terminal-card__price-label">Current Market Price</div>
-                        <div class="batch-terminal-card__price">{{ marketRate }}<span>/lb</span></div>
+                        <div class="batch-terminal-card__price">${{ props.batch.price || '0.00' }}<span>/lb</span></div>
                         <div class="batch-terminal-card__trend">{{ priceTrend }}</div>
 
                         <div class="batch-terminal-card__volume">
@@ -266,8 +286,22 @@ watch(
                             <div class="batch-terminal-card__volume-value">{{ numericBags || 10 }}</div>
                         </div>
 
-                        <button type="button" class="batch-terminal-card__button batch-terminal-card__button--primary">Place Bid</button>
-                        <button type="button" class="batch-terminal-card__button batch-terminal-card__button--secondary">Request Sample</button>
+                        <button
+                            v-if="canManageBatch"
+                            type="button"
+                            class="batch-terminal-card__button batch-terminal-card__button--primary"
+                            @click="updateBatchModalOpen = true"
+                        >
+                            Edit Batch Data
+                        </button>
+                        <button
+                            v-if="canManageBatch"
+                            type="button"
+                            class="batch-terminal-card__button batch-terminal-card__button--secondary"
+                            @click="complianceModalOpen = true"
+                        >
+                            Add Compliance
+                        </button>
 
                         <div class="batch-terminal-card__meta">
                             <div class="batch-terminal-card__meta-row">
@@ -292,6 +326,16 @@ watch(
                 </aside>
             </div>
         </div>
+
+        <BatchComplianceModal
+            v-model="complianceModalOpen"
+            :batch="props.batch"
+        />
+
+        <UpdateBatchModal
+            v-model="updateBatchModalOpen"
+            :batch="props.batch"
+        />
     </AppLayout>
 </template>
 

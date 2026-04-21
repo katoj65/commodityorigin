@@ -15,6 +15,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    showBanner: {
+        type: Boolean,
+        default: true,
+    },
 });
 
 const page = usePage();
@@ -259,6 +263,15 @@ const sideSections = computed(() => [
                 icon: 'harvest',
             },
             {
+                label: 'Batches',
+                href: route('batch.index'),
+                active: route().current('batch.*'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'batch',
+            },
+            {
                 label: 'Grade Guide',
                 href: '#',
                 active: false,
@@ -393,7 +406,7 @@ onBeforeUnmount(() => {
             />
         </Head>
 
-        <Banner />
+        <Banner v-if="props.showBanner" />
 
         <header class="fixed inset-x-0 top-0 z-30 flex h-14 flex-shrink-0 items-stretch bg-white">
             <div class="hidden h-full w-16 flex-shrink-0 items-center justify-center bg-[#212529] lg:flex">
@@ -695,6 +708,11 @@ onBeforeUnmount(() => {
                             <path d="M7.1 19.8c1.3-1.9 3.2-3.1 5.3-3.1 4 0 7.3-3.3 7.3-7.3V3.9" />
                             <path d="M8 20h8" />
                         </svg>
+                        <svg v-else-if="item.icon === 'batch'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 7.5l8-4 8 4-8 4-8-4z" />
+                            <path d="M4 12l8 4 8-4" />
+                            <path d="M4 16.5l8 4 8-4" />
+                        </svg>
                         <span class="snav-label">{{ item.label }}</span>
                         <span v-if="item.badge" class="snav-trailing">
                             <span class="snav-badge">{{ item.badge }}</span>
@@ -917,6 +935,11 @@ onBeforeUnmount(() => {
                             <path d="M7.1 19.8c1.3-1.9 3.2-3.1 5.3-3.1 4 0 7.3-3.3 7.3-7.3V3.9" />
                             <path d="M8 20h8" />
                         </svg>
+                        <svg v-else-if="item.icon === 'batch'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 7.5l8-4 8 4-8 4-8-4z" />
+                            <path d="M4 12l8 4 8-4" />
+                            <path d="M4 16.5l8 4 8-4" />
+                        </svg>
                         <span class="snav-label">{{ item.label }}</span>
                         <span v-if="item.badge" class="snav-trailing">
                             <span class="snav-badge">{{ item.badge }}</span>
@@ -1072,6 +1095,18 @@ onBeforeUnmount(() => {
                         <path d="M8 20h8" />
                     </svg>
                     <svg
+                        v-else-if="action.icon === 'batch'"
+                        class="fab-action-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                    >
+                        <path d="M4 7.5l8-4 8 4-8 4-8-4z" />
+                        <path d="M4 12l8 4 8-4" />
+                        <path d="M4 16.5l8 4 8-4" />
+                    </svg>
+                    <svg
                         v-else
                         class="fab-action-icon"
                         viewBox="0 0 24 24"
@@ -1147,6 +1182,18 @@ onBeforeUnmount(() => {
                         <path d="M18.5 3C13 3 8.8 4.8 6.4 7.3A8.8 8.8 0 004 13.7c0 2.2.7 4.3 2.1 6.1" />
                         <path d="M7.1 19.8c1.3-1.9 3.2-3.1 5.3-3.1 4 0 7.3-3.3 7.3-7.3V3.9" />
                         <path d="M8 20h8" />
+                    </svg>
+                    <svg
+                        v-else-if="action.icon === 'batch'"
+                        class="fab-action-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                    >
+                        <path d="M4 7.5l8-4 8 4-8 4-8-4z" />
+                        <path d="M4 12l8 4 8-4" />
+                        <path d="M4 16.5l8 4 8-4" />
                     </svg>
                     <svg
                         v-else
