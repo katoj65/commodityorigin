@@ -12,11 +12,15 @@ use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Farmer\FarmerController;
 use App\Http\Controllers\Lot\LotController;
 use App\Http\Controllers\Market\MarketController;
+use App\Http\Controllers\Origin\OriginController;
 use App\Http\Controllers\Profile\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 // Public landing page.
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/news', [MarketController::class, 'marketIntelligence'])->name('market.news');
+Route::get('/live-market', [MarketController::class, 'liveMarket'])->name('market.live');
+Route::get('/origins', [OriginController::class, 'index'])->name('origin.index');
 
 
 

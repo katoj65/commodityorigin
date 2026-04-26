@@ -51,7 +51,7 @@ const submit = () => {
         <div class="space-y-4">
             <section class="rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 sm:px-5">
                 <div class="flex flex-col gap-1.5">
-                    <h1 class="font-display text-[20px] font-bold leading-tight text-[#111827]">Add Batch</h1>
+                    <h1 class="font-display text-[18px] font-bold leading-tight text-[#111827]">Add Batch</h1>
                     <p class="max-w-2xl text-[13px] leading-relaxed text-[#6B7280]">
                         Register a warehouse batch against an existing lot and capture the operational details needed for inventory and settlement.
                     </p>

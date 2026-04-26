@@ -236,7 +236,7 @@ const rangeSummary = computed(() => {
 .batch-registry-heading h1 {
     margin: 8px 0 0;
     color: #123d2d;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
     line-height: 1.2;
 }

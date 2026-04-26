@@ -216,6 +216,8 @@ onBeforeUnmount(() => {
                 </a>
                 <ul class="flex flex-wrap gap-1 list-none">
                     <li><a href="#market" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Market</a></li>
+                    <li><Link :href="route('market.live')" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Live Market</Link></li>
+                    <li><Link :href="route('market.news')" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">News</Link></li>
                     <li><a href="#origins" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Origins</a></li>
                     <li><a href="#quality" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Quality</a></li>
                     <li><a href="#traceability" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Traceability</a></li>

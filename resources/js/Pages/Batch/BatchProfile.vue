@@ -102,9 +102,13 @@ const originDetails = computed(() => [
 ]);
 const processDetails = computed(() => [
     { label: 'Method', value: processLabel.value },
+    { label: 'Moisture Content', value: Number.isFinite(numericMoisture.value) ? `${numericMoisture.value}%` : 'Pending' },
+    { label: 'Processing Date', value: props.batch.processing_date || 'Pending' },
+    { label: 'Dry Duration', value: props.batch.drying_duration ? `${props.batch.drying_duration} Days` : 'Pending' },
+    { label: 'Defect Count', value: props.batch.defect_count ?? 'Pending' },
+    { label: 'Screen Size', value: props.batch.screen_size || 'Pending' },
     { label: 'Drying', value: props.batch.drying_method || (numericWeight.value >= 500 ? 'Raised Beds' : 'Mechanical Finish') },
     { label: 'Milling', value: props.batch.milling_status || 'Pending' },
-    { label: 'Screen', value: props.batch.screen_size || 'Pending' },
 ]);
 const sustainabilityStats = computed(() => [
     { label: 'Carbon Footprint', value: (Math.max(0.62, (numericBags.value || 8) * 0.041)).toFixed(2), unit: 'kg CO2e' },
@@ -180,6 +184,7 @@ watch(
                         <div>
                             <div class="batch-dashboard-head__badge">Premium Grade</div>
                             <h1 class="batch-dashboard-head__title">{{ batchCode }}</h1>
+
                             <p class="batch-dashboard-head__copy">{{ heroCopy }}</p>
                         </div>
 
@@ -377,7 +382,7 @@ watch(
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 1rem;
-    align-items: end;
+    align-items: start;
     padding: 8px 4px 2px;
 }
 
@@ -403,12 +408,15 @@ watch(
 }
 
 .batch-dashboard-head__title {
-    margin: 8px 0 0;
+    margin: 100px 0 0;
+    display: block !important;
+    margin-top: 100px !important;
     color: #0d2c22;
-    font-size: clamp(1.7rem, 2.8vw, 2.35rem);
+    font-size: 1.5rem;
     line-height: 1;
     font-weight: 800;
     letter-spacing: -0.03em;
+
 }
 
 .batch-dashboard-head__copy {
@@ -611,8 +619,9 @@ watch(
 .batch-process-grid__value {
     margin-top: 8px;
     color: #17352b;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 800;
+    line-height: 1.2;
 }
 
 .batch-ledger-card {

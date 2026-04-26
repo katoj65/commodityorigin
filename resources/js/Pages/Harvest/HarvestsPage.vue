@@ -303,7 +303,7 @@ onBeforeUnmount(() => {
 .harvest-directory-title {
     margin-top: 8px;
     color: #192f28;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 800;
     line-height: 1.1;
 }

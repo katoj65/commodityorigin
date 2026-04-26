@@ -1,44 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Market;
+namespace App\Http\Controllers\Origin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class MarketController extends Controller
+class OriginController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index(): Response
     {
-        return Inertia::render('Market/MarketPage');
-    }
-
-    /**
-     * Display the market intelligence briefing.
-     */
-    public function marketIntelligence(): Response
-    {
-        return Inertia::render('Market/MarketIntelligence');
-    }
-
-    /**
-     * Display the live market terminal.
-     */
-    public function liveMarket(): Response
-    {
-        return Inertia::render('Market/LiveMarket');
-    }
-
-    /**
-     * Display the live auction board.
-     */
-    public function auction(): Response
-    {
-        return Inertia::render('Market/Auction');
+        return Inertia::render('Origin/OriginsPage');
     }
 
     /**
@@ -72,13 +48,4 @@ class MarketController extends Controller
     {
         //
     }
-
-
-
-
-
-
-
-
-    
 }
