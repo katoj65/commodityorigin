@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Season;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\HarvestResource;
 use App\Http\Resources\SeasonResource;
+use App\Models\Farm;
+use App\Models\PickMethodMetadata;
 use App\Models\Season;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,19 +19,9 @@ class SeasonController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): Response
+    public function index(): Response
     {
-        $search = trim((string) $request->string('search')->value());
-
         $paginator = Season::query()
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($nested) use ($search): void {
-                    $nested
-                        ->where('name', 'like', "%{$search}%")
-                        ->orWhere('region', 'like', "%{$search}%")
-                        ->orWhere('status', 'like', "%{$search}%");
-                });
-            })
             ->latest('start_date')
             ->latest('id')
             ->paginate(10)
@@ -45,11 +39,6 @@ class SeasonController extends Controller
                     'to' => $paginator->lastItem(),
                 ],
             ],
-            'filters' => [
-                'search' => $search,
-            ],
-            'statusOptions' => self::statusOptions(),
-            'regionOptions' => self::regionOptions(),
         ]);
     }
 
@@ -78,7 +67,6 @@ class SeasonController extends Controller
 
         $season = Season::query()->create([
             ...$validated,
-            'coffee_type' => 'Not specified',
             'status' => 'planned',
             'user_id' => $request->user()->id,
         ]);
@@ -93,8 +81,44 @@ class SeasonController extends Controller
      */
     public function show(Season $season): Response
     {
+        Gate::authorize('view', $season);
+
+        $season->loadCount('harvests')
+            ->loadSum('harvests', 'weight')
+            ->loadSum('harvests', 'price')
+            ->load([
+            'harvests' => fn ($query) => $query
+                ->with('farm')
+                ->latest('harvest_date')
+                ->latest('id'),
+            ]);
+
         return Inertia::render('Season/SeasonsProfile', [
             'season' => SeasonResource::make($season)->resolve(),
+            'harvests' => HarvestResource::collection($season->harvests)->resolve(),
+            'farmOptions' => Farm::query()
+                ->with('farmer')
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Farm $farm): array => [
+                    'id' => $farm->id,
+                    'name' => $farm->name,
+                    'location' => $farm->location,
+                    'variety' => $farm->variety,
+                ])
+                ->values(),
+            'pickMethodOptions' => PickMethodMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name')
+                ->values(),
+            'harvestSeasonOptions' => [
+                'Main Crop',
+                'Fly Crop',
+                'Early Harvest',
+                'Late Harvest',
+            ],
             'regionOptions' => self::regionOptions(),
             'statusOptions' => self::statusOptions(),
         ]);
@@ -105,6 +129,8 @@ class SeasonController extends Controller
      */
     public function update(Request $request, Season $season): RedirectResponse
     {
+        Gate::authorize('update', $season);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'region' => ['required', 'string', 'max:255'],
@@ -124,9 +150,15 @@ class SeasonController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Season $season): RedirectResponse
     {
-        //
+        Gate::authorize('delete', $season);
+
+        $season->delete();
+
+        return redirect()
+            ->route('season.index')
+            ->with('success', 'Season deleted successfully.');
     }
 
     protected static function statusOptions(): array

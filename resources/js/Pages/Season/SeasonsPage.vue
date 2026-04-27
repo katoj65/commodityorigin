@@ -1,7 +1,7 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { Calendar, Filter, Location, Plus, Reading, Search, Tickets } from '@element-plus/icons-vue';
+import { computed } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
+import { Calendar, Location, Plus, Reading, Tickets } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -9,23 +9,8 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-    filters: {
-        type: Object,
-        default: () => ({
-            search: '',
-        }),
-    },
-    statusOptions: {
-        type: Array,
-        default: () => [],
-    },
-    regionOptions: {
-        type: Array,
-        default: () => [],
-    },
 });
 
-const searchQuery = ref(props.filters.search ?? '');
 const visiblePages = computed(() => {
     const currentPage = props.seasons.meta.current_page || 1;
     const lastPage = props.seasons.meta.last_page || 1;
@@ -60,39 +45,6 @@ const formatDate = (value) => {
     }).format(new Date(value));
 };
 
-let searchDebounceId = null;
-
-const visitSeasonIndex = (page = 1) => {
-    router.get(
-        route('season.index'),
-        {
-            page,
-            search: searchQuery.value || undefined,
-        },
-        {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        },
-    );
-};
-
-watch(searchQuery, () => {
-    if (searchDebounceId) {
-        window.clearTimeout(searchDebounceId);
-    }
-
-    searchDebounceId = window.setTimeout(() => {
-        visitSeasonIndex(1);
-    }, 250);
-});
-
-onBeforeUnmount(() => {
-    if (searchDebounceId) {
-        window.clearTimeout(searchDebounceId);
-    }
-});
-
 const statusTagType = (status) => {
     switch (String(status).toLowerCase()) {
         case 'active':
@@ -123,10 +75,12 @@ const statusTagType = (status) => {
                     </div>
 
                     <div class="season-directory-log-button">
-                        <el-button class="season-directory-log-el-button" size="small" @click="router.visit(route('season.create'))">
-                            <el-icon><Plus /></el-icon>
-                            <span>Add Season</span>
-                        </el-button>
+                        <Link :href="route('season.create')" class="season-directory-log-link">
+                            <el-button class="season-directory-log-el-button" type="default">
+                                <el-icon><Plus /></el-icon>
+                                <span>Add Season</span>
+                            </el-button>
+                        </Link>
                     </div>
                 </section>
 
@@ -137,33 +91,6 @@ const statusTagType = (status) => {
                             <div class="season-directory-section-copy">
                                 Review all seasonal cycles, origin windows, and harvest planning periods.
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="season-directory-toolbar">
-                        <el-input
-                            v-model="searchQuery"
-                            class="season-directory-search"
-                            size="small"
-                            placeholder="Search seasons..."
-                            :prefix-icon="Search"
-                            clearable
-                        />
-
-                        <div class="season-directory-filter-wrap">
-                            <el-select class="season-directory-select" size="small" placeholder="All Regions">
-                                <el-option label="All Regions" value="" />
-                                <el-option v-for="region in regionOptions" :key="region" :label="region" :value="region" />
-                            </el-select>
-
-                            <el-select class="season-directory-select" size="small" placeholder="All Statuses">
-                                <el-option label="All Statuses" value="" />
-                                <el-option v-for="status in statusOptions" :key="status" :label="status" :value="status" />
-                            </el-select>
-
-                            <el-button class="season-directory-filter-button" size="small">
-                                <el-icon><Filter /></el-icon>
-                            </el-button>
                         </div>
                     </div>
 
@@ -235,7 +162,7 @@ const statusTagType = (status) => {
 
                         <div class="season-directory-pagination">
                             <Link
-                                :href="route('season.index', { page: Math.max(1, seasons.meta.current_page - 1), search: filters.search || undefined })"
+                                :href="route('season.index', { page: Math.max(1, seasons.meta.current_page - 1) })"
                                 class="season-directory-page-button"
                                 :class="{ disabled: seasons.meta.current_page <= 1 }"
                             >
@@ -245,7 +172,7 @@ const statusTagType = (status) => {
                             <Link
                                 v-for="page in visiblePages"
                                 :key="page"
-                                :href="route('season.index', { page, search: filters.search || undefined })"
+                                :href="route('season.index', { page })"
                                 class="season-directory-page-button"
                                 :class="{ active: page === seasons.meta.current_page }"
                             >
@@ -253,7 +180,7 @@ const statusTagType = (status) => {
                             </Link>
 
                             <Link
-                                :href="route('season.index', { page: Math.min(seasons.meta.last_page, seasons.meta.current_page + 1), search: filters.search || undefined })"
+                                :href="route('season.index', { page: Math.min(seasons.meta.last_page, seasons.meta.current_page + 1) })"
                                 class="season-directory-page-button"
                                 :class="{ disabled: seasons.meta.current_page >= seasons.meta.last_page }"
                             >
@@ -282,7 +209,6 @@ const statusTagType = (status) => {
 }
 
 .season-directory-hero,
-.season-directory-toolbar,
 .season-directory-footer {
     align-items: center;
     display: flex;
@@ -290,10 +216,13 @@ const statusTagType = (status) => {
     justify-content: space-between;
 }
 
-.season-directory-filter-wrap,
 .season-directory-pagination {
     display: flex;
     gap: 10px;
+}
+
+.season-directory-log-link {
+    text-decoration: none;
 }
 
 .season-directory-eyebrow,
@@ -311,7 +240,7 @@ const statusTagType = (status) => {
 
 .season-directory-title {
     color: #16312b;
-    font-size: 30px;
+    font-size: 24px;
     font-weight: 800;
     letter-spacing: -0.05em;
     margin: 10px 0 0;
@@ -327,10 +256,10 @@ const statusTagType = (status) => {
 }
 
 .season-directory-log-el-button {
-    border-color: #0e5b3f;
-    border-radius: 999px;
-    color: #0e5b3f;
+    border-radius: 8px;
     font-weight: 700;
+    min-height: 40px;
+    padding: 0 16px;
 }
 
 .season-directory-table-card {
@@ -349,21 +278,6 @@ const statusTagType = (status) => {
     color: #253b35;
     font-size: 12px;
     font-weight: 800;
-}
-
-.season-directory-search {
-    max-width: 260px;
-}
-
-.season-directory-search :deep(.el-input__wrapper),
-.season-directory-select :deep(.el-select__wrapper),
-.season-directory-filter-button {
-    border-radius: 12px;
-    min-height: 40px;
-}
-
-.season-directory-filter-button {
-    border: 1px solid #dbe1e6;
 }
 
 .season-directory-table {
@@ -430,21 +344,14 @@ const statusTagType = (status) => {
 }
 
 @media (max-width: 960px) {
-    .season-directory-toolbar,
     .season-directory-hero,
     .season-directory-footer {
         align-items: stretch;
         flex-direction: column;
     }
 
-    .season-directory-filter-wrap,
     .season-directory-pagination {
         flex-wrap: wrap;
-    }
-
-    .season-directory-search {
-        max-width: none;
-        width: 100%;
     }
 }
 </style>

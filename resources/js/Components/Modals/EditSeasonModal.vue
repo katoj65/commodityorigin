@@ -1,6 +1,5 @@
 <script setup>
 import { computed, watch } from 'vue';
-import { ElMessage } from 'element-plus';
 import { Close } from '@element-plus/icons-vue';
 import { useForm } from '@inertiajs/vue3';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
@@ -80,8 +79,7 @@ const submit = () => {
     form.patch(route('season.update', props.season.id), {
         preserveScroll: true,
         onSuccess: () => {
-            ElMessage.success('Season updated successfully.');
-            emit('success');
+            emit('success', 'Season updated successfully.');
             closeDialog();
         },
         onError: () => {

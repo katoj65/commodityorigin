@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\HarvestResource;
 use App\Models\Farm;
 use App\Models\Harvest;
+use App\Models\Season;
 use App\Models\DocumentMetadata;
 use App\Models\HarvestDocument;
 use App\Models\HarvestSustainability;
@@ -155,6 +156,7 @@ class HarvestController extends Controller
 
         $validated = $request->validate(
             [
+                'season_id' => ['nullable', 'exists:seasons,id'],
                 'farm_id' => ['required', 'exists:farms,id'],
                 'variety' => ['required', 'string', 'max:255'],
                 'date_planted' => ['required', 'date', 'before_or_equal:today'],
@@ -179,6 +181,11 @@ class HarvestController extends Controller
             ],
         );
 
+        if (!empty($validated['season_id'])) {
+            $season = Season::query()->findOrFail($validated['season_id']);
+            Gate::authorize('view', $season);
+        }
+
         $harvest = Harvest::query()->create([
             ...$validated,
             'user_id' => $request->user()->id,
@@ -187,6 +194,12 @@ class HarvestController extends Controller
             'disease_signs' => $request->boolean('disease_signs'),
             'visible_defects' => $request->boolean('visible_defects'),
         ]);
+
+        if ($harvest->season_id) {
+            return redirect()
+                ->route('season.show', $harvest->season_id)
+                ->with('success', "Harvest {$harvest->id} recorded successfully.");
+        }
 
         return redirect()
             ->route('harvest.show', $harvest)

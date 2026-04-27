@@ -100,6 +100,7 @@ Route::middleware([
         Route::get('/create', [SeasonController::class, 'create'])->name('create');
         Route::post('/', [SeasonController::class, 'store'])->name('store');
         Route::patch('/{season}', [SeasonController::class, 'update'])->name('update');
+        Route::delete('/{season}', [SeasonController::class, 'destroy'])->name('destroy');
         Route::get('/{season}', [SeasonController::class, 'show'])->name('show');
     });
 

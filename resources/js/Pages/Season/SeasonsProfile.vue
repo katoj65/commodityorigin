@@ -1,15 +1,19 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
-import { usePage } from '@inertiajs/vue3';
-import { ElNotification } from 'element-plus';
+import { computed, ref } from 'vue';
+import { router } from '@inertiajs/vue3';
+import { ElMessageBox, ElNotification } from 'element-plus';
 import {
+    ArrowDown,
+    Calendar,
     Checked,
     CircleCheckFilled,
     CollectionTag,
+    Delete,
     Document,
     EditPen,
     Files,
     Histogram,
+    Location,
     MostlyCloudy,
     Opportunity,
     Plus,
@@ -17,6 +21,7 @@ import {
     TrendCharts,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import AddHarvestModal from '@/Components/Modals/AddHarvestModal.vue';
 import EditSeasonModal from '@/Components/Modals/EditSeasonModal.vue';
 
 const props = defineProps({
@@ -24,7 +29,23 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    harvests: {
+        type: Array,
+        default: () => [],
+    },
     regionOptions: {
+        type: Array,
+        default: () => [],
+    },
+    farmOptions: {
+        type: Array,
+        default: () => [],
+    },
+    pickMethodOptions: {
+        type: Array,
+        default: () => [],
+    },
+    harvestSeasonOptions: {
         type: Array,
         default: () => [],
     },
@@ -34,9 +55,8 @@ const props = defineProps({
     },
 });
 
-const page = usePage();
-const flashSuccess = computed(() => page.props.flash?.success ?? '');
 const editModalOpen = ref(false);
+const addHarvestModalOpen = ref(false);
 
 const seasonName = computed(() => props.season.name || 'Main Crop 2026');
 const seasonCode = computed(() => {
@@ -56,11 +76,15 @@ const seasonTimeline = computed(() => {
     return `${format(start)} - ${format(end)}`;
 });
 
+const totalHarvests = computed(() => props.season.harvests_count ?? props.harvests.length);
+const totalQuantity = computed(() => props.season.harvests_sum_weight ?? 0);
+const totalHarvestValue = computed(() => props.season.harvests_sum_price ?? 0);
+
 const summaryCards = computed(() => [
     { label: 'Timeline', value: seasonTimeline.value, note: '' },
-    { label: 'Total Harvests', value: '08', note: '+2 vs LW' },
-    { label: 'Total Quantity', value: '12,400 kg', note: '' },
-    { label: 'Expected Yield', value: '18,000 kg', note: '68% kg reached' },
+    { label: 'Total Harvests', value: String(totalHarvests.value).padStart(2, '0'), note: '' },
+    { label: 'Total Quantity', value: `${Number(totalQuantity.value).toLocaleString()} kg`, note: '' },
+    { label: 'Total Value', value: `Shs. ${Number(totalHarvestValue.value).toLocaleString()}`, note: '' },
     { label: 'Health Score', value: '92 /100', note: '', tone: 'dark' },
 ]);
 
@@ -70,11 +94,15 @@ const insightCards = [
     { icon: TrendCharts, text: 'Yield above last season trend' },
 ];
 
-const recentHarvests = [
-    { id: '#HAR-241', farm: 'Sipi Falls North', quantity: '1,240kg', moisture: '11.2%', score: '87.5', status: 'READY' },
-    { id: '#HAR-240', farm: 'Kapchorwa Plot B', quantity: '850kg', moisture: '11.8%', score: '86.0', status: 'READY' },
-    { id: '#HAR-239', farm: 'Mountain Ridge', quantity: '1,100kg', moisture: '12.1%', score: '–', status: 'DRYING' },
-];
+const seasonHarvests = computed(() => props.harvests.map((harvest) => ({
+    id: `#HAR-${String(harvest.id).padStart(3, '0')}`,
+    farm: harvest.farm?.name || 'Unassigned farm',
+    lot: harvest.farm?.location || harvest.variety || '—',
+    quantity: harvest.weight ? `${Number(harvest.weight).toLocaleString()}kg` : '—',
+    moisture: harvest.ripeness_percentage !== null ? `${Number(harvest.ripeness_percentage).toFixed(1)}%` : '—',
+    score: harvest.price ? Number(harvest.price).toLocaleString() : '—',
+    status: (harvest.status || 'pending').toUpperCase(),
+})));
 
 const recentActivities = [
     { date: 'Mar 12, 2026', activity: 'Organic Weeding', note: 'Maintenance', farm: 'Moses W. / Lot A', status: 'Completed', evidence: 'View Photo' },
@@ -94,27 +122,48 @@ const climateCards = [
     { label: 'Disease', value: 'Controlled', badge: 'LOW', tone: 'mint' },
 ];
 
-let lastShownSuccess = '';
+const handleOptionsCommand = (command) => {
+    if (command === 'edit') {
+        editModalOpen.value = true;
+        return;
+    }
 
-watch(
-    flashSuccess,
-    (message) => {
-        if (!message || message === lastShownSuccess) {
-            return;
-        }
+    if (command === 'add-harvest') {
+        addHarvestModalOpen.value = true;
+        return;
+    }
 
-        lastShownSuccess = message;
+    if (command === 'delete') {
+        ElMessageBox.confirm(
+            'This will permanently delete the current season. Continue?',
+            'Delete season',
+            {
+                confirmButtonText: 'Delete',
+                cancelButtonText: 'Cancel',
+                type: 'warning',
+            },
+        ).then(() => {
+            router.delete(route('season.destroy', props.season.id), {
+                preserveScroll: true,
+            });
+        }).catch(() => {});
+    }
+};
 
-        ElNotification({
-            title: 'Season Saved',
-            message,
-            type: 'success',
-            duration: 3200,
-            offset: 84,
-        });
-    },
-    { immediate: true },
-);
+const notifySeasonUpdateSuccess = (message) => {
+    ElNotification({
+        title: 'Season Saved',
+        message,
+        type: 'success',
+        duration: 3200,
+        offset: 84,
+    });
+};
+
+
+
+
+
 </script>
 
 <template>
@@ -128,14 +177,35 @@ watch(
                             <div>
                                 <h1>{{ seasonName }}</h1>
                                 <p>
-                                    Season ID: <strong>{{ seasonCode }}</strong> | Mount Elgon Heights Cooperative | {{ season.region }} | Uganda | Arabica SL-14
+                                    Season ID: <strong>{{ seasonCode }}</strong> | {{ season.region }} | {{ season.start_date }} / {{ season.end_date }}
                                 </p>
                             </div>
 
                             <div class="season-hero__actions">
-                                <button type="button" class="season-btn is-soft" @click="editModalOpen = true"><el-icon><EditPen /></el-icon><span>Edit</span></button>
-                                <button type="button" class="season-btn is-soft"><el-icon><Plus /></el-icon><span>Harvest</span></button>
-                                <button type="button" class="season-btn is-soft"><el-icon><Histogram /></el-icon><span>Activity</span></button>
+
+                                <el-dropdown trigger="click" @command="handleOptionsCommand">
+                                    <button type="button" class="season-btn is-soft">
+                                        <!-- <el-icon><Histogram /></el-icon> -->
+                                        <span>Options</span>
+                                        <el-icon class="season-btn__caret"><ArrowDown /></el-icon>
+                                    </button>
+                                    <template #dropdown>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item command="edit">
+                                                <el-icon><EditPen /></el-icon>
+                                                <span>Edit</span>
+                                            </el-dropdown-item>
+                                            <el-dropdown-item command="add-harvest">
+                                                <el-icon><Plus /></el-icon>
+                                                <span>Add harvest</span>
+                                            </el-dropdown-item>
+                                            <el-dropdown-item command="delete" class="season-dropdown__danger">
+                                                <el-icon><Delete /></el-icon>
+                                                <span>Delete</span>
+                                            </el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
                             </div>
                         </div>
 
@@ -209,13 +279,57 @@ watch(
 
                         <div class="season-right-column">
                             <article class="season-card season-table-card">
-                                <div class="season-card__title"><span>Recent Harvests</span></div>
-                                <el-table :data="recentHarvests" class="season-data-table" empty-text="No harvests yet">
-                                    <el-table-column prop="id" label="ID" min-width="110" />
-                                    <el-table-column prop="farm" label="Farm/Lot" min-width="170" />
-                                    <el-table-column prop="quantity" label="Quantity" min-width="120" />
-                                    <el-table-column prop="moisture" label="Moisture" min-width="100" />
-                                    <el-table-column prop="score" label="Score" min-width="90" />
+                                <div class="season-card__title">
+                                  
+                                    <span>Harvests Attached to This Season</span>
+                                </div>
+                                <el-table :data="seasonHarvests" class="season-data-table" empty-text="No harvests are attached to this season yet">
+                                    <el-table-column label="ID" min-width="120">
+                                        <template #default="{ row }">
+                                            <span class="season-table-info">
+                                                <el-icon><Tickets /></el-icon>
+                                                <strong>{{ row.id }}</strong>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="Farm / Lot" min-width="210">
+                                        <template #default="{ row }">
+                                            <div class="season-table-info season-table-info--stack">
+                                                <span class="season-table-info__line">
+                                                    <el-icon><CollectionTag /></el-icon>
+                                                    <strong>{{ row.farm }}</strong>
+                                                </span>
+                                                <span class="season-table-info__line is-subtle">
+                                                    <el-icon><Location /></el-icon>
+                                                    <small>{{ row.lot }}</small>
+                                                </span>
+                                            </div>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="Quantity" min-width="130">
+                                        <template #default="{ row }">
+                                            <span class="season-table-info">
+                                                <el-icon><Files /></el-icon>
+                                                <span>{{ row.quantity }}</span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="Moisture" min-width="110">
+                                        <template #default="{ row }">
+                                            <span class="season-table-info">
+                                                <el-icon><MostlyCloudy /></el-icon>
+                                                <span>{{ row.moisture }}</span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="Price" min-width="120">
+                                        <template #default="{ row }">
+                                            <span class="season-table-info">
+                                                <el-icon><TrendCharts /></el-icon>
+                                                <span>{{ row.score }}</span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
                                     <el-table-column label="Status" min-width="110">
                                         <template #default="{ row }">
                                             <span class="season-status-pill" :class="{ 'is-blue': row.status === 'DRYING' }">{{ row.status }}</span>
@@ -235,24 +349,54 @@ watch(
                             </div>
 
                             <article class="season-card season-table-card">
-                                <div class="season-card__title"><span>Recent Activities</span></div>
+                                <div class="season-card__title">
+                                    <el-icon><Histogram /></el-icon>
+                                    <span>Recent Activities</span>
+                                </div>
                                 <el-table :data="recentActivities" class="season-data-table" empty-text="No activity yet">
-                                    <el-table-column prop="date" label="Date" min-width="120" />
+                                    <el-table-column label="Date" min-width="140">
+                                        <template #default="{ row }">
+                                            <span class="season-table-info">
+                                                <el-icon><Calendar /></el-icon>
+                                                <span>{{ row.date }}</span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
                                     <el-table-column label="Activity" min-width="180">
                                         <template #default="{ row }">
-                                            <div class="season-activity-cell">
-                                                <strong>{{ row.activity }}</strong>
-                                                <small>{{ row.note }}</small>
+                                            <div class="season-table-info season-table-info--stack">
+                                                <span class="season-table-info__line">
+                                                    <el-icon><EditPen /></el-icon>
+                                                    <strong>{{ row.activity }}</strong>
+                                                </span>
+                                                <span class="season-table-info__line is-subtle">
+                                                    <el-icon><Opportunity /></el-icon>
+                                                    <small>{{ row.note }}</small>
+                                                </span>
                                             </div>
                                         </template>
                                     </el-table-column>
-                                    <el-table-column prop="farm" label="Farmer / Lot" min-width="180" />
+                                    <el-table-column label="Farmer / Lot" min-width="180">
+                                        <template #default="{ row }">
+                                            <span class="season-table-info">
+                                                <el-icon><CollectionTag /></el-icon>
+                                                <span>{{ row.farm }}</span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
                                     <el-table-column label="Status" min-width="130">
                                         <template #default="{ row }">
                                             <span class="season-completed-status"><el-icon><CircleCheckFilled /></el-icon>{{ row.status }}</span>
                                         </template>
                                     </el-table-column>
-                                    <el-table-column prop="evidence" label="Evidence" min-width="110" />
+                                    <el-table-column label="Evidence" min-width="130">
+                                        <template #default="{ row }">
+                                            <span class="season-table-info">
+                                                <el-icon><Document /></el-icon>
+                                                <span>{{ row.evidence }}</span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
                                 </el-table>
                             </article>
                         </div>
@@ -265,6 +409,14 @@ watch(
             :season="season"
             :region-options="regionOptions"
             :status-options="statusOptions"
+            @success="notifySeasonUpdateSuccess"
+        />
+        <AddHarvestModal
+            v-model="addHarvestModalOpen"
+            :season="season"
+            :farm-options="farmOptions"
+            :pick-method-options="pickMethodOptions"
+            :harvest-season-options="harvestSeasonOptions"
         />
     </AppLayout>
 </template>
@@ -338,6 +490,15 @@ watch(
     padding: 0 16px;
 }
 
+.season-btn__caret {
+    font-size: 12px;
+    margin-left: 2px;
+}
+
+:deep(.season-dropdown__danger) {
+    color: #dc2626;
+}
+
 .season-btn.is-soft {
     background: #f3f5f7;
     border: 1px solid #edf1f4;
@@ -406,8 +567,8 @@ watch(
     display: block;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-transform: none;
 }
 
 .season-summary-card strong {
@@ -475,8 +636,8 @@ watch(
     font-size: 14px;
     font-weight: 800;
     gap: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-transform: none;
 }
 
 .season-card__title :deep(.el-icon) {
@@ -681,6 +842,40 @@ watch(
     display: inline-flex;
     font-weight: 600;
     gap: 6px;
+}
+
+.season-table-info {
+    align-items: center;
+    color: #172026;
+    display: inline-flex;
+    gap: 8px;
+}
+
+.season-table-info :deep(.el-icon) {
+    color: #0b5d46;
+    font-size: 15px;
+}
+
+.season-table-info strong {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.season-table-info--stack {
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.season-table-info__line {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+}
+
+.season-table-info__line.is-subtle {
+    color: #8a96a0;
 }
 
 @media (max-width: 1280px) {

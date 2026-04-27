@@ -14,9 +14,6 @@ watchEffect(async () => {
     if (appFlash.error) {
         style.value = 'danger';
         message.value = appFlash.error;
-    } else if (appFlash.success) {
-        style.value = 'success';
-        message.value = appFlash.success;
     } else {
         style.value = jetstreamFlash.bannerStyle || 'success';
         message.value = jetstreamFlash.banner || '';
