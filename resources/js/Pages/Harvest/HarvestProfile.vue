@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import {
+    Aim,
     Calendar,
     Checked,
     CircleCheckFilled,
@@ -14,12 +15,15 @@ import {
     Opportunity,
     PriceTag,
     Reading,
+    SetUp,
     Tickets,
     TrendCharts,
     User,
+    WarningFilled,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AddHarvestDocumentModal from '@/Components/Modals/AddHarvestDocumentModal.vue';
+import AddHarvestSustainabilityModal from '@/Components/Modals/AddHarvestSustainabilityModal.vue';
 import EditHarvestQualityModel from '@/Components/Modals/EditHarvestQualityModel.vue';
 
 const props = defineProps({
@@ -48,6 +52,7 @@ const props = defineProps({
 const page = usePage();
 const qualityModalOpen = ref(false);
 const documentModalOpen = ref(false);
+const sustainabilityModalOpen = ref(false);
 const flashSuccess = computed(() => page.props.flash?.success ?? '');
 
 const harvestDocuments = computed(() => (
@@ -75,6 +80,17 @@ const harvestDateLabel = computed(() => {
         year: 'numeric',
     }).format(new Date(props.harvest.harvest_date));
 });
+const plantedDateLabel = computed(() => {
+    if (!props.harvest.date_planted) {
+        return 'Pending';
+    }
+
+    return new Intl.DateTimeFormat('en-UG', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(new Date(props.harvest.date_planted));
+});
 const harvestCode = computed(() => {
     const year = props.harvest.harvest_date
         ? new Date(props.harvest.harvest_date).getFullYear()
@@ -85,6 +101,7 @@ const harvestCode = computed(() => {
 const volumeKg = computed(() => Number(props.harvest.weight || 1200));
 const moistureContent = computed(() => Number(props.harvest.moisture_content || 11.2));
 const qualityScore = computed(() => Number(props.harvest.ripeness_percentage || 87.4));
+const formatBooleanLabel = (value) => (value ? 'Yes' : 'No');
 const currentPrice = computed(() => {
     if (props.harvest.price) {
         return Number(props.harvest.price);
@@ -101,14 +118,58 @@ const currentPrice = computed(() => {
     return 3.8;
 });
 const estimatedMarketValue = computed(() => Math.round(volumeKg.value * currentPrice.value));
-const cleanCoffeeEstimate = computed(() => Math.round(volumeKg.value * 0.166));
-const expectedBatchLoss = computed(() => 4.2);
 const pickMethodLabel = computed(() => props.harvest.pick_method || 'Selective');
+const harvestSeasonLabel = computed(() => props.harvest.harvest_season || 'Main Season');
+const qualityBreakdownRows = computed(() => [
+    {
+        label: 'Pick Method',
+        value: pickMethodLabel.value,
+        icon: SetUp,
+        tone: 'feature',
+    },
+    {
+        label: 'Ripeness Percentage',
+        value: `${qualityScore.value.toFixed(1)}%`,
+        icon: Aim,
+        tone: 'feature',
+    },
+    {
+        label: 'Foreign Matter Present',
+        value: formatBooleanLabel(props.harvest.foreign_matter_present),
+        icon: WarningFilled,
+        tone: props.harvest.foreign_matter_present ? 'risk' : 'clear',
+    },
+    {
+        label: 'Pest Damage',
+        value: formatBooleanLabel(props.harvest.pest_damage),
+        icon: WarningFilled,
+        tone: props.harvest.pest_damage ? 'risk' : 'clear',
+    },
+    {
+        label: 'Disease Signs',
+        value: formatBooleanLabel(props.harvest.disease_signs),
+        icon: WarningFilled,
+        tone: props.harvest.disease_signs ? 'risk' : 'clear',
+    },
+    {
+        label: 'Visible Defects',
+        value: formatBooleanLabel(props.harvest.visible_defects),
+        icon: WarningFilled,
+        tone: props.harvest.visible_defects ? 'risk' : 'clear',
+    },
+]);
 const processChecklist = computed(() => [
     'Cherry collection verified',
     'Moisture benchmark passed',
     'Defect sorting completed',
     'Farm traceability confirmed',
+]);
+const processDetails = computed(() => [
+    { label: 'Date Planted', value: plantedDateLabel.value, icon: Calendar },
+    { label: 'Harvest Date', value: harvestDateLabel.value, icon: Tickets },
+    { label: 'Harvest Season', value: harvestSeasonLabel.value, icon: Reading },
+    { label: 'Weight', value: `${volumeKg.value.toLocaleString()} kg`, icon: GoodsFilled },
+    { label: 'Price', value: `$${currentPrice.value.toFixed(2)}`, icon: PriceTag },
 ]);
 const qualityPotential = computed(() => [
     { label: 'Ripeness Score', value: `${Math.min(95, Math.round(qualityScore.value + 8))}/100` },
@@ -129,17 +190,44 @@ const timelineItems = computed(() => [
         active: false,
     },
 ]);
-const availableLots = computed(() => [
-    { id: '#LOT-RW-24-001', origin: 'Rwenzori / Natural', score: '88.5', process: 'Natural / Sundried', quantity: '42 Bags (60kg)' },
-    { id: '#LOT-EG-24-012', origin: 'Mt. Elgon / Washed', score: '87.2', process: 'Fully Washed', quantity: '110 Bags (60kg)' },
-    { id: '#LOT-KAS-24-09', origin: 'Kasese / Honey', score: '86.8', process: 'Red Honey', quantity: '15 Bags (60kg)' },
-]);
+const attachedFarms = computed(() => {
+    if (!props.harvest.farm) {
+        return [];
+    }
+
+    const farm = props.harvest.farm;
+    const responsible = [
+        farm.farmer?.first_name,
+        farm.farmer?.last_name,
+    ].filter(Boolean).join(' ') || farmerName.value;
+
+    return [
+        {
+            id: `#FARM-${String(farm.id || props.harvest.farm_id || props.harvest.id).padStart(3, '0')}`,
+            name: farm.name || farmName.value,
+            location: farm.location || 'Origin pending',
+            variety: farm.variety || varietyLabel.value,
+            farmer: responsible,
+            status: String(farm.status || 'Attached'),
+        },
+    ];
+});
+const sustainabilityDetails = ref({
+    organicCertified: props.harvest.sustainability?.organicCertified ?? true,
+    climateSmart: props.harvest.sustainability?.climateSmart ?? true,
+    shadeGrown: props.harvest.sustainability?.shadeGrown ?? true,
+    waterManagement: props.harvest.sustainability?.waterManagement ?? true,
+    soilConservation: props.harvest.sustainability?.soilConservation ?? true,
+    lowCarbon: props.harvest.sustainability?.lowCarbon ?? true,
+    fairWages: props.harvest.sustainability?.fairWages ?? true,
+    notes: props.harvest.sustainability?.notes ?? '',
+});
 const sustainabilityPillars = computed(() => [
-    { label: 'Shade Grown', icon: CollectionTag },
-    { label: 'Water Management', icon: GoodsFilled },
-    { label: 'Soil Conservation', icon: Opportunity },
-    { label: 'Low Carbon', icon: TrendCharts },
-    { label: 'Fair Wages', icon: User },
+    { label: 'Shade Grown', icon: CollectionTag, active: sustainabilityDetails.value.shadeGrown },
+    { label: 'Water Management', icon: GoodsFilled, active: sustainabilityDetails.value.waterManagement },
+    { label: 'Soil Conservation', icon: Opportunity, active: sustainabilityDetails.value.soilConservation },
+    { label: 'Low Carbon', icon: TrendCharts, active: sustainabilityDetails.value.lowCarbon },
+    { label: 'Fair Wages', icon: User, active: sustainabilityDetails.value.fairWages },
 ]);
 const documentItems = computed(() => {
     if (harvestDocuments.value.length) {
@@ -178,6 +266,31 @@ watch(
     },
     { immediate: true },
 );
+
+const saveSustainabilityDetails = (payload) => {
+    sustainabilityDetails.value = { ...payload };
+};
+
+watch(
+    () => props.harvest.sustainability,
+    (value) => {
+        if (!value) {
+            return;
+        }
+
+        sustainabilityDetails.value = {
+            organicCertified: value.organicCertified ?? true,
+            climateSmart: value.climateSmart ?? true,
+            shadeGrown: value.shadeGrown ?? true,
+            waterManagement: value.waterManagement ?? true,
+            soilConservation: value.soilConservation ?? true,
+            lowCarbon: value.lowCarbon ?? true,
+            fairWages: value.fairWages ?? true,
+            notes: value.notes ?? '',
+        };
+    },
+    { deep: true },
+);
 </script>
 
 <template>
@@ -204,9 +317,7 @@ watch(
 
                         <div class="harvest-hero__actions">
                             <button type="button" class="harvest-btn harvest-btn--soft" @click="qualityModalOpen = true">Edit Harvest</button>
-                            <button type="button" class="harvest-btn harvest-btn--soft">Download Report</button>
-                            <button type="button" class="harvest-btn harvest-btn--peach">View Farm</button>
-                            <button type="button" class="harvest-btn harvest-btn--green" @click="documentModalOpen = true">Create Batch</button>
+                            <button type="button" class="harvest-btn harvest-btn--green" @click="documentModalOpen = true">Upload Document</button>
                         </div>
                     </div>
                 </section>
@@ -240,83 +351,68 @@ watch(
                             </article>
                         </section>
 
-                        <section class="harvest-card harvest-breakdown-card">
+                        <section class="harvest-card harvest-breakdown-card h-100">
                             <div class="harvest-section-title">
                                 <el-icon><Histogram /></el-icon>
                                 <span>Quantity Breakdown</span>
                             </div>
 
-                            <div class="harvest-progress-list">
-                                <div class="harvest-progress-row">
-                                    <div class="harvest-progress-labels">
-                                        <span>Fresh Cherry</span>
-                                        <strong>{{ volumeKg.toLocaleString() }} kg</strong>
-                                    </div>
-                                    <div class="harvest-progress-track">
-                                        <div class="is-dark" style="width: 100%"></div>
-                                    </div>
-                                </div>
-                                <div class="harvest-progress-row">
-                                    <div class="harvest-progress-labels">
-                                        <span>Clean Coffee Estimate</span>
-                                        <strong>{{ cleanCoffeeEstimate.toLocaleString() }} kg (16.6%)</strong>
-                                    </div>
-                                    <div class="harvest-progress-track">
-                                        <div class="is-light" :style="{ width: `${(cleanCoffeeEstimate / volumeKg) * 100}%` }"></div>
+                            <div class="harvest-breakdown-layout">
+                                <div class="harvest-breakdown-featured">
+                                    <div
+                                        v-for="item in qualityBreakdownRows.slice(0, 2)"
+                                        :key="item.label"
+                                        class="harvest-breakdown-highlight"
+                                    >
+                                        <div class="harvest-breakdown-highlight__icon">
+                                            <el-icon><component :is="item.icon" /></el-icon>
+                                        </div>
+                                        <span>{{ item.label }}</span>
+                                        <strong>{{ item.value }}</strong>
                                     </div>
                                 </div>
-                                <div class="harvest-progress-row">
-                                    <div class="harvest-progress-labels">
-                                        <span>Expected Batch Loss</span>
-                                        <strong class="is-negative">{{ expectedBatchLoss.toFixed(1) }}%</strong>
-                                    </div>
-                                    <div class="harvest-progress-track">
-                                        <div class="is-muted" :style="{ width: `${expectedBatchLoss * 8}%` }"></div>
+
+                                <div class="harvest-breakdown-flags">
+                                    <div
+                                        v-for="item in qualityBreakdownRows.slice(2)"
+                                        :key="item.label"
+                                        class="harvest-breakdown-flag"
+                                        :class="`is-${item.tone}`"
+                                    >
+                                        <div class="harvest-breakdown-flag__meta">
+                                            <div class="harvest-breakdown-flag__icon" :class="`is-${item.tone}`">
+                                                <el-icon>
+                                                    <component :is="item.value === 'Yes' ? item.icon : CircleCheckFilled" />
+                                                </el-icon>
+                                            </div>
+                                            <span>{{ item.label }}</span>
+                                        </div>
+                                        <strong>{{ item.value }}</strong>
                                     </div>
                                 </div>
                             </div>
                         </section>
 
-                        <section class="harvest-info-row">
-                            <section class="harvest-card harvest-timeline-card">
-                                <div class="harvest-table-title">Traceability Timeline</div>
-                                <div class="harvest-timeline">
-                                    <div v-for="item in timelineItems" :key="item.title" class="harvest-timeline__row">
-                                        <div class="harvest-timeline__dot" :class="{ 'is-active': item.active }"></div>
-                                        <div>
-                                            <strong>{{ item.date }}</strong>
-                                            <span>{{ item.title }}</span>
-                                            <small>{{ item.note }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-                        </section>
 
                     </main>
 
                     <aside class="harvest-sidebar">
                         <section class="harvest-card harvest-checklist-card h-100">
-                            <div class="harvest-section-title">
-                                <el-icon><Checked /></el-icon>
-                                <span>Process</span>
-                            </div>
-                            <div class="harvest-checklist h-100">
-                                <div v-for="item in processChecklist" :key="item" class="harvest-checklist__row">
-                                    <el-icon><CircleCheckFilled /></el-icon>
-                                    <span>{{ item }}</span>
-                                </div>
-                            </div>
-                            <div class="harvest-process-subsection">
-                                <div class="harvest-table-title">Quality Potential</div>
-                                <div class="harvest-quality-list">
-                                    <div v-for="item in qualityPotential" :key="item.label" class="harvest-quality-list__row">
-                                        <span>{{ item.label }}</span>
-                                        <strong :class="{ 'is-positive': item.tone === 'positive' }">{{ item.value }}</strong>
+
+
+                            <div class="harvest-process-subsection border-0 mt-0 pt-0">
+                                <div class="harvest-table-title">Harvest Details</div>
+                                <div class="harvest-process-details">
+                                    <div v-for="item in processDetails" :key="item.label" class="harvest-process-details__row">
+                                        <span class="harvest-process-details__label">
+                                            <el-icon><component :is="item.icon" /></el-icon>
+                                            <span>{{ item.label }}</span>
+                                        </span>
+                                        <strong>{{ item.value }}</strong>
                                     </div>
                                 </div>
-                                <span class="harvest-badge">Specialty Potential</span>
                             </div>
+
                             <div class="harvest-process-subsection">
                                 <div class="harvest-table-title">Documents</div>
                                 <div class="harvest-documents-card">
@@ -347,45 +443,93 @@ watch(
 
                 <section class="harvest-card harvest-lots-card">
                     <div class="harvest-lots-card__head">
-                        <h2>Active Available Lots</h2>
+                        <h2 class="harvest-lots-card__title">
+                            <el-icon><CollectionTag /></el-icon>
+                            <span>Farms Attached to This Harvest</span>
+                        </h2>
                         <div class="harvest-lots-card__chips">
-                            <span class="harvest-badge is-bright">Organic</span>
-                            <span class="harvest-badge is-muted">Fairtrade</span>
+                            <span class="harvest-badge is-bright">Attached</span>
                             <span class="harvest-badge is-muted">Traceable</span>
                         </div>
                     </div>
 
-                    <div class="harvest-lots-table">
-                        <div class="harvest-lots-table__head">
-                            <span>Lot ID</span>
-                            <span>Origin</span>
-                            <span>Quality Score</span>
-                            <span>Process</span>
-                            <span>Quantity</span>
-                            <span>Actions</span>
-                        </div>
-                        <div v-for="lot in availableLots" :key="lot.id" class="harvest-lots-table__row">
-                            <strong>{{ lot.id }}</strong>
-                            <span>{{ lot.origin }}</span>
-                            <span class="harvest-score-chip">{{ lot.score }}</span>
-                            <span>{{ lot.process }}</span>
-                            <span>{{ lot.quantity }}</span>
-                            <button type="button" class="harvest-table-action">View Samples</button>
-                        </div>
-                    </div>
+                    <el-table
+                        :data="attachedFarms"
+                        empty-text="No farm attached to this harvest"
+                        class="harvest-farms-table mt-3"
+                    >
+                        <el-table-column label="Farm ID" min-width="140">
+                            <template #default="{ row }">
+                                <span class="harvest-table-cell">
+                                    <el-icon><Tickets /></el-icon>
+                                    <strong>{{ row.id }}</strong>
+                                </span>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column label="Name" min-width="180">
+                            <template #default="{ row }">
+                                <span class="harvest-table-cell">
+                                    <el-icon><CollectionTag /></el-icon>
+                                    <span>{{ row.name }}</span>
+                                </span>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column label="Location" min-width="180">
+                            <template #default="{ row }">
+                                <span class="harvest-table-cell">
+                                    <el-icon><Location /></el-icon>
+                                    <span>{{ row.location }}</span>
+                                </span>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column label="Variety" min-width="140">
+                            <template #default="{ row }">
+                                <span class="harvest-table-cell">
+                                    <el-icon><GoodsFilled /></el-icon>
+                                    <span>{{ row.variety }}</span>
+                                </span>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column label="Farmer" min-width="180">
+                            <template #default="{ row }">
+                                <span class="harvest-table-cell">
+                                    <el-icon><User /></el-icon>
+                                    <span>{{ row.farmer }}</span>
+                                </span>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column label="Status" min-width="120">
+                            <template #default="{ row }">
+                                <span class="harvest-status-pill active">{{ row.status }}</span>
+                            </template>
+                        </el-table-column>
+                    </el-table>
                 </section>
 
                 <section class="harvest-card harvest-sustainability-card">
                     <div class="harvest-sustainability-card__head">
                         <h2>Sustainability Profile</h2>
                         <div class="harvest-sustainability-card__tags">
-                            <span><el-icon><CollectionTag /></el-icon> Organic Certified</span>
-                            <span><el-icon><GoodsFilled /></el-icon> Climate Smart</span>
+                            <span v-if="sustainabilityDetails.organicCertified"><el-icon><CollectionTag /></el-icon> Organic Certified</span>
+                            <span v-if="sustainabilityDetails.climateSmart"><el-icon><GoodsFilled /></el-icon> Climate Smart</span>
+                            <button type="button" class="harvest-btn harvest-btn--soft harvest-btn--sm" @click="sustainabilityModalOpen = true">
+                                Add Sustainability Details
+                            </button>
                         </div>
                     </div>
 
                     <div class="harvest-sustainability-grid">
-                        <article v-for="item in sustainabilityPillars" :key="item.label" class="harvest-sustainability-tile">
+                        <article
+                            v-for="item in sustainabilityPillars"
+                            :key="item.label"
+                            class="harvest-sustainability-tile"
+                            :class="{ 'is-inactive': !item.active }"
+                        >
                             <el-icon><component :is="item.icon" /></el-icon>
                             <span>{{ item.label }}</span>
                         </article>
@@ -404,6 +548,12 @@ watch(
             v-model="documentModalOpen"
             :harvest="props.harvest"
             :document-type-options="props.documentTypeOptions"
+        />
+        <AddHarvestSustainabilityModal
+            v-model="sustainabilityModalOpen"
+            :harvest="props.harvest"
+            :sustainability="sustainabilityDetails"
+            @save="saveSustainabilityDetails"
         />
     </AppLayout>
 </template>
@@ -540,11 +690,16 @@ watch(
     width: 100%;
 }
 
+.harvest-btn--sm {
+    font-size: 0.8rem;
+    padding: 0.55rem 0.9rem;
+}
+
 .harvest-layout {
     display: grid;
     gap: 1.4rem;
     grid-template-columns: minmax(0, 1fr) 320px;
-    align-items: start;
+    align-items: stretch;
 }
 
 .harvest-main,
@@ -552,6 +707,10 @@ watch(
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+}
+
+.harvest-sidebar > .h-100 {
+    flex: 1 1 auto;
 }
 
 .harvest-info-row {
@@ -614,53 +773,122 @@ watch(
     color: #fff;
 }
 
-.harvest-progress-list {
+.harvest-breakdown-layout {
     display: flex;
     flex-direction: column;
-    gap: 1.55rem;
-    margin-top: 1.45rem;
+    gap: 0.95rem;
+    margin-top: 1.25rem;
 }
 
-.harvest-progress-labels {
-    align-items: center;
-    color: #314050;
+.harvest-breakdown-featured {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.harvest-breakdown-highlight,
+.harvest-breakdown-flag {
+    border-radius: 0.95rem;
+    padding: 0.8rem 0.9rem;
+}
+
+.harvest-breakdown-highlight {
+    background: linear-gradient(180deg, #fbfcfe 0%, #f4f7fb 100%);
+    border: 1px solid #e5ebf2;
     display: flex;
-    font-size: 0.92rem;
-    justify-content: space-between;
-    margin-bottom: 0.55rem;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-height: 5.1rem;
 }
 
-.harvest-progress-labels strong {
-    color: #111f2f;
-    font-size: 0.9rem;
+.harvest-breakdown-highlight__icon {
+    align-items: center;
+    background: #e9f5ef;
+    border-radius: 0.85rem;
+    color: #0f6a47;
+    display: inline-flex;
+    height: 1.8rem;
+    justify-content: center;
+    width: 1.8rem;
 }
 
-.harvest-progress-labels .is-negative {
-    color: #d62424;
+.harvest-breakdown-flags {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.harvest-progress-track {
-    background: #eef2f6;
+.harvest-breakdown-flag {
+    background: #f8fafc;
+    border: 1px solid #edf1f5;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 4.35rem;
+}
+
+.harvest-breakdown-flag__meta {
+    align-items: center;
+    display: flex;
+    gap: 0.55rem;
+}
+
+.harvest-breakdown-flag__icon {
+    align-items: center;
     border-radius: 999px;
-    height: 0.4rem;
-    overflow: hidden;
+    display: inline-flex;
+    flex-shrink: 0;
+    height: 1.55rem;
+    justify-content: center;
+    width: 1.55rem;
 }
 
-.harvest-progress-track div {
-    border-radius: inherit;
-    height: 100%;
+.harvest-breakdown-flag__icon.is-clear {
+    background: #e8f6ee;
+    color: #0d6b47;
 }
 
-.harvest-progress-track .is-dark {
-    background: #04573a;
+.harvest-breakdown-flag__icon.is-risk {
+    background: #fff0ef;
+    color: #cf3b2d;
 }
 
-.harvest-progress-track .is-light {
-    background: #0f6b4a;
+.harvest-breakdown-highlight span,
+.harvest-breakdown-flag span {
+    color: #758494;
+    display: block;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.45rem;
+    text-transform: uppercase;
 }
 
-.harvest-progress-track .is-muted {
-    background: #d6dce4;
+.harvest-breakdown-highlight strong,
+.harvest-breakdown-flag strong {
+    color: #162333;
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.harvest-breakdown-highlight strong {
+    color: #0f412d;
+    font-size: 1rem;
+}
+
+.harvest-breakdown-flag strong {
+    font-size: 0.85rem;
+    padding-left: 2.1rem;
+}
+
+.harvest-breakdown-flag.is-clear strong {
+    color: #0f6a47;
+}
+
+.harvest-breakdown-flag.is-risk strong {
+    color: #b53a2e;
 }
 
 .harvest-table-title {
@@ -771,6 +999,43 @@ watch(
     border-top: 1px solid #edf1f5;
     margin-top: 1rem;
     padding-top: 1rem;
+}
+
+.harvest-process-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    margin-top: 0.85rem;
+}
+
+.harvest-process-details__row {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.harvest-process-details__label {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.45rem;
+}
+
+.harvest-process-details__label :deep(svg) {
+    color: #69806f;
+    font-size: 0.95rem;
+}
+
+.harvest-process-details__row span {
+    color: #71808f;
+    font-size: 0.85rem;
+}
+
+.harvest-process-details__row strong {
+    color: #162333;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-align: right;
 }
 
 .harvest-checklist__row {
@@ -935,6 +1200,16 @@ watch(
     margin: 0;
 }
 
+.harvest-lots-card__title {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.55rem;
+}
+
+.harvest-lots-card__title :deep(svg) {
+    color: #0a5f40;
+}
+
 .harvest-lots-card__chips,
 .harvest-sustainability-card__tags {
     display: flex;
@@ -952,6 +1227,39 @@ watch(
 
 .harvest-lots-table {
     margin-top: 1rem;
+}
+
+.harvest-farms-table :deep(.el-table__header th) {
+    background: #f8fafc;
+    color: #7f8d9b;
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.harvest-farms-table :deep(.el-table__cell) {
+    padding: 0.9rem 0;
+}
+
+.harvest-farms-table :deep(.el-table__row td) {
+    background: #fff;
+}
+
+.harvest-farms-table :deep(.el-table__inner-wrapper::before) {
+    display: none;
+}
+
+.harvest-table-cell {
+    align-items: center;
+    color: #233242;
+    display: inline-flex;
+    gap: 0.5rem;
+}
+
+.harvest-table-cell :deep(svg) {
+    color: #69806f;
+    font-size: 0.95rem;
 }
 
 .harvest-lots-table__head {
@@ -1019,6 +1327,10 @@ watch(
     text-align: center;
 }
 
+.harvest-sustainability-tile.is-inactive {
+    opacity: 0.45;
+}
+
 .harvest-sustainability-tile :deep(svg) {
     color: #0a5f40;
     font-size: 1.1rem;
@@ -1047,6 +1359,8 @@ watch(
     }
 
     .harvest-stats-grid,
+    .harvest-breakdown-featured,
+    .harvest-breakdown-flags,
     .harvest-sustainability-grid {
         grid-template-columns: 1fr;
     }

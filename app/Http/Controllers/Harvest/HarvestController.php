@@ -8,6 +8,7 @@ use App\Models\Farm;
 use App\Models\Harvest;
 use App\Models\DocumentMetadata;
 use App\Models\HarvestDocument;
+use App\Models\HarvestSustainability;
 use App\Models\PickMethodMetadata;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -27,7 +28,7 @@ class HarvestController extends Controller
         $search = trim((string) $request->string('search')->value());
 
         $paginator = Harvest::query()
-            ->with('farm')
+            ->with(['farm', 'season'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->whereRaw('CAST(id AS CHAR) LIKE ?', ["%{$search}%"]);
             })
@@ -39,6 +40,7 @@ class HarvestController extends Controller
                 'id' => $harvest->id,
                 'code' => self::formatHarvestCode($harvest),
                 'farm_name' => $harvest->farm?->name ?? "Farm #{$harvest->farm_id}",
+                'season_name' => $harvest->season?->name,
                 'date_planted' => $harvest->date_planted?->toDateString(),
                 'harvest_date' => $harvest->harvest_date?->toDateString(),
                 'harvest_season' => $harvest->harvest_season,
@@ -122,7 +124,9 @@ class HarvestController extends Controller
     {
         $harvest->load([
             'farm.farmer',
+            'season',
             'creator',
+            'sustainability',
             'documents' => fn ($query) => $query->latest(),
         ]);
         Gate::authorize('view', $harvest);
@@ -262,6 +266,42 @@ class HarvestController extends Controller
         ]);
 
         return back();
+    }
+
+    /**
+     * Store sustainability details for the specified harvest.
+     */
+    public function storeHarvestSustainability(Request $request, Harvest $harvest): RedirectResponse
+    {
+        Gate::authorize('update', $harvest);
+
+        $validated = $request->validate([
+            'organicCertified' => ['required', 'boolean'],
+            'climateSmart' => ['required', 'boolean'],
+            'shadeGrown' => ['required', 'boolean'],
+            'waterManagement' => ['required', 'boolean'],
+            'soilConservation' => ['required', 'boolean'],
+            'lowCarbon' => ['required', 'boolean'],
+            'fairWages' => ['required', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        HarvestSustainability::query()->updateOrCreate(
+            ['harvest_id' => $harvest->id],
+            [
+                'user_id' => $request->user()->id,
+                'organic_certified' => $request->boolean('organicCertified'),
+                'climate_smart' => $request->boolean('climateSmart'),
+                'shade_grown' => $request->boolean('shadeGrown'),
+                'water_management' => $request->boolean('waterManagement'),
+                'soil_conservation' => $request->boolean('soilConservation'),
+                'low_carbon' => $request->boolean('lowCarbon'),
+                'fair_wages' => $request->boolean('fairWages'),
+                'notes' => $validated['notes'] ?? null,
+            ],
+        );
+
+        return back()->with('success', 'Harvest sustainability details saved successfully.');
     }
     /**
      * Return the inclusive monthly range buckets between the planted and harvest dates.

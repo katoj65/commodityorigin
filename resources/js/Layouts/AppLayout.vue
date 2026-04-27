@@ -216,6 +216,15 @@ const sideSections = computed(() => [
         title: 'Coffee Lots',
         items: [
             {
+                label: 'Season',
+                href: route('season.index'),
+                active: route().current('season.*'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'season',
+            },
+            {
                 label: 'All Lots',
                 href: '#',
                 active: false,
@@ -708,6 +717,15 @@ onBeforeUnmount(() => {
                             <path d="M7.1 19.8c1.3-1.9 3.2-3.1 5.3-3.1 4 0 7.3-3.3 7.3-7.3V3.9" />
                             <path d="M8 20h8" />
                         </svg>
+                        <svg v-else-if="item.icon === 'season'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="5" width="18" height="16" rx="2" />
+                            <path d="M16 3v4" />
+                            <path d="M8 3v4" />
+                            <path d="M3 10h18" />
+                            <path d="M8 14h3" />
+                            <path d="M13 14h3" />
+                            <path d="M8 18h3" />
+                        </svg>
                         <svg v-else-if="item.icon === 'batch'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M4 7.5l8-4 8 4-8 4-8-4z" />
                             <path d="M4 12l8 4 8-4" />
@@ -934,6 +952,15 @@ onBeforeUnmount(() => {
                             <path d="M18.5 3C13 3 8.8 4.8 6.4 7.3A8.8 8.8 0 004 13.7c0 2.2.7 4.3 2.1 6.1" />
                             <path d="M7.1 19.8c1.3-1.9 3.2-3.1 5.3-3.1 4 0 7.3-3.3 7.3-7.3V3.9" />
                             <path d="M8 20h8" />
+                        </svg>
+                        <svg v-else-if="item.icon === 'season'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="5" width="18" height="16" rx="2" />
+                            <path d="M16 3v4" />
+                            <path d="M8 3v4" />
+                            <path d="M3 10h18" />
+                            <path d="M8 14h3" />
+                            <path d="M13 14h3" />
+                            <path d="M8 18h3" />
                         </svg>
                         <svg v-else-if="item.icon === 'batch'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M4 7.5l8-4 8 4-8 4-8-4z" />

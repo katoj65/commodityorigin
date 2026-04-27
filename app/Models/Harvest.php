@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Harvest extends Model
 {
@@ -19,6 +20,7 @@ class Harvest extends Model
     protected $fillable = [
         'user_id',
         'farm_id',
+        'season_id',
         'variety',
         'date_planted',
         'harvest_date',
@@ -60,6 +62,14 @@ class Harvest extends Model
     }
 
     /**
+     * Get the season attached to this harvest.
+     */
+    public function season(): BelongsTo
+    {
+        return $this->belongsTo(Season::class);
+    }
+
+    /**
      * Get the user who created the harvest record.
      */
     public function creator(): BelongsTo
@@ -73,5 +83,13 @@ class Harvest extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(HarvestDocument::class);
+    }
+
+    /**
+     * Get the sustainability record attached to this harvest.
+     */
+    public function sustainability(): HasOne
+    {
+        return $this->hasOne(HarvestSustainability::class);
     }
 }

@@ -14,6 +14,7 @@ use App\Http\Controllers\Lot\LotController;
 use App\Http\Controllers\Market\MarketController;
 use App\Http\Controllers\Origin\OriginController;
 use App\Http\Controllers\Profile\ProfileController;
+use App\Http\Controllers\Season\SeasonController;
 use Illuminate\Support\Facades\Route;
 
 // Public landing page.
@@ -88,8 +89,18 @@ Route::middleware([
         Route::get('/create', [HarvestController::class, 'create'])->name('create');
         Route::post('/', [HarvestController::class, 'store'])->name('store');
         Route::post('/{harvest}/documents', [HarvestController::class, 'storeDocument'])->name('documents.store');
+        Route::post('/{harvest}/sustainability', [HarvestController::class, 'storeHarvestSustainability'])->name('sustainability.store');
         Route::patch('/{harvest}', [HarvestController::class, 'update'])->name('update');
         Route::get('/{harvest}', [HarvestController::class, 'show'])->name('show');
+    });
+
+    // Season workspace routes.
+    Route::prefix('season')->name('season.')->group(function () {
+        Route::get('/', [SeasonController::class, 'index'])->name('index');
+        Route::get('/create', [SeasonController::class, 'create'])->name('create');
+        Route::post('/', [SeasonController::class, 'store'])->name('store');
+        Route::patch('/{season}', [SeasonController::class, 'update'])->name('update');
+        Route::get('/{season}', [SeasonController::class, 'show'])->name('show');
     });
 
     // Bid workspace routes.
