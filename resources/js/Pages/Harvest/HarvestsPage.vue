@@ -113,18 +113,13 @@ onBeforeUnmount(() => {
                 <section class="harvest-directory-hero">
                     <div>
                         <div class="harvest-directory-eyebrow">Harvest Exchange</div>
-                        <h1 class="harvest-directory-title">Harvests Directory</h1>
+                        <h1 class="harvest-directory-title mt-2 mb-2">Harvests Directory</h1>
                         <p class="harvest-directory-copy">
                             Centralized oversight for all micro-lot processing, estate management, and seasonal quality tracking across your active harvest pipeline.
                         </p>
                     </div>
 
-                    <div class="harvest-directory-log-button">
-                        <el-button class="harvest-directory-log-el-button" size="small" @click="router.visit(route('harvest.create'))">
-                            <el-icon><Plus /></el-icon>
-                            <span>Log New Harvest</span>
-                        </el-button>
-                    </div>
+                
                 </section>
 
                 <section class="harvest-directory-table-card">
@@ -363,7 +358,7 @@ onBeforeUnmount(() => {
     min-height: 38px;
     border-radius: 10px;
     background: #f6f8f7;
-    box-shadow: none;
+    box-shadow: 0 0 0 1px #e2e8e5 inset;
 }
 
 .harvest-directory-search :deep(.el-input__wrapper) {

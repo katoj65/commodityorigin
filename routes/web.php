@@ -77,6 +77,7 @@ Route::middleware([
     Route::prefix('batch')->name('batch.')->group(function () {
         Route::get('/', [BatchController::class, 'index'])->name('index');
         Route::get('/create', [BatchController::class, 'create'])->name('create');
+        Route::get('/season/{season}/create', [SeasonController::class, 'createBatch'])->name('create-season');
         Route::post('/', [BatchController::class, 'store'])->name('store');
         Route::patch('/{batch}', [BatchController::class, 'update'])->name('update');
         Route::post('/{batch}/compliance', [BatchController::class, 'storeCompliance'])->name('compliance.store');
@@ -99,6 +100,9 @@ Route::middleware([
         Route::get('/', [SeasonController::class, 'index'])->name('index');
         Route::get('/create', [SeasonController::class, 'create'])->name('create');
         Route::post('/', [SeasonController::class, 'store'])->name('store');
+        Route::get('/{season}/create-harvest', [SeasonController::class, 'createHarvest'])->name('create-harvest');
+        Route::post('/{season}/create-harvest', [SeasonController::class, 'storeHarvest'])->name('store-harvest');
+        Route::delete('/{season}/harvest/{harvest}', [SeasonController::class, 'destroyHarvest'])->name('harvest.destroy');
         Route::patch('/{season}', [SeasonController::class, 'update'])->name('update');
         Route::delete('/{season}', [SeasonController::class, 'destroy'])->name('destroy');
         Route::get('/{season}', [SeasonController::class, 'show'])->name('show');

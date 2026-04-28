@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\HarvestResource;
 use App\Http\Resources\SeasonResource;
 use App\Models\Farm;
+use App\Models\Harvest;
 use App\Models\PickMethodMetadata;
 use App\Models\Season;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -87,41 +90,126 @@ class SeasonController extends Controller
             ->loadSum('harvests', 'weight')
             ->loadSum('harvests', 'price')
             ->load([
-            'harvests' => fn ($query) => $query
-                ->with('farm')
-                ->latest('harvest_date')
-                ->latest('id'),
+                'harvests' => fn ($query) => $query
+                    ->with('farm')
+                    ->latest('harvest_date')
+                    ->latest('id'),
             ]);
 
         return Inertia::render('Season/SeasonsProfile', [
             'season' => SeasonResource::make($season)->resolve(),
             'harvests' => HarvestResource::collection($season->harvests)->resolve(),
-            'farmOptions' => Farm::query()
-                ->with('farmer')
-                ->orderBy('name')
-                ->get()
-                ->map(fn (Farm $farm): array => [
-                    'id' => $farm->id,
-                    'name' => $farm->name,
-                    'location' => $farm->location,
-                    'variety' => $farm->variety,
-                ])
-                ->values(),
-            'pickMethodOptions' => PickMethodMetadata::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->pluck('name')
-                ->values(),
-            'harvestSeasonOptions' => [
-                'Main Crop',
-                'Fly Crop',
-                'Early Harvest',
-                'Late Harvest',
-            ],
+            'farmOptions' => self::farmOptions(),
+            'pickMethodOptions' => self::pickMethodOptions()->values(),
+            'harvestSeasonOptions' => self::harvestSeasonOptions(),
             'regionOptions' => self::regionOptions(),
             'statusOptions' => self::statusOptions(),
         ]);
+    }
+
+    public function createHarvest(Season $season): Response
+    {
+        Gate::authorize('view', $season);
+        Gate::authorize('create', Harvest::class);
+
+        $season->loadCount('harvests')
+            ->load([
+                'harvests' => fn ($query) => $query
+                    ->with('farm.farmer')
+                    ->latest('harvest_date')
+                    ->latest('id'),
+            ]);
+
+        return Inertia::render('Season/NewHarvestPage', [
+            'season' => SeasonResource::make($season)->resolve(),
+            'harvests' => HarvestResource::collection($season->harvests)->resolve(),
+            'farmOptions' => self::farmOptions(),
+            'pickMethodOptions' => self::pickMethodOptions()->values(),
+            'harvestSeasonOptions' => self::harvestSeasonOptions(),
+        ]);
+    }
+
+    public function createBatch(Season $season): Response
+    {
+        Gate::authorize('view', $season);
+
+        $season->loadCount('harvests')
+            ->loadSum('harvests', 'weight')
+            ->loadSum('harvests', 'price')
+            ->load([
+                'harvests' => fn ($query) => $query
+                    ->with('farm')
+                    ->latest('harvest_date')
+                    ->latest('id'),
+            ]);
+
+        return Inertia::render('Batch/CreateBatch', [
+            'season' => SeasonResource::make($season)->resolve(),
+            'harvests' => HarvestResource::collection($season->harvests)->resolve(),
+        ]);
+    }
+
+    public function storeHarvest(Request $request, Season $season): RedirectResponse
+    {
+        Gate::authorize('view', $season);
+        Gate::authorize('create', Harvest::class);
+
+        $pickMethodOptions = self::pickMethodOptions()->all();
+        $harvestSeasonOptions = self::harvestSeasonOptions();
+
+        $validated = $request->validate([
+            'farm_id' => ['required', 'exists:farms,id'],
+            'variety' => ['required', 'string', 'max:255'],
+            'pick_method' => ['required', 'string', 'max:255', Rule::in($pickMethodOptions)],
+            'date_planted' => ['required', 'date', 'before_or_equal:today'],
+            'harvest_date' => ['required', 'date', 'before_or_equal:today'],
+            'harvest_season' => ['required', 'string', 'max:255', Rule::in($harvestSeasonOptions)],
+            'price' => ['required', 'numeric', 'min:0.01'],
+            'weight' => ['required', 'numeric', 'min:0.01'],
+            'ripeness_percentage' => ['required', 'numeric', 'between:0,100'],
+            'foreign_matter_present' => ['required', 'boolean'],
+            'pest_damage' => ['required', 'boolean'],
+            'disease_signs' => ['required', 'boolean'],
+            'visible_defects' => ['required', 'boolean'],
+        ]);
+
+        Farm::query()->with('farmer')->findOrFail($validated['farm_id']);
+
+        $harvest = Harvest::query()->create([
+            'user_id' => $request->user()->id,
+            'season_id' => $season->id,
+            'farm_id' => $validated['farm_id'],
+            'variety' => $validated['variety'],
+            'date_planted' => $validated['date_planted'],
+            'harvest_date' => $validated['harvest_date'],
+            'harvest_season' => $validated['harvest_season'],
+            'status' => 'active',
+            'pick_method' => $validated['pick_method'],
+            'price' => $validated['price'],
+            'weight' => $validated['weight'],
+            'ripeness_percentage' => $validated['ripeness_percentage'],
+            'foreign_matter_present' => $request->boolean('foreign_matter_present'),
+            'pest_damage' => $request->boolean('pest_damage'),
+            'disease_signs' => $request->boolean('disease_signs'),
+            'visible_defects' => $request->boolean('visible_defects'),
+        ]);
+
+        return redirect()
+            ->route('season.show', $season)
+            ->with('success', "Harvest {$harvest->id} recorded successfully.");
+    }
+
+    public function destroyHarvest(Season $season, Harvest $harvest): RedirectResponse
+    {
+        Gate::authorize('view', $season);
+
+        abort_unless((int) $harvest->season_id === (int) $season->id, 404);
+        Gate::authorize('delete', $harvest);
+
+        $harvestId = $harvest->id;
+        $harvest->delete();
+
+        return back()->with('success', "Harvest {$harvestId} deleted successfully.");
     }
 
     /**
@@ -180,5 +268,62 @@ class SeasonController extends Controller
             'Northern Plateau',
             'West Nile',
         ];
+    }
+
+    protected static function harvestSeasonOptions(): array
+    {
+        return [
+            'Main Crop',
+            'Fly Crop',
+            'Early Harvest',
+            'Late Harvest',
+        ];
+    }
+
+    protected static function pickMethodOptions(): Collection
+    {
+        $options = PickMethodMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name')
+            ->values();
+
+        if ($options->isNotEmpty()) {
+            return $options;
+        }
+
+        return collect([
+            'Selective Picking',
+            'Strip Picking',
+            'Hand Sorting',
+        ]);
+    }
+
+    protected static function farmOptions(): Collection
+    {
+        return Farm::query()
+            ->with('farmer')
+            ->orderBy('name')
+            ->get()
+            ->map(function (Farm $farm): array {
+                $farmerName = trim(implode(' ', array_filter([
+                    $farm->farmer?->first_name,
+                    $farm->farmer?->last_name,
+                ])));
+
+                return [
+                    'id' => $farm->id,
+                    'name' => $farm->name,
+                    'location' => $farm->location,
+                    'variety' => $farm->variety,
+                    'altitude' => $farm->altitude,
+                    'latitude' => $farm->latitude,
+                    'longitude' => $farm->longitude,
+                    'farmer_name' => $farmerName !== '' ? $farmerName : 'Unassigned farmer',
+                    'region' => $farm->farmer?->district ?: $farm->location,
+                ];
+            })
+            ->values();
     }
 }

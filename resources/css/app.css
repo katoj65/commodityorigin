@@ -98,6 +98,45 @@
     width: 100%;
 }
 
+.app-form-field .el-input__wrapper,
+.app-form-field .el-select__wrapper,
+.app-form-field .el-date-editor.el-input__wrapper,
+.app-form-control .el-input__wrapper,
+.app-form-control .el-select__wrapper,
+.app-form-control.el-date-editor .el-input__wrapper {
+    border: none !important;
+    background: #ffffff;
+    box-shadow: 0 0 0 1px #dbe1e6 inset !important;
+}
+
+.app-form-field .el-input__wrapper:hover,
+.app-form-field .el-select__wrapper:hover,
+.app-form-field .el-date-editor.el-input__wrapper:hover,
+.app-form-control .el-input__wrapper:hover,
+.app-form-control .el-select__wrapper:hover,
+.app-form-control.el-date-editor .el-input__wrapper:hover {
+    box-shadow: 0 0 0 1px #cfd7de inset !important;
+}
+
+.app-form-field .el-input__wrapper.is-focus,
+.app-form-field .el-input.is-focus .el-input__wrapper,
+.app-form-field .el-input.is-active .el-input__wrapper,
+.app-form-field .el-select__wrapper.is-focused,
+.app-form-field .el-select__wrapper:focus-within,
+.app-form-field .el-date-editor.is-focus .el-input__wrapper,
+.app-form-field .el-date-editor.is-active .el-input__wrapper,
+.app-form-field .el-date-editor:focus-within .el-input__wrapper,
+.app-form-control .el-input__wrapper.is-focus,
+.app-form-control .el-input.is-focus .el-input__wrapper,
+.app-form-control .el-input.is-active .el-input__wrapper,
+.app-form-control .el-select__wrapper.is-focused,
+.app-form-control .el-select__wrapper:focus-within,
+.app-form-control.el-date-editor.is-focus .el-input__wrapper,
+.app-form-control.el-date-editor.is-active .el-input__wrapper,
+.app-form-control.el-date-editor:focus-within .el-input__wrapper {
+    box-shadow: 0 0 0 1px #dbe1e6 inset !important;
+}
+
 .h-100 {
     height: 100% !important;
 }

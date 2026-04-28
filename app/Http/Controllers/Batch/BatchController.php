@@ -4,12 +4,19 @@ namespace App\Http\Controllers\Batch;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BatchResource;
+use App\Http\Resources\HarvestResource;
+use App\Http\Resources\SeasonResource;
 use App\Models\Batch;
 use App\Models\BatchCompliance;
+use App\Models\BatchOwnership;
+use App\Models\Harvest;
+use App\Models\Season;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -74,10 +81,53 @@ class BatchController extends Controller
     public function show(Batch $batch): Response
     {
         Gate::authorize('view', $batch);
-        $batch->load('compliances');
+        $batch->load(['compliances', 'ownerships', 'season']);
+
+        $seasonId = $batch->season_id ?: $batch->ownerships
+            ->firstWhere('owner_type', Season::class)
+            ?->owner_id;
+
+        /** @var Collection<int, int> $harvestIds */
+        $harvestIds = $batch->ownerships
+            ->where('owner_type', Harvest::class)
+            ->pluck('owner_id')
+            ->filter()
+            ->map(fn ($id): int => (int) $id)
+            ->values();
+
+        $season = $seasonId
+            ? Season::query()
+                ->withCount('harvests')
+                ->withSum('harvests', 'weight')
+                ->withSum('harvests', 'price')
+                ->find($seasonId)
+            : null;
+
+        $harvests = $harvestIds->isNotEmpty()
+            ? Harvest::query()
+                ->with(['farm.farmer', 'season'])
+                ->whereKey($harvestIds)
+                ->get()
+                ->sortBy(fn (Harvest $harvest): int => $harvestIds->search($harvest->id) ?: 0)
+                ->values()
+            : collect();
+
+        if (!$season && $harvests->isNotEmpty()) {
+            $linkedSeasonId = $harvests->first()?->season_id;
+
+            if ($linkedSeasonId) {
+                $season = Season::query()
+                    ->withCount('harvests')
+                    ->withSum('harvests', 'weight')
+                    ->withSum('harvests', 'price')
+                    ->find($linkedSeasonId);
+            }
+        }
 
         return Inertia::render('Batch/BatchProfile', [
             'batch' => BatchResource::make($batch)->resolve(),
+            'season' => $season ? SeasonResource::make($season)->resolve() : null,
+            'harvests' => HarvestResource::collection($harvests)->resolve(),
         ]);
     }
 
@@ -87,9 +137,16 @@ class BatchController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateBatchData($request);
+        $seasonId = $validated['season_id'] ?? null;
+
+        if ($seasonId) {
+            $season = Season::query()->findOrFail($seasonId);
+            Gate::authorize('view', $season);
+        }
 
         $batch = Batch::query()->create([
             'user_id' => $request->user()->id,
+            'season_id' => $seasonId,
             'batch_number' => $validated['batch_number'],
             'variety' => $validated['variety'] ?? null,
             'warehouse_location' => $validated['warehouse_location'],
@@ -109,6 +166,22 @@ class BatchController extends Controller
             'status' => 'received',
         ]);
 
+        $harvestIds = collect($validated['harvest_ids'] ?? [])->map(fn ($id): int => (int) $id);
+
+        if ($harvestIds->isNotEmpty()) {
+            Harvest::query()
+                ->whereKey($harvestIds)
+                ->get()
+                ->each(function (Harvest $harvest) use ($batch, $request): void {
+                    BatchOwnership::query()->create([
+                        'batch_id' => $batch->id,
+                        'user_id' => $request->user()->id,
+                        'owner_id' => $harvest->id,
+                        'owner_type' => Harvest::class,
+                    ]);
+                });
+        }
+
         return redirect()
             ->route('batch.show', $batch)
             ->with('success', 'Batch added successfully.');
@@ -122,8 +195,15 @@ class BatchController extends Controller
         Gate::authorize('update', $batch);
 
         $validated = $this->validateBatchData($request, $batch);
+        $seasonId = $validated['season_id'] ?? $batch->season_id;
+
+        if ($seasonId) {
+            $season = Season::query()->findOrFail($seasonId);
+            Gate::authorize('view', $season);
+        }
 
         $batch->update([
+            'season_id' => $seasonId,
             'batch_number' => $validated['batch_number'],
             'variety' => $validated['variety'],
             'warehouse_location' => $validated['warehouse_location'],
@@ -178,7 +258,7 @@ class BatchController extends Controller
      */
     private function validateBatchData(Request $request, ?Batch $batch = null): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'batch_number' => [
                 'required',
                 'string',
@@ -200,6 +280,24 @@ class BatchController extends Controller
             'defect_count' => ['nullable', 'integer', 'min:0'],
             'cup_score' => ['nullable', 'numeric', 'between:0,100'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'season_id' => ['nullable', 'exists:seasons,id'],
+            'harvest_ids' => ['nullable', 'array'],
+            'harvest_ids.*' => ['integer', 'exists:harvests,id'],
         ]);
+
+        if (!empty($validated['season_id']) && !empty($validated['harvest_ids'])) {
+            $mismatchedHarvest = Harvest::query()
+                ->whereKey($validated['harvest_ids'])
+                ->where('season_id', '!=', $validated['season_id'])
+                ->exists();
+
+            if ($mismatchedHarvest) {
+                throw ValidationException::withMessages([
+                    'harvest_ids' => 'Selected harvests must belong to the chosen season.',
+                ]);
+            }
+        }
+
+        return $validated;
     }
 }

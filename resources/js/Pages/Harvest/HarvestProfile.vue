@@ -1,35 +1,18 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
-import { usePage } from '@inertiajs/vue3';
-import { ElNotification } from 'element-plus';
-import {
-    Aim,
-    Calendar,
-    Checked,
-    CircleCheckFilled,
-    CollectionTag,
-    Document,
-    GoodsFilled,
-    Histogram,
-    Location,
-    Opportunity,
-    PriceTag,
-    Reading,
-    SetUp,
-    Tickets,
-    TrendCharts,
-    User,
-    WarningFilled,
-} from '@element-plus/icons-vue';
+import { computed, ref } from 'vue';
+import { Head } from '@inertiajs/vue3';
+import { Calendar, Check, Document, Download, Location } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import AddHarvestDocumentModal from '@/Components/Modals/AddHarvestDocumentModal.vue';
-import AddHarvestSustainabilityModal from '@/Components/Modals/AddHarvestSustainabilityModal.vue';
 import EditHarvestQualityModel from '@/Components/Modals/EditHarvestQualityModel.vue';
 
 const props = defineProps({
     harvest: {
         type: Object,
         required: true,
+    },
+    season: {
+        type: Object,
+        default: null,
     },
     dateRange: {
         type: Array,
@@ -49,1325 +32,1663 @@ const props = defineProps({
     },
 });
 
-const page = usePage();
-const qualityModalOpen = ref(false);
-const documentModalOpen = ref(false);
-const sustainabilityModalOpen = ref(false);
-const flashSuccess = computed(() => page.props.flash?.success ?? '');
+const pageTitle = 'Harvest Profile';
+const editHarvestModalOpen = ref(false);
 
-const harvestDocuments = computed(() => (
-    Array.isArray(props.harvest.harvest_documents) ? props.harvest.harvest_documents : []
-));
-
-const farmName = computed(() => props.harvest.farm?.name || 'Mount Elgon Heights');
-const farmerName = computed(() => {
-    const fullName = [
-        props.harvest.farm?.farmer?.first_name,
-        props.harvest.farm?.farmer?.last_name,
-    ].filter(Boolean).join(' ');
-
-    return fullName || props.harvest.farmer_name || 'Abebe Bikila';
-});
-const varietyLabel = computed(() => props.harvest.variety || props.harvest.farm?.variety || 'Arabica');
-const harvestDateLabel = computed(() => {
-    if (!props.harvest.harvest_date) {
-        return 'Oct 12, 2024';
-    }
-
-    return new Intl.DateTimeFormat('en-UG', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    }).format(new Date(props.harvest.harvest_date));
-});
-const plantedDateLabel = computed(() => {
-    if (!props.harvest.date_planted) {
+const formatDate = (value, options = { month: 'short', day: 'numeric', year: 'numeric' }) => {
+    if (!value) {
         return 'Pending';
     }
 
-    return new Intl.DateTimeFormat('en-UG', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    }).format(new Date(props.harvest.date_planted));
-});
+    return new Intl.DateTimeFormat('en-US', options).format(new Date(value));
+};
+
+const formatMonthYear = (value) => formatDate(value, { month: 'short', year: 'numeric' });
+
+const formatRange = (start, end) => {
+    if (!start && !end) {
+        return 'Feb - Jun 2026';
+    }
+
+    if (start && end) {
+        return `${formatMonthYear(start)} - ${formatMonthYear(end)}`;
+    }
+
+    return start ? formatMonthYear(start) : formatMonthYear(end);
+};
+
+const formatWeight = (value, digits = 0) => `${Number(value || 0).toLocaleString('en-US', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+})}kg`;
+
+const formatCurrency = (value) => `$${Number(value || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+})}`;
+
+const formatCurrencyPrecise = (value) => `$${Number(value || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+})}`;
+
+const startCase = (value, fallback) => {
+    if (!value) {
+        return fallback;
+    }
+
+    return String(value)
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
 const harvestCode = computed(() => {
-    const year = props.harvest.harvest_date
-        ? new Date(props.harvest.harvest_date).getFullYear()
-        : 2024;
+    const year = props.harvest.harvest_date ? new Date(props.harvest.harvest_date).getFullYear() : new Date().getFullYear();
 
     return `#H-${year}-${String(props.harvest.id).padStart(2, '0')}`;
 });
-const volumeKg = computed(() => Number(props.harvest.weight || 1200));
-const moistureContent = computed(() => Number(props.harvest.moisture_content || 11.2));
-const qualityScore = computed(() => Number(props.harvest.ripeness_percentage || 87.4));
-const formatBooleanLabel = (value) => (value ? 'Yes' : 'No');
-const currentPrice = computed(() => {
-    if (props.harvest.price) {
-        return Number(props.harvest.price);
-    }
 
-    if (qualityScore.value >= 90) {
-        return 4.5;
-    }
+const seasonName = computed(() => props.season?.name || props.harvest.season?.name || 'Main Crop 2026');
+const farmName = computed(() => props.harvest.farm?.name || 'Mount Elgon Heights');
+const farmerName = computed(() => {
+    const farmer = props.harvest.farm?.farmer;
+    const fullName = [farmer?.first_name, farmer?.last_name].filter(Boolean).join(' ');
 
-    if (qualityScore.value >= 86) {
-        return 4.25;
-    }
-
-    return 3.8;
+    return fullName || 'Abebe Bikila';
 });
-const estimatedMarketValue = computed(() => Math.round(volumeKg.value * currentPrice.value));
-const pickMethodLabel = computed(() => props.harvest.pick_method || 'Selective');
-const harvestSeasonLabel = computed(() => props.harvest.harvest_season || 'Main Season');
-const qualityBreakdownRows = computed(() => [
-    {
-        label: 'Pick Method',
-        value: pickMethodLabel.value,
-        icon: SetUp,
-        tone: 'feature',
-    },
-    {
-        label: 'Ripeness Percentage',
-        value: `${qualityScore.value.toFixed(1)}%`,
-        icon: Aim,
-        tone: 'feature',
-    },
-    {
-        label: 'Foreign Matter Present',
-        value: formatBooleanLabel(props.harvest.foreign_matter_present),
-        icon: WarningFilled,
-        tone: props.harvest.foreign_matter_present ? 'risk' : 'clear',
-    },
-    {
-        label: 'Pest Damage',
-        value: formatBooleanLabel(props.harvest.pest_damage),
-        icon: WarningFilled,
-        tone: props.harvest.pest_damage ? 'risk' : 'clear',
-    },
-    {
-        label: 'Disease Signs',
-        value: formatBooleanLabel(props.harvest.disease_signs),
-        icon: WarningFilled,
-        tone: props.harvest.disease_signs ? 'risk' : 'clear',
-    },
-    {
-        label: 'Visible Defects',
-        value: formatBooleanLabel(props.harvest.visible_defects),
-        icon: WarningFilled,
-        tone: props.harvest.visible_defects ? 'risk' : 'clear',
-    },
-]);
-const processChecklist = computed(() => [
-    'Cherry collection verified',
-    'Moisture benchmark passed',
-    'Defect sorting completed',
-    'Farm traceability confirmed',
-]);
-const processDetails = computed(() => [
-    { label: 'Date Planted', value: plantedDateLabel.value, icon: Calendar },
-    { label: 'Harvest Date', value: harvestDateLabel.value, icon: Tickets },
-    { label: 'Harvest Season', value: harvestSeasonLabel.value, icon: Reading },
-    { label: 'Weight', value: `${volumeKg.value.toLocaleString()} kg`, icon: GoodsFilled },
-    { label: 'Price', value: `$${currentPrice.value.toFixed(2)}`, icon: PriceTag },
-]);
-const qualityPotential = computed(() => [
-    { label: 'Ripeness Score', value: `${Math.min(95, Math.round(qualityScore.value + 8))}/100` },
-    { label: 'Cupping Range', value: qualityScore.value >= 86 ? '86-88' : '82-84' },
-    { label: 'Defect Risk', value: 'Low', tone: 'positive' },
-]);
-const timelineItems = computed(() => [
-    {
-        date: 'Oct 14, 2024',
-        title: 'Ready for Batching',
-        note: 'Quality verified by Warehouse B',
-        active: true,
-    },
-    {
-        date: harvestDateLabel.value,
-        title: 'Harvest Registration',
-        note: 'Initial cherry count logged',
-        active: false,
-    },
-]);
-const attachedFarms = computed(() => {
-    if (!props.harvest.farm) {
-        return [];
+const regionLabel = computed(() => {
+    const district = props.harvest.farm?.farmer?.district;
+    const location = props.harvest.farm?.location;
+
+    if (district) {
+        return `${district}, Uganda`;
     }
 
-    const farm = props.harvest.farm;
-    const responsible = [
-        farm.farmer?.first_name,
-        farm.farmer?.last_name,
-    ].filter(Boolean).join(' ') || farmerName.value;
+    return location || 'Gedeo, Uganda';
+});
+const altitudeLabel = computed(() => props.harvest.farm?.altitude || '2,100m');
+const coordinatesLabel = computed(() => {
+    const latitude = props.harvest.farm?.latitude;
+    const longitude = props.harvest.farm?.longitude;
 
-    return [
-        {
-            id: `#FARM-${String(farm.id || props.harvest.farm_id || props.harvest.id).padStart(3, '0')}`,
-            name: farm.name || farmName.value,
-            location: farm.location || 'Origin pending',
-            variety: farm.variety || varietyLabel.value,
-            farmer: responsible,
-            status: String(farm.status || 'Attached'),
-        },
-    ];
+    if (latitude && longitude) {
+        return `${latitude}, ${longitude}`;
+    }
+
+    return '1.149 N, 34.331 E';
 });
-const sustainabilityDetails = ref({
-    organicCertified: props.harvest.sustainability?.organicCertified ?? true,
-    climateSmart: props.harvest.sustainability?.climateSmart ?? true,
-    shadeGrown: props.harvest.sustainability?.shadeGrown ?? true,
-    waterManagement: props.harvest.sustainability?.waterManagement ?? true,
-    soilConservation: props.harvest.sustainability?.soilConservation ?? true,
-    lowCarbon: props.harvest.sustainability?.lowCarbon ?? true,
-    fairWages: props.harvest.sustainability?.fairWages ?? true,
-    notes: props.harvest.sustainability?.notes ?? '',
+const varietyLabel = computed(() => props.harvest.variety || props.harvest.farm?.variety || 'Arabica SL-14');
+const pickMethodLabel = computed(() => startCase(props.harvest.pick_method, 'Selective'));
+const totalQuantity = computed(() => Number(props.harvest.weight || 1200));
+const cleanEstimate = computed(() => totalQuantity.value * 0.1667);
+const processLoss = computed(() => {
+    let loss = 4.2;
+
+    if (props.harvest.foreign_matter_present) {
+        loss += 0.8;
+    }
+
+    if (props.harvest.visible_defects) {
+        loss += 0.6;
+    }
+
+    return loss;
 });
-const sustainabilityPillars = computed(() => [
-    { label: 'Shade Grown', icon: CollectionTag, active: sustainabilityDetails.value.shadeGrown },
-    { label: 'Water Management', icon: GoodsFilled, active: sustainabilityDetails.value.waterManagement },
-    { label: 'Soil Conservation', icon: Opportunity, active: sustainabilityDetails.value.soilConservation },
-    { label: 'Low Carbon', icon: TrendCharts, active: sustainabilityDetails.value.lowCarbon },
-    { label: 'Fair Wages', icon: User, active: sustainabilityDetails.value.fairWages },
+const expectedBatchQuantity = computed(() => cleanEstimate.value * (1 - (processLoss.value / 100)));
+const moistureLevel = computed(() => {
+    const ripeness = Number(props.harvest.ripeness_percentage || 94);
+    return Math.max(10.6, Math.min(12.3, 12.9 - (ripeness * 0.018)));
+});
+const harvestDateLabel = computed(() => formatDate(props.harvest.harvest_date, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+}));
+const seasonDuration = computed(() => formatRange(
+    props.season?.start_date || props.harvest.date_planted,
+    props.season?.end_date || props.harvest.harvest_date,
+));
+const plantedDateLabel = computed(() => formatDate(props.harvest.date_planted, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+}));
+const totalYield = computed(() => props.season?.harvests_sum_weight
+    ? formatWeight(props.season.harvests_sum_weight)
+    : formatWeight(totalQuantity.value * 10.33));
+const harvestCount = computed(() => `${props.season?.harvests_count || 8} Events`);
+const statusLabel = computed(() => {
+    const normalized = String(props.harvest.status || '').toLowerCase();
+
+    if (!normalized || normalized === 'active') {
+        return 'Verified';
+    }
+
+    return startCase(normalized, 'Verified');
+});
+const readinessItems = computed(() => [
+    { label: 'Season linked', complete: true },
+    { label: 'Farm verified', complete: Boolean(props.harvest.farm?.id) },
+    { label: 'Quantity verified', complete: totalQuantity.value > 0 },
+    { label: 'Moisture checked', complete: moistureLevel.value > 0 },
+    { label: 'Cherries sorted', complete: !props.harvest.foreign_matter_present },
+    { label: 'Evidence uploaded', complete: (props.harvest.harvest_documents || []).length > 0 },
 ]);
-const documentItems = computed(() => {
-    if (harvestDocuments.value.length) {
-        return harvestDocuments.value.map((document) => ({
-            title: document.title || document.original_name || 'Harvest document',
-            fileName: document.original_name || 'File attached',
+const readinessScore = computed(() => {
+    const items = readinessItems.value;
+    const completed = items.filter((item) => item.complete).length;
+
+    return Math.round((completed / items.length) * 100);
+});
+const healthScore = computed(() => Math.max(82, Math.min(96, Math.round(86 + (Number(props.harvest.ripeness_percentage || 94) * 0.06)))));
+const cupScoreLabel = computed(() => {
+    const score = Math.max(84, Math.min(90, Math.round(83 + (Number(props.harvest.ripeness_percentage || 94) * 0.045))));
+    return `${score}-${score + 2}`;
+});
+const estimatedValue = computed(() => {
+    const price = Number(props.harvest.price || 0);
+
+    if (price > 25) {
+        return price;
+    }
+
+    return totalQuantity.value * Math.max(price, 4.5);
+});
+const traceableLabel = computed(() => `TRACEABLE HARVEST LINKED TO ${seasonName.value.toUpperCase()}`);
+const badgeItems = computed(() => [
+    { label: 'LINKED TO SEASON', tone: 'green' },
+    { label: 'VERIFIED FARM', tone: 'neutral' },
+    { label: 'READY FOR BATCHING', tone: 'green' },
+    { label: 'TRACEABLE', tone: 'neutral' },
+]);
+const evidenceItems = computed(() => {
+    const documents = props.harvest.harvest_documents || [];
+
+    if (documents.length > 0) {
+        return documents.map((document) => ({
+            id: document.id,
+            title: document.title,
+            subtitle: document.original_name,
             href: document.file_url,
         }));
     }
 
     return [
-        { title: 'Harvest photos (12)', fileName: 'Field image bundle', href: '#' },
-        { title: 'Farmer Confirmation.pdf', fileName: 'Signed confirmation', href: '#' },
-        { title: 'Field Quality Report', fileName: 'Inspection report', href: '#' },
+        { id: 'photos', title: 'Harvest Photos', subtitle: 'Pending upload', href: null },
+        { id: 'farmer-confirmation', title: 'Farmer Confirmation', subtitle: 'Pending upload', href: null },
+        { id: 'field-report', title: 'Field Officer Report', subtitle: 'Pending upload', href: null },
     ];
 });
-
-let lastShownSuccess = '';
-
-watch(
-    flashSuccess,
-    (message) => {
-        if (!message || message === lastShownSuccess) {
-            return;
-        }
-
-        lastShownSuccess = message;
-
-        ElNotification({
-            title: 'Harvest Updated',
-            message,
-            type: 'success',
-            duration: 3200,
-            offset: 84,
-        });
+const harvestSeasonLabel = computed(() => startCase(props.harvest.harvest_season, 'Main Crop'));
+const detailItems = computed(() => [
+    { key: 'date-planted', label: 'Date Planted', value: plantedDateLabel.value },
+    { key: 'harvest-date', label: 'Harvest Date', value: harvestDateLabel.value },
+    { key: 'harvest-season', label: 'Harvest Season', value: harvestSeasonLabel.value },
+    { key: 'variety', label: 'Variety', value: varietyLabel.value },
+    { key: 'pick-method', label: 'Pick Method', value: pickMethodLabel.value },
+    { key: 'weight', label: 'Weight', value: formatWeight(totalQuantity.value, 2) },
+    { key: 'price', label: 'Price', value: formatCurrencyPrecise(props.harvest.price || 0) },
+    { key: 'ripeness', label: 'Ripeness Percentage', value: `${Number(props.harvest.ripeness_percentage || 0).toFixed(2)}%` },
+]);
+const qualityItems = computed(() => [
+    { label: 'Foreign Matter Present', value: props.harvest.foreign_matter_present ? 'Yes' : 'No', tone: props.harvest.foreign_matter_present ? 'alert' : 'good' },
+    { label: 'Pest Damage', value: props.harvest.pest_damage ? 'Yes' : 'No', tone: props.harvest.pest_damage ? 'alert' : 'good' },
+    { label: 'Disease Signs', value: props.harvest.disease_signs ? 'Yes' : 'No', tone: props.harvest.disease_signs ? 'alert' : 'good' },
+    { label: 'Visible Defects', value: props.harvest.visible_defects ? 'Yes' : 'No', tone: props.harvest.visible_defects ? 'alert' : 'good' },
+]);
+const verificationChain = computed(() => [
+    {
+        title: 'Season Created',
+        subtitle: props.season?.start_date ? formatDate(props.season.start_date, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Feb 14, 2026',
+        active: false,
     },
-    { immediate: true },
-);
+    {
+        title: 'Farm Activities Logged',
+        subtitle: props.dateRange.length > 0
+            ? `${formatMonthYear(props.dateRange[0]?.start)} - ${formatMonthYear(props.dateRange[props.dateRange.length - 1]?.end)}`
+            : 'Mar - Sep 2026',
+        active: false,
+    },
+    {
+        title: 'Harvest Recorded',
+        subtitle: harvestDateLabel.value,
+        active: false,
+    },
+    {
+        title: 'Quantity Verified',
+        subtitle: harvestDateLabel.value,
+        active: false,
+    },
+    {
+        title: 'Ready for Batching',
+        subtitle: 'SYSTEM CONFIRMED',
+        active: true,
+    },
+]);
+const activitySteps = computed(() => {
+    const fallback = [
+        { title: 'Planting', date: 'Mar 24' },
+        { title: 'Weeding', date: 'May 24' },
+        { title: 'Flowering', date: 'Jul 24' },
+        { title: 'Inspection', date: 'Sept 24' },
+        { title: 'Harvesting', date: 'Oct 24' },
+    ];
 
-const saveSustainabilityDetails = (payload) => {
-    sustainabilityDetails.value = { ...payload };
+    if (props.dateRange.length === 0) {
+        return fallback;
+    }
+
+    return [
+        { title: 'Planting', date: formatMonthYear(props.dateRange[0]?.start || props.harvest.date_planted).replace(' ', ' ') },
+        { title: 'Weeding', date: formatMonthYear(props.dateRange[1]?.start || props.dateRange[0]?.start || props.harvest.date_planted) },
+        { title: 'Flowering', date: formatMonthYear(props.dateRange[2]?.start || props.dateRange[0]?.start || props.harvest.date_planted) },
+        { title: 'Inspection', date: formatMonthYear(props.dateRange[3]?.start || props.dateRange[1]?.start || props.harvest.date_planted) },
+        { title: 'Harvesting', date: formatDate(props.harvest.harvest_date, { month: 'short', year: '2-digit' }) },
+    ];
+});
+const openEditHarvestModal = () => {
+    editHarvestModalOpen.value = true;
 };
-
-watch(
-    () => props.harvest.sustainability,
-    (value) => {
-        if (!value) {
-            return;
-        }
-
-        sustainabilityDetails.value = {
-            organicCertified: value.organicCertified ?? true,
-            climateSmart: value.climateSmart ?? true,
-            shadeGrown: value.shadeGrown ?? true,
-            waterManagement: value.waterManagement ?? true,
-            soilConservation: value.soilConservation ?? true,
-            lowCarbon: value.lowCarbon ?? true,
-            fairWages: value.fairWages ?? true,
-            notes: value.notes ?? '',
-        };
-    },
-    { deep: true },
-);
 </script>
 
 <template>
-    <AppLayout :title="harvestCode" full-width>
+    <AppLayout :title="pageTitle" full-width flush :show-banner="false">
+        <Head :title="pageTitle" />
+
         <div class="harvest-profile-page">
             <div class="harvest-profile-shell">
-                <section class="harvest-hero">
-                    <div class="harvest-hero__meta">
-                        <span class="harvest-chip is-green">Verified Farm</span>
-                        <span class="harvest-chip is-peach">Fresh Harvest</span>
-                        <span class="harvest-chip is-slate">Ready for Batching</span>
-                        <span class="harvest-chip is-slate">Traceable</span>
+                <section class="profile-hero">
+                    <div class="profile-hero__copy">
+                        <p class="profile-kicker">{{ traceableLabel }}</p>
+                        <h1 class="mt-2 mb-2">Harvest Profile</h1>
                     </div>
 
-                    <div class="harvest-hero__row">
-                        <div class="harvest-hero__copy">
-                            <h1>{{ harvestCode }}</h1>
-                            <p>
-                                Farmer: {{ farmerName }}
-                                <span>•</span>
-                                {{ varietyLabel }} SL-14
-                            </p>
-                        </div>
-
-                        <div class="harvest-hero__actions">
-                            <button type="button" class="harvest-btn harvest-btn--soft" @click="qualityModalOpen = true">Edit Harvest</button>
-                            <button type="button" class="harvest-btn harvest-btn--green" @click="documentModalOpen = true">Upload Document</button>
-                        </div>
+                    <div class="profile-hero__actions">
+                        <button type="button" class="hero-button hero-button--soft" @click="openEditHarvestModal">Edit</button>
                     </div>
                 </section>
 
-                <section class="harvest-layout">
-                    <main class="harvest-main">
-                        <section class="harvest-stats-grid">
-                            <article class="harvest-stat-card">
-                                <span>Total Quantity</span>
-                                <strong>{{ volumeKg.toLocaleString() }}kg</strong>
-                            </article>
-                            <article class="harvest-stat-card">
+                <section class="badge-row">
+                    <span
+                        v-for="badge in badgeItems"
+                        :key="badge.label"
+                        class="profile-badge"
+                        :class="badge.tone === 'green' ? 'is-green' : 'is-neutral'"
+                    >
+                        {{ badge.label }}
+                    </span>
+                </section>
+
+                <section class="summary-strip">
+                    <article class="summary-strip__item">
+                        <span>Harvest ID</span>
+                        <strong>{{ harvestCode }}</strong>
+                    </article>
+                    <article class="summary-strip__item">
+                        <span>Season</span>
+                        <strong>{{ seasonName }}</strong>
+                    </article>
+                    <article class="summary-strip__item">
+                        <span>Farm</span>
+                        <strong>{{ farmName }}</strong>
+                    </article>
+                    <article class="summary-strip__item">
+                        <span>Coffee Type</span>
+                        <strong>{{ varietyLabel }}</strong>
+                    </article>
+                    <article class="summary-strip__item">
+                        <span>Status</span>
+                        <strong class="summary-status">
+                            <span class="status-dot"></span>
+                            {{ statusLabel }}
+                        </strong>
+                    </article>
+                    <article class="summary-strip__item summary-strip__item--score">
+                        <span>Readiness Score</span>
+                        <strong>{{ readinessScore }}%</strong>
+                    </article>
+                </section>
+
+                <div class="content-grid">
+                    <div class="content-main">
+                        <section class="season-card">
+                            <div class="season-card__content">
+                                <div class="mb-3">
+                                    <h2>{{ seasonName }}</h2>
+                                    <p>Active Agricultural Lifecycle</p>
+                                </div>
+
+                                <div class="season-metrics">
+                                    <article class="mini-metric-card">
+                                        <span>Duration</span>
+                                        <strong>{{ seasonDuration }}</strong>
+                                    </article>
+                                    <article class="mini-metric-card">
+                                        <span>Total Yield</span>
+                                        <strong>{{ totalYield }}</strong>
+                                    </article>
+                                    <article class="mini-metric-card">
+                                        <span>Harvests</span>
+                                        <strong>{{ harvestCount }}</strong>
+                                    </article>
+                                    <article class="mini-metric-card">
+                                        <span>Status</span>
+                                        <strong class="metric-active">Active</strong>
+                                    </article>
+                                </div>
+                            </div>
+
+                            <div class="health-score-card">
+                                <strong>{{ healthScore }}</strong>
+                                <span>HEALTH SCORE</span>
+                            </div>
+                        </section>
+
+                        <!-- <section class="harvest-stats">
+                            <article class="metric-card">
                                 <span>Harvest Date</span>
                                 <strong>{{ harvestDateLabel }}</strong>
                             </article>
-                            <article class="harvest-stat-card">
-                                <span>Moisture Content</span>
-                                <strong>{{ moistureContent.toFixed(1) }}%</strong>
+                            <article class="metric-card">
+                                <span>Total Qty</span>
+                                <strong>{{ formatWeight(totalQuantity) }}</strong>
                             </article>
-                            <article class="harvest-stat-card">
-                                <span>Picking Method</span>
-                                <strong>{{ pickMethodLabel }}</strong>
+                            <article class="metric-card">
+                                <span>Clean Est.</span>
+                                <strong>{{ formatWeight(cleanEstimate) }}</strong>
                             </article>
-                            <article class="harvest-stat-card">
-                                <span>Bean Variety</span>
-                                <strong>{{ varietyLabel }}</strong>
+                            <article class="metric-card">
+                                <span>Moisture</span>
+                                <strong>{{ moistureLevel.toFixed(1) }}%</strong>
                             </article>
-                            <article class="harvest-stat-card">
-                                <span>Est. Market Value</span>
-                                <strong>${{ estimatedMarketValue.toLocaleString() }}</strong>
+                            <article class="metric-card">
+                                <span>Cup Score</span>
+                                <strong>{{ cupScoreLabel }}</strong>
                             </article>
-                        </section>
+                            <article class="metric-card">
+                                <span>Est. Value</span>
+                                <strong>{{ formatCurrency(estimatedValue) }}</strong>
+                            </article>
+                        </section> -->
 
-                        <section class="harvest-card harvest-breakdown-card h-100">
-                            <div class="harvest-section-title">
-                                <el-icon><Histogram /></el-icon>
-                                <span>Quantity Breakdown</span>
+                        <section class="harvest-data-card">
+                            <div class="section-header mb-3">
+                                <h3>Harvest Details</h3>
                             </div>
 
-                            <div class="harvest-breakdown-layout">
-                                <div class="harvest-breakdown-featured">
-                                    <div
-                                        v-for="item in qualityBreakdownRows.slice(0, 2)"
-                                        :key="item.label"
-                                        class="harvest-breakdown-highlight"
-                                    >
-                                        <div class="harvest-breakdown-highlight__icon">
-                                            <el-icon><component :is="item.icon" /></el-icon>
-                                        </div>
+                            <div class="harvest-data-grid">
+                                <article v-for="item in detailItems" :key="item.label" class="data-pill-card">
+                                    <div class="data-pill-card__label">
+                                        <span class="detail-icon" aria-hidden="true">
+                                            <svg v-if="item.key === 'date-planted' || item.key === 'harvest-date'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <rect x="3" y="5" width="18" height="16" rx="2" />
+                                                <path d="M8 3v4" />
+                                                <path d="M16 3v4" />
+                                                <path d="M3 10h18" />
+                                            </svg>
+                                            <svg v-else-if="item.key === 'harvest-season'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path d="M6 4h12" />
+                                                <path d="M6 8h12" />
+                                                <path d="M6 12h8" />
+                                                <path d="M6 16h8" />
+                                                <path d="M17 14l2 2 3-4" />
+                                            </svg>
+                                            <svg v-else-if="item.key === 'variety'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path d="M12 20c4.5-2.4 7-6 7-10.1C19 6.5 16.3 4 12 4S5 6.5 5 9.9C5 14 7.5 17.6 12 20Z" />
+                                                <path d="M12 7v8" />
+                                                <path d="M9 11c1.2.8 2 .8 3 0 1.1-.8 1.8-.8 3 0" />
+                                            </svg>
+                                            <svg v-else-if="item.key === 'pick-method'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path d="M7 20l10-10" />
+                                                <path d="M14 7l3 3" />
+                                                <path d="M5 14l5 5" />
+                                                <path d="M4 20h6" />
+                                            </svg>
+                                            <svg v-else-if="item.key === 'weight'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path d="M7 8h10l2 11H5L7 8Z" />
+                                                <path d="M9.5 8a2.5 2.5 0 1 1 5 0" />
+                                                <path d="M12 11v3" />
+                                            </svg>
+                                            <svg v-else-if="item.key === 'price'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path d="M12 3v18" />
+                                                <path d="M16 7.5c0-1.9-1.8-3-4-3s-4 1.1-4 3 1.6 2.5 4 3 4 1.1 4 3-1.8 3-4 3-4-1.1-4-3" />
+                                            </svg>
+                                            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path d="M12 3v10" />
+                                                <path d="M8.5 9.5 12 13l3.5-3.5" />
+                                                <path d="M5 19h14" />
+                                            </svg>
+                                        </span>
                                         <span>{{ item.label }}</span>
-                                        <strong>{{ item.value }}</strong>
                                     </div>
-                                </div>
+                                    <strong>{{ item.value }}</strong>
+                                </article>
+                            </div>
 
-                                <div class="harvest-breakdown-flags">
-                                    <div
-                                        v-for="item in qualityBreakdownRows.slice(2)"
-                                        :key="item.label"
-                                        class="harvest-breakdown-flag"
-                                        :class="`is-${item.tone}`"
-                                    >
-                                        <div class="harvest-breakdown-flag__meta">
-                                            <div class="harvest-breakdown-flag__icon" :class="`is-${item.tone}`">
-                                                <el-icon>
-                                                    <component :is="item.value === 'Yes' ? item.icon : CircleCheckFilled" />
-                                                </el-icon>
-                                            </div>
-                                            <span>{{ item.label }}</span>
-                                        </div>
-                                        <strong>{{ item.value }}</strong>
-                                    </div>
-                                </div>
+                            <div class="quality-flags-grid">
+                                <article
+                                    v-for="item in qualityItems"
+                                    :key="item.label"
+                                    class="quality-flag-card"
+                                    :class="item.tone === 'alert' ? 'is-alert' : 'is-good'"
+                                >
+                                    <span>{{ item.label }}</span>
+                                    <strong>{{ item.value }}</strong>
+                                </article>
                             </div>
                         </section>
 
-
-                    </main>
-
-                    <aside class="harvest-sidebar">
-                        <section class="harvest-card harvest-checklist-card h-100">
-
-
-                            <div class="harvest-process-subsection border-0 mt-0 pt-0">
-                                <div class="harvest-table-title">Harvest Details</div>
-                                <div class="harvest-process-details">
-                                    <div v-for="item in processDetails" :key="item.label" class="harvest-process-details__row">
-                                        <span class="harvest-process-details__label">
-                                            <el-icon><component :is="item.icon" /></el-icon>
-                                            <span>{{ item.label }}</span>
-                                        </span>
-                                        <strong>{{ item.value }}</strong>
+                        <section class="source-grid">
+                            <article class="source-card">
+                                <div class="source-card__header">
+                                    <div class="source-avatar">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                                            <rect x="4" y="4" width="16" height="16" rx="2" />
+                                            <circle cx="12" cy="10" r="3" />
+                                            <path d="M7.5 18c1.2-2.2 3-3.3 4.5-3.3S15.3 15.8 16.5 18" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3>{{ farmerName }}</h3>
+                                        <p>Lead Producer, Mount Elgon</p>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="harvest-process-subsection">
-                                <div class="harvest-table-title">Documents</div>
-                                <div class="harvest-documents-card">
-                                    <a
-                                        v-for="item in documentItems"
-                                        :key="item.title"
-                                        :href="item.href"
-                                        class="harvest-document-link"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        <span class="harvest-document-link__icon">
-                                            <el-icon><Document /></el-icon>
-                                        </span>
-                                        <div>
-                                            <strong>{{ item.title }}</strong>
-                                            <small>{{ item.fileName }}</small>
-                                        </div>
-                                        <span class="harvest-document-link__action">↓</span>
-                                    </a>
-                                </div>
-                            </div>
-                            <button type="button" class="harvest-btn harvest-btn--green harvest-btn--block">Move to Batch</button>
-                        </section>
+                                <dl class="source-details">
+                                    <div>
+                                        <dt>Region</dt>
+                                        <dd>{{ regionLabel }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Altitude</dt>
+                                        <dd>{{ altitudeLabel }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>GPS Coordinates</dt>
+                                        <dd>{{ coordinatesLabel }}</dd>
+                                    </div>
+                                </dl>
+                            </article>
 
-                    </aside>
-                </section>
-
-                <section class="harvest-card harvest-lots-card">
-                    <div class="harvest-lots-card__head">
-                        <h2 class="harvest-lots-card__title">
-                            <el-icon><CollectionTag /></el-icon>
-                            <span>Farms Attached to This Harvest</span>
-                        </h2>
-                        <div class="harvest-lots-card__chips">
-                            <span class="harvest-badge is-bright">Attached</span>
-                            <span class="harvest-badge is-muted">Traceable</span>
-                        </div>
-                    </div>
-
-                    <el-table
-                        :data="attachedFarms"
-                        empty-text="No farm attached to this harvest"
-                        class="harvest-farms-table mt-3"
-                    >
-                        <el-table-column label="Farm ID" min-width="140">
-                            <template #default="{ row }">
-                                <span class="harvest-table-cell">
-                                    <el-icon><Tickets /></el-icon>
-                                    <strong>{{ row.id }}</strong>
-                                </span>
-                            </template>
-                        </el-table-column>
-
-                        <el-table-column label="Name" min-width="180">
-                            <template #default="{ row }">
-                                <span class="harvest-table-cell">
-                                    <el-icon><CollectionTag /></el-icon>
-                                    <span>{{ row.name }}</span>
-                                </span>
-                            </template>
-                        </el-table-column>
-
-                        <el-table-column label="Location" min-width="180">
-                            <template #default="{ row }">
-                                <span class="harvest-table-cell">
+                            <article class="map-card">
+                                <div class="map-card__image"></div>
+                                <div class="map-card__caption">
                                     <el-icon><Location /></el-icon>
-                                    <span>{{ row.location }}</span>
-                                </span>
-                            </template>
-                        </el-table-column>
+                                    <span>{{ farmName }}, Eastern Uganda</span>
+                                </div>
+                            </article>
+                        </section>
 
-                        <el-table-column label="Variety" min-width="140">
-                            <template #default="{ row }">
-                                <span class="harvest-table-cell">
-                                    <el-icon><GoodsFilled /></el-icon>
-                                    <span>{{ row.variety }}</span>
-                                </span>
-                            </template>
-                        </el-table-column>
+                        <section class="transformation-card">
+                            <div class="section-header">
+                                <h3>Quantity Breakdown &amp; Transformation</h3>
+                                <div class="section-header__stats">
+                                    <div>
+                                        <span>Ripeness Score</span>
+                                        <strong>{{ Math.round(props.harvest.ripeness_percentage || 94) }}%</strong>
+                                    </div>
+                                    <div>
+                                        <span>Method</span>
+                                        <strong>{{ pickMethodLabel }}</strong>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <el-table-column label="Farmer" min-width="180">
-                            <template #default="{ row }">
-                                <span class="harvest-table-cell">
-                                    <el-icon><User /></el-icon>
-                                    <span>{{ row.farmer }}</span>
-                                </span>
-                            </template>
-                        </el-table-column>
+                            <div class="transformation-flow">
+                                <article class="flow-stage">
+                                    <div class="flow-stage__icon is-red">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                            <circle cx="8" cy="17" r="1.5" />
+                                            <circle cx="16" cy="17" r="1.5" />
+                                            <path d="M5 16V9h9l3 4" />
+                                            <path d="M10 9V6" />
+                                            <path d="M13 6H7" />
+                                        </svg>
+                                    </div>
+                                    <span>Fresh Cherry</span>
+                                    <strong>{{ formatWeight(totalQuantity) }}</strong>
+                                </article>
 
-                        <el-table-column label="Status" min-width="120">
-                            <template #default="{ row }">
-                                <span class="harvest-status-pill active">{{ row.status }}</span>
-                            </template>
-                        </el-table-column>
-                    </el-table>
-                </section>
+                                <div class="flow-connector">
+                                    <span>Processing</span>
+                                </div>
 
-                <section class="harvest-card harvest-sustainability-card">
-                    <div class="harvest-sustainability-card__head">
-                        <h2>Sustainability Profile</h2>
-                        <div class="harvest-sustainability-card__tags">
-                            <span v-if="sustainabilityDetails.organicCertified"><el-icon><CollectionTag /></el-icon> Organic Certified</span>
-                            <span v-if="sustainabilityDetails.climateSmart"><el-icon><GoodsFilled /></el-icon> Climate Smart</span>
-                            <button type="button" class="harvest-btn harvest-btn--soft harvest-btn--sm" @click="sustainabilityModalOpen = true">
-                                Add Sustainability Details
-                            </button>
-                        </div>
+                                <article class="flow-stage">
+                                    <div class="flow-stage__icon is-amber">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                            <path d="M12 4c3.8 0 6 2.7 6 6.1 0 5-4.6 8.3-6 9.1-1.4-.8-6-4.1-6-9.1C6 6.7 8.2 4 12 4Z" />
+                                            <path d="M10 10c.8 1 2 1.4 4 1.2" />
+                                        </svg>
+                                    </div>
+                                    <span>Clean Estimate</span>
+                                    <strong>{{ formatWeight(cleanEstimate) }}</strong>
+                                </article>
+
+                                <div class="flow-connector">
+                                    <span>{{ processLoss.toFixed(1) }}% Loss</span>
+                                </div>
+
+                                <article class="flow-stage">
+                                    <div class="flow-stage__icon is-green">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                            <path d="M7 5h10" />
+                                            <path d="M8 5v14h8V5" />
+                                            <path d="M9 10h6" />
+                                            <path d="M9 14h6" />
+                                        </svg>
+                                    </div>
+                                    <span>Batch Exp.</span>
+                                    <strong>{{ formatWeight(expectedBatchQuantity) }}</strong>
+                                </article>
+                            </div>
+                        </section>
+
+                        <section class="activity-card">
+                            <div class="section-header">
+                                <h3>Activities Before Harvest</h3>
+                            </div>
+
+                            <div class="activity-track">
+                                <article
+                                    v-for="(activity, index) in activitySteps"
+                                    :key="activity.title"
+                                    class="activity-step"
+                                    :class="{ 'is-current': index === activitySteps.length - 1 }"
+                                >
+                                    <div class="activity-step__dot">
+                                        <span v-if="index === activitySteps.length - 1">&#10003;</span>
+                                        <span v-else></span>
+                                    </div>
+                                    <h4>{{ activity.title }}</h4>
+                                    <p>{{ activity.date }}</p>
+                                </article>
+                            </div>
+                        </section>
                     </div>
 
-                    <div class="harvest-sustainability-grid">
-                        <article
-                            v-for="item in sustainabilityPillars"
-                            :key="item.label"
-                            class="harvest-sustainability-tile"
-                            :class="{ 'is-inactive': !item.active }"
-                        >
-                            <el-icon><component :is="item.icon" /></el-icon>
-                            <span>{{ item.label }}</span>
-                        </article>
-                    </div>
-                </section>
+                    <aside class="content-rail">
+                        <section class="readiness-card">
+                            <div class="readiness-card__header">
+                                <h3>Readiness</h3>
+                                <strong>{{ readinessScore }}%</strong>
+                            </div>
+
+                            <ul class="readiness-list">
+                                <li v-for="item in readinessItems" :key="item.label">
+                                    <span class="readiness-check" :class="{ complete: item.complete }">
+                                        <el-icon><Check /></el-icon>
+                                    </span>
+                                    <span>{{ item.label }}</span>
+                                </li>
+                            </ul>
+                        </section>
+
+                        <section class="timeline-card">
+                            <p class="card-eyebrow">Verification Chain</p>
+
+                            <div class="timeline-list">
+                                <article
+                                    v-for="item in verificationChain"
+                                    :key="item.title"
+                                    class="timeline-entry"
+                                    :class="{ 'is-active': item.active }"
+                                >
+                                    <span class="timeline-entry__dot"></span>
+                                    <div>
+                                        <h4>{{ item.title }}</h4>
+                                        <p>{{ item.subtitle }}</p>
+                                    </div>
+                                </article>
+                            </div>
+                        </section>
+
+                        <section class="evidence-card">
+                            <h3>Evidence &amp; Compliance</h3>
+
+                            <component
+                                v-for="item in evidenceItems"
+                                :key="item.id"
+                                :is="item.href ? 'a' : 'div'"
+                                class="evidence-row"
+                                :href="item.href || undefined"
+                                :target="item.href ? '_blank' : undefined"
+                                :rel="item.href ? 'noreferrer noopener' : undefined"
+                            >
+                                <div class="evidence-row__content">
+                                    <div class="evidence-row__icon">
+                                        <el-icon><Document /></el-icon>
+                                    </div>
+                                    <div>
+                                        <strong>{{ item.title }}</strong>
+                                        <span>{{ item.subtitle }}</span>
+                                    </div>
+                                </div>
+
+                                <el-icon class="evidence-row__download"><Download /></el-icon>
+                            </component>
+                        </section>
+
+                        <section class="insight-strip">
+                            <span class="insight-strip__sparkle">+</span>
+                            <p>Harvest correctly linked to active season</p>
+                        </section>
+
+                        <section class="insight-strip">
+                            <span class="insight-strip__sparkle">+</span>
+                            <p>Season activities support full traceability</p>
+                        </section>
+                    </aside>
+                </div>
             </div>
-        </div>
 
-        <EditHarvestQualityModel
-            v-model="qualityModalOpen"
-            :harvest="props.harvest"
-            :pick-method-options="props.pickMethodOptions"
-            :harvest-season-options="props.harvestSeasonOptions"
-        />
-        <AddHarvestDocumentModal
-            v-model="documentModalOpen"
-            :harvest="props.harvest"
-            :document-type-options="props.documentTypeOptions"
-        />
-        <AddHarvestSustainabilityModal
-            v-model="sustainabilityModalOpen"
-            :harvest="props.harvest"
-            :sustainability="sustainabilityDetails"
-            @save="saveSustainabilityDetails"
-        />
+            <EditHarvestQualityModel
+                v-model="editHarvestModalOpen"
+                :harvest="harvest"
+                :pick-method-options="pickMethodOptions"
+                :harvest-season-options="harvestSeasonOptions"
+            />
+        </div>
     </AppLayout>
 </template>
 
 <style scoped>
 .harvest-profile-page {
-    background: #fff;
-    min-height: 100vh;
-    padding: 0.75rem 1rem 1.5rem;
+    min-height: calc(100vh - 56px);
+    background: #ffffff;
 }
 
 .harvest-profile-shell {
-    display: flex;
-    flex-direction: column;
-    gap: 1.1rem;
+    max-width: 1230px;
     margin: 0 auto;
-    max-width: 1440px;
+    padding: 34px 28px 48px;
 }
 
-.harvest-hero__meta,
-.harvest-hero__row,
-.harvest-section-title,
-.harvest-stat-card span,
-.harvest-table-title,
-.harvest-mini-table__head,
-.harvest-lots-table__head {
-    letter-spacing: 0.08em;
-}
-
-.harvest-chip,
-.harvest-badge,
-.harvest-status-pill,
-.harvest-score-chip,
-.harvest-btn {
-    border-radius: 999px;
-}
-
-.harvest-hero {
+.profile-hero {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.harvest-hero__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    text-transform: uppercase;
-}
-
-.harvest-chip {
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.66rem;
-    font-weight: 800;
-    padding: 0.38rem 0.62rem;
-}
-
-.harvest-chip.is-green {
-    background: #c9f3df;
-    color: #0b5a3e;
-}
-
-.harvest-chip.is-peach {
-    background: #ffe3cf;
-    color: #8a5218;
-}
-
-.harvest-chip.is-slate {
-    background: #edf1f6;
-    color: #5f6977;
-}
-
-.harvest-hero__row {
-    align-items: center;
-    display: flex;
-    gap: 1rem;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 24px;
 }
 
-.harvest-hero__copy h1 {
-    color: #0f412d;
-    font-size: 2.1rem;
-    font-weight: 800;
-    letter-spacing: -0.04em;
+.profile-kicker {
+    margin: 0 0 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: #6f7f7b;
+}
+
+.profile-hero h1 {
     margin: 0;
+    font-size: 34px;
+    line-height: 0.96;
+    font-weight: 700;
+    color: #121715;
 }
 
-.harvest-hero__copy p {
-    color: #43515c;
-    font-size: 1rem;
-    margin: 0.45rem 0 0;
+.profile-hero__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.harvest-hero__copy p span {
-    color: #97a2ad;
-    margin: 0 0.4rem;
+.hero-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    padding: 0 18px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #d8ddd6;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.harvest-hero__actions {
+.hero-button--soft {
+    background: #f8faf8;
+    color: #121715;
+}
+
+.badge-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
 }
 
-.harvest-btn {
-    border: 1px solid #d6dde6;
-    font-size: 0.94rem;
-    font-weight: 700;
-    padding: 0.8rem 1.2rem;
-}
-
-.harvest-btn--soft {
-    background: #fff;
-    color: #1c2a39;
-}
-
-.harvest-btn--peach {
-    background: #ffe2c7;
-    border-color: #ffd0aa;
-    color: #5d3812;
-}
-
-.harvest-btn--green {
-    background: #055336;
-    border-color: #055336;
-    color: #fff;
-}
-
-.harvest-btn--block {
-    border-radius: 0.85rem;
-    margin-top: 1rem;
-    width: 100%;
-}
-
-.harvest-btn--sm {
-    font-size: 0.8rem;
-    padding: 0.55rem 0.9rem;
-}
-
-.harvest-layout {
-    display: grid;
-    gap: 1.4rem;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    align-items: stretch;
-}
-
-.harvest-main,
-.harvest-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
-.harvest-sidebar > .h-100 {
-    flex: 1 1 auto;
-}
-
-.harvest-info-row {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: minmax(0, 1fr);
-}
-
-.harvest-card,
-.harvest-stat-card {
-    background: #fff;
-    border: 1px solid #e8edf3;
-    border-radius: 1.1rem;
-    box-shadow: 0 10px 28px rgba(20, 32, 56, 0.04);
-}
-
-.harvest-stats-grid {
-    display: grid;
-    gap: 0.9rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.harvest-stat-card {
-    padding: 1.1rem 1.25rem;
-}
-
-.harvest-stat-card span {
-    color: #70808e;
-    display: block;
-    font-size: 0.68rem;
-    font-weight: 700;
-    margin-bottom: 0.8rem;
-    text-transform: uppercase;
-}
-
-.harvest-stat-card strong {
-    color: #0f412d;
-    font-size: 1.05rem;
-    font-weight: 800;
-}
-
-.harvest-breakdown-card,
-.harvest-lots-card,
-.harvest-sustainability-card,
-.harvest-card {
-    padding: 1.2rem 1.25rem;
-}
-
-.harvest-section-title {
-    align-items: center;
-    color: #122232;
+.profile-badge {
     display: inline-flex;
-    font-size: 0.78rem;
-    font-weight: 800;
-    gap: 0.55rem;
-    text-transform: uppercase;
-}
-
-.harvest-section-title.is-light {
-    color: #fff;
-}
-
-.harvest-breakdown-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 0.95rem;
-    margin-top: 1.25rem;
-}
-
-.harvest-breakdown-featured {
-    display: grid;
-    gap: 0.75rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.harvest-breakdown-highlight,
-.harvest-breakdown-flag {
-    border-radius: 0.95rem;
-    padding: 0.8rem 0.9rem;
-}
-
-.harvest-breakdown-highlight {
-    background: linear-gradient(180deg, #fbfcfe 0%, #f4f7fb 100%);
-    border: 1px solid #e5ebf2;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    min-height: 5.1rem;
-}
-
-.harvest-breakdown-highlight__icon {
     align-items: center;
-    background: #e9f5ef;
-    border-radius: 0.85rem;
-    color: #0f6a47;
-    display: inline-flex;
-    height: 1.8rem;
     justify-content: center;
-    width: 1.8rem;
-}
-
-.harvest-breakdown-flags {
-    display: grid;
-    gap: 0.75rem;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.harvest-breakdown-flag {
-    background: #f8fafc;
-    border: 1px solid #edf1f5;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-height: 4.35rem;
-}
-
-.harvest-breakdown-flag__meta {
-    align-items: center;
-    display: flex;
-    gap: 0.55rem;
-}
-
-.harvest-breakdown-flag__icon {
-    align-items: center;
+    min-height: 28px;
+    padding: 0 12px;
     border-radius: 999px;
-    display: inline-flex;
-    flex-shrink: 0;
-    height: 1.55rem;
-    justify-content: center;
-    width: 1.55rem;
-}
-
-.harvest-breakdown-flag__icon.is-clear {
-    background: #e8f6ee;
-    color: #0d6b47;
-}
-
-.harvest-breakdown-flag__icon.is-risk {
-    background: #fff0ef;
-    color: #cf3b2d;
-}
-
-.harvest-breakdown-highlight span,
-.harvest-breakdown-flag span {
-    color: #758494;
-    display: block;
-    font-size: 0.66rem;
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.06em;
-    margin-bottom: 0.45rem;
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #12201c;
 }
 
-.harvest-breakdown-highlight strong,
-.harvest-breakdown-flag strong {
-    color: #162333;
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 700;
-    line-height: 1.4;
+.profile-badge.is-green {
+    background: #9bf0bb;
 }
 
-.harvest-breakdown-highlight strong {
-    color: #0f412d;
-    font-size: 1rem;
+.profile-badge.is-neutral {
+    background: #e4e7e6;
 }
 
-.harvest-breakdown-flag strong {
-    font-size: 0.85rem;
-    padding-left: 2.1rem;
-}
-
-.harvest-breakdown-flag.is-clear strong {
-    color: #0f6a47;
-}
-
-.harvest-breakdown-flag.is-risk strong {
-    color: #b53a2e;
-}
-
-.harvest-table-title {
-    color: #161f2e;
-    font-size: 1rem;
-    font-weight: 700;
-}
-
-.harvest-lots-table__head,
-.harvest-lots-table__row {
-    align-items: center;
+.summary-strip {
     display: grid;
-    gap: 0.9rem;
-}
-
-.harvest-status-pill {
-    display: inline-flex;
-    font-size: 0.65rem;
-    font-weight: 800;
-    justify-content: center;
-    padding: 0.35rem 0.6rem;
-    text-transform: uppercase;
-}
-
-.harvest-status-pill.active {
-    background: #dff7e7;
-    color: #0c6a45;
-}
-
-.harvest-status-pill.queued {
-    background: #eef2f6;
-    color: #7a8794;
-}
-
-.harvest-farm-card {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0;
+    margin-top: 30px;
+    background: #fff;
+    border: 0.5px solid #e7ebe6;
+    border-radius: 14px;
     overflow: hidden;
-    padding: 0;
 }
 
-.harvest-farm-card__image {
-    align-items: end;
-    background:
-        linear-gradient(180deg, rgba(4, 34, 22, 0.12) 0%, rgba(4, 34, 22, 0.72) 100%),
-        radial-gradient(circle at 20% 30%, rgba(112, 163, 92, 0.95), rgba(12, 64, 39, 0.95) 52%, rgba(7, 34, 20, 1) 100%);
-    display: flex;
-    height: 7.2rem;
-    padding: 1rem;
+.summary-strip__item {
+    padding: 16px 22px;
+    border-right: 0.5px solid #edf1ec;
 }
 
-.harvest-farm-card__image-copy strong {
-    color: #fff;
-    font-size: 1.2rem;
-    font-weight: 700;
+.summary-strip__item:last-child {
+    border-right: none;
 }
 
-.harvest-farm-card__identity,
-.harvest-farm-card__meta {
-    display: flex;
-    gap: 0.85rem;
-    padding: 1rem 1.1rem 0;
-}
-
-.harvest-avatar {
-    align-items: center;
-    background: linear-gradient(135deg, #ffd9a9, #9fe0c1);
-    border-radius: 999px;
-    color: #0b3a28;
-    display: flex;
-    font-weight: 800;
-    height: 2.65rem;
-    justify-content: center;
-    width: 2.65rem;
-}
-
-.harvest-farm-card__identity strong,
-.harvest-farm-card__meta strong {
-    color: #19283a;
+.summary-strip__item span {
     display: block;
+    margin-bottom: 8px;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #74807a;
 }
 
-.harvest-farm-card__identity span,
-.harvest-farm-card__meta span {
-    color: #6c7a88;
+.summary-strip__item strong {
     display: block;
-    font-size: 0.84rem;
+    font-size: 24px;
+    line-height: 1.15;
+    font-weight: 600;
+    color: #111614;
 }
 
-.harvest-farm-card__meta {
-    justify-content: space-between;
-    padding-bottom: 1rem;
+.summary-strip__item:not(.summary-strip__item--score) strong {
+    font-size: 20px;
 }
 
-.harvest-checklist-card,
-.harvest-quality-card,
-.harvest-timeline-card,
-.harvest-documents-card {
-    padding: 1rem;
-}
-
-.harvest-checklist {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    margin-top: 1rem;
-}
-
-.harvest-process-subsection {
-    border-top: 1px solid #edf1f5;
-    margin-top: 1rem;
-    padding-top: 1rem;
-}
-
-.harvest-process-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.7rem;
-    margin-top: 0.85rem;
-}
-
-.harvest-process-details__row {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.harvest-process-details__label {
-    align-items: center;
-    display: inline-flex;
-    gap: 0.45rem;
-}
-
-.harvest-process-details__label :deep(svg) {
-    color: #69806f;
-    font-size: 0.95rem;
-}
-
-.harvest-process-details__row span {
-    color: #71808f;
-    font-size: 0.85rem;
-}
-
-.harvest-process-details__row strong {
-    color: #162333;
-    font-size: 0.88rem;
-    font-weight: 700;
+.summary-strip__item--score {
     text-align: right;
 }
 
-.harvest-checklist__row {
+.summary-status {
+    display: inline-flex !important;
     align-items: center;
-    color: #304051;
-    display: flex;
-    font-size: 0.91rem;
-    gap: 0.65rem;
+    gap: 8px;
+    font-size: 17px !important;
 }
 
-.harvest-checklist__row :deep(svg) {
-    color: #0a6a46;
-}
-
-.harvest-quality-list,
-.harvest-timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 0.95rem;
-    margin-top: 1rem;
-}
-
-.harvest-quality-list__row {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    color: #4d5c6b;
-    font-size: 0.92rem;
-}
-
-.harvest-quality-list__row strong {
-    color: #0f1e2e;
-}
-
-.harvest-quality-list__row strong.is-positive {
-    color: #0b6a47;
-}
-
-.harvest-badge {
-    background: #cbf2dc;
-    color: #0a5d3f;
-    display: inline-flex;
-    font-size: 0.65rem;
-    font-weight: 800;
-    margin-top: 1rem;
-    padding: 0.36rem 0.62rem;
-    text-transform: uppercase;
-}
-
-.harvest-badge.is-bright {
-    background: #aff0c9;
-}
-
-.harvest-badge.is-muted {
-    background: #eef2f6;
-    color: #5f6c78;
-}
-
-.harvest-timeline__row {
-    display: grid;
-    gap: 0.85rem;
-    grid-template-columns: 0.7rem minmax(0, 1fr);
-}
-
-.harvest-timeline__dot {
-    background: #d7dfe7;
+.status-dot {
+    width: 8px;
+    height: 8px;
     border-radius: 999px;
-    height: 0.75rem;
-    margin-top: 0.25rem;
-    position: relative;
-    width: 0.75rem;
+    background: #0a8b51;
 }
 
-.harvest-timeline__dot::after {
-    background: #dde4ec;
-    content: '';
-    height: 2rem;
-    left: 50%;
-    position: absolute;
-    top: 0.8rem;
-    transform: translateX(-50%);
-    width: 1px;
+.content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 292px;
+    gap: 24px;
+    margin-top: 24px;
+    align-items: start;
 }
 
-.harvest-timeline__row:last-child .harvest-timeline__dot::after {
-    display: none;
+.content-main,
+.content-rail {
+    display: grid;
+    gap: 24px;
 }
 
-.harvest-timeline__dot.is-active {
-    background: #04573a;
+.season-card,
+.metric-card,
+.source-card,
+.map-card,
+.harvest-data-card,
+.transformation-card,
+.activity-card,
+.readiness-card,
+.timeline-card,
+.evidence-card,
+.insight-strip {
+    background: #fff;
+    border: 0.5px solid #e7ebe6;
+    border-radius: 14px;
 }
 
-.harvest-timeline__row strong,
-.harvest-document-link strong {
-    color: #162333;
+.season-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 130px;
+    min-height: 184px;
+    overflow: hidden;
+}
+
+.season-card__content {
+    padding: 26px 24px 22px;
+}
+
+.season-card__content h2 {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.1;
+    font-weight: 600;
+    color: #121715;
+}
+
+.season-card__content > p {
+    margin: 6px 0 28px;
+    font-size: 14px;
+    color: #6a736f;
+}
+
+.season-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.mini-metric-card {
+    min-height: 74px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: #fbfbf9;
+}
+
+.mini-metric-card span,
+.metric-card span,
+.section-header__stats span,
+.card-eyebrow,
+.intel-metrics span {
     display: block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: #76807d;
 }
 
-.harvest-timeline__row span,
-.harvest-document-link small {
-    color: #4d5a69;
+.mini-metric-card strong,
+.metric-card strong {
     display: block;
-    font-size: 0.9rem;
-    margin-top: 0.2rem;
+    margin-top: 10px;
+    font-size: 16px;
+    line-height: 1.25;
+    font-weight: 600;
+    color: #101513;
 }
 
-.harvest-timeline__row small {
-    color: #8a95a1;
-    display: block;
-    font-size: 0.78rem;
-    margin-top: 0.18rem;
+.metric-active {
+    color: #0d8a52 !important;
 }
 
-.harvest-documents-card {
+.health-score-card {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-}
-
-.harvest-document-link {
     align-items: center;
-    background: #f5f7fb;
-    border: 1px solid #eef2f6;
-    border-radius: 0.85rem;
-    color: inherit;
-    display: grid;
-    gap: 0.75rem;
-    grid-template-columns: 2.15rem minmax(0, 1fr) auto;
-    padding: 0.85rem;
-    text-decoration: none;
-}
-
-.harvest-document-link__icon {
-    align-items: center;
-    background: #fff;
-    border-radius: 0.65rem;
-    color: #667685;
-    display: flex;
-    height: 2.15rem;
     justify-content: center;
-    width: 2.15rem;
+    background: #e7efec;
+    color: #a3bab4;
 }
 
-.harvest-document-link__action {
-    color: #384656;
-    font-size: 1rem;
+.health-score-card strong {
+    font-size: 56px;
+    line-height: 1;
     font-weight: 700;
 }
 
-.harvest-lots-card__head,
-.harvest-sustainability-card__head {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
+.health-score-card span {
+    margin-top: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #6f807b;
 }
 
-.harvest-lots-card__head h2,
-.harvest-sustainability-card__head h2 {
-    color: #151f2f;
-    font-size: 1.15rem;
+.harvest-stats {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.metric-card {
+    min-height: 90px;
+    padding: 16px 16px 14px;
+}
+
+.source-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+}
+
+.harvest-data-card {
+    padding: 26px 24px;
+}
+
+.harvest-data-grid,
+.quality-flags-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.quality-flags-grid {
+    margin-top: 14px;
+}
+
+.data-pill-card,
+.quality-flag-card {
+    min-height: 88px;
+    padding: 15px 16px 14px;
+    border-radius: 10px;
+    background: #fafbf9;
+    border: 0.5px solid #edf1ec;
+}
+
+.data-pill-card__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.detail-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: #6e7b76;
+    flex-shrink: 0;
+}
+
+.detail-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.data-pill-card span,
+.quality-flag-card span {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: #76807d;
+}
+
+.data-pill-card__label > span:last-child {
+    display: inline-block;
+    min-width: 0;
+}
+
+.data-pill-card strong,
+.quality-flag-card strong {
+    display: block;
+    margin-top: 10px;
+    font-size: 15px;
+    line-height: 1.35;
+    font-weight: 600;
+    color: #101513;
+}
+
+.quality-flag-card.is-good {
+    background: #f6faf7;
+}
+
+.quality-flag-card.is-good strong {
+    color: #0a5b38;
+}
+
+.quality-flag-card.is-alert {
+    background: #fff7f5;
+}
+
+.quality-flag-card.is-alert strong {
+    color: #b8572a;
+}
+
+.source-card {
+    padding: 22px 24px;
+}
+
+.source-card__header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 0.5px solid #edf0eb;
+}
+
+.source-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #f5f7f3;
+    color: #11211c;
+}
+
+.source-avatar svg {
+    width: 22px;
+    height: 22px;
+}
+
+.source-card__header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111614;
+}
+
+.source-card__header p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #68716d;
+}
+
+.source-details {
+    display: grid;
+    gap: 18px;
     margin: 0;
 }
 
-.harvest-lots-card__title {
-    align-items: center;
-    display: inline-flex;
-    gap: 0.55rem;
-}
-
-.harvest-lots-card__title :deep(svg) {
-    color: #0a5f40;
-}
-
-.harvest-lots-card__chips,
-.harvest-sustainability-card__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-}
-
-.harvest-sustainability-card__tags span {
-    align-items: center;
-    color: #103323;
-    display: inline-flex;
-    font-size: 0.9rem;
-    gap: 0.35rem;
-}
-
-.harvest-lots-table {
-    margin-top: 1rem;
-}
-
-.harvest-farms-table :deep(.el-table__header th) {
-    background: #f8fafc;
-    color: #7f8d9b;
-    font-size: 0.67rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.harvest-farms-table :deep(.el-table__cell) {
-    padding: 0.9rem 0;
-}
-
-.harvest-farms-table :deep(.el-table__row td) {
-    background: #fff;
-}
-
-.harvest-farms-table :deep(.el-table__inner-wrapper::before) {
-    display: none;
-}
-
-.harvest-table-cell {
-    align-items: center;
-    color: #233242;
-    display: inline-flex;
-    gap: 0.5rem;
-}
-
-.harvest-table-cell :deep(svg) {
-    color: #69806f;
-    font-size: 0.95rem;
-}
-
-.harvest-lots-table__head {
-    border-bottom: 1px solid #edf1f5;
-    color: #7f8d9b;
-    font-size: 0.67rem;
-    font-weight: 700;
-    grid-template-columns: 1.1fr 1.2fr 0.9fr 1.25fr 1.1fr 0.9fr;
-    padding-bottom: 0.8rem;
-    text-transform: uppercase;
-}
-
-.harvest-lots-table__row {
-    color: #233242;
-    font-size: 0.92rem;
-    grid-template-columns: 1.1fr 1.2fr 0.9fr 1.25fr 1.1fr 0.9fr;
-    padding: 1rem 0;
-}
-
-.harvest-lots-table__row + .harvest-lots-table__row {
-    border-top: 1px solid #f0f3f7;
-}
-
-.harvest-score-chip {
-    align-items: center;
-    background: #dff7e7;
-    border-radius: 0.45rem;
-    color: #0a6644;
-    display: inline-flex;
-    font-weight: 700;
-    justify-content: center;
-    padding: 0.35rem 0.55rem;
-    width: fit-content;
-}
-
-.harvest-table-action {
-    background: transparent;
-    border: 0;
-    color: #12472f;
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 0;
-    text-transform: uppercase;
-}
-
-.harvest-sustainability-grid {
+.source-details div {
     display: grid;
-    gap: 0.9rem;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    margin-top: 1.2rem;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 12px;
 }
 
-.harvest-sustainability-tile {
+.source-details dt {
+    font-size: 13px;
+    color: #68716d;
+}
+
+.source-details dd {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #121715;
+}
+
+.map-card {
+    position: relative;
+    min-height: 228px;
+    overflow: hidden;
+}
+
+.map-card__image {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.18)),
+        radial-gradient(circle at 30% 35%, rgba(255, 255, 255, 0.42), transparent 35%),
+        linear-gradient(145deg, #d7dbd6 0%, #c7ceca 32%, #97a39e 100%);
+}
+
+.map-card__image::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(165deg, rgba(255, 255, 255, 0.28) 0 2px, transparent 2px 12px),
+        repeating-linear-gradient(15deg, rgba(255, 255, 255, 0.1) 0 1px, transparent 1px 11px);
+    opacity: 0.65;
+}
+
+.map-card__caption {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+    display: inline-flex;
     align-items: center;
-    background: #f7f9fc;
-    border: 1px solid #edf1f5;
-    border-radius: 0.95rem;
-    color: #263648;
+    gap: 10px;
+    max-width: max-content;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #17211d;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.transformation-card,
+.activity-card {
+    padding: 26px 24px;
+}
+
+.section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.section-header h3,
+.evidence-card h3,
+.readiness-card h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #121715;
+}
+
+.section-header__stats {
+    display: flex;
+    align-items: flex-start;
+    gap: 28px;
+}
+
+.section-header__stats strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #111614;
+}
+
+.transformation-flow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 86px minmax(0, 1fr) 86px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.flow-stage {
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.flow-stage span {
+    font-size: 14px;
+    color: #222a27;
+}
+
+.flow-stage strong {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f1412;
+}
+
+.flow-stage__icon {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    min-height: 6rem;
-    padding: 1rem;
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+}
+
+.flow-stage__icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.flow-stage__icon.is-red {
+    background: #ffe9ea;
+    color: #e24a45;
+}
+
+.flow-stage__icon.is-amber {
+    background: #fee0bc;
+    color: #6f4f22;
+}
+
+.flow-stage__icon.is-green {
+    background: #c8f5dc;
+    color: #0a5b38;
+}
+
+.flow-connector {
+    position: relative;
+    height: 0.5px;
+    background: #dbe3dd;
+}
+
+.flow-connector span {
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0 6px;
+    background: #fff;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9aa6a1;
+    white-space: nowrap;
+}
+
+.activity-track {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 28px;
+    position: relative;
+}
+
+.activity-track::before {
+    content: '';
+    position: absolute;
+    top: 17px;
+    left: 42px;
+    right: 42px;
+    height: 0.5px;
+    background: #d9e1dc;
+}
+
+.activity-step {
+    position: relative;
+    z-index: 1;
     text-align: center;
 }
 
-.harvest-sustainability-tile.is-inactive {
-    opacity: 0.45;
+.activity-step__dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin: 0 auto 12px;
+    border-radius: 12px;
+    border: 0.5px solid #0d3927;
+    background: #fff;
+    color: #0d3927;
+    font-size: 14px;
+    font-weight: 700;
 }
 
-.harvest-sustainability-tile :deep(svg) {
-    color: #0a5f40;
-    font-size: 1.1rem;
+.activity-step__dot span {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: currentColor;
+    display: block;
 }
 
-@media (max-width: 1200px) {
-    .harvest-layout {
+.activity-step.is-current .activity-step__dot {
+    background: #0a5b38;
+    color: #fff;
+    border-color: #0a5b38;
+}
+
+.activity-step.is-current .activity-step__dot span {
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    background: transparent;
+}
+
+.activity-step h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #121715;
+}
+
+.activity-step p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #94a09b;
+}
+
+.readiness-card {
+    padding: 22px 22px 20px;
+    background: #0a5b38;
+    border-color: #0a5b38;
+    color: #fff;
+}
+
+.readiness-card__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.readiness-card__header h3 {
+    color: #fff;
+}
+
+.readiness-card__header strong {
+    font-size: 44px;
+    line-height: 1;
+    font-weight: 700;
+}
+
+.readiness-list {
+    list-style: none;
+    padding: 0;
+    margin: 22px 0 0;
+    display: grid;
+    gap: 16px;
+}
+
+.readiness-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+}
+
+.readiness-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    border: 0.5px solid rgba(255, 255, 255, 0.7);
+    color: #fff;
+}
+
+.readiness-check.complete {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.timeline-card,
+.evidence-card {
+    position: relative;
+    padding: 22px 22px 20px;
+    background: #f7f8f5;
+}
+
+.timeline-list {
+    margin-top: 22px;
+}
+
+.timeline-entry {
+    position: relative;
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 14px;
+    padding: 0 0 22px;
+}
+
+.timeline-entry:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-entry::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 16px;
+    bottom: 0;
+    width: 1px;
+    background: #d6ddd8;
+}
+
+.timeline-entry:last-child::before {
+    display: none;
+}
+
+.timeline-entry__dot {
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    border-radius: 999px;
+    background: #0a5b38;
+}
+
+.timeline-entry h4 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #0f1412;
+}
+
+.timeline-entry p {
+    margin: 0;
+    font-size: 12px;
+    color: #96a39d;
+}
+
+.timeline-entry.is-active p {
+    color: #0a8b51;
+    font-weight: 600;
+}
+
+.evidence-card {
+    display: grid;
+    gap: 12px;
+}
+
+.evidence-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 14px;
+    border-radius: 8px;
+    background: #fff;
+    color: #15201b;
+    text-decoration: none;
+}
+
+.evidence-row__content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.evidence-row__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: #f4f7f3;
+    color: #7b92b7;
+    flex-shrink: 0;
+}
+
+.evidence-row strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #232a27;
+}
+
+.evidence-row span {
+    display: block;
+    margin-top: 3px;
+    font-size: 12px;
+    color: #9ba59f;
+}
+
+.evidence-row__download {
+    color: #b7c2bc;
+    flex-shrink: 0;
+}
+
+.insight-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 18px;
+    background: #edf5f2;
+}
+
+.insight-strip__sparkle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0a5b38;
+}
+
+.insight-strip p {
+    margin: 0;
+    font-size: 13px;
+    color: #183127;
+}
+
+@media (max-width: 1180px) {
+    .summary-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .summary-strip__item:nth-child(3n) {
+        border-right: none;
+    }
+
+    .summary-strip__item:nth-child(n + 4) {
+        border-top: 0.5px solid #ecefea;
+    }
+
+    .content-grid {
         grid-template-columns: 1fr;
     }
 
-    .harvest-sidebar {
-        order: -1;
+    .content-rail {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
 }
 
-@media (max-width: 900px) {
-    .harvest-profile-page {
-        padding: 0.6rem 0.75rem 1rem;
+@media (max-width: 960px) {
+    .harvest-profile-shell {
+        padding: 24px 18px 38px;
     }
 
-    .harvest-hero__row,
-    .harvest-lots-card__head,
-    .harvest-sustainability-card__head {
-        align-items: start;
+    .profile-hero {
         flex-direction: column;
     }
 
-    .harvest-stats-grid,
-    .harvest-breakdown-featured,
-    .harvest-breakdown-flags,
-    .harvest-sustainability-grid {
+    .profile-hero h1 {
+        font-size: 30px;
+    }
+
+    .season-card {
         grid-template-columns: 1fr;
     }
 
-    .harvest-lots-table__head,
-    .harvest-lots-table__row {
+    .health-score-card {
+        min-height: 110px;
+    }
+
+    .season-metrics,
+    .harvest-stats,
+    .harvest-data-grid,
+    .quality-flags-grid,
+    .source-grid,
+    .content-rail {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .transformation-flow {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .flow-connector {
+        height: 18px;
+        width: 1px;
+        margin: 0 auto;
+    }
+
+    .flow-connector span {
+        top: 50%;
+        left: 14px;
+        transform: translateY(-50%);
+    }
+
+    .activity-track {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .activity-track::before {
+        left: 17px;
+        top: 18px;
+        bottom: 18px;
+        right: auto;
+        width: 1px;
+        height: auto;
+    }
+
+    .activity-step {
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr);
+        gap: 12px;
+        text-align: left;
+        align-items: center;
+    }
+
+    .activity-step__dot {
+        margin: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .summary-strip,
+    .season-metrics,
+    .harvest-stats,
+    .harvest-data-grid,
+    .quality-flags-grid,
+    .source-grid,
+    .content-rail {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-strip__item {
+        border-right: none;
+        border-top: 0.5px solid #ecefea;
+    }
+
+    .summary-strip__item:first-child {
+        border-top: none;
+    }
+
+    .summary-strip__item--score {
+        text-align: left;
+    }
+
+    .profile-hero__actions {
+        width: 100%;
+    }
+
+    .hero-button {
+        flex: 1;
+    }
+
+    .section-header {
+        flex-direction: column;
+    }
+
+    .section-header__stats {
+        width: 100%;
+        justify-content: space-between;
     }
 }
 </style>

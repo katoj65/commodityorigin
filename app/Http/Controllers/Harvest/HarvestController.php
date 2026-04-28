@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Harvest;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\HarvestResource;
+use App\Http\Resources\SeasonResource;
 use App\Models\Farm;
 use App\Models\Harvest;
 use App\Models\Season;
@@ -132,8 +133,20 @@ class HarvestController extends Controller
         ]);
         Gate::authorize('view', $harvest);
 
+        $seasonPayload = null;
+
+        if ($harvest->season) {
+            $harvest->season
+                ->loadCount('harvests')
+                ->loadSum('harvests', 'weight')
+                ->loadSum('harvests', 'price');
+
+            $seasonPayload = SeasonResource::make($harvest->season)->resolve();
+        }
+
         return Inertia::render('Harvest/HarvestProfile', [
             'harvest' => HarvestResource::make($harvest)->resolve(),
+            'season' => $seasonPayload,
             'dateRange' => self::getRangeOfDates(
                 $harvest->date_planted?->toDateString() ?? '',
                 $harvest->harvest_date?->toDateString() ?? '',

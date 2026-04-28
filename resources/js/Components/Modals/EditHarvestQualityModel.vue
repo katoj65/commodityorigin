@@ -52,11 +52,27 @@ const disableFutureDates = (date) => {
     return date.getTime() > today.getTime();
 };
 
+const matchOption = (value, options) => {
+    if (!value) {
+        return '';
+    }
+
+    const directMatch = options.find((option) => option === value);
+
+    if (directMatch) {
+        return directMatch;
+    }
+
+    const normalizedValue = String(value).trim().toLowerCase();
+
+    return options.find((option) => String(option).trim().toLowerCase() === normalizedValue) ?? value;
+};
+
 const hydrateForm = () => {
     form.defaults({
         harvest_date: props.harvest?.harvest_date ?? '',
-        harvest_season: props.harvest?.harvest_season ?? '',
-        pick_method: props.harvest?.pick_method ?? '',
+        harvest_season: matchOption(props.harvest?.harvest_season, props.harvestSeasonOptions),
+        pick_method: matchOption(props.harvest?.pick_method, props.pickMethodOptions),
         price: props.harvest?.price ?? '',
         weight: props.harvest?.weight ?? '',
         ripeness_percentage: props.harvest?.ripeness_percentage ?? '',
@@ -81,6 +97,16 @@ watch(
 
 watch(
     () => props.harvest,
+    () => {
+        if (props.modelValue) {
+            hydrateForm();
+        }
+    },
+    { deep: true },
+);
+
+watch(
+    () => [props.harvestSeasonOptions, props.pickMethodOptions],
     () => {
         if (props.modelValue) {
             hydrateForm();

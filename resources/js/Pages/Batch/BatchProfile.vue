@@ -1,9 +1,17 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
-import { usePage } from '@inertiajs/vue3';
-import { ElNotification } from 'element-plus';
+import { computed, ref } from 'vue';
+import {  Link } from '@inertiajs/vue3';
+import {
+    Box,
+    Calendar,
+    Checked,
+    Connection,
+    DataAnalysis,
+    Document,
+    List,
+    TrendCharts,
+} from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import BatchComplianceModal from '@/Components/Modals/BatchComplianceModal.vue';
 import UpdateBatchModal from '@/Components/Modals/UpdateBatchModal.vue';
 
 const props = defineProps({
@@ -11,844 +19,1412 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    season: {
+        type: Object,
+        default: null,
+    },
+    harvests: {
+        type: Array,
+        default: () => [],
+    },
 });
 
-const page = usePage();
-const complianceModalOpen = ref(false);
 const updateBatchModalOpen = ref(false);
 
-const flashSuccess = computed(() => page.props.flash?.success ?? '');
+const formatDate = (value) => {
+    if (!value) {
+        return 'Pending';
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(new Date(value));
+};
+
+const formatMonthYear = (value) => {
+    if (!value) {
+        return 'Pending';
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        year: 'numeric',
+    }).format(new Date(value));
+};
+
+const formatWeight = (value) => `${Number(value || 0).toLocaleString()}kg`;
+
+const batchCode = computed(() => props.batch.batch_number || `#BTC-${String(props.batch.id).padStart(2, '0')}`);
+const seasonName = computed(() => props.season?.name || 'Main Crop 2026');
+const seasonCode = computed(() => props.season?.id ? `#S-${String(props.season.id).padStart(4, '0')}-MAIN` : '#S-2026-MAIN');
+const totalYield = computed(() => Number(props.batch.net_weight_kg || props.season?.harvests_sum_weight || 12400));
+const marketValue = computed(() => Number(props.batch.price || 58400));
+const marketRate = computed(() => {
+    const total = totalYield.value || 1;
+    return (marketValue.value / total).toFixed(2);
+});
+const cupScore = computed(() => Number(props.batch.cup_score || 87.2).toFixed(1));
+const moistureValue = computed(() => Number(props.batch.moisture_content || 11.2).toFixed(1));
+const readinessScore = computed(() => 100);
+const durationLabel = computed(() => {
+    const start = props.season?.start_date ? formatMonthYear(props.season.start_date) : 'Feb 2026';
+    const end = props.season?.end_date ? formatMonthYear(props.season.end_date) : 'Jun 2026';
+
+    return `${start} - ${end}`;
+});
+
 const canManageBatch = computed(() => Boolean(props.batch.can_manage));
 
-const numericWeight = computed(() => Number(props.batch.net_weight_kg ?? 0));
-const numericBags = computed(() => Number(props.batch.quantity_bags ?? 0));
-const numericMoisture = computed(() => Number(props.batch.moisture_content));
+const badges = [
+    'Season Linked',
+    'Harvest Verified',
+    'Quality Checked',
+    'Export Ready',
+];
 
-const batchCode = computed(() => props.batch.batch_number || `BATCH-${props.batch.id}`);
-const warehouseLabel = computed(() => props.batch.warehouse_location || 'Origin location pending');
-const varietyLabel = computed(() => {
-    if (props.batch.variety) {
-        return props.batch.variety;
-    }
+const lifecycleSteps = [
+    { key: 'season', label: 'Season', detail: 'Completed · Feb 2026', complete: true },
+    { key: 'harvest', label: 'Harvests', detail: 'Verified · Oct 2026', complete: true },
+    { key: 'batch', label: 'Batch', detail: 'Active · Oct 2026', current: true },
+    { key: 'lot', label: 'Lot', detail: 'Pending Generation' },
+    { key: 'market', label: 'Market', detail: 'Not Listed' },
+];
 
-    if ((props.batch.notes || '').toLowerCase().includes('robusta')) {
-        return 'Robusta';
-    }
-
-    return 'Heirloom';
-});
-const processLabel = computed(() => (
-    props.batch.processing_method ||
-    (Number.isFinite(numericMoisture.value) && numericMoisture.value > 0
-        ? 'Washed / Wet Process'
-        : 'Institutional Intake')
-));
-const scoreLabel = computed(() => {
-    const cupScore = Number(props.batch.cup_score);
-
-    if (Number.isFinite(cupScore) && cupScore > 0) {
-        return cupScore.toFixed(1);
-    }
-
-    if (!Number.isFinite(numericMoisture.value)) {
-        return '91.5';
-    }
-
-    const score = Math.max(85.4, Math.min(91.8, 91.8 - Math.abs(11.2 - numericMoisture.value) * 1.15));
-    return score.toFixed(1);
-});
-const scoreTrend = computed(() => (
-    Number(scoreLabel.value) >= 90 ? '+1.2% since morning' : '+0.6% since morning'
-));
-const heroCopy = computed(() => (
-    props.batch.notes ||
-    `Institutional coffee asset verified for transparency and quality through the Commodity Origin operating workflow.`
-));
-const volumeLabel = computed(() => {
-    const bags = Number.isFinite(numericBags.value) && numericBags.value > 0 ? numericBags.value : 0;
-    const kg = Number.isFinite(numericWeight.value) && numericWeight.value > 0 ? numericWeight.value : 0;
-    const kgDisplay = Math.round(kg) === kg ? kg : Number(kg.toFixed(1));
-
-    return `${bags} Bags (${kgDisplay}kg)`;
-});
-const marketRate = computed(() => {
-    const rate = Number(scoreLabel.value) * 0.053 + 0.01;
-    return `$${rate.toFixed(2)}`;
-});
-const priceTrend = computed(() => (
-    Number(scoreLabel.value) >= 90 ? '+1.2% since morning' : '+0.8% since morning'
-));
-const lotNumber = computed(() => `BT-${String(props.batch.id).padStart(4, '0')}`);
-const shippingEstimate = computed(() => {
-    if (!Number.isFinite(numericWeight.value) || numericWeight.value <= 0) {
-        return '10-14 Days';
-    }
-
-    return numericWeight.value >= 500 ? '14-21 Days' : '7-12 Days';
-});
-const availableStock = computed(() => `${Math.max(1, Math.round((numericBags.value || 6) * 0.75))}/${Math.max(numericBags.value || 6, 1)} Bags`);
-const journeySteps = computed(() => [
-    { label: 'Farm', detail: 'Harvest Complete', active: true },
-    { label: 'Process', detail: 'Wet Milled', active: true },
-    { label: 'Quality Check', detail: `Grading ${scoreLabel.value}`, active: true },
-    { label: 'Storage', detail: 'In Warehouse', active: true },
-    { label: 'Tokenization', detail: 'Pending', active: false },
-]);
-const activeJourneyStep = computed(() => Math.max(journeySteps.value.filter((step) => step.active).length - 1, 0));
-const originDetails = computed(() => [
-    { label: 'Farmer', value: page.props.auth?.user?.name || 'Assigned Operator' },
-    { label: 'Altitude', value: numericWeight.value >= 600 ? '1,950 - 2,100m' : '1,780 - 1,950m' },
-    { label: 'Lot Size', value: `${numericBags.value || 0} Bags` },
-]);
-const processDetails = computed(() => [
-    { label: 'Method', value: processLabel.value },
-    { label: 'Moisture Content', value: Number.isFinite(numericMoisture.value) ? `${numericMoisture.value}%` : 'Pending' },
-    { label: 'Processing Date', value: props.batch.processing_date || 'Pending' },
-    { label: 'Dry Duration', value: props.batch.drying_duration ? `${props.batch.drying_duration} Days` : 'Pending' },
-    { label: 'Defect Count', value: props.batch.defect_count ?? 'Pending' },
-    { label: 'Screen Size', value: props.batch.screen_size || 'Pending' },
-    { label: 'Drying', value: props.batch.drying_method || (numericWeight.value >= 500 ? 'Raised Beds' : 'Mechanical Finish') },
-    { label: 'Milling', value: props.batch.milling_status || 'Pending' },
-]);
-const sustainabilityStats = computed(() => [
-    { label: 'Carbon Footprint', value: (Math.max(0.62, (numericBags.value || 8) * 0.041)).toFixed(2), unit: 'kg CO2e' },
-    { label: 'Water Intensity', value: Math.max(9.8, (numericWeight.value || 700) / 48).toFixed(1), unit: 'L/kg' },
-    { label: 'Certifications', value: 'RFA', unit: 'Verified' },
-    { label: 'Protocol', value: 'Organic', unit: 'Compliant' },
-]);
-const registryRows = computed(() => [
+const seasonSummaryItems = computed(() => [
     {
-        label: 'Registry Info',
-        values: [
-            'Protocol: Commodity Origin v2.4',
-            `Hash: ${lotNumber.value}-${props.batch.id}`,
-            `Issued: ${props.batch.created_at ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(props.batch.created_at)) : 'Sep 12, 2023'}`,
-        ],
+        label: 'Origin Season',
+        primary: seasonName.value,
+        secondary: `${durationLabel.value} · ${props.harvests.length || props.season?.harvests_count || 14} Harvests`,
+        side: seasonCode.value,
     },
     {
-        label: 'Laboratory',
-        values: [
-            'Tester: Internal QA Desk',
-            `Moisture: ${Number.isFinite(numericMoisture.value) ? `${numericMoisture.value}%` : 'Pending'}`,
-            `Water Activity: ${Number.isFinite(numericMoisture.value) ? (numericMoisture.value / 20).toFixed(2) : '0.58'}`,
-        ],
+        label: 'Health Score',
+        primary: '92/100',
     },
     {
-        label: 'Logistics',
-        values: [
-            'Port: Mombasa',
-            'Incoterms: FOB',
-            'Vessel: Trace Voyager',
-        ],
-    },
-    {
-        label: 'System Status',
-        values: ['Blockchain Sync Active'],
+        label: 'Total Yield',
+        primary: formatWeight(totalYield.value),
     },
 ]);
 
-let lastShownSuccess = '';
+const harvestRows = computed(() => {
+    if (props.harvests.length > 0) {
+        return props.harvests.slice(0, 3).map((harvest) => ({
+            id: harvest.id,
+            code: `#HV-${String(harvest.id).padStart(4, '0')}`,
+            date: formatDate(harvest.harvest_date),
+            farm: harvest.farm?.name || 'Blue Ridge Estates',
+            farmer: harvest.farm?.farmer
+                ? `${harvest.farm.farmer.first_name?.[0] || ''}. ${harvest.farm.farmer.last_name || ''}`.trim()
+                : 'M. Wanale',
+            quantity: formatWeight(harvest.weight),
+            moisture: `${Number(Math.max(10.8, Number(moistureValue.value) + ((Number(harvest.ripeness_percentage || 94) - 94) * -0.05))).toFixed(1)}%`,
+        }));
+    }
 
-watch(
-    flashSuccess,
-    (message) => {
-        if (!message || message === lastShownSuccess) {
-            return;
-        }
+    return [
+        { id: 4522, code: '#HV-4522', date: 'Oct 12, 2026', farm: 'Blue Ridge Estates', farmer: 'M. Wanale', quantity: '4,200kg', moisture: '11.2%' },
+        { id: 4528, code: '#HV-4528', date: 'Oct 14, 2026', farm: 'Sipi Falls Central', farmer: 'J. Chemutai', quantity: '5,100kg', moisture: '11.1%' },
+        { id: 4531, code: '#HV-4531', date: 'Oct 15, 2026', farm: 'Kapchorwa Heights', farmer: 'K. Sula', quantity: '3,100kg', moisture: '11.3%' },
+    ];
+});
 
-        lastShownSuccess = message;
+const readinessChecklist = [
+    'Season identity linked',
+    'Individual harvests verified',
+    'Aggregation qty confirmed',
+    `Lab moisture checked (${moistureValue.value}%)`,
+    'SCA quality report uploaded',
+    'Dry mill processing complete',
+];
 
-        ElNotification({
-            title: message.toLowerCase().includes('compliance')
-                ? 'Compliance Saved'
-                : message.toLowerCase().includes('updated')
-                    ? 'Batch Updated'
-                    : 'Batch Created',
-            message,
-            type: 'success',
-            duration: 3200,
-            offset: 84,
-        });
-    },
-    { immediate: true },
-);
+const processingMethods = computed(() => [
+    { label: 'Method', value: props.batch.processing_method || 'Washed' },
+    { label: 'Fermentation', value: props.batch.drying_duration ? `${props.batch.drying_duration}h Aerobic` : '36h Aerobic' },
+    { label: 'Drying', value: props.batch.drying_method || 'Raised African Beds' },
+    { label: 'Duration', value: props.batch.drying_duration ? `${props.batch.drying_duration} Days` : '14 Days' },
+    { label: 'Storage', value: props.batch.warehouse_location || 'Ventilated Silo' },
+]);
+
+const qualityScores = computed(() => [
+    { label: 'Aroma Profile', value: 9.0 },
+    { label: 'Flavor Complexity', value: 8.5 },
+    { label: 'Body / Mouthfeel', value: 8.0 },
+]);
+
+const artifacts = [
+    'Harvest Reports',
+    'Processing Photos',
+    'Quality Report',
+    'Export Docs',
+];
+
+const timelineSteps = [
+    { title: 'Season Created', date: 'Feb 01, 2026', complete: true },
+    { title: 'Harvest Entry #HV-4531', date: 'Oct 15, 2026', complete: true },
+    { title: 'Batch Aggregation Complete', date: 'Oct 18, 2026', complete: true },
+    { title: 'Lot Generation Pending', date: 'Queued for action', active: true },
+];
 </script>
 
 <template>
-    <AppLayout :title="batchCode" :show-banner="false">
+    <AppLayout title="Batch Profile" full-width flush :show-banner="false">
 
-        <div class="batch-dashboard-page">
-            <div class="batch-dashboard-shell">
-                <main class="batch-dashboard-main">
-                    <section class="batch-dashboard-head">
-                        <div>
-                            <div class="batch-dashboard-head__badge">Premium Grade</div>
-                            <h1 class="batch-dashboard-head__title">{{ batchCode }}</h1>
+        <div class="batch-profile-page">
+            <div class="batch-profile-shell">
+                <section class="profile-hero">
+                    <div class="profile-hero__copy">
+                        <h1 class="title-with-icon title-with-icon--page">
+                            <el-icon><Box /></el-icon>
+                            <span class="ml-2">Batch Profile</span>
+                        </h1>
+                        <p>Verified coffee batch ready for lot creation</p>
 
-                            <p class="batch-dashboard-head__copy">{{ heroCopy }}</p>
+                        <div class="profile-badges">
+                            <span v-for="badge in badges" :key="badge" class="profile-badge">{{ badge }}</span>
                         </div>
+                    </div>
 
-                        <div class="batch-dashboard-head__stats">
-                            <div class="batch-dashboard-head__stat">
-                                <div class="batch-dashboard-head__label">SCAA Score</div>
-                                <div class="batch-dashboard-head__value">{{ scoreLabel }}</div>
-                            </div>
-                            <div class="batch-dashboard-head__stat">
-                                <div class="batch-dashboard-head__label">Variety</div>
-                                <div class="batch-dashboard-head__value">{{ varietyLabel }}</div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="batch-tracker-card">
-                        <div class="batch-card-kicker">Farm To Cup Journey Tracker</div>
-
-                        <el-steps class="batch-tracker-steps" :active="activeJourneyStep" align-center finish-status="success">
-                            <el-step
-                                v-for="step in journeySteps"
-                                :key="step.label"
-                                :title="step.label"
-                                :description="step.detail"
-                                :status="step.active ? undefined : 'wait'"
-                            />
-                        </el-steps>
-                    </section>
-
-                    <section class="batch-info-grid">
-                        <article class="batch-info-card">
-                            <div class="batch-card-kicker">Originating Farm</div>
-
-                            <div class="batch-origin-card">
-                                <div class="batch-origin-card__thumb"></div>
-                                <div>
-                                    <div class="batch-origin-card__title">{{ warehouseLabel }}</div>
-                                    <div class="batch-origin-card__meta">Gedeb Zone, Ethiopia</div>
-                                </div>
-                            </div>
-
-                            <div class="batch-detail-list">
-                                <div v-for="item in originDetails" :key="item.label" class="batch-detail-list__row">
-                                    <span>{{ item.label }}</span>
-                                    <strong>{{ item.value }}</strong>
-                                </div>
-                            </div>
-                        </article>
-
-                        <article class="batch-info-card">
-                            <div class="batch-card-kicker">Technical Process</div>
-
-                            <div class="batch-process-card__hero">
-                                <div class="batch-process-card__label">Method</div>
-                                <div class="batch-process-card__value">{{ processLabel }}</div>
-                            </div>
-
-                            <div class="batch-process-grid">
-                                <div v-for="item in processDetails.slice(1)" :key="item.label" class="batch-process-grid__item">
-                                    <div class="batch-process-grid__label">{{ item.label }}</div>
-                                    <div class="batch-process-grid__value">{{ item.value }}</div>
-                                </div>
-                            </div>
-                        </article>
-                    </section>
-
-                    <section class="batch-ledger-card">
-                        <div class="batch-card-kicker batch-card-kicker--light">Sustainability Ledger</div>
-
-                        <div class="batch-ledger-grid">
-                            <div v-for="item in sustainabilityStats" :key="item.label" class="batch-ledger-grid__item">
-                                <div class="batch-ledger-grid__label">{{ item.label }}</div>
-                                <div class="batch-ledger-grid__value">{{ item.value }}</div>
-                                <div class="batch-ledger-grid__unit">{{ item.unit }}</div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- <section class="batch-registry-grid">
-                        <div v-for="group in registryRows" :key="group.label" class="batch-registry-grid__column">
-                            <div class="batch-registry-grid__title">{{ group.label }}</div>
-                            <div
-                                v-for="value in group.values"
-                                :key="value"
-                                class="batch-registry-grid__row"
-                                :class="{ 'batch-registry-grid__row--status': group.label === 'System Status' }"
-                            >
-                                {{ value }}
-                            </div>
-                        </div>
-                    </section> -->
-                </main>
-
-                <aside class="batch-dashboard-side">
-                    <section class="batch-terminal-card">
-                        <div class="batch-terminal-card__title">Execution Terminal</div>
-
-                        <div class="batch-terminal-card__price-label">Current Market Price</div>
-                        <div class="batch-terminal-card__price">${{ props.batch.price || '0.00' }}<span>/lb</span></div>
-                        <div class="batch-terminal-card__trend">{{ priceTrend }}</div>
-
-                        <div class="batch-terminal-card__volume">
-                            <div class="batch-terminal-card__volume-label">Bidding Volume (bags)</div>
-                            <div class="batch-terminal-card__volume-value">{{ numericBags || 10 }}</div>
-                        </div>
-
+                    <div class="profile-hero__actions">
                         <button
                             v-if="canManageBatch"
                             type="button"
-                            class="batch-terminal-card__button batch-terminal-card__button--primary"
+                            class="profile-button profile-button--soft"
                             @click="updateBatchModalOpen = true"
                         >
-                            Edit Batch Data
+                            Edit
                         </button>
-                        <button
-                            v-if="canManageBatch"
-                            type="button"
-                            class="batch-terminal-card__button batch-terminal-card__button--secondary"
-                            @click="complianceModalOpen = true"
-                        >
-                            Add Compliance
-                        </button>
+                        <button type="button" class="profile-button profile-button--peach">Tokenise</button>
+                        <Link :href="route('lot.create')" class="profile-button profile-button--solid">Create Lot</Link>
+                    </div>
+                </section>
 
-                        <div class="batch-terminal-card__meta">
-                            <div class="batch-terminal-card__meta-row">
-                                <span>Lot #</span>
-                                <strong>{{ lotNumber }}</strong>
+                <section class="hero-panels">
+                    <article class="hero-batch-card">
+                        <div class="hero-batch-card__image"></div>
+
+                        <div class="hero-batch-card__main">
+                            <span class="hero-batch-card__code">{{ batchCode }}</span>
+                            <h2>{{ batch.variety || 'Arabica SL-14' }}</h2>
+
+                            <div class="hero-batch-card__meta">
+                                <span>Mt Elgon, Uganda</span>
+                                <span>YCFCU Processing</span>
                             </div>
-                            <div class="batch-terminal-card__meta-row">
-                                <span>Shipping Estimate</span>
-                                <strong>{{ shippingEstimate }}</strong>
-                            </div>
-                            <div class="batch-terminal-card__meta-row">
-                                <span>Available Stock</span>
-                                <strong>{{ availableStock }}</strong>
+
+                            <span class="active-pill">Active Batch</span>
+                        </div>
+
+                        <div class="hero-batch-card__value">
+                            <span>Market Value</span>
+                            <strong>Shs. {{ Number(marketValue).toLocaleString() }}</strong>
+                            <p>{{ formatWeight(totalYield) }} @ ${{ marketRate }}/kg</p>
+                        </div>
+
+                        <div class="hero-batch-card__readiness">
+                            <div class="readiness-circle">
+                                <div>
+                                    <strong>{{ readinessScore }}%</strong>
+                                    <span>Ready</span>
+                                </div>
                             </div>
                         </div>
-                    </section>
+                    </article>
 
-                    <section class="batch-origin-map">
-                        <div class="batch-origin-map__eyebrow">Geographical Origin</div>
-                        <div class="batch-origin-map__title">{{ warehouseLabel }}</div>
-                    </section>
-                </aside>
+                    <article class="hero-score-card">
+                        <span>Cup Quality Score</span>
+                        <strong>{{ cupScore }}</strong>
+                        <div class="score-pill">Excellence Grade</div>
+                    </article>
+                </section>
+
+                <section class="lifecycle-strip">
+                    <h2 class="title-with-icon mb-3">
+                        <el-icon><Connection /></el-icon>
+                        <span class="ml-2">Traceability Lifecycle</span>
+                    </h2>
+
+                    <div class="lifecycle-strip__track">
+                        <div class="lifecycle-strip__line"></div>
+
+                        <article
+                            v-for="step in lifecycleSteps"
+                            :key="step.key"
+                            class="lifecycle-step"
+                            :class="{
+                                'is-complete': step.complete,
+                                'is-current': step.current,
+                            }"
+                        >
+                            <span class="lifecycle-step__icon"></span>
+                            <strong>{{ step.label }}</strong>
+                            <p>{{ step.detail }}</p>
+                        </article>
+                    </div>
+                </section>
+
+                <div class="profile-grid">
+                    <main class="profile-main">
+                        <section class="season-summary-card">
+                            <article v-for="item in seasonSummaryItems" :key="item.label" class="season-summary-card__item">
+                                <span>{{ item.label }}</span>
+                                <strong>{{ item.primary }}</strong>
+                                <p v-if="item.secondary">{{ item.secondary }}</p>
+                                <em v-if="item.side">{{ item.side }}</em>
+                            </article>
+                        </section>
+
+                        <section class="panel-card table-panel">
+                            <div class="panel-card__head">
+                                <h3 class="card-title">
+                                    <el-icon><List /></el-icon>
+                                    <span class="ml-2">Harvest Source Components</span>
+                                </h3>
+                                <Link :href="route('season.show', season?.id || 1)">View All Records</Link>
+                            </div>
+
+                            <div class="table-wrap">
+                                <table class="source-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Date</th>
+                                            <th>Source Farm</th>
+                                            <th>Farmer</th>
+                                            <th>Qty</th>
+                                            <th>Moisture</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="row in harvestRows" :key="row.id">
+                                            <td>
+                                                <Link :href="route('harvest.show', row.id)" class="source-table__code">{{ row.code }}</Link>
+                                            </td>
+                                            <td>{{ row.date }}</td>
+                                            <td>{{ row.farm }}</td>
+                                            <td>{{ row.farmer }}</td>
+                                            <td>{{ row.quantity }}</td>
+                                            <td>{{ row.moisture }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <section class="details-grid">
+                            <article class="panel-card detail-panel">
+                                <h3 class="card-title">
+                                    <el-icon><Box /></el-icon>
+                                    <span class="ml-2">Processing Methods</span>
+                                </h3>
+
+                                <div class="detail-list">
+                                    <div v-for="item in processingMethods" :key="item.label" class="detail-list__row">
+                                        <span>{{ item.label }}</span>
+                                        <strong>{{ item.value }}</strong>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <article class="panel-card detail-panel">
+                                <h3 class="card-title">
+                                    <el-icon><DataAnalysis /></el-icon>
+                                    <span class="ml-2">Quality Forensics</span>
+                                </h3>
+
+                                <div class="quality-list">
+                                    <div v-for="item in qualityScores" :key="item.label" class="quality-list__row">
+                                        <div class="quality-list__head">
+                                            <span>{{ item.label }}</span>
+                                            <strong>{{ item.value.toFixed(1) }}/10</strong>
+                                        </div>
+                                        <div class="quality-list__bar">
+                                            <div class="quality-list__fill" :style="{ width: `${item.value * 10}%` }"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="quality-meta">
+                                        <article>
+                                            <span>Defects</span>
+                                            <strong>{{ batch.defect_count ? `${batch.defect_count}/300g` : '2/300g' }}</strong>
+                                        </article>
+                                        <article>
+                                            <span>Grade</span>
+                                            <strong>Grade A</strong>
+                                        </article>
+                                    </div>
+                                </div>
+                            </article>
+                        </section>
+
+                        <section class="artifacts-panel">
+                            <h3 class="title-with-icon mb-3">
+                                <el-icon><Document /></el-icon>
+                                <span class="ml-2">Verification Artifacts</span>
+                            </h3>
+
+                            <div class="artifacts-grid">
+                                <article v-for="artifact in artifacts" :key="artifact" class="artifact-card">
+                                    <span class="artifact-card__icon"></span>
+                                    <strong>{{ artifact }}</strong>
+                                </article>
+                            </div>
+                        </section>
+                    </main>
+
+                    <aside class="profile-rail">
+                        <section class="rail-card rail-card--green">
+                            <div class="rail-card__title-row">
+                                <h3 class="card-title">
+                                    <el-icon><Checked /></el-icon>
+                                    <span class="ml-2">Readiness Checklist</span>
+                                </h3>
+                                <strong>100%</strong>
+                            </div>
+
+                            <div class="checklist-list">
+                                <article v-for="item in readinessChecklist" :key="item" class="checklist-item">
+                                    <span class="checklist-item__icon"></span>
+                                    <span>{{ item }}</span>
+                                </article>
+                            </div>
+                        </section>
+
+                        <section class="rail-card">
+                            <h3 class="card-title">
+                                <el-icon><TrendCharts /></el-icon>
+                                <span class="ml-2">Market Intelligence</span>
+                            </h3>
+
+                            <div class="market-intelligence">
+                                <span>Suggested Batch Listing Price</span>
+                                <strong>$5.10<span>/kg</span></strong>
+
+                                <div class="market-intelligence__grid">
+                                    <article>
+                                        <span>Target Region</span>
+                                        <strong>UAE / Dubai</strong>
+                                    </article>
+                                    <article>
+                                        <span>Market Match</span>
+                                        <strong>High Demand</strong>
+                                    </article>
+                                </div>
+
+                                <blockquote>
+                                    "High demand for Ugandan Arabica specialty profiles in the UAE market for Q4 export contracts."
+                                </blockquote>
+                            </div>
+                        </section>
+
+                        <section class="rail-card timeline-card">
+                            <h3 class="card-title">
+                                <el-icon><Calendar /></el-icon>
+                                <span class="ml-2">Lifecycle Timeline</span>
+                            </h3>
+
+                            <div class="timeline-list">
+                                <article
+                                    v-for="step in timelineSteps"
+                                    :key="step.title"
+                                    class="timeline-step"
+                                    :class="{
+                                        'is-complete': step.complete,
+                                        'is-active': step.active,
+                                    }"
+                                >
+                                    <span class="timeline-step__dot"></span>
+                                    <div>
+                                        <strong>{{ step.title }}</strong>
+                                        <p>{{ step.date }}</p>
+                                    </div>
+                                </article>
+                            </div>
+                        </section>
+                    </aside>
+                </div>
             </div>
         </div>
 
-        <BatchComplianceModal
-            v-model="complianceModalOpen"
-            :batch="props.batch"
-        />
-
         <UpdateBatchModal
+            v-if="canManageBatch"
             v-model="updateBatchModalOpen"
-            :batch="props.batch"
+            :batch="batch"
         />
     </AppLayout>
 </template>
 
 <style scoped>
-.batch-dashboard-page {
+.batch-profile-page {
+    min-height: 100vh;
     background: #ffffff;
 }
 
-.batch-dashboard-shell {
-    max-width: 1260px;
+.batch-profile-shell {
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 16px 18px 24px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 260px;
-    gap: 1.1rem;
-    align-items: start;
+    padding: 34px 28px 44px;
 }
 
-.batch-dashboard-main,
-.batch-dashboard-side {
-    min-width: 0;
-}
-
-.batch-terminal-card__title {
-    color: #17352b;
-    font-size: 13px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.batch-dashboard-main {
+.profile-hero {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.batch-dashboard-head {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 1rem;
-    align-items: start;
-    padding: 8px 4px 2px;
-}
-
-.batch-dashboard-head__badge,
-.batch-card-kicker,
-.batch-registry-grid__title,
-.batch-terminal-card__price-label,
-.batch-terminal-card__volume-label,
-.batch-origin-map__eyebrow {
-    font-family: 'IBM Plex Mono', monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
-.batch-dashboard-head__badge {
-    display: inline-flex;
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: #dff4e8;
-    color: #0b7a52;
-    font-size: 10px;
-    font-weight: 700;
-}
-
-.batch-dashboard-head__title {
-    margin: 100px 0 0;
-    display: block !important;
-    margin-top: 100px !important;
-    color: #0d2c22;
-    font-size: 1.5rem;
-    line-height: 1;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-
-}
-
-.batch-dashboard-head__copy {
-    max-width: 520px;
-    margin: 10px 0 0;
-    color: #6e7b78;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-.batch-dashboard-head__stats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
-    min-width: 220px;
-}
-
-.batch-dashboard-head__label {
-    color: #a3afac;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
-.batch-dashboard-head__value {
-    margin-top: 6px;
-    color: #0d2c22;
-    font-size: 17px;
-    font-weight: 800;
-}
-
-.batch-tracker-card,
-.batch-info-card,
-.batch-terminal-card,
-.batch-origin-map {
-    border: 1px solid #e6ece9;
-    border-radius: 12px;
-    background: #ffffff;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-}
-
-.batch-tracker-card {
-    padding: 18px 18px 16px;
-    background: #f7f9fa;
-}
-
-.batch-card-kicker {
-    color: #4b5d59;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.batch-tracker-steps {
-    margin-top: 18px;
-}
-
-:deep(.batch-tracker-steps .el-step__head.is-success),
-:deep(.batch-tracker-steps .el-step__head.is-process) {
-    color: #0b5b3f;
-    border-color: #0b5b3f;
-}
-
-:deep(.batch-tracker-steps .el-step__head.is-wait) {
-    color: #c7d1cd;
-    border-color: #c7d1cd;
-}
-
-:deep(.batch-tracker-steps .el-step__line) {
-    background-color: #d5ddda;
-}
-
-:deep(.batch-tracker-steps .el-step__icon) {
-    width: 32px;
-    height: 32px;
-    border-width: 1px;
-    background: #ffffff;
-}
-
-:deep(.batch-tracker-steps .el-step__icon-inner) {
-    font-size: 13px;
-    font-weight: 700;
-}
-
-:deep(.batch-tracker-steps .el-step__title) {
-    margin-top: 4px;
-    color: #16342a;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    line-height: 1.35;
-}
-
-:deep(.batch-tracker-steps .el-step__description) {
-    margin-top: 4px;
-    color: #95a19d;
-    font-size: 10px;
-    line-height: 1.45;
-}
-
-.batch-info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-}
-
-.batch-info-card {
-    padding: 16px;
-}
-
-.batch-origin-card {
-    display: grid;
-    grid-template-columns: 72px minmax(0, 1fr);
-    gap: 12px;
-    align-items: center;
-    margin-top: 14px;
-}
-
-.batch-origin-card__thumb {
-    width: 72px;
-    height: 72px;
-    border-radius: 10px;
-    background:
-        linear-gradient(180deg, rgba(15, 91, 63, 0.18), rgba(15, 91, 63, 0.05)),
-        linear-gradient(135deg, #9ac37d 0%, #d7e6b5 38%, #8eab73 100%);
-}
-
-.batch-origin-card__title {
-    color: #17352b;
-    font-size: 18px;
-    font-weight: 800;
-    line-height: 1.1;
-}
-
-.batch-origin-card__meta {
-    margin-top: 6px;
-    color: #83918d;
-    font-size: 13px;
-    line-height: 1.45;
-}
-
-.batch-detail-list {
-    margin-top: 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.batch-detail-list__row {
-    display: flex;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
-    color: #94a3af;
-    font-size: 12px;
+    gap: 24px;
+    margin-bottom: 26px;
 }
 
-.batch-detail-list__row strong {
-    color: #17352b;
-    font-size: 13px;
+.profile-hero__copy h1 {
+    margin: 0;
+    font-size: 25px;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #111827;
 }
 
-.batch-process-card__hero {
-    margin-top: 14px;
-    border-radius: 10px;
-    background: #f7f9fa;
-    padding: 14px;
-}
-
-.batch-process-card__label,
-.batch-process-grid__label {
-    color: #a0ada9;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
-.batch-process-card__value {
-    margin-top: 8px;
-    color: #17352b;
-    font-size: 18px;
-    font-weight: 800;
-    line-height: 1.15;
-}
-
-.batch-process-grid {
-    margin-top: 12px;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-}
-
-.batch-process-grid__item {
-    border-radius: 10px;
-    background: #f7f9fa;
-    padding: 14px;
-}
-
-.batch-process-grid__value {
-    margin-top: 8px;
-    color: #17352b;
+.profile-hero__copy p {
+    margin: 8px 0 0;
     font-size: 16px;
-    font-weight: 800;
-    line-height: 1.2;
+    color: #1f2937;
 }
 
-.batch-ledger-card {
-    padding: 18px 20px;
-    border-radius: 12px;
-    background: #0d4b35;
-    color: #e7f6ee;
+.title-with-icon,
+.card-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.batch-card-kicker--light {
-    color: #bfd8ca;
-}
-
-.batch-ledger-grid {
-    margin-top: 18px;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
-}
-
-.batch-ledger-grid__label {
-    color: #8dc0a6;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
-.batch-ledger-grid__value {
-    margin-top: 8px;
-    font-size: 28px;
-    line-height: 1;
-    font-weight: 800;
-}
-
-.batch-ledger-grid__unit {
-    margin-top: 6px;
-    color: #c6e7d6;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.batch-registry-grid {
-    padding: 18px 0 6px;
-    border-top: 1px solid #e8eeeb;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
-}
-
-.batch-registry-grid__title {
-    color: #9aa7a3;
-    font-size: 10px;
-    font-weight: 700;
-    margin-bottom: 10px;
-}
-
-.batch-registry-grid__row {
-    color: #5f6c69;
-    font-size: 12px;
-    line-height: 1.8;
-}
-
-.batch-registry-grid__row--status {
-    color: #0b8f5d;
-    font-weight: 700;
-}
-
-.batch-dashboard-side {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.batch-terminal-card {
-    padding: 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.batch-terminal-card__price-label {
-    margin-top: 4px;
-    color: #9ea9a6;
-    font-size: 10px;
-    font-weight: 700;
-}
-
-.batch-terminal-card__price {
-    margin-top: -2px;
-    color: #0d2c22;
-    font-size: 32px;
-    line-height: 1;
-    font-weight: 800;
-}
-
-.batch-terminal-card__price span {
-    font-size: 14px;
-    margin-left: 2px;
-}
-
-.batch-terminal-card__trend {
-    margin-top: -4px;
-    color: #0b8f5d;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.batch-terminal-card__volume {
-    margin-top: 4px;
-    border-radius: 10px;
-    background: #f7f9fa;
-    padding: 14px;
-}
-
-.batch-terminal-card__volume-label {
-    color: #9ea9a6;
-    font-size: 10px;
-    font-weight: 700;
-}
-
-.batch-terminal-card__volume-value {
-    margin-top: 8px;
-    color: #17352b;
-    font-size: 20px;
-    font-weight: 800;
-}
-
-.batch-terminal-card__button {
-    width: 100%;
-    margin-top: 2px;
+.title-with-icon .el-icon,
+.card-title .el-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
     border-radius: 8px;
-    padding: 13px 14px;
-    font-size: 12px;
+    background: #f3f6f5;
+    flex-shrink: 0;
+    color: #6d7f95;
+}
+
+.title-with-icon--page .el-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+    color: #0d5b3f;
+    background: #e8f6ef;
+}
+
+.title-with-icon span,
+.card-title span {
+    display: inline-block;
+}
+
+.profile-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.profile-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #a7f3d0;
+    font-size: 11px;
     font-weight: 700;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    color: #0f5132;
+}
+
+.profile-hero__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 12px;
+}
+
+.profile-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 20px;
+    border: 1px solid #e7ecea;
+    border-radius: 8px;
+    background: #f4f6f5;
+    font-size: 13px;
+    font-weight: 600;
+    color: #17202f;
+    text-decoration: none;
     cursor: pointer;
 }
 
-.batch-terminal-card__button--primary {
-    border: 0;
-    background: #0b5b3f;
+.profile-button--peach {
+    background: #ffd9b7;
+    color: #754c24;
+}
+
+.profile-button--solid {
+    border-color: #0d5b3f;
+    background: #0d5b3f;
     color: #ffffff;
 }
 
-.batch-terminal-card__button--secondary {
-    border: 0;
-    background: #ffe0cb;
-    color: #8b5a35;
+.hero-panels {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(250px, 1fr);
+    gap: 28px;
 }
 
-.batch-terminal-card__meta {
-    margin-top: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.hero-batch-card,
+.hero-score-card,
+.season-summary-card,
+.panel-card,
+.rail-card {
+    border: 1px solid #edf1ef;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 16px 30px rgba(15, 35, 23, 0.03);
 }
 
-.batch-terminal-card__meta-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    color: #9aa7a3;
-    font-size: 12px;
+.hero-batch-card {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1.3fr) minmax(0, 0.8fr) 118px;
+    align-items: center;
+    gap: 18px;
+    padding: 28px;
+    background: #f7f8f8;
 }
 
-.batch-terminal-card__meta-row strong {
-    color: #17352b;
-}
-
-.batch-origin-map {
-    min-height: 140px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    justify-content: end;
+.hero-batch-card__image {
+    width: 88px;
+    height: 120px;
+    border-radius: 6px;
     background:
-        linear-gradient(180deg, rgba(16, 45, 39, 0.08), rgba(13, 75, 53, 0.58)),
-        linear-gradient(135deg, #e2ebe7 0%, #c7d6cf 45%, #8ea59b 100%);
+        radial-gradient(circle at 18% 24%, #b7d688 0 12%, transparent 12.5%),
+        radial-gradient(circle at 40% 32%, #8fb05c 0 11%, transparent 11.5%),
+        radial-gradient(circle at 68% 24%, #a0c76b 0 12%, transparent 12.5%),
+        radial-gradient(circle at 26% 54%, #9abd63 0 12%, transparent 12.5%),
+        radial-gradient(circle at 58% 52%, #7f9b4e 0 13%, transparent 13.5%),
+        radial-gradient(circle at 34% 80%, #a4c56f 0 12%, transparent 12.5%),
+        linear-gradient(135deg, #6b3e1d 0%, #c49173 32%, #9cc96f 33%, #6d9845 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
 
-.batch-origin-map__eyebrow {
-    color: rgba(255, 255, 255, 0.82);
+.hero-batch-card__code {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.hero-batch-card__main h2 {
+    margin: 6px 0 12px;
+    font-size: 20px;
+    line-height: 1.1;
+    font-weight: 700;
+    color: #111827;
+}
+
+.hero-batch-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-bottom: 14px;
+}
+
+.hero-batch-card__meta span {
+    position: relative;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #4b5563;
+}
+
+.hero-batch-card__meta span::before {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 8px;
+    border: 1.5px solid #374151;
+    border-radius: 3px;
+    vertical-align: -1px;
+}
+
+.active-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.active-pill::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    border-radius: 999px;
+    background: #70d7b0;
+}
+
+.hero-batch-card__value span,
+.hero-score-card span,
+.season-summary-card__item span,
+.panel-card h3,
+.rail-card h3 {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #5d6b7d;
+}
+
+.hero-batch-card__value strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 25px;
+    line-height: 1;
+    font-weight: 700;
+    color: #0d5b3f;
+}
+
+.hero-batch-card__value p {
+    margin: 8px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #6b7280;
+}
+
+.readiness-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 90px;
+    height: 90px;
+    border-radius: 999px;
+    background:
+        conic-gradient(#0d5b3f 0deg 360deg, #d7dfdc 360deg 360deg);
+}
+
+.readiness-circle > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 74px;
+    height: 74px;
+    border-radius: inherit;
+    background: #f7f8f8;
+}
+
+.readiness-circle strong {
+    font-size: 21px;
+    line-height: 1;
+    font-weight: 700;
+    color: #111827;
+}
+
+.readiness-circle span {
+    margin-top: 4px;
     font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5d6b7d;
+}
+
+.hero-score-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 24px;
+}
+
+.hero-score-card strong {
+    margin-top: 16px;
+    font-size: 56px;
+    line-height: 1;
+    font-weight: 700;
+    color: #0d5b3f;
+}
+
+.score-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    margin-top: 12px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #a7f3d0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f5132;
+}
+
+.lifecycle-strip {
+    margin-top: 34px;
+}
+
+.lifecycle-strip h2,
+.artifacts-panel h3 {
+    margin: 0 0 22px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: #6d7f95;
+}
+
+.lifecycle-strip__track {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.lifecycle-strip__line {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    right: 18px;
+    height: 2px;
+    background: #dbe2df;
+}
+
+.lifecycle-step {
+    position: relative;
+    padding-top: 0;
+}
+
+.lifecycle-step__icon {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    border: 1px solid #dbe2df;
+    border-radius: 12px;
+    background: #f7f8f8;
+}
+
+.lifecycle-step.is-complete .lifecycle-step__icon,
+.lifecycle-step.is-current .lifecycle-step__icon {
+    background: #0d5b3f;
+    border-color: #0d5b3f;
+    box-shadow: 0 0 0 5px rgba(126, 236, 192, 0.26);
+}
+
+.lifecycle-step.is-complete .lifecycle-step__icon::before,
+.lifecycle-step.is-current .lifecycle-step__icon::before {
+    content: '';
+    width: 14px;
+    height: 8px;
+    margin: auto;
+    border-left: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: rotate(-45deg);
+}
+
+.lifecycle-step strong {
+    display: block;
+    margin-top: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.lifecycle-step p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #6b7280;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2.15fr) minmax(270px, 1fr);
+    gap: 28px;
+    margin-top: 34px;
+}
+
+.profile-main,
+.profile-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.season-summary-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 0.7fr);
+    gap: 18px;
+    padding: 22px 24px;
+    background: #f7f8f8;
+}
+
+.season-summary-card__item strong {
+    display: block;
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.season-summary-card__item p,
+.season-summary-card__item em {
+    margin: 4px 0 0;
+    font-size: 13px;
+    line-height: 1.4;
+    font-style: normal;
+    color: #6b7280;
+}
+
+.panel-card {
+    padding: 0;
+}
+
+.panel-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 24px;
+    border-bottom: 1px solid #edf1ef;
+}
+
+.panel-card__head h3,
+.detail-panel h3,
+.artifacts-panel h3,
+.rail-card h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: #111827;
+}
+
+.panel-card__head a {
+    font-size: 13px;
+    color: #0d5b3f;
+    text-decoration: none;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+.source-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.source-table thead th {
+    padding: 16px 24px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-align: left;
+    color: #7a8698;
+    background: #fafbfb;
+}
+
+.source-table tbody td {
+    padding: 18px 24px;
+    border-top: 1px solid #eef2f0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #1f2937;
+}
+
+.source-table__code {
+    font-weight: 700;
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+}
+
+.detail-panel {
+    padding: 24px;
+    background: #f7f8f8;
+}
+
+.detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 24px;
+}
+
+.detail-list__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.detail-list__row span {
+    font-size: 13px;
+    color: #374151;
+}
+
+.detail-list__row strong {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0d5b3f;
+}
+
+.quality-list {
+    margin-top: 24px;
+}
+
+.quality-list__row + .quality-list__row {
+    margin-top: 20px;
+}
+
+.quality-list__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 8px;
+}
+
+.quality-list__head span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #5d6b7d;
+}
+
+.quality-list__head strong {
+    font-size: 12px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.quality-list__bar {
+    height: 5px;
+    border-radius: 999px;
+    background: #e5ebe8;
+    overflow: hidden;
+}
+
+.quality-list__fill {
+    height: 100%;
+    border-radius: inherit;
+    background: #0d5b3f;
+}
+
+.quality-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 24px;
+}
+
+.quality-meta article {
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.quality-meta span {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #8a97a8;
+}
+
+.quality-meta strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.quality-meta article:first-child strong {
+    color: #dc2626;
+}
+
+.artifacts-panel h3 {
+    color: #111827;
+}
+
+.artifacts-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.artifact-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    min-height: 132px;
+    border: 1px solid #edf1ef;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.artifact-card__icon {
+    width: 24px;
+    height: 30px;
+    border: 2px solid #9aa9c0;
+    border-radius: 4px;
+    position: relative;
+}
+
+.artifact-card__icon::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    height: 2px;
+    background: #9aa9c0;
+    box-shadow: 0 6px 0 #9aa9c0;
+}
+
+.artifact-card strong {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    text-align: center;
+    color: #111827;
+}
+
+.profile-rail {
+    gap: 30px;
+}
+
+.rail-card {
+    padding: 24px;
+}
+
+.rail-card--green {
+    background: #0d5b3f;
+    border-color: #0d5b3f;
+    color: #ffffff;
+}
+
+.rail-card__title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.rail-card__title-row h3 {
+    color: inherit;
+}
+
+.rail-card__title-row h3 .el-icon {
+    color: inherit;
+}
+
+.rail-card__title-row strong {
+    font-size: 25px;
+    line-height: 1;
     font-weight: 700;
 }
 
-.batch-origin-map__title {
-    margin-top: 6px;
-    color: #ffffff;
-    font-size: 18px;
-    font-weight: 800;
-    line-height: 1.15;
+.checklist-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 24px;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: inherit;
+}
+
+.checklist-item__icon {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid currentColor;
+    border-radius: 999px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.checklist-item__icon::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 2px;
+    width: 5px;
+    height: 9px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(40deg);
+}
+
+.market-intelligence {
+    margin-top: 26px;
+}
+
+.market-intelligence > span {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #8a97a8;
+}
+
+.market-intelligence > strong {
+    display: block;
+    margin-top: 10px;
+    font-size: 25px;
+    line-height: 1;
+    font-weight: 700;
+    color: #7c5731;
+}
+
+.market-intelligence > strong span {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.market-intelligence__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.market-intelligence__grid article {
+    padding: 12px;
+    border-radius: 8px;
+    background: #f5f7f6;
+}
+
+.market-intelligence__grid span {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #8a97a8;
+}
+
+.market-intelligence__grid strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 700;
+    color: #111827;
+}
+
+.market-intelligence blockquote {
+    margin: 22px 0 0;
+    padding: 18px;
+    border-radius: 10px;
+    background: #fff1e4;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #442c17;
+}
+
+.timeline-card {
+    background: #f7f8f8;
+}
+
+.timeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 22px;
+}
+
+.timeline-step {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.timeline-step__dot {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    border: 2px solid #cad4cf;
+    border-radius: 999px;
+    background: #ffffff;
+    position: relative;
+}
+
+.timeline-step.is-complete .timeline-step__dot {
+    border-color: #0d5b3f;
+    background: #0d5b3f;
+}
+
+.timeline-step.is-complete .timeline-step__dot::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border-right: 1.5px solid #ffffff;
+    border-bottom: 1.5px solid #ffffff;
+    transform: rotate(40deg);
+}
+
+.timeline-step.is-active .timeline-step__dot {
+    border-color: #0d5b3f;
+}
+
+.timeline-step.is-active .timeline-step__dot::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: inherit;
+    background: #0d5b3f;
+}
+
+.timeline-step strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.timeline-step p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #6b7280;
 }
 
 @media (max-width: 1180px) {
-    .batch-dashboard-shell {
-        grid-template-columns: minmax(0, 1fr) 250px;
+    .hero-panels,
+    .profile-grid,
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-batch-card {
+        grid-template-columns: 88px minmax(0, 1fr);
+    }
+
+    .hero-batch-card__value,
+    .hero-batch-card__readiness {
+        grid-column: 2;
+    }
+
+    .artifacts-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 900px) {
-    .batch-dashboard-shell {
-        grid-template-columns: 1fr;
-        padding: 12px 8px 20px;
+    .batch-profile-shell {
+        padding: 24px 18px 36px;
     }
 
-    .batch-dashboard-head,
-    .batch-info-grid,
-    .batch-ledger-grid,
-    .batch-registry-grid {
-        grid-template-columns: 1fr 1fr;
+    .profile-hero {
+        flex-direction: column;
+    }
+
+    .profile-hero__actions {
+        width: 100%;
+        flex-wrap: wrap;
+        padding-top: 0;
+    }
+
+    .season-summary-card {
+        grid-template-columns: 1fr;
+    }
+
+    .source-table thead {
+        display: none;
+    }
+
+    .source-table,
+    .source-table tbody,
+    .source-table tr,
+    .source-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .source-table tbody td {
+        padding: 8px 24px;
+        border-top: 0;
+    }
+
+    .source-table tbody tr {
+        padding: 14px 0;
+        border-top: 1px solid #eef2f0;
     }
 }
 
 @media (max-width: 640px) {
-    .batch-dashboard-head,
-    .batch-info-grid,
-    .batch-ledger-grid,
-    .batch-registry-grid,
-    .batch-tracker {
+    .profile-hero__copy h1 {
+        font-size: 23px;
+    }
+
+    .profile-hero__copy p {
+        font-size: 14px;
+    }
+
+    .hero-batch-card {
+        grid-template-columns: 1fr;
+        padding: 22px;
+    }
+
+    .hero-batch-card__image {
+        width: 100%;
+        max-width: 96px;
+    }
+
+    .hero-batch-card__value,
+    .hero-batch-card__readiness {
+        grid-column: auto;
+    }
+
+    .artifacts-grid {
         grid-template-columns: 1fr;
     }
 
-    .batch-dashboard-head__stats {
-        min-width: 0;
+    .market-intelligence__grid {
+        grid-template-columns: 1fr;
     }
 }
 </style>

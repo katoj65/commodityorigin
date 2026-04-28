@@ -21,7 +21,6 @@ import {
     TrendCharts,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import AddHarvestModal from '@/Components/Modals/AddHarvestModal.vue';
 import EditSeasonModal from '@/Components/Modals/EditSeasonModal.vue';
 
 const props = defineProps({
@@ -56,8 +55,6 @@ const props = defineProps({
 });
 
 const editModalOpen = ref(false);
-const addHarvestModalOpen = ref(false);
-
 const seasonName = computed(() => props.season.name || 'Main Crop 2026');
 const seasonCode = computed(() => {
     const year = props.season.start_date ? new Date(props.season.start_date).getFullYear() : 2026;
@@ -95,6 +92,7 @@ const insightCards = [
 ];
 
 const seasonHarvests = computed(() => props.harvests.map((harvest) => ({
+    rawId: harvest.id,
     id: `#HAR-${String(harvest.id).padStart(3, '0')}`,
     farm: harvest.farm?.name || 'Unassigned farm',
     lot: harvest.farm?.location || harvest.variety || '—',
@@ -102,6 +100,7 @@ const seasonHarvests = computed(() => props.harvests.map((harvest) => ({
     moisture: harvest.ripeness_percentage !== null ? `${Number(harvest.ripeness_percentage).toFixed(1)}%` : '—',
     score: harvest.price ? Number(harvest.price).toLocaleString() : '—',
     status: (harvest.status || 'pending').toUpperCase(),
+    showUrl: route('harvest.show', harvest.id),
 })));
 
 const recentActivities = [
@@ -129,7 +128,7 @@ const handleOptionsCommand = (command) => {
     }
 
     if (command === 'add-harvest') {
-        addHarvestModalOpen.value = true;
+        router.get(route('season.create-harvest', props.season.id));
         return;
     }
 
@@ -160,6 +159,43 @@ const notifySeasonUpdateSuccess = (message) => {
     });
 };
 
+const notifyHarvestDeleteSuccess = (message) => {
+    ElNotification({
+        title: 'Harvest Deleted',
+        message,
+        type: 'success',
+        duration: 3200,
+        offset: 84,
+    });
+};
+
+const openHarvestProfile = (row) => {
+    if (!row?.showUrl) {
+        return;
+    }
+
+    router.get(row.showUrl);
+};
+
+const deleteHarvest = (row) => {
+    ElMessageBox.confirm(
+        `This will permanently delete ${row.id}. Continue?`,
+        'Delete harvest',
+        {
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            type: 'warning',
+        },
+    ).then(() => {
+        router.delete(route('season.harvest.destroy', [props.season.id, row.rawId]), {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                notifyHarvestDeleteSuccess(page.props.flash?.success || `${row.id} deleted successfully.`);
+            },
+        });
+    }).catch(() => {});
+};
+
 
 
 
@@ -182,6 +218,13 @@ const notifySeasonUpdateSuccess = (message) => {
                             </div>
 
                             <div class="season-hero__actions">
+                                <button
+                                    type="button"
+                                    class="season-btn is-primary"
+                                    @click="router.get(route('batch.create-season', season.id))"
+                                >
+                                    <span>Create Batch</span>
+                                </button>
 
                                 <el-dropdown trigger="click" @command="handleOptionsCommand">
                                     <button type="button" class="season-btn is-soft">
@@ -280,10 +323,15 @@ const notifySeasonUpdateSuccess = (message) => {
                         <div class="season-right-column">
                             <article class="season-card season-table-card">
                                 <div class="season-card__title">
-                                  
+
                                     <span>Harvests Attached to This Season</span>
                                 </div>
-                                <el-table :data="seasonHarvests" class="season-data-table" empty-text="No harvests are attached to this season yet">
+                                <el-table
+                                    :data="seasonHarvests"
+                                    class="season-data-table season-harvests-table"
+                                    empty-text="No harvests are attached to this season yet"
+                                    @row-click="openHarvestProfile"
+                                >
                                     <el-table-column label="ID" min-width="120">
                                         <template #default="{ row }">
                                             <span class="season-table-info">
@@ -322,7 +370,7 @@ const notifySeasonUpdateSuccess = (message) => {
                                             </span>
                                         </template>
                                     </el-table-column>
-                                    <el-table-column label="Price" min-width="120">
+                                    <el-table-column label="Price" min-width="90">
                                         <template #default="{ row }">
                                             <span class="season-table-info">
                                                 <el-icon><TrendCharts /></el-icon>
@@ -330,9 +378,17 @@ const notifySeasonUpdateSuccess = (message) => {
                                             </span>
                                         </template>
                                     </el-table-column>
-                                    <el-table-column label="Status" min-width="110">
+                                    <el-table-column label="Action" min-width="110" align="right">
                                         <template #default="{ row }">
-                                            <span class="season-status-pill" :class="{ 'is-blue': row.status === 'DRYING' }">{{ row.status }}</span>
+                                            <button
+                                                type="button"
+                                                class="season-delete-harvest-btn"
+                                                @click.stop="deleteHarvest(row)"
+                                                aria-label="Delete harvest"
+                                                title="Delete harvest"
+                                            >
+                                                <el-icon><Delete /></el-icon>
+                                            </button>
                                         </template>
                                     </el-table-column>
                                 </el-table>
@@ -350,7 +406,7 @@ const notifySeasonUpdateSuccess = (message) => {
 
                             <article class="season-card season-table-card">
                                 <div class="season-card__title">
-                                    <el-icon><Histogram /></el-icon>
+                                  
                                     <span>Recent Activities</span>
                                 </div>
                                 <el-table :data="recentActivities" class="season-data-table" empty-text="No activity yet">
@@ -410,13 +466,6 @@ const notifySeasonUpdateSuccess = (message) => {
             :region-options="regionOptions"
             :status-options="statusOptions"
             @success="notifySeasonUpdateSuccess"
-        />
-        <AddHarvestModal
-            v-model="addHarvestModalOpen"
-            :season="season"
-            :farm-options="farmOptions"
-            :pick-method-options="pickMethodOptions"
-            :harvest-season-options="harvestSeasonOptions"
         />
     </AppLayout>
 </template>
@@ -789,6 +838,10 @@ const notifySeasonUpdateSuccess = (message) => {
     font-size: 14px;
 }
 
+:deep(.season-harvests-table .el-table__row) {
+    cursor: pointer;
+}
+
 .season-status-pill.is-blue {
     background: #dce9ff;
     color: #2158d8;
@@ -876,6 +929,28 @@ const notifySeasonUpdateSuccess = (message) => {
 
 .season-table-info__line.is-subtle {
     color: #8a96a0;
+}
+
+.season-delete-harvest-btn {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: #dc2626;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 700;
+    justify-content: flex-end;
+    line-height: 1;
+    padding: 0;
+}
+
+.season-delete-harvest-btn :deep(.el-icon) {
+    font-size: 16px;
+}
+
+.season-delete-harvest-btn:hover {
+    color: #b91c1c;
 }
 
 @media (max-width: 1280px) {
