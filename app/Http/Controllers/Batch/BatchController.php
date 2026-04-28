@@ -103,26 +103,10 @@ class BatchController extends Controller
                 ->find($seasonId)
             : null;
 
-        $harvests = $harvestIds->isNotEmpty()
-            ? Harvest::query()
-                ->with(['farm.farmer', 'season'])
-                ->whereKey($harvestIds)
-                ->get()
-                ->sortBy(fn (Harvest $harvest): int => $harvestIds->search($harvest->id) ?: 0)
-                ->values()
-            : collect();
-
-        if (!$season && $harvests->isNotEmpty()) {
-            $linkedSeasonId = $harvests->first()?->season_id;
-
-            if ($linkedSeasonId) {
-                $season = Season::query()
-                    ->withCount('harvests')
-                    ->withSum('harvests', 'weight')
-                    ->withSum('harvests', 'price')
-                    ->find($linkedSeasonId);
-            }
-        }
+        $harvests = Harvest::query()
+            ->where("season_id",$seasonId)
+            ->with('farm')
+            ->get();
 
         return Inertia::render('Batch/BatchProfile', [
             'batch' => BatchResource::make($batch)->resolve(),

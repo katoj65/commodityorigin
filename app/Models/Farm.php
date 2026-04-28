@@ -38,14 +38,6 @@ class Farm extends Model
     }
 
     /**
-     * Get the lots attached to the farm.
-     */
-    public function lots(): HasMany
-    {
-        return $this->hasMany(Lot::class);
-    }
-
-    /**
      * Get the harvest records attached to this farm.
      */
     public function harvests(): HasMany

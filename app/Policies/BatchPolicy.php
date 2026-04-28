@@ -12,6 +12,10 @@ class BatchPolicy
      */
     public function view(User $user, Batch $batch): bool
     {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
         return (int) $batch->user_id === (int) $user->id;
     }
 

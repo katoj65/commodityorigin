@@ -1,5 +1,6 @@
 <script setup>
 import { computed, watch } from 'vue';
+import { ElNotification } from 'element-plus';
 import { Close } from '@element-plus/icons-vue';
 import { useForm } from '@inertiajs/vue3';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
@@ -96,6 +97,13 @@ const submit = () => {
     form.patch(route('batch.update', props.batch.id), {
         preserveScroll: 'errors',
         onSuccess: () => {
+            ElNotification({
+                title: 'Batch Updated',
+                message: `Batch ${props.batch.batch_number || `#${props.batch.id}`} was updated successfully.`,
+                type: 'success',
+                duration: 3200,
+                offset: 84,
+            });
             emit('success');
             closeDialog();
         },

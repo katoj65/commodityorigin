@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('lots', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('farm_id')->constrained()->cascadeOnDelete();
             $table->string('lot_number')->unique();
             $table->string('process');
             $table->string('grade');

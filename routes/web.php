@@ -78,6 +78,8 @@ Route::middleware([
         Route::get('/', [BatchController::class, 'index'])->name('index');
         Route::get('/create', [BatchController::class, 'create'])->name('create');
         Route::get('/season/{season}/create', [SeasonController::class, 'createBatch'])->name('create-season');
+        Route::get('/{batch}/create-lot', [LotController::class, 'createLot'])->name('create-lot');
+        Route::post('/{batch}/create-lot', [LotController::class, 'storeFromBatch'])->name('store-lot');
         Route::post('/', [BatchController::class, 'store'])->name('store');
         Route::patch('/{batch}', [BatchController::class, 'update'])->name('update');
         Route::post('/{batch}/compliance', [BatchController::class, 'storeCompliance'])->name('compliance.store');

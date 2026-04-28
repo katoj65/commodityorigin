@@ -1,13 +1,13 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { Box, Document, Location, OfficeBuilding, User } from '@element-plus/icons-vue';
+import { Box, Document, OfficeBuilding, User } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
 const props = defineProps({
-    farms: {
+    batches: {
         type: Array,
         default: () => [],
     },
@@ -18,43 +18,45 @@ const props = defineProps({
 });
 
 const form = useForm({
-    farm_id: props.farms[0]?.id ?? '',
+    batch_id: props.batches[0]?.id ?? '',
     lot_number: '',
-    process: '',
+    process: props.batches[0]?.processing_method ?? '',
     grade: '',
     quantity_bags: '',
     bag_weight_kg: '',
     reserve_price: '',
-    quality_score: '',
+    quality_score: props.batches[0]?.quality_score ?? '',
     notes: '',
 });
 
-const selectedFarm = computed(() => props.farms.find((farm) => farm.id === form.farm_id) ?? null);
+const selectedBatch = computed(() => props.batches.find((batch) => batch.id === form.batch_id) ?? null);
 
-const farmerName = computed(() => {
-    const farmer = selectedFarm.value?.farmer;
-
-    return [farmer?.first_name, farmer?.last_name].filter(Boolean).join(' ') || 'Farmer not assigned';
-});
-
-const farmMeta = computed(() => [
+const batchMeta = computed(() => [
     {
-        label: 'Origin',
-        value: [selectedFarm.value?.farmer?.sub_county, selectedFarm.value?.farmer?.district]
-            .filter(Boolean)
-            .join(', ') || selectedFarm.value?.location || 'Location pending',
+        label: 'Warehouse',
+        value: selectedBatch.value?.warehouse_location || 'Warehouse pending',
     },
     {
         label: 'Variety',
-        value: selectedFarm.value?.variety || 'Not set',
+        value: selectedBatch.value?.variety || 'Not set',
     },
     {
-        label: 'Farm Size',
-        value: selectedFarm.value?.size || 'Not set',
+        label: 'Net Weight',
+        value: selectedBatch.value?.net_weight_kg
+            ? `${Number(selectedBatch.value.net_weight_kg).toLocaleString()} kg`
+            : 'Not set',
     },
 ]);
 
 const submit = () => {
+    if (!form.process && selectedBatch.value?.processing_method) {
+        form.process = selectedBatch.value.processing_method;
+    }
+
+    if (!form.quality_score && selectedBatch.value?.quality_score) {
+        form.quality_score = selectedBatch.value.quality_score;
+    }
+
     form.post(route('lot.store'));
 };
 </script>
@@ -68,7 +70,7 @@ const submit = () => {
                 <div class="flex flex-col gap-1.5">
                     <h1 class="font-display text-[20px] font-bold leading-tight text-[#111827]">Add Lot</h1>
                     <p class="max-w-2xl text-[13px] leading-relaxed text-[#6B7280]">
-                        Register a traceable coffee lot against an existing farm and prepare it for bidding, inventory, and settlement workflows.
+                        Register a traceable coffee lot against an existing batch and prepare it for bidding, inventory, and settlement workflows.
                     </p>
                 </div>
             </section>
@@ -78,16 +80,16 @@ const submit = () => {
                     <form class="space-y-5" @submit.prevent="submit">
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="md:col-span-2">
-                                <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Farm</label>
-                                <el-select v-model="form.farm_id" class="w-full" placeholder="Select farm">
+                                <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Batch</label>
+                                <el-select v-model="form.batch_id" class="w-full" placeholder="Select batch">
                                     <el-option
-                                        v-for="farm in props.farms"
-                                        :key="farm.id"
-                                        :label="`${farm.name} · ${[farm.farmer?.first_name, farm.farmer?.last_name].filter(Boolean).join(' ')}`"
-                                        :value="farm.id"
+                                        v-for="batch in props.batches"
+                                        :key="batch.id"
+                                        :label="`${batch.batch_number} · ${batch.variety || 'Unspecified variety'}`"
+                                        :value="batch.id"
                                     />
                                 </el-select>
-                                <InputError class="mt-2 text-sm" :message="form.errors.farm_id" />
+                                <InputError class="mt-2 text-sm" :message="form.errors.batch_id" />
                             </div>
 
                             <div>
@@ -165,10 +167,10 @@ const submit = () => {
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
-                                        Selected Farm
+                                        Selected Batch
                                     </p>
                                     <h2 class="mt-1 text-[18px] font-semibold leading-tight text-[#111827]">
-                                        {{ selectedFarm?.name || 'Choose a farm' }}
+                                        {{ selectedBatch?.batch_number || 'Choose a batch' }}
                                     </h2>
                                 </div>
 
@@ -179,26 +181,26 @@ const submit = () => {
 
                             <div class="mt-3 flex items-center gap-2 text-[13px] text-[#4B5563]">
                                 <el-icon class="text-[#0F5D3B]"><User /></el-icon>
-                                <span>{{ farmerName }}</span>
+                                <span>{{ selectedBatch?.variety || 'Variety not set' }}</span>
                             </div>
 
                             <div class="mt-2 flex items-center gap-2 text-[13px] text-[#4B5563]">
-                                <el-icon class="text-[#0F5D3B]"><Location /></el-icon>
-                                <span>{{ selectedFarm?.location || 'Farm location pending' }}</span>
+                                <el-icon class="text-[#0F5D3B]"><OfficeBuilding /></el-icon>
+                                <span>{{ selectedBatch?.warehouse_location || 'Warehouse pending' }}</span>
                             </div>
                         </div>
 
                         <div class="space-y-3">
                             <div
-                                v-for="item in farmMeta"
+                                v-for="item in batchMeta"
                                 :key="item.label"
                                 class="rounded-lg border border-[#E5E7EB] px-3.5 py-3"
                             >
                                 <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
                                     <el-icon class="text-[#0F5D3B]">
-                                        <Location v-if="item.label === 'Origin'" />
+                                        <OfficeBuilding v-if="item.label === 'Warehouse'" />
                                         <Document v-else-if="item.label === 'Variety'" />
-                                        <OfficeBuilding v-else />
+                                        <User v-else />
                                     </el-icon>
                                     <span>{{ item.label }}</span>
                                 </div>
@@ -214,7 +216,7 @@ const submit = () => {
                             </p>
                             <ul class="mt-2.5 space-y-2 text-[13px] leading-5 text-[#4B5563]">
                                 <li>Use a unique lot number that can be traced across auction, inventory, and settlement records.</li>
-                                <li>Match the lot to the correct farm so origin reporting stays consistent.</li>
+                                <li>Attach every lot to the correct verified batch for clean traceability.</li>
                                 <li>Capture process, grade, and quantity clearly for downstream bidding and export workflows.</li>
                             </ul>
                         </div>

@@ -76,4 +76,12 @@ class Batch extends Model
     {
         return $this->hasMany(BatchCompliance::class);
     }
+
+    /**
+     * Get the lots created from this batch.
+     */
+    public function lots(): HasMany
+    {
+        return $this->hasMany(Lot::class);
+    }
 }

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import {  Link } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import {
     Box,
     Calendar,
@@ -8,7 +8,10 @@ import {
     Connection,
     DataAnalysis,
     Document,
+    Download,
+    Files,
     List,
+    Location,
     TrendCharts,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -31,17 +34,10 @@ const props = defineProps({
 
 const updateBatchModalOpen = ref(false);
 
-const formatDate = (value) => {
-    if (!value) {
-        return 'Pending';
-    }
-
-    return new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    }).format(new Date(value));
-};
+const formatNumber = (value, digits = 0) => Number(value || 0).toLocaleString('en-US', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+});
 
 const formatMonthYear = (value) => {
     if (!value) {
@@ -54,393 +50,411 @@ const formatMonthYear = (value) => {
     }).format(new Date(value));
 };
 
-const formatWeight = (value) => `${Number(value || 0).toLocaleString()}kg`;
+const batchCode = computed(() => props.batch.batch_number || `ETH-YR-2023-${String(props.batch.id).padStart(4, '0')}`);
+const gradeLabel = computed(() => props.batch.grade || 'G1');
+const batchTitle = computed(() => props.batch.variety || 'Yirgacheffe');
+const titleSuffix = computed(() => `${gradeLabel.value}-Specialty`);
+const totalQuantity = computed(() => Number(props.batch.net_weight_kg || props.season?.harvests_sum_weight || 4200));
+const commercialValue = computed(() => Number(props.batch.price || 32540));
+const cupScore = computed(() => Number(props.batch.cup_score || 87.2));
+const moistureScore = computed(() => Number(props.batch.moisture_content || 11.2));
+const densityValue = computed(() => Math.max(720, Math.round(cupScore.value * 8.1)));
+const waterActivity = computed(() => 0.58);
+const seasonTitle = computed(() => props.season?.name || 'Main Harvest 2023/24');
+const seasonRegion = computed(() => props.season?.region || 'Central Highlands Region');
+const seasonHealth = computed(() => Number(props.batch.cup_score || 88.4));
+const activeFarms = computed(() => props.harvests.length || props.season?.harvests_count || 12);
+const readinessScore = computed(() => {
+    let score = 88;
 
-const batchCode = computed(() => props.batch.batch_number || `#BTC-${String(props.batch.id).padStart(2, '0')}`);
-const seasonName = computed(() => props.season?.name || 'Main Crop 2026');
-const seasonCode = computed(() => props.season?.id ? `#S-${String(props.season.id).padStart(4, '0')}-MAIN` : '#S-2026-MAIN');
-const totalYield = computed(() => Number(props.batch.net_weight_kg || props.season?.harvests_sum_weight || 12400));
-const marketValue = computed(() => Number(props.batch.price || 58400));
-const marketRate = computed(() => {
-    const total = totalYield.value || 1;
-    return (marketValue.value / total).toFixed(2);
+    if (props.season) score += 1;
+    if (props.harvests.length > 0) score += 1;
+    if (cupScore.value >= 87) score += 1;
+    if (moistureScore.value <= 12) score += 1;
+
+    return Math.min(score, 92);
 });
-const cupScore = computed(() => Number(props.batch.cup_score || 87.2).toFixed(1));
-const moistureValue = computed(() => Number(props.batch.moisture_content || 11.2).toFixed(1));
-const readinessScore = computed(() => 100);
-const durationLabel = computed(() => {
-    const start = props.season?.start_date ? formatMonthYear(props.season.start_date) : 'Feb 2026';
-    const end = props.season?.end_date ? formatMonthYear(props.season.end_date) : 'Jun 2026';
+const seasonHref = computed(() => (props.season?.id ? route('season.show', props.season.id) : route('batch.index')));
 
-    return `${start} - ${end}`;
-});
-
-const canManageBatch = computed(() => Boolean(props.batch.can_manage));
-
-const badges = [
-    'Season Linked',
-    'Harvest Verified',
-    'Quality Checked',
-    'Export Ready',
+const journeySteps = [
+    { label: 'Harvest', complete: true },
+    { label: 'Milling', complete: true },
+    { label: 'Export', complete: false },
 ];
 
-const lifecycleSteps = [
-    { key: 'season', label: 'Season', detail: 'Completed · Feb 2026', complete: true },
-    { key: 'harvest', label: 'Harvests', detail: 'Verified · Oct 2026', complete: true },
-    { key: 'batch', label: 'Batch', detail: 'Active · Oct 2026', current: true },
-    { key: 'lot', label: 'Lot', detail: 'Pending Generation' },
-    { key: 'market', label: 'Market', detail: 'Not Listed' },
-];
+const processingItems = computed(() => [
+    {
+        title: props.batch.processing_method || 'Washed Process',
+        subtitle: 'Processing Method',
+        icon: Checked,
+    },
+    {
+        title: props.batch.drying_duration ? `${props.batch.drying_duration}h Fermentation` : '36h Fermentation',
+        subtitle: 'Controlled Anaerobic',
+        icon: TrendCharts,
+    },
+    {
+        title: props.batch.warehouse_location || 'Silo B-12 (Temp Controlled)',
+        subtitle: 'Current Location',
+        icon: Box,
+    },
+]);
 
-const seasonSummaryItems = computed(() => [
-    {
-        label: 'Origin Season',
-        primary: seasonName.value,
-        secondary: `${durationLabel.value} · ${props.harvests.length || props.season?.harvests_count || 14} Harvests`,
-        side: seasonCode.value,
-    },
-    {
-        label: 'Health Score',
-        primary: '92/100',
-    },
-    {
-        label: 'Total Yield',
-        primary: formatWeight(totalYield.value),
-    },
+const readinessItems = computed(() => [
+    { label: 'Season Linkage Complete', complete: true },
+    { label: 'Milling Report Verified', complete: true },
+    { label: 'Cupping Score Approved', complete: true },
+    { label: 'Export Logistics Quote', complete: false },
 ]);
 
 const harvestRows = computed(() => {
     if (props.harvests.length > 0) {
-        return props.harvests.slice(0, 3).map((harvest) => ({
+        return props.harvests.slice(0, 3).map((harvest, index) => ({
             id: harvest.id,
-            code: `#HV-${String(harvest.id).padStart(4, '0')}`,
-            date: formatDate(harvest.harvest_date),
-            farm: harvest.farm?.name || 'Blue Ridge Estates',
-            farmer: harvest.farm?.farmer
-                ? `${harvest.farm.farmer.first_name?.[0] || ''}. ${harvest.farm.farmer.last_name || ''}`.trim()
-                : 'M. Wanale',
-            quantity: formatWeight(harvest.weight),
-            moisture: `${Number(Math.max(10.8, Number(moistureValue.value) + ((Number(harvest.ripeness_percentage || 94) - 94) * -0.05))).toFixed(1)}%`,
+            harvestCode: `HV-24-${String(index + 1).padStart(3, '0')}`,
+            farmIdentity: harvest.farm?.name || `Source Estate ${index + 1}`,
+            quantity: `${formatNumber(harvest.weight || 0)} KG`,
+            grade: props.batch.grade || 'G1',
+            status: 'Verified',
         }));
     }
 
     return [
-        { id: 4522, code: '#HV-4522', date: 'Oct 12, 2026', farm: 'Blue Ridge Estates', farmer: 'M. Wanale', quantity: '4,200kg', moisture: '11.2%' },
-        { id: 4528, code: '#HV-4528', date: 'Oct 14, 2026', farm: 'Sipi Falls Central', farmer: 'J. Chemutai', quantity: '5,100kg', moisture: '11.1%' },
-        { id: 4531, code: '#HV-4531', date: 'Oct 15, 2026', farm: 'Kapchorwa Heights', farmer: 'K. Sula', quantity: '3,100kg', moisture: '11.3%' },
+        { id: 1, harvestCode: 'HV-24-001', farmIdentity: 'Aricha Cooperative', quantity: '1,200 KG', grade: 'G1', status: 'Verified' },
+        { id: 2, harvestCode: 'HV-24-005', farmIdentity: 'Misty Mountain Farm', quantity: '850 KG', grade: 'G1', status: 'Verified' },
+        { id: 3, harvestCode: 'HV-24-012', farmIdentity: 'Blue Nile Estate', quantity: '1,150 KG', grade: 'G1', status: 'Verified' },
     ];
 });
 
-const readinessChecklist = [
-    'Season identity linked',
-    'Individual harvests verified',
-    'Aggregation qty confirmed',
-    `Lab moisture checked (${moistureValue.value}%)`,
-    'SCA quality report uploaded',
-    'Dry mill processing complete',
-];
-
-const processingMethods = computed(() => [
-    { label: 'Method', value: props.batch.processing_method || 'Washed' },
-    { label: 'Fermentation', value: props.batch.drying_duration ? `${props.batch.drying_duration}h Aerobic` : '36h Aerobic' },
-    { label: 'Drying', value: props.batch.drying_method || 'Raised African Beds' },
-    { label: 'Duration', value: props.batch.drying_duration ? `${props.batch.drying_duration} Days` : '14 Days' },
-    { label: 'Storage', value: props.batch.warehouse_location || 'Ventilated Silo' },
+const intelligenceBars = computed(() => [
+    { label: 'Moisture Content', value: `${formatNumber(moistureScore.value, 1)}%`, width: 81 },
+    { label: 'Water Activity', value: `${waterActivity.value.toFixed(2)}AW`, width: 73 },
+    { label: 'Density', value: `${densityValue.value}G/L`, width: 89 },
 ]);
 
-const qualityScores = computed(() => [
-    { label: 'Aroma Profile', value: 9.0 },
-    { label: 'Flavor Complexity', value: 8.5 },
-    { label: 'Body / Mouthfeel', value: 8.0 },
-]);
-
-const artifacts = [
-    'Harvest Reports',
-    'Processing Photos',
-    'Quality Report',
-    'Export Docs',
+const sensoryNotes = [
+    { title: 'Aroma', description: 'Floral, Jasmine, Peach Blossom' },
+    { title: 'Body', description: 'Silky, Medium, Tea-like' },
+    { title: 'Flavor', description: 'Lemon, Honey, Berries' },
+    { title: 'Acidity', description: 'Bright, Citric, Complex' },
 ];
 
-const timelineSteps = [
-    { title: 'Season Created', date: 'Feb 01, 2026', complete: true },
-    { title: 'Harvest Entry #HV-4531', date: 'Oct 15, 2026', complete: true },
-    { title: 'Batch Aggregation Complete', date: 'Oct 18, 2026', complete: true },
-    { title: 'Lot Generation Pending', date: 'Queued for action', active: true },
+const documentTiles = [
+    { title: 'Quality Report', meta: 'PDF • 2.4 MB', icon: Document },
+    { title: 'Certification', meta: 'PNG • 1.1 MB', icon: Checked },
+    { title: 'Export Docs', meta: 'DOC • 0.8 MB', icon: Files },
+    { title: 'Add Document', meta: '', icon: null, isAdd: true },
 ];
+
+const marketBars = [28, 42, 56, 68, 82];
+const canManageBatch = computed(() => Boolean(props.batch.can_manage));
 </script>
 
 <template>
     <AppLayout title="Batch Profile" full-width flush :show-banner="false">
-
         <div class="batch-profile-page">
             <div class="batch-profile-shell">
-                <section class="profile-hero">
-                    <div class="profile-hero__copy">
-                        <h1 class="title-with-icon title-with-icon--page">
-                            <el-icon><Box /></el-icon>
-                            <span class="ml-2">Batch Profile</span>
-                        </h1>
-                        <p>Verified coffee batch ready for lot creation</p>
+                <section class="top-summary-card">
+                    <div class="top-summary-grid">
+                        <article class="summary-block summary-block--identity">
+                            <span class="block-label">Batch Identity</span>
+                            <h1>{{ batchTitle }}<br>{{ titleSuffix }}</h1>
+                            <p>ID : {{ batchCode }}</p>
+                        </article>
 
-                        <div class="profile-badges">
-                            <span v-for="badge in badges" :key="badge" class="profile-badge">{{ badge }}</span>
-                        </div>
-                    </div>
+                        <article class="summary-block summary-block--journey">
+                            <span class="block-label">Traceability Journey</span>
 
-                    <div class="profile-hero__actions">
-                        <button
-                            v-if="canManageBatch"
-                            type="button"
-                            class="profile-button profile-button--soft"
-                            @click="updateBatchModalOpen = true"
-                        >
-                            Edit
-                        </button>
-                        <button type="button" class="profile-button profile-button--peach">Tokenise</button>
-                        <Link :href="route('lot.create')" class="profile-button profile-button--solid">Create Lot</Link>
-                    </div>
-                </section>
-
-                <section class="hero-panels">
-                    <article class="hero-batch-card">
-                        <div class="hero-batch-card__image"></div>
-
-                        <div class="hero-batch-card__main">
-                            <span class="hero-batch-card__code">{{ batchCode }}</span>
-                            <h2>{{ batch.variety || 'Arabica SL-14' }}</h2>
-
-                            <div class="hero-batch-card__meta">
-                                <span>Mt Elgon, Uganda</span>
-                                <span>YCFCU Processing</span>
-                            </div>
-
-                            <span class="active-pill">Active Batch</span>
-                        </div>
-
-                        <div class="hero-batch-card__value">
-                            <span>Market Value</span>
-                            <strong>Shs. {{ Number(marketValue).toLocaleString() }}</strong>
-                            <p>{{ formatWeight(totalYield) }} @ ${{ marketRate }}/kg</p>
-                        </div>
-
-                        <div class="hero-batch-card__readiness">
-                            <div class="readiness-circle">
-                                <div>
-                                    <strong>{{ readinessScore }}%</strong>
-                                    <span>Ready</span>
+                            <div class="journey-track">
+                                <div
+                                    v-for="(step, index) in journeySteps"
+                                    :key="step.label"
+                                    class="journey-step"
+                                    :class="{ 'is-complete': step.complete }"
+                                >
+                                    <span class="journey-step__dot"></span>
+                                    <span v-if="index < journeySteps.length - 1" class="journey-step__line"></span>
+                                    <strong>{{ step.label }}</strong>
                                 </div>
                             </div>
-                        </div>
-                    </article>
-
-                    <article class="hero-score-card">
-                        <span>Cup Quality Score</span>
-                        <strong>{{ cupScore }}</strong>
-                        <div class="score-pill">Excellence Grade</div>
-                    </article>
-                </section>
-
-                <section class="lifecycle-strip">
-                    <h2 class="title-with-icon mb-3">
-                        <el-icon><Connection /></el-icon>
-                        <span class="ml-2">Traceability Lifecycle</span>
-                    </h2>
-
-                    <div class="lifecycle-strip__track">
-                        <div class="lifecycle-strip__line"></div>
-
-                        <article
-                            v-for="step in lifecycleSteps"
-                            :key="step.key"
-                            class="lifecycle-step"
-                            :class="{
-                                'is-complete': step.complete,
-                                'is-current': step.current,
-                            }"
-                        >
-                            <span class="lifecycle-step__icon"></span>
-                            <strong>{{ step.label }}</strong>
-                            <p>{{ step.detail }}</p>
                         </article>
+
+                        <article class="summary-block summary-block--readiness">
+                            <div class="mini-ring" :style="{ '--score': `${readinessScore}` }">
+                                <div class="mini-ring__inner">{{ readinessScore }}%</div>
+                            </div>
+
+                            <div class="summary-block__readiness-copy">
+                                <span class="block-label">Readiness</span>
+                                <strong>Market<br>Ready</strong>
+                            </div>
+                        </article>
+
+                        <article class="summary-block summary-block--value">
+                            <span class="block-label">Commercial Value</span>
+
+                            <div class="commercial-grid">
+                                <div>
+                                    <span>Qty</span>
+                                    <strong>{{ formatNumber(totalQuantity) }} KG</strong>
+                                </div>
+
+                                <div>
+                                    <span>Value</span>
+                                    <strong class="value-accent">Shs. {{ formatNumber(commercialValue) }}</strong>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="summary-actions">
+                        <div class="summary-actions__group">
+                            <Link :href="route('batch.create-lot', batch.id)" class="action-button action-button--green">
+                                <el-icon><Files /></el-icon>
+                                <span>Create Lot</span>
+                            </Link>
+
+                            <button
+                                v-if="canManageBatch"
+                                type="button"
+                                class="action-button action-button--peach"
+                                @click="updateBatchModalOpen = true"
+                            >
+                                <el-icon><List /></el-icon>
+                                <span>Edit</span>
+                            </button>
+
+                            <Link :href="seasonHref" class="action-button action-button--neutral">
+                                <el-icon><Connection /></el-icon>
+                                <span>View Harvests</span>
+                            </Link>
+                        </div>
+
+                        <button type="button" class="download-report">
+                            <el-icon><Download /></el-icon>
+                            <span>Download Report</span>
+                        </button>
+                    </div>
+
+                    <div class="insight-banner">
+                        <span class="insight-banner__icon">✦</span>
+                        <p><strong>AI Insight:</strong> This batch is strongly traceable and ready for lot creation. Optimization suggested for UAE market placement.</p>
                     </div>
                 </section>
 
                 <div class="profile-grid">
                     <main class="profile-main">
-                        <section class="season-summary-card">
-                            <article v-for="item in seasonSummaryItems" :key="item.label" class="season-summary-card__item">
-                                <span>{{ item.label }}</span>
-                                <strong>{{ item.primary }}</strong>
-                                <p v-if="item.secondary">{{ item.secondary }}</p>
-                                <em v-if="item.side">{{ item.side }}</em>
+                        <section class="feature-row">
+                            <article class="surface-card season-card">
+                                <div class="card-head">
+                                    <span class="card-label">Season Context</span>
+                                    <span class="status-pill">Active</span>
+                                </div>
+
+                                <h2>{{ seasonTitle }}</h2>
+                                <p>{{ seasonRegion }}</p>
+
+                                <div class="season-stats">
+                                    <div>
+                                        <strong>{{ formatNumber(seasonHealth, 1) }}</strong>
+                                        <span>Health Score</span>
+                                    </div>
+                                    <div>
+                                        <strong>{{ activeFarms }}</strong>
+                                        <span>Active Farms</span>
+                                    </div>
+                                </div>
+
+                                <Link :href="seasonHref" class="season-link">View Season Details</Link>
                             </article>
-                        </section>
 
-                        <section class="panel-card table-panel">
-                            <div class="panel-card__head">
-                                <h3 class="card-title">
-                                    <el-icon><List /></el-icon>
-                                    <span class="ml-2">Harvest Source Components</span>
-                                </h3>
-                                <Link :href="route('season.show', season?.id || 1)">View All Records</Link>
-                            </div>
+                            <article class="surface-card processing-card">
+                                <span class="card-label">Processing &amp; Storage</span>
 
-                            <div class="table-wrap">
-                                <table class="source-table">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Date</th>
-                                            <th>Source Farm</th>
-                                            <th>Farmer</th>
-                                            <th>Qty</th>
-                                            <th>Moisture</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="row in harvestRows" :key="row.id">
-                                            <td>
-                                                <Link :href="route('harvest.show', row.id)" class="source-table__code">{{ row.code }}</Link>
-                                            </td>
-                                            <td>{{ row.date }}</td>
-                                            <td>{{ row.farm }}</td>
-                                            <td>{{ row.farmer }}</td>
-                                            <td>{{ row.quantity }}</td>
-                                            <td>{{ row.moisture }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </section>
+                                <div class="processing-list">
+                                    <div v-for="item in processingItems" :key="item.title" class="processing-item">
+                                        <div class="processing-item__icon">
+                                            <el-icon><component :is="item.icon" /></el-icon>
+                                        </div>
 
-                        <section class="details-grid">
-                            <article class="panel-card detail-panel">
-                                <h3 class="card-title">
-                                    <el-icon><Box /></el-icon>
-                                    <span class="ml-2">Processing Methods</span>
-                                </h3>
+                                        <div>
+                                            <strong>{{ item.title }}</strong>
+                                            <span>{{ item.subtitle }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
 
-                                <div class="detail-list">
-                                    <div v-for="item in processingMethods" :key="item.label" class="detail-list__row">
+                            <article class="surface-card readiness-card">
+                                <span class="card-label">Lot Readiness Checklist</span>
+
+                                <div class="readiness-progress">
+                                    <strong>{{ readinessScore }}%</strong>
+                                    <div class="readiness-progress__bar">
+                                        <span :style="{ width: `${readinessScore}%` }"></span>
+                                    </div>
+                                </div>
+
+                                <div class="readiness-list">
+                                    <div
+                                        v-for="item in readinessItems"
+                                        :key="item.label"
+                                        class="readiness-item"
+                                        :class="{ 'is-complete': item.complete }"
+                                    >
+                                        <span class="readiness-item__dot"></span>
                                         <span>{{ item.label }}</span>
-                                        <strong>{{ item.value }}</strong>
-                                    </div>
-                                </div>
-                            </article>
-
-                            <article class="panel-card detail-panel">
-                                <h3 class="card-title">
-                                    <el-icon><DataAnalysis /></el-icon>
-                                    <span class="ml-2">Quality Forensics</span>
-                                </h3>
-
-                                <div class="quality-list">
-                                    <div v-for="item in qualityScores" :key="item.label" class="quality-list__row">
-                                        <div class="quality-list__head">
-                                            <span>{{ item.label }}</span>
-                                            <strong>{{ item.value.toFixed(1) }}/10</strong>
-                                        </div>
-                                        <div class="quality-list__bar">
-                                            <div class="quality-list__fill" :style="{ width: `${item.value * 10}%` }"></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="quality-meta">
-                                        <article>
-                                            <span>Defects</span>
-                                            <strong>{{ batch.defect_count ? `${batch.defect_count}/300g` : '2/300g' }}</strong>
-                                        </article>
-                                        <article>
-                                            <span>Grade</span>
-                                            <strong>Grade A</strong>
-                                        </article>
                                     </div>
                                 </div>
                             </article>
                         </section>
 
-                        <section class="artifacts-panel">
-                            <h3 class="title-with-icon mb-3">
-                                <el-icon><Document /></el-icon>
-                                <span class="ml-2">Verification Artifacts</span>
-                            </h3>
+                        <section class="surface-card harvest-card">
+                            <div class="section-head">
+                                <span class="card-label">Harvest Sources</span>
+                                <span class="section-meta">{{ harvestRows.length }} Selected Sources</span>
+                            </div>
 
-                            <div class="artifacts-grid">
-                                <article v-for="artifact in artifacts" :key="artifact" class="artifact-card">
-                                    <span class="artifact-card__icon"></span>
-                                    <strong>{{ artifact }}</strong>
-                                </article>
+                            <div class="harvest-table">
+                                <div class="harvest-table__head">
+                                    <span>Harvest ID</span>
+                                    <span>Farm Identity</span>
+                                    <span>Quantity</span>
+                                    <span>Grade</span>
+                                    <span>Status</span>
+                                </div>
+
+                                <div v-for="row in harvestRows" :key="row.id" class="harvest-table__row">
+                                    <span>{{ row.harvestCode }}</span>
+                                    <span>{{ row.farmIdentity }}</span>
+                                    <span>{{ row.quantity }}</span>
+                                    <span>{{ row.grade }}</span>
+                                    <span class="table-status">{{ row.status }}</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="quality-panel">
+                            <div class="quality-panel__top">
+                                <div>
+                                    <span class="quality-panel__label">Quality Intelligence</span>
+                                    <h2>Institutional Grade Analysis</h2>
+                                </div>
+
+                                <div class="quality-tags">
+                                    <span>Specialty</span>
+                                    <span>Premium</span>
+                                </div>
+                            </div>
+
+                            <div class="quality-panel__body">
+                                <div class="score-tile">
+                                    <strong>{{ formatNumber(cupScore, 1) }}</strong>
+                                    <span>SCA Cupping Score</span>
+                                    <div class="score-tile__stars">* * * * *</div>
+                                </div>
+
+                                <div class="intelligence-bars">
+                                    <div v-for="item in intelligenceBars" :key="item.label" class="intelligence-bar">
+                                        <div class="intelligence-bar__head">
+                                            <span>{{ item.label }}</span>
+                                            <strong>{{ item.value }}</strong>
+                                        </div>
+                                        <div class="intelligence-bar__track">
+                                            <span :style="{ width: `${item.width}%` }"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="sensory-breakdown">
+                                    <span class="sensory-breakdown__label">Sensory Breakdown</span>
+
+                                    <div class="sensory-grid">
+                                        <div v-for="item in sensoryNotes" :key="item.title" class="sensory-item">
+                                            <strong>{{ item.title }}</strong>
+                                            <p>{{ item.description }}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </section>
                     </main>
 
-                    <aside class="profile-rail">
-                        <section class="rail-card rail-card--green">
-                            <div class="rail-card__title-row">
-                                <h3 class="card-title">
-                                    <el-icon><Checked /></el-icon>
-                                    <span class="ml-2">Readiness Checklist</span>
-                                </h3>
-                                <strong>100%</strong>
+                    <aside class="profile-side">
+                        <section class="surface-card market-card">
+                            <span class="card-label">Market Intelligence</span>
+
+                            <div class="market-meta">
+                                <div>
+                                    <span>Target Market</span>
+                                    <strong>UAE / Dubai</strong>
+                                </div>
+                                <div>
+                                    <span>Demand Level</span>
+                                    <strong>Critical High</strong>
+                                </div>
                             </div>
 
-                            <div class="checklist-list">
-                                <article v-for="item in readinessChecklist" :key="item" class="checklist-item">
-                                    <span class="checklist-item__icon"></span>
-                                    <span>{{ item }}</span>
+                            <div class="market-chart">
+                                <span class="market-chart__label">Price Trend (30D)</span>
+
+                                <div class="market-chart__bars">
+                                    <span
+                                        v-for="height in marketBars"
+                                        :key="height"
+                                        :style="{ height: `${height}px` }"
+                                    ></span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="surface-card documents-card">
+                            <div class="section-head section-head--tight">
+                                <span class="card-label">Documents &amp; Evidence</span>
+                                <span class="section-meta">...</span>
+                            </div>
+
+                            <div class="documents-grid">
+                                <article
+                                    v-for="item in documentTiles"
+                                    :key="item.title"
+                                    class="document-tile"
+                                    :class="{ 'is-add': item.isAdd }"
+                                >
+                                    <template v-if="item.isAdd">
+                                        <span class="document-tile__plus">+</span>
+                                    </template>
+
+                                    <template v-else>
+                                        <div class="document-tile__icon">
+                                            <el-icon><component :is="item.icon" /></el-icon>
+                                        </div>
+                                        <strong>{{ item.title }}</strong>
+                                        <span>{{ item.meta }}</span>
+                                    </template>
                                 </article>
                             </div>
                         </section>
 
-                        <section class="rail-card">
-                            <h3 class="card-title">
-                                <el-icon><TrendCharts /></el-icon>
-                                <span class="ml-2">Market Intelligence</span>
-                            </h3>
+                        <section class="advisor-card">
+                            <div class="advisor-card__title">
+                                <div class="advisor-card__icon">
+                                    <el-icon><DataAnalysis /></el-icon>
+                                </div>
+                                <strong>AI Batch Advisor</strong>
+                            </div>
 
-                            <div class="market-intelligence">
-                                <span>Suggested Batch Listing Price</span>
-                                <strong>$5.10<span>/kg</span></strong>
+                            <p>
+                                “Based on current market trends in the Middle East, this Yirgacheffe profile is fetching a 12% premium. I recommend initiating the UAE Export Permit immediately.”
+                            </p>
 
-                                <div class="market-intelligence__grid">
-                                    <article>
-                                        <span>Target Region</span>
-                                        <strong>UAE / Dubai</strong>
-                                    </article>
-                                    <article>
-                                        <span>Market Match</span>
-                                        <strong>High Demand</strong>
-                                    </article>
+                            <div class="advisor-card__footer">
+                                <div>
+                                    <span>Confidence</span>
+                                    <strong>94.8%</strong>
                                 </div>
 
-                                <blockquote>
-                                    "High demand for Ugandan Arabica specialty profiles in the UAE market for Q4 export contracts."
-                                </blockquote>
-                            </div>
-                        </section>
-
-                        <section class="rail-card timeline-card">
-                            <h3 class="card-title">
-                                <el-icon><Calendar /></el-icon>
-                                <span class="ml-2">Lifecycle Timeline</span>
-                            </h3>
-
-                            <div class="timeline-list">
-                                <article
-                                    v-for="step in timelineSteps"
-                                    :key="step.title"
-                                    class="timeline-step"
-                                    :class="{
-                                        'is-complete': step.complete,
-                                        'is-active': step.active,
-                                    }"
-                                >
-                                    <span class="timeline-step__dot"></span>
-                                    <div>
-                                        <strong>{{ step.title }}</strong>
-                                        <p>{{ step.date }}</p>
-                                    </div>
-                                </article>
+                                <button type="button">Apply Recommendation</button>
                             </div>
                         </section>
                     </aside>
@@ -463,968 +477,906 @@ const timelineSteps = [
 }
 
 .batch-profile-shell {
-    max-width: 1280px;
+    max-width: 1240px;
     margin: 0 auto;
-    padding: 34px 28px 44px;
+    padding: 18px 18px 42px;
 }
 
-.profile-hero {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 26px;
+.top-summary-card,
+.surface-card,
+.advisor-card {
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #ebf0f3;
+    box-shadow: 0 12px 26px rgba(17, 24, 39, 0.04);
 }
 
-.profile-hero__copy h1 {
-    margin: 0;
-    font-size: 25px;
-    line-height: 1.1;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #111827;
+.top-summary-card {
+    padding: 26px 28px 30px;
 }
 
-.profile-hero__copy p {
-    margin: 8px 0 0;
-    font-size: 16px;
-    color: #1f2937;
+.top-summary-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 0.9fr 0.9fr;
+    gap: 0;
 }
 
-.title-with-icon,
-.card-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
+.summary-block {
+    min-height: 128px;
+    padding: 0 28px;
+    border-right: 1px solid #edf1f4;
 }
 
-.title-with-icon .el-icon,
-.card-title .el-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: #f3f6f5;
-    flex-shrink: 0;
-    color: #6d7f95;
+.summary-block:first-child {
+    padding-left: 0;
 }
 
-.title-with-icon--page .el-icon {
-    width: 30px;
-    height: 30px;
-    font-size: 18px;
-    color: #0d5b3f;
-    background: #e8f6ef;
+.summary-block:last-child {
+    padding-right: 0;
+    border-right: 0;
 }
 
-.title-with-icon span,
-.card-title span {
+.block-label,
+.card-label {
     display: inline-block;
-}
-
-.profile-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 16px;
-}
-
-.profile-badge {
-    display: inline-flex;
-    align-items: center;
-    min-height: 28px;
-    padding: 0 12px;
-    border-radius: 999px;
-    background: #a7f3d0;
     font-size: 11px;
     font-weight: 700;
+    letter-spacing: 0.14em;
+    color: #7d6950;
+}
+
+.block-label {
+    font-size: 13px;
     letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #0f5132;
 }
 
-.profile-hero__actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-top: 12px;
-}
-
-.profile-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 40px;
-    padding: 0 20px;
-    border: 1px solid #e7ecea;
-    border-radius: 8px;
-    background: #f4f6f5;
+.card-label {
     font-size: 13px;
-    font-weight: 600;
-    color: #17202f;
-    text-decoration: none;
-    cursor: pointer;
+    letter-spacing: 0.1em;
+    color: #6f573a;
 }
 
-.profile-button--peach {
-    background: #ffd9b7;
-    color: #754c24;
-}
-
-.profile-button--solid {
-    border-color: #0d5b3f;
-    background: #0d5b3f;
-    color: #ffffff;
-}
-
-.hero-panels {
-    display: grid;
-    grid-template-columns: minmax(0, 2.2fr) minmax(250px, 1fr);
-    gap: 28px;
-}
-
-.hero-batch-card,
-.hero-score-card,
-.season-summary-card,
-.panel-card,
-.rail-card {
-    border: 1px solid #edf1ef;
-    border-radius: 14px;
-    background: #ffffff;
-    box-shadow: 0 16px 30px rgba(15, 35, 23, 0.03);
-}
-
-.hero-batch-card {
-    display: grid;
-    grid-template-columns: 88px minmax(0, 1.3fr) minmax(0, 0.8fr) 118px;
-    align-items: center;
-    gap: 18px;
-    padding: 28px;
-    background: #f7f8f8;
-}
-
-.hero-batch-card__image {
-    width: 88px;
-    height: 120px;
-    border-radius: 6px;
-    background:
-        radial-gradient(circle at 18% 24%, #b7d688 0 12%, transparent 12.5%),
-        radial-gradient(circle at 40% 32%, #8fb05c 0 11%, transparent 11.5%),
-        radial-gradient(circle at 68% 24%, #a0c76b 0 12%, transparent 12.5%),
-        radial-gradient(circle at 26% 54%, #9abd63 0 12%, transparent 12.5%),
-        radial-gradient(circle at 58% 52%, #7f9b4e 0 13%, transparent 13.5%),
-        radial-gradient(circle at 34% 80%, #a4c56f 0 12%, transparent 12.5%),
-        linear-gradient(135deg, #6b3e1d 0%, #c49173 32%, #9cc96f 33%, #6d9845 100%);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-}
-
-.hero-batch-card__code {
-    display: block;
-    font-size: 13px;
+.summary-block--identity h1 {
+    margin: 16px 0 14px;
+    font-size: 24px;
+    line-height: 1.18;
     font-weight: 700;
-    color: #1f2937;
+    letter-spacing: -0.04em;
+    color: #12161c;
 }
 
-.hero-batch-card__main h2 {
-    margin: 6px 0 12px;
-    font-size: 20px;
-    line-height: 1.1;
-    font-weight: 700;
-    color: #111827;
+.summary-block--identity p {
+    margin: 0;
+    font-size: 14px;
+    color: #585f6c;
 }
 
-.hero-batch-card__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 22px;
-    margin-bottom: 14px;
+.journey-track {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    margin-top: 24px;
 }
 
-.hero-batch-card__meta span {
+.journey-step {
     position: relative;
-    font-size: 12px;
-    line-height: 1.4;
-    color: #4b5563;
+    display: grid;
+    justify-items: center;
+    gap: 18px;
 }
 
-.hero-batch-card__meta span::before {
-    content: '';
-    display: inline-block;
+.journey-step__dot {
+    position: relative;
+    z-index: 1;
     width: 12px;
     height: 12px;
-    margin-right: 8px;
-    border: 1.5px solid #374151;
-    border-radius: 3px;
-    vertical-align: -1px;
-}
-
-.active-pill {
-    display: inline-flex;
-    align-items: center;
-    min-height: 28px;
-    padding: 0 12px;
     border-radius: 999px;
-    background: #ffffff;
-    font-size: 12px;
-    font-weight: 600;
-    color: #1f2937;
+    background: #c9d6df;
 }
 
-.active-pill::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    margin-right: 8px;
-    border-radius: 999px;
-    background: #70d7b0;
+.journey-step.is-complete .journey-step__dot {
+    background: #17b47a;
 }
 
-.hero-batch-card__value span,
-.hero-score-card span,
-.season-summary-card__item span,
-.panel-card h3,
-.rail-card h3 {
-    display: block;
+.journey-step__line {
+    position: absolute;
+    top: 5px;
+    left: calc(50% + 6px);
+    width: calc(100% - 12px);
+    height: 2px;
+    background: #dce7e3;
+}
+
+.journey-step strong {
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
+    font-weight: 600;
     text-transform: uppercase;
-    color: #5d6b7d;
+    color: #1f2630;
 }
 
-.hero-batch-card__value strong {
-    display: block;
-    margin-top: 8px;
-    font-size: 25px;
-    line-height: 1;
-    font-weight: 700;
-    color: #0d5b3f;
-}
-
-.hero-batch-card__value p {
-    margin: 8px 0 0;
-    font-size: 12px;
-    line-height: 1.45;
-    color: #6b7280;
-}
-
-.readiness-circle {
+.summary-block--readiness {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 90px;
-    height: 90px;
-    border-radius: 999px;
-    background:
-        conic-gradient(#0d5b3f 0deg 360deg, #d7dfdc 360deg 360deg);
+    gap: 18px;
 }
 
-.readiness-circle > div {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+.mini-ring {
+    --score: 92;
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    background: conic-gradient(#08a06c calc(var(--score) * 1%), #dce8e4 0);
+    display: grid;
+    place-items: center;
+}
+
+.mini-ring__inner {
     width: 74px;
     height: 74px;
     border-radius: inherit;
-    background: #f7f8f8;
+    background: #ffffff;
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #182029;
 }
 
-.readiness-circle strong {
-    font-size: 21px;
-    line-height: 1;
-    font-weight: 700;
-    color: #111827;
+.summary-block__readiness-copy {
+    display: grid;
+    gap: 8px;
 }
 
-.readiness-circle span {
-    margin-top: 4px;
-    font-size: 10px;
-    font-weight: 700;
+.summary-block__readiness-copy strong {
+    font-size: 16px;
+    line-height: 1.2;
+    color: #15202c;
+}
+
+.commercial-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.commercial-grid span,
+.market-meta span,
+.season-stats span,
+.processing-item span,
+.intelligence-bar__head span,
+.document-tile span,
+.advisor-card__footer span {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #5d6b7d;
+    color: #7a818c;
 }
 
-.hero-score-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 28px 24px;
-}
-
-.hero-score-card strong {
-    margin-top: 16px;
-    font-size: 56px;
-    line-height: 1;
-    font-weight: 700;
-    color: #0d5b3f;
-}
-
-.score-pill {
-    display: inline-flex;
-    align-items: center;
-    min-height: 24px;
-    margin-top: 12px;
-    padding: 0 14px;
-    border-radius: 999px;
-    background: #a7f3d0;
-    font-size: 12px;
-    font-weight: 700;
-    color: #0f5132;
-}
-
-.lifecycle-strip {
-    margin-top: 34px;
-}
-
-.lifecycle-strip h2,
-.artifacts-panel h3 {
-    margin: 0 0 22px;
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    text-transform: none;
-    color: #6d7f95;
-}
-
-.lifecycle-strip__track {
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 18px;
-}
-
-.lifecycle-strip__line {
-    position: absolute;
-    top: 18px;
-    left: 18px;
-    right: 18px;
-    height: 2px;
-    background: #dbe2df;
-}
-
-.lifecycle-step {
-    position: relative;
-    padding-top: 0;
-}
-
-.lifecycle-step__icon {
-    position: relative;
-    z-index: 1;
-    display: inline-flex;
-    width: 38px;
-    height: 38px;
-    border: 1px solid #dbe2df;
-    border-radius: 12px;
-    background: #f7f8f8;
-}
-
-.lifecycle-step.is-complete .lifecycle-step__icon,
-.lifecycle-step.is-current .lifecycle-step__icon {
-    background: #0d5b3f;
-    border-color: #0d5b3f;
-    box-shadow: 0 0 0 5px rgba(126, 236, 192, 0.26);
-}
-
-.lifecycle-step.is-complete .lifecycle-step__icon::before,
-.lifecycle-step.is-current .lifecycle-step__icon::before {
-    content: '';
-    width: 14px;
-    height: 8px;
-    margin: auto;
-    border-left: 2px solid #ffffff;
-    border-bottom: 2px solid #ffffff;
-    transform: rotate(-45deg);
-}
-
-.lifecycle-step strong {
+.commercial-grid strong {
     display: block;
-    margin-top: 16px;
-    font-size: 15px;
+    margin-top: 6px;
+    font-size: 28px;
     font-weight: 700;
-    color: #111827;
+    color: #141922;
 }
 
-.lifecycle-step p {
-    margin: 4px 0 0;
-    font-size: 12px;
-    line-height: 1.4;
-    color: #6b7280;
+.commercial-grid .value-accent {
+    color: #0a8c57;
+}
+
+.summary-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding-top: 28px;
+    margin-top: 20px;
+    border-top: 1px solid #edf1f4;
+}
+
+.summary-actions__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 0 22px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    color: #161d25;
+    cursor: pointer;
+}
+
+.action-button :deep(svg),
+.download-report :deep(svg) {
+    font-size: 16px;
+}
+
+.action-button--green {
+    background: #0d5a3d;
+    color: #ffffff;
+}
+
+.action-button--peach {
+    background: #ffd6b0;
+    color: #37210d;
+}
+
+.action-button--neutral {
+    background: #eef2f5;
+    color: #101822;
+}
+
+.download-report {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 500;
+    color: #16212c;
+    cursor: pointer;
+}
+
+.insight-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 30px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 1px solid #c9f0df;
+    background: #f4fff9;
+}
+
+.insight-banner__icon {
+    font-size: 20px;
+    color: #0a9960;
+}
+
+.insight-banner p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #295244;
 }
 
 .profile-grid {
     display: grid;
-    grid-template-columns: minmax(0, 2.15fr) minmax(270px, 1fr);
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.8fr);
     gap: 28px;
-    margin-top: 34px;
+    margin-top: 28px;
 }
 
 .profile-main,
-.profile-rail {
+.profile-side {
     display: flex;
     flex-direction: column;
     gap: 28px;
 }
 
-.season-summary-card {
+.feature-row {
     display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 0.7fr);
-    gap: 18px;
-    padding: 22px 24px;
-    background: #f7f8f8;
-}
-
-.season-summary-card__item strong {
-    display: block;
-    margin-top: 10px;
-    font-size: 16px;
-    font-weight: 700;
-    color: #111827;
-}
-
-.season-summary-card__item p,
-.season-summary-card__item em {
-    margin: 4px 0 0;
-    font-size: 13px;
-    line-height: 1.4;
-    font-style: normal;
-    color: #6b7280;
-}
-
-.panel-card {
-    padding: 0;
-}
-
-.panel-card__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 18px 24px;
-    border-bottom: 1px solid #edf1ef;
-}
-
-.panel-card__head h3,
-.detail-panel h3,
-.artifacts-panel h3,
-.rail-card h3 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    text-transform: none;
-    color: #111827;
-}
-
-.panel-card__head a {
-    font-size: 13px;
-    color: #0d5b3f;
-    text-decoration: none;
-}
-
-.table-wrap {
-    overflow-x: auto;
-}
-
-.source-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.source-table thead th {
-    padding: 16px 24px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    text-align: left;
-    color: #7a8698;
-    background: #fafbfb;
-}
-
-.source-table tbody td {
-    padding: 18px 24px;
-    border-top: 1px solid #eef2f0;
-    font-size: 13px;
-    line-height: 1.5;
-    color: #1f2937;
-}
-
-.source-table__code {
-    font-weight: 700;
-    color: #0f172a;
-    text-decoration: none;
-}
-
-.details-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 28px;
 }
 
-.detail-panel {
-    padding: 24px;
-    background: #f7f8f8;
+.surface-card {
+    padding: 22px 22px 24px;
 }
 
-.detail-list {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    margin-top: 24px;
-}
-
-.detail-list__row {
+.card-head,
+.section-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 18px;
-}
-
-.detail-list__row span {
-    font-size: 13px;
-    color: #374151;
-}
-
-.detail-list__row strong {
-    font-size: 13px;
-    font-weight: 700;
-    color: #0d5b3f;
-}
-
-.quality-list {
-    margin-top: 24px;
-}
-
-.quality-list__row + .quality-list__row {
-    margin-top: 20px;
-}
-
-.quality-list__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 8px;
-}
-
-.quality-list__head span {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #5d6b7d;
-}
-
-.quality-list__head strong {
-    font-size: 12px;
-    font-weight: 700;
-    color: #111827;
-}
-
-.quality-list__bar {
-    height: 5px;
-    border-radius: 999px;
-    background: #e5ebe8;
-    overflow: hidden;
-}
-
-.quality-list__fill {
-    height: 100%;
-    border-radius: inherit;
-    background: #0d5b3f;
-}
-
-.quality-meta {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-    margin-top: 24px;
-}
-
-.quality-meta article {
-    padding: 14px 16px;
-    border-radius: 8px;
-    background: #ffffff;
-}
-
-.quality-meta span {
-    display: block;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #8a97a8;
-}
-
-.quality-meta strong {
-    display: block;
-    margin-top: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #111827;
-}
-
-.quality-meta article:first-child strong {
-    color: #dc2626;
-}
-
-.artifacts-panel h3 {
-    color: #111827;
-}
-
-.artifacts-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 14px;
 }
 
-.artifact-card {
-    display: flex;
-    flex-direction: column;
+.status-pill {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 18px;
-    min-height: 132px;
-    border: 1px solid #edf1ef;
-    border-radius: 12px;
-    background: #ffffff;
+    min-height: 24px;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: #b8f0cf;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #0d563a;
 }
 
-.artifact-card__icon {
-    width: 24px;
-    height: 30px;
-    border: 2px solid #9aa9c0;
+.season-card h2 {
+    margin: 34px 0 6px;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #111720;
+}
+
+.season-card p {
+    margin: 0;
+    font-size: 14px;
+    color: #66707f;
+}
+
+.season-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin: 28px 0 24px;
+}
+
+.season-stats strong {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: #0e6646;
+}
+
+.season-stats div:last-child strong {
+    color: #131922;
+}
+
+.season-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
     border-radius: 4px;
-    position: relative;
+    border: 1px solid #d3dde2;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: #16212b;
 }
 
-.artifact-card__icon::after {
-    content: '';
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    right: 5px;
-    height: 2px;
-    background: #9aa9c0;
-    box-shadow: 0 6px 0 #9aa9c0;
-}
-
-.artifact-card strong {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    text-transform: none;
-    text-align: center;
-    color: #111827;
-}
-
-.profile-rail {
-    gap: 30px;
-}
-
-.rail-card {
-    padding: 24px;
-}
-
-.rail-card--green {
-    background: #0d5b3f;
-    border-color: #0d5b3f;
-    color: #ffffff;
-}
-
-.rail-card__title-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-}
-
-.rail-card__title-row h3 {
-    color: inherit;
-}
-
-.rail-card__title-row h3 .el-icon {
-    color: inherit;
-}
-
-.rail-card__title-row strong {
-    font-size: 25px;
-    line-height: 1;
-    font-weight: 700;
-}
-
-.checklist-list {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+.processing-list {
+    display: grid;
+    gap: 14px;
     margin-top: 24px;
 }
 
-.checklist-item {
+.processing-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
-    font-size: 13px;
-    color: inherit;
 }
 
-.checklist-item__icon {
-    width: 18px;
-    height: 18px;
-    border: 1.5px solid currentColor;
-    border-radius: 999px;
-    position: relative;
+.processing-item__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #f1f4f6;
+    display: grid;
+    place-items: center;
+    color: #0b6642;
     flex-shrink: 0;
 }
 
-.checklist-item__icon::after {
-    content: '';
-    position: absolute;
-    left: 4px;
-    top: 2px;
-    width: 5px;
-    height: 9px;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: rotate(40deg);
+.processing-item strong {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #101720;
 }
 
-.market-intelligence {
+.processing-item span {
+    margin-top: 3px;
+}
+
+.readiness-progress {
+    display: flex;
+    align-items: center;
+    gap: 16px;
     margin-top: 26px;
 }
 
-.market-intelligence > span {
-    display: block;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: #8a97a8;
-}
-
-.market-intelligence > strong {
-    display: block;
-    margin-top: 10px;
-    font-size: 25px;
+.readiness-progress strong {
+    font-size: 40px;
     line-height: 1;
     font-weight: 700;
-    color: #7c5731;
+    color: #0b8458;
 }
 
-.market-intelligence > strong span {
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.market-intelligence__grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 22px;
-}
-
-.market-intelligence__grid article {
-    padding: 12px;
-    border-radius: 8px;
-    background: #f5f7f6;
-}
-
-.market-intelligence__grid span {
-    display: block;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #8a97a8;
-}
-
-.market-intelligence__grid strong {
-    display: block;
-    margin-top: 8px;
-    font-size: 13px;
-    line-height: 1.4;
-    font-weight: 700;
-    color: #111827;
-}
-
-.market-intelligence blockquote {
-    margin: 22px 0 0;
-    padding: 18px;
-    border-radius: 10px;
-    background: #fff1e4;
-    font-size: 13px;
-    line-height: 1.7;
-    color: #442c17;
-}
-
-.timeline-card {
-    background: #f7f8f8;
-}
-
-.timeline-list {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    margin-top: 22px;
-}
-
-.timeline-step {
-    display: grid;
-    grid-template-columns: 18px minmax(0, 1fr);
-    gap: 14px;
-    align-items: flex-start;
-}
-
-.timeline-step__dot {
-    width: 18px;
-    height: 18px;
-    margin-top: 1px;
-    border: 2px solid #cad4cf;
+.readiness-progress__bar {
+    flex: 1;
+    height: 10px;
     border-radius: 999px;
-    background: #ffffff;
+    background: #edf3ef;
+    overflow: hidden;
+}
+
+.readiness-progress__bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #0b9b67;
+}
+
+.readiness-list {
+    display: grid;
+    gap: 18px;
+    margin-top: 30px;
+}
+
+.readiness-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 15px;
+    color: #1b232d;
+}
+
+.readiness-item__dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1.5px solid #c4d0dc;
+    flex-shrink: 0;
+}
+
+.readiness-item.is-complete .readiness-item__dot {
+    border-color: #11a36a;
     position: relative;
 }
 
-.timeline-step.is-complete .timeline-step__dot {
-    border-color: #0d5b3f;
-    background: #0d5b3f;
-}
-
-.timeline-step.is-complete .timeline-step__dot::after {
-    content: '';
-    position: absolute;
-    left: 5px;
-    top: 2px;
-    width: 4px;
-    height: 8px;
-    border-right: 1.5px solid #ffffff;
-    border-bottom: 1.5px solid #ffffff;
-    transform: rotate(40deg);
-}
-
-.timeline-step.is-active .timeline-step__dot {
-    border-color: #0d5b3f;
-}
-
-.timeline-step.is-active .timeline-step__dot::after {
+.readiness-item.is-complete .readiness-item__dot::after {
     content: '';
     position: absolute;
     inset: 3px;
     border-radius: inherit;
-    background: #0d5b3f;
+    background: #11a36a;
 }
 
-.timeline-step strong {
+.section-meta {
+    font-size: 13px;
+    color: #7b8490;
+}
+
+.harvest-table {
+    margin-top: 18px;
+}
+
+.harvest-table__head,
+.harvest-table__row {
+    display: grid;
+    grid-template-columns: 1.1fr 1.8fr 0.9fr 0.6fr 0.7fr;
+    gap: 18px;
+}
+
+.harvest-table__head {
+    padding: 8px 0 14px;
+    border-bottom: 1px solid #edf1f4;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6a727d;
+}
+
+.harvest-table__row {
+    padding: 18px 0;
+    border-bottom: 1px solid #f0f3f6;
+    font-size: 15px;
+    color: #121b25;
+}
+
+.harvest-table__row:last-child {
+    border-bottom: 0;
+}
+
+.table-status {
+    color: #0c8f5a;
+    font-weight: 600;
+}
+
+.quality-panel {
+    padding: 28px 30px 30px;
+    border-radius: 8px;
+    background: #0f5f43;
+    color: #ffffff;
+}
+
+.quality-panel__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.quality-panel__label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #3fd09a;
+}
+
+.quality-panel h2 {
+    margin: 14px 0 0;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+}
+
+.quality-tags {
+    display: flex;
+    gap: 10px;
+}
+
+.quality-tags span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 220, 188, 0.35);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #f0fff7;
+}
+
+.quality-panel__body {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr) minmax(220px, 0.9fr);
+    gap: 36px;
+    margin-top: 30px;
+    align-items: start;
+}
+
+.score-tile {
+    padding: 22px 22px 20px;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.score-tile strong {
+    display: block;
+    font-size: 48px;
+    line-height: 1;
+    font-weight: 700;
+    color: #38dd9d;
+}
+
+.score-tile span {
+    display: block;
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #effff7;
+}
+
+.score-tile__stars {
+    margin-top: 18px;
+    font-size: 14px;
+    letter-spacing: 0.22em;
+    color: #3de1a0;
+}
+
+.intelligence-bars {
+    display: grid;
+    gap: 20px;
+}
+
+.intelligence-bar__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 8px;
+}
+
+.intelligence-bar__head span,
+.intelligence-bar__head strong {
+    color: #f4fff9;
+}
+
+.intelligence-bar__track {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.intelligence-bar__track span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #47dba2;
+}
+
+.sensory-breakdown__label {
+    display: block;
+    margin-bottom: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #3fd09a;
+}
+
+.sensory-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 22px;
+}
+
+.sensory-item strong {
+    display: block;
+    font-size: 22px;
+    margin-bottom: 6px;
+}
+
+.sensory-item p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.market-card,
+.documents-card {
+    padding: 20px 20px 22px;
+}
+
+.market-meta {
+    display: grid;
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.market-meta strong {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+    min-height: 32px;
+    padding: 0 16px;
+    border-radius: 4px;
+    background: #0d5b3d;
+    font-size: 15px;
+    color: #ffffff;
+}
+
+.market-meta div:last-child strong {
+    justify-content: flex-start;
+    padding: 0;
+    min-height: auto;
+    border-radius: 0;
+    background: transparent;
+    color: #0b8b57;
+}
+
+.market-chart {
+    margin-top: 26px;
+    padding: 18px 18px 16px;
+    border-radius: 8px;
+    background: #f2f5f7;
+}
+
+.market-chart__label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #646c78;
+}
+
+.market-chart__bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 86px;
+    margin-top: 18px;
+}
+
+.market-chart__bars span {
+    flex: 1;
+    border-radius: 2px 2px 0 0;
+    background: #7acbb0;
+}
+
+.market-chart__bars span:last-child {
+    background: #119764;
+}
+
+.section-head--tight {
+    align-items: center;
+}
+
+.documents-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 22px;
+}
+
+.document-tile {
+    min-height: 90px;
+    padding: 18px 16px;
+    border-radius: 10px;
+    background: #f5f7f9;
+    display: grid;
+    align-content: center;
+    gap: 8px;
+}
+
+.document-tile__icon {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    color: #0c6242;
+}
+
+.document-tile strong {
     display: block;
     font-size: 14px;
     font-weight: 700;
-    color: #111827;
+    color: #151c24;
+    text-transform: uppercase;
 }
 
-.timeline-step p {
-    margin: 4px 0 0;
-    font-size: 12px;
-    color: #6b7280;
+.document-tile.is-add {
+    place-items: center;
+    border: 1px dashed #ced7dd;
+    background: #fafbfc;
+}
+
+.document-tile__plus {
+    font-size: 34px;
+    line-height: 1;
+    color: #161d24;
+}
+
+.advisor-card {
+    padding: 22px 20px 20px;
+    background: #0b5b3c;
+    color: #ffffff;
+    box-shadow: 0 18px 30px rgba(6, 36, 22, 0.2);
+}
+
+.advisor-card__title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.advisor-card__icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.advisor-card__title strong {
+    font-size: 25px;
+    font-weight: 700;
+}
+
+.advisor-card p {
+    margin: 24px 0 22px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.advisor-card__footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.advisor-card__footer span {
+    color: rgba(226, 255, 243, 0.72);
+}
+
+.advisor-card__footer strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 700;
+}
+
+.advisor-card__footer button {
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 6px;
+    border: 0;
+    background: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0d593d;
+    cursor: pointer;
 }
 
 @media (max-width: 1180px) {
-    .hero-panels,
+    .top-summary-grid,
+    .feature-row,
     .profile-grid,
-    .details-grid {
+    .quality-panel__body {
         grid-template-columns: 1fr;
     }
 
-    .hero-batch-card {
-        grid-template-columns: 88px minmax(0, 1fr);
+    .summary-block {
+        padding: 0 0 24px;
+        border-right: 0;
+        border-bottom: 1px solid #edf1f4;
+        margin-bottom: 24px;
     }
 
-    .hero-batch-card__value,
-    .hero-batch-card__readiness {
-        grid-column: 2;
+    .summary-block:last-child {
+        border-bottom: 0;
+        margin-bottom: 0;
+        padding-bottom: 0;
     }
 
-    .artifacts-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .summary-actions,
+    .advisor-card__footer {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 820px) {
     .batch-profile-shell {
-        padding: 24px 18px 36px;
+        padding: 14px 14px 34px;
     }
 
-    .profile-hero {
-        flex-direction: column;
-    }
-
-    .profile-hero__actions {
-        width: 100%;
-        flex-wrap: wrap;
-        padding-top: 0;
-    }
-
-    .season-summary-card {
+    .summary-actions__group,
+    .documents-grid,
+    .sensory-grid,
+    .commercial-grid,
+    .season-stats,
+    .harvest-table__head,
+    .harvest-table__row {
         grid-template-columns: 1fr;
     }
 
-    .source-table thead {
+    .summary-actions__group {
+        display: grid;
+        width: 100%;
+    }
+
+    .action-button,
+    .download-report,
+    .season-link,
+    .advisor-card__footer button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .harvest-table__head {
         display: none;
     }
 
-    .source-table,
-    .source-table tbody,
-    .source-table tr,
-    .source-table td {
-        display: block;
-        width: 100%;
-    }
-
-    .source-table tbody td {
-        padding: 8px 24px;
-        border-top: 0;
-    }
-
-    .source-table tbody tr {
-        padding: 14px 0;
-        border-top: 1px solid #eef2f0;
-    }
-}
-
-@media (max-width: 640px) {
-    .profile-hero__copy h1 {
-        font-size: 23px;
-    }
-
-    .profile-hero__copy p {
-        font-size: 14px;
-    }
-
-    .hero-batch-card {
-        grid-template-columns: 1fr;
-        padding: 22px;
-    }
-
-    .hero-batch-card__image {
-        width: 100%;
-        max-width: 96px;
-    }
-
-    .hero-batch-card__value,
-    .hero-batch-card__readiness {
-        grid-column: auto;
-    }
-
-    .artifacts-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .market-intelligence__grid {
-        grid-template-columns: 1fr;
+    .harvest-table__row {
+        padding: 16px 0;
+        gap: 8px;
     }
 }
 </style>
