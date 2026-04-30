@@ -1,13 +1,10 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
 import {
     Bell,
-    ChatLineRound,
     Checked,
     Connection,
     DataAnalysis,
     Document,
-    Grid,
     InfoFilled,
     List,
     Money,
@@ -17,1695 +14,1643 @@ import {
     ShoppingCartFull,
     ShoppingTrolley,
     TrendCharts,
-    UserFilled,
     WarnTriangleFilled,
 } from '@element-plus/icons-vue';
 import OuterLayout from '@/Layouts/OuterLayout.vue';
 
-const sideLinks = [
-    { label: 'Terminal', icon: Grid, active: true, href: '/live-market' },
-    { label: 'Portfolio', icon: Document, active: false, href: '/origins' },
-    { label: 'Alerts', icon: Bell, active: false, href: '/news' },
+const topActions = [
+    { label: 'Buy Coffee', icon: ShoppingCartFull, tone: 'green' },
+    { label: 'Sell Coffee', icon: Money, tone: 'peach' },
+    { label: 'Set Alert', icon: Bell, tone: 'ghost' },
+    { label: 'Ask Advisor', icon: Opportunity, tone: 'ghost' },
+];
+
+const filters = [
+    'Coffee Type',
+    'Origin',
+    'Quality Score',
+];
+
+const filterPills = [
+    { label: 'Tokenised', active: true },
+    { label: 'Export Ready', active: false },
 ];
 
 const tickerItems = [
-    { name: 'Brazil Arabica', price: '$224.15', change: '▼ 0.8%', tone: 'red' },
-    { name: 'Vietnam Robusta', price: '$168.90', change: '▲ 1.2%', tone: 'green' },
-    { name: 'Ethiopia Sidamo', price: '$294.00', change: '▲ 4.1%', tone: 'green' },
-    { name: 'Colombia Excelso', price: '$245.50', change: '▼ 1.5%', tone: 'red' },
-    { name: 'Uganda Robusta', price: '$184.20', change: '▲ 3.2%', tone: 'green' },
+    { name: 'Uganda Robusta', change: '↑ 4.2%', price: '$1.92' },
+    { name: 'Rwenzori Arabica', change: '↑ 5.0%', price: '$4.15' },
+    { name: 'Brazil Arabica', change: '↓ 1.1%', price: '$3.88' },
+    { name: 'Vietnam Robusta', change: '↑ 2.8%', price: '$1.75' },
+    { name: 'Kenya AA', change: '↑ 0.5%', price: '$6.20' },
 ];
 
-const topStats = [
-    { label: 'Market Status', value: 'Bullish', tone: 'green', helper: '↗' },
-    { label: 'Avg Price (MT)', value: '$2,412.00', tone: 'default' },
-    { label: '24H Volume', value: '14.2k Lots', tone: 'default' },
-    { label: 'Volatility', value: 'Low (2.4%)', tone: 'red' },
-    { label: 'Top Active Origin', value: 'Robusta G1', tone: 'default', badge: 'Uganda' },
-    { label: 'Highest Demand', value: 'UAE (Dubai)', tone: 'default' },
+const statCards = [
+    { label: 'Market Status', value: 'Bullish', accent: 'trend' },
+    { label: 'Avg. Price', value: '$2.85', muted: ' ' },
+    { label: '24H Volume', value: '1.2M kg' },
+    { label: 'Volatility', value: 'Medium', accent: 'soft' },
+    { label: 'Peak Demand', value: 'UAE' },
+    { label: 'Export Lots', value: '342' },
 ];
 
-const watchlist = [
-    { code: 'UG-ROB-G1', name: 'Uganda Robusta', price: '$1,840', change: '+3.2%', tone: 'green' },
-    { code: 'BR-ARA-NY', name: 'Brazil Arabica', price: '$2,210', change: '-0.4%', tone: 'red' },
-    { code: 'VN-ROB-13', name: 'Vietnam Screen 13', price: '$1,695', change: '+1.8%', tone: 'green' },
+const watchlistItems = [
+    { name: 'Uganda R1', type: 'Robusta', price: '$1.92', move: '+4.2%', tone: 'up' },
+    { name: 'Rwenz. Arabica', type: 'Specialty', price: '$4.15', move: '+5.0%', tone: 'up' },
+    { name: 'Brazil Santos', type: 'Arabica', price: '$3.88', move: '-1.1%', tone: 'down' },
 ];
 
-const gainers = [
-    { rank: '01', name: 'Ethiopia Yirgacheffe', gain: '+8.4%', width: '78%' },
-    { rank: '02', name: 'Kenya AA Plus', gain: '+6.1%', width: '58%' },
+const demandOrigins = [
+    { code: 'UG', name: 'Uganda', level: '92%' },
+    { code: 'ET', name: 'Ethiopia', level: '85%' },
 ];
 
-const alertCards = [
+const chartTabs = ['Price', 'Volume', 'Demand', 'Forecast'];
+
+const chartCandles = [
+    { x: 4, h: 42, dir: 'up' }, { x: 7, h: 68, dir: 'down' }, { x: 10, h: 55, dir: 'up' },
+    { x: 13, h: 82, dir: 'down' }, { x: 16, h: 47, dir: 'up' }, { x: 19, h: 71, dir: 'down' },
+    { x: 22, h: 53, dir: 'up' }, { x: 25, h: 88, dir: 'down' }, { x: 28, h: 36, dir: 'up' },
+    { x: 31, h: 64, dir: 'down' }, { x: 34, h: 48, dir: 'up' }, { x: 37, h: 91, dir: 'down' },
+    { x: 40, h: 58, dir: 'up' }, { x: 43, h: 44, dir: 'down' }, { x: 46, h: 76, dir: 'up' },
+    { x: 49, h: 52, dir: 'down' }, { x: 52, h: 66, dir: 'up' }, { x: 55, h: 84, dir: 'down' },
+    { x: 58, h: 57, dir: 'up' }, { x: 61, h: 72, dir: 'down' }, { x: 64, h: 49, dir: 'up' },
+    { x: 67, h: 62, dir: 'down' }, { x: 70, h: 78, dir: 'up' }, { x: 73, h: 50, dir: 'down' },
+    { x: 76, h: 69, dir: 'up' }, { x: 79, h: 60, dir: 'down' }, { x: 82, h: 74, dir: 'up' },
+    { x: 85, h: 46, dir: 'down' },
+];
+
+const chartVolumes = [18, 30, 22, 46, 28, 50, 32, 56, 24, 38, 21, 62];
+
+const liveLots = [
     {
-        title: 'Weather Alert: Brazil',
-        body: 'Frost predicted in Minas Gerais region.',
-        tone: 'red',
-        icon: WarnTriangleFilled,
+        name: 'Mount Elgon AA',
+        origin: 'Uganda',
+        type: 'Arabica',
+        price: '$5.20',
+        volume: '4,200',
+        status: 'Live',
+        statusTone: 'live',
+        imageTone: 'brown',
     },
     {
-        title: 'Policy Update: EUDR',
-        body: 'New deforestation compliance timeline.',
-        tone: 'amber',
-        icon: InfoFilled,
+        name: 'Kyoga Robusta R1',
+        origin: 'Uganda',
+        type: 'Robusta',
+        price: '$1.88',
+        volume: '12,500',
+        status: 'Pending',
+        statusTone: 'pending',
+        imageTone: 'olive',
     },
 ];
 
-const chartBars = [
-    { height: '36%', tone: 'soft' },
-    { height: '51%', tone: 'soft' },
-    { height: '41%', tone: 'red' },
-    { height: '56%', tone: 'soft' },
-    { height: '72%', tone: 'deep' },
-    { height: '61%', tone: 'deep' },
-    { height: '82%', tone: 'dark' },
+const orderBookAsks = [
+    { price: '$2.88', qty: '400', total: '1,152', tone: 'ask', width: '68%' },
+    { price: '$2.87', qty: '820', total: '2,353', tone: 'ask', width: '84%' },
 ];
 
-const lotsFeed = [
-    { code: 'UG', name: 'Rwenzori Natural', score: '86.5', price: '$2,840', change: '+1.2%', tone: 'green' },
-    { code: 'BR', name: 'Santos Screen 17', score: '82.0', price: '$2,115', change: '-0.5%', tone: 'red' },
-    { code: 'VN', name: 'Lam Dong Robusta', score: '78.5', price: '$1,640', change: '+0.8%', tone: 'green' },
+const orderBookBids = [
+    { price: '$2.84', qty: '1,250', total: '3,550', tone: 'bid', width: '93%' },
+    { price: '$2.83', qty: '300', total: '849', tone: 'bid', width: '42%' },
 ];
 
-const corridorRows = [
-    { route: 'UG → UAE', state: 'Opportunity', tone: 'green' },
-    { route: 'BR → DE', state: 'Stable', tone: 'slate' },
+const regionalTags = [
+    { label: 'UAE', note: 'Extreme', tone: 'green' },
+    { label: 'DE', note: 'High', tone: 'dark' },
+    { label: 'USA', note: 'Moderate', tone: 'peach' },
 ];
 
-const executionRows = [
-    { side: 'BUY', contract: 'UG-ROB-G1', volume: '14.5 MT', total: '$26,680.00', time: '12:04:15', tone: 'green' },
-    { side: 'SELL', contract: 'BR-ARA-NY', volume: '5.0 MT', total: '$11,050.00', time: '12:03:50', tone: 'red' },
-    { side: 'BUY', contract: 'VN-ROB-13', volume: '20.0 MT', total: '$33,800.00', time: '12:02:11', tone: 'green' },
+const regionalRoutes = [
+    { route: 'UG Robusta', market: 'UAE', roi: '+12% ROI' },
+    { route: 'RW Arabica', market: 'GER', roi: '+8% ROI' },
+];
+
+const riskToggles = [
+    { label: 'Price Spike Alert (> $3.00)', enabled: true },
+    { label: 'Export Policy Changes', enabled: false },
+    { label: 'Major Volume Demand (>10 kg)', enabled: true },
 ];
 </script>
 
 <template>
-    <OuterLayout title="Live Market">
-        <section class="live-page">
-            <div class="live-shell">
+    <OuterLayout title="Live Coffee Market">
+        <section class="terminal-page">
+            <div class="terminal-shell">
+                <section class="terminal-hero">
+                    <div class="terminal-hero__head">
+                        <div>
+                            <h1>Live Coffee Market</h1>
+                            <p>Real-time prices, demand, supply, and verified coffee lots</p>
+                        </div>
 
-                <div class="live-layout">
-                    <aside class="live-sidebar">
-                        <div class="live-profile">
+                        <div class="terminal-actions">
+                            <button
+                                v-for="item in topActions"
+                                :key="item.label"
+                                type="button"
+                                class="terminal-action"
+                                :class="`is-${item.tone}`"
+                            >
+                                <el-icon><component :is="item.icon" /></el-icon>
+                                <span>{{ item.label }}</span>
+                            </button>
+                        </div>
+                    </div>
 
-                            <div>
-                                <strong>Trader Terminal</strong>
-                                <span>Live Market Active</span>
+                    <div class="terminal-filters">
+                        <span class="terminal-filter-label">Filters:</span>
+
+                        <button
+                            v-for="item in filters"
+                            :key="item"
+                            type="button"
+                            class="terminal-filter-chip"
+                        >
+                            {{ item }}<sup>*</sup>
+                        </button>
+
+                        <button
+                            v-for="item in filterPills"
+                            :key="item.label"
+                            type="button"
+                            class="terminal-filter-pill"
+                            :class="{ 'is-active': item.active }"
+                        >
+                            <el-icon v-if="item.active"><Checked /></el-icon>
+                            <span>{{ item.label }}</span>
+                        </button>
+
+                        <div class="terminal-range-switch">
+                            <button type="button" class="is-active">1H</button>
+                            <button type="button">24H</button>
+                            <button type="button">7D</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="terminal-ticker">
+                    <div v-for="item in tickerItems" :key="item.name" class="terminal-ticker__item">
+                        <span>{{ item.name }}</span>
+                        <strong>{{ item.change }}</strong>
+                        <em>{{ item.price }}</em>
+                    </div>
+                </section>
+
+                <section class="terminal-stats">
+                    <article v-for="item in statCards" :key="item.label" class="terminal-stat-card">
+                        <span>{{ item.label }}</span>
+                        <div class="terminal-stat-card__value" :class="{ 'is-soft': item.accent === 'soft' }">
+                            <strong>{{ item.value }}</strong>
+                            <i v-if="item.accent === 'trend'">↗</i>
+                            <small v-if="item.muted"></small>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="terminal-main-grid">
+                    <div class="terminal-left-rail">
+                        <article class="terminal-card terminal-watchlist">
+                            <div class="terminal-card__head">
+                                <h2>My Watchlist</h2>
+                                <button type="button">⋮</button>
+                            </div>
+
+                            <div class="watchlist-list">
+                                <div v-for="item in watchlistItems" :key="item.name" class="watchlist-row">
+                                    <div>
+                                        <strong>{{ item.name }}</strong>
+                                        <span>{{ item.type }}</span>
+                                    </div>
+                                    <div class="watchlist-row__price">
+                                        <strong>{{ item.price }}</strong>
+                                        <em :class="`is-${item.tone}`">{{ item.move }}</em>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="terminal-card terminal-demand-card">
+                            <h2>High Demand Origins</h2>
+
+                            <div class="demand-origin-list">
+                                <div v-for="item in demandOrigins" :key="item.code" class="demand-origin-row">
+                                    <span class="demand-origin-row__code">{{ item.code }}</span>
+                                    <div class="demand-origin-row__body">
+                                        <div class="demand-origin-row__head">
+                                            <strong>{{ item.name }}</strong>
+                                            <span>{{ item.level }}</span>
+                                        </div>
+                                        <div class="demand-origin-row__track">
+                                            <span :style="{ width: item.level }"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <article class="terminal-card terminal-chart-card">
+                        <div class="terminal-card__head terminal-card__head--chart">
+                            <div class="chart-segments">
+                                <button
+                                    v-for="(item, index) in chartTabs"
+                                    :key="item"
+                                    type="button"
+                                    :class="{ 'is-active': index === 0 }"
+                                >
+                                    {{ item }}
+                                </button>
+                            </div>
+
+                            <div class="chart-head-tools">
+                                <button type="button"><TrendCharts /></button>
+                                <button type="button"><Setting /></button>
                             </div>
                         </div>
 
-                        <nav class="live-side-nav">
-                            <Link
-                                v-for="item in sideLinks"
-                                :key="item.label"
-                                :href="item.href"
-                                class="live-side-link"
-                                :class="{ 'is-active': item.active }"
-                            >
-                                <component :is="item.icon" />
-                                <span>{{ item.label }}</span>
-                            </Link>
-                        </nav>
-
-                        <button type="button" class="live-deposit-btn">Quick Deposit</button>
-
-                       
-                    </aside>
-
-                    <main class="live-main">
-                        <section class="live-titlebar">
-                            <div>
-                                <h1>Live Coffee Market</h1>
-                                <p>Real-time coffee prices, demand, supply, and trade signals</p>
+                        <div class="chart-surface">
+                            <div class="chart-grid-lines">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
                             </div>
 
-                            <div class="live-title-actions">
-                                <div class="live-segmented">
-                                    <button type="button" class="is-active">Price</button>
-                                    <button type="button">Volume</button>
-                                    <button type="button">Demand</button>
-                                </div>
-                                <button type="button" class="live-action-btn is-buy">
-                                    <ShoppingCartFull />
-                                    <span>Buy Coffee</span>
-                                </button>
-                                <button type="button" class="live-action-btn">
-                                    <Money />
-                                    <span>Sell Coffee</span>
-                                </button>
-                                <button type="button" class="live-action-btn is-advisor">
-                                    <ChatLineRound />
-                                    <span>Ask Advisor</span>
-                                </button>
+                            <div class="chart-waves">
+                                <span class="wave wave-a"></span>
+                                <span class="wave wave-b"></span>
+                                <span class="wave wave-c"></span>
                             </div>
-                        </section>
 
-
-
-                        <section class="live-ticker-bar">
-                            <div v-for="item in tickerItems" :key="item.name" class="live-ticker-item">
-                                <span>{{ item.name }}</span>
-                                <strong>{{ item.price }}</strong>
-                                <em :class="`is-${item.tone}`">{{ item.change }}</em>
-                            </div>
-                        </section>
-
-                        <section class="live-stats-row">
-                            <article v-for="item in topStats" :key="item.label" class="live-stat-card">
-                                <span>{{ item.label }}</span>
-                                <div class="live-stat-value" :class="`is-${item.tone}`">
-                                    <small v-if="item.badge" class="live-origin-badge">{{ item.badge }}</small>
-                                    <strong>{{ item.value }}</strong>
-                                    <em v-if="item.helper">{{ item.helper }}</em>
-                                </div>
-                            </article>
-                        </section>
-
-                        <section class="live-main-grid">
-                            <div class="live-left-stack">
-                                <article class="live-card live-watchlist-card">
-                                    <div class="live-card-head">
-                                        <h2>Market Watchlist</h2>
-                                        <span>⋮</span>
-                                    </div>
-                                    <div class="live-watchlist">
-                                        <div v-for="item in watchlist" :key="item.code" class="live-watch-row">
-                                            <div class="live-watch-meta">
-                                                <i :class="`is-${item.tone}`"></i>
-                                                <div>
-                                                    <strong>{{ item.code }}</strong>
-                                                    <span>{{ item.name }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="live-watch-price">
-                                                <strong>{{ item.price }}</strong>
-                                                <span :class="`is-${item.tone}`">{{ item.change }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="button" class="live-link-btn">View All Assets</button>
-                                </article>
-
-                                <article class="live-card live-gainers-card">
-                                    <h2>Top Gainers</h2>
-                                    <div class="live-gainers-list">
-                                        <div v-for="item in gainers" :key="item.rank" class="live-gainer-row">
-                                            <div class="live-gainer-name">
-                                                <span>{{ item.rank }}</span>
-                                                <strong>{{ item.name }}</strong>
-                                            </div>
-                                            <div class="live-gainer-side">
-                                                <em>{{ item.gain }}</em>
-                                                <div class="live-mini-track">
-                                                    <div :style="{ width: item.width }"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </article>
-
-                                <article
-                                    v-for="card in alertCards"
-                                    :key="card.title"
-                                    class="live-alert-card"
-                                    :class="`is-${card.tone}`"
+                            <div class="chart-candles">
+                                <div
+                                    v-for="(item, index) in chartCandles"
+                                    :key="index"
+                                    class="chart-candle"
+                                    :class="`is-${item.dir}`"
+                                    :style="{ left: `${item.x}%`, height: `${item.h}%` }"
                                 >
-                                    <component :is="card.icon" />
-                                    <div>
-                                        <strong>{{ card.title }}</strong>
-                                        <p>{{ card.body }}</p>
-                                    </div>
-                                </article>
+                                    <span></span>
+                                </div>
                             </div>
 
-                            <div class="live-center-stack">
-                                <article class="live-card live-chart-card">
-                                    <div class="live-card-head live-chart-head">
-                                        <div>
-                                            <h2>Uganda Robusta G1</h2>
-                                            <div class="live-chart-price-row">
-                                                <strong>$1,840.00</strong>
-                                                <span class="live-up-pill">+3.24%</span>
-                                                <DataAnalysis />
-                                                <TrendCharts />
-                                                <Connection />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="live-chart-surface">
-                                        <div class="live-chart-legend">
-                                            <span><i class="is-dark"></i>Live Price Move</span>
-                                            <span><i class="is-light"></i>Market Forecast</span>
-                                        </div>
-                                        <div class="live-chart-bars">
-                                            <div
-                                                v-for="(bar, index) in chartBars"
-                                                :key="index"
-                                                class="live-chart-bar"
-                                                :class="`is-${bar.tone}`"
-                                                :style="{ height: bar.height }"
-                                            ></div>
-                                        </div>
-                                    </div>
-                                </article>
-
-                                <article class="live-card live-feed-card">
-                                    <div class="live-card-head">
-                                        <h2>Live Lots Feed</h2>
-                                        <div class="live-feed-tags">
-                                            <span>SCAA 85+</span>
-                                            <span>Direct</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="live-feed-table">
-                                        <div class="live-feed-head">
-                                            <span>Origin / Grade</span>
-                                            <span>SCAA Score</span>
-                                            <span>Price/MT</span>
-                                            <span>24H Chg</span>
-                                        </div>
-                                        <div v-for="row in lotsFeed" :key="row.name" class="live-feed-row">
-                                            <div class="live-feed-origin">
-                                                <b>{{ row.code }}</b>
-                                                <div>
-                                                    <strong>{{ row.name }}</strong>
-                                                </div>
-                                            </div>
-                                            <span class="live-score-pill">{{ row.score }}</span>
-                                            <strong>{{ row.price }}</strong>
-                                            <em :class="`is-${row.tone}`">{{ row.change }}</em>
-                                        </div>
-                                    </div>
-                                </article>
+                            <div class="chart-volumes">
+                                <span
+                                    v-for="(item, index) in chartVolumes"
+                                    :key="index"
+                                    :style="{ height: `${item}%` }"
+                                ></span>
                             </div>
 
-                            <aside class="live-right-stack">
-                                <article class="live-signal-card">
-                                    <div class="live-signal-head">
-                                        <div>
-                                            <span>✦</span>
-                                            <strong>AI Trade Signal</strong>
-                                        </div>
-                                    </div>
-                                    <div class="live-signal-body">
-                                        <small>Recommended</small>
-                                        <h2>Long Position: Uganda Robusta</h2>
-                                        <div class="live-confidence">88% <span>Confidence</span></div>
-                                        <div class="live-signal-stats">
-                                            <div>
-                                                <span>Risk Level</span>
-                                                <strong>Low-Mid</strong>
-                                            </div>
-                                            <div>
-                                                <span>Target Profit</span>
-                                                <strong>+4.5%</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </article>
+                            <div class="chart-watermark">
+                                <strong>LIVE</strong>
+                                <span>ANALYTICS</span>
+                                <p>Real-time forecasting engine active</p>
+                            </div>
+                        </div>
+                    </article>
 
-                                <article class="live-chat-card">
-                                    <div class="live-chat-head">
-                                        <div class="live-chat-title">
-                                            <div class="live-chat-avatar">
-                                                <ChatLineRound />
-                                            </div>
-                                            <div>
-                                                <strong>Bean Origin Advisor</strong>
-                                                <span>Online • Market Analysis</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                    <div class="terminal-right-rail">
+                        <article class="trade-signal-card">
+                            <div class="trade-signal-card__eyebrow">
+                                <span>✦</span>
+                                <strong>AI Trade Signal</strong>
+                            </div>
 
-                                    <div class="live-chat-body">
-                                        <div class="live-chat-bubble">
-                                            Good morning! I see you're looking at Uganda Robusta. Prices have surged 3%
-                                            following the logistics report from Mombasa port. Would you like a detailed
-                                            forecast?
-                                        </div>
-                                        <div class="live-chat-bubble is-user">
-                                            Show me the export corridor risk for the next 48 hours.
-                                        </div>
-                                    </div>
-
-                                    <div class="live-chat-input">
-                                        <input type="text" placeholder="Ask market advice..." />
-                                        <button type="button">
-                                            <Promotion />
-                                        </button>
-                                    </div>
-                                </article>
-
-                                <button type="button" class="live-buyorder-btn">Place Buy Order</button>
-                            </aside>
-                        </section>
-
-                        <section class="live-bottom-grid">
-                            <article class="live-card live-heatmap-card">
-                                <h2>Demand Heatmap</h2>
-                                <div class="live-heatmap-surface">
-                                    <div class="live-heatmap-point"></div>
-                                    <div class="live-heatmap-callout">
-                                        <strong>UAE Demand Spiking</strong>
-                                        <p>UAE market demand for specialty Robusta increased 14% this week.</p>
-                                    </div>
+                            <div class="trade-signal-card__body">
+                                <h2>Strong<br>BUY</h2>
+                                <div class="trade-signal-card__badge">
+                                    <TrendCharts />
                                 </div>
-                            </article>
+                            </div>
 
-                            <article class="live-card live-corridors-card">
-                                <h2>Trade Corridors</h2>
-                                <div class="live-corridor-list">
-                                    <div v-for="item in corridorRows" :key="item.route" class="live-corridor-row">
-                                        <strong>{{ item.route }}</strong>
-                                        <span :class="`is-${item.tone}`">{{ item.state }}</span>
-                                    </div>
+                            <span class="trade-signal-card__meta">92% Confidence • UAE Market</span>
+                            <p>Demand from UAE roasting hubs expected to spike by 15% in next 48h. Secure lots now.</p>
+                        </article>
+
+                        <article class="terminal-card quick-trade-card">
+                            <h2>Quick Trade Box</h2>
+
+                            <div class="quick-trade-switch">
+                                <button type="button" class="is-active">Buy</button>
+                                <button type="button">Sell</button>
+                            </div>
+
+                            <label>Quantity (kg)</label>
+                            <div class="quick-trade-input">1000</div>
+
+                            <label>Limit Price ($/kg)</label>
+                            <div class="quick-trade-input">2.85</div>
+
+                            <div class="quick-trade-total">
+                                <span>Total Est.</span>
+                                <strong>$2,850.00</strong>
+                            </div>
+
+                            <button type="button" class="quick-trade-submit">Confirm Order</button>
+
+                            <button type="button" class="quick-trade-fab">
+                                <el-icon><ShoppingTrolley /></el-icon>
+                            </button>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="terminal-card lots-card">
+                    <div class="terminal-card__head terminal-card__head--table">
+                        <h2>Live Coffee Lots</h2>
+                        <button type="button" class="table-link">View Full Inventory →</button>
+                    </div>
+
+                    <div class="lots-table">
+                        <div class="lots-table__head">
+                            <span>Lot Name</span>
+                            <span>Origin</span>
+                            <span>Type</span>
+                            <span>Price</span>
+                            <span>Vol (kg)</span>
+                            <span>Status</span>
+                            <span>Certifications</span>
+                            <span>Action</span>
+                        </div>
+
+                        <div v-for="item in liveLots" :key="item.name" class="lots-table__row">
+                            <div class="lots-table__lot">
+                                <span class="lot-thumb" :class="`is-${item.imageTone}`"></span>
+                                <strong>{{ item.name }}</strong>
+                            </div>
+                            <span>{{ item.origin }}</span>
+                            <span class="type-pill" :class="`is-${item.type.toLowerCase()}`">{{ item.type }}</span>
+                            <strong>{{ item.price }}</strong>
+                            <span>{{ item.volume }}</span>
+                            <span class="status-pill" :class="`is-${item.statusTone}`">{{ item.status }}</span>
+                            <span class="cert-icons">
+                                <Checked />
+                                <Document />
+                                <Connection />
+                            </span>
+                            <button type="button" class="trade-chip">TRADE</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="terminal-bottom-grid">
+                    <article class="terminal-card terminal-bottom-card">
+                        <h2>Order Book</h2>
+
+                        <div class="order-book-head">
+                            <span>Price</span>
+                            <span>Qty</span>
+                            <span>Total</span>
+                        </div>
+
+                        <div v-for="item in orderBookAsks" :key="`${item.price}-${item.qty}`" class="order-book-row is-ask">
+                            <span>{{ item.price }}</span>
+                            <div class="order-book-row__bar"><i :style="{ width: item.width }"></i></div>
+                            <span>{{ item.qty }}</span>
+                            <span>{{ item.total }}</span>
+                        </div>
+
+                        <div class="order-book-spread">SPREAD: 0.01 (0.35%)</div>
+
+                        <div v-for="item in orderBookBids" :key="`${item.price}-${item.qty}`" class="order-book-row is-bid">
+                            <span>{{ item.price }}</span>
+                            <div class="order-book-row__bar"><i :style="{ width: item.width }"></i></div>
+                            <span>{{ item.qty }}</span>
+                            <span>{{ item.total }}</span>
+                        </div>
+                    </article>
+
+                    <article class="terminal-card terminal-bottom-card">
+                        <h2>Regional Analytics</h2>
+
+                        <span class="bottom-card-label">Demand Heatmap</span>
+                        <div class="regional-tags">
+                            <div v-for="item in regionalTags" :key="item.label" class="regional-tag" :class="`is-${item.tone}`">
+                                <strong>{{ item.label }}</strong>
+                                <span>{{ item.note }}</span>
+                            </div>
+                        </div>
+
+                        <span class="bottom-card-label">Live Opportunities</span>
+                        <div class="regional-opps">
+                            <div v-for="item in regionalRoutes" :key="item.route" class="regional-opp-row">
+                                <div>
+                                    <strong>{{ item.route }}</strong>
+                                    <span>→</span>
+                                    <strong>{{ item.market }}</strong>
                                 </div>
-                            </article>
+                                <em>{{ item.roi }}</em>
+                            </div>
+                        </div>
+                    </article>
 
-                            <article class="live-card live-recent-card">
-                                <h2>Recent Executions</h2>
-                                <div class="live-recent-table">
-                                    <div v-for="item in executionRows" :key="`${item.side}-${item.time}`" class="live-recent-row">
-                                        <span :class="`is-${item.tone}`">{{ item.side }}</span>
-                                        <strong>{{ item.contract }}</strong>
-                                        <em>{{ item.volume }}</em>
-                                        <b>{{ item.total }}</b>
-                                        <small>{{ item.time }}</small>
-                                    </div>
-                                </div>
-                            </article>
-                        </section>
-                    </main>
-                </div>
+                    <article class="terminal-card terminal-bottom-card risk-card">
+                        <div class="terminal-card__head">
+                            <h2>Risks &amp; Smart Alerts</h2>
+                            <button type="button">⌁</button>
+                        </div>
 
-                <button type="button" class="live-floating-fab">
-                    <ShoppingTrolley />
-                </button>
+                        <div class="risk-banner">
+                            <el-icon><WarnTriangleFilled /></el-icon>
+                            <div>
+                                <strong>Weather Risk: High</strong>
+                                <p>El Niño effects expected in East Africa. Supply may tighten.</p>
+                            </div>
+                        </div>
+
+                        <div class="risk-toggles">
+                            <div v-for="item in riskToggles" :key="item.label" class="risk-toggle-row">
+                                <span>{{ item.label }}</span>
+                                <button type="button" class="risk-toggle" :class="{ 'is-on': item.enabled }">
+                                    <i></i>
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                </section>
             </div>
         </section>
     </OuterLayout>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-
-.live-page {
-    background: #eef3f7;
-    color: #122132;
-    font-family: 'Manrope', sans-serif;
+.terminal-page {
     min-height: 100vh;
+    background: #ffffff;
+    color: #16202b;
+    font-family: 'Manrope', sans-serif;
 }
 
-.live-shell {
-    width: 100%;
+.terminal-shell {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 24px 28px 42px;
 }
 
-.live-header {
-    align-items: center;
-    background: #fff;
-    border-bottom: 1px solid #e6edf3;
+.terminal-hero__head {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
-    min-height: 64px;
-    padding: 0 1.5rem;
+    gap: 24px;
 }
 
-.live-brand-row {
-    align-items: center;
-    display: flex;
-    gap: 2rem;
-}
-
-.live-brand {
-    color: #0d5a41;
-    font-size: 1rem;
-    font-weight: 700;
-}
-
-.live-top-nav {
-    display: flex;
-    gap: 1.45rem;
-}
-
-.live-top-link {
-    border-bottom: 2px solid transparent;
-    color: #55677c;
-    font-size: 0.94rem;
-    padding: 1.2rem 0;
-    text-decoration: none;
-}
-
-.live-top-link.is-active {
-    border-bottom-color: #0d5a41;
-    color: #111827;
-    font-weight: 600;
-}
-
-.live-header-tools {
-    align-items: center;
-    display: flex;
-    gap: 0.85rem;
-}
-
-.live-search {
-    align-items: center;
-    background: #f5f7fa;
-    border-radius: 0.5rem;
-    color: #98a2b3;
-    display: inline-flex;
-    gap: 0.6rem;
-    min-width: 305px;
-    padding: 0.85rem 0.95rem;
-}
-
-.live-search :deep(svg),
-.live-side-link :deep(svg),
-.live-icon-btn :deep(svg),
-.live-chat-avatar :deep(svg),
-.live-action-btn :deep(svg),
-.live-buyorder-btn :deep(svg),
-.live-floating-fab :deep(svg),
-.live-alert-card :deep(svg) {
-    height: 1rem;
-    width: 1rem;
-}
-
-.live-execute-btn {
-    background: #0d5a41;
-    border: 0;
-    border-radius: 0.45rem;
-    color: #fff;
-    font-size: 0.92rem;
-    font-weight: 700;
-    min-height: 46px;
-    padding: 0 1.35rem;
-}
-
-.live-icon-btn {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    color: #42556b;
-    display: inline-flex;
-    height: 2.25rem;
-    justify-content: center;
-    width: 2.25rem;
-}
-
-.live-layout {
-    display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-}
-
-.live-sidebar {
-    background: linear-gradient(180deg, #fbfcfd 0%, #f5f8fb 100%);
-    border-right: 1px solid #e6edf3;
-    min-height: calc(100vh - 64px);
-    padding: 1rem 1rem 1.2rem;
-}
-
-.live-profile {
-    align-items: center;
-    display: flex;
-    gap: 0.9rem;
-    margin-bottom: 1.6rem;
-    padding: 0 0.2rem;
-}
-
-.live-avatar {
-    align-items: center;
-    background: linear-gradient(180deg, #d8dde3, #b8c2cd);
-    border-radius: 999px;
-    color: #0f172a;
-    display: inline-flex;
-    flex: 0 0 auto;
-    height: 2.75rem;
-    justify-content: center;
-    width: 2.75rem;
-}
-
-.live-profile strong {
-    color: #152436;
-    display: block;
-    font-size: 0.95rem;
-    font-weight: 700;
-}
-
-.live-profile span {
-    color: #728397;
-    display: block;
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    margin-top: 0.18rem;
-    text-transform: uppercase;
-}
-
-.live-side-nav {
-    display: grid;
-    gap: 0.55rem;
-}
-
-.live-side-link {
-    align-items: center;
-    background: transparent;
-    border-radius: 0.75rem;
-    color: #52657a;
-    display: flex;
-    gap: 0.85rem;
-    min-height: 50px;
-    padding: 0.95rem 1rem;
-    text-decoration: none;
-}
-
-.live-side-link.is-active {
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    color: #0d5a41;
-    font-weight: 600;
-}
-
-.live-deposit-btn {
-    background: #ffd4a8;
-    border: 0;
-    border-radius: 0.75rem;
-    color: #1f2937;
-    font-size: 0.98rem;
-    font-weight: 700;
-    margin-top: 18rem;
-    min-height: 48px;
-    width: 100%;
-}
-
-.live-sidebar-footer {
-    display: grid;
-    gap: 1rem;
-    margin-top: 2rem;
-    padding: 0 0.2rem;
-}
-
-.live-footer-link {
-    align-items: center;
-    color: #55677c;
-    display: flex;
-    gap: 0.8rem;
-    text-decoration: none;
-}
-
-.live-main {
-    min-width: 0;
-}
-
-.live-titlebar {
-    align-items: center;
-    background: #fff;
-    border-bottom: 1px solid #e6edf3;
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-}
-
-.live-titlebar h1 {
-    color: #0d5a41;
-    font-size: 1.2rem;
-    font-weight: 800;
-    margin: 0 0 0.2rem;
-}
-
-.live-titlebar p {
-    color: #59697d;
-    font-size: 0.9rem;
+.terminal-hero h1 {
     margin: 0;
+    font-size: 25px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    color: #12181f;
 }
 
-.live-title-actions {
+.terminal-hero p {
+    margin: 8px 0 0;
+    font-size: 18px;
+    color: #546171;
+}
+
+.terminal-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+}
+
+.terminal-action {
+    display: inline-flex;
     align-items: center;
-    display: flex;
-    gap: 0.7rem;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
 }
 
-.live-segmented {
-    background: #fff;
-    border: 1px solid #edf1f4;
-    border-radius: 0.7rem;
-    display: flex;
-    gap: 0.15rem;
-    padding: 0.2rem;
+.terminal-action.is-green {
+    background: #0a5a3b;
+    color: #ffffff;
 }
 
-.live-segmented button {
+.terminal-action.is-peach {
+    background: #ffd8b5;
+    color: #23180f;
+}
+
+.terminal-action.is-ghost {
+    background: #f3f5f8;
+    color: #1a2430;
+}
+
+.terminal-action :deep(svg) {
+    width: 16px;
+    height: 16px;
+}
+
+.terminal-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 26px;
+}
+
+.terminal-filter-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #f3f5f7;
+    font-size: 14px;
+    color: #9ba6b1;
+}
+
+.terminal-filter-chip {
     background: transparent;
     border: 0;
-    border-radius: 0.45rem;
-    color: #1f2937;
-    font-size: 0.88rem;
-    min-height: 34px;
-    padding: 0 0.95rem;
+    padding: 0 10px;
+    min-height: 30px;
+    font-size: 15px;
+    color: #141d28;
+    cursor: pointer;
 }
 
-.live-segmented .is-active {
-    background: #f6f8fb;
-    box-shadow: inset 0 0 0 1px #eef2f5;
-    font-weight: 700;
+.terminal-filter-chip sup {
+    font-size: 10px;
+    top: -0.2em;
 }
 
-.live-action-btn {
-    align-items: center;
-    background: #fff;
-    border: 1px solid #0d5a41;
-    border-radius: 0.55rem;
-    color: #0d5a41;
+.terminal-filter-pill {
     display: inline-flex;
-    font-size: 0.9rem;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 0;
+    background: #eff2f4;
+    font-size: 13px;
     font-weight: 700;
-    gap: 0.55rem;
-    min-height: 42px;
-    padding: 0 1rem;
-}
-
-.live-action-btn.is-buy {
-    background: #0d5a41;
-    color: #fff;
-}
-
-.live-action-btn.is-advisor {
-    background: #ffd9b5;
-    border-color: #ffd9b5;
-    color: #1f2937;
-}
-
-.live-filter-row {
-    align-items: center;
-    background: #fff;
-    border-bottom: 1px solid #e6edf3;
-    display: flex;
-    gap: 1rem;
-    padding: 0.8rem 1.5rem;
-}
-
-.live-filter-pill {
-    align-items: center;
-    display: inline-flex;
-    gap: 0.45rem;
-}
-
-.live-filter-pill span {
-    color: #364152;
-    font-size: 0.76rem;
-    letter-spacing: 0.08em;
     text-transform: uppercase;
+    color: #1a2532;
+    cursor: pointer;
 }
 
-.live-filter-pill strong {
-    background: #f7f9fb;
-    border: 1px solid #eef2f5;
-    border-radius: 0.45rem;
-    color: #111827;
-    font-size: 0.86rem;
-    font-weight: 600;
-    padding: 0.5rem 0.75rem;
+.terminal-filter-pill.is-active {
+    background: #aef0c9;
 }
 
-.live-ticker-bar {
+.terminal-range-switch {
+    margin-left: auto;
+    display: inline-flex;
     align-items: center;
-    background: #0d5a41;
-    display: flex;
-    gap: 2rem;
-    overflow: hidden;
-    padding: 0.7rem 1.5rem;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 999px;
+    background: #f3f5f7;
 }
 
-.live-ticker-item {
+.terminal-range-switch button {
+    min-width: 44px;
+    min-height: 30px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+    color: #687383;
+    cursor: pointer;
+}
+
+.terminal-range-switch .is-active {
+    background: #ffffff;
+    color: #151d27;
+    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
+}
+
+.terminal-ticker {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 22px;
+    padding: 8px 16px;
+    border-radius: 0;
+    background: #0a6644;
+    color: #dff7ea;
+}
+
+.terminal-ticker__item {
     display: flex;
-    gap: 0.45rem;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    font-size: 14px;
     white-space: nowrap;
 }
 
-.live-ticker-item span,
-.live-ticker-item strong,
-.live-ticker-item em {
-    color: #fff;
-    font-size: 0.88rem;
+.terminal-ticker__item strong {
+    font-weight: 700;
+}
+
+.terminal-ticker__item em {
+    color: #effcf5;
     font-style: normal;
 }
 
-.live-ticker-item em.is-red {
-    color: #ffd1d1;
-}
-
-.live-ticker-item em.is-green {
-    color: #cff7e1;
-}
-
-.live-stats-row {
+.terminal-stats {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 30px;
 }
 
-.live-stat-card {
-    background: #fff;
-    border-bottom: 1px solid #e6edf3;
-    border-right: 1px solid #e6edf3;
-    min-height: 94px;
-    padding: 1rem 1rem 0.95rem;
+.terminal-stat-card,
+.terminal-card,
+.trade-signal-card {
+    background: #ffffff;
+    border: 1px solid #eef2f4;
+    border-radius: 18px;
+    box-shadow: 0 14px 28px rgba(16, 24, 40, 0.05);
 }
 
-.live-stat-card:last-child {
-    border-right: 0;
+.terminal-stat-card {
+    padding: 16px 18px;
 }
 
-.live-stat-card span {
-    color: #364152;
+.terminal-stat-card > span {
     display: block;
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.55rem;
-    text-transform: uppercase;
+    font-size: 13px;
+    color: #697584;
 }
 
-.live-stat-value {
-    align-items: center;
+.terminal-stat-card__value {
     display: flex;
-    gap: 0.45rem;
-}
-
-.live-stat-value strong {
-    color: #111827;
-    font-size: 0.95rem;
-    font-weight: 800;
-}
-
-.live-stat-value.is-green strong {
-    color: #0d5a41;
-}
-
-.live-stat-value.is-red strong {
-    color: #d92d20;
-}
-
-.live-stat-value em {
-    color: #0d5a41;
-    font-style: normal;
-    font-weight: 700;
-}
-
-.live-origin-badge {
-    background: #b8f2d0;
-    border-radius: 0.25rem;
-    color: #0d5a41;
-    font-size: 0.65rem;
-    font-style: normal;
-    font-weight: 700;
-    padding: 0.22rem 0.38rem;
-    text-transform: uppercase;
-}
-
-.live-main-grid {
-    display: grid;
-    gap: 1.3rem;
-    grid-template-columns: 230px minmax(0, 1fr) 310px;
-    padding: 1.5rem;
-}
-
-.live-left-stack,
-.live-center-stack,
-.live-right-stack {
-    display: grid;
-    gap: 1rem;
-    align-content: start;
-}
-
-.live-card,
-.live-signal-card,
-.live-chat-card {
-    background: #fff;
-    border: 1px solid #e6edf3;
-    border-radius: 0.95rem;
-    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.035);
-}
-
-.live-card {
-    padding: 1rem;
-}
-
-.live-card-head {
     align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.terminal-stat-card__value strong {
+    font-size: 21px;
+    font-weight: 700;
+    color: #111a23;
+}
+
+.terminal-stat-card__value i {
+    font-style: normal;
+    font-size: 18px;
+    color: #0a7e51;
+}
+
+.terminal-stat-card__value.is-soft strong {
+    color: #8e6c41;
+}
+
+.terminal-main-grid {
+    display: grid;
+    grid-template-columns: 198px minmax(0, 1fr) 280px;
+    gap: 28px;
+    margin-top: 28px;
+}
+
+.terminal-left-rail,
+.terminal-right-rail {
     display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.terminal-card {
+    padding: 22px;
+}
+
+.terminal-card__head {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
+    gap: 14px;
 }
 
-.live-card h2,
-.live-signal-card h2 {
-    color: #122132;
-    font-size: 0.92rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
+.terminal-card__head h2,
+.terminal-demand-card h2,
+.quick-trade-card h2,
+.terminal-bottom-card h2 {
     margin: 0;
-    text-transform: uppercase;
+    font-size: 16px;
+    font-weight: 700;
+    color: #151d27;
 }
 
-.live-watchlist {
+.terminal-card__head button {
+    border: 0;
+    background: transparent;
+    color: #7e8794;
+    cursor: pointer;
+}
+
+.watchlist-list {
     display: grid;
+    gap: 18px;
+    margin-top: 18px;
 }
 
-.live-watch-row {
-    align-items: center;
-    border-top: 1px solid #eef2f5;
+.watchlist-row {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
-    padding: 0.95rem 0;
+    gap: 12px;
 }
 
-.live-watch-row:first-child {
-    border-top: 0;
-    padding-top: 0;
-}
-
-.live-watch-meta {
-    align-items: center;
-    display: flex;
-    gap: 0.65rem;
-}
-
-.live-watch-meta i {
-    border-radius: 999px;
-    display: inline-block;
-    height: 8px;
-    width: 8px;
-}
-
-.live-watch-meta i.is-green {
-    background: #0d5a41;
-}
-
-.live-watch-meta i.is-red {
-    background: #d92d20;
-}
-
-.live-watch-meta strong {
-    color: #111827;
+.watchlist-row strong,
+.demand-origin-row__head strong,
+.lots-table__lot strong,
+.regional-opp-row strong {
     display: block;
-    font-size: 0.88rem;
+    font-size: 15px;
+    font-weight: 600;
+    color: #131b24;
 }
 
-.live-watch-meta span,
-.live-watch-price span {
-    color: #667085;
+.watchlist-row span {
     display: block;
-    font-size: 0.76rem;
+    margin-top: 2px;
+    font-size: 12px;
+    color: #8b96a2;
 }
 
-.live-watch-price {
+.watchlist-row__price {
     text-align: right;
 }
 
-.live-watch-price strong {
-    color: #111827;
+.watchlist-row__price em {
     display: block;
-    font-size: 0.88rem;
-}
-
-.live-watch-price .is-green {
-    color: #0d5a41;
-}
-
-.live-watch-price .is-red {
-    color: #d92d20;
-}
-
-.live-link-btn {
-    background: transparent;
-    border: 0;
-    color: #111827;
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 700;
-    margin: 0.35rem auto 0;
-    text-transform: uppercase;
-}
-
-.live-gainers-list {
-    display: grid;
-    gap: 1rem;
-}
-
-.live-gainer-row {
-    display: grid;
-    gap: 0.8rem;
-}
-
-.live-gainer-name {
-    align-items: center;
-    display: flex;
-    gap: 0.6rem;
-}
-
-.live-gainer-name span {
-    background: #b8f2d0;
-    border-radius: 0.2rem;
-    color: #0d5a41;
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.18rem 0.35rem;
-}
-
-.live-gainer-name strong {
-    color: #111827;
-    font-size: 0.86rem;
-}
-
-.live-gainer-side {
-    align-items: center;
-    display: flex;
-    gap: 0.65rem;
-    justify-content: space-between;
-}
-
-.live-gainer-side em {
-    color: #0d5a41;
-    font-size: 0.84rem;
+    margin-top: 2px;
+    font-size: 13px;
     font-style: normal;
-    font-weight: 700;
 }
 
-.live-mini-track {
-    background: #edf1f4;
-    border-radius: 999px;
+.watchlist-row__price .is-up {
+    color: #0a8d5a;
+}
+
+.watchlist-row__price .is-down {
+    color: #cf5648;
+}
+
+.terminal-demand-card {
+    padding-top: 18px;
+}
+
+.demand-origin-list {
+    display: grid;
+    gap: 18px;
+    margin-top: 18px;
+}
+
+.demand-origin-row {
+    display: flex;
+    gap: 12px;
+}
+
+.demand-origin-row__code {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: #f3f5f7;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #222b36;
+    flex-shrink: 0;
+}
+
+.demand-origin-row__body {
     flex: 1;
-    height: 5px;
+}
+
+.demand-origin-row__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.demand-origin-row__head span {
+    font-size: 12px;
+    font-weight: 700;
+    color: #16222d;
+}
+
+.demand-origin-row__track {
+    height: 4px;
+    margin-top: 8px;
+    border-radius: 999px;
+    background: #dce5df;
     overflow: hidden;
 }
 
-.live-mini-track div {
-    background: #0d5a41;
+.demand-origin-row__track span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #0a6945;
+}
+
+.terminal-chart-card {
+    padding: 22px;
+}
+
+.terminal-card__head--chart {
+    margin-bottom: 20px;
+}
+
+.chart-segments {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 10px;
+    background: #f2f5f8;
+}
+
+.chart-segments button {
+    min-height: 30px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 14px;
+    color: #37414d;
+    cursor: pointer;
+}
+
+.chart-segments .is-active {
+    background: #ffffff;
+    box-shadow: 0 0 0 1px #e7edf2 inset;
+}
+
+.chart-head-tools {
+    display: inline-flex;
+    gap: 10px;
+}
+
+.chart-head-tools button {
+    width: 26px;
+    height: 26px;
+    border: 0;
+    background: transparent;
+    color: #687585;
+    cursor: pointer;
+}
+
+.chart-surface {
+    position: relative;
+    min-height: 530px;
+    border-radius: 10px;
+    overflow: hidden;
+    background:
+        linear-gradient(180deg, rgba(72, 84, 90, 0.58) 0%, rgba(123, 136, 145, 0.34) 100%),
+        linear-gradient(180deg, #8f979c 0%, #727f86 44%, #8b9399 100%);
+}
+
+.chart-grid-lines {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-rows: repeat(5, 1fr);
+}
+
+.chart-grid-lines span {
+    border-top: 1px solid rgba(209, 236, 249, 0.18);
+}
+
+.chart-waves {
+    position: absolute;
+    inset: 0;
+}
+
+.wave {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 2px solid;
+    border-radius: 50%;
+    opacity: 0.7;
+}
+
+.wave-a {
+    top: 38%;
+    height: 210px;
+    border-color: rgba(234, 144, 156, 0.68);
+    transform: skewY(-8deg);
+}
+
+.wave-b {
+    top: 44%;
+    height: 250px;
+    border-color: rgba(134, 215, 229, 0.58);
+    transform: skewY(-11deg);
+}
+
+.wave-c {
+    top: 56%;
+    height: 190px;
+    border-color: rgba(221, 208, 134, 0.42);
+    transform: skewY(-6deg);
+}
+
+.chart-candles {
+    position: absolute;
+    inset: 34px 18px 84px;
+}
+
+.chart-candle {
+    position: absolute;
+    bottom: 0;
+    width: 10px;
+}
+
+.chart-candle::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: -26px;
+    bottom: -18px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.36);
+}
+
+.chart-candle span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 18px;
+    border-radius: 4px;
+}
+
+.chart-candle.is-up span {
+    height: 34px;
+    background: rgba(131, 243, 240, 0.7);
+}
+
+.chart-candle.is-down span {
+    height: 46px;
+    background: rgba(249, 165, 175, 0.72);
+}
+
+.chart-volumes {
+    position: absolute;
+    left: 26px;
+    right: 26px;
+    bottom: 28px;
+    height: 90px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.chart-volumes span {
+    flex: 1;
+    border-radius: 2px 2px 0 0;
+    background: rgba(111, 227, 255, 0.38);
+}
+
+.chart-watermark {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    color: rgba(26, 55, 64, 0.18);
+}
+
+.chart-watermark strong,
+.chart-watermark span {
+    display: block;
+    font-size: 72px;
+    line-height: 0.95;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+}
+
+.chart-watermark p {
+    margin: 18px 0 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.trade-signal-card {
+    padding: 20px;
+    background: #08553a;
+    color: #ffffff;
+    box-shadow: 0 18px 28px rgba(7, 45, 30, 0.16);
+}
+
+.trade-signal-card__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #d6fff1;
+}
+
+.trade-signal-card__body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.trade-signal-card__body h2 {
+    margin: 0;
+    font-size: 57px;
+    line-height: 0.96;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+}
+
+.trade-signal-card__badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: rgba(23, 130, 95, 0.72);
+    display: grid;
+    place-items: center;
+}
+
+.trade-signal-card__meta {
+    display: block;
+    margin-top: 18px;
+    font-size: 15px;
+    color: #bfe8d7;
+}
+
+.trade-signal-card p {
+    margin: 10px 0 0;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #d8f4e8;
+}
+
+.quick-trade-card {
+    position: relative;
+}
+
+.quick-trade-switch {
+    display: inline-flex;
+    width: 100%;
+    margin-top: 18px;
+    padding: 4px;
+    border-radius: 10px;
+    background: #f1f4f6;
+}
+
+.quick-trade-switch button {
+    flex: 1;
+    min-height: 34px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 14px;
+    color: #202935;
+    cursor: pointer;
+}
+
+.quick-trade-switch .is-active {
+    background: #0a5a3b;
+    color: #ffffff;
+}
+
+.quick-trade-card label {
+    display: block;
+    margin-top: 22px;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #6f7a86;
+}
+
+.quick-trade-input {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    margin-top: 8px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: #f3f5f7;
+    font-size: 28px;
+    font-weight: 700;
+    color: #131b24;
+}
+
+.quick-trade-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 22px;
+    font-size: 15px;
+}
+
+.quick-trade-total strong {
+    font-size: 25px;
+    font-weight: 700;
+}
+
+.quick-trade-submit {
+    width: 100%;
+    min-height: 40px;
+    margin-top: 16px;
+    border: 0;
+    border-radius: 10px;
+    background: #0a5a3b;
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.quick-trade-fab {
+    position: absolute;
+    right: -18px;
+    bottom: 94px;
+    width: 50px;
+    height: 50px;
+    border: 0;
+    border-radius: 14px;
+    background: #09573b;
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 10px 20px rgba(8, 44, 29, 0.18);
+    cursor: pointer;
+}
+
+.lots-card {
+    margin-top: 32px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.terminal-card__head--table {
+    padding: 18px 24px;
+}
+
+.table-link {
+    border: 0;
+    background: transparent;
+    font-size: 14px;
+    color: #17212c;
+    cursor: pointer;
+}
+
+.lots-table__head,
+.lots-table__row {
+    display: grid;
+    grid-template-columns: 1.8fr 0.9fr 0.9fr 0.8fr 0.8fr 0.9fr 1fr 0.7fr;
+    gap: 14px;
+    align-items: center;
+    padding: 16px 24px;
+}
+
+.lots-table__head {
+    border-top: 1px solid #edf2f5;
+    background: #fafbfc;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #7a8594;
+}
+
+.lots-table__row {
+    border-top: 1px solid #edf2f5;
+    font-size: 14px;
+    color: #18212d;
+}
+
+.lots-table__lot {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.lot-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    flex-shrink: 0;
+}
+
+.lot-thumb.is-brown {
+    background:
+        radial-gradient(circle at 30% 30%, #3b1c10 0 18%, transparent 19%),
+        radial-gradient(circle at 65% 38%, #5c2c16 0 16%, transparent 17%),
+        linear-gradient(135deg, #7a3e23 0%, #4f2412 100%);
+}
+
+.lot-thumb.is-olive {
+    background:
+        radial-gradient(circle at 38% 36%, #d8f0bd 0 18%, transparent 19%),
+        radial-gradient(circle at 64% 44%, #a3d488 0 16%, transparent 17%),
+        linear-gradient(135deg, #2e4821 0%, #5f7d42 100%);
+}
+
+.type-pill,
+.status-pill,
+.trade-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    min-height: 22px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.type-pill.is-arabica {
+    background: #ffd8b5;
+    color: #6b4729;
+}
+
+.type-pill.is-robusta {
+    background: #eceef1;
+    color: #25303d;
+}
+
+.status-pill.is-live {
+    color: #0a7b4f;
+}
+
+.status-pill.is-live::before,
+.status-pill.is-pending::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-right: 6px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+.status-pill.is-pending {
+    color: #8a673f;
+}
+
+.cert-icons {
+    display: inline-flex;
+    gap: 8px;
+    color: #1d2c39;
+}
+
+.trade-chip {
+    border: 0;
+    background: #eef2f4;
+    color: #1c2733;
+    cursor: pointer;
+}
+
+.terminal-bottom-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px;
+    margin-top: 30px;
+}
+
+.terminal-bottom-card {
+    min-height: 282px;
+}
+
+.order-book-head {
+    display: grid;
+    grid-template-columns: 0.8fr 1.1fr 0.7fr 0.8fr;
+    gap: 12px;
+    margin-top: 22px;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #7a8593;
+}
+
+.order-book-row {
+    display: grid;
+    grid-template-columns: 0.8fr 1.1fr 0.7fr 0.8fr;
+    gap: 12px;
+    align-items: center;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+.order-book-row.is-ask span:first-child {
+    color: #d24e44;
+}
+
+.order-book-row.is-bid span:first-child {
+    color: #0b6e47;
+}
+
+.order-book-row__bar {
+    height: 22px;
+    border-radius: 4px;
+    background: #f3f5f7;
+    overflow: hidden;
+}
+
+.order-book-row__bar i {
+    display: block;
     height: 100%;
 }
 
-.live-alert-card {
-    align-items: start;
-    border-radius: 0.9rem;
+.order-book-row.is-ask .order-book-row__bar i {
+    background: rgba(244, 208, 208, 0.55);
+}
+
+.order-book-row.is-bid .order-book-row__bar i {
+    background: rgba(220, 233, 228, 0.8);
+}
+
+.order-book-spread {
     display: flex;
-    gap: 0.7rem;
-    padding: 0.95rem 1rem;
-}
-
-.live-alert-card.is-red {
-    background: #ffe3df;
-    border: 1px solid #ffd0ca;
-    color: #8d2318;
-}
-
-.live-alert-card.is-amber {
-    background: #ffdcb9;
-    border: 1px solid #ffcc94;
-    color: #7a4b16;
-}
-
-.live-alert-card strong {
-    display: block;
-    font-size: 0.84rem;
-    margin-bottom: 0.2rem;
-}
-
-.live-alert-card p {
-    font-size: 0.8rem;
-    line-height: 1.45;
-    margin: 0;
-}
-
-.live-chart-card {
-    padding: 0;
-}
-
-.live-chart-head {
-    padding: 1rem 1rem 0;
-}
-
-.live-chart-price-row {
     align-items: center;
-    display: flex;
-    gap: 0.65rem;
-    margin-top: 0.35rem;
-}
-
-.live-chart-price-row strong {
-    color: #111827;
-    font-size: 0.96rem;
-    font-weight: 800;
-}
-
-.live-chart-price-row :deep(svg) {
-    color: #233242;
-    height: 1rem;
-    width: 1rem;
-}
-
-.live-up-pill {
-    background: #b8f2d0;
-    border-radius: 0.25rem;
-    color: #0d5a41;
-    font-size: 0.78rem;
-    font-weight: 700;
-    padding: 0.22rem 0.45rem;
-}
-
-.live-chart-surface {
-    background:
-        radial-gradient(circle at center, rgba(10, 10, 10, 0.03) 1px, transparent 1px),
-        linear-gradient(180deg, #f9fbfd 0%, #f3f7fb 100%);
-    background-size: 16px 16px, 100% 100%;
-    border-radius: 0 0 0.95rem 0.95rem;
-    min-height: 342px;
-    padding: 1rem 1rem 1.15rem;
-    position: relative;
-}
-
-.live-chart-surface::before {
-    background:
-        linear-gradient(180deg, transparent 0, transparent calc(100% - 1px), rgba(15, 23, 42, 0.06) calc(100% - 1px)),
-        linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(15, 23, 42, 0.04) calc(100% - 1px));
-    background-size: 100% 25%, 14.28% 100%;
-    content: '';
-    inset: 0;
-    position: absolute;
-}
-
-.live-chart-legend {
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid #e6edf3;
-    border-radius: 0.45rem;
-    display: grid;
-    gap: 0.35rem;
-    padding: 0.6rem 0.7rem;
-    position: absolute;
-    right: 1rem;
-    top: 1rem;
-    z-index: 2;
-}
-
-.live-chart-legend span {
-    align-items: center;
-    color: #5b6472;
-    display: flex;
-    font-size: 0.74rem;
-    gap: 0.4rem;
-}
-
-.live-chart-legend i {
-    border-radius: 999px;
-    display: inline-block;
-    height: 8px;
-    width: 8px;
-}
-
-.live-chart-legend .is-dark {
-    background: #0d5a41;
-}
-
-.live-chart-legend .is-light {
-    background: #baa47c;
-}
-
-.live-chart-bars {
-    align-items: end;
-    display: grid;
-    gap: 0.2rem;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    height: 290px;
-    padding-top: 42px;
-    position: relative;
-    z-index: 1;
-}
-
-.live-chart-bar {
-    border-radius: 0.2rem 0.2rem 0 0;
-}
-
-.live-chart-bar.is-soft {
-    background: rgba(146, 176, 170, 0.65);
-}
-
-.live-chart-bar.is-deep {
-    background: rgba(98, 136, 124, 0.82);
-}
-
-.live-chart-bar.is-dark {
-    background: #0d5a41;
-}
-
-.live-chart-bar.is-red {
-    background: rgba(234, 175, 176, 0.9);
-}
-
-.live-feed-card {
-    padding: 0;
-}
-
-.live-feed-card .live-card-head {
-    padding: 1rem 1rem 0;
-}
-
-.live-feed-tags {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.live-feed-tags span {
-    background: #f5f7fa;
-    border: 1px solid #edf1f4;
-    border-radius: 0.35rem;
-    color: #4b5563;
-    font-size: 0.72rem;
-    padding: 0.28rem 0.5rem;
-}
-
-.live-feed-table {
-    padding: 0 1rem 1rem;
-}
-
-.live-feed-head,
-.live-feed-row {
-    display: grid;
-    gap: 0.8rem;
-    grid-template-columns: 1.35fr 0.7fr 0.7fr 0.6fr;
-}
-
-.live-feed-head {
-    border-top: 1px solid #eef2f5;
-    color: #4b5563;
-    font-size: 0.74rem;
-    margin-top: 0.3rem;
-    padding: 0.9rem 0;
-    text-transform: uppercase;
-}
-
-.live-feed-row {
-    align-items: center;
-    border-top: 1px solid #f0f4f7;
-    padding: 1rem 0;
-}
-
-.live-feed-origin {
-    align-items: center;
-    display: flex;
-    gap: 0.65rem;
-}
-
-.live-feed-origin b {
-    align-items: center;
-    background: #b8f2d0;
-    border-radius: 0.2rem;
-    color: #0d5a41;
-    display: inline-flex;
-    font-size: 0.72rem;
-    height: 1.7rem;
     justify-content: center;
-    width: 1.7rem;
+    min-height: 36px;
+    margin: 16px 0;
+    border-radius: 8px;
+    background: #eff2f4;
+    font-size: 13px;
+    font-weight: 700;
+    color: #38414c;
 }
 
-.live-feed-origin strong,
-.live-feed-row strong {
-    color: #111827;
-    font-size: 0.88rem;
+.bottom-card-label {
+    display: block;
+    margin-top: 22px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #778390;
 }
 
-.live-score-pill {
-    background: #edf1f4;
-    border-radius: 999px;
-    color: #111827;
-    display: inline-block;
-    font-size: 0.76rem;
-    justify-self: start;
-    padding: 0.26rem 0.55rem;
+.regional-tags {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
 }
 
-.live-feed-row em {
-    font-size: 0.84rem;
+.regional-tag {
+    min-width: 62px;
+    padding: 12px 12px 10px;
+    border-radius: 10px;
+}
+
+.regional-tag strong,
+.regional-tag span {
+    display: block;
+}
+
+.regional-tag strong {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.regional-tag span {
+    margin-top: 6px;
+    font-size: 12px;
+}
+
+.regional-tag.is-green {
+    background: #0a5f3f;
+    color: #ffffff;
+}
+
+.regional-tag.is-dark {
+    background: #2b6c4f;
+    color: #ffffff;
+}
+
+.regional-tag.is-peach {
+    background: #ffd8b5;
+    color: #65472a;
+}
+
+.regional-opps {
+    display: grid;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.regional-opp-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #f3f5f7;
+}
+
+.regional-opp-row div {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.regional-opp-row em {
     font-style: normal;
+    font-size: 13px;
     font-weight: 700;
+    color: #0a6845;
 }
 
-.live-feed-row em.is-green {
-    color: #0d5a41;
+.risk-card .terminal-card__head {
+    margin-bottom: 22px;
 }
 
-.live-feed-row em.is-red {
-    color: #d92d20;
-}
-
-.live-signal-card {
-    background: linear-gradient(180deg, #0d5a41 0%, #0b4b38 100%);
-    border-radius: 0.95rem;
-    color: #fff;
-    padding: 1rem;
-}
-
-.live-signal-head strong {
-    font-size: 0.92rem;
-    text-transform: uppercase;
-}
-
-.live-signal-head span {
-    margin-right: 0.4rem;
-}
-
-.live-signal-body small {
-    color: rgba(255, 255, 255, 0.72);
-    display: block;
-    font-size: 0.74rem;
-    letter-spacing: 0.1em;
-    margin: 1rem 0 0.45rem;
-    text-transform: uppercase;
-}
-
-.live-signal-body h2 {
-    color: #fff;
-    font-size: 0.98rem;
-    line-height: 1.35;
-    margin: 0 0 0.9rem;
-    text-transform: none;
-}
-
-.live-confidence {
-    color: #d8f9e7;
-    font-size: 2rem;
-    font-weight: 800;
-    line-height: 1;
-    margin-bottom: 1rem;
-}
-
-.live-confidence span {
-    color: rgba(255, 255, 255, 0.72);
-    display: block;
-    font-size: 0.68rem;
-    letter-spacing: 0.1em;
-    margin-top: 0.2rem;
-    text-transform: uppercase;
-}
-
-.live-signal-stats {
-    display: grid;
-    gap: 0.7rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.live-signal-stats div {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 0.45rem;
-    padding: 0.75rem;
-}
-
-.live-signal-stats span {
-    color: rgba(255, 255, 255, 0.72);
-    display: block;
-    font-size: 0.68rem;
-    margin-bottom: 0.25rem;
-    text-transform: uppercase;
-}
-
-.live-signal-stats strong {
-    font-size: 0.9rem;
-}
-
-.live-chat-card {
-    overflow: hidden;
-    position: relative;
-}
-
-.live-chat-head {
-    background: #0d5a41;
-    color: #fff;
-    padding: 0.9rem 1rem;
-}
-
-.live-chat-title {
-    align-items: center;
+.risk-banner {
     display: flex;
-    gap: 0.7rem;
-}
-
-.live-chat-avatar {
-    align-items: center;
-    background: rgba(255, 255, 255, 0.14);
-    border-radius: 999px;
-    display: inline-flex;
-    height: 2rem;
-    justify-content: center;
-    width: 2rem;
-}
-
-.live-chat-title strong {
-    display: block;
-    font-size: 0.92rem;
-}
-
-.live-chat-title span {
-    color: rgba(255, 255, 255, 0.72);
-    display: block;
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    margin-top: 0.15rem;
-    text-transform: uppercase;
-}
-
-.live-chat-body {
-    display: grid;
-    gap: 1rem;
-    padding: 1rem;
-}
-
-.live-chat-bubble {
-    background: #fff;
-    border: 1px solid #e8edf2;
-    border-radius: 0.8rem;
-    color: #344054;
-    font-size: 0.85rem;
-    line-height: 1.55;
-    padding: 0.95rem 1rem;
-}
-
-.live-chat-bubble.is-user {
-    background: #e8f3ef;
-    border-color: #dcebe5;
-    justify-self: end;
-    max-width: 88%;
-    text-align: right;
-}
-
-.live-chat-input {
-    align-items: center;
-    border-top: 1px solid #edf1f4;
-    display: flex;
-    gap: 0.6rem;
-    padding: 0.9rem 1rem 1rem;
-}
-
-.live-chat-input input {
-    background: #f6f8fb;
-    border: 1px solid #eef2f5;
-    border-radius: 0.45rem;
-    flex: 1;
-    min-height: 42px;
-    outline: none;
-    padding: 0 0.9rem;
-}
-
-.live-chat-input button,
-.live-buyorder-btn {
-    align-items: center;
-    background: #0d5a41;
-    border: 0;
-    border-radius: 0.45rem;
-    color: #fff;
-    display: inline-flex;
-    justify-content: center;
-}
-
-.live-chat-input button {
-    height: 42px;
-    width: 42px;
-}
-
-.live-buyorder-btn {
-    font-size: 0.98rem;
-    font-weight: 700;
-    min-height: 54px;
-    width: 100%;
-}
-
-.live-orderbook-card h2 {
-    margin-bottom: 1rem;
-}
-
-.live-book-block {
-    border-radius: 0.5rem;
-    overflow: hidden;
-    padding: 0.2rem 0;
-}
-
-.live-book-block.is-sell {
+    gap: 12px;
+    padding: 16px 16px 15px;
+    border-radius: 16px;
+    border: 1px solid #f3c8c4;
     background: #fff4f2;
+    color: #cb3c32;
 }
 
-.live-book-block.is-buy {
-    background: #eef9f4;
+.risk-banner p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #d2847d;
 }
 
-.live-book-head,
-.live-spread-row,
-.live-book-row {
-    align-items: center;
+.risk-toggles {
+    display: grid;
+    gap: 16px;
+    margin-top: 22px;
+}
+
+.risk-toggle-row {
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    gap: 14px;
+    font-size: 14px;
+    color: #151d27;
 }
 
-.live-book-head,
-.live-spread-row {
-    color: #364152;
-    font-size: 0.78rem;
-    margin-bottom: 0.8rem;
-    text-transform: uppercase;
-}
-
-.live-book-row {
-    font-size: 0.88rem;
-    padding: 0.5rem 0.75rem;
-}
-
-.live-book-row strong {
-    color: #d92d20;
-}
-
-.live-book-block.is-buy .live-book-row strong {
-    color: #0d5a41;
-}
-
-.live-book-row span {
-    color: #111827;
-}
-
-.live-spread-row {
-    margin: 0.9rem 0;
-}
-
-.live-spread-row strong {
-    color: #111827;
-    font-size: 0.9rem;
-}
-
-.live-bottom-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: 1.05fr 1fr 2fr;
-    padding: 0 1.5rem 1.5rem;
-}
-
-.live-heatmap-surface {
-    background:
-        radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.2), transparent 16%),
-        linear-gradient(180deg, #d8dde2, #c6ccd3);
-    border-radius: 0.8rem;
-    min-height: 162px;
-    padding: 1.1rem;
-    position: relative;
-}
-
-.live-heatmap-point {
-    background: #0d5a41;
-    border-radius: 999px;
-    box-shadow: 0 0 0 6px rgba(13, 90, 65, 0.12);
-    height: 12px;
-    left: 2.9rem;
-    position: absolute;
-    top: 4.7rem;
-    width: 12px;
-}
-
-.live-heatmap-callout {
-    bottom: 1rem;
-    left: 1rem;
-    position: absolute;
-}
-
-.live-heatmap-callout strong {
-    color: #111827;
-    display: block;
-    font-size: 0.84rem;
-    margin-bottom: 0.35rem;
-}
-
-.live-heatmap-callout p {
-    color: #5d6674;
-    font-size: 0.76rem;
-    line-height: 1.45;
-    margin: 0;
-    max-width: 175px;
-}
-
-.live-corridor-list {
-    display: grid;
-    gap: 0.75rem;
-}
-
-.live-corridor-row {
-    align-items: center;
-    background: #f7f9fb;
-    border-radius: 0.55rem;
-    display: flex;
-    justify-content: space-between;
-    padding: 0.85rem 0.9rem;
-}
-
-.live-corridor-row strong {
-    color: #111827;
-    font-size: 0.9rem;
-}
-
-.live-corridor-row span {
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.live-corridor-row .is-green {
-    color: #0d5a41;
-}
-
-.live-corridor-row .is-slate {
-    color: #667085;
-}
-
-.live-recent-table {
-    display: grid;
-}
-
-.live-recent-row {
-    align-items: center;
-    border-top: 1px solid #edf1f4;
-    display: grid;
-    gap: 0.8rem;
-    grid-template-columns: 0.5fr 1fr 0.65fr 0.9fr 0.55fr;
-    padding: 0.9rem 0;
-}
-
-.live-recent-row:first-child {
-    border-top: 0;
-    padding-top: 0;
-}
-
-.live-recent-row span,
-.live-recent-row strong,
-.live-recent-row em,
-.live-recent-row b,
-.live-recent-row small {
-    font-size: 0.82rem;
-}
-
-.live-recent-row span {
-    font-weight: 700;
-}
-
-.live-recent-row span.is-green {
-    color: #0d5a41;
-}
-
-.live-recent-row span.is-red {
-    color: #d92d20;
-}
-
-.live-recent-row strong,
-.live-recent-row b {
-    color: #111827;
-}
-
-.live-recent-row em,
-.live-recent-row small {
-    color: #5e6b78;
-    font-style: normal;
-}
-
-.live-floating-fab {
-    align-items: center;
-    background: #0d5a41;
+.risk-toggle {
+    width: 34px;
+    height: 20px;
+    padding: 2px;
     border: 0;
-    border-radius: 1rem;
-    bottom: 1.35rem;
-    box-shadow: 0 14px 30px rgba(13, 90, 65, 0.22);
-    color: #fff;
-    display: inline-flex;
-    height: 58px;
-    justify-content: center;
-    position: fixed;
-    right: 1.35rem;
-    width: 58px;
-    z-index: 30;
+    border-radius: 999px;
+    background: #e3e7eb;
+    cursor: pointer;
 }
 
-@media (max-width: 1279.98px) {
-    .live-layout,
-    .live-main-grid,
-    .live-bottom-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .live-sidebar {
-        min-height: auto;
-    }
-
-    .live-deposit-btn {
-        margin-top: 2rem;
-    }
-
-    .live-stats-row {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+.risk-toggle i {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: #ffffff;
+    transition: transform 0.2s ease;
 }
 
-@media (max-width: 991.98px) {
-    .live-header,
-    .live-titlebar {
-        align-items: start;
+.risk-toggle.is-on {
+    background: #0a5c3c;
+}
+
+.risk-toggle.is-on i {
+    transform: translateX(14px);
+}
+
+@media (max-width: 1200px) {
+    .terminal-hero__head {
         flex-direction: column;
+        align-items: flex-start;
     }
 
-    .live-brand-row,
-    .live-header-tools,
-    .live-title-actions {
+    .terminal-actions {
         flex-wrap: wrap;
     }
 
-    .live-search {
-        min-width: 100%;
+    .terminal-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .live-stats-row {
+    .terminal-main-grid,
+    .terminal-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .terminal-ticker {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .live-main-grid {
-        padding: 1rem;
+    .terminal-main-grid {
+        gap: 22px;
     }
 }
 
-@media (max-width: 767.98px) {
-    .live-header,
-    .live-titlebar,
-    .live-filter-row,
-    .live-ticker-bar,
-    .live-bottom-grid {
-        padding-inline: 1rem;
+@media (max-width: 900px) {
+    .terminal-shell {
+        padding: 18px 16px 34px;
     }
 
-    .live-stats-row {
+    .terminal-hero__head,
+    .terminal-filters,
+    .terminal-actions,
+    .terminal-card__head--table,
+    .terminal-card__head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .terminal-actions {
+        width: 100%;
+    }
+
+    .terminal-action {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .terminal-stats {
         grid-template-columns: 1fr;
     }
 
-    .live-recent-row {
+    .terminal-ticker {
         grid-template-columns: 1fr;
+    }
+
+    .terminal-range-switch {
+        margin-left: 0;
+    }
+
+    .lots-table__head {
+        display: none;
+    }
+
+    .lots-table__row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .trade-signal-card__body h2 {
+        font-size: 40px;
+    }
+
+    .chart-surface {
+        min-height: 420px;
+    }
+}
+
+@media (max-width: 640px) {
+    .terminal-shell {
+        padding: 16px 12px 28px;
+    }
+
+    .terminal-filters {
+        gap: 10px;
+    }
+
+    .terminal-filter-chip,
+    .terminal-filter-pill,
+    .terminal-filter-label {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .terminal-range-switch {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .terminal-card,
+    .terminal-stat-card,
+    .trade-signal-card {
+        border-radius: 14px;
+    }
+
+    .terminal-card,
+    .trade-signal-card,
+    .terminal-chart-card {
+        padding: 18px;
+    }
+
+    .trade-signal-card__body h2 {
+        font-size: 34px;
     }
 }
 </style>

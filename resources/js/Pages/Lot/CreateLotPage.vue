@@ -1,8 +1,10 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import { Box, CollectionTag, Files, Tickets, Van } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
+import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
 const props = defineProps({
     batch: {
@@ -21,6 +23,7 @@ const props = defineProps({
         type: Object,
         default: () => ({
             packaging_types: [],
+            processing_methods: [],
             target_markets: [],
         }),
     },
@@ -36,16 +39,15 @@ const props = defineProps({
 
 const form = useForm({
     lot_number: props.defaults.lot_number ?? '',
-    lot_name: props.defaults.lot_name ?? '',
     allocation_kg: props.defaults.allocation_kg ?? '',
     net_weight_kg: props.defaults.net_weight_kg ?? props.defaults.allocation_kg ?? '',
     quantity_bags: props.defaults.quantity_bags ?? '',
     bag_weight_kg: props.defaults.bag_weight_kg ?? '',
     grade: props.defaults.grade ?? '',
+    process: props.defaults.process ?? '',
     warehouse: props.defaults.warehouse ?? '',
     packaging_type: props.defaults.packaging_type ?? props.options.packaging_types[0] ?? 'GrainPro',
     screen_size: props.defaults.screen_size ?? '',
-    altitude: props.defaults.altitude ?? '',
     aroma_score: props.defaults.aroma_score ?? 8.75,
     acidity_score: props.defaults.acidity_score ?? 9.0,
     body_score: props.defaults.body_score ?? 8.25,
@@ -61,7 +63,8 @@ const formatNumber = (value, digits = 0) => Number(value || 0).toLocaleString('e
     maximumFractionDigits: digits,
 });
 
-const formatCurrency = (value) => `$${formatNumber(value, 2)}`;
+const formatCurrency = (value) => `Shs. ${formatNumber(value, 2)}`;
+const formatScore = (value) => (value === '' || value === null || value === undefined ? '—' : formatNumber(value, 2));
 
 const overviewBadges = [
     'BATCH REQUIRED',
@@ -89,7 +92,25 @@ const projectedAllocated = computed(() => (
 
 const suggestedPriceLow = computed(() => Number(form.price_per_kg || 0) * 0.944);
 const suggestedPriceHigh = computed(() => Number(form.price_per_kg || 0) * 1.056);
-const canSubmitForm = computed(() => props.canSubmit && Number(form.allocation_kg || 0) > 0);
+const hasValue = (value) => String(value ?? '').trim().length > 0;
+
+const requiredForSubmit = computed(() => ({
+    lot_number: hasValue(form.lot_number),
+    allocation_kg: Number(form.allocation_kg || 0) > 0,
+    quantity_bags: Number(form.quantity_bags || 0) >= 1,
+    bag_weight_kg: Number(form.bag_weight_kg || 0) >= 1,
+    grade: hasValue(form.grade),
+    process: hasValue(form.process),
+    warehouse: hasValue(form.warehouse),
+    packaging_type: hasValue(form.packaging_type),
+    screen_size: hasValue(form.screen_size),
+    aroma_score: hasValue(form.aroma_score) && Number(form.aroma_score) >= 0 && Number(form.aroma_score) <= 10,
+    acidity_score: hasValue(form.acidity_score) && Number(form.acidity_score) >= 0 && Number(form.acidity_score) <= 10,
+    body_score: hasValue(form.body_score) && Number(form.body_score) >= 0 && Number(form.body_score) <= 10,
+    target_market: hasValue(form.target_market),
+    price_per_kg: hasValue(form.price_per_kg) && Number(form.price_per_kg) >= 0,
+    within_batch_limit: Number(form.allocation_kg || 0) <= Number(props.sourceBatch.remaining_qty_kg || 0),
+}));
 
 const readinessItems = computed(() => [
     { label: 'Verified Batch Origin', complete: true },
@@ -98,7 +119,46 @@ const readinessItems = computed(() => [
     { label: 'Warehouse release document', complete: Boolean(form.warehouse) && props.canSubmit },
 ]);
 
+const validateForm = () => {
+    form.clearErrors();
+
+    const errors = {};
+
+    if (!requiredForSubmit.value.lot_number) errors.lot_number = 'Lot code is required.';
+    if (!requiredForSubmit.value.allocation_kg) errors.allocation_kg = 'Allocation must be greater than 0.';
+    if (!requiredForSubmit.value.within_batch_limit) {
+        errors.allocation_kg = `Allocation cannot exceed ${formatNumber(props.sourceBatch.remaining_qty_kg || 0, 2)} kg.`;
+    }
+    if (!requiredForSubmit.value.quantity_bags) errors.quantity_bags = 'Bag count must be at least 1.';
+    if (!requiredForSubmit.value.bag_weight_kg) errors.bag_weight_kg = 'Bag weight must be at least 1 kg.';
+    if (!requiredForSubmit.value.grade) errors.grade = 'Grade is required.';
+    if (!requiredForSubmit.value.process) errors.process = 'Processing method is required.';
+    if (!requiredForSubmit.value.warehouse) errors.warehouse = 'Warehouse is required.';
+    if (!requiredForSubmit.value.packaging_type) errors.packaging_type = 'Packaging type is required.';
+    if (!requiredForSubmit.value.screen_size) errors.screen_size = 'Screen size is required.';
+    if (!requiredForSubmit.value.aroma_score) errors.aroma_score = 'Aroma score must be between 0 and 10.';
+    if (!requiredForSubmit.value.acidity_score) errors.acidity_score = 'Acidity score must be between 0 and 10.';
+    if (!requiredForSubmit.value.body_score) errors.body_score = 'Body score must be between 0 and 10.';
+    if (!requiredForSubmit.value.target_market) errors.target_market = 'Target market is required.';
+    if (!requiredForSubmit.value.price_per_kg) errors.price_per_kg = 'Price per kg must be 0 or higher.';
+
+    if (!props.canSubmit) {
+        errors.batch = props.submissionBlockedMessage || 'Batch must be linked before creating a lot.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+        form.setError(errors);
+        return false;
+    }
+
+    return true;
+};
+
 const submit = (intent = 'create') => {
+    if (!validateForm()) {
+        return;
+    }
+
     form.submission_intent = intent;
     form.net_weight_kg = Number(form.allocation_kg || 0);
 
@@ -163,28 +223,34 @@ const submit = (intent = 'create') => {
                 <main class="lot-creation-main">
                     <section class="lot-surface lot-source-card">
                         <div class="lot-section-head">
-                            <h2>SOURCE BATCH SELECTION</h2>
+                            <h2>Source Batch Selection</h2>
                         </div>
 
                         <div class="lot-source-grid">
                             <div class="lot-source-grid__selector">
-                                <label>SELECT VERIFIED BATCH</label>
+                                <label>Select verified batch</label>
                                 <div class="lot-static-select">
                                     <span>{{ props.sourceBatch.label }}</span>
-                                    <span class="lot-static-select__chevron">v</span>
+                                    <span class="lot-static-select__chevron"></span>
                                 </div>
                             </div>
 
                             <article class="lot-stat-card">
-                                <span>AVAILABLE QTY</span>
+                                <div class="lot-stat-card__head">
+                                    <span>AVAILABLE QTY</span>
+                                    <el-icon><Box /></el-icon>
+                                </div>
                                 <strong>{{ formatNumber(props.sourceBatch.available_qty_kg) }}</strong>
                                 <small>kg</small>
                             </article>
 
                             <article class="lot-stat-card">
-                                <span>QUALITY SCORE</span>
-                                <strong>{{ formatNumber(props.sourceBatch.quality_score, 1) }}</strong>
-                                <small>sca</small>
+                                <div class="lot-stat-card__head">
+                                    <span>BATCH PRICE</span>
+                                    <el-icon><CollectionTag /></el-icon>
+                                </div>
+                                <strong>{{ props.batch.price ? formatCurrency(props.batch.price) : 'Not set' }}</strong>
+                                <small>usd total</small>
                             </article>
                         </div>
 
@@ -208,14 +274,12 @@ const submit = (intent = 'create') => {
 
                         <div class="lot-surface lot-allocation-card">
                             <div class="lot-allocation-card__left">
-                                <label for="allocation_kg">NEW LOT ALLOCATION (KG)</label>
-                                <input
+                                <label for="allocation_kg">New lot allocation (kg)</label>
+                                <el-input
                                     id="allocation_kg"
-                                    v-model.number="form.allocation_kg"
+                                    v-model="form.allocation_kg"
                                     class="lot-large-input"
                                     type="number"
-                                    min="0"
-                                    step="0.01"
                                     placeholder="e.g. 400"
                                 />
                                 <p>Note: Max allocation cannot exceed current batch remainder.</p>
@@ -224,15 +288,15 @@ const submit = (intent = 'create') => {
 
                             <div class="lot-allocation-card__summary">
                                 <div class="lot-summary-row">
-                                    <span>Batch Total</span>
+                                    <span class="lot-summary-row__label"><el-icon><Files /></el-icon><span>Batch Total</span></span>
                                     <strong>{{ formatNumber(props.sourceBatch.batch_total_kg) }} kg</strong>
                                 </div>
                                 <div class="lot-summary-row">
-                                    <span>Allocated</span>
+                                    <span class="lot-summary-row__label"><el-icon><Tickets /></el-icon><span>Allocated</span></span>
                                     <strong class="is-warning">{{ formatNumber(projectedAllocated) }} kg</strong>
                                 </div>
                                 <div class="lot-summary-row">
-                                    <span>Remaining</span>
+                                    <span class="lot-summary-row__label"><el-icon><Van /></el-icon><span>Remaining</span></span>
                                     <strong class="is-success">{{ formatNumber(remainingAfterEntry) }} kg</strong>
                                 </div>
                             </div>
@@ -241,21 +305,16 @@ const submit = (intent = 'create') => {
 
                     <section class="lot-form-columns">
                         <div class="lot-column">
-                            <div class="lot-column__title">LOT IDENTITY</div>
+                            <div class="lot-column__title">Lot Identity</div>
                             <div class="lot-field-grid">
                                 <div class="lot-field lot-field--wide">
-                                    <label for="lot_name">LOT NAME</label>
-                                    <input id="lot_name" v-model="form.lot_name" type="text">
-                                    <InputError class="mt-2 text-sm" :message="form.errors.lot_name" />
-                                </div>
-                                <div class="lot-field">
-                                    <label for="lot_number">LOT CODE</label>
-                                    <input id="lot_number" v-model="form.lot_number" type="text">
+                                    <label for="lot_number">Lot code</label>
+                                    <el-input id="lot_number" v-model="form.lot_number" class="lot-form-control" placeholder="e.g. LOT-2026-001" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.lot_number" />
                                 </div>
-                                <div class="lot-field">
-                                    <label for="warehouse">WAREHOUSE</label>
-                                    <input id="warehouse" v-model="form.warehouse" type="text">
+                                <div class="lot-field lot-field--wide">
+                                    <label for="warehouse">Warehouse</label>
+                                    <el-input id="warehouse" v-model="form.warehouse" class="lot-form-control" placeholder="e.g. Kampala Dry Mill" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.warehouse" />
                                 </div>
                             </div>
@@ -265,29 +324,25 @@ const submit = (intent = 'create') => {
                             <div class="lot-column__title">LOGISTICS &amp; PACKING</div>
                             <div class="lot-field-grid">
                                 <div class="lot-field">
-                                    <label for="quantity_bags">BAG COUNT</label>
-                                    <input id="quantity_bags" v-model.number="form.quantity_bags" type="number" min="1">
+                                    <label for="quantity_bags">Bag count</label>
+                                    <el-input id="quantity_bags" v-model="form.quantity_bags" class="lot-form-control" type="number" placeholder="e.g. 18" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.quantity_bags" />
                                 </div>
                                 <div class="lot-field">
-                                    <label for="bag_weight_kg">BAG WEIGHT (KG)</label>
-                                    <input id="bag_weight_kg" v-model.number="form.bag_weight_kg" type="number" min="1" step="0.01">
+                                    <label for="bag_weight_kg">Bag weight (kg)</label>
+                                    <el-input id="bag_weight_kg" v-model="form.bag_weight_kg" class="lot-form-control" type="number" placeholder="e.g. 60" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.bag_weight_kg" />
                                 </div>
                                 <div class="lot-field lot-field--wide">
-                                    <label>PACKAGING TYPE</label>
-                                    <div class="lot-chip-group">
-                                        <button
+                                    <label>Packaging type</label>
+                                    <el-select v-model="form.packaging_type" class="lot-form-control" placeholder="Select packaging type">
+                                        <el-option
                                             v-for="option in props.options.packaging_types"
                                             :key="option"
-                                            type="button"
-                                            class="lot-choice-chip"
-                                            :class="{ 'is-selected': form.packaging_type === option }"
-                                            @click="form.packaging_type = option"
-                                        >
-                                            {{ option }}
-                                        </button>
-                                    </div>
+                                            :label="option"
+                                            :value="option"
+                                        />
+                                    </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.packaging_type" />
                                 </div>
                             </div>
@@ -296,26 +351,33 @@ const submit = (intent = 'create') => {
 
                     <section class="lot-form-columns lot-form-columns--spacious">
                         <div class="lot-column">
-                            <div class="lot-column__title">TECHNICAL SPECS</div>
+                            <div class="lot-column__title">Technical Specs</div>
                             <div class="lot-field-grid">
                                 <div class="lot-field">
-                                    <label>VARIETY</label>
-                                    <input :value="props.batch.variety || props.sourceBatch.type" type="text" readonly>
+                                    <label>Variety</label>
+                                    <el-input :model-value="props.batch.variety || props.sourceBatch.type" class="lot-form-control lot-form-control--readonly" readonly />
                                 </div>
                                 <div class="lot-field">
-                                    <label for="grade">GRADE</label>
-                                    <input id="grade" v-model="form.grade" type="text">
+                                    <label for="grade">Grade</label>
+                                    <el-input id="grade" v-model="form.grade" class="lot-form-control" placeholder="e.g. AA, Screen 18, Specialty" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.grade" />
                                 </div>
                                 <div class="lot-field">
-                                    <label for="screen_size">SCREEN SIZE</label>
-                                    <input id="screen_size" v-model="form.screen_size" type="text">
+                                    <label for="screen_size">Screen size</label>
+                                    <el-input id="screen_size" v-model="form.screen_size" class="lot-form-control" placeholder="e.g. 17/18" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.screen_size" />
                                 </div>
                                 <div class="lot-field">
-                                    <label for="altitude">ALTITUDE (M)</label>
-                                    <input id="altitude" v-model="form.altitude" type="text">
-                                    <InputError class="mt-2 text-sm" :message="form.errors.altitude" />
+                                    <label for="process">Processing</label>
+                                    <el-select id="process" v-model="form.process" class="lot-form-control" placeholder="Select lot processing method">
+                                        <el-option
+                                            v-for="option in props.options.processing_methods"
+                                            :key="option.id"
+                                            :label="option.name"
+                                            :value="option.name"
+                                        />
+                                    </el-select>
+                                    <InputError class="mt-2 text-sm" :message="form.errors.process" />
                                 </div>
                             </div>
                         </div>
@@ -325,26 +387,26 @@ const submit = (intent = 'create') => {
                             <div class="lot-slider-stack">
                                 <div class="lot-slider-field">
                                     <div class="lot-slider-field__top">
-                                        <label for="aroma_score">AROMA</label>
-                                        <span>{{ formatNumber(form.aroma_score, 2) }}</span>
+                                        <label for="aroma_score">Aroma</label>
+                                        <span>{{ formatScore(form.aroma_score) }}</span>
                                     </div>
-                                    <input id="aroma_score" v-model.number="form.aroma_score" type="range" min="0" max="10" step="0.01">
+                                    <el-input id="aroma_score" v-model="form.aroma_score" class="lot-form-control" type="number" placeholder="0.00 - 10.00" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.aroma_score" />
                                 </div>
                                 <div class="lot-slider-field">
                                     <div class="lot-slider-field__top">
-                                        <label for="acidity_score">ACIDITY</label>
-                                        <span>{{ formatNumber(form.acidity_score, 2) }}</span>
+                                        <label for="acidity_score">Acidity</label>
+                                        <span>{{ formatScore(form.acidity_score) }}</span>
                                     </div>
-                                    <input id="acidity_score" v-model.number="form.acidity_score" type="range" min="0" max="10" step="0.01">
+                                    <el-input id="acidity_score" v-model="form.acidity_score" class="lot-form-control" type="number" placeholder="0.00 - 10.00" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.acidity_score" />
                                 </div>
                                 <div class="lot-slider-field">
                                     <div class="lot-slider-field__top">
-                                        <label for="body_score">BODY</label>
-                                        <span>{{ formatNumber(form.body_score, 2) }}</span>
+                                        <label for="body_score">Body</label>
+                                        <span>{{ formatScore(form.body_score) }}</span>
                                     </div>
-                                    <input id="body_score" v-model.number="form.body_score" type="range" min="0" max="10" step="0.01">
+                                    <el-input id="body_score" v-model="form.body_score" class="lot-form-control" type="number" placeholder="0.00 - 10.00" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.body_score" />
                                 </div>
                             </div>
@@ -354,23 +416,21 @@ const submit = (intent = 'create') => {
                     <section class="lot-bottom-row">
                         <article class="lot-bottom-card">
                             <div class="lot-content-section__title lot-content-section__title--compact">
-                                <h2>Marketplace Listing</h2>
+                                <h2 class="mb-2">Marketplace Listing</h2>
                                 <span>Buyer-facing listing setup</span>
                             </div>
 
                             <div class="lot-field-grid lot-field-grid--single">
                                 <div class="lot-field">
-                                    <label for="target_market">TARGET MARKET</label>
-                                    <select id="target_market" v-model="form.target_market">
-                                        <option v-for="market in props.options.target_markets" :key="market" :value="market">
-                                            {{ market }}
-                                        </option>
-                                    </select>
+                                    <label for="target_market">Target market</label>
+                                    <el-select id="target_market" v-model="form.target_market" class="lot-form-control" placeholder="Select target market">
+                                        <el-option v-for="market in props.options.target_markets" :key="market" :label="market" :value="market" />
+                                    </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.target_market" />
                                 </div>
                                 <div class="lot-field">
-                                    <label for="price_per_kg">PRICE PER KG (USD)</label>
-                                    <input id="price_per_kg" v-model.number="form.price_per_kg" type="number" min="0" step="0.01">
+                                    <label for="price_per_kg">Price per kg (USD)</label>
+                                    <el-input id="price_per_kg" v-model="form.price_per_kg" class="lot-form-control" type="number" placeholder="e.g. 4.85" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.price_per_kg" />
                                 </div>
                             </div>
@@ -379,10 +439,7 @@ const submit = (intent = 'create') => {
                         <article class="lot-bottom-card">
                             <div class="lot-content-section__title lot-content-section__title--compact">
                                 <h2>Tokenisation Settings</h2>
-                                <label class="lot-switch">
-                                    <input v-model="form.tokenize" type="checkbox">
-                                    <span class="lot-switch__track"></span>
-                                </label>
+                                <el-switch v-model="form.tokenize" class="lot-switch" />
                             </div>
 
                             <div class="lot-token-grid">
@@ -466,7 +523,7 @@ const submit = (intent = 'create') => {
                     </section>
 
                     <section class="lot-sidebar-card">
-                        <h3>EXPORT READINESS</h3>
+                        <h3 class="mb-2">Export Readiness</h3>
                         <ul class="lot-readiness-list">
                             <li v-for="item in readinessItems" :key="item.label" :class="{ 'is-complete': item.complete }">
                                 <span class="lot-readiness-dot"></span>
@@ -476,17 +533,16 @@ const submit = (intent = 'create') => {
                     </section>
 
                     <section class="lot-sidebar-actions">
-                        <button
-                            type="submit"
+                        <SubmitButton
                             class="lot-sidebar-cta lot-sidebar-cta--primary"
-                            :disabled="form.processing || !canSubmitForm"
+                            :loading="form.processing"
                         >
                             Create Lot
-                        </button>
+                        </SubmitButton>
                         <button
                             type="button"
                             class="lot-sidebar-cta lot-sidebar-cta--secondary"
-                            :disabled="form.processing || !canSubmitForm"
+                            :disabled="form.processing"
                             @click="submit('create_and_tokenise')"
                         >
                             Create &amp; Tokenise
@@ -494,7 +550,7 @@ const submit = (intent = 'create') => {
                         <button
                             type="button"
                             class="lot-sidebar-cta lot-sidebar-cta--tertiary"
-                            :disabled="form.processing || !canSubmitForm"
+                            :disabled="form.processing"
                             @click="submit('create_and_list')"
                         >
                             Create &amp; List
@@ -508,14 +564,14 @@ const submit = (intent = 'create') => {
 
 <style scoped>
 .create-lot-page {
-    background: #f7f6f2;
+    background: #ffffff;
     min-height: 100%;
     padding: 18px 24px 32px;
 }
 
 .lot-page-topbar {
     align-items: center;
-    background: #f7f6f2;
+    background: #ffffff;
     display: grid;
     gap: 18px;
     grid-template-columns: minmax(0, 1fr) auto auto;
@@ -524,7 +580,7 @@ const submit = (intent = 'create') => {
 
 .lot-page-topbar__copy h1 {
     color: #0f1720;
-    font-size: 31px;
+    font-size: 25px;
     font-weight: 700;
     letter-spacing: -0.04em;
     line-height: 1;
@@ -708,33 +764,46 @@ const submit = (intent = 'create') => {
 .lot-source-grid__selector label,
 .lot-field label,
 .lot-allocation-card__left label,
-.lot-slider-field label,
+.lot-slider-field label {
+    color: #94a3b8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: none;
+}
+
 .lot-static-select,
 .lot-stat-card span,
 .lot-token-card span {
-    color: #5d6877;
+    color: #94a3b8;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
 }
 
 .lot-static-select {
     align-items: center;
     background: #ffffff;
-    border: 1px solid #d7dfe5;
-    border-radius: 8px;
-    color: #202a35;
+    border: 1px solid #edf1f5;
+    border-radius: 14px;
+    color: #111827;
     display: flex;
+    font-family: 'Source Sans 3', sans-serif;
     font-size: 15px;
+    font-weight: 600;
     justify-content: space-between;
     margin-top: 8px;
-    padding: 16px 14px;
+    min-height: 48px;
+    padding: 12px 14px;
 }
 
 .lot-static-select__chevron {
-    color: #55606d;
-    font-size: 16px;
-    font-weight: 700;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .lot-stat-card {
@@ -743,10 +812,22 @@ const submit = (intent = 'create') => {
     padding: 14px 16px;
 }
 
+.lot-stat-card__head {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.lot-stat-card__head .el-icon {
+    color: #2d6a4f;
+    font-size: 15px;
+}
+
 .lot-stat-card strong {
     color: #111a23;
     display: block;
-    font-size: 31px;
+    font-size: 24px;
     font-weight: 700;
     line-height: 1.1;
     margin-top: 8px;
@@ -788,7 +869,7 @@ const submit = (intent = 'create') => {
 
 .lot-content-section__title h2 {
     color: #111822;
-    font-size: 34px;
+    font-size: 25px;
     font-weight: 700;
     letter-spacing: -0.04em;
     margin: 0;
@@ -811,24 +892,40 @@ const submit = (intent = 'create') => {
 }
 
 .lot-large-input,
-.lot-field input,
-.lot-field select {
-    appearance: none;
-    background: #f3f5f7;
-    border: 1px solid #e2e8ee;
-    border-radius: 8px;
-    color: #18222c;
-    font-size: 15px;
-    font-weight: 600;
-    outline: none;
+.lot-form-control {
     width: 100%;
 }
 
+.lot-large-input :deep(.el-input__wrapper),
+.lot-form-control :deep(.el-input__wrapper),
+.lot-form-control :deep(.el-select__wrapper) {
+    align-items: center;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px #e8edf3 inset;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 600;
+    height: 48px;
+    min-height: 48px;
+    padding-left: 14px;
+    padding-right: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
 .lot-large-input {
-    font-size: 22px;
-    height: 86px;
     margin-top: 10px;
-    padding: 0 18px;
+}
+
+.lot-large-input :deep(.el-input__wrapper) {
+    height: 72px;
+    min-height: 72px;
+}
+
+.lot-large-input :deep(.el-input__inner) {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
 }
 
 .lot-allocation-card__left p {
@@ -851,6 +948,19 @@ const submit = (intent = 'create') => {
     justify-content: space-between;
 }
 
+.lot-summary-row__label {
+    align-items: center;
+    color: #5d6877;
+    display: inline-flex;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.lot-summary-row__label .el-icon {
+    color: #2d6a4f;
+    font-size: 14px;
+}
+
 .lot-summary-row span {
     color: #5d6877;
     font-size: 14px;
@@ -858,7 +968,7 @@ const submit = (intent = 'create') => {
 
 .lot-summary-row strong {
     color: #18232f;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
 }
 
@@ -873,6 +983,7 @@ const submit = (intent = 'create') => {
 
 .lot-form-columns {
     border-top: 1px solid #e1e6eb;
+    align-items: start;
     display: grid;
     gap: 28px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -884,11 +995,13 @@ const submit = (intent = 'create') => {
 }
 
 .lot-column {
+    align-content: start;
     display: grid;
-    gap: 16px;
+    gap: 10px;
 }
 
 .lot-field-grid {
+    align-items: start;
     display: grid;
     gap: 12px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -900,23 +1013,43 @@ const submit = (intent = 'create') => {
 
 .lot-field {
     display: grid;
-    gap: 7px;
+    gap: 8px;
 }
 
 .lot-field--wide {
     grid-column: 1 / -1;
 }
 
-.lot-field input,
-.lot-field select {
-    background: #ffffff;
-    height: 46px;
-    padding: 0 14px;
+.lot-field :deep(.el-input),
+.lot-field :deep(.el-select) {
+    width: 100%;
 }
 
-.lot-field input[readonly] {
-    background: #f7f8fa;
-    color: #52606d;
+.lot-field :deep(.el-input__inner),
+.lot-field :deep(.el-select__selected-item),
+.lot-large-input :deep(.el-input__inner) {
+    color: #111827;
+}
+
+.lot-field :deep(.el-input__inner::placeholder),
+.lot-large-input :deep(.el-input__inner::placeholder) {
+    color: #a3aab5;
+}
+
+.lot-large-input :deep(.el-input__wrapper.is-focus),
+.lot-form-control :deep(.el-input__wrapper.is-focus),
+.lot-form-control :deep(.el-select__wrapper.is-focused),
+.lot-form-control :deep(.el-select__wrapper:focus-within),
+.lot-static-select:focus-within {
+    box-shadow: 0 0 0 1px #198754 inset, 0 0 0 0.2rem rgba(25, 135, 84, 0.12);
+}
+
+.lot-form-control--readonly :deep(.el-input__wrapper) {
+    background: #f8fafc;
+}
+
+.lot-form-control--readonly :deep(.el-input__inner) {
+    color: #475569;
 }
 
 .lot-chip-group {
@@ -926,20 +1059,22 @@ const submit = (intent = 'create') => {
 }
 
 .lot-choice-chip {
-    background: #f3f4f6;
-    border: 1px solid #e1e6eb;
-    border-radius: 8px;
-    color: #3e4956;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    color: #475569;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    padding: 12px 18px;
+    letter-spacing: 0.04em;
+    padding: 10px 14px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .lot-choice-chip.is-selected {
-    background: #f7d8bd;
-    border-color: #f7d8bd;
-    color: #5b3a11;
+    background: #f5fbf8;
+    border-color: #b7dfc6;
+    color: #166534;
 }
 
 .lot-slider-stack {
@@ -962,11 +1097,6 @@ const submit = (intent = 'create') => {
     color: #1a2430;
     font-size: 13px;
     font-weight: 700;
-}
-
-.lot-slider-field input[type='range'] {
-    accent-color: #0f5c3a;
-    width: 100%;
 }
 
 .lot-bottom-row {
@@ -1003,42 +1133,15 @@ const submit = (intent = 'create') => {
 
 .lot-switch {
     align-items: center;
-    cursor: pointer;
     display: inline-flex;
 }
 
-.lot-switch input {
-    display: none;
-}
-
-.lot-switch__track {
-    background: #d6dde4;
-    border-radius: 999px;
+.lot-switch :deep(.el-switch__core) {
+    --el-switch-on-color: #0f5c3a;
+    --el-switch-off-color: #d6dde4;
+    min-width: 46px;
     height: 26px;
-    position: relative;
-    transition: 0.2s ease;
-    width: 46px;
-}
-
-.lot-switch__track::after {
-    background: #ffffff;
-    border-radius: 50%;
-    box-shadow: 0 3px 10px rgba(20, 38, 55, 0.18);
-    content: '';
-    height: 20px;
-    left: 3px;
-    position: absolute;
-    top: 3px;
-    transition: 0.2s ease;
-    width: 20px;
-}
-
-.lot-switch input:checked + .lot-switch__track {
-    background: #0f5c3a;
-}
-
-.lot-switch input:checked + .lot-switch__track::after {
-    transform: translateX(20px);
+    border: 0;
 }
 
 .lot-sidebar {

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Lot extends Model
 {
@@ -74,5 +75,21 @@ class Lot extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the sensory profile associated with the lot.
+     */
+    public function sensoryProfile(): HasOne
+    {
+        return $this->hasOne(LotSensoryProfile::class);
+    }
+
+    /**
+     * Get the storage profile associated with the lot.
+     */
+    public function storageProfile(): HasOne
+    {
+        return $this->hasOne(LotStorageProfile::class);
     }
 }

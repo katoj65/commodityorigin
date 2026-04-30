@@ -1,1623 +1,1867 @@
 <script setup>
-import { ref } from 'vue';
-import {
-    Bell,
-    ChatLineRound,
-    Checked,
-    Download,
-    Grid,
-    Histogram,
-    InfoFilled,
-    Promotion,
-    RefreshRight,
-    Search,
-    ShoppingCartFull,
-    TrendCharts,
-    UserFilled,
-    WarnTriangleFilled,
-} from '@element-plus/icons-vue';
+import { Head } from '@inertiajs/vue3';
 import OuterLayout from '@/Layouts/OuterLayout.vue';
 
-const topTabs = [
-    { label: 'Intelligence', active: true },
-    { label: 'Markets', active: false },
-    { label: 'Supply', active: false },
-    { label: 'Forecasts', active: false },
-];
+const topTabs = ['Region', 'Coffee Type', 'Category'];
 
 const sideLinks = [
-    { label: 'Global News', icon: Grid, active: true },
-    { label: 'Weather Risks', icon: WarnTriangleFilled, active: false },
-    { label: 'Price Index', icon: TrendCharts, active: false },
-    { label: 'Trade Desk', icon: Promotion, active: false },
-    { label: 'Sentiment', icon: Histogram, active: false },
+    { label: 'Terminal', icon: 'dashboard', active: false },
+    { label: 'Market Data', icon: 'monitoring', active: true },
+    { label: 'Global News', icon: 'newspaper', active: false },
+    { label: 'Supply Chain', icon: 'local_shipping', active: false },
+    { label: 'Risk Analytics', icon: 'security_update_good', active: false },
+    { label: 'Archive', icon: 'inventory_2', active: false },
+];
+
+const sideFooterLinks = [
+    { label: 'Support', icon: 'help_outline' },
+    { label: 'API Reference', icon: 'code' },
+];
+
+const tickerItems = [
+    { text: 'Robusta prices rise 4.2%', tone: 'green' },
+    { text: 'Heavy rain reported in Brazil', tone: 'red' },
+    { text: 'UAE demand for Ugandan coffee increasing', tone: 'amber' },
+    { text: 'EU traceability requirements affecting exporters', tone: 'red' },
 ];
 
 const summaryCards = [
-    {
-        label: 'Weather Index',
-        value: '34.2',
-        meta: 'Global Avg Index',
-        status: 'High Risk',
-        tone: 'red',
-        icon: WarnTriangleFilled,
-        accent: 'alert',
-    },
-    {
-        label: 'Price Index',
-        value: '$188.40',
-        meta: 'Composite USD/lb',
-        status: '+1.8%',
-        tone: 'green',
-        icon: TrendCharts,
-        accent: 'price',
-    },
-    {
-        label: 'Supply Chain',
-        value: '78%',
-        meta: 'Capacity Efficiency',
-        status: 'Congested',
-        tone: 'amber',
-        icon: Promotion,
-        accent: 'supply',
-    },
-    {
-        label: 'Demand Forecast',
-        value: '+4.1m',
-        meta: 'Bags (60kg) est.',
-        status: 'Growing',
-        tone: 'green',
-        icon: ShoppingCartFull,
-        accent: 'demand',
-    },
-    {
-        label: 'Quality Pulse',
-        value: '84.2',
-        meta: 'SCA Avg Score',
-        status: 'Stable',
-        tone: 'green',
-        icon: Checked,
-        accent: 'quality',
-    },
-];
-
-const movingMarkets = [
-    { label: 'UAE', detail: '↑ 12% Demand', tone: 'green' },
-    { label: 'Vietnam', detail: '↓ 5% Harvest', tone: 'red' },
-    { label: 'Germany', detail: '↑ Specialty', tone: 'green' },
-    { label: 'Robusta', detail: '🔥 High Volatility', tone: 'red' },
-    { label: 'Logistics', detail: '↔ Ocean Freight Stagnant', tone: 'neutral' },
+    { label: 'Price Direction', value: '+2.4%', tone: 'green', icon: 'bars' },
+    { label: 'Weather Risk', value: 'Critical', tone: 'red', icon: 'warning' },
+    { label: 'Demand Trend', value: 'Accel.', tone: 'dark', icon: 'trending_up' },
+    { label: 'Supply Status', value: 'Shortage', tone: 'amber', icon: 'inventory' },
+    { label: 'Quality Avg', value: '92.4', tone: 'dark', icon: 'star' },
+    { label: 'Export Risk', value: 'Medium', tone: 'amber', icon: 'gavel' },
 ];
 
 const feedCards = [
     {
-        category: 'Climate',
-        sentiment: 'Negative',
-        tone: 'red',
-        title: 'La Nina Intensifies: Heavy Rains Threaten Vietnam Harvest Window',
-        body: 'Continuous rainfall in the Central Highlands is slowing cherry drying and compressing export-grade availability.',
-        footerTitle: 'Why It Matters',
-        footerBody: 'Potential 15% reduction in exportable grade Robusta for Q1.',
-        impact: 'Impact 9/10',
-        time: '14m ago',
+        age: '14M AGO • BRAZIL',
+        sentiment: 'Positive Sentiment',
+        tone: 'positive',
+        title: 'Frost warnings in Minas Gerais trigger Arabica price volatility',
+        body: 'Met services confirm a cold front moving towards key regions, potentially impacting late harvest cherry development.',
+        impactLabel: 'Critical Impact',
+        why: 'Likely to drive short-term futures spikes by up to 8.5 cents/lb.',
+        impact: '9.2 / 10',
     },
     {
-        category: 'Trade',
-        sentiment: 'Positive',
-        tone: 'green',
-        title: 'New Port Agreement in Kenya to Reduce Export Lead Times by 20%',
-        body: 'Public-private partnership at Mombasa Port aims to streamline handling for premium East African lots.',
-        footerTitle: 'Why It Matters',
-        footerBody: 'Faster speed-to-market for premium Kenyan AA lots.',
-        impact: 'Impact 6/10',
-        time: '2h ago',
+        age: '2H AGO • EU/VIETNAM',
+        sentiment: 'Negative Sentiment',
+        tone: 'negative',
+        title: 'New EUDR compliance hurdles for Vietnamese Robusta exporters',
+        body: 'Regulatory update requires geolocation data for all smallholder plots by Q4, risking export delays for unverified volumes.',
+        impactLabel: 'Supply Risk',
+        why: '30% of current supply chain lacks necessary digital mapping data.',
+        impact: '7.8 / 10',
     },
     {
-        category: 'Price',
-        sentiment: 'Neutral',
-        tone: 'slate',
-        title: "Global Stockpiles Stabilize as Roasters Move to 'Just-in-Time' Model",
-        body: 'Warehousing reports in Hamburg and NYC show stable inventory behavior despite intra-month volatility.',
-        footerTitle: 'Why It Matters',
-        footerBody: 'Short-term price stabilization expected across Arabica futures.',
-        impact: 'Impact 4/10',
-        time: '4h ago',
-    },
-    {
-        category: 'Tech',
-        sentiment: 'Positive',
-        tone: 'green',
-        title: 'Satellite Data Confirms Successful Replanting in South Ethiopia',
-        body: 'High-resolution imaging shows 85% survival rate for new disease-resistant planting clusters.',
-        footerTitle: 'Why It Matters',
-        footerBody: 'Ensures quality consistency for 2026-2027 harvest seasons.',
-        impact: 'Impact 7/10',
-        time: '6h ago',
+        age: '5H AGO • UAE',
+        sentiment: 'Positive Sentiment',
+        tone: 'positive',
+        title: 'DMCC reports 15% growth in specialty coffee trade corridors',
+        body: 'Strong growth driven by specialty demand from MENA region and new logistics corridors for East African producers.',
+        impactLabel: 'Market Opportunity',
+        why: 'Signals massive trade opportunity for Ethiopian and Ugandan Arabicas.',
+        impact: '6.5 / 10',
     },
 ];
 
-const matrixRows = [
-    { market: 'UAE', change: '+14%', status: 'High Growth', tone: 'green' },
-    { market: 'USA', change: '+1%', status: 'Saturated', tone: 'slate' },
-    { market: 'DE', change: '+6%', status: 'Specialty Shift', tone: 'amber' },
+const weatherItems = [
+    { country: 'Uganda', note: '24°C | 85% PRECIP EXPECTED', risk: 'Low Risk', tone: 'green', icon: 'rainy' },
+    { country: 'Brazil', note: '32°C | EXTREME DROUGHT', risk: 'High Risk', tone: 'red', icon: 'wb_sunny' },
+    { country: 'Vietnam', note: '19°C | UNSEASONAL FROST', risk: 'Med Risk', tone: 'amber', icon: 'cloudy_snowing' },
 ];
 
-const advisorPrompts = [
-    'Summarize Brazil drought impact',
-    'Show Robusta price trends',
-    'Identify supply chain risks',
+const analyticsBars = [24, 50, 40, 76, 60, 35, 92, 66, 100];
+
+const buyerRequirements = [
+    { market: 'UAE', coffee: 'Specialty Arabica', score: '85+', moisture: '11.5%', cert: 'Halal/Organic', demand: 'Surging', tone: 'green' },
+    { market: 'Germany', coffee: 'Fine Robusta', score: '82+', moisture: '12.0%', cert: 'Fairtrade/RF', demand: 'Stable', tone: 'gray' },
+    { market: 'Japan', coffee: 'Micro-lot Arabica', score: '88+', moisture: '11.0%', cert: 'JAS Organic', demand: 'High', tone: 'green' },
 ];
 
-const smartAlerts = [
-    { label: 'Price Volatility (>5%)', note: 'Instant push notification', active: true },
-    { label: 'Climate Risk Alerts', note: 'Origin-specific monitoring', active: true },
-    { label: 'Competitor Insights', note: 'Weekly aggregated report', active: false },
+const deskAlerts = [
+    { label: 'Price Volatility (>5%)', enabled: true },
+    { label: 'New Compliance Rules', enabled: true },
+    { label: 'Trade Matches', enabled: false },
 ];
 
-const weatherCards = [
-    { country: 'Brazil', status: 'Extreme', title: 'Drought Risk', tone: 'red' },
-    { country: 'Vietnam', status: 'Moderate', title: 'Flood Warning', tone: 'amber' },
-    { country: 'Uganda', status: 'Low', title: 'Ideal Conditions', tone: 'green' },
-    { country: 'Colombia', status: 'Low', title: 'Stable Patterns', tone: 'green' },
+const regionalDesks = [
+    'East Africa: +256 (0) 41 455...',
+    'South America: +55 (11) 3444...',
+    'EMEA Central: +971 4 433...',
 ];
-
-const parityBars = ['22%', '26%', '20%', '34%', '31%', '38%', '46%', '58%'];
-
-const advisorInput = ref('');
-
-function fillAdvisorPrompt(prompt) {
-    advisorInput.value = prompt;
-}
-
-function sendAdvisorMessage() {
-    advisorInput.value = '';
-}
 </script>
 
 <template>
     <OuterLayout title="Market Intelligence">
+        <Head>
+            <link
+                href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+                rel="stylesheet"
+            />
+        </Head>
+
         <section class="mi-page">
-            <div class="mi-frame">
-
-
+            <div class="mi-shell">
+             
                 <div class="mi-layout">
                     <aside class="mi-sidebar">
-                        <div class="mi-sidebar-top">
-                            <h2>Intelligence Hub</h2>
-                            <span>Market Pulse</span>
+                        <div class="mi-sidebar__head">
+                            <h2>Institutional Exchange</h2>
+                            <span>Terminal v4.2</span>
                         </div>
 
-                        <nav class="mi-side-nav">
-                            <a
+                        <nav class="mi-sidebar__nav">
+                            <button
                                 v-for="item in sideLinks"
                                 :key="item.label"
-                                href="#"
-                                class="mi-side-link"
+                                type="button"
+                                class="mi-sidebar__link"
                                 :class="{ 'is-active': item.active }"
                             >
-                                <component :is="item.icon" />
+                                <span class="material-symbols-outlined">{{ item.icon }}</span>
                                 <span>{{ item.label }}</span>
-                            </a>
+                            </button>
                         </nav>
 
-                        <div class="mi-sidebar-bottom">
-                            <button type="button" class="mi-ai-btn">
-                                <ChatLineRound />
-                                <span>Ask AI Advisor</span>
+                        <div class="mi-sidebar__bottom">
+                            <button type="button" class="mi-live-btn">
+                                <span class="material-symbols-outlined">bolt</span>
+                                <span>Live Intelligence</span>
                             </button>
+
+                            <div class="mi-sidebar__meta">
+                                <button
+                                    v-for="item in sideFooterLinks"
+                                    :key="item.label"
+                                    type="button"
+                                    class="mi-sidebar__meta-link"
+                                >
+                                    <span class="material-symbols-outlined">{{ item.icon }}</span>
+                                    <span>{{ item.label }}</span>
+                                </button>
+                            </div>
                         </div>
                     </aside>
 
-                    <main class="mi-main">
-                        <section class="mi-toolbar">
-                            <div>
-                                <h1 class="mi-title">Coffee News &amp; Market Intelligence</h1>
+                    <main class="mi-content">
+                        <section class="mi-summary-strip">
+                            <div class="mi-summary-strip__text">
+                                <span class="material-symbols-outlined">auto_awesome</span>
+                                <p>Robusta demand is rising in UAE while global supply remains tight.</p>
                             </div>
 
-                            <div class="mi-toolbar-actions">
-                                <button type="button" class="mi-select-btn">
-                                    <span>Global Regions</span>
-                                    <span>⌄</span>
-                                </button>
-                                <button type="button" class="mi-select-btn">
-                                    <span>All Types</span>
-                                    <span>⌄</span>
-                                </button>
-                                <span class="mi-toolbar-divider"></span>
-                                <button type="button" class="mi-tool-btn">
-                                    <Bell />
-                                    <span>Set Alerts</span>
-                                </button>
-                                <button type="button" class="mi-tool-btn">
-                                    <Download />
-                                    <span>Export</span>
-                                </button>
+                            <div class="mi-summary-strip__badges">
+                                <span class="is-primary">Bullish</span>
+                                <span class="is-soft">High Demand</span>
+                                <span class="is-neutral">Impact: Med</span>
                             </div>
                         </section>
 
-                        <section class="mi-banner-row">
-                            <article class="mi-ai-summary">
-                                <div class="mi-ai-summary-badge">
-                                    <span>AI</span>
-                                    <strong>Summary</strong>
-                                </div>
-                                <p>
-                                    Market sentiment is <strong>Bullish</strong> for Arabica following crop reports from Minas Gerais.
-                                    Robusta supply chains offsetting logistics delays in the Red Sea.
-                                </p>
-                                <div class="mi-ai-summary-status">
-                                    <i></i>
-                                    <span>Market</span>
-                                    <strong>Neutral/Positive</strong>
-                                </div>
-                            </article>
-
-                            <article class="mi-breaking">
-                                <span class="mi-breaking-label">
-                                    <i></i>
-                                    Breaking:
-                                </span>
-                                <p>Brazil rainfall significantly below 5-year average in key producing regions; Robusta prices spike +4.2% in London.</p>
-                            </article>
-                        </section>
-
-                        <section class="mi-metric-grid">
-                            <article v-for="card in summaryCards" :key="card.label" class="mi-card mi-metric-card">
-                                <div class="mi-metric-top">
-                                    <div>
-                                        <span class="mi-kicker">{{ card.label }}</span>
-                                        <div class="mi-metric-status" :class="`is-${card.tone}`">{{ card.status }}</div>
+                        <section class="mi-ticker" aria-label="Breaking market updates">
+                            <div class="mi-ticker__track">
+                                <div class="mi-ticker__group">
+                                    <div
+                                        v-for="item in tickerItems"
+                                        :key="`first-${item.text}`"
+                                        class="mi-ticker__item"
+                                    >
+                                        <i :class="`is-${item.tone}`"></i>
+                                        <span>{{ item.text }}</span>
                                     </div>
-                                    <component :is="card.icon" class="mi-metric-icon" :class="`is-${card.tone}`" />
                                 </div>
-                                <div class="mi-metric-value">{{ card.value }}</div>
-                                <div class="mi-metric-meta">{{ card.meta }}</div>
-                                <div v-if="card.accent === 'alert'" class="mi-alert-bars">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                </div>
-                            </article>
-                        </section>
-
-                        <section class="mi-moving-row">
-                            <span class="mi-moving-label">Moving Markets:</span>
-                            <div class="mi-chip-row">
-                                <span v-for="item in movingMarkets" :key="item.label" class="mi-chip" :class="`is-${item.tone}`">
-                                    <strong>{{ item.label }}</strong>
-                                    <span>{{ item.detail }}</span>
-                                </span>
-                            </div>
-                        </section>
-
-                        <section class="mi-feed-section">
-                            <div class="mi-feed-header">
-                                <h2>Main Intelligence Feed</h2>
-                                <div class="mi-feed-actions">
-                                    <button type="button" class="mi-view-btn is-active">
-                                        <Grid />
-                                    </button>
-                                    <button type="button" class="mi-view-btn">
-                                        <Histogram />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="mi-feed-grid">
-                                <div class="mi-feed-main">
-                                    <div class="mi-story-grid">
-                                        <article
-                                            v-for="card in feedCards"
-                                            :key="card.title"
-                                            class="mi-card mi-story-card"
-                                        >
-                                            <div class="mi-story-top">
-                                                <span class="mi-story-tag">{{ card.category }}</span>
-                                                <span class="mi-story-tone" :class="`is-${card.tone}`">
-                                                    <i></i>
-                                                    {{ card.sentiment }}
-                                                </span>
-                                            </div>
-
-                                            <h3>{{ card.title }}</h3>
-                                            <p class="mi-story-body">{{ card.body }}</p>
-
-                                            <div class="mi-story-footer-box">
-                                                <div>
-                                                    <span class="mi-story-footer-kicker">{{ card.footerTitle }}</span>
-                                                    <p>{{ card.footerBody }}</p>
-                                                </div>
-                                                <strong>{{ card.impact }}</strong>
-                                            </div>
-
-                                            <div class="mi-story-meta">
-                                                <span>{{ card.time }}</span>
-                                                <div class="mi-story-icons">
-                                                    <Checked />
-                                                    <Promotion />
-                                                </div>
-                                            </div>
-                                        </article>
-
-                                        <article class="mi-card mi-loading-card">
-                                            <RefreshRight class="mi-spin-icon" />
-                                            <span>Loading Market Updates...</span>
-                                        </article>
-
-                                        <article class="mi-card mi-loading-card">
-                                            <RefreshRight class="mi-spin-icon" />
-                                            <span>Scanning Trade Reports...</span>
-                                        </article>
+                                <div class="mi-ticker__group" aria-hidden="true">
+                                    <div
+                                        v-for="item in tickerItems"
+                                        :key="`second-${item.text}`"
+                                        class="mi-ticker__item"
+                                    >
+                                        <i :class="`is-${item.tone}`"></i>
+                                        <span>{{ item.text }}</span>
                                     </div>
+                                </div>
+                            </div>
+                        </section>
 
-                                    <div class="mi-lower-panels">
-                                        <section class="mi-panel-block">
-                                            <h3>Weather Intelligence</h3>
-                                            <div class="mi-weather-grid">
-                                                <article
-                                                    v-for="item in weatherCards"
-                                                    :key="item.country"
-                                                    class="mi-card mi-weather-card"
-                                                    :class="`is-${item.tone}`"
-                                                >
-                                                    <div class="mi-weather-top">
-                                                        <span>{{ item.country }}</span>
-                                                        <strong>{{ item.status }}</strong>
-                                                    </div>
-                                                    <div class="mi-weather-title">{{ item.title }}</div>
-                                                </article>
+                        <div class="mi-content__inner">
+                            <section class="mi-kpi-grid">
+                                <article v-for="item in summaryCards" :key="item.label" class="mi-kpi-card">
+                                    <p>{{ item.label }}</p>
+                                    <div class="mi-kpi-card__value">
+                                        <strong :class="`is-${item.tone}`">{{ item.value }}</strong>
+
+                                        <div v-if="item.icon === 'bars'" class="mi-spark-bars" aria-hidden="true">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+                                        <span v-else class="material-symbols-outlined" :class="`is-${item.tone}`">
+                                            {{ item.icon }}
+                                        </span>
+                                    </div>
+                                </article>
+                            </section>
+
+                            <section class="mi-feed">
+                                <div class="mi-feed__head">
+                                    <h1>Market Intelligence Feed</h1>
+                                    <div class="mi-feed__actions">
+                                        <button type="button" class="is-primary">Set Alerts</button>
+                                        <button type="button">Export</button>
+                                    </div>
+                                </div>
+
+                                <div class="mi-story-grid">
+                                    <article v-for="item in feedCards" :key="item.title" class="mi-story-card">
+                                        <div class="mi-story-card__top">
+                                            <span class="mi-story-card__age">{{ item.age }}</span>
+                                            <span class="mi-story-card__sentiment">
+                                                <i :class="`is-${item.tone}`"></i>
+                                                {{ item.sentiment }}
+                                            </span>
+                                        </div>
+
+                                        <h2>{{ item.title }}</h2>
+                                        <p class="mi-story-card__body">{{ item.body }}</p>
+
+                                        <div class="mi-story-card__impact">
+                                            <span>{{ item.impactLabel }}</span>
+                                            <p>{{ item.why }}</p>
+                                        </div>
+
+                                        <div class="mi-story-card__footer">
+                                            <div>
+                                                <small>Impact Score</small>
+                                                <strong>{{ item.impact }}</strong>
                                             </div>
-                                        </section>
+                                            <button type="button">
+                                                View Data
+                                                <span class="material-symbols-outlined">arrow_right_alt</span>
+                                            </button>
+                                        </div>
+                                    </article>
+                                </div>
 
-                                        <section class="mi-panel-block">
-                                            <h3>Arabica/Robusta Parity</h3>
-                                            <article class="mi-card mi-parity-card">
-                                                <div class="mi-parity-top">
-                                                    <div>
-                                                        <span>Spread Gap</span>
-                                                        <strong>82.40 pts</strong>
-                                                    </div>
-                                                    <div class="mi-parity-trend">
-                                                        <span>24H Trend</span>
-                                                        <strong>Widening</strong>
-                                                    </div>
+                                <div class="mi-analysis-grid">
+                                    <section class="mi-weather">
+                                        <h2>Weather &amp; Crop Risk</h2>
+
+                                        <div class="mi-weather__list">
+                                            <article v-for="item in weatherItems" :key="item.country" class="mi-weather-card">
+                                                <div class="mi-weather-card__icon" :class="`is-${item.tone}`">
+                                                    <span class="material-symbols-outlined">{{ item.icon }}</span>
                                                 </div>
 
-                                                <div class="mi-parity-chart">
-                                                    <div
-                                                        v-for="(bar, index) in parityBars"
-                                                        :key="index"
-                                                        class="mi-parity-bar"
-                                                        :class="{ 'is-active': index === parityBars.length - 1 }"
-                                                        :style="{ height: bar }"
-                                                    ></div>
+                                                <div class="mi-weather-card__body">
+                                                    <div class="mi-weather-card__head">
+                                                        <strong>{{ item.country }}</strong>
+                                                        <em :class="`is-${item.tone}`">{{ item.risk }}</em>
+                                                    </div>
+                                                    <span>{{ item.note }}</span>
                                                 </div>
                                             </article>
-                                        </section>
-                                    </div>
+                                        </div>
+
+                                        <article class="mi-recommendation">
+                                            <span>AI Recommendation</span>
+                                            <h3>List export-ready Robusta for UAE immediately to capitalize on supply gap.</h3>
+                                            <button type="button">Execute Strategy</button>
+                                        </article>
+                                    </section>
+
+                                    <section class="mi-analytics-card">
+                                        <div class="mi-analytics-card__head">
+                                            <div>
+                                                <h2>Market Analytics</h2>
+                                                <p>Institutional Price &amp; Volume Tracking</p>
+                                            </div>
+
+                                            <div class="mi-analytics-card__tabs">
+                                                <button type="button" class="is-active">Arabica</button>
+                                                <button type="button">Robusta</button>
+                                                <button type="button">Uganda</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="mi-chart">
+                                            <div class="mi-chart__bars">
+                                                <span
+                                                    v-for="(item, index) in analyticsBars"
+                                                    :key="index"
+                                                    :style="{ height: `${item}%` }"
+                                                ></span>
+                                            </div>
+
+                                            <div class="mi-chart__spot">
+                                                <small>Current Spot</small>
+                                                <strong>$182.45</strong>
+                                                <em>+1.2% Day</em>
+                                            </div>
+                                        </div>
+
+                                        <div class="mi-analytics-card__meta">
+                                            <div>
+                                                <span>Volume 24h</span>
+                                                <strong>1.2M Bags</strong>
+                                            </div>
+                                            <div>
+                                                <span>Open Interest</span>
+                                                <strong>45.2K Contracts</strong>
+                                            </div>
+                                            <div>
+                                                <span>Influence</span>
+                                                <strong class="is-green">Bullish</strong>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div>
+                            </section>
+
+                            <section class="mi-table-card">
+                                <div class="mi-table-card__head">
+                                    <h2>Global Buyer Requirements</h2>
+                                    <button type="button">
+                                        View All Markets
+                                        <span class="material-symbols-outlined">open_in_new</span>
+                                    </button>
                                 </div>
 
-                                <aside class="mi-rail">
-                                    <article class="mi-card mi-demand-card">
-                                        <div class="mi-rail-heading">
-                                            <h3>Demand Matrix</h3>
-                                        </div>
-                                        <div class="mi-demand-list">
-                                            <div v-for="row in matrixRows" :key="row.market" class="mi-demand-row">
-                                                <div>
-                                                    <strong>{{ row.market }}</strong>
-                                                    <span>{{ row.change }}</span>
-                                                </div>
-                                                <em :class="`is-${row.tone}`">{{ row.status }}</em>
-                                            </div>
-                                        </div>
-                                    </article>
+                                <div class="mi-table-wrap">
+                                    <table class="mi-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Market</th>
+                                                <th>Preferred Coffee</th>
+                                                <th>Min Score</th>
+                                                <th>Moisture %</th>
+                                                <th>Certification</th>
+                                                <th>Demand Level</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="item in buyerRequirements" :key="item.market">
+                                                <td>
+                                                    <div class="mi-market-cell">
+                                                        <span class="mi-market-cell__flag"></span>
+                                                        <strong>{{ item.market }}</strong>
+                                                    </div>
+                                                </td>
+                                                <td>{{ item.coffee }}</td>
+                                                <td class="is-strong">{{ item.score }}</td>
+                                                <td>{{ item.moisture }}</td>
+                                                <td class="is-cert">{{ item.cert }}</td>
+                                                <td>
+                                                    <span class="mi-demand-chip" :class="`is-${item.tone}`">{{ item.demand }}</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
 
-                                    <article class="mi-card mi-advisor-card">
-                                        <div class="mi-advisor-card-head">
-                                            <div class="mi-advisor-card-title">
-                                                <div class="mi-advisor-avatar">
-                                                    <ChatLineRound />
-                                                </div>
-                                                <div>
-                                                    <strong>News Advisor</strong>
-                                                    <span>Online</span>
-                                                </div>
-                                            </div>
-                                        </div>
+                            <section class="mi-footer-panels">
+                                <article class="mi-footer-panels__brand">
+                                    <h2>Bean Origin Intelligence</h2>
+                                    <p>Institutional-grade data terminal for global coffee supply chains, logistics, and market analytics.</p>
+                                    <div class="mi-footer-panels__links">
+                                        <a href="#">Privacy Policy</a>
+                                        <a href="#">Terms of Service</a>
+                                        <a href="#">Methodology</a>
+                                    </div>
+                                </article>
 
-                                        <div class="mi-advisor-prompts">
-                                            <button
-                                                v-for="prompt in advisorPrompts"
-                                                :key="prompt"
-                                                type="button"
-                                                class="mi-advisor-prompt"
-                                                @click="fillAdvisorPrompt(prompt)"
-                                            >
-                                                "{{ prompt }}"
+                                <article class="mi-footer-panels__card">
+                                    <h3>Smart Alerts</h3>
+                                    <div class="mi-toggle-list">
+                                        <div v-for="item in deskAlerts" :key="item.label" class="mi-toggle-row">
+                                            <span>{{ item.label }}</span>
+                                            <button type="button" class="mi-toggle" :class="{ 'is-on': item.enabled }" aria-hidden="true">
+                                                <i></i>
                                             </button>
                                         </div>
+                                    </div>
+                                </article>
 
-                                        <div class="mi-advisor-input">
-                                            <input
-                                                v-model="advisorInput"
-                                                type="text"
-                                                placeholder="Ask Bean Origin AI..."
-                                                @keydown.enter.prevent="sendAdvisorMessage"
-                                            />
-                                            <button type="button" @click="sendAdvisorMessage">
-                                                <Promotion />
-                                            </button>
-                                        </div>
-                                    </article>
-
-                                    <article class="mi-card mi-alerts-card">
-                                        <div class="mi-rail-heading">
-                                            <h3>Smart Alerts</h3>
-                                            <InfoFilled />
-                                        </div>
-
-                                        <div class="mi-alerts-list">
-                                            <div v-for="alert in smartAlerts" :key="alert.label" class="mi-alert-line">
-                                                <div>
-                                                    <strong>{{ alert.label }}</strong>
-                                                    <span>{{ alert.note }}</span>
-                                                </div>
-                                                <button type="button" class="mi-toggle" :class="{ 'is-active': alert.active }">
-                                                    <span></span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </article>
-                                </aside>
-                            </div>
-                        </section>
-
+                                <article class="mi-footer-panels__card">
+                                    <h3>Regional Desks</h3>
+                                    <div class="mi-desk-list">
+                                        <span v-for="item in regionalDesks" :key="item">{{ item }}</span>
+                                    </div>
+                                </article>
+                            </section>
+                        </div>
                     </main>
                 </div>
-            </div>
 
-            <button type="button" class="mi-floating-chat">
-                <ChatLineRound />
-            </button>
+                <aside class="mi-advisor">
+                    <div class="mi-advisor__head">
+                        <div class="mi-advisor__identity">
+                            <div class="mi-advisor__avatar">
+                                <span class="material-symbols-outlined">smart_toy</span>
+                            </div>
+                            <div>
+                                <strong>Bean Origin Advisor</strong>
+                                <span><i></i> Online &amp; Analyzing</span>
+                            </div>
+                        </div>
+
+                        <button type="button" aria-label="Close advisor">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+
+                    <div class="mi-advisor__body">
+                        <div class="mi-advisor__message">
+                            Good morning. Brazil frost warnings have triggered a 4% spike in Arabica futures. Would you like to see how this impacts your current Ugandan Robusta export strategy?
+                        </div>
+
+                        <div class="mi-advisor__reply">
+                            Yes, show me the UAE arbitrage opportunity.
+                        </div>
+                    </div>
+
+                    <div class="mi-advisor__footer">
+                        <div class="mi-advisor__chips">
+                            <button type="button">UAE Entry</button>
+                            <button type="button">EUDR Compliance</button>
+                        </div>
+
+                        <label class="mi-advisor__input">
+                            <input type="text" placeholder="Ask advisor..." />
+                            <button type="button" aria-label="Send">
+                                <span class="material-symbols-outlined">send</span>
+                            </button>
+                        </label>
+                    </div>
+                </aside>
+            </div>
         </section>
     </OuterLayout>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
 .mi-page {
-    background: #fff;
-    color: #111827;
-    font-family: 'Inter', sans-serif;
+    --mi-primary: #065f46;
+    --mi-primary-soft: #e8f3ef;
+    --mi-primary-faint: #dff3ea;
+    --mi-amber: #e6a41d;
+    --mi-red: #d63c34;
+    --mi-text: #191c1e;
+    --mi-muted: #68727d;
+    --mi-soft-text: #8c96a1;
+    --mi-line: rgba(190, 201, 194, 0.38);
+    --mi-panel: #ffffff;
+    --mi-page: #f8f9fa;
+    --mi-surface: #f2f4f6;
     min-height: 100vh;
+    background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+    color: var(--mi-text);
+    font-family: 'Manrope', sans-serif;
 }
 
-.mi-frame {
-    margin: 0 auto;
-    max-width: 1320px;
+.mi-shell {
+    position: relative;
+    width: 100%;
+    background: #ffffff;
 }
 
-.mi-header {
-    align-items: center;
-    background: #fff;
-    border-bottom: 1px solid #e8edf2;
+.mi-topbar {
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    gap: 24px;
     min-height: 72px;
-    padding: 0 1.5rem;
+    padding: 0 28px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 0 rgba(224, 227, 229, 0.9);
+    backdrop-filter: blur(14px);
 }
 
-.mi-brand-row {
-    align-items: center;
+.mi-topbar__left,
+.mi-topbar__right,
+.mi-brand,
+.mi-tabs,
+.mi-topbar__actions {
     display: flex;
-    gap: 2rem;
+    align-items: center;
+}
+
+.mi-topbar__left {
+    gap: 28px;
 }
 
 .mi-brand {
-    color: #0d5a41;
-    font-size: 1rem;
-    font-weight: 700;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #0f2f27;
 }
 
-.mi-top-nav {
-    display: flex;
-    gap: 1.5rem;
+.mi-brand__icon {
+    font-size: 20px;
+    color: #0c67ff;
 }
 
-.mi-top-link {
+.mi-tabs {
+    gap: 28px;
+}
+
+.mi-tabs__button {
+    min-height: 28px;
+    padding: 0 0 4px;
+    border: 0;
     border-bottom: 2px solid transparent;
-    color: #526277;
-    font-size: 0.95rem;
-    padding: 1.55rem 0;
-    text-decoration: none;
+    background: transparent;
+    font-size: 14px;
+    color: #54606b;
+    cursor: pointer;
 }
 
-.mi-top-link.is-active {
-    border-bottom-color: #0d5a41;
-    color: #0d5a41;
-    font-weight: 600;
+.mi-tabs__button.is-active {
+    color: #11191f;
+    border-bottom-color: #0f2a20;
 }
 
-.mi-header-tools {
-    align-items: center;
-    display: flex;
-    gap: 0.7rem;
+.mi-topbar__right {
+    gap: 16px;
 }
 
 .mi-search {
-    align-items: center;
-    background: #f5f7fa;
-    border: 1px solid #eef2f5;
-    border-radius: 0.55rem;
-    color: #9aa5b1;
     display: inline-flex;
-    gap: 0.6rem;
-    min-width: 300px;
-    padding: 0.78rem 0.95rem;
-}
-
-.mi-search :deep(svg),
-.mi-circle-btn :deep(svg),
-.mi-side-link :deep(svg),
-.mi-tool-btn :deep(svg),
-.mi-floating-chat :deep(svg),
-.mi-story-icons :deep(svg),
-.mi-advisor-avatar :deep(svg),
-.mi-metric-icon {
-    height: 1rem;
-    width: 1rem;
-}
-
-.mi-circle-btn {
     align-items: center;
-    background: transparent;
+    gap: 10px;
+    min-width: 220px;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: #f3f4f5;
+    color: #838d98;
+}
+
+.mi-search input,
+.mi-advisor__input input {
+    width: 100%;
     border: 0;
-    color: #6b7280;
-    display: inline-flex;
-    height: 2.2rem;
-    justify-content: center;
-    width: 2.2rem;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    color: var(--mi-text);
+}
+
+.mi-search input::placeholder,
+.mi-advisor__input input::placeholder {
+    color: #8d97a1;
+}
+
+.mi-topbar__actions {
+    gap: 4px;
+}
+
+.mi-topbar__actions button,
+.mi-sidebar__link,
+.mi-sidebar__meta-link,
+.mi-tabs__button,
+.mi-live-btn,
+.mi-feed__actions button,
+.mi-story-card__footer button,
+.mi-analytics-card__tabs button,
+.mi-table-card__head button,
+.mi-toggle,
+.mi-advisor__head button,
+.mi-advisor__chips button,
+.mi-advisor__input button,
+.mi-sidebar__meta-link {
+    font-family: inherit;
+}
+
+.mi-topbar__actions button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    background: transparent;
+    color: #163128;
+    cursor: pointer;
 }
 
 .mi-layout {
     display: grid;
-    grid-template-columns: 264px minmax(0, 1fr);
+    grid-template-columns: 218px minmax(0, 1fr);
 }
 
 .mi-sidebar {
-    background: #f7f9fc;
-    border-right: 1px solid #e8edf2;
     display: flex;
     flex-direction: column;
     min-height: calc(100vh - 72px);
-    padding: 0.85rem 1rem 1rem;
+    padding: 18px 18px 22px 20px;
+    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+    box-shadow: inset -1px 0 0 rgba(224, 227, 229, 0.82);
 }
 
-.mi-sidebar-top {
-    margin-bottom: 1.6rem;
-    padding: 0.45rem 0.4rem;
-}
-
-.mi-sidebar-top h2 {
-    color: #102131;
-    font-size: 0.98rem;
-    font-weight: 600;
-    margin: 0 0 0.2rem;
-}
-
-.mi-sidebar-top span {
-    color: #9aa5b1;
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.mi-side-nav {
-    display: grid;
-    gap: 0.45rem;
-}
-
-.mi-side-link {
-    align-items: center;
-    border-radius: 0.65rem;
-    color: #334155;
-    display: flex;
-    gap: 0.85rem;
-    min-height: 42px;
-    padding: 0.85rem 0.95rem;
-    position: relative;
-    text-decoration: none;
-}
-
-.mi-side-link.is-active {
-    background: #eefaf4;
-    color: #0d5a41;
-    font-weight: 600;
-}
-
-.mi-side-link.is-active::after {
-    background: #0d5a41;
-    border-radius: 999px;
-    content: '';
-    height: 72%;
-    position: absolute;
-    right: 0;
-    top: 14%;
-    width: 3px;
-}
-
-.mi-sidebar-bottom {
-    margin-top: auto;
-    padding: 1rem 0.2rem 0;
-}
-
-.mi-ai-btn {
-    align-items: center;
-    background: #0d5a41;
-    border: 0;
-    border-radius: 0.75rem;
-    color: #fff;
-    display: inline-flex;
-    font-size: 0.95rem;
-    font-weight: 600;
-    gap: 0.6rem;
-    justify-content: center;
-    padding: 1rem 1.1rem;
-    width: 100%;
-}
-
-.mi-main {
-    background: #fff;
-    padding: 2rem 1.9rem 1.7rem;
-}
-
-.mi-toolbar {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.35rem;
-}
-
-.mi-title {
-    color: #101828;
-    font-size: 1.15rem;
-    font-weight: 700;
+.mi-sidebar__head h2,
+.mi-footer-panels__brand h2 {
     margin: 0;
-}
-
-.mi-toolbar-actions {
-    align-items: center;
-    display: flex;
-    gap: 0.7rem;
-}
-
-.mi-select-btn,
-.mi-tool-btn {
-    align-items: center;
-    background: #fff;
-    border: 1px solid #e6ebf0;
-    border-radius: 0.5rem;
-    color: #344054;
-    display: inline-flex;
-    font-size: 0.9rem;
-    gap: 0.55rem;
-    min-height: 40px;
-    padding: 0 0.9rem;
-}
-
-.mi-select-btn {
-    min-width: 140px;
-    justify-content: space-between;
-}
-
-.mi-toolbar-divider {
-    background: #e0e7ef;
-    height: 26px;
-    width: 1px;
-}
-
-.mi-banner-row {
-    display: grid;
-    gap: 0.8rem;
-    margin-bottom: 1.7rem;
-}
-
-.mi-ai-summary,
-.mi-breaking,
-.mi-card {
-    border: 1px solid #e8edf2;
-    border-radius: 0.85rem;
-    background: #fff;
-}
-
-.mi-ai-summary {
-    align-items: center;
-    background: #f8fbf8;
-    display: grid;
-    gap: 0.85rem;
-    grid-template-columns: auto 1fr auto;
-    padding: 0.7rem 0.9rem;
-}
-
-.mi-ai-summary-badge {
-    background: #0d4a36;
-    border-radius: 0.4rem;
-    color: #fff;
-    display: grid;
-    min-width: 72px;
-    padding: 0.45rem 0.55rem;
-}
-
-.mi-ai-summary-badge span,
-.mi-ai-summary-badge strong {
-    font-size: 0.72rem;
+    font-size: 10px;
     font-weight: 700;
-    line-height: 1.15;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
 }
 
-.mi-ai-summary p {
-    color: #334155;
-    font-size: 0.9rem;
-    line-height: 1.45;
-    margin: 0;
+.mi-sidebar__head h2 {
+    color: #5f6a73;
 }
 
-.mi-ai-summary-status {
-    align-items: center;
-    color: #0f172a;
-    display: flex;
-    gap: 0.5rem;
-    justify-self: end;
-}
-
-.mi-ai-summary-status i {
-    background: #0d5a41;
-    border-radius: 999px;
-    display: inline-block;
-    height: 8px;
-    width: 8px;
-}
-
-.mi-ai-summary-status span,
-.mi-ai-summary-status strong {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-}
-
-.mi-ai-summary-status span {
-    color: #5c6877;
-}
-
-.mi-ai-summary-status strong {
-    font-weight: 700;
-}
-
-.mi-breaking {
-    align-items: center;
-    background: #fff1f1;
-    border-color: #ffd5d5;
-    color: #b42318;
-    display: flex;
-    gap: 0.9rem;
-    padding: 0.82rem 1rem;
-}
-
-.mi-breaking-label {
-    align-items: center;
-    display: inline-flex;
-    font-size: 0.78rem;
-    font-weight: 700;
-    gap: 0.5rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.mi-breaking-label i {
-    background: #b42318;
-    border-radius: 999px;
-    display: inline-block;
-    height: 10px;
-    width: 10px;
-}
-
-.mi-breaking p {
-    font-size: 0.9rem;
-    line-height: 1.45;
-    margin: 0;
-}
-
-.mi-metric-grid {
-    display: grid;
-    gap: 0.9rem;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    margin-bottom: 1.35rem;
-}
-
-.mi-metric-card {
-    min-height: 124px;
-    padding: 1rem 1rem 0.95rem;
-}
-
-.mi-metric-top {
-    align-items: start;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.9rem;
-}
-
-.mi-kicker {
-    color: #677689;
+.mi-sidebar__head span {
     display: block;
-    font-size: 0.74rem;
-    letter-spacing: 0.12em;
-    margin-bottom: 0.15rem;
+    margin-top: 3px;
+    font-size: 10px;
+    color: #8b959e;
+}
+
+.mi-sidebar__nav {
+    display: grid;
+    gap: 6px;
+    margin-top: 34px;
+}
+
+.mi-sidebar__link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 48px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 500;
+    color: #55606c;
+    cursor: pointer;
+    text-align: left;
+}
+
+.mi-sidebar__link.is-active {
+    background: #e2f3eb;
+    color: #12372d;
+}
+
+.mi-sidebar__bottom {
+    margin-top: auto;
+}
+
+.mi-live-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    width: 100%;
+    border: 0;
+    border-radius: 14px;
+    background: var(--mi-primary);
+    box-shadow: 0 12px 22px rgba(6, 95, 70, 0.2);
+    font-size: 14px;
+    font-weight: 800;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.mi-sidebar__meta {
+    display: grid;
+    gap: 8px;
+    margin-top: 18px;
+    padding-left: 8px;
+}
+
+.mi-sidebar__meta-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: 11px;
+    color: #7e8892;
+    cursor: pointer;
+    text-align: left;
+}
+
+.mi-content {
+    min-width: 0;
+    background: #ffffff;
+}
+
+.mi-summary-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 30px;
+    padding: 0 20px;
+    background: #eaf5ef;
+    box-shadow: inset 0 -1px 0 rgba(219, 236, 228, 0.9);
+}
+
+.mi-summary-strip__text,
+.mi-summary-strip__badges,
+.mi-story-card__sentiment,
+.mi-weather-card__head,
+.mi-table-card__head button,
+.mi-advisor__identity,
+.mi-advisor__input {
+    display: flex;
+    align-items: center;
+}
+
+.mi-summary-strip__text {
+    gap: 10px;
+    min-width: 0;
+}
+
+.mi-summary-strip__text span {
+    font-size: 14px;
+    color: #0d63ff;
+}
+
+.mi-summary-strip__text p {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f63ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mi-summary-strip__badges {
+    gap: 6px;
+}
+
+.mi-summary-strip__badges span,
+.mi-weather-card__head em,
+.mi-demand-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 18px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    line-height: 1;
+}
+
+.mi-summary-strip__badges .is-primary {
+    background: var(--mi-primary);
+    color: #ffffff;
+}
+
+.mi-summary-strip__badges .is-soft {
+    background: #d9f1df;
+    color: #1f5d42;
+}
+
+.mi-summary-strip__badges .is-neutral {
+    background: #ecebea;
+    color: #3e4348;
+}
+
+.mi-ticker {
+    overflow: hidden;
+    background: #1f2124;
+    color: #ffffff;
+}
+
+.mi-ticker__track {
+    display: flex;
+    width: max-content;
+    animation: mi-ticker 34s linear infinite;
+}
+
+.mi-ticker__group {
+    display: flex;
+    align-items: center;
+}
+
+.mi-ticker__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: max-content;
+    min-height: 32px;
+    padding: 0 26px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
     text-transform: uppercase;
 }
 
-.mi-metric-status {
-    font-size: 0.72rem;
-    font-weight: 600;
+.mi-ticker__item i {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #8be0bb;
 }
 
-.mi-metric-status.is-red {
-    color: #c81e1e;
+.mi-ticker__item i.is-red {
+    background: #e85b53;
 }
 
-.mi-metric-status.is-green {
-    color: #0d5a41;
+.mi-ticker__item i.is-amber {
+    background: #e6aa38;
 }
 
-.mi-metric-status.is-amber {
-    color: #8b5e25;
+.mi-content__inner {
+    padding: 22px 20px 64px;
+    background: linear-gradient(180deg, #fafafa 0%, #ffffff 22%);
 }
 
-.mi-metric-icon {
-    color: #0d5a41;
-    flex: 0 0 auto;
+.mi-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px;
 }
 
-.mi-metric-icon.is-red {
-    color: #c81e1e;
+.mi-kpi-card,
+.mi-story-card,
+.mi-weather-card,
+.mi-analytics-card,
+.mi-table-card {
+    background: #ffffff;
+    box-shadow:
+        0 1px 0 rgba(233, 236, 238, 1),
+        0 12px 24px rgba(25, 28, 30, 0.04);
 }
 
-.mi-metric-icon.is-amber {
-    color: #8b5e25;
+.mi-kpi-card {
+    padding: 14px 16px;
+    border-radius: 16px;
 }
 
-.mi-metric-value {
-    color: #0f172a;
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-}
-
-.mi-metric-meta {
-    color: #7b8794;
-    font-size: 0.8rem;
-}
-
-.mi-alert-bars {
-    align-items: end;
-    display: flex;
-    gap: 0.18rem;
-    justify-content: end;
-    margin-top: -1rem;
-}
-
-.mi-alert-bars span {
-    background: #0d5a41;
-    border-radius: 2px 2px 0 0;
-    display: inline-block;
-    width: 12px;
-}
-
-.mi-alert-bars span:nth-child(1) {
-    background: #0d5a41;
-    height: 14px;
-}
-
-.mi-alert-bars span:nth-child(2) {
-    background: #345b4f;
-    height: 18px;
-}
-
-.mi-alert-bars span:nth-child(3) {
-    background: #8d6d28;
-    height: 28px;
-}
-
-.mi-alert-bars span:nth-child(4) {
-    background: #c81e1e;
-    height: 28px;
-}
-
-.mi-moving-row {
-    align-items: center;
-    display: flex;
-    gap: 0.95rem;
-    margin-bottom: 1.8rem;
-}
-
-.mi-moving-label {
-    color: #5e6b78;
-    font-size: 0.78rem;
+.mi-kpi-card p,
+.mi-story-card__impact span,
+.mi-story-card__footer small,
+.mi-analytics-card__meta span,
+.mi-table thead th,
+.mi-footer-panels__card h3 {
+    margin: 0;
+    font-size: 9px;
+    font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    white-space: nowrap;
+    color: #8b949d;
 }
 
-.mi-chip-row {
+.mi-kpi-card__value {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-}
-
-.mi-chip {
     align-items: center;
-    background: #f4f6f8;
-    border-radius: 999px;
-    color: #4b5563;
-    display: inline-flex;
-    font-size: 0.76rem;
-    gap: 0.35rem;
-    padding: 0.5rem 0.8rem;
-}
-
-.mi-chip strong {
-    color: #111827;
-    font-weight: 600;
-}
-
-.mi-chip.is-green span {
-    color: #0d5a41;
-}
-
-.mi-chip.is-red span {
-    color: #c81e1e;
-}
-
-.mi-feed-header {
-    align-items: center;
-    display: flex;
     justify-content: space-between;
-    margin-bottom: 1rem;
+    gap: 12px;
+    margin-top: 10px;
 }
 
-.mi-feed-header h2 {
-    color: #111827;
-    font-size: 1.05rem;
-    font-weight: 700;
-    margin: 0;
+.mi-kpi-card__value strong {
+    font-size: 17px;
+    font-weight: 800;
+    color: #12191f;
 }
 
-.mi-feed-actions {
+.mi-kpi-card__value strong.is-green,
+.mi-kpi-card__value .material-symbols-outlined.is-green,
+.mi-analytics-card__meta strong.is-green {
+    color: var(--mi-primary);
+}
+
+.mi-kpi-card__value strong.is-red,
+.mi-kpi-card__value .material-symbols-outlined.is-red {
+    color: var(--mi-red);
+}
+
+.mi-kpi-card__value strong.is-amber,
+.mi-kpi-card__value .material-symbols-outlined.is-amber {
+    color: var(--mi-amber);
+}
+
+.mi-kpi-card__value .material-symbols-outlined {
+    font-size: 22px;
+    color: #707b86;
+}
+
+.mi-spark-bars {
     display: flex;
-    gap: 0.45rem;
+    align-items: flex-end;
+    gap: 3px;
+    width: 18px;
+    height: 20px;
 }
 
-.mi-view-btn {
+.mi-spark-bars span {
+    width: 4px;
+    border-radius: 999px;
+    background: #61c29b;
+}
+
+.mi-spark-bars span:nth-child(1) {
+    height: 8px;
+    background: #d1ece0;
+}
+
+.mi-spark-bars span:nth-child(2) {
+    height: 12px;
+    background: #a8ddc4;
+}
+
+.mi-spark-bars span:nth-child(3) {
+    height: 18px;
+    background: #14a36f;
+}
+
+.mi-feed {
+    margin-top: 34px;
+}
+
+.mi-feed__head {
+    display: flex;
     align-items: center;
-    background: transparent;
-    border: 0;
-    color: #7b8794;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 0 4px;
+}
+
+.mi-feed__head h1,
+.mi-weather h2,
+.mi-analytics-card__head h2,
+.mi-table-card__head h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #171d22;
+}
+
+.mi-feed__actions {
+    display: flex;
+    gap: 10px;
+}
+
+.mi-feed__actions button,
+.mi-table-card__head button {
     display: inline-flex;
-    height: 2rem;
+    align-items: center;
     justify-content: center;
-    width: 2rem;
+    gap: 6px;
+    min-height: 28px;
+    padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(111, 121, 115, 0.45);
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    color: #5a6169;
+    cursor: pointer;
 }
 
-.mi-view-btn.is-active {
-    color: #111827;
-}
-
-.mi-feed-grid {
-    display: grid;
-    gap: 1.1rem;
-    grid-template-columns: minmax(0, 1fr) 256px;
-}
-
-.mi-feed-main {
-    min-width: 0;
+.mi-feed__actions .is-primary {
+    border-color: transparent;
+    background: var(--mi-primary);
+    color: #ffffff;
 }
 
 .mi-story-grid {
     display: grid;
-    gap: 1rem;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin-bottom: 1.4rem;
-}
-
-.mi-story-card,
-.mi-loading-card,
-.mi-demand-card,
-.mi-advisor-card,
-.mi-alerts-card,
-.mi-parity-card,
-.mi-weather-card {
-    padding: 1rem;
+    gap: 18px;
 }
 
 .mi-story-card {
-    min-height: 304px;
-}
-
-.mi-story-top {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-}
-
-.mi-story-tag {
-    background: #f3f4f6;
-    border-radius: 0.3rem;
-    color: #4b5563;
-    font-size: 0.72rem;
-    padding: 0.35rem 0.6rem;
-}
-
-.mi-story-tone {
-    align-items: center;
-    display: inline-flex;
-    font-size: 0.72rem;
-    font-weight: 600;
-    gap: 0.35rem;
-    text-transform: uppercase;
-}
-
-.mi-story-tone i {
-    border-radius: 999px;
-    display: inline-block;
-    height: 6px;
-    width: 6px;
-}
-
-.mi-story-tone.is-red {
-    color: #c81e1e;
-}
-
-.mi-story-tone.is-red i {
-    background: #c81e1e;
-}
-
-.mi-story-tone.is-green {
-    color: #0d5a41;
-}
-
-.mi-story-tone.is-green i {
-    background: #0d5a41;
-}
-
-.mi-story-tone.is-slate {
-    color: #6b7280;
-}
-
-.mi-story-tone.is-slate i {
-    background: #6b7280;
-}
-
-.mi-story-card h3 {
-    color: #111827;
-    font-size: 0.95rem;
-    font-weight: 700;
-    line-height: 1.35;
-    margin: 0 0 0.75rem;
-}
-
-.mi-story-body {
-    color: #667085;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    margin: 0 0 1rem;
-}
-
-.mi-story-footer-box {
-    background: #f8fafb;
-    border-radius: 0.6rem;
-    display: grid;
-    gap: 0.5rem;
-    grid-template-columns: 1fr auto;
-    margin-bottom: 0.95rem;
-    padding: 0.75rem 0.8rem;
-}
-
-.mi-story-footer-kicker {
-    color: #6b7280;
-    display: block;
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.35rem;
-    text-transform: uppercase;
-}
-
-.mi-story-footer-box p {
-    color: #5b6572;
-    font-size: 0.78rem;
-    line-height: 1.45;
-    margin: 0;
-}
-
-.mi-story-footer-box strong {
-    color: #111827;
-    font-size: 0.78rem;
-    font-weight: 600;
-}
-
-.mi-story-meta {
-    align-items: center;
-    color: #8b95a1;
-    display: flex;
-    font-size: 0.76rem;
-    justify-content: space-between;
-    margin-top: auto;
-}
-
-.mi-story-icons {
-    color: #0d5a41;
-    display: flex;
-    gap: 0.7rem;
-}
-
-.mi-loading-card {
-    align-items: center;
-    border-style: dashed;
-    color: #8b95a1;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    justify-content: center;
-    min-height: 304px;
+    min-height: 324px;
+    padding: 18px 20px;
+    border-radius: 18px;
 }
 
-.mi-spin-icon {
-    color: #98a2b3;
-    height: 1.4rem;
-    width: 1.4rem;
+.mi-story-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-.mi-lower-panels {
-    display: grid;
-    gap: 1.4rem;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+.mi-story-card__age {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #f4f5f6;
+    font-size: 9px;
+    font-weight: 800;
+    color: #7e8791;
 }
 
-.mi-panel-block h3,
-.mi-rail-heading h3 {
-    color: #5e6b78;
-    font-size: 0.78rem;
+.mi-story-card__sentiment {
+    gap: 6px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.12em;
-    margin: 0 0 0.9rem;
-    text-transform: uppercase;
+    color: #2b3137;
 }
 
-.mi-weather-grid {
+.mi-story-card__sentiment i {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #12a66f;
+}
+
+.mi-story-card__sentiment i.is-negative {
+    background: #e14841;
+}
+
+.mi-story-card h2 {
+    margin: 16px 0 12px;
+    font-size: 17px;
+    line-height: 1.32;
+    font-weight: 700;
+    color: #132027;
+}
+
+.mi-story-card__body,
+.mi-story-card__impact p,
+.mi-footer-panels__brand p,
+.mi-desk-list span,
+.mi-toggle-row span {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #6a747f;
+}
+
+.mi-story-card__impact {
+    margin-top: auto;
+    padding: 14px;
+    border-radius: 12px;
+    background: #f7f8f8;
+}
+
+.mi-story-card__impact span {
+    color: #2f73ff;
+}
+
+.mi-story-card__impact p {
+    margin-top: 4px;
+    color: #41474d;
+}
+
+.mi-story-card__footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 18px;
+    padding-top: 16px;
+    box-shadow: inset 0 1px 0 rgba(236, 238, 240, 0.9);
+}
+
+.mi-story-card__footer strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1f24;
+}
+
+.mi-story-card__footer button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--mi-primary);
+    cursor: pointer;
+}
+
+.mi-story-card__footer button span {
+    font-size: 18px;
+}
+
+.mi-analysis-grid {
     display: grid;
-    gap: 0.65rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 0.92fr 1.88fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.mi-weather__list {
+    display: grid;
+    gap: 14px;
+    margin-top: 14px;
 }
 
 .mi-weather-card {
-    background: #f8fafb;
-}
-
-.mi-weather-top {
+    display: flex;
     align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.9rem;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 16px;
 }
 
-.mi-weather-top span {
-    color: #111827;
-    font-size: 0.86rem;
-    font-weight: 500;
-}
-
-.mi-weather-top strong {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.mi-weather-card.is-red .mi-weather-top strong {
-    color: #c81e1e;
-}
-
-.mi-weather-card.is-amber .mi-weather-top strong {
-    color: #8b5e25;
-}
-
-.mi-weather-card.is-green .mi-weather-top strong {
-    color: #0d5a41;
-}
-
-.mi-weather-title {
-    color: #111827;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.mi-parity-card {
-    min-height: 206px;
-}
-
-.mi-parity-top {
-    align-items: start;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-}
-
-.mi-parity-top span {
-    color: #667085;
-    display: block;
-    font-size: 0.82rem;
-}
-
-.mi-parity-top strong {
-    color: #0d5a41;
-    display: block;
-    font-size: 0.92rem;
-    font-weight: 700;
-    margin-top: 0.2rem;
-}
-
-.mi-parity-trend {
-    text-align: right;
-}
-
-.mi-parity-trend strong {
-    color: #c81e1e;
-}
-
-.mi-parity-chart {
-    align-items: end;
+.mi-weather-card__icon {
     display: grid;
-    gap: 0.35rem;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    height: 116px;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #f4f6f7;
+    color: var(--mi-primary);
+    flex-shrink: 0;
 }
 
-.mi-parity-bar {
-    background: #c9d8d3;
-    border-radius: 0.2rem 0.2rem 0 0;
+.mi-weather-card__icon.is-red {
+    background: #ffe8e6;
+    color: var(--mi-red);
 }
 
-.mi-parity-bar.is-active {
-    background: #0d5a41;
+.mi-weather-card__icon.is-amber {
+    background: #f4f5f6;
+    color: #7c8289;
 }
 
-.mi-rail {
-    display: grid;
-    gap: 1rem;
-    align-content: start;
-}
-
-.mi-rail-heading {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-}
-
-.mi-rail-heading :deep(svg) {
-    color: #5f6c79;
-    height: 0.95rem;
-    width: 0.95rem;
-}
-
-.mi-demand-list {
-    display: grid;
-    gap: 0.7rem;
-}
-
-.mi-demand-row {
-    align-items: center;
-    background: #f8fafb;
-    border-radius: 0.55rem;
-    display: flex;
-    justify-content: space-between;
-    padding: 0.78rem 0.8rem;
-}
-
-.mi-demand-row strong {
-    color: #111827;
-    display: block;
-    font-size: 0.86rem;
-    font-weight: 600;
-}
-
-.mi-demand-row span {
-    color: #667085;
-    font-size: 0.78rem;
-}
-
-.mi-demand-row em {
-    border-radius: 0.4rem;
-    font-size: 0.74rem;
-    font-style: normal;
-    padding: 0.3rem 0.55rem;
-}
-
-.mi-demand-row em.is-green {
-    background: #dff7ea;
-    color: #0d5a41;
-}
-
-.mi-demand-row em.is-slate {
-    background: #eef2f5;
-    color: #526277;
-}
-
-.mi-demand-row em.is-amber {
-    background: #fff1df;
-    color: #8b5e25;
-}
-
-.mi-advisor-card-head {
-    margin-bottom: 0.9rem;
-}
-
-.mi-advisor-card-title {
-    align-items: center;
-    display: flex;
-    gap: 0.7rem;
-}
-
-.mi-advisor-avatar {
-    align-items: center;
-    background: #0d5a41;
-    border-radius: 999px;
-    color: #fff;
-    display: inline-flex;
-    height: 2rem;
-    justify-content: center;
-    width: 2rem;
-}
-
-.mi-advisor-card-title strong {
-    color: #111827;
-    display: block;
-    font-size: 0.92rem;
-    font-weight: 600;
-}
-
-.mi-advisor-card-title span {
-    color: #0d5a41;
-    font-size: 0.76rem;
-}
-
-.mi-advisor-prompts {
-    display: grid;
-    gap: 0.55rem;
-    margin-bottom: 0.8rem;
-}
-
-.mi-advisor-prompt {
-    background: #f3f5f7;
-    border: 0;
-    border-radius: 0.45rem;
-    color: #344054;
-    font-size: 0.8rem;
-    padding: 0.75rem 0.8rem;
-    text-align: left;
-}
-
-.mi-advisor-input {
-    align-items: center;
-    background: #fff;
-    border: 1px solid #e5ebf0;
-    border-radius: 0.6rem;
-    display: flex;
-    gap: 0.55rem;
-    padding: 0.45rem 0.5rem 0.45rem 0.75rem;
-}
-
-.mi-advisor-input input {
-    background: transparent;
-    border: 0;
-    color: #111827;
+.mi-weather-card__body {
     flex: 1;
-    font-size: 0.86rem;
-    outline: none;
 }
 
-.mi-advisor-input button {
-    align-items: center;
-    background: #0d5a41;
-    border: 0;
-    border-radius: 0.45rem;
-    color: #fff;
-    display: inline-flex;
-    height: 2rem;
-    justify-content: center;
-    width: 2rem;
-}
-
-.mi-alerts-list {
-    display: grid;
-    gap: 1rem;
-}
-
-.mi-alert-line {
-    align-items: center;
-    display: flex;
+.mi-weather-card__head {
     justify-content: space-between;
-    gap: 1rem;
+    gap: 12px;
 }
 
-.mi-alert-line strong {
-    color: #111827;
+.mi-weather-card__head strong {
+    font-size: 15px;
+    font-weight: 700;
+    color: #161d22;
+}
+
+.mi-weather-card__body span {
     display: block;
-    font-size: 0.86rem;
-    font-weight: 600;
-    margin-bottom: 0.15rem;
+    margin-top: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #707a84;
 }
 
-.mi-alert-line span {
-    color: #8b95a1;
-    font-size: 0.76rem;
+.mi-weather-card__head em {
+    font-style: normal;
+}
+
+.mi-weather-card__head em.is-green {
+    background: #dff4e7;
+    color: #266b49;
+}
+
+.mi-weather-card__head em.is-red {
+    background: #ef3d3d;
+    color: #ffffff;
+}
+
+.mi-weather-card__head em.is-amber {
+    background: #f8e9ba;
+    color: #866016;
+}
+
+.mi-recommendation {
+    position: relative;
+    margin-top: 14px;
+    padding: 18px 18px 20px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #0b5a40 0%, #084a35 100%);
+    box-shadow: 0 18px 28px rgba(6, 95, 70, 0.22);
+    color: #ffffff;
+    overflow: hidden;
+}
+
+.mi-recommendation::after {
+    content: 'auto_awesome';
+    position: absolute;
+    right: -14px;
+    top: -10px;
+    font-family: 'Material Symbols Outlined', sans-serif;
+    font-size: 118px;
+    opacity: 0.08;
+    line-height: 1;
+}
+
+.mi-recommendation > span {
+    position: relative;
+    z-index: 1;
+    display: block;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.82;
+}
+
+.mi-recommendation h3 {
+    position: relative;
+    z-index: 1;
+    margin: 12px 0 18px;
+    font-size: 17px;
+    line-height: 1.28;
+    font-weight: 800;
+}
+
+.mi-recommendation button {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    min-height: 34px;
+    border: 0;
+    border-radius: 10px;
+    background: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2a2a2a;
+    cursor: pointer;
+}
+
+.mi-analytics-card {
+    padding: 18px 20px 20px;
+    border-radius: 18px;
+}
+
+.mi-analytics-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.mi-analytics-card__head p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #76808a;
+}
+
+.mi-analytics-card__tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 12px;
+    background: #f3f5f6;
+}
+
+.mi-analytics-card__tabs button {
+    min-height: 24px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 10px;
+    font-weight: 800;
+    color: #4d5760;
+    cursor: pointer;
+}
+
+.mi-analytics-card__tabs button.is-active {
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(25, 28, 30, 0.08);
+}
+
+.mi-chart {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: 300px;
+    margin-top: 18px;
+    padding: 20px 22px 0;
+    box-shadow: inset 0 -1px 0 rgba(232, 235, 237, 1);
+}
+
+.mi-chart__bars {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    align-items: end;
+    gap: 12px;
+    width: 100%;
+    min-height: 228px;
+}
+
+.mi-chart__bars span {
+    border-radius: 8px 8px 0 0;
+    background: #ebf7f2;
+}
+
+.mi-chart__bars span:nth-child(2) {
+    background: #d8f1e3;
+}
+
+.mi-chart__bars span:nth-child(3) {
+    background: #d1efe0;
+}
+
+.mi-chart__bars span:nth-child(4) {
+    background: #99e7c1;
+}
+
+.mi-chart__bars span:nth-child(5) {
+    background: #35ca8b;
+}
+
+.mi-chart__bars span:nth-child(6) {
+    background: #dcefe4;
+}
+
+.mi-chart__bars span:nth-child(7) {
+    background: #0f9467;
+}
+
+.mi-chart__bars span:nth-child(8) {
+    background: #2dbb82;
+}
+
+.mi-chart__bars span:nth-child(9) {
+    background: #0d5a41;
+}
+
+.mi-chart__spot {
+    position: absolute;
+    left: 53%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 126px;
+    padding: 10px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow:
+        0 1px 0 rgba(233, 236, 238, 1),
+        0 20px 40px rgba(25, 28, 30, 0.08);
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.mi-chart__spot small {
+    display: block;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8b949d;
+}
+
+.mi-chart__spot strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 25px;
+    font-weight: 800;
+    color: #113025;
+}
+
+.mi-chart__spot em {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+    min-height: 22px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #daf3e4;
+    font-style: normal;
+    font-size: 12px;
+    color: var(--mi-primary);
+}
+
+.mi-analytics-card__meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.mi-analytics-card__meta strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #20262b;
+}
+
+.mi-table-card {
+    margin-top: 22px;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.mi-table-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    box-shadow: inset 0 -1px 0 rgba(233, 236, 238, 1);
+}
+
+.mi-table-card__head button {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: #0f63ff;
+}
+
+.mi-table-wrap {
+    overflow-x: auto;
+}
+
+.mi-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.mi-table thead th {
+    padding: 14px 20px;
+    text-align: left;
+    background: #f7f8f8;
+    white-space: nowrap;
+}
+
+.mi-table tbody td {
+    padding: 13px 20px;
+    box-shadow: inset 0 -1px 0 rgba(236, 238, 240, 0.95);
+    font-size: 14px;
+    color: #20262b;
+    white-space: nowrap;
+}
+
+.mi-market-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mi-market-cell__flag {
+    width: 22px;
+    height: 12px;
+    border-radius: 3px;
+    background: #f0f2f3;
+}
+
+.mi-table .is-strong {
+    font-weight: 700;
+}
+
+.mi-table .is-cert {
+    font-weight: 700;
+    color: var(--mi-primary);
+}
+
+.mi-demand-chip.is-green {
+    background: #d8f3df;
+    color: #1b6a45;
+}
+
+.mi-demand-chip.is-gray {
+    background: #ececed;
+    color: #30353a;
+}
+
+.mi-footer-panels {
+    display: grid;
+    grid-template-columns: 1.35fr 0.9fr 0.9fr;
+    gap: 36px;
+    margin-top: 56px;
+    padding: 0 10px 12px;
+}
+
+.mi-footer-panels__brand {
+    max-width: 360px;
+}
+
+.mi-footer-panels__brand h2 {
+    color: #0b4f3a;
+}
+
+.mi-footer-panels__brand p {
+    margin-top: 20px;
+    line-height: 1.65;
+}
+
+.mi-footer-panels__links {
+    display: flex;
+    gap: 24px;
+    margin-top: 32px;
+}
+
+.mi-footer-panels__links a {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--mi-primary);
+    text-decoration: none;
+}
+
+.mi-footer-panels__card h3 {
+    margin-bottom: 18px;
+    color: #41484f;
+}
+
+.mi-toggle-list,
+.mi-desk-list {
+    display: grid;
+    gap: 12px;
+}
+
+.mi-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.mi-toggle-row span {
+    color: #5d6771;
 }
 
 .mi-toggle {
-    background: #d5dce3;
-    border: 0;
-    border-radius: 999px;
-    height: 20px;
-    position: relative;
-    width: 38px;
-}
-
-.mi-toggle span {
-    background: #fff;
-    border-radius: 999px;
-    display: block;
-    height: 16px;
-    left: 2px;
-    position: absolute;
-    top: 2px;
-    width: 16px;
-}
-
-.mi-toggle.is-active {
-    background: #0d5a41;
-}
-
-.mi-toggle.is-active span {
-    left: 20px;
-}
-
-.mi-footer {
-    align-items: center;
-    color: #98a2b3;
-    display: flex;
-    font-size: 0.78rem;
-    justify-content: space-between;
-    margin-top: 1.6rem;
-    padding-top: 1rem;
-}
-
-.mi-footer-links {
-    display: flex;
-    gap: 1.8rem;
-}
-
-.mi-footer a {
-    color: #94a3b8;
-    text-decoration: none;
-    text-transform: uppercase;
-}
-
-.mi-floating-chat {
-    align-items: center;
-    background: #0d5a41;
-    border: 0;
-    border-radius: 0.85rem;
-    bottom: 1.25rem;
-    box-shadow: 0 14px 34px rgba(13, 90, 65, 0.24);
-    color: #fff;
     display: inline-flex;
-    height: 3.5rem;
-    justify-content: center;
-    position: fixed;
-    right: 1.25rem;
-    width: 3.5rem;
-    z-index: 30;
+    align-items: center;
+    width: 30px;
+    height: 16px;
+    padding: 2px;
+    border: 0;
+    border-radius: 999px;
+    background: #d5d9de;
+    cursor: default;
 }
 
-@media (max-width: 1199.98px) {
-    .mi-layout,
-    .mi-feed-grid,
-    .mi-lower-panels {
+.mi-toggle i {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    background: #ffffff;
+    transition: transform 0.2s ease;
+}
+
+.mi-toggle.is-on {
+    background: #2d6de9;
+}
+
+.mi-toggle.is-on i {
+    transform: translateX(14px);
+}
+
+.mi-advisor {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    z-index: 50;
+    width: 300px;
+    overflow: hidden;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow:
+        0 1px 0 rgba(233, 236, 238, 1),
+        0 24px 48px rgba(25, 28, 30, 0.14);
+}
+
+.mi-advisor__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #0a5a40;
+    color: #ffffff;
+}
+
+.mi-advisor__identity {
+    gap: 12px;
+}
+
+.mi-advisor__avatar {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.mi-advisor__head strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.mi-advisor__head span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.mi-advisor__head span i {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #40d388;
+}
+
+.mi-advisor__head button {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+}
+
+.mi-advisor__body {
+    display: grid;
+    gap: 16px;
+    padding: 14px;
+    background: #f4f5f6;
+}
+
+.mi-advisor__message,
+.mi-advisor__reply {
+    font-size: 13px;
+    line-height: 1.55;
+    box-shadow: 0 8px 16px rgba(25, 28, 30, 0.05);
+}
+
+.mi-advisor__message {
+    padding: 14px;
+    border-radius: 16px 16px 16px 4px;
+    background: #ffffff;
+    color: #23292f;
+}
+
+.mi-advisor__reply {
+    width: 78%;
+    margin-left: auto;
+    padding: 14px;
+    border-radius: 16px 16px 4px 16px;
+    background: #e7f7ec;
+    color: #184932;
+}
+
+.mi-advisor__footer {
+    padding: 12px 14px 14px;
+    background: #ffffff;
+    box-shadow: inset 0 1px 0 rgba(233, 236, 238, 1);
+}
+
+.mi-advisor__chips {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+}
+
+.mi-advisor__chips button {
+    min-height: 22px;
+    padding: 0 10px;
+    border: 1px solid rgba(6, 95, 70, 0.8);
+    border-radius: 999px;
+    background: #ffffff;
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--mi-primary);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.mi-advisor__input {
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #f4f5f6;
+}
+
+.mi-advisor__input button {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    background: transparent;
+    color: #1d67ff;
+    cursor: pointer;
+}
+
+@keyframes mi-ticker {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+@media (max-width: 1199px) {
+    .mi-kpi-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mi-story-grid,
+    .mi-analysis-grid,
+    .mi-footer-panels {
+        grid-template-columns: 1fr;
+    }
+
+    .mi-advisor {
+        right: 20px;
+        bottom: 20px;
+    }
+}
+
+@media (max-width: 991px) {
+    .mi-layout {
         grid-template-columns: 1fr;
     }
 
     .mi-sidebar {
         min-height: auto;
+        padding-bottom: 18px;
+        box-shadow: inset 0 -1px 0 rgba(224, 227, 229, 0.82);
     }
 
-    .mi-metric-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+    .mi-sidebar__nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mi-sidebar__bottom {
+        margin-top: 24px;
     }
 
     .mi-story-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
+    }
+
+    .mi-advisor {
+        position: static;
+        width: 100%;
+        margin-top: 24px;
     }
 }
 
-@media (max-width: 991.98px) {
-    .mi-header,
-    .mi-toolbar,
-    .mi-ai-summary,
-    .mi-footer {
-        align-items: start;
-        grid-template-columns: 1fr;
+@media (max-width: 767px) {
+    .mi-topbar {
         flex-direction: column;
+        align-items: stretch;
+        padding: 18px 16px;
     }
 
-    .mi-header {
-        gap: 1rem;
-        padding-block: 1rem;
-    }
-
-    .mi-brand-row {
-        align-items: start;
+    .mi-topbar__left,
+    .mi-topbar__right {
         flex-direction: column;
-        gap: 1rem;
+        align-items: stretch;
     }
 
-    .mi-header-tools,
-    .mi-toolbar-actions {
-        flex-wrap: wrap;
+    .mi-topbar__left {
+        gap: 16px;
+    }
+
+    .mi-tabs {
+        gap: 18px;
+        overflow-x: auto;
     }
 
     .mi-search {
-        min-width: 100%;
-    }
-
-    .mi-metric-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .mi-story-grid,
-    .mi-weather-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 767.98px) {
-    .mi-frame {
+        min-width: 0;
         width: 100%;
     }
 
-    .mi-main,
-    .mi-header {
-        padding-inline: 1rem;
+    .mi-topbar__actions {
+        justify-content: flex-end;
     }
 
-    .mi-sidebar {
-        padding-inline: 0.85rem;
+    .mi-summary-strip,
+    .mi-feed__head,
+    .mi-table-card__head {
+        flex-direction: column;
+        align-items: flex-start;
     }
 
-    .mi-metric-grid,
-    .mi-lower-panels {
+    .mi-summary-strip {
+        padding: 10px 16px;
+    }
+
+    .mi-summary-strip__text p {
+        white-space: normal;
+    }
+
+    .mi-content__inner {
+        padding: 18px 16px 40px;
+    }
+
+    .mi-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mi-sidebar__nav {
         grid-template-columns: 1fr;
     }
 
-    .mi-moving-row {
-        align-items: start;
+    .mi-analytics-card__head {
         flex-direction: column;
     }
 
-    .mi-footer-links {
+    .mi-chart {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .mi-chart__bars {
+        gap: 8px;
+    }
+
+    .mi-chart__spot {
+        left: 50%;
+        min-width: 110px;
+    }
+
+    .mi-analytics-card__meta,
+    .mi-footer-panels {
+        grid-template-columns: 1fr;
+    }
+
+    .mi-footer-panels__links {
         flex-wrap: wrap;
-        gap: 0.9rem 1.2rem;
+        gap: 14px;
+    }
+
+    .mi-table thead th,
+    .mi-table tbody td {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+}
+
+@media (max-width: 479px) {
+    .mi-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mi-feed__actions {
+        width: 100%;
+    }
+
+    .mi-feed__actions button {
+        flex: 1;
     }
 }
 </style>

@@ -7,6 +7,7 @@ use App\Models\Batch;
 use App\Models\Farm;
 use App\Models\Harvest;
 use App\Models\Lot;
+use App\Models\ProcessingMetadata;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -26,6 +27,10 @@ class LotController extends Controller
     {
         Gate::authorize('create', Lot::class);
 
+        $processOptions = $this->processingMethodOptions()
+            ->pluck('name')
+            ->all();
+
         $batches = Batch::query()
             ->orderBy('batch_number')
             ->get()
@@ -44,7 +49,7 @@ class LotController extends Controller
 
         return Inertia::render('Lot/Create', [
             'batches' => $batches,
-            'processOptions' => ['Washed', 'Natural', 'Honey', 'Anaerobic'],
+            'processOptions' => $processOptions,
         ]);
     }
 
@@ -58,7 +63,12 @@ class LotController extends Controller
         $validated = $request->validate([
             'batch_id' => ['required', 'exists:batches,id'],
             'lot_number' => ['required', 'string', 'max:100', 'unique:lots,lot_number'],
-            'process' => ['required', 'string', 'max:100'],
+            'process' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('processing_metadata', 'name')->where('is_active', true),
+            ],
             'grade' => ['required', 'string', 'max:100'],
             'quantity_bags' => ['required', 'integer', 'min:1'],
             'bag_weight_kg' => ['required', 'numeric', 'min:1'],
@@ -88,10 +98,14 @@ class LotController extends Controller
 
         [$sourceFarm, $allocatedQtyKg, $remainingQtyKg] = $this->resolveBatchMetrics($batch);
         $qualityScore = (float) ($batch->cup_score ?: 87.2);
-        $defaultAllocationKg = $remainingQtyKg > 0 ? min($remainingQtyKg, 400.0) : 0.0;
-        $defaultPricePerKg = $batch->weight && $batch->price
-            ? round((float) $batch->price / max((float) $batch->weight, 1), 2)
-            : 12.50;
+        $processingMethods = $this->processingMethodOptions()
+            ->map(fn (ProcessingMetadata $method): array => [
+                'id' => $method->id,
+                'slug' => $method->slug,
+                'name' => $method->name,
+                'description' => $method->description,
+            ])
+            ->all();
 
         return Inertia::render('Lot/CreateLotPage', [
             'batch' => [
@@ -122,26 +136,27 @@ class LotController extends Controller
                 'source_farm_name' => $sourceFarm?->name,
             ],
             'defaults' => [
-                'lot_number' => $this->makeLotNumber($batch),
-                'lot_name' => trim(($batch->variety ?: 'Sidama Bensa').' - Special Selection'),
-                'allocation_kg' => $defaultAllocationKg,
-                'net_weight_kg' => $defaultAllocationKg,
-                'quantity_bags' => max(1, (int) ceil(max($defaultAllocationKg, 60) / 60)),
-                'bag_weight_kg' => 60,
-                'grade' => $this->inferGrade((float) ($batch->cup_score ?? 0)),
-                'warehouse' => $batch->warehouse_location ?: 'Warehouse release pending',
-                'packaging_type' => 'GrainPro',
-                'screen_size' => $batch->screen_size ?: '17/18',
-                'altitude' => $sourceFarm?->altitude ?: '1,950 - 2,100',
-                'aroma_score' => 8.75,
-                'acidity_score' => 9.00,
-                'body_score' => 8.25,
-                'target_market' => 'United Arab Emirates (Specialty)',
-                'price_per_kg' => $defaultPricePerKg,
-                'tokenize' => true,
+                'lot_number' => '',
+                'lot_name' => '',
+                'allocation_kg' => '',
+                'net_weight_kg' => '',
+                'quantity_bags' => '',
+                'bag_weight_kg' => '',
+                'grade' => '',
+                'process' => '',
+                'warehouse' => '',
+                'packaging_type' => '',
+                'screen_size' => '',
+                'aroma_score' => '',
+                'acidity_score' => '',
+                'body_score' => '',
+                'target_market' => '',
+                'price_per_kg' => '',
+                'tokenize' => false,
             ],
             'options' => [
                 'packaging_types' => ['GrainPro', 'Jute Only', 'Vacuum'],
+                'processing_methods' => $processingMethods,
                 'target_markets' => [
                     'United Arab Emirates (Specialty)',
                     'Scandinavia Specialty Buyers',
@@ -178,10 +193,15 @@ class LotController extends Controller
             'quantity_bags' => ['required', 'integer', 'min:1'],
             'bag_weight_kg' => ['required', 'numeric', 'min:1'],
             'grade' => ['required', 'string', 'max:100'],
+            'process' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('processing_metadata', 'name')->where('is_active', true),
+            ],
             'warehouse' => ['required', 'string', 'max:255'],
             'packaging_type' => ['required', 'string', Rule::in(['GrainPro', 'Jute Only', 'Vacuum'])],
             'screen_size' => ['nullable', 'string', 'max:100'],
-            'altitude' => ['nullable', 'string', 'max:100'],
             'aroma_score' => ['required', 'numeric', 'between:0,10'],
             'acidity_score' => ['required', 'numeric', 'between:0,10'],
             'body_score' => ['required', 'numeric', 'between:0,10'],
@@ -212,7 +232,7 @@ class LotController extends Controller
             'user_id' => $request->user()->id,
             'lot_number' => $validated['lot_number'],
             'lot_name' => $validated['lot_name'],
-            'process' => $batch->processing_method ?: 'Washed',
+            'process' => $validated['process'],
             'grade' => $validated['grade'],
             'allocation_kg' => $validated['allocation_kg'],
             'net_weight_kg' => round((float) $validated['allocation_kg'], 2),
@@ -223,7 +243,6 @@ class LotController extends Controller
             'warehouse' => $validated['warehouse'],
             'packaging_type' => $validated['packaging_type'],
             'screen_size' => $validated['screen_size'] ?: $batch->screen_size,
-            'altitude' => $validated['altitude'],
             'aroma_score' => $validated['aroma_score'],
             'acidity_score' => $validated['acidity_score'],
             'body_score' => $validated['body_score'],
@@ -305,6 +324,20 @@ class LotController extends Controller
 
             return (float) $lot->quantity_bags * (float) $lot->bag_weight_kg;
         }), 2);
+    }
+
+    /**
+     * Fetch active processing methods from metadata.
+     *
+     * @return Collection<int, ProcessingMetadata>
+     */
+    private function processingMethodOptions(): Collection
+    {
+        return ProcessingMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
     }
 
     /**

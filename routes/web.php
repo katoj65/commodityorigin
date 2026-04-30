@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Analysis\AnalysisController;
 use App\Http\Controllers\Bid\BidController;
 use App\Http\Controllers\Auction\AuctionController;
 use App\Http\Controllers\Batch\BatchController;
+use App\Http\Controllers\Buy\BuyController;
 use App\Http\Controllers\Checkout\CheckoutController;
 use App\Http\Controllers\Cooperative\CooperativeController;
 use App\Http\Controllers\Farm\FarmController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\Market\MarketController;
 use App\Http\Controllers\Origin\OriginController;
 use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\Season\SeasonController;
+use App\Http\Controllers\Sell\SellController;
 use Illuminate\Support\Facades\Route;
 
 // Public landing page.
@@ -131,16 +134,19 @@ Route::middleware([
         Route::get('/auction', [MarketController::class, 'auction'])->name('auction');
     });
 
+    // Buyer workspace routes.
+    Route::prefix('buyer')->name('buyer.')->group(function () {
+        Route::get('/', [BuyController::class, 'index'])->name('index');
+    });
 
+    // Seller workspace routes.
+    Route::prefix('seller')->name('seller.')->group(function () {
+        Route::get('/', [SellController::class, 'index'])->name('index');
+    });
 
-
-
-
-
-
-
-
-
-
+    // Analysis workspace routes.
+    Route::prefix('analysis')->name('analysis.')->group(function () {
+        Route::get('/', [AnalysisController::class, 'index'])->name('index');
+    });
 
     });

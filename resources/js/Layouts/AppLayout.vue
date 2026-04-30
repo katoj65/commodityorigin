@@ -47,7 +47,7 @@ const topNavLinks = computed(() => [
     {
         label: 'Market',
         href: route('market.index'),
-        active: route().current('market.index'),
+        active: route().current('market.*'),
         inertia: true,
     },
     {
@@ -68,9 +68,9 @@ const railLinks = computed(() => [
     },
     {
         label: 'Market',
-        href: '#',
-        active: false,
-        inertia: false,
+        href: route('market.index'),
+        active: route().current('market.*'),
+        inertia: true,
         icon: 'pulse',
     },
     {

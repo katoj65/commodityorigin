@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
             ClimateMetadataSeeder::class,
             HarvestingMetadataSeeder::class,
             SensoryMetadataSeeder::class,
+            ProcessingMetadataSeeder::class,
         ]);
 
         // User::factory(10)->create();
