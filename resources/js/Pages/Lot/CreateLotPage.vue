@@ -93,6 +93,12 @@ const projectedAllocated = computed(() => (
 const suggestedPriceLow = computed(() => Number(form.price_per_kg || 0) * 0.944);
 const suggestedPriceHigh = computed(() => Number(form.price_per_kg || 0) * 1.056);
 const hasValue = (value) => String(value ?? '').trim().length > 0;
+const sourceMetaItems = computed(() => [
+    { label: 'Season', value: props.sourceBatch.season || 'Pending' },
+    { label: 'Origin', value: props.sourceBatch.origin || 'Pending' },
+    { label: 'Type', value: props.sourceBatch.type || 'Pending' },
+    { label: 'Warehouse', value: props.sourceBatch.warehouse || 'Pending' },
+]);
 
 const requiredForSubmit = computed(() => ({
     lot_number: hasValue(form.lot_number),
@@ -108,7 +114,6 @@ const requiredForSubmit = computed(() => ({
     acidity_score: hasValue(form.acidity_score) && Number(form.acidity_score) >= 0 && Number(form.acidity_score) <= 10,
     body_score: hasValue(form.body_score) && Number(form.body_score) >= 0 && Number(form.body_score) <= 10,
     target_market: hasValue(form.target_market),
-    price_per_kg: hasValue(form.price_per_kg) && Number(form.price_per_kg) >= 0,
     within_batch_limit: Number(form.allocation_kg || 0) <= Number(props.sourceBatch.remaining_qty_kg || 0),
 }));
 
@@ -140,7 +145,6 @@ const validateForm = () => {
     if (!requiredForSubmit.value.acidity_score) errors.acidity_score = 'Acidity score must be between 0 and 10.';
     if (!requiredForSubmit.value.body_score) errors.body_score = 'Body score must be between 0 and 10.';
     if (!requiredForSubmit.value.target_market) errors.target_market = 'Target market is required.';
-    if (!requiredForSubmit.value.price_per_kg) errors.price_per_kg = 'Price per kg must be 0 or higher.';
 
     if (!props.canSubmit) {
         errors.batch = props.submissionBlockedMessage || 'Batch must be linked before creating a lot.';
@@ -161,6 +165,7 @@ const submit = (intent = 'create') => {
 
     form.submission_intent = intent;
     form.net_weight_kg = Number(form.allocation_kg || 0);
+    form.price_per_kg = Number(form.price_per_kg || 0);
 
     if (intent === 'create_and_tokenise') {
         form.tokenize = true;
@@ -222,8 +227,12 @@ const submit = (intent = 'create') => {
             <form class="lot-creation-grid" @submit.prevent="submit('create')">
                 <main class="lot-creation-main">
                     <section class="lot-surface lot-source-card">
-                        <div class="lot-section-head">
-                            <h2>Source Batch Selection</h2>
+                        <div class="lot-section-head lot-section-head--source">
+                            <div class="lot-section-head__copy">
+                                <h2>Source Batch Selection</h2>
+                                <p>Use a verified batch profile as the traceable baseline for this lot.</p>
+                            </div>
+                            <span class="lot-source-status">Verified Source</span>
                         </div>
 
                         <div class="lot-source-grid">
@@ -231,7 +240,7 @@ const submit = (intent = 'create') => {
                                 <label>Select verified batch</label>
                                 <div class="lot-static-select">
                                     <span>{{ props.sourceBatch.label }}</span>
-                                    <span class="lot-static-select__chevron"></span>
+                                    <span class="lot-static-select__chevron">Batch locked</span>
                                 </div>
                             </div>
 
@@ -254,10 +263,11 @@ const submit = (intent = 'create') => {
                             </article>
                         </div>
 
-                        <div class="lot-source-meta">
-                            <span>Season: {{ props.sourceBatch.season }}</span>
-                            <span>Origin: {{ props.sourceBatch.origin }}</span>
-                            <span>Type: {{ props.sourceBatch.type }}</span>
+                        <div class="lot-source-meta-grid">
+                            <article v-for="item in sourceMetaItems" :key="item.label" class="lot-source-meta-item">
+                                <span>{{ item.label }}</span>
+                                <strong>{{ item.value }}</strong>
+                            </article>
                         </div>
 
                         <p v-if="props.submissionBlockedMessage" class="lot-source-warning">
@@ -428,11 +438,6 @@ const submit = (intent = 'create') => {
                                     </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.target_market" />
                                 </div>
-                                <div class="lot-field">
-                                    <label for="price_per_kg">Price per kg (USD)</label>
-                                    <el-input id="price_per_kg" v-model="form.price_per_kg" class="lot-form-control" type="number" placeholder="e.g. 4.85" />
-                                    <InputError class="mt-2 text-sm" :message="form.errors.price_per_kg" />
-                                </div>
                             </div>
                         </article>
 
@@ -539,22 +544,6 @@ const submit = (intent = 'create') => {
                         >
                             Create Lot
                         </SubmitButton>
-                        <button
-                            type="button"
-                            class="lot-sidebar-cta lot-sidebar-cta--secondary"
-                            :disabled="form.processing"
-                            @click="submit('create_and_tokenise')"
-                        >
-                            Create &amp; Tokenise
-                        </button>
-                        <button
-                            type="button"
-                            class="lot-sidebar-cta lot-sidebar-cta--tertiary"
-                            :disabled="form.processing"
-                            @click="submit('create_and_list')"
-                        >
-                            Create &amp; List
-                        </button>
                     </section>
                 </aside>
             </form>
@@ -749,6 +738,38 @@ const submit = (intent = 'create') => {
     margin: 0;
 }
 
+.lot-section-head--source {
+    align-items: flex-start;
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.lot-section-head__copy {
+    display: grid;
+    gap: 6px;
+}
+
+.lot-section-head__copy p {
+    color: #5f6d79;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.lot-source-status {
+    background: #e8f7ee;
+    border: 1px solid #b4dfc4;
+    border-radius: 999px;
+    color: #0d6a3f;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 8px 10px;
+    text-transform: uppercase;
+}
+
 .lot-source-card {
     background: #eef2f2;
     padding: 22px 18px 18px;
@@ -802,8 +823,10 @@ const submit = (intent = 'create') => {
 
 .lot-static-select__chevron {
     color: #64748b;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 .lot-stat-card {
@@ -840,13 +863,35 @@ const submit = (intent = 'create') => {
     margin-top: 2px;
 }
 
-.lot-source-meta {
-    color: #5f6a77;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 22px;
-    font-size: 12px;
-    margin-top: 18px;
+.lot-source-meta-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 14px;
+}
+
+.lot-source-meta-item {
+    background: #ffffff;
+    border: 1px solid #e0e8ef;
+    border-radius: 10px;
+    display: grid;
+    gap: 4px;
+    padding: 10px 12px;
+}
+
+.lot-source-meta-item span {
+    color: #8090a0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.lot-source-meta-item strong {
+    color: #152432;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
 }
 
 .lot-source-warning {
@@ -1379,6 +1424,7 @@ const submit = (intent = 'create') => {
     }
 
     .lot-source-grid,
+    .lot-source-meta-grid,
     .lot-allocation-card,
     .lot-form-columns,
     .lot-bottom-row,
@@ -1396,6 +1442,11 @@ const submit = (intent = 'create') => {
     }
 
     .lot-content-section__title {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .lot-section-head--source {
         align-items: flex-start;
         flex-direction: column;
     }
