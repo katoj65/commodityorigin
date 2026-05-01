@@ -39,6 +39,9 @@ const props = defineProps({
 
 const form = useForm({
     lot_number: props.defaults.lot_number ?? '',
+    lot_name: props.defaults.lot_name ?? '',
+    description: props.defaults.description ?? '',
+    image: null,
     allocation_kg: props.defaults.allocation_kg ?? '',
     net_weight_kg: props.defaults.net_weight_kg ?? props.defaults.allocation_kg ?? '',
     quantity_bags: props.defaults.quantity_bags ?? '',
@@ -51,7 +54,7 @@ const form = useForm({
     aroma_score: props.defaults.aroma_score ?? 8.75,
     acidity_score: props.defaults.acidity_score ?? 9.0,
     body_score: props.defaults.body_score ?? 8.25,
-    target_market: props.defaults.target_market ?? props.options.target_markets[0] ?? '',
+    target_market: props.defaults.target_market ?? props.options.target_markets[0]?.name ?? '',
     price_per_kg: props.defaults.price_per_kg ?? '',
     tokenize: props.defaults.tokenize ?? true,
     notes: '',
@@ -158,6 +161,11 @@ const validateForm = () => {
     return true;
 };
 
+const onImageChange = (event) => {
+    const [file] = event.target.files ?? [];
+    form.image = file ?? null;
+};
+
 const submit = (intent = 'create') => {
     if (!validateForm()) {
         return;
@@ -171,7 +179,9 @@ const submit = (intent = 'create') => {
         form.tokenize = true;
     }
 
-    form.post(route('batch.store-lot', props.batch.id));
+    form.post(route('batch.store-lot', props.batch.id), {
+        forceFormData: true,
+    });
 };
 </script>
 
@@ -288,7 +298,7 @@ const submit = (intent = 'create') => {
                                 <el-input
                                     id="allocation_kg"
                                     v-model="form.allocation_kg"
-                                    class="lot-large-input"
+                                    class="lot-form-control"
                                     type="number"
                                     placeholder="e.g. 400"
                                 />
@@ -318,14 +328,14 @@ const submit = (intent = 'create') => {
                             <div class="lot-column__title">Lot Identity</div>
                             <div class="lot-field-grid">
                                 <div class="lot-field lot-field--wide">
+                                    <label for="lot_name">Lot name</label>
+                                    <el-input id="lot_name" v-model="form.lot_name" class="lot-form-control" placeholder="e.g. Bugisu Premium Lot" />
+                                    <InputError class="mt-2 text-sm" :message="form.errors.lot_name" />
+                                </div>
+                                <div class="lot-field lot-field--wide">
                                     <label for="lot_number">Lot code</label>
                                     <el-input id="lot_number" v-model="form.lot_number" class="lot-form-control" placeholder="e.g. LOT-2026-001" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.lot_number" />
-                                </div>
-                                <div class="lot-field lot-field--wide">
-                                    <label for="warehouse">Warehouse</label>
-                                    <el-input id="warehouse" v-model="form.warehouse" class="lot-form-control" placeholder="e.g. Kampala Dry Mill" />
-                                    <InputError class="mt-2 text-sm" :message="form.errors.warehouse" />
                                 </div>
                             </div>
                         </div>
@@ -356,6 +366,38 @@ const submit = (intent = 'create') => {
                                     <InputError class="mt-2 text-sm" :message="form.errors.packaging_type" />
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="lot-field lot-field--span-all">
+                            <label for="warehouse">Warehouse</label>
+                            <el-input id="warehouse" v-model="form.warehouse" class="lot-form-control" placeholder="e.g. Kampala Dry Mill" />
+                            <InputError class="mt-2 text-sm" :message="form.errors.warehouse" />
+                        </div>
+
+                        <div class="lot-field lot-field--span-all">
+                            <label for="description">Lot description</label>
+                            <el-input
+                                id="description"
+                                v-model="form.description"
+                                class="lot-form-control lot-form-control--textarea"
+                                type="textarea"
+                                :autosize="{ minRows: 3, maxRows: 5 }"
+                                placeholder="Describe this lot for buyers and traceability records."
+                            />
+                            <InputError class="mt-2 text-sm" :message="form.errors.description" />
+                        </div>
+
+                        <div class="lot-field lot-field--span-all">
+                            <label for="image">Upload image</label>
+                            <input
+                                id="image"
+                                class="lot-upload-input"
+                                type="file"
+                                accept="image/*"
+                                @change="onImageChange"
+                            >
+                            <small v-if="form.image" class="lot-upload-name">{{ form.image.name }}</small>
+                            <InputError class="mt-2 text-sm" :message="form.errors.image" />
                         </div>
                     </section>
 
@@ -434,7 +476,7 @@ const submit = (intent = 'create') => {
                                 <div class="lot-field">
                                     <label for="target_market">Target market</label>
                                     <el-select id="target_market" v-model="form.target_market" class="lot-form-control" placeholder="Select target market">
-                                        <el-option v-for="market in props.options.target_markets" :key="market" :label="market" :value="market" />
+                                        <el-option v-for="market in props.options.target_markets" :key="market.id" :label="market.name" :value="market.name" />
                                     </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.target_market" />
                                 </div>
@@ -786,11 +828,13 @@ const submit = (intent = 'create') => {
 .lot-field label,
 .lot-allocation-card__left label,
 .lot-slider-field label {
-    color: #94a3b8;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    color: #334155;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: 1.35;
     text-transform: none;
 }
 
@@ -936,12 +980,10 @@ const submit = (intent = 'create') => {
     padding: 22px;
 }
 
-.lot-large-input,
 .lot-form-control {
     width: 100%;
 }
 
-.lot-large-input :deep(.el-input__wrapper),
 .lot-form-control :deep(.el-input__wrapper),
 .lot-form-control :deep(.el-select__wrapper) {
     align-items: center;
@@ -956,21 +998,6 @@ const submit = (intent = 'create') => {
     padding-left: 14px;
     padding-right: 14px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-}
-
-.lot-large-input {
-    margin-top: 10px;
-}
-
-.lot-large-input :deep(.el-input__wrapper) {
-    height: 72px;
-    min-height: 72px;
-}
-
-.lot-large-input :deep(.el-input__inner) {
-    font-size: 1.5rem;
-    font-weight: 600;
-    letter-spacing: -0.03em;
 }
 
 .lot-allocation-card__left p {
@@ -1065,23 +1092,24 @@ const submit = (intent = 'create') => {
     grid-column: 1 / -1;
 }
 
+.lot-field--span-all {
+    grid-column: 1 / -1;
+}
+
 .lot-field :deep(.el-input),
 .lot-field :deep(.el-select) {
     width: 100%;
 }
 
 .lot-field :deep(.el-input__inner),
-.lot-field :deep(.el-select__selected-item),
-.lot-large-input :deep(.el-input__inner) {
+.lot-field :deep(.el-select__selected-item) {
     color: #111827;
 }
 
-.lot-field :deep(.el-input__inner::placeholder),
-.lot-large-input :deep(.el-input__inner::placeholder) {
+.lot-field :deep(.el-input__inner::placeholder) {
     color: #a3aab5;
 }
 
-.lot-large-input :deep(.el-input__wrapper.is-focus),
 .lot-form-control :deep(.el-input__wrapper.is-focus),
 .lot-form-control :deep(.el-select__wrapper.is-focused),
 .lot-form-control :deep(.el-select__wrapper:focus-within),
@@ -1095,6 +1123,42 @@ const submit = (intent = 'create') => {
 
 .lot-form-control--readonly :deep(.el-input__inner) {
     color: #475569;
+}
+
+.lot-form-control--textarea :deep(.el-textarea__inner) {
+    background: #ffffff;
+    border: 1px solid #e8edf3;
+    border-radius: 14px;
+    box-shadow: none;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    min-height: 96px;
+    padding: 12px 14px;
+}
+
+.lot-form-control--textarea :deep(.el-textarea__inner:focus) {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.12);
+    outline: 0;
+}
+
+.lot-upload-input {
+    background: #ffffff;
+    border: 1px solid #e8edf3;
+    border-radius: 14px;
+    color: #111827;
+    cursor: pointer;
+    font-size: 13px;
+    min-height: 48px;
+    padding: 12px 14px;
+    width: 100%;
+}
+
+.lot-upload-name {
+    color: #64748b;
+    font-size: 12px;
 }
 
 .lot-chip-group {

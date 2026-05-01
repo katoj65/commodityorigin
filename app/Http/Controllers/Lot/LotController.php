@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Lot;
 
+use App\Helpers\ImageUploadHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Batch;
 use App\Models\Farm;
 use App\Models\Harvest;
 use App\Models\Lot;
+use App\Models\MarketMetadata;
 use App\Models\ProcessingMetadata;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -63,6 +65,9 @@ class LotController extends Controller
         $validated = $request->validate([
             'batch_id' => ['required', 'exists:batches,id'],
             'lot_number' => ['required', 'string', 'max:100', 'unique:lots,lot_number'],
+            'lot_name' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:4000'],
+            'image' => ['nullable', 'image', 'max:5120'],
             'process' => [
                 'required',
                 'string',
@@ -77,8 +82,11 @@ class LotController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
+        $imagePath = ImageUploadHelper::store($request->file('image'), 'lots');
+
         $lot = Lot::query()->create([
             ...$validated,
+            'image' => $imagePath,
             'net_weight_kg' => round((float) $validated['quantity_bags'] * (float) $validated['bag_weight_kg'], 2),
             'user_id' => $request->user()->id,
             'status' => 'draft',
@@ -104,6 +112,14 @@ class LotController extends Controller
                 'slug' => $method->slug,
                 'name' => $method->name,
                 'description' => $method->description,
+            ])
+            ->all();
+        $targetMarkets = $this->targetMarketOptions()
+            ->map(fn (MarketMetadata $market): array => [
+                'id' => $market->id,
+                'slug' => $market->slug,
+                'name' => $market->name,
+                'description' => $market->description,
             ])
             ->all();
 
@@ -138,6 +154,8 @@ class LotController extends Controller
             'defaults' => [
                 'lot_number' => '',
                 'lot_name' => '',
+                'description' => '',
+                'image' => '',
                 'allocation_kg' => '',
                 'net_weight_kg' => '',
                 'quantity_bags' => '',
@@ -157,12 +175,7 @@ class LotController extends Controller
             'options' => [
                 'packaging_types' => ['GrainPro', 'Jute Only', 'Vacuum'],
                 'processing_methods' => $processingMethods,
-                'target_markets' => [
-                    'United Arab Emirates (Specialty)',
-                    'Scandinavia Specialty Buyers',
-                    'Japan Premium Roasters',
-                    'Germany Green Coffee Importers',
-                ],
+                'target_markets' => $targetMarkets,
             ],
             'canSubmit' => (bool) $sourceFarm,
             'submissionBlockedMessage' => $sourceFarm
@@ -170,6 +183,16 @@ class LotController extends Controller
                 : 'Link a harvest with a source farm to this batch before creating a lot.',
         ]);
     }
+
+
+
+
+
+
+
+
+
+
 
     /**
      * Store a newly created lot against a batch.
@@ -188,7 +211,9 @@ class LotController extends Controller
 
         $validated = $request->validate([
             'lot_number' => ['required', 'string', 'max:100', 'unique:lots,lot_number'],
-            'lot_name' => ['required', 'string', 'max:255'],
+            'lot_name' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:4000'],
+            'image' => ['nullable', 'image', 'max:5120'],
             'allocation_kg' => ['required', 'numeric', 'gt:0'],
             'quantity_bags' => ['required', 'integer', 'min:1'],
             'bag_weight_kg' => ['required', 'numeric', 'min:1'],
@@ -199,18 +224,34 @@ class LotController extends Controller
                 'max:100',
                 Rule::exists('processing_metadata', 'name')->where('is_active', true),
             ],
-            'warehouse' => ['required', 'string', 'max:255'],
+            'warehouse' => ['nullable', 'string', 'max:255'],
             'packaging_type' => ['required', 'string', Rule::in(['GrainPro', 'Jute Only', 'Vacuum'])],
             'screen_size' => ['nullable', 'string', 'max:100'],
             'aroma_score' => ['required', 'numeric', 'between:0,10'],
             'acidity_score' => ['required', 'numeric', 'between:0,10'],
             'body_score' => ['required', 'numeric', 'between:0,10'],
-            'target_market' => ['required', 'string', 'max:255'],
+            'target_market' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::exists('market_metadata', 'name')->where('is_active', true),
+            ],
             'price_per_kg' => ['required', 'numeric', 'min:0'],
             'tokenize' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'submission_intent' => ['nullable', 'string', Rule::in(['draft', 'create', 'create_and_tokenise', 'create_and_list'])],
         ]);
+
+        $imagePath = ImageUploadHelper::store($request->file('image'), 'lots');
+
+        if ((float) $validated['allocation_kg'] > (float) $batch->weight) {
+            throw ValidationException::withMessages([
+                'allocation_kg' => sprintf(
+                    'Lot allocation cannot exceed the batch weight of %.2f kg.',
+                    (float) $batch->weight
+                ),
+            ]);
+        }
 
         if ((float) $validated['allocation_kg'] > $remainingQtyKg) {
             throw ValidationException::withMessages([
@@ -221,34 +262,30 @@ class LotController extends Controller
             ]);
         }
 
+
+
         $sensoryAverage = round(collect([
             $validated['aroma_score'],
             $validated['acidity_score'],
             $validated['body_score'],
         ])->avg(), 2);
 
+
         Lot::query()->create([
             'batch_id' => $batch->id,
             'user_id' => $request->user()->id,
             'lot_number' => $validated['lot_number'],
-            'lot_name' => $validated['lot_name'],
+            'lot_name' => $validated['lot_name'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'image' => $imagePath,
             'process' => $validated['process'],
             'grade' => $validated['grade'],
-            'allocation_kg' => $validated['allocation_kg'],
-            'net_weight_kg' => round((float) $validated['allocation_kg'], 2),
             'quantity_bags' => $validated['quantity_bags'],
             'bag_weight_kg' => $validated['bag_weight_kg'],
+            'packaging_type' => $validated['packaging_type'],
+            'net_weight_kg' => round((float) $validated['allocation_kg'], 2),
             'reserve_price' => $validated['price_per_kg'],
             'quality_score' => $batch->cup_score ?: $sensoryAverage,
-            'warehouse' => $validated['warehouse'],
-            'packaging_type' => $validated['packaging_type'],
-            'screen_size' => $validated['screen_size'] ?: $batch->screen_size,
-            'aroma_score' => $validated['aroma_score'],
-            'acidity_score' => $validated['acidity_score'],
-            'body_score' => $validated['body_score'],
-            'target_market' => $validated['target_market'],
-            'price_per_kg' => $validated['price_per_kg'],
-            'tokenize' => (bool) ($validated['tokenize'] ?? false),
             'status' => $this->resolveLotStatus($validated['submission_intent'] ?? 'create'),
             'notes' => $validated['notes'] ?? null,
         ]);
@@ -341,6 +378,20 @@ class LotController extends Controller
     }
 
     /**
+     * Fetch active coffee target market options from metadata.
+     *
+     * @return Collection<int, MarketMetadata>
+     */
+    private function targetMarketOptions(): Collection
+    {
+        return MarketMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
      * Build the next lot number suggestion for the batch.
      */
     private function makeLotNumber(Batch $batch): string
@@ -383,5 +434,24 @@ class LotController extends Controller
             default => 'ready',
         };
     }
+
+
+public function show(Lot $lot): Response
+{
+    return Inertia::render('Lot/LotProfile', [
+        'lot' => $lot,
+    ]);
+}
+
+
+
+
+
+
+
+
+
+
+
 
 }

@@ -47,7 +47,7 @@ Route::middleware([
 
 
     // Farmer workspace routes.
-    Route::prefix('farmer')->name('farmer.')->group(function () {
+    Route::prefix('farmer')->name('farmer.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [FarmerController::class, 'index'])->name('index');
         Route::get('/create', [FarmerController::class, 'create'])->name('create');
         Route::post('/', [FarmerController::class, 'store'])->name('store');
@@ -55,7 +55,7 @@ Route::middleware([
     });
 
     // Cooperative workspace routes.
-    Route::prefix('cooperative')->name('cooperative.')->group(function () {
+    Route::prefix('cooperative')->name('cooperative.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [CooperativeController::class, 'index'])->name('index');
         Route::get('/create', [CooperativeController::class, 'create'])->name('create');
         Route::post('/', [CooperativeController::class, 'store'])->name('store');
@@ -63,7 +63,7 @@ Route::middleware([
     });
 
     // Farm workspace routes.
-    Route::prefix('farm')->name('farm.')->group(function () {
+    Route::prefix('farm')->name('farm.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [FarmController::class, 'index'])->name('index');
         Route::get('/create/{farmer}', [FarmController::class, 'create'])->name('create');
         Route::post('/', [FarmController::class, 'store'])->name('store');
@@ -71,13 +71,14 @@ Route::middleware([
     });
 
     // Lot workspace routes.
-    Route::prefix('lot')->name('lot.')->group(function () {
+    Route::prefix('lot')->name('lot.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/create', [LotController::class, 'create'])->name('create');
         Route::post('/', [LotController::class, 'store'])->name('store');
+        Route::get('/{lot}', [LotController::class, 'show'])->name('show');
     });
 
     // Batch workspace routes.
-    Route::prefix('batch')->name('batch.')->group(function () {
+    Route::prefix('batch')->name('batch.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [BatchController::class, 'index'])->name('index');
         Route::get('/create', [BatchController::class, 'create'])->name('create');
         Route::get('/season/{season}/create', [SeasonController::class, 'createBatch'])->name('create-season');
@@ -90,7 +91,7 @@ Route::middleware([
     });
 
     // Harvest workspace routes.
-    Route::prefix('harvest')->name('harvest.')->group(function () {
+    Route::prefix('harvest')->name('harvest.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [HarvestController::class, 'index'])->name('index');
         Route::get('/create', [HarvestController::class, 'create'])->name('create');
         Route::post('/', [HarvestController::class, 'store'])->name('store');
@@ -101,7 +102,7 @@ Route::middleware([
     });
 
     // Season workspace routes.
-    Route::prefix('season')->name('season.')->group(function () {
+    Route::prefix('season')->name('season.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [SeasonController::class, 'index'])->name('index');
         Route::get('/create', [SeasonController::class, 'create'])->name('create');
         Route::post('/', [SeasonController::class, 'store'])->name('store');
@@ -114,17 +115,17 @@ Route::middleware([
     });
 
     // Bid workspace routes.
-    Route::prefix('bid')->name('bid.')->group(function () {
+    Route::prefix('bid')->name('bid.')->middleware('role:buyer,admin')->group(function () {
         Route::get('/', [BidController::class, 'index'])->name('index');
     });
 
     // Auction workspace routes.
-    Route::prefix('auction')->name('auction.')->group(function () {
+    Route::prefix('auction')->name('auction.')->middleware('role:buyer,admin')->group(function () {
         Route::get('/', [AuctionController::class, 'index'])->name('index');
     });
 
     // Checkout workspace routes.
-    Route::prefix('checkout')->name('checkout.')->group(function () {
+    Route::prefix('checkout')->name('checkout.')->middleware('role:buyer,admin')->group(function () {
         Route::get('/', [CheckoutController::class, 'index'])->name('index');
     });
 
@@ -135,18 +136,18 @@ Route::middleware([
     });
 
     // Buyer workspace routes.
-    Route::prefix('buyer')->name('buyer.')->group(function () {
+    Route::prefix('buyer')->name('buyer.')->middleware('role:buyer,admin')->group(function () {
         Route::get('/', [BuyController::class, 'index'])->name('index');
     });
 
     // Seller workspace routes.
-    Route::prefix('seller')->name('seller.')->group(function () {
+    Route::prefix('seller')->name('seller.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [SellController::class, 'index'])->name('index');
     });
 
     // Analysis workspace routes.
-    Route::prefix('analysis')->name('analysis.')->group(function () {
+    Route::prefix('analysis')->name('analysis.')->middleware('role:investor,admin')->group(function () {
         Route::get('/', [AnalysisController::class, 'index'])->name('index');
     });
 
-    });
+});

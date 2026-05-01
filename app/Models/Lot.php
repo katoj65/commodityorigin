@@ -21,6 +21,8 @@ class Lot extends Model
         'user_id',
         'lot_number',
         'lot_name',
+        'description',
+        'image',
         'process',
         'grade',
         'allocation_kg',

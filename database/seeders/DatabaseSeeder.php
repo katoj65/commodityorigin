@@ -41,6 +41,7 @@ class DatabaseSeeder extends Seeder
             HarvestingMetadataSeeder::class,
             SensoryMetadataSeeder::class,
             ProcessingMetadataSeeder::class,
+            MarketMetadataSeeder::class,
         ]);
 
         // User::factory(10)->create();
