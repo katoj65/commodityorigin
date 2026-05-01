@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
-import { Plus } from '@element-plus/icons-vue';
+import { Plus, MapLocation, OfficeBuilding, Shield, ArrowRight, User, TrendCharts, Check, Tickets } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -152,23 +152,26 @@ const goToFarmProfile = (farmId) => {
 </script>
 
 <template>
-    <AppLayout :title="fullName" full-width>
+    <AppLayout :title="fullName" full-width flush :show-banner="false">
         <div class="producer-directory-page">
             <div class="producer-directory-shell">
                 <div v-if="flashSuccess" class="producer-flash-banner">
+                    <el-icon class="producer-flash-banner__icon"><Check /></el-icon>
                     {{ flashSuccess }}
                 </div>
 
                 <div class="producer-page-head">
-                    <div>
-                        <div class="producer-page-kicker">Producer Directory</div>
-                        <h1 class="producer-page-title">Farmer Profile</h1>
+                    <div class="producer-page-head__left">
+                        <p class="producer-page-kicker">
+                            <el-icon class="producer-page-kicker__icon"><User /></el-icon>
+                            Producer Profile
+                        </p>
+                        <h1 class="producer-page-title">{{ fullName }}</h1>
+                        <p class="producer-page-sub">{{ locationLabel }}</p>
                     </div>
-
-                    <el-button class="producer-cta-button" @click="goToAddFarm">
-                        <el-icon><Plus /></el-icon>
-                        <span>Add New Farm</span>
-                    </el-button>
+                    <button type="button" class="producer-cta-button" @click="goToAddFarm">
+                        <el-icon><Plus /></el-icon> Add New Farm
+                    </button>
                 </div>
 
                 <div class="producer-top-grid">
@@ -234,9 +237,7 @@ const goToFarmProfile = (farmId) => {
                         <div class="producer-info-grid">
                             <section class="producer-info-card">
                                 <div class="producer-card-heading">
-                                    <svg class="producer-card-heading-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path :d="iconPaths.location" />
-                                    </svg>
+                                    <span class="producer-card-heading-icon"><el-icon><MapLocation /></el-icon></span>
                                     <span>Contact &amp; Location</span>
                                 </div>
 
@@ -250,9 +251,7 @@ const goToFarmProfile = (farmId) => {
 
                             <section class="producer-info-card">
                                 <div class="producer-card-heading">
-                                    <svg class="producer-card-heading-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path :d="iconPaths.farm" />
-                                    </svg>
+                                    <span class="producer-card-heading-icon"><el-icon><OfficeBuilding /></el-icon></span>
                                     <span>Cooperative &amp; Production</span>
                                 </div>
 
@@ -274,8 +273,10 @@ const goToFarmProfile = (farmId) => {
 
                         <section class="producer-estates-section">
                             <div class="producer-section-header">
-                                <h2 class="producer-section-title">Managed Estates</h2>
-                                <button type="button" class="producer-link-button">View All Stations</button>
+                                <div class="producer-section-header__left">
+                                    <span class="producer-section-icon"><el-icon><Tickets /></el-icon></span>
+                                    <h2 class="producer-section-title">Managed Estates</h2>
+                                </div>
                             </div>
 
                             <div v-if="estates.length" class="producer-estate-stack">
@@ -305,9 +306,7 @@ const goToFarmProfile = (farmId) => {
                                     </div>
 
                                     <button type="button" class="producer-estate-arrow" aria-label="Open estate" @click.stop="goToFarmProfile(estate.id)">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                                            <path :d="iconPaths.chevronRight" />
-                                        </svg>
+                                        <el-icon><ArrowRight /></el-icon>
                                     </button>
                                 </article>
                             </div>
@@ -324,9 +323,7 @@ const goToFarmProfile = (farmId) => {
                     <aside class="producer-side-column">
                         <section class="producer-credentials-card">
                             <div class="producer-card-heading">
-                                <svg class="producer-card-heading-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path :d="iconPaths.shield" />
-                                </svg>
+                                <span class="producer-card-heading-icon"><el-icon><Shield /></el-icon></span>
                                 <span>Credentials &amp; Certs</span>
                             </div>
 
@@ -345,7 +342,9 @@ const goToFarmProfile = (farmId) => {
                                 </article>
                             </div>
 
-                            <button type="button" class="producer-outline-button">Update Credentials</button>
+                            <button type="button" class="producer-outline-button">
+                                <el-icon><Shield /></el-icon> Update Credentials
+                            </button>
                         </section>
                     </aside>
                 </div>
@@ -356,9 +355,20 @@ const goToFarmProfile = (farmId) => {
 
 <style scoped>
 .producer-directory-page {
+    --primary:          #004532;
+    --primary-grad:     #065f46;
+    --on-primary:       #ffffff;
+    --on-surface:       #191c1e;
+    --on-surface-var:   #74777a;
+    --surface-white:    #ffffff;
+    --surface-low:      #f2f4f6;
+    --surface-high:     #e6e8ea;
+    --primary-fixed:    #a6f2d1;
+    --on-primary-fixed: #002116;
     min-height: 100%;
-    background: #ffffff;
-    color: #10241e;
+    background: var(--surface-white);
+    color: var(--on-surface);
+    font-family: 'Manrope', system-ui, sans-serif;
 }
 
 .producer-directory-shell {
@@ -368,15 +378,19 @@ const goToFarmProfile = (farmId) => {
 }
 
 .producer-flash-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 1rem;
-    border: 1px solid #cce6d8;
-    border-radius: 1rem;
-    background: #edf9f2;
-    padding: 0.85rem 1rem;
-    color: #1e6a48;
-    font-size: 0.9rem;
+    border: 1px solid #bbf0d0;
+    border-radius: 0.625rem;
+    background: #f0fbf5;
+    padding: 0.75rem 1rem;
+    color: #0d6a40;
+    font-size: 0.8125rem;
     font-weight: 600;
 }
+.producer-flash-banner__icon { font-size: 15px; flex-shrink: 0; }
 
 .producer-page-head {
     display: flex;
@@ -384,43 +398,56 @@ const goToFarmProfile = (farmId) => {
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1.25rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--surface-high);
 }
+.producer-page-head__left { min-width: 0; }
 
 .producer-page-kicker {
-    color: #7b8b88;
-    font-size: 0.68rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--on-surface-var);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
 }
+.producer-page-kicker__icon { font-size: 13px; color: var(--primary); }
 
 .producer-page-title {
-    margin: 0.3rem 0 0;
-    color: #111827;
-    font-size: 1.7rem;
-    line-height: 1.12;
-    font-weight: 700;
-    letter-spacing: -0.025em;
+    margin: 0 0 0.2rem;
+    color: var(--on-surface);
+    font-size: 1.25rem;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.producer-page-sub {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--on-surface-var);
 }
 
 .producer-cta-button {
-    --el-button-bg-color: #0f5d3b;
-    --el-button-border-color: #0f5d3b;
-    --el-button-text-color: #ffffff;
-    --el-button-hover-bg-color: #0c5032;
-    --el-button-hover-border-color: #0c5032;
-    --el-button-hover-text-color: #ffffff;
-    height: 44px;
-    padding: 0 1.05rem;
-    border-radius: 0.85rem;
-    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 6px;
+    border: none;
+    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
+    color: var(--on-primary);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 0.8125rem;
     font-weight: 700;
-    box-shadow: 0 16px 26px -20px rgba(15, 93, 59, 0.45);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s ease;
+    flex-shrink: 0;
 }
-
-.producer-cta-button :deep(.el-icon) {
-    margin-right: 0.35rem;
-}
+.producer-cta-button:hover { opacity: 0.88; }
 
 .producer-top-grid {
     display: grid;
@@ -469,11 +496,11 @@ const goToFarmProfile = (farmId) => {
     display: inline-flex;
     align-items: center;
     border-radius: 999px;
-    background: #d8f5e4;
-    padding: 0.3rem 0.6rem;
-    color: #1c7a4d;
-    font-size: 0.62rem;
-    font-weight: 800;
+    background: var(--primary-fixed);
+    padding: 3px 10px;
+    color: var(--on-primary-fixed);
+    font-size: 0.6875rem;
+    font-weight: 700;
 }
 
 .producer-hero-content {
@@ -539,33 +566,30 @@ const goToFarmProfile = (farmId) => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 96px;
     border-radius: 999px;
-    background: #0f6b47;
-    padding: 0.5rem 0.8rem;
-    color: #ffffff;
-    font-size: 0.6rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
+    background: rgba(0,69,50,0.08);
+    border: 1px solid rgba(0,69,50,0.15);
+    padding: 4px 12px;
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 700;
     text-align: center;
+    white-space: nowrap;
 }
 
 .producer-brief-kicker {
     margin-top: 1rem;
-    color: #9ca3af;
-    font-size: 0.64rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
+    color: var(--on-surface-var);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
 
 .producer-brief-copy {
     margin: 0.45rem 0 0;
-    color: #667085;
-    font-size: 1rem;
-    line-height: 1.8;
-    font-style: italic;
+    color: var(--on-surface-var);
+    font-size: 0.875rem;
+    line-height: 1.7;
 }
 
 .producer-stat-grid {
@@ -617,15 +641,14 @@ const goToFarmProfile = (farmId) => {
 
 .producer-stat-label {
     margin-top: 1.1rem;
-    color: #9aa6a1;
-    font-size: 0.62rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
+    color: var(--on-surface-var);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
 
 .producer-stat-card--accent .producer-stat-label {
-    color: rgba(255, 255, 255, 0.72);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .producer-stat-value-row {
@@ -683,20 +706,24 @@ const goToFarmProfile = (farmId) => {
 }
 
 .producer-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--on-surface);
+}
+.producer-card-heading-icon {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    color: #94a3b8;
-    font-size: 0.66rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-}
-
-.producer-card-heading-icon {
-    width: 0.95rem;
-    height: 0.95rem;
-    fill: #315749;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(0,69,50,0.08);
+    color: var(--primary);
+    font-size: 14px;
+    flex-shrink: 0;
 }
 
 .producer-field-grid {
@@ -708,11 +735,9 @@ const goToFarmProfile = (farmId) => {
 
 .producer-field-label,
 .producer-meta-line-label {
-    color: #9ca3af;
-    font-size: 0.58rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
+    color: var(--on-surface-var);
+    font-size: 0.6875rem;
+    font-weight: 600;
 }
 
 .producer-field-value,
@@ -758,17 +783,17 @@ const goToFarmProfile = (farmId) => {
 .producer-tag-chip {
     display: inline-flex;
     align-items: center;
-    border-radius: 0.45rem;
-    background: #dcf2e6;
-    padding: 0.35rem 0.55rem;
-    color: #23734c;
-    font-size: 0.68rem;
-    font-weight: 800;
+    border-radius: 999px;
+    background: var(--primary-fixed);
+    padding: 3px 10px;
+    color: var(--on-primary-fixed);
+    font-size: 0.6875rem;
+    font-weight: 700;
 }
 
 .producer-tag-chip--muted {
-    background: #eef3f1;
-    color: #5f7a6e;
+    background: var(--surface-low);
+    color: var(--on-surface-var);
 }
 
 .producer-credential-list {
@@ -815,11 +840,9 @@ const goToFarmProfile = (farmId) => {
 
 .producer-credential-id {
     margin-top: 0.2rem;
-    color: #94a3b8;
-    font-size: 0.62rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    color: var(--on-surface-var);
+    font-size: 0.6875rem;
+    font-weight: 600;
 }
 
 .producer-credential-status {
@@ -832,15 +855,26 @@ const goToFarmProfile = (farmId) => {
 }
 
 .producer-outline-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     width: 100%;
     margin-top: 1rem;
-    border: 1px dashed #d8dde2;
-    border-radius: 0.8rem;
-    background: #fbfcfd;
-    padding: 0.8rem 1rem;
-    color: #8c98a7;
-    font-size: 0.8rem;
+    border: 1px solid var(--surface-high);
+    border-radius: 6px;
+    background: var(--surface-low);
+    padding: 0.65rem 1rem;
+    color: var(--on-surface-var);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 0.8125rem;
     font-weight: 700;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+.producer-outline-button:hover {
+    background: var(--surface-high);
+    color: var(--on-surface);
 }
 
 .producer-estates-section {
@@ -858,18 +892,26 @@ const goToFarmProfile = (farmId) => {
 
 .producer-section-title {
     margin: 0;
-    color: #111827;
-    font-size: 1.35rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-}
-
-.producer-link-button {
-    border: 0;
-    background: transparent;
-    color: #315749;
-    font-size: 0.78rem;
+    color: var(--on-surface);
+    font-size: 0.9375rem;
     font-weight: 700;
+}
+.producer-section-header__left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.producer-section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(0,69,50,0.08);
+    color: var(--primary);
+    font-size: 14px;
+    flex-shrink: 0;
 }
 
 .producer-estate-stack {
@@ -946,28 +988,29 @@ const goToFarmProfile = (farmId) => {
 }
 
 .producer-estate-id {
-    color: #9ca3af;
-    font-size: 0.62rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    color: var(--on-surface-var);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .producer-estate-arrow {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.2rem;
-    height: 2.2rem;
-    border: 1px solid #e5e7eb;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--surface-high);
     border-radius: 999px;
-    background: #ffffff;
+    background: var(--surface-white);
+    color: var(--on-surface-var);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.12s ease;
 }
-
-.producer-estate-arrow svg {
-    width: 0.95rem;
-    height: 0.95rem;
-    fill: #6b7280;
+.producer-estate-arrow:hover {
+    background: var(--surface-low);
+    color: var(--primary);
 }
 
 .text-success-custom {

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import { Calendar, Check, Document, Download, Location } from '@element-plus/icons-vue';
+import { Check, Document, Download, Location, EditPen, Tickets, Calendar, TrendCharts, ScaleToOriginal, DataLine, Promotion, Connection } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import EditHarvestQualityModel from '@/Components/Modals/EditHarvestQualityModel.vue';
 
@@ -196,12 +196,12 @@ const estimatedValue = computed(() => {
 
     return totalQuantity.value * Math.max(price, 4.5);
 });
-const traceableLabel = computed(() => `TRACEABLE HARVEST LINKED TO ${seasonName.value.toUpperCase()}`);
+const traceableLabel = computed(() => `Traceable harvest · Linked to ${seasonName.value}`);
 const badgeItems = computed(() => [
-    { label: 'LINKED TO SEASON', tone: 'green' },
-    { label: 'VERIFIED FARM', tone: 'neutral' },
-    { label: 'READY FOR BATCHING', tone: 'green' },
-    { label: 'TRACEABLE', tone: 'neutral' },
+    { label: 'Linked to Season', tone: 'green' },
+    { label: 'Verified Farm', tone: 'neutral' },
+    { label: 'Ready for Batching', tone: 'green' },
+    { label: 'Traceable', tone: 'neutral' },
 ]);
 const evidenceItems = computed(() => {
     const documents = props.harvest.harvest_documents || [];
@@ -301,12 +301,20 @@ const openEditHarvestModal = () => {
             <div class="harvest-profile-shell">
                 <section class="profile-hero">
                     <div class="profile-hero__copy">
-                        <p class="profile-kicker">{{ traceableLabel }}</p>
-                        <h1 class="mt-2 mb-2">Harvest Profile</h1>
+                        <p class="profile-kicker">
+                            <el-icon class="profile-kicker__icon"><Connection /></el-icon>
+                            {{ traceableLabel }}
+                        </p>
+                        <h1 class="mt-2 mb-2">
+                            <el-icon class="profile-hero__title-icon"><Tickets /></el-icon>
+                            Harvest Profile
+                        </h1>
                     </div>
 
                     <div class="profile-hero__actions">
-                        <button type="button" class="hero-button hero-button--soft" @click="openEditHarvestModal">Edit</button>
+                        <button type="button" class="hero-button hero-button--primary" @click="openEditHarvestModal">
+                            <el-icon><EditPen /></el-icon> Edit Harvest
+                        </button>
                     </div>
                 </section>
 
@@ -323,30 +331,30 @@ const openEditHarvestModal = () => {
 
                 <section class="summary-strip">
                     <article class="summary-strip__item">
-                        <span>Harvest ID</span>
+                        <span><el-icon class="strip-icon"><Tickets /></el-icon> Harvest ID</span>
                         <strong>{{ harvestCode }}</strong>
                     </article>
                     <article class="summary-strip__item">
-                        <span>Season</span>
+                        <span><el-icon class="strip-icon"><Calendar /></el-icon> Season</span>
                         <strong>{{ seasonName }}</strong>
                     </article>
                     <article class="summary-strip__item">
-                        <span>Farm</span>
+                        <span><el-icon class="strip-icon"><Location /></el-icon> Farm</span>
                         <strong>{{ farmName }}</strong>
                     </article>
                     <article class="summary-strip__item">
-                        <span>Coffee Type</span>
+                        <span><el-icon class="strip-icon"><DataLine /></el-icon> Variety</span>
                         <strong>{{ varietyLabel }}</strong>
                     </article>
                     <article class="summary-strip__item">
-                        <span>Status</span>
+                        <span><el-icon class="strip-icon"><Promotion /></el-icon> Status</span>
                         <strong class="summary-status">
                             <span class="status-dot"></span>
                             {{ statusLabel }}
                         </strong>
                     </article>
                     <article class="summary-strip__item summary-strip__item--score">
-                        <span>Readiness Score</span>
+                        <span><el-icon class="strip-icon"><TrendCharts /></el-icon> Readiness</span>
                         <strong>{{ readinessScore }}%</strong>
                     </article>
                 </section>
@@ -357,7 +365,7 @@ const openEditHarvestModal = () => {
                             <div class="season-card__content">
                                 <div class="mb-3">
                                     <h2>{{ seasonName }}</h2>
-                                    <p>Active Agricultural Lifecycle</p>
+                                    <p>Active crop lifecycle</p>
                                 </div>
 
                                 <div class="season-metrics">
@@ -382,7 +390,7 @@ const openEditHarvestModal = () => {
 
                             <div class="health-score-card">
                                 <strong>{{ healthScore }}</strong>
-                                <span>HEALTH SCORE</span>
+                                <span>Health Score</span>
                             </div>
                         </section>
 
@@ -415,7 +423,10 @@ const openEditHarvestModal = () => {
 
                         <section class="harvest-data-card">
                             <div class="section-header mb-3">
-                                <h3>Harvest Details</h3>
+                                <h3>
+                                    <span class="section-icon"><el-icon><ScaleToOriginal /></el-icon></span>
+                                    Harvest Details
+                                </h3>
                             </div>
 
                             <div class="harvest-data-grid">
@@ -523,7 +534,10 @@ const openEditHarvestModal = () => {
 
                         <section class="transformation-card">
                             <div class="section-header">
-                                <h3>Quantity Breakdown &amp; Transformation</h3>
+                                <h3>
+                                    <span class="section-icon"><el-icon><DataLine /></el-icon></span>
+                                    Quantity Breakdown &amp; Transformation
+                                </h3>
                                 <div class="section-header__stats">
                                     <div>
                                         <span>Ripeness Score</span>
@@ -587,7 +601,10 @@ const openEditHarvestModal = () => {
 
                         <section class="activity-card">
                             <div class="section-header">
-                                <h3>Activities Before Harvest</h3>
+                                <h3>
+                                    <span class="section-icon"><el-icon><Calendar /></el-icon></span>
+                                    Activities Before Harvest
+                                </h3>
                             </div>
 
                             <div class="activity-track">
@@ -598,8 +615,8 @@ const openEditHarvestModal = () => {
                                     :class="{ 'is-current': index === activitySteps.length - 1 }"
                                 >
                                     <div class="activity-step__dot">
-                                        <span v-if="index === activitySteps.length - 1">&#10003;</span>
-                                        <span v-else></span>
+                                        <el-icon v-if="index === activitySteps.length - 1"><Check /></el-icon>
+                                        <span v-else class="activity-dot-fill"></span>
                                     </div>
                                     <h4>{{ activity.title }}</h4>
                                     <p>{{ activity.date }}</p>
@@ -645,7 +662,10 @@ const openEditHarvestModal = () => {
                         </section>
 
                         <section class="evidence-card">
-                            <h3>Evidence &amp; Compliance</h3>
+                            <h3>
+                                <span class="section-icon"><el-icon><Document /></el-icon></span>
+                                Evidence &amp; Compliance
+                            </h3>
 
                             <component
                                 v-for="item in evidenceItems"
@@ -671,12 +691,12 @@ const openEditHarvestModal = () => {
                         </section>
 
                         <section class="insight-strip">
-                            <span class="insight-strip__sparkle">+</span>
+                            <span class="insight-strip__sparkle"><el-icon><Check /></el-icon></span>
                             <p>Harvest correctly linked to active season</p>
                         </section>
 
                         <section class="insight-strip">
-                            <span class="insight-strip__sparkle">+</span>
+                            <span class="insight-strip__sparkle"><el-icon><Check /></el-icon></span>
                             <p>Season activities support full traceability</p>
                         </section>
                     </aside>
@@ -695,8 +715,19 @@ const openEditHarvestModal = () => {
 
 <style scoped>
 .harvest-profile-page {
+    --primary:          #004532;
+    --primary-grad:     #065f46;
+    --on-primary:       #ffffff;
+    --on-surface:       #191c1e;
+    --on-surface-var:   #74777a;
+    --surface-white:    #ffffff;
+    --surface-low:      #f2f4f6;
+    --surface-high:     #e6e8ea;
+    --primary-fixed:    #a6f2d1;
+    --on-primary-fixed: #002116;
     min-height: calc(100vh - 56px);
     background: #ffffff;
+    font-family: 'Manrope', system-ui, sans-serif;
 }
 
 .harvest-profile-shell {
@@ -714,18 +745,30 @@ const openEditHarvestModal = () => {
 
 .profile-kicker {
     margin: 0 0 4px;
-    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
     font-weight: 600;
-    letter-spacing: 0.12em;
-    color: #6f7f7b;
+    color: var(--on-surface-var);
+    letter-spacing: 0.01em;
 }
+.profile-kicker__icon { font-size: 13px; color: var(--primary); }
 
 .profile-hero h1 {
     margin: 0;
-    font-size: 34px;
-    line-height: 0.96;
-    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.375rem;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     color: #121715;
+}
+.profile-hero__title-icon {
+    font-size: 18px;
+    color: var(--primary);
 }
 
 .profile-hero__actions {
@@ -738,21 +781,23 @@ const openEditHarvestModal = () => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 42px;
-    padding: 0 18px;
+    gap: 7px;
+    height: 38px;
+    padding: 0 16px;
     border-radius: 6px;
-    font-size: 15px;
-    font-weight: 600;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
     text-decoration: none;
-    border: 1px solid #d8ddd6;
+    border: none;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: opacity 0.15s ease;
 }
-
-.hero-button--soft {
-    background: #f8faf8;
-    color: #121715;
+.hero-button--primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
+    color: var(--on-primary);
 }
+.hero-button--primary:hover { opacity: 0.88; }
 
 .badge-row {
     display: flex;
@@ -803,13 +848,17 @@ const openEditHarvestModal = () => {
 }
 
 .summary-strip__item span {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 5px;
     margin-bottom: 8px;
-    font-size: 10px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #74807a;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: capitalize;
+    color: var(--on-surface-var);
 }
+.strip-icon { font-size: 12px; color: var(--primary); flex-shrink: 0; }
 
 .summary-strip__item strong {
     display: block;
@@ -1187,9 +1236,24 @@ const openEditHarvestModal = () => {
 .evidence-card h3,
 .readiness-card h3 {
     margin: 0;
-    font-size: 16px;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9375rem;
+    font-weight: 700;
     color: #121715;
+}
+.section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(0,69,50,0.08);
+    color: var(--primary);
+    font-size: 14px;
+    flex-shrink: 0;
 }
 
 .section-header__stats {
@@ -1321,7 +1385,7 @@ const openEditHarvestModal = () => {
     font-weight: 700;
 }
 
-.activity-step__dot span {
+.activity-dot-fill {
     width: 8px;
     height: 8px;
     border-radius: 999px;
@@ -1539,12 +1603,13 @@ const openEditHarvestModal = () => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
     border-radius: 999px;
-    font-size: 14px;
-    font-weight: 700;
+    background: rgba(10,91,56,0.12);
+    font-size: 13px;
     color: #0a5b38;
+    flex-shrink: 0;
 }
 
 .insight-strip p {

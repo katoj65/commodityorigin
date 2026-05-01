@@ -444,7 +444,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 
                             <!-- Trading Options -->
                             <div class="lp-card">
-                                <h2 class="lp-card__title"><el-icon><Money /></el-icon> Trading Options</h2>
+                                <h2 class="lp-card__title mb-3"><el-icon><Money /></el-icon> Trading Options</h2>
                                 <div class="lp-trade-grid">
                                     <div class="lp-trade-card lp-trade-card--primary">
                                         <div class="lp-trade-card__eyebrow"><el-icon><ShoppingCart /></el-icon> BUY NOW</div>
@@ -467,45 +467,6 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                 </div>
                             </div>
 
-                            <!-- Documents -->
-                            <div class="lp-card">
-                                <h2 class="lp-card__title"><el-icon><Document /></el-icon> Documents &amp; Verification</h2>
-                                <div class="lp-doc-grid">
-                                    <div v-for="doc in [
-                                        { label: 'Quality Report',        verified: true },
-                                        { label: 'Certificate of Origin', verified: true },
-                                        { label: 'Export Documents',      verified: false },
-                                        { label: 'Lot Photos',            verified: true },
-                                        { label: 'Blockchain Proof',      verified: true },
-                                    ]" :key="doc.label" class="lp-doc-item">
-                                        <div class="lp-doc-item__label">{{ doc.label }}</div>
-                                        <span class="lp-origin-tag" :class="doc.verified ? '' : 'lp-origin-tag--pending'" style="font-size:9px;">
-                                            {{ doc.verified ? 'Verified' : 'Pending' }}
-                                        </span>
-                                        <div class="lp-doc-item__actions">
-                                            <button class="lp-btn lp-btn--tertiary" style="font-size:11px;padding:4px 10px;">View</button>
-                                            <button class="lp-btn lp-btn--tertiary" style="font-size:11px;padding:4px 10px;">Download</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Timeline -->
-                            <div class="lp-card">
-                                <h2 class="lp-card__title"><el-icon><Clock /></el-icon> Activity Timeline</h2>
-                                <div class="lp-timeline">
-                                    <div v-for="(item, i) in timeline" :key="item.label"
-                                        class="lp-tl-item"
-                                        :class="item.done ? 'lp-tl-item--done' : 'lp-tl-item--pending'">
-                                        <div class="lp-tl-spine" v-if="i < timeline.length - 1"></div>
-                                        <div class="lp-tl-dot"></div>
-                                        <div class="lp-tl-body">
-                                            <strong>{{ item.label }}</strong>
-                                            <span>{{ item.date }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
                         <!-- RIGHT COLUMN -->
@@ -1010,17 +971,16 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 }
 .lp-card--tinted { background: #f6fdf9; border-color: #c8e6d4; }
 .lp-card__title {
-    font-size: 0.6875rem;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    color: var(--on-surface-var);
-    text-transform: uppercase;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: var(--on-surface);
     margin: 0 0 1.5rem;
     display: flex;
     align-items: center;
     gap: 6px;
 }
-.lp-card__title .el-icon { font-size: 14px; color: var(--primary); }
+.lp-card__title .el-icon { font-size: 15px; color: var(--primary); }
 .lp-card__head-row {
     display: flex;
     align-items: center;

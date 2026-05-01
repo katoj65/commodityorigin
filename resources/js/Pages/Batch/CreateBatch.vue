@@ -20,7 +20,7 @@ const props = defineProps({
 const processingMethods = ['Washed', 'Natural', 'Honey', 'Anaerobic', 'Semi-washed'];
 const dryingMethods = ['Raised beds', 'Patio', 'Mechanical dryer', 'Greenhouse'];
 const millingStatuses = ['Pending', 'In milling', 'Milled', 'Ready for grading'];
-const selectedHarvestIds = ref([]);
+const selectedHarvestIds = ref(props.harvests.map((h) => h.id));
 
 const formatDate = (value) => {
     if (!value) {
@@ -48,7 +48,7 @@ const harvestRows = computed(() => props.harvests.map((harvest, index) => ({
     type: harvest.variety || 'SL28/34',
     quantity: Number(harvest.weight || 0),
     moisture: deriveMoisture(harvest),
-    status: (harvest.status || 'ready').toUpperCase(),
+    status: (harvest.status || 'ready').charAt(0).toUpperCase() + (harvest.status || 'ready').slice(1).toLowerCase(),
 })));
 
 const selectedHarvests = computed(() => harvestRows.value.filter((harvest) => selectedHarvestIds.value.includes(harvest.id)));
@@ -90,9 +90,9 @@ const form = useForm({
 });
 
 const seasonBadges = [
-    'SEASON LINKED',
-    'HARVEST SELECTED',
-    'TRACEABLE BATCH',
+    'Season Linked',
+    'Harvest Selected',
+    'Traceable Batch',
 ];
 
 const checklistItems = computed(() => [
@@ -127,26 +127,16 @@ const submit = () => {
 
 <template>
     <AppLayout title="Create Batch" full-width flush :show-banner="false">
-        <Head title="Create Batch" />
+
 
         <div class="create-batch-page">
             <div class="create-batch-shell">
                 <section class="batch-hero">
                     <div>
-                        <h1>Create Batch</h1>
+                        <h1 class="mb-2">Create Batch</h1>
                         <p>Create a batch from harvests under <strong>{{ season.name }}</strong></p>
 
-                        <div class="batch-badges">
-                            <span
-                                v-for="badge in seasonBadges"
-                                :key="badge"
-                                class="batch-badge"
-                                :class="badge === 'HARVEST SELECTED' ? 'is-peach' : 'is-mint'"
-                            >
-                                <span class="badge-dot"></span>
-                                {{ badge }}
-                            </span>
-                        </div>
+                   
                     </div>
 
                     <div class="batch-hero__actions">
@@ -254,7 +244,7 @@ const submit = () => {
                                             <td>{{ harvest.type }}</td>
                                             <td>{{ harvest.quantity.toLocaleString() }}</td>
                                             <td>{{ harvest.moisture.toFixed(1) }}%</td>
-                                            <td><span class="batch-status-pill">READY</span></td>
+                                            <td><span class="batch-status-pill">{{ harvest.status }}</span></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -351,7 +341,7 @@ const submit = () => {
                                         </div>
                                     </div>
 
-                                    <div class="batch-form-field">
+                                    <div class="batch-form-field mt-3">
                                         <label>Processing method <span class="text-red-500">*</span></label>
                                         <el-select v-model="form.processing_method" clearable filterable placeholder="Select method" class="batch-form-control !w-full">
                                             <el-option
@@ -364,7 +354,7 @@ const submit = () => {
                                         <InputError :message="form.errors.processing_method" class="batch-input-error" />
                                     </div>
 
-                                    <div class="batch-form-field">
+                                    <div class="batch-form-field mt-3">
                                         <label>Drying method <span class="text-red-500">*</span></label>
                                         <el-select v-model="form.drying_method" clearable filterable placeholder="Select drying method" class="batch-form-control !w-full">
                                             <el-option
@@ -531,17 +521,33 @@ const submit = () => {
 </template>
 
 <style scoped>
+/* ── Tokens ────────────────────────────────────────────────────────────────── */
 .create-batch-page {
+    --primary:            #004532;
+    --primary-grad:       #065f46;
+    --on-primary:         #ffffff;
+    --on-surface:         #191c1e;
+    --on-surface-var:     #74777a;
+    --surface:            #f7f9fb;
+    --surface-low:        #f2f4f6;
+    --surface-high:       #e6e8ea;
+    --surface-white:      #ffffff;
+    --primary-fixed:      #a6f2d1;
+    --on-primary-fixed:   #002116;
+    --secondary-fixed:    #fedcbe;
+    --on-secondary-fixed: #291806;
+    font-family: 'Manrope', system-ui, sans-serif;
     min-height: calc(100vh - 56px);
-    background: #ffffff;
+    background: var(--surface-white);
 }
 
 .create-batch-shell {
     max-width: 1180px;
     margin: 0 auto;
-    padding: 30px 18px 40px;
+    padding: 28px 18px 40px;
 }
 
+/* ── Hero ──────────────────────────────────────────────────────────────────── */
 .batch-hero {
     display: flex;
     align-items: flex-start;
@@ -551,149 +557,157 @@ const submit = () => {
 
 .batch-hero h1 {
     margin: 0;
-    font-size: 34px;
-    line-height: 1;
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    color: #111615;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--on-surface);
+    line-height: 1.15;
 }
 
 .batch-hero p {
-    margin: 10px 0 0;
-    font-size: 18px;
-    color: #2b3632;
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--on-surface-var);
+    line-height: 1.5;
 }
 
 .batch-badges {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 22px;
+    gap: 8px;
+    margin-top: 16px;
 }
 
 .batch-badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 30px;
-    padding: 0 13px;
+    gap: 6px;
+    min-height: 24px;
+    padding: 0 10px;
     border-radius: 999px;
-    border: 1px solid #d8e1db;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.14em;
-    color: #23443b;
+    letter-spacing: 0.08em;
+    text-transform: capitalize;
 }
 
 .batch-badge.is-mint {
-    background: #d4fae8;
+    background: var(--primary-fixed);
+    color: var(--on-primary-fixed);
 }
 
 .batch-badge.is-peach {
-    background: #f8d3ac;
+    background: var(--secondary-fixed);
+    color: var(--on-secondary-fixed);
 }
 
 .badge-dot {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 999px;
-    background: #0a5d3c;
+    background: currentColor;
+    opacity: 0.7;
 }
 
 .batch-hero__actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 .batch-hero-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
-    padding: 0 22px;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 500;
+    min-height: 38px;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
     text-decoration: none;
-    border: 1px solid #d7e0db;
-    color: #17201d;
-    background: #ffffff;
+    border: 1px solid var(--surface-high);
+    color: var(--on-surface);
+    background: var(--surface-white);
+    transition: background 0.15s ease;
 }
+
+.batch-hero-button:hover { background: var(--surface-low); }
 
 .batch-hero-button.is-primary {
-    background: #0a5d3c;
-    border-color: #0a5d3c;
-    color: #ffffff;
-    box-shadow: 0 12px 30px rgba(10, 93, 60, 0.16);
+    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
+    border-color: transparent;
+    color: var(--on-primary);
 }
 
+.batch-hero-button.is-primary:hover { opacity: 0.9; }
+
+/* ── Steps ─────────────────────────────────────────────────────────────────── */
 .batch-steps {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 18px;
-    margin-top: 28px;
+    gap: 12px;
+    margin-top: 24px;
 }
 
 .batch-step {
     display: flex;
     align-items: center;
-    gap: 12px;
-    color: #8b9aa4;
-    font-size: 13px;
+    gap: 10px;
+    color: var(--on-surface-var);
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-transform: capitalize;
 }
 
 .batch-step::after {
     content: '';
     flex: 1;
     height: 1px;
-    background: #dfe6e2;
+    background: var(--surface-high);
 }
 
-.batch-step:last-child::after {
-    display: none;
-}
+.batch-step:last-child::after { display: none; }
 
 .batch-step span {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background: #edf0ee;
-    color: #18231e;
-    font-size: 16px;
-    font-weight: 700;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--surface-low);
+    color: var(--on-surface-var);
+    font-size: 13px;
+    font-weight: 800;
     letter-spacing: 0;
+    flex-shrink: 0;
 }
 
 .batch-step.is-active span {
-    background: #0a5d3c;
-    color: #ffffff;
+    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
+    color: var(--on-primary);
 }
 
-.batch-step.is-active {
-    color: #18231e;
-}
+.batch-step.is-active { color: var(--on-surface); }
 
+/* ── Grid ──────────────────────────────────────────────────────────────────── */
 .batch-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 292px;
-    gap: 24px;
-    margin-top: 28px;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 20px;
+    margin-top: 24px;
     align-items: start;
 }
 
 .batch-main,
 .batch-rail {
     display: grid;
-    gap: 24px;
+    gap: 20px;
 }
 
+/* ── Card base ─────────────────────────────────────────────────────────────── */
 .batch-context-card,
 .batch-table-card,
 .batch-details-card,
@@ -703,14 +717,13 @@ const submit = () => {
 .batch-notes-card,
 .batch-footer-card,
 .traceability-card {
-    background: #ffffff;
-    border: 0.5px solid #e1e7e3;
-    border-radius: 14px;
+    background: var(--surface-white);
+    border: 1px solid var(--surface-high);
+    border-radius: 10px;
 }
 
-.batch-context-card {
-    padding: 24px 24px 22px;
-}
+/* ── Season context card ───────────────────────────────────────────────────── */
+.batch-context-card { padding: 20px; }
 
 .batch-section-title,
 .batch-card-heading,
@@ -718,31 +731,31 @@ const submit = () => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 14px;
+    gap: 12px;
 }
 
 .batch-section-title span,
-.batch-card-heading span,
-.rail-section-heading {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: none;
-    color: #65817a;
+.batch-card-heading span {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: capitalize;
+    color: var(--on-surface-var);
 }
 
 .batch-section-title a {
-    color: #0d3928;
-    font-size: 13px;
+    color: var(--primary);
+    font-size: 12px;
     font-weight: 600;
     text-decoration: none;
 }
+.batch-section-title a:hover { text-decoration: underline; }
 
 .batch-context-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 28px 20px;
-    margin-top: 28px;
+    gap: 20px 16px;
+    margin-top: 20px;
 }
 
 .batch-context-grid span,
@@ -752,49 +765,46 @@ const submit = () => {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.04em;
-    text-transform: none;
-    color: #5d6965;
+    color: var(--on-surface-var);
 }
 
 .batch-context-label {
     display: inline-flex !important;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .batch-context-label .el-icon {
-    font-size: 14px;
-    color: #6b8178;
+    font-size: 13px;
+    color: var(--primary);
+    opacity: 0.7;
     flex-shrink: 0;
 }
 
-.batch-context-label > span {
-    display: inline-block;
-}
+.batch-context-label > span { display: inline-block; }
 
 .batch-context-grid strong,
 .rail-metric-list strong {
     display: block;
-    margin-top: 10px;
-    font-size: 16px;
+    margin-top: 8px;
+    font-size: 14px;
     font-weight: 700;
-    color: #111615;
+    color: var(--on-surface);
 }
 
-.batch-table-card {
-    overflow: hidden;
-}
+/* ── Harvest table card ────────────────────────────────────────────────────── */
+.batch-table-card { overflow: hidden; }
 
 .batch-table-card__header {
-    padding: 18px 24px;
-    border-bottom: 0.5px solid #edf2ee;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--surface-high);
 }
 
 .batch-table-card__header h2 {
     margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #161d1a;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--on-surface);
 }
 
 .batch-harvest-table {
@@ -804,363 +814,348 @@ const submit = () => {
 
 .batch-harvest-table th,
 .batch-harvest-table td {
-    padding: 16px 18px;
+    padding: 12px 16px;
     text-align: left;
-    border-bottom: 0.5px solid #edf2ee;
-    font-size: 14px;
-    color: #27312d;
+    border-bottom: 1px solid var(--surface-low);
+    font-size: 13px;
+    color: var(--on-surface);
 }
 
 .batch-harvest-table th {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #52625c;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: capitalize;
+    color: var(--on-surface-var);
+    background: var(--surface-low);
 }
 
-.batch-harvest-table tbody tr {
-    cursor: pointer;
-}
-
-.batch-harvest-table tbody tr.is-selected {
-    background: #edf4ef;
-}
+.batch-harvest-table tbody tr { cursor: pointer; transition: background 0.1s ease; }
+.batch-harvest-table tbody tr:hover { background: var(--surface-low); }
+.batch-harvest-table tbody tr.is-selected { background: rgba(0,69,50,0.05); }
+.batch-harvest-table tbody tr:last-child td { border-bottom: none; }
 
 .batch-checkbox {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
-    border: 0.5px solid #d1dad4;
-    border-radius: 3px;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--surface-high);
+    border-radius: 4px;
     color: transparent;
 }
 
 .batch-checkbox.is-checked {
-    background: #0a5d3c;
-    border-color: #0a5d3c;
-    color: #ffffff;
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--on-primary);
 }
 
 .batch-status-pill {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 22px;
-    padding: 0 10px;
+    min-height: 20px;
+    padding: 0 8px;
     border-radius: 999px;
-    background: #e6f1eb;
-    color: #0a5d3c;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    background: var(--primary-fixed);
+    color: var(--on-primary-fixed);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
 }
 
+/* ── Selection summary bar ─────────────────────────────────────────────────── */
 .batch-selection-summary {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-    padding: 18px 24px;
-    background: #0b5d46;
+    gap: 12px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
 }
 
 .batch-selection-summary span,
 .batch-footer-card span,
 .traceability-card span {
     display: block;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.72);
+    letter-spacing: 0.1em;
+    text-transform: capitalize;
+    color: rgba(255,255,255,0.65);
 }
 
 .batch-selection-summary strong {
     display: block;
-    margin-top: 8px;
-    font-size: 16px;
-    font-weight: 700;
-    color: #ffffff;
+    margin-top: 6px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--on-primary);
 }
 
+/* ── Lower two-column grid ─────────────────────────────────────────────────── */
 .batch-lower-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
+    gap: 20px;
 }
 
 .batch-details-card,
 .batch-process-card,
 .batch-notes-card {
-    padding: 24px;
+    padding: 20px;
 }
 
 .batch-card-heading {
     justify-content: flex-start;
-    gap: 10px;
+    gap: 8px;
 }
 
 .batch-card-heading .el-icon {
-    color: #10271f;
+    font-size: 15px;
+    color: var(--primary);
 }
 
+/* ── Form fields ───────────────────────────────────────────────────────────── */
 .batch-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    margin-top: 24px;
+    gap: 14px;
+    margin-top: 18px;
 }
 
-.batch-form-field {
-    display: flex;
-    flex-direction: column;
-}
-
-.batch-form-field--full {
-    grid-column: 1 / -1;
-}
-
-.batch-form-field label {
-    margin-bottom: 8px;
-}
+.batch-form-field { display: flex; flex-direction: column; }
+.batch-form-field--full { grid-column: 1 / -1; }
+.batch-form-field label { margin-bottom: 6px; }
 
 .batch-date-row,
 .batch-form-control,
-.batch-form-control.el-date-editor {
-    width: 100%;
-}
+.batch-form-control.el-date-editor { width: 100%; }
 
-.batch-form-control :deep(.el-textarea__inner) {
-    min-height: 120px !important;
-}
+.batch-form-control :deep(.el-textarea__inner) { min-height: 120px !important; }
+.batch-input-error { margin-top: 6px; }
+.batch-input-error :deep(p) { margin: 0; }
+.batch-date-error-slot { margin-top: 6px; }
+.batch-date-error-slot :deep(p) { margin: 0; }
 
-.batch-input-error {
-    margin-top: 6px;
-}
-
-.batch-input-error :deep(p) {
-    margin: 0;
-}
-
-.batch-date-error-slot {
-    margin-top: 6px;
-}
-
-.batch-date-error-slot :deep(p) {
-    margin: 0;
-}
-
+/* ── Rail ──────────────────────────────────────────────────────────────────── */
 .batch-guide-card {
-    padding: 20px;
-    background: #0b5d46;
-    border-color: #0b5d46;
-    color: #ffffff;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
+    border-color: transparent;
+    color: var(--on-primary);
 }
 
 .batch-card-heading.is-light span,
-.batch-card-heading.is-light .el-icon {
-    color: #ffffff;
-}
+.batch-card-heading.is-light .el-icon { color: rgba(255,255,255,0.85); }
 
 .batch-guide-card p {
-    margin: 26px 0 0;
-    font-size: 16px;
+    margin: 18px 0 0;
+    font-size: 13px;
     line-height: 1.65;
+    color: rgba(255,255,255,0.85);
 }
 
 .guide-cta {
     width: 100%;
-    min-height: 40px;
-    margin-top: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    min-height: 36px;
+    margin-top: 14px;
+    border: 1px solid rgba(255,255,255,0.25);
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
-    color: #ffffff;
-    font-size: 15px;
-    font-weight: 500;
+    background: rgba(255,255,255,0.08);
+    color: var(--on-primary);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Manrope', system-ui, sans-serif;
+    cursor: pointer;
+    transition: background 0.15s ease;
 }
+.guide-cta:hover { background: rgba(255,255,255,0.14); }
 
-.batch-rail-card {
-    padding: 20px;
-}
+.batch-rail-card { padding: 18px; }
 
 .rail-section-heading {
-    color: #18211f;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: capitalize;
+    color: var(--on-surface-var);
 }
 
 .rail-section-heading span {
-    color: #18211f;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
 }
 
 .rail-metric-list {
     display: grid;
-    gap: 16px;
-    margin-top: 24px;
+    gap: 0;
+    margin-top: 16px;
 }
 
 .rail-metric-list article {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--surface-low);
 }
 
-.rail-metric-list article + article {
-    padding-top: 16px;
-    border-top: 1px solid #eef2ef;
-}
+.rail-metric-list article:last-child { border-bottom: none; }
+.rail-metric-list strong { margin-top: 0; text-align: right; font-size: 13px; }
 
-.rail-metric-list strong {
-    margin-top: 0;
-    text-align: right;
-}
-
+/* ── Checklist ─────────────────────────────────────────────────────────────── */
 .batch-checklist {
     list-style: none;
     padding: 0;
-    margin: 22px 0 0;
+    margin: 16px 0 0;
     display: grid;
-    gap: 16px;
+    gap: 12px;
 }
 
 .batch-checklist li {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 15px;
-    color: #2d3834;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--on-surface);
 }
 
 .check-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     border-radius: 999px;
-    border: 1px solid #cad5cf;
+    border: 1px solid var(--surface-high);
     color: transparent;
+    flex-shrink: 0;
 }
 
 .check-icon.is-done {
-    border-color: #0a5d3c;
-    color: #0a5d3c;
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(0,69,50,0.06);
 }
 
+/* ── Dropzone ──────────────────────────────────────────────────────────────── */
 .dropzone-card {
     display: grid;
     place-items: center;
-    min-height: 138px;
-    margin-top: 22px;
-    border: 1px dashed #dbe3dd;
-    border-radius: 12px;
-    background: #fbfcfb;
+    min-height: 120px;
+    margin-top: 16px;
+    border: 1px dashed var(--surface-high);
+    border-radius: 8px;
+    background: var(--surface-low);
     text-align: center;
-    color: #8d9a95;
+    color: var(--on-surface-var);
+    gap: 4px;
 }
 
-.dropzone-card .el-icon {
-    font-size: 34px;
-    color: #b7c2bc;
-}
+.dropzone-card .el-icon { font-size: 28px; color: var(--surface-high); }
 
 .dropzone-card strong {
     display: block;
-    margin-top: 10px;
-    font-size: 16px;
-    color: #3e4a45;
-}
-
-.dropzone-card span {
     margin-top: 6px;
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--on-surface);
 }
 
+.dropzone-card span { font-size: 11px; color: var(--on-surface-var); }
+
+/* ── Traceability card ─────────────────────────────────────────────────────── */
 .traceability-card {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) auto;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 14px;
-    padding: 18px 16px;
-    background: #9eeec6;
-    border-color: #9eeec6;
+    gap: 12px;
+    padding: 14px;
+    background: var(--primary-fixed);
+    border-color: var(--primary-fixed);
 }
 
 .traceability-card__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.32);
-    color: #0d3d29;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: rgba(0,33,22,0.12);
+    color: var(--on-primary-fixed);
+    font-size: 16px;
 }
 
-.traceability-card span {
-    color: #356555;
-}
+.traceability-card span { color: rgba(0,33,22,0.6); font-size: 10px; letter-spacing: 0.06em; text-transform: capitalize; }
 
 .traceability-card strong {
     display: block;
-    margin-top: 6px;
-    font-size: 18px;
-    color: #0d2319;
+    margin-top: 3px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--on-primary-fixed);
 }
 
 .traceability-card em {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 46px;
-    min-height: 42px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.3);
-    color: #214d3b;
-    font-size: 13px;
+    min-width: 40px;
+    min-height: 36px;
+    border-radius: 6px;
+    background: rgba(0,33,22,0.12);
+    color: var(--on-primary-fixed);
+    font-size: 12px;
     font-style: normal;
-    font-weight: 700;
+    font-weight: 800;
 }
 
+/* ── Footer card ───────────────────────────────────────────────────────────── */
 .batch-footer-card {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) 252px;
-    gap: 20px;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 220px;
+    gap: 16px;
     align-items: center;
-    padding: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
+    border-color: transparent;
 }
 
 .batch-footer-card span {
-    color: #66746f;
+    color: rgba(255,255,255,0.65);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: capitalize;
 }
 
 .batch-footer-card strong {
     display: block;
-    margin-top: 8px;
-    font-size: 18px;
-    line-height: 1.45;
-    color: #18211f;
+    margin-top: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--on-primary);
+    line-height: 1.4;
 }
 
 .batch-footer-submit {
-    min-height: 58px;
+    min-height: 48px;
     width: 100%;
     justify-self: stretch;
-    font-size: 15px;
-    letter-spacing: 0.08em;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
 
+/* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 1180px) {
-    .batch-grid {
-        grid-template-columns: 1fr;
-    }
-
+    .batch-grid { grid-template-columns: 1fr; }
     .batch-context-grid,
-    .batch-footer-card {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+    .batch-footer-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 960px) {
@@ -1169,35 +1164,14 @@ const submit = () => {
     .batch-lower-grid,
     .batch-context-grid,
     .batch-selection-summary,
-    .batch-footer-card {
-        grid-template-columns: 1fr;
-    }
-
-    .batch-hero {
-        display: grid;
-    }
-
+    .batch-footer-card { grid-template-columns: 1fr; }
+    .batch-hero { display: grid; }
     .batch-hero__actions,
-    .batch-steps {
-        grid-template-columns: 1fr;
-    }
-
-    .batch-harvest-table {
-        min-width: 760px;
-    }
+    .batch-steps { grid-template-columns: 1fr; }
+    .batch-harvest-table { min-width: 760px; }
 }
 
 @media (max-width: 640px) {
-    .create-batch-shell {
-        padding: 22px 14px 32px;
-    }
-
-    .batch-hero h1 {
-        font-size: 30px;
-    }
-
-    .batch-hero p {
-        font-size: 15px;
-    }
+    .create-batch-shell { padding: 18px 14px 28px; }
 }
 </style>

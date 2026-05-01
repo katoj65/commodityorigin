@@ -1,499 +1,513 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Filter, Plus, Search } from '@element-plus/icons-vue';
+import { Search, Tickets, Files, ArrowRight, MapLocation, ScaleToOriginal, Coin } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
-    harvests: {
-        type: Object,
-        required: true,
-    },
-    filters: {
-        type: Object,
-        default: () => ({
-            search: '',
-        }),
-    },
-    estateOptions: {
-        type: Array,
-        default: () => [],
-    },
+    harvests: { type: Object, required: true },
+    filters:  { type: Object, default: () => ({ search: '' }) },
+    estateOptions: { type: Array, default: () => [] },
 });
 
 const visiblePages = computed(() => {
-    const currentPage = props.harvests.meta.current_page || 1;
-    const lastPage = props.harvests.meta.last_page || 1;
-    const start = Math.max(1, currentPage - 1);
-    const end = Math.min(lastPage, currentPage + 1);
+    const cur  = props.harvests.meta.current_page || 1;
+    const last = props.harvests.meta.last_page    || 1;
     const pages = [];
-
-    for (let page = start; page <= end; page += 1) {
-        pages.push(page);
-    }
-
+    for (let p = Math.max(1, cur - 1); p <= Math.min(last, cur + 1); p++) pages.push(p);
     return pages;
 });
 
-const hasHarvests = computed(() => props.harvests.data.length > 0);
-const searchQuery = ref(props.filters.search ?? '');
+const hasHarvests  = computed(() => props.harvests.data.length > 0);
+const totalHarvests = computed(() => props.harvests.meta.total || 0);
+const searchQuery  = ref(props.filters.search ?? '');
 const rangeSummary = computed(() => {
-    const from = props.harvests.meta.from || 0;
-    const to = props.harvests.meta.to || 0;
-    const total = props.harvests.meta.total || 0;
-
-    return `Showing ${from}-${to} of ${total} harvests`;
+    const { from = 0, to = 0, total = 0 } = props.harvests.meta;
+    return `Showing ${from}–${to} of ${total}`;
 });
 
-let searchDebounceId = null;
+let debounceId = null;
 
 const formatDate = (value) => {
-    if (!value) {
-        return 'Pending';
-    }
-
-    return new Intl.DateTimeFormat('en-UG', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    }).format(new Date(value));
+    if (!value) return 'Pending';
+    return new Intl.DateTimeFormat('en-UG', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
 };
 
 const formatWeight = (value) => `${Number(value || 0).toLocaleString()} kg`;
 
 const formatPrice = (value) => {
-    if (value === null || value === undefined || value === '') {
-        return 'Pending';
-    }
-
-    return `Shs. ${Number(value).toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    })}`;
+    if (value === null || value === undefined || value === '') return 'Pending';
+    return `Shs. ${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const visitHarvestIndex = (page = 1) => {
     router.get(
         route('harvest.index'),
-        {
-            page,
-            search: searchQuery.value || undefined,
-        },
-        {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        },
+        { page, search: searchQuery.value || undefined },
+        { preserveState: true, preserveScroll: true, replace: true },
     );
 };
 
 watch(searchQuery, () => {
-    if (searchDebounceId) {
-        window.clearTimeout(searchDebounceId);
-    }
-
-    searchDebounceId = window.setTimeout(() => {
-        visitHarvestIndex(1);
-    }, 250);
+    if (debounceId) window.clearTimeout(debounceId);
+    debounceId = window.setTimeout(() => visitHarvestIndex(1), 250);
 });
 
-onBeforeUnmount(() => {
-    if (searchDebounceId) {
-        window.clearTimeout(searchDebounceId);
-    }
-});
+onBeforeUnmount(() => { if (debounceId) window.clearTimeout(debounceId); });
 </script>
 
 <template>
-    <AppLayout title="Harvests Directory">
+    <AppLayout title="Harvests Directory" full-width flush :show-banner="false">
         <Head title="Harvests Directory" />
 
-        <div class="harvest-directory-page">
-            <div class="harvest-directory-shell">
-                <section class="harvest-directory-hero">
-                    <div>
-                        <div class="harvest-directory-eyebrow">Harvest Exchange</div>
-                        <h1 class="harvest-directory-title mt-2 mb-2">Harvests Directory</h1>
-                        <p class="harvest-directory-copy">
-                            Centralized oversight for all micro-lot processing, estate management, and seasonal quality tracking across your active harvest pipeline.
-                        </p>
+        <div class="hp-root">
+
+            <!-- ── Hero ──────────────────────────────────────────────────── -->
+            <section class="hp-hero">
+                <div class="hp-hero__inner">
+                    <div class="hp-hero__left">
+                        <h1 class="hp-hero__title">Harvests Directory</h1>
+                        <p class="hp-hero__sub">Centralized oversight for all harvest records, quality tracking, and seasonal processing.</p>
                     </div>
-
-                
-                </section>
-
-                <section class="harvest-directory-table-card">
-                    <div class="harvest-directory-section-head">
-                        <div>
-                            <div class="harvest-directory-section-title">Harvest Registry</div>
-                            <div class="harvest-directory-section-copy">
-                                Review estate harvest records, quality movement, and processing readiness in one place.
+                    <div class="hp-hero__right">
+                        <div class="hp-stats">
+                            <div class="hp-stat">
+                                <span class="hp-stat__val">{{ totalHarvests }}</span>
+                                <span class="hp-stat__label">Total</span>
+                            </div>
+                            <div class="hp-stat-divider"></div>
+                            <div class="hp-stat">
+                                <span class="hp-stat__val hp-stat__val--green">{{ harvests.data.length }}</span>
+                                <span class="hp-stat__label">This page</span>
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                    <div class="harvest-directory-toolbar">
-                        <el-input
-                            v-model="searchQuery"
-                            class="harvest-directory-search"
-                            size="small"
-                            placeholder="Search by harvest ID..."
-                            :prefix-icon="Search"
-                            clearable
-                        />
+            <!-- ── Table section ─────────────────────────────────────────── -->
+            <section class="hp-section">
+                <div class="hp-section__inner">
 
-                        <div class="harvest-directory-filter-wrap">
-                            <el-select class="harvest-directory-select" size="small" placeholder="All Estates">
-                                <el-option label="All Estates" value="" />
-                                <el-option v-for="estate in estateOptions" :key="estate" :label="estate" :value="estate" />
-                            </el-select>
+                  
 
-                            <el-select class="harvest-directory-select" size="small" placeholder="Variety: All">
-                                <el-option label="Variety: All" value="" />
-                                <el-option label="Arabica" value="Arabica" />
-                                <el-option label="Robusta" value="Robusta" />
-                            </el-select>
-
-                            <el-select class="harvest-directory-select" size="small" placeholder="Method: All">
-                                <el-option label="Method: All" value="" />
-                                <el-option label="Washed" value="Washed" />
-                                <el-option label="Natural" value="Natural" />
-                                <el-option label="Honey" value="Honey" />
-                                <el-option label="Anaerobic" value="Anaerobic" />
-                            </el-select>
-
-                            <el-button class="harvest-directory-filter-button" size="small">
-                                <el-icon><Filter /></el-icon>
-                            </el-button>
+                    <!-- Table -->
+                    <div class="hp-table-wrap">
+                        <div class="hp-table-header">
+                            <div class="hp-table-header__left">
+                                <el-icon class="hp-table-header__icon"><Tickets /></el-icon>
+                                <span class="hp-table-header__title">All Harvest Records</span>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="harvest-directory-table-wrap">
-                        <table class="harvest-directory-table">
+                        <table class="hp-table">
                             <thead>
                                 <tr>
                                     <th>Harvest ID</th>
                                     <th>Farm</th>
                                     <th>Date Planted</th>
                                     <th>Harvest Date</th>
-                                    <th>Harvest Season</th>
+                                    <th>Season</th>
                                     <th>Weight</th>
                                     <th>Price</th>
                                     <th>Picking Method</th>
-                                    <th>Actions</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody v-if="hasHarvests">
-                                <tr v-for="harvest in harvests.data" :key="harvest.id">
-                                    <td class="harvest-directory-code">H-{{ harvest.id }}</td>
-                                    <td class="harvest-directory-estate">{{ harvest.farm_name }}</td>
-                                    <td>{{ formatDate(harvest.date_planted) }}</td>
-                                    <td>{{ formatDate(harvest.harvest_date) }}</td>
-                                    <td>
-                                        <span class="harvest-directory-variety">{{ harvest.harvest_season || 'Pending' }}</span>
+                                <tr v-for="harvest in harvests.data" :key="harvest.id" class="hp-row">
+                                    <td class="hp-td hp-td--id">
+                                        <el-icon class="hp-row-icon"><Tickets /></el-icon>
+                                        H-{{ harvest.id }}
                                     </td>
-                                    <td>{{ formatWeight(harvest.weight) }}</td>
-                                    <td>{{ formatPrice(harvest.price) }}</td>
-                                    <td>{{ harvest.pick_method || 'Pending' }}</td>
-                                    <td>
-                                        <Link :href="harvest.show_url" class="harvest-directory-action-link">Open</Link>
+                                    <td class="hp-td hp-td--farm">
+                                        <div class="hp-farm-cell">
+                                            <el-icon class="hp-farm-icon"><MapLocation /></el-icon>
+                                            {{ harvest.farm_name }}
+                                        </div>
+                                    </td>
+                                    <td class="hp-td hp-td--muted">{{ formatDate(harvest.date_planted) }}</td>
+                                    <td class="hp-td hp-td--muted">{{ formatDate(harvest.harvest_date) }}</td>
+                                    <td class="hp-td">
+                                        <span v-if="harvest.harvest_season" class="hp-season-tag">{{ harvest.harvest_season }}</span>
+                                        <span v-else class="hp-pending-tag">Pending</span>
+                                    </td>
+                                    <td class="hp-td">
+                                        <div class="hp-weight-cell">
+                                            <el-icon class="hp-weight-icon"><ScaleToOriginal /></el-icon>
+                                            <span class="hp-td--weight">{{ formatWeight(harvest.weight) }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="hp-td hp-td--price">
+                                        <span v-if="harvest.price !== null && harvest.price !== undefined && harvest.price !== ''" class="hp-price-val">
+                                            <el-icon class="hp-price-icon"><Coin /></el-icon>
+                                            {{ formatPrice(harvest.price) }}
+                                        </span>
+                                        <span v-else class="hp-pending-tag">Pending</span>
+                                    </td>
+                                    <td class="hp-td">
+                                        <span v-if="harvest.pick_method" class="hp-method-tag">{{ harvest.pick_method }}</span>
+                                        <span v-else class="hp-pending-tag">Pending</span>
+                                    </td>
+                                    <td class="hp-td hp-td--action">
+                                        <Link :href="harvest.show_url" class="hp-open-link">
+                                            View <el-icon class="hp-open-link__icon"><ArrowRight /></el-icon>
+                                        </Link>
                                     </td>
                                 </tr>
                             </tbody>
                             <tbody v-else>
                                 <tr>
-                                    <td colspan="9" class="harvest-directory-empty">
-                                        No harvests have been recorded yet.
+                                    <td colspan="9" class="hp-empty">
+                                        <el-icon class="hp-empty__icon"><Files /></el-icon>
+                                        <strong>No harvests recorded yet</strong>
+                                        <span>Harvests will appear here once they are added to a season.</span>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <div class="harvest-directory-footer">
-                        <div class="harvest-directory-summary">{{ rangeSummary }}</div>
-
-                        <div class="harvest-directory-pagination">
+                    <!-- Footer -->
+                    <div class="hp-footer">
+                        <span class="hp-footer__summary">{{ rangeSummary }}</span>
+                        <div class="hp-pagination">
                             <Link
                                 :href="route('harvest.index', { page: Math.max(1, harvests.meta.current_page - 1), search: filters.search || undefined })"
-                                class="harvest-directory-page-button"
-                                :class="{ disabled: harvests.meta.current_page <= 1 }"
-                            >
-                                Previous
-                            </Link>
-
+                                class="hp-page-btn"
+                                :class="{ 'hp-page-btn--disabled': harvests.meta.current_page <= 1 }"
+                            >Previous</Link>
                             <Link
                                 v-for="page in visiblePages"
                                 :key="page"
                                 :href="route('harvest.index', { page, search: filters.search || undefined })"
-                                class="harvest-directory-page-button"
-                                :class="{ active: page === harvests.meta.current_page }"
-                            >
-                                {{ page }}
-                            </Link>
-
+                                class="hp-page-btn"
+                                :class="{ 'hp-page-btn--active': page === harvests.meta.current_page }"
+                            >{{ page }}</Link>
                             <Link
                                 :href="route('harvest.index', { page: Math.min(harvests.meta.last_page, harvests.meta.current_page + 1), search: filters.search || undefined })"
-                                class="harvest-directory-page-button"
-                                :class="{ disabled: harvests.meta.current_page >= harvests.meta.last_page }"
-                            >
-                                Next
-                            </Link>
+                                class="hp-page-btn"
+                                :class="{ 'hp-page-btn--disabled': harvests.meta.current_page >= harvests.meta.last_page }"
+                            >Next</Link>
                         </div>
                     </div>
-                </section>
 
-            </div>
+                </div>
+            </section>
         </div>
     </AppLayout>
 </template>
 
 <style scoped>
-.harvest-directory-page {
-    background: #fff;
-    padding-top: 6px;
+/* ── Tokens ────────────────────────────────────────────────────────────────── */
+.hp-root {
+    --primary:          #004532;
+    --primary-grad:     #065f46;
+    --on-primary:       #ffffff;
+    --on-surface:       #191c1e;
+    --on-surface-var:   #74777a;
+    --surface-white:    #ffffff;
+    --surface-low:      #f2f4f6;
+    --surface-high:     #e6e8ea;
+    --primary-fixed:    #a6f2d1;
+    --on-primary-fixed: #002116;
+    --inner-pad:        2rem;
+    font-family: 'Manrope', system-ui, sans-serif;
+    background: var(--surface-white);
+    color: var(--on-surface);
+    min-height: 100%;
 }
 
-.harvest-directory-shell {
-    max-width: 1180px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+/* ── Hero ──────────────────────────────────────────────────────────────────── */
+.hp-hero {
+    background: var(--surface-white);
+    border-bottom: 1px solid var(--surface-high);
+    padding: 1.5rem 0;
 }
-
-.harvest-directory-hero,
-.harvest-directory-toolbar,
-.harvest-directory-footer {
+.hp-hero__inner {
+    padding: 0 var(--inner-pad);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 1.5rem;
+    flex-wrap: wrap;
 }
-
-.harvest-directory-filter-wrap,
-.harvest-directory-pagination {
-    display: flex;
-    gap: 14px;
-}
-
-.harvest-directory-eyebrow,
-.harvest-directory-table th,
-.harvest-directory-section-title {
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.harvest-directory-log-button {
-    text-decoration: none;
-}
-
-.harvest-directory-eyebrow {
-    color: #9aa6a2;
-    font-size: 10px;
-    font-weight: 700;
-}
-
-.harvest-directory-title {
-    margin-top: 8px;
-    color: #192f28;
-    font-size: 20px;
+.hp-hero__title {
+    font-size: 1.25rem;
     font-weight: 800;
-    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--on-surface);
+    margin: 0 0 0.25rem;
+    line-height: 1.2;
+}
+.hp-hero__sub {
+    font-size: 0.8125rem;
+    color: var(--on-surface-var);
+    margin: 0;
+    line-height: 1.5;
+    max-width: 480px;
 }
 
-.harvest-directory-copy {
-    margin-top: 8px;
-    max-width: 620px;
-    color: #6f7c78;
-    font-size: 14px;
-    line-height: 1.6;
+/* Stats */
+.hp-stats { display: flex; align-items: center; gap: 1rem; flex-shrink: 0; }
+.hp-stat  { display: flex; flex-direction: column; align-items: center; gap: 1px; text-align: center; }
+.hp-stat__val {
+    font-size: 1.125rem; font-weight: 800;
+    letter-spacing: -0.02em; color: var(--on-surface); line-height: 1;
+}
+.hp-stat__val--green { color: var(--primary); }
+.hp-stat__label {
+    font-size: 0.625rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-surface-var);
+}
+.hp-stat-divider { width: 1px; height: 28px; background: var(--surface-high); }
+
+/* ── Section ───────────────────────────────────────────────────────────────── */
+.hp-section { padding: 1.5rem 0 2.5rem; }
+.hp-section__inner { padding: 0 var(--inner-pad); }
+
+/* ── Toolbar ───────────────────────────────────────────────────────────────── */
+.hp-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+.hp-search { flex: 1; min-width: 220px; }
+.hp-result-count {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--on-surface-var);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.harvest-directory-log-button {
-    display: inline-flex;
-}
-
-.harvest-directory-log-el-button {
-    min-height: 32px;
-    border-radius: 10px;
-    padding: 0 12px;
-    font-weight: 700;
-}
-
-.harvest-directory-table-card {
-    border: 1px solid #e7ecea;
-    border-radius: 18px;
-    background: #fff;
-    padding: 18px;
-    box-shadow: 0 8px 26px rgba(15, 23, 42, 0.04);
-}
-
-.harvest-directory-section-head {
-    margin-bottom: 14px;
-}
-
-.harvest-directory-section-title {
-    color: #7f8b87;
-    font-size: 10px;
-    font-weight: 700;
-}
-
-.harvest-directory-section-copy {
-    margin-top: 6px;
-    color: #5f6e69;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-.harvest-directory-search {
-    flex: 1;
-    min-width: 240px;
-}
-
-.harvest-directory-search :deep(.el-input__wrapper),
-.harvest-directory-select :deep(.el-select__wrapper),
-.harvest-directory-filter-button {
+:deep(.hp-search .el-input__wrapper) {
+    background: var(--surface-white);
+    border-radius: 6px !important;
+    box-shadow: 0 0 0 1px var(--surface-high) inset;
     min-height: 38px;
-    border-radius: 10px;
-    background: #f6f8f7;
-    box-shadow: 0 0 0 1px #e2e8e5 inset;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 0.8125rem;
+}
+:deep(.hp-search .el-input__wrapper.is-focus) {
+    box-shadow: 0 0 0 1px var(--primary) inset;
 }
 
-.harvest-directory-search :deep(.el-input__wrapper) {
-    padding-left: 12px;
-    padding-right: 12px;
-}
-
-.harvest-directory-select {
-    min-width: 140px;
-}
-
-.harvest-directory-filter-button {
-    border: 1px solid #e2e8e5;
-    color: #60716b;
-}
-
-.harvest-directory-table-wrap {
-    margin-top: 16px;
+/* ── Table ─────────────────────────────────────────────────────────────────── */
+.hp-table-wrap {
+    border: 1px solid var(--surface-high);
+    border-radius: 0.75rem;
+    overflow: hidden;
     overflow-x: auto;
 }
 
-.harvest-directory-table {
+.hp-table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--surface-white);
+    border-bottom: 1px solid var(--surface-high);
+}
+.hp-table-header__left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.hp-table-header__icon {
+    color: var(--primary);
+    font-size: 15px;
+}
+.hp-table-header__title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--on-surface);
+}
+.hp-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 800px;
 }
-
-.harvest-directory-table th {
-    padding: 12px 10px;
-    color: #9aa6a2;
-    font-size: 10px;
-    font-weight: 700;
+.hp-table thead tr {
+    background: var(--surface-low);
+}
+.hp-table th {
+    padding: 10px 14px;
     text-align: left;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-surface-var);
+    white-space: nowrap;
 }
+.hp-table th:last-child { width: 60px; }
 
-.harvest-directory-table td {
-    padding: 16px 10px;
-    border-top: 1px solid #edf2f0;
-    color: #243934;
-    font-size: 13px;
+.hp-row {
+    border-bottom: 1px solid var(--surface-low);
+    transition: background 0.1s ease;
+    cursor: default;
+}
+.hp-row:last-child { border-bottom: none; }
+.hp-row:hover { background: #fafbfc; }
+
+.hp-td {
+    padding: 12px 14px;
+    font-size: 0.8125rem;
+    color: var(--on-surface);
     vertical-align: middle;
 }
-
-.harvest-directory-code {
-    color: #17322c;
-    font-weight: 800;
-}
-
-.harvest-directory-estate {
-    font-weight: 600;
-}
-
-.harvest-directory-variety {
-    display: inline-flex;
-    border-radius: 999px;
-    background: #dcfce7;
-    padding: 5px 9px;
-    color: #0d7a4f;
-    font-size: 11px;
+.hp-td--id {
     font-weight: 700;
-}
-
-.harvest-directory-status {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
-    font-weight: 700;
+    white-space: nowrap;
 }
+.hp-row-icon { color: var(--primary); font-size: 13px; }
+.hp-td--farm  { font-weight: 600; }
+.hp-td--muted { color: var(--on-surface-var); }
+.hp-td--weight{ font-weight: 600; }
+.hp-td--price { color: var(--on-surface); font-weight: 500; }
+.hp-td--action{ text-align: right; }
 
-.harvest-directory-status::before {
-    content: '';
-    width: 6px;
-    height: 6px;
+/* Farm cell */
+.hp-farm-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+.hp-farm-icon { color: var(--on-surface-var); font-size: 13px; flex-shrink: 0; }
+
+/* Weight cell */
+.hp-weight-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.hp-weight-icon { color: var(--on-surface-var); font-size: 12px; flex-shrink: 0; }
+
+/* Price cell */
+.hp-price-val {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+}
+.hp-price-icon { color: var(--on-surface-var); font-size: 12px; flex-shrink: 0; }
+
+/* Tags */
+.hp-season-tag {
+    display: inline-flex;
+    align-items: center;
     border-radius: 999px;
-    background: currentColor;
+    background: var(--primary-fixed);
+    color: var(--on-primary-fixed);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    white-space: nowrap;
+}
+.hp-method-tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: var(--surface-low);
+    color: var(--on-surface);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    white-space: nowrap;
+    text-transform: capitalize;
+}
+.hp-pending-tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: #f5f0e8;
+    color: #7a6030;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    white-space: nowrap;
 }
 
-.harvest-directory-status.processing { color: #c26b19; }
-.harvest-directory-status.drying { color: #3b82f6; }
-.harvest-directory-status.ready { color: #0f8a5f; }
-
-.harvest-directory-action-link {
-    color: #0d5b3f;
+.hp-open-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--primary);
+    font-size: 0.8125rem;
     font-weight: 700;
     text-decoration: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(0,69,50,0.2);
+    background: rgba(0,69,50,0.04);
+    transition: background 0.12s ease;
 }
+.hp-open-link:hover { background: rgba(0,69,50,0.09); }
+.hp-open-link__icon { font-size: 11px; }
 
-.harvest-directory-empty,
-.harvest-directory-summary {
-    color: #7d8985;
-    font-size: 12px;
+/* Empty state */
+.hp-empty {
+    padding: 4rem 2rem;
+    text-align: center;
 }
+.hp-empty { display: table-cell; }
+.hp-empty__icon {
+    font-size: 2.5rem;
+    color: var(--surface-high);
+    display: block;
+    margin: 0 auto 0.75rem;
+}
+.hp-empty strong { display: block; font-size: 0.9375rem; color: var(--on-surface); margin-bottom: 6px; }
+.hp-empty span   { font-size: 0.8125rem; color: var(--on-surface-var); }
 
-.harvest-directory-page-button {
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+.hp-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+.hp-footer__summary { font-size: 0.8125rem; color: var(--on-surface-var); }
+.hp-pagination { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.hp-page-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 34px;
-    border: 1px solid #e6ece9;
-    border-radius: 8px;
-    padding: 8px 10px;
-    color: #30403b;
+    height: 34px;
+    border-radius: 6px;
+    border: 1px solid var(--surface-high);
+    background: var(--surface-white);
+    color: var(--on-surface);
+    font-size: 0.8125rem;
+    font-weight: 600;
     text-decoration: none;
-    font-size: 12px;
-    font-weight: 700;
-    background: #fff;
+    padding: 0 10px;
+    transition: background 0.12s ease;
 }
+.hp-page-btn:hover { background: var(--surface-low); }
+.hp-page-btn--active { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.hp-page-btn--disabled { opacity: 0.4; pointer-events: none; }
 
-.harvest-directory-page-button.active {
-    background: #0d5b3f;
-    border-color: #0d5b3f;
-    color: #fff;
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .hp-root { --inner-pad: 1.25rem; }
+    .hp-toolbar { flex-direction: column; align-items: stretch; }
+    .hp-filters { flex-wrap: wrap; }
+    .hp-hero__inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
 }
-
-.harvest-directory-page-button.disabled {
-    pointer-events: none;
-    opacity: 0.5;
-}
-
-@media (max-width: 1080px) {
-    .harvest-directory-toolbar,
-    .harvest-directory-hero,
-    .harvest-directory-footer {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-@media (max-width: 800px) {
-    .harvest-directory-filter-wrap {
-        flex-wrap: wrap;
-    }
-
-    .harvest-directory-title {
-        font-size: 20px;
-    }
+@media (max-width: 640px) {
+    .hp-root { --inner-pad: 1rem; }
+    .hp-stats { gap: 0.75rem; }
+    .hp-footer { flex-direction: column; align-items: flex-start; }
 }
 </style>

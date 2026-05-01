@@ -8,14 +8,13 @@ import {
     Checked,
     CircleCheckFilled,
     CollectionTag,
+    DataAnalysis,
     Delete,
     Document,
     EditPen,
     Files,
-    Histogram,
     Location,
     MostlyCloudy,
-    Opportunity,
     Plus,
     Tickets,
     TrendCharts,
@@ -78,11 +77,11 @@ const totalQuantity = computed(() => props.season.harvests_sum_weight ?? 0);
 const totalHarvestValue = computed(() => props.season.harvests_sum_price ?? 0);
 
 const summaryCards = computed(() => [
-    { label: 'Timeline', value: seasonTimeline.value, note: '' },
-    { label: 'Total Harvests', value: String(totalHarvests.value).padStart(2, '0'), note: '' },
-    { label: 'Total Quantity', value: `${Number(totalQuantity.value).toLocaleString()} kg`, note: '' },
-    { label: 'Total Value', value: `Shs. ${Number(totalHarvestValue.value).toLocaleString()}`, note: '' },
-    { label: 'Health Score', value: '92 /100', note: '', tone: 'dark' },
+    { label: 'Timeline', value: seasonTimeline.value, note: '', icon: 'Calendar' },
+    { label: 'Total Harvests', value: String(totalHarvests.value).padStart(2, '0'), note: '', icon: 'Tickets' },
+    { label: 'Total Quantity', value: `${Number(totalQuantity.value).toLocaleString()} kg`, note: '', icon: 'Files' },
+    { label: 'Total Value', value: `Shs. ${Number(totalHarvestValue.value).toLocaleString()}`, note: '', icon: 'TrendCharts' },
+    { label: 'Health Score', value: '92 /100', note: '', tone: 'dark', icon: 'Checked' },
 ]);
 
 const insightCards = [
@@ -199,7 +198,6 @@ const deleteHarvest = (row) => {
 
 
 
-
 </script>
 
 <template>
@@ -208,7 +206,7 @@ const deleteHarvest = (row) => {
             <div class="season-profile-shell">
                 <div class="season-content">
                     <section class="season-hero">
-                        <div class="season-hero__crumbs">Seasons <span>›</span> {{ seasonName }}</div>
+                        <div class="season-hero__crumbs">Seasons <span class="season-crumb-sep">›</span> {{ seasonName }}</div>
                         <div class="season-hero__head">
                             <div>
                                 <h1>{{ seasonName }}</h1>
@@ -223,12 +221,12 @@ const deleteHarvest = (row) => {
                                     class="season-btn is-primary"
                                     @click="router.get(route('batch.create-season', season.id))"
                                 >
+                                    <el-icon><Plus /></el-icon>
                                     <span>Create Batch</span>
                                 </button>
 
                                 <el-dropdown trigger="click" @command="handleOptionsCommand">
                                     <button type="button" class="season-btn is-soft">
-                                        <!-- <el-icon><Histogram /></el-icon> -->
                                         <span>Options</span>
                                         <el-icon class="season-btn__caret"><ArrowDown /></el-icon>
                                     </button>
@@ -237,10 +235,6 @@ const deleteHarvest = (row) => {
                                             <el-dropdown-item command="edit">
                                                 <el-icon><EditPen /></el-icon>
                                                 <span>Edit</span>
-                                            </el-dropdown-item>
-                                            <el-dropdown-item command="add-harvest">
-                                                <el-icon><Plus /></el-icon>
-                                                <span>Add harvest</span>
                                             </el-dropdown-item>
                                             <el-dropdown-item command="delete" class="season-dropdown__danger">
                                                 <el-icon><Delete /></el-icon>
@@ -267,17 +261,18 @@ const deleteHarvest = (row) => {
                             class="season-summary-card"
                             :class="{ 'is-dark': card.tone === 'dark' }"
                         >
+
                             <span>{{ card.label }}</span>
                             <strong>{{ card.value }}</strong>
                             <small v-if="card.note">{{ card.note }}</small>
-                            <el-icon v-if="card.tone === 'dark'" class="season-summary-card__badge"><Checked /></el-icon>
+                      
                         </article>
                     </section>
 
                     <section class="season-grid">
                         <div class="season-left-column">
                             <article class="season-card season-insights">
-                                <div class="season-card__title"><el-icon><Opportunity /></el-icon><span>AI Season Insights</span></div>
+                                <div class="season-card__title"><span>AI Season Insights</span></div>
                                 <div class="season-insights__list">
                                     <div v-for="item in insightCards" :key="item.text" class="season-insight-item">
                                         <span class="season-insight-item__icon"><el-icon><component :is="item.icon" /></el-icon></span>
@@ -287,7 +282,10 @@ const deleteHarvest = (row) => {
                             </article>
 
                             <article class="season-card season-quality">
-                                <div class="season-card__title"><span>Quality Outlook</span></div>
+                                <div class="season-card__title">
+
+                                    <span>Quality Outlook</span>
+                                </div>
                                 <div class="season-quality__metrics">
                                     <div>
                                         <span>Avg Moisture</span>
@@ -309,7 +307,10 @@ const deleteHarvest = (row) => {
                             </article>
 
                             <article class="season-card season-climate">
-                                <div class="season-card__title"><span>Climate Risk</span></div>
+                                <div class="season-card__title">
+
+                                    <span>Climate Risk</span>
+                                </div>
                                 <div class="season-climate__grid">
                                     <div v-for="item in climateCards" :key="item.label" class="season-climate__item">
                                         <span>{{ item.label }}</span>
@@ -325,6 +326,13 @@ const deleteHarvest = (row) => {
                                 <div class="season-card__title">
 
                                     <span>Harvests Attached to This Season</span>
+                                    <button
+                                        type="button"
+                                        class="season-add-harvest-btn"
+                                        @click="router.get(route('season.create-harvest', season.id))"
+                                    >
+                                        <el-icon><Plus /></el-icon> Add Harvest
+                                    </button>
                                 </div>
                                 <el-table
                                     :data="seasonHarvests"
@@ -406,7 +414,7 @@ const deleteHarvest = (row) => {
 
                             <article class="season-card season-table-card">
                                 <div class="season-card__title">
-                                  
+
                                     <span>Recent Activities</span>
                                 </div>
                                 <el-table :data="recentActivities" class="season-data-table" empty-text="No activity yet">
@@ -472,7 +480,18 @@ const deleteHarvest = (row) => {
 
 <style scoped>
 .season-profile-page {
-    background: #ffffff;
+    --primary: #004532;
+    --primary-grad: #065f46;
+    --on-surface: #191c1e;
+    --on-surface-var: #74777a;
+    --surface: #f7f9fb;
+    --surface-low: #f2f4f6;
+    --surface-high: #e6e8ea;
+    --surface-white: #ffffff;
+    --primary-fixed: #a6f2d1;
+    --on-primary-fixed: #002116;
+    background: var(--surface-white);
+    font-family: 'Manrope', system-ui, sans-serif;
     min-height: calc(100vh - 3.5rem);
 }
 
@@ -486,12 +505,13 @@ const deleteHarvest = (row) => {
     padding: 28px 12px 36px;
 }
 
+/* ── Hero ── */
 .season-hero__crumbs {
-    color: #576472;
-    font-size: 14px;
+    color: var(--on-surface-var);
+    font-size: 12px;
 }
 
-.season-hero__crumbs span {
+.season-crumb-sep {
     margin: 0 8px;
 }
 
@@ -504,16 +524,16 @@ const deleteHarvest = (row) => {
 }
 
 .season-hero h1 {
-    color: #171c20;
-    font-size: 30px;
+    color: var(--on-surface);
+    font-size: 24px;
     font-weight: 800;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.03em;
     margin: 0;
 }
 
 .season-hero p {
-    color: #263238;
-    font-size: 18px;
+    color: var(--on-surface-var);
+    font-size: 13px;
     line-height: 1.45;
     margin: 10px 0 0;
     max-width: 760px;
@@ -526,15 +546,16 @@ const deleteHarvest = (row) => {
     justify-items: end;
 }
 
+/* ── Buttons ── */
 .season-btn {
     align-items: center;
-    border-radius: 4px;
+    border-radius: 6px;
     display: inline-flex;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
     gap: 8px;
     justify-content: center;
-    min-height: 36px;
+    min-height: 38px;
     min-width: 96px;
     padding: 0 16px;
 }
@@ -549,17 +570,22 @@ const deleteHarvest = (row) => {
 }
 
 .season-btn.is-soft {
-    background: #f3f5f7;
-    border: 1px solid #edf1f4;
-    color: #1b2328;
+    background: var(--surface-low);
+    border: 1px solid var(--surface-high);
+    color: var(--on-surface);
 }
 
 .season-btn.is-primary {
-    background: #0b5d46;
-    border: 1px solid #0b5d46;
+    background: linear-gradient(135deg, #004532, #065f46);
+    border: none;
+    border-radius: 6px;
     color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    min-height: 38px;
 }
 
+/* ── Pills ── */
 .season-pills {
     display: flex;
     flex-wrap: wrap;
@@ -569,25 +595,32 @@ const deleteHarvest = (row) => {
 
 .season-pill {
     align-items: center;
-    background: #eff5f2;
+    background: var(--surface-low);
     border-radius: 999px;
-    color: #24413a;
+    color: var(--on-surface-var);
     display: inline-flex;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
     gap: 7px;
-    min-height: 32px;
-    padding: 0 14px;
+    letter-spacing: 0.04em;
+    min-height: 26px;
+    padding: 0 10px;
+}
+
+.season-pill.is-green {
+    background: var(--primary-fixed);
+    color: var(--on-primary-fixed);
 }
 
 .season-pill .dot {
-    background: #0b5d46;
+    background: var(--primary);
     border-radius: 50%;
     display: inline-block;
     height: 7px;
     width: 7px;
 }
 
+/* ── Summary Cards ── */
 .season-summary-grid {
     display: grid;
     gap: 16px;
@@ -598,38 +631,49 @@ const deleteHarvest = (row) => {
 .season-summary-card,
 .season-card,
 .season-doc-card {
-    background: #fff;
-    border: 1px solid #edf1f4;
-    border-radius: 14px;
+    background: var(--surface-white);
+    border: 1px solid var(--surface-high);
+    border-radius: 10px;
 }
 
 .season-summary-card {
-    min-height: 104px;
-    padding: 20px 18px;
+    min-height: 96px;
+    padding: 16px;
     position: relative;
+}
+
+.season-summary-card__icon-row {
+    color: var(--on-surface-var);
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.season-summary-card__icon-row :deep(.el-icon) {
+    font-size: 14px;
+    color: var(--on-surface-var);
 }
 
 .season-summary-card span,
 .season-climate__item span,
 .season-quality__metrics span {
-    color: #2e3943;
+    color: var(--on-surface-var);
     display: block;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: none;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .season-summary-card strong {
-    color: #151c20;
+    color: var(--on-surface);
     display: block;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 800;
-    margin-top: 14px;
+    margin-top: 10px;
 }
 
 .season-summary-card small {
-    color: #0b5d46;
+    color: var(--primary);
     display: block;
     font-size: 12px;
     font-weight: 700;
@@ -637,14 +681,19 @@ const deleteHarvest = (row) => {
 }
 
 .season-summary-card.is-dark {
-    background: #0b5d46;
-    border-color: #0b5d46;
+    background: linear-gradient(135deg, #004532, #065f46);
+    border-color: #004532;
 }
 
 .season-summary-card.is-dark span,
 .season-summary-card.is-dark strong,
 .season-summary-card.is-dark small {
     color: #fff;
+}
+
+.season-summary-card.is-dark .season-summary-card__icon-row,
+.season-summary-card.is-dark .season-summary-card__icon-row :deep(.el-icon) {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .season-summary-card__badge {
@@ -655,6 +704,7 @@ const deleteHarvest = (row) => {
     right: 18px;
 }
 
+/* ── Two-column grid ── */
 .season-grid {
     display: grid;
     gap: 22px;
@@ -669,7 +719,9 @@ const deleteHarvest = (row) => {
     gap: 22px;
 }
 
+/* ── Cards ── */
 .season-card {
+    border-radius: 12px;
     padding: 24px;
 }
 
@@ -681,19 +733,20 @@ const deleteHarvest = (row) => {
 }
 
 .season-card__title {
-    color: #171d21;
-    font-size: 14px;
-    font-weight: 800;
-    gap: 10px;
-    letter-spacing: 0.04em;
-    text-transform: none;
+    color: var(--on-surface);
+    font-size: 13px;
+    font-weight: 700;
+    gap: 8px;
+    letter-spacing: 0;
+    text-transform: capitalize;
 }
 
 .season-card__title :deep(.el-icon) {
-    color: #0b5d46;
-    font-size: 18px;
+    color: var(--primary);
+    font-size: 15px;
 }
 
+/* ── Insights ── */
 .season-insights__list {
     display: flex;
     flex-direction: column;
@@ -703,27 +756,27 @@ const deleteHarvest = (row) => {
 
 .season-insight-item {
     align-items: center;
-    background: #fff;
-    border: 1px solid #eef2f5;
+    background: var(--surface-low);
     border-radius: 8px;
     display: flex;
     gap: 12px;
-    min-height: 56px;
+    min-height: 50px;
     padding: 0 12px;
 }
 
 .season-insight-item__icon {
     align-items: center;
-    background: #aaf1cf;
-    border-radius: 4px;
-    color: #0b5d46;
+    background: var(--primary-fixed);
+    border-radius: 6px;
+    color: var(--on-primary-fixed);
     display: inline-flex;
-    font-size: 18px;
-    height: 30px;
+    font-size: 14px;
+    height: 28px;
     justify-content: center;
-    width: 30px;
+    width: 28px;
 }
 
+/* ── Quality Outlook ── */
 .season-quality__metrics {
     display: grid;
     gap: 16px;
@@ -732,15 +785,15 @@ const deleteHarvest = (row) => {
 }
 
 .season-quality__metrics strong {
-    color: #0e3d30;
+    color: var(--on-surface);
     display: block;
-    font-size: 18px;
+    font-size: 16px;
     margin-top: 10px;
 }
 
 .season-quality__risk {
     align-items: center;
-    border-top: 1px solid #edf1f4;
+    border-top: 1px solid var(--surface-high);
     display: flex;
     gap: 10px;
     margin-top: 18px;
@@ -752,9 +805,9 @@ const deleteHarvest = (row) => {
 .season-status-pill,
 .season-climate__item em {
     align-items: center;
-    border-radius: 4px;
+    border-radius: 999px;
     display: inline-flex;
-    font-size: 12px;
+    font-size: 11px;
     font-style: normal;
     font-weight: 700;
     justify-content: center;
@@ -762,12 +815,16 @@ const deleteHarvest = (row) => {
     padding: 0 10px;
 }
 
-.season-quality__risk-tag,
+.season-quality__risk-tag {
+    background: #d1fae5;
+    color: #065f46;
+}
+
 .season-quality__pill.is-mint,
 .season-climate__item em.is-mint,
 .season-status-pill {
-    background: #cbf5de;
-    color: #0b5d46;
+    background: #d1fae5;
+    color: #065f46;
 }
 
 .season-quality__pills {
@@ -787,6 +844,7 @@ const deleteHarvest = (row) => {
     color: #d14b5f;
 }
 
+/* ── Climate Risk ── */
 .season-climate__grid {
     display: grid;
     gap: 10px;
@@ -795,23 +853,31 @@ const deleteHarvest = (row) => {
 }
 
 .season-climate__item {
-    background: #f6f8fa;
-    border-radius: 10px;
+    background: var(--surface-low);
+    border-radius: 8px;
     min-height: 92px;
     padding: 16px;
 }
 
+.season-climate__item span {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
 .season-climate__item strong {
-    color: #181d22;
+    color: var(--on-surface);
     display: block;
-    font-size: 16px;
-    margin-top: 18px;
+    font-size: 14px;
+    margin-top: 12px;
 }
 
 .season-climate__item em {
+    border-radius: 999px;
     margin-top: 10px;
 }
 
+/* ── Table Cards ── */
 .season-table-card {
     overflow: hidden;
     padding: 0;
@@ -821,21 +887,51 @@ const deleteHarvest = (row) => {
     padding: 20px 22px;
 }
 
+.season-add-harvest-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
+    color: #ffffff !important;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+    margin-left: auto;
+}
+.season-add-harvest-btn:hover { opacity: 0.88; }
+.season-add-harvest-btn .el-icon { font-size: 13px; color: #ffffff !important; }
+
 :deep(.season-data-table) {
-    border-top: 1px solid #edf1f4;
+    border-top: 1px solid var(--surface-high);
 }
 
 :deep(.season-data-table .el-table__header-wrapper th) {
-    background: #f5f7fa;
-    color: #3d4a53;
-    font-size: 12px;
+    background: var(--surface-low);
+    color: var(--on-surface-var);
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
 }
 
 :deep(.season-data-table .el-table__row td) {
-    color: #182126;
+    color: var(--on-surface);
     font-size: 14px;
+}
+
+:deep(.season-data-table .el-table__row:hover td) {
+    background: var(--surface);
+}
+
+:deep(.season-data-table .el-table__border-left-patch),
+:deep(.season-data-table .el-table__border-bottom-patch),
+:deep(.season-data-table td.el-table__cell),
+:deep(.season-data-table th.el-table__cell) {
+    border-color: var(--surface-high);
 }
 
 :deep(.season-harvests-table .el-table__row) {
@@ -847,6 +943,7 @@ const deleteHarvest = (row) => {
     color: #2158d8;
 }
 
+/* ── Doc Cards ── */
 .season-docs-row {
     display: grid;
     gap: 18px;
@@ -855,6 +952,7 @@ const deleteHarvest = (row) => {
 
 .season-doc-card {
     align-items: center;
+    border-radius: 10px;
     display: flex;
     gap: 14px;
     min-height: 72px;
@@ -863,49 +961,43 @@ const deleteHarvest = (row) => {
 
 .season-doc-card__icon {
     align-items: center;
-    background: #aaf1cf;
-    border-radius: 6px;
-    color: #0b5d46;
+    background: var(--primary-fixed);
+    border-radius: 8px;
+    color: var(--on-primary-fixed);
     display: inline-flex;
     font-size: 18px;
     height: 36px;
     justify-content: center;
     width: 36px;
+    flex-shrink: 0;
 }
 
 .season-doc-card strong,
 .season-activity-cell strong {
-    color: #172026;
+    color: var(--on-surface);
     display: block;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
 }
 
 .season-doc-card small,
 .season-activity-cell small {
-    color: #8a96a0;
+    color: var(--on-surface-var);
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     margin-top: 4px;
 }
 
-.season-completed-status {
-    align-items: center;
-    color: #0b9a5c;
-    display: inline-flex;
-    font-weight: 600;
-    gap: 6px;
-}
-
+/* ── Table info cells ── */
 .season-table-info {
     align-items: center;
-    color: #172026;
+    color: var(--on-surface);
     display: inline-flex;
     gap: 8px;
 }
 
 .season-table-info :deep(.el-icon) {
-    color: #0b5d46;
+    color: var(--primary);
     font-size: 15px;
 }
 
@@ -928,9 +1020,19 @@ const deleteHarvest = (row) => {
 }
 
 .season-table-info__line.is-subtle {
-    color: #8a96a0;
+    color: var(--on-surface-var);
 }
 
+/* ── Completed status ── */
+.season-completed-status {
+    align-items: center;
+    color: var(--primary);
+    display: inline-flex;
+    font-weight: 600;
+    gap: 6px;
+}
+
+/* ── Delete button ── */
 .season-delete-harvest-btn {
     align-items: center;
     background: transparent;
@@ -953,6 +1055,7 @@ const deleteHarvest = (row) => {
     color: #b91c1c;
 }
 
+/* ── Responsive ── */
 @media (max-width: 1280px) {
     .season-summary-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));

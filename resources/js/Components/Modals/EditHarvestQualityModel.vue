@@ -1,6 +1,6 @@
 <script setup>
 import { computed, watch } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElNotification } from 'element-plus';
 import { Close } from '@element-plus/icons-vue';
 import { useForm } from '@inertiajs/vue3';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
@@ -123,7 +123,13 @@ const submit = () => {
     form.patch(route('harvest.update', props.harvest.id), {
         preserveScroll: true,
         onSuccess: () => {
-            ElMessage.success('Harvest profile updated successfully.');
+            ElNotification({
+                title: 'Harvest Updated',
+                message: 'Harvest profile has been updated successfully.',
+                type: 'success',
+                duration: 4000,
+                position: 'top-right',
+            });
             emit('success');
             closeDialog();
         },

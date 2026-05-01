@@ -1,7 +1,15 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { Calendar, Location, Plus, Reading, Tickets } from '@element-plus/icons-vue';
+import {
+    Calendar,
+    Location,
+    Plus,
+    Reading,
+    Tickets,
+    TrendCharts,
+    Box,
+} from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -13,345 +21,432 @@ const props = defineProps({
 
 const visiblePages = computed(() => {
     const currentPage = props.seasons.meta.current_page || 1;
-    const lastPage = props.seasons.meta.last_page || 1;
+    const lastPage    = props.seasons.meta.last_page    || 1;
     const start = Math.max(1, currentPage - 1);
-    const end = Math.min(lastPage, currentPage + 1);
+    const end   = Math.min(lastPage, currentPage + 1);
     const pages = [];
-
-    for (let page = start; page <= end; page += 1) {
-        pages.push(page);
-    }
-
+    for (let p = start; p <= end; p++) pages.push(p);
     return pages;
 });
 
 const rangeSummary = computed(() => {
-    const from = props.seasons.meta.from || 0;
-    const to = props.seasons.meta.to || 0;
-    const total = props.seasons.meta.total || 0;
-
-    return `Showing ${from}-${to} of ${total} seasons`;
+    const { from = 0, to = 0, total = 0 } = props.seasons.meta;
+    return `Showing ${from}–${to} of ${total}`;
 });
 
-const formatDate = (value) => {
-    if (!value) {
-        return 'Pending';
-    }
+const totalSeasons  = computed(() => props.seasons.meta.total || 0);
+const activeCount   = computed(() => props.seasons.data.filter(s => String(s.status).toLowerCase() === 'active').length);
+const completedCount= computed(() => props.seasons.data.filter(s => String(s.status).toLowerCase() === 'completed').length);
 
-    return new Intl.DateTimeFormat('en-UG', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    }).format(new Date(value));
+const formatDate = (value) => {
+    if (!value) return 'Pending';
+    return new Intl.DateTimeFormat('en-UG', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
 };
 
-const statusTagType = (status) => {
+const statusClass = (status) => {
     switch (String(status).toLowerCase()) {
-        case 'active':
-            return 'success';
-        case 'completed':
-            return 'info';
-        case 'archived':
-            return 'warning';
-        default:
-            return '';
+        case 'active':    return 'sp-status--active';
+        case 'completed': return 'sp-status--completed';
+        case 'archived':  return 'sp-status--archived';
+        default:          return 'sp-status--default';
     }
 };
 </script>
 
 <template>
-    <AppLayout title="Seasons Directory">
+    <AppLayout title="Seasons Directory" full-width flush :show-banner="false">
         <Head title="Seasons Directory" />
 
-        <div class="season-directory-page">
-            <div class="season-directory-shell">
-                <section class="season-directory-hero">
-                    <div>
-                        <div class="season-directory-eyebrow">Season Planning</div>
-                        <h1 class="season-directory-title">Seasons Directory</h1>
-                        <p class="season-directory-copy">
-                            Track production windows, regional cycles, and coffee season planning in one place.
-                        </p>
-                    </div>
+        <div class="sp-root">
 
-                    <div class="season-directory-log-button">
-                        <Link :href="route('season.create')" class="season-directory-log-link">
-                            <el-button class="season-directory-log-el-button" type="default">
-                                <el-icon><Plus /></el-icon>
-                                <span>Add Season</span>
-                            </el-button>
+            <!-- ── Header ──────────────────────────────────────────────────── -->
+            <section class="sp-hero">
+                <div class="sp-hero__inner">
+                    <div class="sp-hero__left">
+                        <h1 class="sp-hero__title">Seasons Directory</h1>
+                        <p class="sp-hero__sub">Track production windows, regional cycles, and harvest planning.</p>
+                    </div>
+                    <div class="sp-hero__right">
+                        <div class="sp-hero__stats">
+                            <div class="sp-stat">
+                                <span class="sp-stat__val">{{ totalSeasons }}</span>
+                                <span class="sp-stat__label">Total</span>
+                            </div>
+                            <div class="sp-stat-divider"></div>
+                            <div class="sp-stat">
+                                <span class="sp-stat__val sp-stat__val--green">{{ activeCount }}</span>
+                                <span class="sp-stat__label">Active</span>
+                            </div>
+                            <div class="sp-stat-divider"></div>
+                            <div class="sp-stat">
+                                <span class="sp-stat__val">{{ completedCount }}</span>
+                                <span class="sp-stat__label">Completed</span>
+                            </div>
+                        </div>
+                        <Link :href="route('season.create')" class="sp-btn sp-btn--primary">
+                            <el-icon><Plus /></el-icon> Add Season
                         </Link>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <section class="season-directory-table-card">
-                    <div class="season-directory-section-head">
-                        <div>
-                            <div class="season-directory-section-title">Season Registry</div>
-                            <div class="season-directory-section-copy">
-                                Review all seasonal cycles, origin windows, and harvest planning periods.
+            <!-- ── Table ───────────────────────────────────────────────────── -->
+            <section class="sp-section">
+                <div class="sp-section__inner">
+
+                    <div class="sp-table-wrap">
+                        <!-- Table head -->
+                        <div class="sp-table-head">
+                            <div class="sp-th sp-col--name">Season</div>
+                            <div class="sp-th sp-col--region">Region</div>
+                            <div class="sp-th sp-col--type">Coffee Type</div>
+                            <div class="sp-th sp-col--date">Start Date</div>
+                            <div class="sp-th sp-col--date">End Date</div>
+                            <div class="sp-th sp-col--status">Status</div>
+                            <div class="sp-th sp-col--notes">Notes</div>
+                        </div>
+
+                        <!-- Empty state -->
+                        <div v-if="!seasons.data.length" class="sp-empty">
+                            <el-icon class="sp-empty__icon"><Tickets /></el-icon>
+                            <strong>No seasons yet</strong>
+                            <span>Create your first season to start tracking production cycles.</span>
+                            <Link :href="route('season.create')" class="sp-btn sp-btn--primary" style="margin-top:1rem;">
+                                <el-icon><Plus /></el-icon> Add Season
+                            </Link>
+                        </div>
+
+                        <!-- Rows -->
+                        <div
+                            v-for="row in seasons.data"
+                            :key="row.id"
+                            class="sp-table-row"
+                        >
+                            <div class="sp-td sp-col--name">
+                                <Link :href="route('season.show', row.id)" class="sp-season-link">
+                                    <el-icon><Tickets /></el-icon>
+                                    <span>{{ row.name }}</span>
+                                </Link>
+                            </div>
+                            <div class="sp-td sp-col--region">
+                                <el-icon><Location /></el-icon>
+                                <span>{{ row.region || '—' }}</span>
+                            </div>
+                            <div class="sp-td sp-col--type">
+                                <el-icon><Reading /></el-icon>
+                                <span>{{ row.coffee_type || '—' }}</span>
+                            </div>
+                            <div class="sp-td sp-col--date">
+                                <el-icon><Calendar /></el-icon>
+                                <span>{{ formatDate(row.start_date) }}</span>
+                            </div>
+                            <div class="sp-td sp-col--date">
+                                <el-icon><Calendar /></el-icon>
+                                <span>{{ formatDate(row.end_date) }}</span>
+                            </div>
+                            <div class="sp-td sp-col--status">
+                                <span class="sp-status" :class="statusClass(row.status)">{{ row.status }}</span>
+                            </div>
+                            <div class="sp-td sp-col--notes sp-td--muted">
+                                {{ row.notes || 'No notes added.' }}
                             </div>
                         </div>
                     </div>
 
-                    <el-table :data="seasons.data" class="season-directory-table" empty-text="No seasons have been created yet.">
-                        <el-table-column label="Season" min-width="200">
-                            <template #default="{ row }">
-                                <span class="season-table-cell">
-                                    <el-icon><Tickets /></el-icon>
-                                    <Link :href="route('season.show', row.id)" class="season-name-link">
-                                        <strong>{{ row.name }}</strong>
-                                    </Link>
-                                </span>
-                            </template>
-                        </el-table-column>
-
-                        <el-table-column label="Region" min-width="180">
-                            <template #default="{ row }">
-                                <span class="season-table-cell">
-                                    <el-icon><Location /></el-icon>
-                                    <span>{{ row.region }}</span>
-                                </span>
-                            </template>
-                        </el-table-column>
-
-                        <el-table-column label="Coffee Type" min-width="150">
-                            <template #default="{ row }">
-                                <span class="season-table-cell">
-                                    <el-icon><Reading /></el-icon>
-                                    <span>{{ row.coffee_type }}</span>
-                                </span>
-                            </template>
-                        </el-table-column>
-
-                        <el-table-column label="Start Date" min-width="150">
-                            <template #default="{ row }">
-                                <span class="season-table-cell">
-                                    <el-icon><Calendar /></el-icon>
-                                    <span>{{ formatDate(row.start_date) }}</span>
-                                </span>
-                            </template>
-                        </el-table-column>
-
-                        <el-table-column label="End Date" min-width="150">
-                            <template #default="{ row }">
-                                <span class="season-table-cell">
-                                    <el-icon><Calendar /></el-icon>
-                                    <span>{{ formatDate(row.end_date) }}</span>
-                                </span>
-                            </template>
-                        </el-table-column>
-
-                        <el-table-column label="Status" min-width="130">
-                            <template #default="{ row }">
-                                <el-tag :type="statusTagType(row.status)" effect="light" round>
-                                    {{ row.status }}
-                                </el-tag>
-                            </template>
-                        </el-table-column>
-
-                        <el-table-column label="Notes" min-width="220" show-overflow-tooltip>
-                            <template #default="{ row }">
-                                <span class="season-notes-cell">{{ row.notes || 'No notes added.' }}</span>
-                            </template>
-                        </el-table-column>
-                    </el-table>
-
-                    <div class="season-directory-footer">
-                        <div class="season-directory-summary">{{ rangeSummary }}</div>
-
-                        <div class="season-directory-pagination">
+                    <!-- Footer / pagination -->
+                    <div class="sp-footer">
+                        <span class="sp-footer__summary">{{ rangeSummary }}</span>
+                        <div class="sp-pagination">
                             <Link
                                 :href="route('season.index', { page: Math.max(1, seasons.meta.current_page - 1) })"
-                                class="season-directory-page-button"
-                                :class="{ disabled: seasons.meta.current_page <= 1 }"
-                            >
-                                Previous
-                            </Link>
-
+                                class="sp-page-btn"
+                                :class="{ 'sp-page-btn--disabled': seasons.meta.current_page <= 1 }"
+                            >Previous</Link>
                             <Link
                                 v-for="page in visiblePages"
                                 :key="page"
                                 :href="route('season.index', { page })"
-                                class="season-directory-page-button"
-                                :class="{ active: page === seasons.meta.current_page }"
-                            >
-                                {{ page }}
-                            </Link>
-
+                                class="sp-page-btn"
+                                :class="{ 'sp-page-btn--active': page === seasons.meta.current_page }"
+                            >{{ page }}</Link>
                             <Link
                                 :href="route('season.index', { page: Math.min(seasons.meta.last_page, seasons.meta.current_page + 1) })"
-                                class="season-directory-page-button"
-                                :class="{ disabled: seasons.meta.current_page >= seasons.meta.last_page }"
-                            >
-                                Next
-                            </Link>
+                                class="sp-page-btn"
+                                :class="{ 'sp-page-btn--disabled': seasons.meta.current_page >= seasons.meta.last_page }"
+                            >Next</Link>
                         </div>
                     </div>
-                </section>
-            </div>
+                </div>
+            </section>
         </div>
     </AppLayout>
 </template>
 
 <style scoped>
-.season-directory-page {
-    background: #fff;
-    padding-top: 6px;
+/* ── Tokens ────────────────────────────────────────────────────────────────── */
+.sp-root {
+    --primary:          #004532;
+    --primary-grad:     #065f46;
+    --on-primary:       #ffffff;
+    --on-surface:       #191c1e;
+    --on-surface-var:   #74777a;
+    --surface:          #f7f9fb;
+    --surface-low:      #f2f4f6;
+    --surface-high:     #e6e8ea;
+    --surface-white:    #ffffff;
+    --primary-fixed:    #a6f2d1;
+    --on-primary-fixed: #002116;
+    --secondary-fixed:  #fedcbe;
+    --on-secondary-fixed: #291806;
+    --inner-pad: 2rem;
+    font-family: 'Manrope', system-ui, sans-serif;
+    background: var(--surface-white);
+    color: var(--on-surface);
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
-.season-directory-shell {
+/* ── Hero ──────────────────────────────────────────────────────────────────── */
+.sp-hero {
+    background: var(--surface-white);
+    border-bottom: 1px solid var(--surface-high);
+    padding: 1.5rem 0;
+}
+.sp-hero__inner {
+    padding: 0 var(--inner-pad);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+.sp-hero__left { min-width: 0; }
+.sp-hero__right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+.sp-hero__title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--on-surface);
+    margin: 0 0 0.25rem;
+    line-height: 1.2;
+}
+.sp-hero__sub {
+    font-size: 0.8125rem;
+    color: var(--on-surface-var);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Inline stats */
+.sp-hero__stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.sp-stat {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    margin: 0 auto;
-    max-width: 1320px;
-}
-
-.season-directory-hero,
-.season-directory-footer {
     align-items: center;
-    display: flex;
-    gap: 16px;
-    justify-content: space-between;
+    gap: 1px;
+    text-align: center;
+}
+.sp-stat__val {
+    font-size: 1.125rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--on-surface);
+    line-height: 1;
+}
+.sp-stat__val--green { color: var(--primary); }
+.sp-stat__label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-surface-var);
+}
+.sp-stat-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--surface-high);
 }
 
-.season-directory-pagination {
-    display: flex;
-    gap: 10px;
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.sp-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    border-radius: 0.375rem;
+    padding: 9px 18px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.15s ease;
+}
+.sp-btn--primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
+    color: var(--on-primary);
+}
+.sp-btn--primary:hover { opacity: 0.88; }
+
+/* ── Section ───────────────────────────────────────────────────────────────── */
+.sp-section { background: var(--surface-white); padding: 2rem 0; }
+.sp-section__inner { padding: 0 var(--inner-pad); }
+
+/* ── Table ─────────────────────────────────────────────────────────────────── */
+.sp-table-wrap {
+    border: 1px solid var(--surface-high);
+    border-radius: 0.75rem;
+    overflow: hidden;
 }
 
-.season-directory-log-link {
+/* Column widths */
+.sp-col--name   { flex: 1.8; min-width: 160px; }
+.sp-col--region { flex: 1.4; min-width: 130px; }
+.sp-col--type   { flex: 1.2; min-width: 120px; }
+.sp-col--date   { flex: 1.2; min-width: 120px; }
+.sp-col--status { flex: 0.8; min-width: 90px; }
+.sp-col--notes  { flex: 2; min-width: 160px; }
+
+.sp-table-head {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface-low);
+    border-bottom: 1px solid var(--surface-high);
+    padding: 0 1.25rem;
+}
+.sp-th {
+    padding: 0.75rem 0.75rem 0.75rem 0;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--on-surface-var);
+}
+
+.sp-table-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0 1.25rem;
+    border-bottom: 1px solid var(--surface-low);
+    transition: background 0.12s ease;
+}
+.sp-table-row:last-child { border-bottom: none; }
+.sp-table-row:hover { background: #fafbfc; }
+
+.sp-td {
+    padding: 1rem 0.75rem 1rem 0;
+    font-size: 0.8125rem;
+    color: var(--on-surface);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.sp-td .el-icon { color: var(--on-surface-var); font-size: 14px; flex-shrink: 0; }
+.sp-td--muted { color: var(--on-surface-var); font-size: 0.75rem; }
+
+.sp-season-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--primary);
+    font-weight: 700;
     text-decoration: none;
 }
+.sp-season-link:hover { text-decoration: underline; }
+.sp-season-link .el-icon { color: var(--primary); }
 
-.season-directory-eyebrow,
-.season-directory-section-title {
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: 0.08em;
+/* Status badges */
+.sp-status {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
+    border-radius: 999px;
+    padding: 3px 10px;
 }
+.sp-status--active    { background: var(--primary-fixed); color: var(--on-primary-fixed); }
+.sp-status--completed { background: var(--surface-high);  color: var(--on-surface-var); }
+.sp-status--archived  { background: var(--secondary-fixed); color: var(--on-secondary-fixed); }
+.sp-status--default   { background: var(--surface-high);  color: var(--on-surface-var); }
 
-.season-directory-eyebrow {
-    color: #8a9692;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.season-directory-title {
-    color: #16312b;
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: -0.05em;
-    margin: 10px 0 0;
-}
-
-.season-directory-copy,
-.season-directory-section-copy,
-.season-directory-summary,
-.season-notes-cell {
-    color: #6b7280;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-.season-directory-log-el-button {
-    border-radius: 8px;
-    font-weight: 700;
-    min-height: 40px;
-    padding: 0 16px;
-}
-
-.season-directory-table-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-    padding: 20px;
-}
-
-.season-directory-section-head {
-    margin-bottom: 14px;
-}
-
-.season-directory-section-title {
-    color: #253b35;
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.season-directory-table {
-    margin-top: 14px;
-}
-
-.season-directory-table :deep(.el-table__header th) {
-    background: #f8fafc;
-    color: #7f8d9b;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.season-directory-table :deep(.el-table__cell) {
-    padding: 14px 0;
-}
-
-.season-directory-table :deep(.el-table__inner-wrapper::before) {
-    display: none;
-}
-
-.season-table-cell {
+/* Empty state */
+.sp-empty {
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    color: #233242;
-    display: inline-flex;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
     gap: 8px;
 }
+.sp-empty__icon { font-size: 2.5rem; color: var(--surface-high); margin-bottom: 0.5rem; }
+.sp-empty strong { font-size: 1rem; font-weight: 700; color: var(--on-surface); }
+.sp-empty span   { font-size: 0.875rem; color: var(--on-surface-var); }
 
-.season-table-cell :deep(svg) {
-    color: #6f847b;
-    font-size: 15px;
+/* ── Footer / Pagination ───────────────────────────────────────────────────── */
+.sp-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
-
-.season-name-link {
-    color: #16312b;
+.sp-footer__summary {
+    font-size: 0.8125rem;
+    color: var(--on-surface-var);
+}
+.sp-pagination { display: flex; gap: 6px; flex-wrap: wrap; }
+.sp-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    border: 1px solid var(--surface-high);
+    background: var(--surface-white);
+    color: var(--on-surface);
+    font-size: 0.8125rem;
+    font-weight: 600;
     text-decoration: none;
+    padding: 0 10px;
+    transition: background 0.12s ease, border-color 0.12s ease;
 }
-
-.season-name-link:hover {
-    text-decoration: underline;
+.sp-page-btn:hover { background: var(--surface-low); }
+.sp-page-btn--active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--on-primary);
 }
+.sp-page-btn--disabled { opacity: 0.4; pointer-events: none; }
 
-.season-directory-page-button {
-    border: 1px solid #dde5e1;
-    border-radius: 999px;
-    color: #51615c;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 7px 12px;
-    text-decoration: none;
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .sp-root { --inner-pad: 1.25rem; }
+    .sp-hero__inner { flex-wrap: wrap; gap: 1rem; }
+    .sp-col--notes { display: none; }
 }
-
-.season-directory-page-button.active {
-    background: #0e5b3f;
-    border-color: #0e5b3f;
-    color: #fff;
-}
-
-.season-directory-page-button.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-}
-
-@media (max-width: 960px) {
-    .season-directory-hero,
-    .season-directory-footer {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .season-directory-pagination {
-        flex-wrap: wrap;
-    }
+@media (max-width: 640px) {
+    .sp-root { --inner-pad: 1rem; }
+    .sp-hero__right { gap: 1rem; }
+    .sp-hero__stats { gap: 0.75rem; }
+    .sp-col--type, .sp-col--region { display: none; }
+    .sp-table-head, .sp-table-row { padding: 0 0.875rem; }
+    .sp-pagination { gap: 4px; }
 }
 </style>

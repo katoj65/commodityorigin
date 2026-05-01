@@ -1,317 +1,337 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { Plus, Tickets } from '@element-plus/icons-vue';
+import { Calendar, Plus, Tickets } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
 const props = defineProps({
-    regionOptions: {
-        type: Array,
-        default: () => [],
-    },
+    regionOptions: { type: Array, default: () => [] },
 });
 
 const form = useForm({
-    name: '',
-    region: '',
+    name:       '',
+    region:     '',
     start_date: '',
-    end_date: '',
-    notes: '',
+    end_date:   '',
+    notes:      '',
 });
 
-const submit = () => {
-    form.post(route('season.store'));
-};
+const submit = () => form.post(route('season.store'));
 </script>
 
 <template>
-    <AppLayout title="Create Season">
+    <AppLayout title="Create Season" full-width flush :show-banner="false">
         <Head title="Create Season" />
 
-        <div class="season-create-page">
-            <div class="season-create-shell">
-                <section class="season-create-hero">
+        <div class="cs-root">
+
+            <!-- ── Header ──────────────────────────────────────────────── -->
+            <section class="cs-hero">
+                <div class="cs-hero__inner">
                     <div>
-                        <div class="season-create-eyebrow">Season Planning</div>
-                        <h1 class="season-create-title">Create Season</h1>
-                        <p class="season-create-copy">
-                            Add a new seasonal window for harvest planning, sourcing alignment, and regional coffee cycle tracking.
-                        </p>
+                        <h1 class="cs-hero__title">Create Season</h1>
+                        <p class="cs-hero__sub">Add a new seasonal window for harvest planning and regional cycle tracking.</p>
                     </div>
+                    <Link :href="route('season.index')" class="cs-btn cs-btn--ghost">
+                        Back to Seasons
+                    </Link>
+                </div>
+            </section>
 
-                    <div class="season-create-hero-actions">
-                        <Link :href="route('season.index')" class="season-create-back-link">Back to Seasons</Link>
-                    </div>
-                </section>
+            <!-- ── Form ────────────────────────────────────────────────── -->
+            <div class="cs-body">
+                <form class="cs-form" @submit.prevent="submit">
 
-                <section class="season-create-card">
-                    <div class="season-create-card-head">
-                        <div class="season-create-card-title-wrap">
-                            <span class="season-create-card-icon">
-                                <el-icon><Plus /></el-icon>
-                            </span>
+                    <!-- Card: Core Details -->
+                    <div class="cs-card">
+                        <div class="cs-card__head">
+                            <span class="cs-card__icon"><el-icon><Tickets /></el-icon></span>
                             <div>
-                                <div class="season-create-card-title">Season Details</div>
-                                <div class="season-create-card-copy">
-                                    Complete the core season details using the structured form below.
-                                </div>
+                                <div class="cs-card__title">Season Details</div>
+                                <div class="cs-card__sub">Set the name, region, and date window for this season.</div>
                             </div>
                         </div>
-                    </div>
 
-                    <form class="season-create-form" @submit.prevent="submit">
-                        <div class="season-create-grid">
-                            <div class="season-create-field">
-                                <label class="season-create-label">Season Name</label>
-                                <el-input v-model="form.name" placeholder="e.g. Uganda Main Harvest 2026" :prefix-icon="Tickets" />
-                                <InputError class="mt-2 text-sm" :message="form.errors.name" />
+                        <div class="cs-grid">
+                            <div class="cs-field cs-field--full">
+                                <label class="cs-label">Season Name <span class="cs-required">*</span></label>
+                                <el-input
+                                    v-model="form.name"
+                                    placeholder="e.g. Uganda Main Harvest 2026"
+                                    :prefix-icon="Tickets"
+                                    class="cs-input"
+                                />
+                                <InputError class="cs-error" :message="form.errors.name" />
                             </div>
 
-                            <div class="season-create-field">
-                                <label class="season-create-label">Region</label>
-                                <el-select v-model="form.region" placeholder="Select region">
-                                    <el-option v-for="region in regionOptions" :key="region" :label="region" :value="region" />
+                            <div class="cs-field">
+                                <label class="cs-label">Region <span class="cs-required">*</span></label>
+                                <el-select
+                                    v-model="form.region"
+                                    placeholder="Select region"
+                                    class="cs-input"
+                                >
+                                    <el-option
+                                        v-for="region in regionOptions"
+                                        :key="region"
+                                        :label="region"
+                                        :value="region"
+                                    />
                                 </el-select>
-                                <InputError class="mt-2 text-sm" :message="form.errors.region" />
+                                <InputError class="cs-error" :message="form.errors.region" />
                             </div>
 
-                            <div class="season-create-field">
-                                <label class="season-create-label">Start Date</label>
+                            <div class="cs-field">
+                                <label class="cs-label">Start Date <span class="cs-required">*</span></label>
                                 <el-date-picker
                                     v-model="form.start_date"
                                     type="date"
                                     value-format="YYYY-MM-DD"
                                     placeholder="Select start date"
+                                    :prefix-icon="Calendar"
+                                    class="cs-input"
                                 />
-                                <InputError class="mt-2 text-sm" :message="form.errors.start_date" />
+                                <InputError class="cs-error cs-error--date mt-3" :message="form.errors.start_date" />
                             </div>
 
-                            <div class="season-create-field">
-                                <label class="season-create-label">End Date</label>
+                            <div class="cs-field cs-field--full">
+                                <label class="cs-label">End Date <span class="cs-required">*</span></label>
                                 <el-date-picker
                                     v-model="form.end_date"
                                     type="date"
                                     value-format="YYYY-MM-DD"
                                     placeholder="Select end date"
+                                    :prefix-icon="Calendar"
+                                    class="cs-input"
                                 />
-                                <InputError class="mt-2 text-sm" :message="form.errors.end_date" />
+                                <InputError class="cs-error cs-error--date mt-3" :message="form.errors.end_date" />
                             </div>
 
-                            <div class="season-create-field season-create-field--full">
-                                <label class="season-create-label">Notes</label>
+                            <div class="cs-field cs-field--full">
+                                <label class="cs-label">Notes</label>
                                 <el-input
                                     v-model="form.notes"
                                     type="textarea"
-                                    :rows="5"
-                                    placeholder="Add season notes, trade windows, harvest expectations, or regional context."
+                                    :rows="4"
+                                    placeholder="Add harvest expectations, trade windows, or regional context."
+                                    class="cs-input"
                                 />
-                                <InputError class="mt-2 text-sm" :message="form.errors.notes" />
+                                <InputError class="cs-error" :message="form.errors.notes" />
                             </div>
                         </div>
 
-                        <div class="season-create-actions">
-                            <SubmitButton class="season-create-submit" :loading="form.processing" :full-width="false">
-                                Create Season
+                        <!-- Actions inside card -->
+                        <div class="cs-actions">
+                            <SubmitButton :loading="form.processing" style="width:160px;">
+                                <el-icon class="mr-2"><Plus /></el-icon> Create Season
                             </SubmitButton>
                         </div>
-                    </form>
-                </section>
+                    </div>
+
+                </form>
             </div>
         </div>
     </AppLayout>
 </template>
 
 <style scoped>
-.season-create-page {
-    background: #fff;
-    padding-top: 6px;
+/* ── Tokens ────────────────────────────────────────────────────────────────── */
+.cs-root {
+    --primary:        #004532;
+    --primary-grad:   #065f46;
+    --on-primary:     #ffffff;
+    --on-surface:     #191c1e;
+    --on-surface-var: #74777a;
+    --surface-white:  #ffffff;
+    --surface-low:    #f2f4f6;
+    --surface-high:   #e6e8ea;
+    --required:       #c0392b;
+    --inner-pad:      2rem;
+    font-family: 'Manrope', system-ui, sans-serif;
+    background: var(--surface-white);
+    color: var(--on-surface);
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
-.season-create-shell {
+/* ── Hero ──────────────────────────────────────────────────────────────────── */
+.cs-hero {
+    background: var(--surface-white);
+    border-bottom: 1px solid var(--surface-high);
+    padding: 1.5rem 0;
+}
+.cs-hero__inner {
+    padding: 0 var(--inner-pad);
     display: flex;
-    flex-direction: column;
-    gap: 18px;
-    margin: 0 auto;
-    max-width: 1180px;
-}
-
-.season-create-hero,
-.season-create-card-head,
-.season-create-actions {
     align-items: center;
-    display: flex;
-    gap: 16px;
     justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
 }
-
-.season-create-eyebrow,
-.season-create-card-title {
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.season-create-eyebrow {
-    color: #8a9692;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.season-create-title {
-    color: #16312b;
-    font-size: 24px;
+.cs-hero__title {
+    font-size: 1.25rem;
     font-weight: 800;
-    letter-spacing: -0.05em;
-    margin: 10px 0 0;
+    letter-spacing: -0.02em;
+    color: var(--on-surface);
+    margin: 0 0 0.25rem;
+    line-height: 1.2;
+}
+.cs-hero__sub {
+    font-size: 0.8125rem;
+    color: var(--on-surface-var);
+    margin: 0;
+    line-height: 1.5;
 }
 
-.season-create-copy,
-.season-create-card-copy {
-    color: #60716c;
-    font-size: 14px;
-    line-height: 1.6;
+/* ── Body ──────────────────────────────────────────────────────────────────── */
+.cs-body {
+    padding: 2rem var(--inner-pad);
+    padding-right: 10%;
 }
 
-.season-create-copy {
-    margin: 10px 0 0;
-    max-width: 720px;
-}
+/* ── Form ──────────────────────────────────────────────────────────────────── */
+.cs-form { display: flex; flex-direction: column; gap: 1.5rem; }
 
-.season-create-back-link {
-    border: 1px solid #d7e2de;
-    border-radius: 999px;
-    color: #24443d;
-    display: inline-flex;
-    font-size: 13px;
-    font-weight: 700;
-    padding: 10px 16px;
-    text-decoration: none;
-    transition: background-color 0.18s ease, border-color 0.18s ease;
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+.cs-card {
+    background: var(--surface-white);
+    border: 1px solid var(--surface-high);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
 }
-
-.season-create-back-link:hover {
-    background: #f4f8f7;
-    border-color: #bbcdc7;
-}
-
-.season-create-card {
-    background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
-    border: 1px solid #dfe8e4;
-    border-radius: 24px;
-    box-shadow: 0 18px 44px rgba(9, 35, 30, 0.06);
-    padding: 22px;
-}
-
-.season-create-card-title-wrap {
-    align-items: center;
+.cs-card__head {
     display: flex;
-    gap: 14px;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--surface-low);
 }
-
-.season-create-card-title {
-    color: #4c6860;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.season-create-card-copy {
-    margin-top: 4px;
-}
-
-.season-create-card-icon {
+.cs-card__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(0,69,50,0.08);
+    color: var(--primary);
+    display: flex;
     align-items: center;
-    background: #e8f3ef;
-    border-radius: 14px;
-    color: #0f5c46;
-    display: inline-flex;
-    flex-shrink: 0;
-    font-size: 18px;
-    height: 42px;
     justify-content: center;
-    width: 42px;
+    font-size: 16px;
+    flex-shrink: 0;
 }
-
-.season-create-form {
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
-    margin-top: 20px;
-}
-
-.season-create-grid {
-    display: grid;
-    gap: 16px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.season-create-field {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.season-create-field--full {
-    grid-column: 1 / -1;
-}
-
-.season-create-label {
-    color: #1f3530;
-    font-size: 13px;
+.cs-card__title {
+    font-size: 0.9375rem;
     font-weight: 700;
+    color: var(--on-surface);
+    margin-bottom: 2px;
+}
+.cs-card__sub {
+    font-size: 0.8125rem;
+    color: var(--on-surface-var);
+    line-height: 1.5;
 }
 
-:deep(.season-create-field .el-select),
-:deep(.season-create-field .el-date-editor.el-input),
-:deep(.season-create-field .el-date-editor.el-input__wrapper),
-:deep(.season-create-field .el-input),
-:deep(.season-create-field .el-textarea) {
-    width: 100%;
+/* ── Grid ──────────────────────────────────────────────────────────────────── */
+.cs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+.cs-field { display: flex; flex-direction: column; gap: 6px; }
+.cs-field--full { grid-column: 1 / -1; }
+
+/* ── Labels ────────────────────────────────────────────────────────────────── */
+.cs-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--on-surface);
+}
+.cs-required { color: var(--required); margin-left: 2px; }
+.cs-error { font-size: 0.75rem; color: var(--required); margin-top: 4px; }
+.cs-error--date { margin-top: 10px; display: block; }
+
+/* ── Element Plus input overrides ──────────────────────────────────────────── */
+.cs-input { width: 100%; }
+
+:deep(.cs-input .el-input__wrapper),
+:deep(.cs-input .el-select__wrapper),
+:deep(.cs-input.el-date-editor .el-input__wrapper) {
+    background: var(--surface-white);
+    border-radius: 6px !important;
+    box-shadow: 0 0 0 1px var(--surface-high) inset;
+    min-height: 42px;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 0.875rem;
+}
+:deep(.cs-input .el-input__wrapper.is-focus),
+:deep(.cs-input .el-select__wrapper.is-focused),
+:deep(.cs-input.el-date-editor .el-input__wrapper.is-focus) {
+    box-shadow: 0 0 0 1px var(--primary) inset,
+                0 0 0 3px rgba(0,69,50,0.08);
+}
+:deep(.cs-input .el-textarea__inner) {
+    background: var(--surface-white);
+    border-radius: 6px !important;
+    box-shadow: 0 0 0 1px var(--surface-high) inset;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 0.875rem;
+    padding: 10px 14px;
+    resize: vertical;
+}
+:deep(.cs-input .el-textarea__inner:focus) {
+    box-shadow: 0 0 0 1px var(--primary) inset,
+                0 0 0 3px rgba(0,69,50,0.08);
+    outline: none;
+}
+:deep(.cs-input.el-date-editor) { width: 100%; }
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.cs-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    border-radius: 0.375rem;
+    padding: 9px 18px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.15s ease, background 0.15s ease;
+}
+.cs-btn--primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
+    color: var(--on-primary);
+    width: auto;
+}
+.cs-btn--primary:hover { opacity: 0.88; }
+.cs-btn--ghost {
+    background: var(--surface-white);
+    border: 1px solid var(--surface-high);
+    color: var(--on-surface);
+}
+.cs-btn--ghost:hover { background: var(--surface-low); }
+
+/* ── Actions (inside card) ─────────────────────────────────────────────────── */
+.cs-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--surface-low);
 }
 
-:deep(.season-create-field .el-input__wrapper),
-:deep(.season-create-field .el-textarea__inner),
-:deep(.season-create-field .el-select__wrapper) {
-    background: #fff;
-    border-radius: 5px !important;
-    box-shadow: 0 0 0 1px #d7e2de inset;
-    min-height: 46px;
-}
-
-:deep(.season-create-field .el-textarea__inner) {
-    padding-top: 12px;
-}
-
-.season-create-actions {
-    border-top: 1px solid #e6efec;
-    padding-top: 18px;
-}
-
-.season-create-submit {
-    min-width: 168px;
-}
-
-@media (max-width: 900px) {
-    .season-create-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 720px) {
-    .season-create-card,
-    .season-create-shell {
-        gap: 14px;
-    }
-
-    .season-create-card {
-        padding: 16px;
-    }
-
-    .season-create-hero,
-    .season-create-card-head,
-    .season-create-actions {
-        align-items: flex-start;
-        flex-direction: column;
-    }
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .cs-root { --inner-pad: 1rem; }
+    .cs-body { padding-top: 1.25rem; }
+    .cs-grid { grid-template-columns: 1fr; }
+    .cs-hero__inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .cs-actions { justify-content: flex-end; }
 }
 </style>
