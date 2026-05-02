@@ -460,8 +460,8 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                     </div>
                                     <div class="lp-trade-card">
                                         <div class="lp-trade-card__eyebrow"><el-icon><Trophy /></el-icon> AUCTION</div>
-                                        <div class="lp-trade-card__price">Shs. {{ fmt(props.lot.reserve_price || 0, 2) }}<small>/kg</small></div>
-                                        <div class="lp-trade-card__meta">Reserve price</div>
+                                        <div class="lp-trade-card__price">Shs. {{ fmt(props.lot.price || 0, 2) }}<small>/kg</small></div>
+                                        <div class="lp-trade-card__meta">Price</div>
                                         <button class="lp-btn lp-btn--tertiary lp-btn--full">Join Auction</button>
                                     </div>
                                 </div>

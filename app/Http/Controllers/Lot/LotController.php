@@ -77,7 +77,7 @@ class LotController extends Controller
             'grade' => ['required', 'string', 'max:100'],
             'quantity_bags' => ['required', 'integer', 'min:1'],
             'bag_weight_kg' => ['required', 'numeric', 'min:1'],
-            'reserve_price' => ['nullable', 'numeric', 'min:0'],
+            'price' => ['nullable', 'numeric', 'min:0'],
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
@@ -284,7 +284,7 @@ class LotController extends Controller
             'bag_weight_kg' => $validated['bag_weight_kg'],
             'packaging_type' => $validated['packaging_type'],
             'net_weight_kg' => round((float) $validated['allocation_kg'], 2),
-            'reserve_price' => $validated['price_per_kg'],
+            'price' => $validated['price_per_kg'],
             'quality_score' => $batch->cup_score ?: $sensoryAverage,
             'status' => $this->resolveLotStatus($validated['submission_intent'] ?? 'create'),
             'notes' => $validated['notes'] ?? null,

@@ -26,7 +26,7 @@ class LotResource extends JsonResource
             'net_weight_kg' => $this->net_weight_kg,
             'quantity_bags' => $this->quantity_bags,
             'bag_weight_kg' => $this->bag_weight_kg,
-            'reserve_price' => $this->reserve_price,
+            'price' => $this->price,
             'quality_score' => $this->quality_score,
             'warehouse' => $this->warehouse,
             'packaging_type' => $this->packaging_type,

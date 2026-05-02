@@ -24,7 +24,7 @@ const form = useForm({
     grade: '',
     quantity_bags: '',
     bag_weight_kg: '',
-    reserve_price: '',
+    price: '',
     quality_score: props.batches[0]?.quality_score ?? '',
     notes: '',
 });
@@ -130,9 +130,9 @@ const submit = () => {
                             </div>
 
                             <div>
-                                <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Reserve price</label>
-                                <el-input v-model="form.reserve_price" type="number" min="0" step="0.01" placeholder="Optional reserve price" />
-                                <InputError class="mt-2 text-sm" :message="form.errors.reserve_price" />
+                                <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Price</label>
+                                <el-input v-model="form.price" type="number" min="0" step="0.01" placeholder="Optional price" />
+                                <InputError class="mt-2 text-sm" :message="form.errors.price" />
                             </div>
 
                             <div>
