@@ -54,7 +54,7 @@ const form = useForm({
     aroma_score: props.defaults.aroma_score ?? 8.75,
     acidity_score: props.defaults.acidity_score ?? 9.0,
     body_score: props.defaults.body_score ?? 8.25,
-    target_market: props.defaults.target_market ?? props.options.target_markets[0]?.name ?? '',
+    target_market: props.defaults.target_market ?? 'All',
     price_per_kg: props.defaults.price_per_kg ?? '',
     tokenize: props.defaults.tokenize ?? true,
     notes: '',
@@ -117,12 +117,13 @@ const requiredForSubmit = computed(() => ({
     acidity_score: hasValue(form.acidity_score) && Number(form.acidity_score) >= 0 && Number(form.acidity_score) <= 10,
     body_score: hasValue(form.body_score) && Number(form.body_score) >= 0 && Number(form.body_score) <= 10,
     target_market: hasValue(form.target_market),
-    within_batch_limit: Number(form.allocation_kg || 0) <= Number(props.sourceBatch.remaining_qty_kg || 0),
+    price_per_kg: Number(form.price_per_kg || 0) > 0,
+    within_batch_total: Number(form.allocation_kg || 0) <= Number(props.sourceBatch.batch_total_kg || 0),
 }));
 
 const readinessItems = computed(() => [
     { label: 'Verified Batch Origin', complete: true },
-    { label: 'Quantity within limits', complete: Number(form.allocation_kg || 0) <= Number(props.sourceBatch.remaining_qty_kg || 0) },
+    { label: 'Quantity within limits', complete: Number(form.allocation_kg || 0) > 0 },
     { label: 'Packaging specs confirmed', complete: Boolean(form.packaging_type) },
     { label: 'Warehouse release document', complete: Boolean(form.warehouse) && props.canSubmit },
 ]);
@@ -134,8 +135,8 @@ const validateForm = () => {
 
     if (!requiredForSubmit.value.lot_number) errors.lot_number = 'Lot code is required.';
     if (!requiredForSubmit.value.allocation_kg) errors.allocation_kg = 'Allocation must be greater than 0.';
-    if (!requiredForSubmit.value.within_batch_limit) {
-        errors.allocation_kg = `Allocation cannot exceed ${formatNumber(props.sourceBatch.remaining_qty_kg || 0, 2)} kg.`;
+    if (requiredForSubmit.value.allocation_kg && !requiredForSubmit.value.within_batch_total) {
+        errors.allocation_kg = `Allocation cannot exceed the batch total of ${formatNumber(props.sourceBatch.batch_total_kg || 0, 2)} kg.`;
     }
     if (!requiredForSubmit.value.quantity_bags) errors.quantity_bags = 'Bag count must be at least 1.';
     if (!requiredForSubmit.value.bag_weight_kg) errors.bag_weight_kg = 'Bag weight must be at least 1 kg.';
@@ -148,6 +149,7 @@ const validateForm = () => {
     if (!requiredForSubmit.value.acidity_score) errors.acidity_score = 'Acidity score must be between 0 and 10.';
     if (!requiredForSubmit.value.body_score) errors.body_score = 'Body score must be between 0 and 10.';
     if (!requiredForSubmit.value.target_market) errors.target_market = 'Target market is required.';
+    if (!requiredForSubmit.value.price_per_kg) errors.price_per_kg = 'Price per kg is required.';
 
     if (!props.canSubmit) {
         errors.batch = props.submissionBlockedMessage || 'Batch must be linked before creating a lot.';
@@ -313,7 +315,7 @@ const submit = (intent = 'create') => {
                                 </div>
                                 <div class="lot-summary-row">
                                     <span class="lot-summary-row__label"><el-icon><Tickets /></el-icon><span>Allocated</span></span>
-                                    <strong class="is-warning">{{ formatNumber(projectedAllocated) }} kg</strong>
+                                    <strong class="is-warning">{{ formatNumber(Number(form.allocation_kg || 0)) }} kg</strong>
                                 </div>
                                 <div class="lot-summary-row">
                                     <span class="lot-summary-row__label"><el-icon><Van /></el-icon><span>Remaining</span></span>
@@ -472,13 +474,30 @@ const submit = (intent = 'create') => {
                                 <span>Buyer-facing listing setup</span>
                             </div>
 
-                            <div class="lot-field-grid lot-field-grid--single">
+                            <div class="lot-field-grid">
                                 <div class="lot-field">
                                     <label for="target_market">Target market</label>
                                     <el-select id="target_market" v-model="form.target_market" class="lot-form-control" placeholder="Select target market">
+                                        <el-option label="All Markets" value="All" />
                                         <el-option v-for="market in props.options.target_markets" :key="market.id" :label="market.name" :value="market.name" />
                                     </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.target_market" />
+                                </div>
+
+                                <div class="lot-field">
+                                    <label for="price_per_kg">Price per kg <span style="color:#c0392b">*</span></label>
+                                    <el-input
+                                        id="price_per_kg"
+                                        v-model="form.price_per_kg"
+                                        class="lot-form-control"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="e.g. 4.85"
+                                    >
+                                        <template #prefix>Shs.</template>
+                                    </el-input>
+                                    <InputError class="mt-2 text-sm" :message="form.errors.price_per_kg" />
                                 </div>
                             </div>
                         </article>

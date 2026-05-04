@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Market;
 
 use App\Http\Controllers\Controller;
+use App\Models\Market;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,7 +15,30 @@ class MarketController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('Market/MarketPage');
+        $markets = Market::query()
+            ->where('status', 'live')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (Market $market): array => [
+                'id'            => $market->id,
+                'lot_code'      => $market->lot_code,
+                'name'          => $market->name,
+                'origin'        => $market->origin,
+                'type'          => $market->type,
+                'process'       => $market->process,
+                'quality_score' => (float) ($market->quality_score ?? 0),
+                'quantity'      => (float) ($market->quantity ?? 0),
+                'price_per_kg'  => (float) ($market->price_per_kg ?? 0),
+                'demand'        => $market->demand,
+                'badges'        => $market->badges ?? [],
+                'target_market' => $market->target_market,
+                'status'        => $market->status,
+                'image'         => $market->image,
+            ]);
+
+        return Inertia::render('Market/MarketPage', [
+            'markets' => $markets,
+        ]);
     }
 
     /**

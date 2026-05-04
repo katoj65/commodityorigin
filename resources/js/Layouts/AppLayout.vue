@@ -531,7 +531,7 @@ onBeforeUnmount(() => {
                             <button
                                 type="button"
                                 class="flex h-8 w-8 items-center justify-center rounded-full bg-gold font-display text-[11px] font-bold text-white transition-transform hover:scale-[1.03]"
-                                :title="user.name"
+                                :title="user?.name"
                             >
                                 {{ userInitials }}
                             </button>
@@ -539,9 +539,9 @@ onBeforeUnmount(() => {
 
                         <template #content>
                             <div class="px-4 pb-3 pt-2">
-                                <div class="truncate text-[12px] font-semibold text-[#111827]">{{ user.name }}</div>
+                                <div class="truncate text-[12px] font-semibold text-[#111827]">{{ user?.name }}</div>
                                 <div class="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">
-                                    {{ user.role || 'Account' }}
+                                    {{ user?.role || 'Account' }}
                                 </div>
                             </div>
 
@@ -799,7 +799,7 @@ onBeforeUnmount(() => {
                         {{ userInitials }}
                     </div>
                     <div class="min-w-0">
-                        <div class="truncate text-[12px] font-medium text-ink">{{ user.name }}</div>
+                        <div class="truncate text-[12px] font-medium text-ink">{{ user?.name }}</div>
                         <div class="flex items-center gap-1 truncate font-mono text-[8px] text-up">
                             <span class="inline-block h-1.5 w-1.5 rounded-full bg-up"></span>
                             Verified trader
@@ -1034,7 +1034,7 @@ onBeforeUnmount(() => {
                             {{ userInitials }}
                         </div>
                         <div class="min-w-0">
-                            <div class="truncate text-[12px] font-medium text-ink">{{ user.name }}</div>
+                            <div class="truncate text-[12px] font-medium text-ink">{{ user?.name }}</div>
                             <div class="flex items-center gap-1 truncate font-mono text-[8px] text-up">
                                 <span class="inline-block h-1.5 w-1.5 rounded-full bg-up"></span>
                                 Verified trader

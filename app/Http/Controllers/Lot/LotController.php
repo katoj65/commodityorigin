@@ -8,6 +8,7 @@ use App\Models\Batch;
 use App\Models\Farm;
 use App\Models\Harvest;
 use App\Models\Lot;
+use App\Models\Market;
 use App\Models\MarketMetadata;
 use App\Models\ProcessingMetadata;
 use Illuminate\Http\RedirectResponse;
@@ -234,7 +235,10 @@ class LotController extends Controller
                 'required',
                 'string',
                 'max:255',
-                Rule::exists('market_metadata', 'name')->where('is_active', true),
+                Rule::when(
+                    fn ($input) => $input->target_market !== 'All',
+                    Rule::exists('market_metadata', 'name')->where('is_active', true),
+                ),
             ],
             'price_per_kg' => ['required', 'numeric', 'min:0'],
             'tokenize' => ['nullable', 'boolean'],
@@ -244,10 +248,16 @@ class LotController extends Controller
 
         $imagePath = ImageUploadHelper::store($request->file('image'), 'lots');
 
+        if ($remainingQtyKg <= 0) {
+            throw ValidationException::withMessages([
+                'allocation_kg' => 'This batch is fully allocated. No remaining quantity is available for a new lot.',
+            ]);
+        }
+
         if ((float) $validated['allocation_kg'] > (float) $batch->weight) {
             throw ValidationException::withMessages([
                 'allocation_kg' => sprintf(
-                    'Lot allocation cannot exceed the batch weight of %.2f kg.',
+                    'Lot allocation cannot exceed the total batch weight of %.2f kg.',
                     (float) $batch->weight
                 ),
             ]);
@@ -271,7 +281,7 @@ class LotController extends Controller
         ])->avg(), 2);
 
 
-        Lot::query()->create([
+        $lot = Lot::query()->create([
             'batch_id' => $batch->id,
             'user_id' => $request->user()->id,
             'lot_number' => $validated['lot_number'],
@@ -295,7 +305,7 @@ class LotController extends Controller
             : 'Lot created successfully from the selected batch.';
 
         return redirect()
-            ->route('batch.show', $batch)
+            ->route('lot.show', $lot)
             ->with('success', $message);
     }
 
@@ -438,15 +448,57 @@ class LotController extends Controller
 
 public function show(Lot $lot): Response
 {
+    $lot->loadMissing('batch');
+
     return Inertia::render('Lot/LotProfile', [
         'lot' => $lot,
     ]);
 }
 
+public function publish(Lot $lot): RedirectResponse
+{
+    Gate::authorize('update', $lot);
+
+    if (Market::where('lot_id', $lot->id)->exists()) {
+        return back()->with('error', 'This lot is already published to the market.');
+    }
+
+    $lot->loadMissing('batch');
+
+    Market::create([
+        'lot_id'        => $lot->id,
+        'user_id'       => auth()->id(),
+        'lot_code'      => $lot->lot_number,
+        'name'          => $lot->lot_name ?? $lot->lot_number,
+        'origin'        => $lot->batch?->warehouse_location,
+        'type'          => $lot->batch?->variety ?? 'Arabica',
+        'process'       => $lot->process,
+        'quality_score' => $lot->quality_score,
+        'quantity'      => $lot->net_weight_kg,
+        'price_per_kg'  => $lot->price,
+        'target_market' => $lot->target_market,
+        'status'        => 'live',
+        'image'         => $lot->image,
+    ]);
+
+    return back()->with('success', 'Lot published to market successfully.');
+}
 
 
 
 
+//publish
+
+
+public function publishLot(){
+
+
+
+
+
+
+
+}
 
 
 

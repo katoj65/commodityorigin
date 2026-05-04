@@ -75,6 +75,7 @@ Route::middleware([
         Route::get('/create', [LotController::class, 'create'])->name('create');
         Route::post('/', [LotController::class, 'store'])->name('store');
         Route::get('/{lot}', [LotController::class, 'show'])->name('show');
+        Route::post('/{lot}/publish', [LotController::class, 'publish'])->name('publish');
     });
 
     // Batch workspace routes.

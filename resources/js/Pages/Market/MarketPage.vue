@@ -1,141 +1,111 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import {
-    Box,
-    Check,
-    Checked,
-    Collection,
-    CollectionTag,
-    Connection,
-    Document,
-    Location,
-    Message,
-    Opportunity,
-    Pointer,
-    Reading,
-    Search,
-    ShoppingTrolley,
-    Star,
-    Tickets,
-    TrendCharts,
-    Van,
-    View,
-    WarnTriangleFilled,
+    Box, Check, Checked, Collection, CollectionTag, Connection,
+    Download, Filter, Location, Medal, Message, Opportunity,
+    Plus, ShoppingCart, Star, Tickets, TrendCharts, Van, View,
+    WarningFilled, User, ChatDotRound, Grid, List,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
-const lots = [
-    {
-        id: 'UG-9902',
-        name: 'Misty Mountains Robusta',
-        origin: 'Uganda',
-        type: 'Robusta',
-        process: 'Natural',
-        qualityScore: 87.5,
-        quantity: 18.5,
-        pricePerKg: 4.1,
-        demand: 'High',
-        demandTone: 'success',
-        badges: ['Verified', 'Export Ready', 'Tokenised'],
-        seller: 'Misty Mountains Cooperative',
-        availableLabel: '18.5 MT',
-    },
-    {
-        id: 'ET-2481',
-        name: 'Sidamo G2 Natural',
-        origin: 'Ethiopia',
-        type: 'Arabica',
-        process: 'Washed',
-        qualityScore: 89.2,
-        quantity: 5,
-        pricePerKg: 3.85,
-        demand: 'Very High',
-        demandTone: 'primary',
-        badges: ['Verified', 'Export Ready', 'Premium'],
-        seller: 'Sidamo Highlands Union',
-        availableLabel: '5.0 MT',
-    },
-    {
-        id: 'BR-1120',
-        name: 'Cerrado Gold',
-        origin: 'Brazil',
-        type: 'Arabica',
-        process: 'Pulped Natural',
-        qualityScore: 84,
-        quantity: 120,
-        pricePerKg: 3.2,
-        demand: 'Stable',
-        demandTone: 'warning',
-        badges: ['Verified'],
-        seller: 'Cerrado Export Group',
-        availableLabel: '120.0 MT',
-    },
-    {
-        id: 'RW-4417',
-        name: 'Kivu Crest Bourbon',
-        origin: 'Rwanda',
-        type: 'Arabica',
-        process: 'Honey',
-        qualityScore: 88.1,
-        quantity: 12.5,
-        pricePerKg: 5.05,
-        demand: 'High',
-        demandTone: 'success',
-        badges: ['Verified', 'Export Ready'],
-        seller: 'Lake Kivu Growers',
-        availableLabel: '12.5 MT',
-    },
-    {
-        id: 'VN-6604',
-        name: 'Dak Lak Select',
-        origin: 'Vietnam',
-        type: 'Robusta',
-        process: 'Washed',
-        qualityScore: 85.4,
-        quantity: 62,
-        pricePerKg: 2.95,
-        demand: 'Active',
-        demandTone: 'info',
-        badges: ['Verified', 'Tokenised'],
-        seller: 'Dak Lak Commodity House',
-        availableLabel: '62.0 MT',
-    },
-];
+const props = defineProps({
+    markets: { type: Array, default: () => [] },
+});
 
-const featuredLots = [
-    {
-        title: 'Best Value Lot',
-        lotId: 'ET-2481',
-        lotName: 'Sidamo G2 Natural',
-        detail: 'Ethiopia • 89.2 score • $3.85/kg',
-        tone: 'mint',
-        meta: 'Lowest landed cost',
-        stat: '89.2',
-        cta: 'Best entry',
-    },
-    {
-        title: 'High Demand Lot',
-        lotId: 'UG-9902',
-        lotName: 'Misty Mountains Robusta',
-        detail: 'Uganda • Strong UAE demand • $4.10/kg',
-        tone: 'green',
-        meta: 'UAE buyers active',
-        stat: 'High',
-        cta: 'Fast-moving',
-    },
-    {
-        title: 'Premium Specialty Lot',
-        lotId: 'RW-4417',
-        lotName: 'Kivu Crest Bourbon',
-        detail: 'Rwanda • Honey process • $5.05/kg',
-        tone: 'amber',
-        meta: 'Specialty premium',
-        stat: '88.1',
-        cta: 'Top cup score',
-    },
-];
+// ── Demand helper ────────────────────────────────────────────────────────────
+const resolveDemandTone = (demand) => {
+    const d = (demand ?? '').toLowerCase();
+    if (d === 'very high') return 'primary';
+    if (d === 'high')      return 'success';
+    if (d === 'stable')    return 'warning';
+    if (d === 'low')       return 'danger';
+    return 'info';
+};
 
+// ── Normalised lots ──────────────────────────────────────────────────────────
+const lots = computed(() =>
+    props.markets.map((m) => ({
+        id:             m.id,
+        lot_code:       m.lot_code,
+        name:           m.name || m.lot_code,
+        origin:         m.origin || '—',
+        type:           m.type,
+        process:        m.process,
+        qualityScore:   Number(m.quality_score || 0),
+        quantity:       Number(m.quantity || 0),
+        pricePerKg:     Number(m.price_per_kg || 0),
+        demand:         m.demand || 'Active',
+        demandTone:     resolveDemandTone(m.demand),
+        badges:         m.badges || [],
+        targetMarket:   m.target_market,
+        image:          m.image,
+        availableLabel: `${Number(m.quantity || 0).toLocaleString()} kg`,
+    })),
+);
+
+// ── Filters ──────────────────────────────────────────────────────────────────
+const filters = reactive({ origin: '', type: '', minQuality: '', maxPrice: '', exportReady: false, tokenised: false });
+
+const uniqueOrigins  = computed(() => [...new Set(lots.value.map((l) => l.origin).filter(Boolean))]);
+const uniqueTypes    = computed(() => [...new Set(lots.value.map((l) => l.type).filter(Boolean))]);
+
+const filteredLots = computed(() => lots.value.filter((lot) => {
+    if (filters.origin     && lot.origin !== filters.origin) return false;
+    if (filters.type       && lot.type   !== filters.type)   return false;
+    if (filters.minQuality && lot.qualityScore < Number(filters.minQuality)) return false;
+    if (filters.maxPrice   && lot.pricePerKg   > Number(filters.maxPrice))   return false;
+    if (filters.exportReady && !lot.badges.includes('Export Ready')) return false;
+    if (filters.tokenised   && !lot.badges.includes('Tokenised'))    return false;
+    return true;
+}));
+
+const hasActiveFilters = computed(() =>
+    filters.origin || filters.type || filters.minQuality || filters.maxPrice || filters.exportReady || filters.tokenised,
+);
+
+const clearFilters = () => Object.assign(filters, { origin: '', type: '', minQuality: '', maxPrice: '', exportReady: false, tokenised: false });
+
+// ── View / selection ─────────────────────────────────────────────────────────
+const viewMode     = ref('grid');
+const selectedLots = ref([]);
+const toggleSelect = (id) => {
+    const i = selectedLots.value.indexOf(id);
+    i === -1 ? selectedLots.value.push(id) : selectedLots.value.splice(i, 1);
+};
+const isSelected = (id) => selectedLots.value.includes(id);
+const clearSelection = () => { selectedLots.value = []; };
+
+// ── Summary cards ────────────────────────────────────────────────────────────
+const summaryCards = computed(() => {
+    const d = lots.value;
+    const avgPrice = d.length ? d.reduce((s, l) => s + l.pricePerKg, 0) / d.length : 0;
+    return [
+        { label: 'Total Lots',     value: d.length.toString().padStart(2, '0'), sub: 'Live on market',       icon: Box,          tone: '' },
+        { label: 'Export-Ready',   value: d.filter((l) => l.badges.includes('Export Ready')).length,         sub: 'Verified for export',    icon: Van,          tone: 'success' },
+        { label: 'Tokenised',      value: d.filter((l) => l.badges.includes('Tokenised')).length,            sub: 'On-chain assets',        icon: Connection,   tone: 'info' },
+        { label: 'Avg. Price',     value: d.length ? `$${avgPrice.toFixed(2)}` : '—',                        sub: 'Per kg across lots',     icon: CollectionTag,tone: '' },
+        { label: 'High Demand',    value: d.filter((l) => ['High', 'Very High'].includes(l.demand)).length,  sub: 'Active buyer interest',  icon: TrendCharts,  tone: 'warning' },
+    ];
+});
+
+// ── Featured lots ────────────────────────────────────────────────────────────
+const featuredLots = computed(() => {
+    const d = lots.value;
+    if (!d.length) return [];
+    const demandOrder = { 'Very High': 0, 'High': 1, 'Active': 2, 'Stable': 3, 'Low': 4 };
+    const bestValue  = [...d].sort((a, b) => a.pricePerKg   - b.pricePerKg)[0];
+    const highDemand = [...d].sort((a, b) => (demandOrder[a.demand] ?? 5) - (demandOrder[b.demand] ?? 5))[0];
+    const premium    = [...d].sort((a, b) => b.qualityScore - a.qualityScore)[0];
+    return [
+        { title: 'Best Value',      sub: 'Lowest price per kg',  lot: bestValue,  tone: 'mint' },
+        { title: 'High Demand',     sub: 'Most active buyers',   lot: highDemand, tone: 'green' },
+        { title: 'Premium Quality', sub: 'Top cup score',        lot: premium,    tone: 'amber' },
+    ].filter((f) => f.lot);
+});
+
+// ── Trend chart ──────────────────────────────────────────────────────────────
+const timeRange = ref('7D');
 const trendBars = [
     { label: 'Mon', arabica: 68, robusta: 52 },
     { label: 'Tue', arabica: 72, robusta: 56 },
@@ -145,984 +115,866 @@ const trendBars = [
     { label: 'Sat', arabica: 79, robusta: 73 },
 ];
 
-const selectedLotId = ref('ET-2481');
-const quantityToBuy = ref(1);
-const currency = ref('USD ($)');
-const paymentMethod = ref('Escrow Transfer');
-const deliveryMarket = ref('UAE');
-const orderType = ref('Market Buy');
-
-const selectedLot = computed(() => lots.find((lot) => lot.id === selectedLotId.value) ?? lots[0]);
-
-const summaryCards = computed(() => {
-    const averagePrice = lots.reduce((sum, lot) => sum + lot.pricePerKg, 0) / lots.length;
-    const highestDemand = lots.find((lot) => lot.demand === 'Very High')?.origin ?? 'Uganda';
-    const exportReadyLots = lots.filter((lot) => lot.badges.includes('Export Ready')).length;
-
+// ── Readiness ────────────────────────────────────────────────────────────────
+const readiness = computed(() => {
+    const d = lots.value;
     return [
-        {
-            label: 'Available Lots',
-            value: lots.length.toString().padStart(2, '0'),
-            subtext: 'Live and trade-ready',
-            icon: Box,
-        },
-        {
-            label: 'Average Price',
-            value: `$${averagePrice.toFixed(2)}/kg`,
-            subtext: 'Across listed coffee lots',
-            icon: CollectionTag,
-        },
-        {
-            label: 'Highest Demand Origin',
-            value: highestDemand,
-            subtext: 'Buyer interest leading today',
-            icon: Location,
-        },
-        {
-            label: 'Export-Ready Lots',
-            value: exportReadyLots.toString(),
-            subtext: 'Verified for shipment',
-            icon: Van,
-        },
+        { label: 'Export Ready',          count: d.filter((l) => l.badges.includes('Export Ready')).length,  tone: 'success', icon: Check },
+        { label: 'Tokenised',             count: d.filter((l) => l.badges.includes('Tokenised')).length,     tone: 'info',    icon: Checked },
+        { label: 'Quality Verified',      count: d.filter((l) => l.qualityScore >= 85).length,               tone: 'success', icon: Star },
+        { label: 'Pending Verification',  count: d.filter((l) => !l.badges.includes('Verified')).length,     tone: 'warning', icon: WarningFilled },
     ];
 });
 
-const subtotal = computed(() => selectedLot.value.pricePerKg * quantityToBuy.value * 1000);
-const platformFee = computed(() => subtotal.value * 0.005);
-const estimatedLogistics = computed(() => quantityToBuy.value * 165);
-const totalPayable = computed(() => subtotal.value + platformFee.value + estimatedLogistics.value);
+// ── Alerts ───────────────────────────────────────────────────────────────────
+const alerts = reactive({ newLots: false, priceDrops: false, demandSpikes: false, exportReady: false });
 
-const formatCurrency = (value) =>
-    new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-    }).format(value);
-
-const badgeClass = (badge) => {
-    if (badge === 'Verified') return 'text-bg-success-subtle text-success-emphasis border border-success-subtle';
-    if (badge === 'Export Ready') return 'text-bg-primary-subtle text-primary-emphasis border border-primary-subtle';
-    if (badge === 'Tokenised') return 'text-bg-info-subtle text-info-emphasis border border-info-subtle';
-    if (badge === 'Premium') return 'text-bg-warning-subtle text-warning-emphasis border border-warning-subtle';
-
-    return 'text-bg-light text-body-secondary border';
+// ── Chatbot ──────────────────────────────────────────────────────────────────
+const chatOpen    = ref(false);
+const chatInput   = ref('');
+const chatMessages = ref([
+    { role: 'assistant', text: 'Hi! I\'m the Bean Origin Lots Advisor. How can I help you find the right coffee lots?' },
+]);
+const suggestedPrompts = [
+    'Which lots are best to buy?',
+    'Which lots are export ready?',
+    'Which lots have high demand?',
+    'What quality should I look for?',
+];
+const sendChat = () => {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    chatMessages.value.push({ role: 'user', text });
+    chatInput.value = '';
+    setTimeout(() => {
+        chatMessages.value.push({
+            role: 'assistant',
+            text: 'Based on current market data, I recommend export-ready Arabica lots with a quality score above 87 for the best trade opportunities.',
+        });
+    }, 800);
 };
+const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 
-const selectLot = (lotId) => {
-    selectedLotId.value = lotId;
-    quantityToBuy.value = 1;
+// ── Badge class ──────────────────────────────────────────────────────────────
+const badgeClass = (badge) => {
+    if (badge === 'Verified')     return 'bg-success-subtle text-success-emphasis border border-success-subtle';
+    if (badge === 'Export Ready') return 'bg-primary-subtle text-primary-emphasis border border-primary-subtle';
+    if (badge === 'Tokenised')    return 'bg-info-subtle text-info-emphasis border border-info-subtle';
+    if (badge === 'Premium')      return 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+    return 'bg-light text-body-secondary border';
 };
 </script>
 
 <template>
+    <AppLayout title="Coffee Lots" full-width flush :show-banner="false">
+        <Head title="Coffee Lots" />
 
+        <div class="lots-page">
 
-    <AppLayout title="Coffee Market" full-width flush :show-banner="false">
-        <section class="market-page bg-white">
-            <div class="container-fluid px-3 px-lg-4 py-3 py-lg-4">
-                <div class="row g-4 align-items-start">
-                    <div class="col-12 col-xxl-8">
-                        <div class="d-flex flex-column gap-4">
-                            <div class="market-card p-3 p-lg-4">
-                                <div class="d-flex flex-column gap-3 flex-lg-row justify-content-between align-items-lg-end">
-                                    <div>
-                                        <h1 class="market-title mb-1">Coffee Market</h1>
-                                        <p class="market-subtitle mb-0">
-                                            Buy verified, traceable, and export-ready coffee lots
-                                        </p>
-                                    </div>
+            <!-- ── 1. Header ─────────────────────────────────────────────── -->
+            <div class="lots-header">
+                <div class="container-fluid px-3 px-lg-4">
 
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <button type="button" class="btn btn-light market-toolbar-btn">
-                                            <el-icon><Tickets /></el-icon>
-                                            <span>My Orders</span>
-                                        </button>
-                                        <button type="button" class="btn btn-light market-toolbar-btn">
-                                            <el-icon><Star /></el-icon>
-                                            <span>Watchlist</span>
-                                        </button>
-                                        <button type="button" class="btn btn-light market-toolbar-btn">
-                                            <el-icon><Message /></el-icon>
-                                            <span>Set Alert</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row g-3">
-                                <div
-                                    v-for="card in summaryCards"
-                                    :key="card.label"
-                                    class="col-12 col-sm-6 col-xl-3"
-                                >
-                                    <div class="market-card market-summary-card h-100 p-3">
-                                        <div class="d-flex align-items-start justify-content-between gap-3">
-                                            <div>
-                                                <div class="market-summary-label">{{ card.label }}</div>
-                                                <div class="market-summary-value">{{ card.value }}</div>
-                                                <div class="market-summary-subtext">{{ card.subtext }}</div>
-                                            </div>
-                                            <div class="market-icon-badge">
-                                                <el-icon><component :is="card.icon" /></el-icon>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="market-insight-bar">
-                                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-                                    <div class="d-flex align-items-start gap-3">
-                                        <div class="market-insight-icon">
-                                            <el-icon><Opportunity /></el-icon>
-                                        </div>
-                                        <div>
-                                            <div class="market-insight-label">AI Market Insight</div>
-                                            <div class="market-insight-text">
-                                                Ugandan Robusta is showing strong buyer demand in UAE markets today.
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <span class="badge market-pill">High Demand</span>
-                                        <span class="badge market-pill">Export Ready</span>
-                                        <span class="badge market-pill">Buyer Momentum</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="market-card p-0 overflow-hidden">
-                                <div class="border-bottom px-3 px-lg-4 py-3">
-                                    <div class="d-flex flex-column gap-2 flex-lg-row justify-content-between align-items-lg-center">
-                                        <div>
-                                            <div class="market-section-heading mb-1">
-                                                <span class="market-section-icon"><el-icon><Tickets /></el-icon></span>
-                                                <h2 class="market-section-title mb-0">Coffee Lots</h2>
-                                            </div>
-                                            <p class="market-section-subtitle mb-0">Compact trading view for fast buyer decisions</p>
-                                        </div>
-
-                                        <div class="d-flex flex-wrap gap-2">
-                                            <span class="badge rounded-pill text-bg-light border market-filter-badge">
-                                                <el-icon><Location /></el-icon>
-                                                <span>All Origins</span>
-                                            </span>
-                                            <span class="badge rounded-pill text-bg-light border market-filter-badge">
-                                                <el-icon><Collection /></el-icon>
-                                                <span>Arabica &amp; Robusta</span>
-                                            </span>
-                                            <span class="badge rounded-pill text-bg-light border market-filter-badge">
-                                                <el-icon><Star /></el-icon>
-                                                <span>Score 84+</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="table-responsive">
-                                    <table class="table align-middle mb-0 market-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Lot ID</th>
-                                                <th>Coffee Name</th>
-                                                <th>Origin</th>
-                                                <th>Profile</th>
-                                                <th>Quantity</th>
-                                                <th>Price / kg</th>
-                                                <th>Market Status</th>
-                                                <th class="text-end">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr
-                                                v-for="lot in lots"
-                                                :key="lot.id"
-                                                :class="{ 'is-selected': selectedLot.id === lot.id }"
-                                                @click="selectLot(lot.id)"
-                                            >
-                                                <td class="fw-semibold">#{{ lot.id }}</td>
-                                                <td>
-                                                    <div class="fw-semibold text-dark">{{ lot.name }}</div>
-                                                    <div class="market-row-subtext">{{ lot.seller }}</div>
-                                                </td>
-                                                <td>{{ lot.origin }}</td>
-                                                <td>
-                                                    <div class="market-meta-cluster">
-                                                        <span class="badge rounded-pill text-bg-light border market-profile-badge">
-                                                            {{ lot.type }}
-                                                        </span>
-                                                        <span class="badge rounded-pill text-bg-light border market-profile-badge">
-                                                            {{ lot.process }}
-                                                        </span>
-                                                        <span class="badge rounded-pill text-bg-success-subtle text-success-emphasis border border-success-subtle market-profile-score">
-                                                            {{ lot.qualityScore }}
-                                                        </span>
-                                                        <span class="market-inline-meta">Cup score</span>
-                                                    </div>
-                                                </td>
-                                                <td>{{ lot.availableLabel }}</td>
-                                                <td class="fw-semibold">{{ formatCurrency(lot.pricePerKg) }}</td>
-                                                <td>
-                                                    <div class="market-meta-cluster market-meta-cluster--status">
-                                                        <span class="badge rounded-pill" :class="`text-bg-${lot.demandTone}-subtle text-${lot.demandTone}-emphasis border border-${lot.demandTone}-subtle`">
-                                                            {{ lot.demand }}
-                                                        </span>
-                                                        <span
-                                                            v-for="badge in lot.badges"
-                                                            :key="badge"
-                                                            class="badge rounded-pill market-status-badge"
-                                                            :class="badgeClass(badge)"
-                                                        >
-                                                            {{ badge }}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex flex-wrap justify-content-end gap-2">
-                                                        <button type="button" class="btn btn-sm btn-success market-action-btn" @click.stop="selectLot(lot.id)">
-                                                            <el-icon><Check /></el-icon>
-                                                            <span>Select</span>
-                                                        </button>
-                                                        <button type="button" class="btn btn-sm btn-light market-action-btn">
-                                                            <el-icon><View /></el-icon>
-                                                            <span>View</span>
-                                                        </button>
-                                                        <button type="button" class="btn btn-sm btn-light market-action-btn">
-                                                            <el-icon><Star /></el-icon>
-                                                            <span>Watchlist</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                         
+                    <!-- Title row -->
+                    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 py-3 border-bottom">
+                        <div>
+                            <h1 class="lots-title mb-0">Coffee Lots</h1>
+                            <p class="lots-subtitle mb-0">Browse verified, traceable, and export-ready coffee lots</p>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn lots-btn-primary btn-sm">
+                                <el-icon><Plus /></el-icon> Create Lot
+                            </button>
+                            <button class="btn lots-btn-outline btn-sm">
+                                <el-icon><Tickets /></el-icon> My Lots
+                            </button>
+                            <button class="btn lots-btn-outline btn-sm">
+                                <el-icon><Download /></el-icon> Export Report
+                            </button>
+                            <button class="btn lots-btn-ghost btn-sm">
+                                <el-icon><ChatDotRound /></el-icon> Ask Advisor
+                            </button>
                         </div>
                     </div>
 
-                    <div class="col-12 col-xxl-4">
-                        <div class="market-sidebar-sticky">
-                            <div class="market-card market-quick-buy p-3 p-lg-4">
-                                <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                    <!-- Filters row -->
+                    <div class="d-flex flex-wrap align-items-center gap-2 py-2">
+                        <el-icon class="text-muted"><Filter /></el-icon>
+                        <select v-model="filters.origin" class="form-select form-select-sm lots-filter-select">
+                            <option value="">All Origins</option>
+                            <option v-for="o in uniqueOrigins" :key="o" :value="o">{{ o }}</option>
+                        </select>
+                        <select v-model="filters.type" class="form-select form-select-sm lots-filter-select">
+                            <option value="">All Types</option>
+                            <option v-for="t in uniqueTypes" :key="t" :value="t">{{ t }}</option>
+                        </select>
+                        <select v-model="filters.minQuality" class="form-select form-select-sm lots-filter-select">
+                            <option value="">Quality Score</option>
+                            <option value="80">80+</option>
+                            <option value="84">84+</option>
+                            <option value="87">87+</option>
+                            <option value="90">90+</option>
+                        </select>
+                        <select v-model="filters.maxPrice" class="form-select form-select-sm lots-filter-select">
+                            <option value="">Any Price</option>
+                            <option value="3">Under $3/kg</option>
+                            <option value="4">Under $4/kg</option>
+                            <option value="5">Under $5/kg</option>
+                        </select>
+                        <div class="form-check form-check-inline mb-0">
+                            <input v-model="filters.exportReady" id="f-export" class="form-check-input" type="checkbox">
+                            <label for="f-export" class="form-check-label lots-filter-label">Export Ready</label>
+                        </div>
+                        <div class="form-check form-check-inline mb-0">
+                            <input v-model="filters.tokenised" id="f-token" class="form-check-input" type="checkbox">
+                            <label for="f-token" class="form-check-label lots-filter-label">Tokenised</label>
+                        </div>
+                        <button v-if="hasActiveFilters" class="btn btn-link btn-sm text-danger p-0" @click="clearFilters">
+                            Clear filters
+                        </button>
+                        <span class="ms-auto text-muted" style="font-size:0.75rem;">
+                            {{ filteredLots.length }} lot{{ filteredLots.length !== 1 ? 's' : '' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container-fluid px-3 px-lg-4 pb-5">
+
+                <!-- ── 2. Insight Strip ──────────────────────────────────── -->
+                <div class="lots-insight-bar d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 my-3">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="lots-insight-icon">
+                            <el-icon><Opportunity /></el-icon>
+                        </div>
+                        <div>
+                            <div class="lots-insight-kicker">AI Market Insight</div>
+                            <div class="lots-insight-text">Export-ready Robusta lots from Uganda are in high demand in UAE markets.</div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 flex-shrink-0">
+                        <span class="badge lots-insight-badge">High Demand</span>
+                        <span class="badge lots-insight-badge">Export Ready</span>
+                        <span class="badge lots-insight-badge">Trade Opportunity</span>
+                    </div>
+                </div>
+
+                <!-- ── 3. Summary Cards ──────────────────────────────────── -->
+                <div class="row g-2 mb-3">
+                    <div v-for="card in summaryCards" :key="card.label" class="col-6 col-sm-4 col-lg">
+                        <div class="lots-kpi-card h-100">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="lots-kpi-label">{{ card.label }}</span>
+                                <span class="lots-kpi-icon" :class="`lots-kpi-icon--${card.tone || 'default'}`">
+                                    <el-icon><component :is="card.icon" /></el-icon>
+                                </span>
+                            </div>
+                            <div class="lots-kpi-value">{{ card.value }}</div>
+                            <div class="lots-kpi-sub">{{ card.sub }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── 4. View Toggle ────────────────────────────────────── -->
+                <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="lots-section-label">
+                            <el-icon><Tickets /></el-icon> All Lots
+                        </span>
+                        <span class="badge bg-light text-secondary border">{{ filteredLots.length }}</span>
+                    </div>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button
+                            class="btn"
+                            :class="viewMode === 'grid' ? 'lots-btn-primary' : 'lots-btn-outline'"
+                            @click="viewMode = 'grid'"
+                        >
+                            <el-icon><Grid /></el-icon> Grid
+                        </button>
+                        <button
+                            class="btn"
+                            :class="viewMode === 'table' ? 'lots-btn-primary' : 'lots-btn-outline'"
+                            @click="viewMode = 'table'"
+                        >
+                            <el-icon><List /></el-icon> Table
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ── 5. Grid View ──────────────────────────────────────── -->
+                <div v-if="viewMode === 'grid'">
+                    <div v-if="filteredLots.length" class="row g-3 mb-4">
+                        <div v-for="lot in filteredLots" :key="lot.id" class="col-12 col-sm-6 col-xl-4">
+                            <div
+                                class="lots-grid-card h-100"
+                                :class="{ 'lots-grid-card--selected': isSelected(lot.id) }"
+                            >
+                                <!-- Card header -->
+                                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
                                     <div>
-                                        <div class="market-sidebar-kicker">Quick Buy</div>
-                                        <div class="market-section-heading">
-                                            <span class="market-section-icon"><el-icon><ShoppingTrolley /></el-icon></span>
-                                            <h2 class="market-sidebar-title mb-0">Checkout Panel</h2>
-                                        </div>
+                                        <div class="lots-grid-code">{{ lot.lot_code }}</div>
+                                        <div class="lots-grid-name">{{ lot.name }}</div>
                                     </div>
-                                    <span class="badge rounded-pill text-bg-success-subtle text-success-emphasis border border-success-subtle">
-                                        Selected
+                                    <div class="d-flex align-items-center gap-1">
+                                        <input
+                                            type="checkbox"
+                                            class="form-check-input mt-0"
+                                            :checked="isSelected(lot.id)"
+                                            @change="toggleSelect(lot.id)"
+                                        >
+                                        <button class="lots-watchlist-btn"><el-icon><Star /></el-icon></button>
+                                    </div>
+                                </div>
+
+                                <!-- Badges -->
+                                <div class="d-flex flex-wrap gap-1 mb-2">
+                                    <span
+                                        v-for="badge in lot.badges"
+                                        :key="badge"
+                                        class="badge rounded-pill lots-badge"
+                                        :class="badgeClass(badge)"
+                                    >{{ badge }}</span>
+                                    <span class="badge rounded-pill" :class="`bg-${lot.demandTone}-subtle text-${lot.demandTone}-emphasis border border-${lot.demandTone}-subtle lots-badge`">
+                                        {{ lot.demand }}
                                     </span>
                                 </div>
 
-                                <div class="market-selected-lot mb-3">
-                                    <div class="fw-semibold text-dark">{{ selectedLot.name }}</div>
-                                    <div class="market-row-subtext">Lot #{{ selectedLot.id }} • {{ selectedLot.seller }}</div>
-                                </div>
-
-                                <div class="row g-2 mb-3">
+                                <!-- Meta grid -->
+                                <div class="row g-1 mb-2">
                                     <div class="col-6">
-                                        <div class="market-detail-card">
-                                            <div class="market-detail-label">Origin</div>
-                                            <div class="market-detail-value">{{ selectedLot.origin }}</div>
+                                        <div class="lots-meta-cell">
+                                            <span><el-icon><Location /></el-icon> Origin</span>
+                                            <strong>{{ lot.origin }}</strong>
                                         </div>
                                     </div>
                                     <div class="col-6">
-                                        <div class="market-detail-card">
-                                            <div class="market-detail-label">Coffee Type</div>
-                                            <div class="market-detail-value">{{ selectedLot.type }}</div>
+                                        <div class="lots-meta-cell">
+                                            <span><el-icon><Collection /></el-icon> Type</span>
+                                            <strong>{{ lot.type }}</strong>
                                         </div>
                                     </div>
                                     <div class="col-6">
-                                        <div class="market-detail-card">
-                                            <div class="market-detail-label">Quality Score</div>
-                                            <div class="market-detail-value">{{ selectedLot.qualityScore }}</div>
+                                        <div class="lots-meta-cell">
+                                            <span><el-icon><Box /></el-icon> Quantity</span>
+                                            <strong>{{ lot.availableLabel }}</strong>
                                         </div>
                                     </div>
                                     <div class="col-6">
-                                        <div class="market-detail-card">
-                                            <div class="market-detail-label">Available Quantity</div>
-                                            <div class="market-detail-value">{{ selectedLot.availableLabel }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="market-detail-card">
-                                            <div class="market-detail-label">Price per kg</div>
-                                            <div class="market-detail-value">{{ formatCurrency(selectedLot.pricePerKg) }}</div>
+                                        <div class="lots-meta-cell">
+                                            <span><el-icon><CollectionTag /></el-icon> Process</span>
+                                            <strong>{{ lot.process }}</strong>
                                         </div>
                                     </div>
                                 </div>
 
-                                <el-form label-position="top" class="market-buy-form mt-1">
-                                    <el-form-item label="Quantity to buy (MT)" class="market-buy-form__item">
-                                        <el-input
-                                            v-model="quantityToBuy"
-                                            type="text"
-                                            inputmode="decimal"
-                                            placeholder="Enter quantity"
-                                            class="market-control"
-                                        />
-                                    </el-form-item>
-
-                                    <div class="row g-2">
-                                        <div class="col-12 col-sm-6 col-xxl-12 col-xl-6">
-                                            <el-form-item label="Currency" class="market-buy-form__item mb-0">
-                                                <el-select v-model="currency" class="market-control" placeholder="Select currency">
-                                                    <el-option label="USD ($)" value="USD ($)" />
-                                                    <el-option label="EUR (€)" value="EUR (€)" />
-                                                    <el-option label="AED (د.إ)" value="AED (د.إ)" />
-                                                </el-select>
-                                            </el-form-item>
-                                        </div>
-                                        <div class="col-12 col-sm-6 col-xxl-12 col-xl-6">
-                                            <el-form-item label="Payment method" class="market-buy-form__item mb-0">
-                                                <el-select v-model="paymentMethod" class="market-control" placeholder="Select payment method">
-                                                    <el-option label="Escrow Transfer" value="Escrow Transfer" />
-                                                    <el-option label="Bank Wire" value="Bank Wire" />
-                                                    <el-option label="Trade Credit" value="Trade Credit" />
-                                                </el-select>
-                                            </el-form-item>
-                                        </div>
-                                        <div class="col-12 col-sm-6 col-xxl-12 col-xl-6">
-                                            <el-form-item label="Delivery market" class="market-buy-form__item mb-0">
-                                                <el-select v-model="deliveryMarket" class="market-control" placeholder="Select delivery market">
-                                                    <el-option label="UAE" value="UAE" />
-                                                    <el-option label="Germany" value="Germany" />
-                                                    <el-option label="USA" value="USA" />
-                                                </el-select>
-                                            </el-form-item>
-                                        </div>
-                                        <div class="col-12 col-sm-6 col-xxl-12 col-xl-6">
-                                            <el-form-item label="Order type" class="market-buy-form__item mb-0">
-                                                <el-select v-model="orderType" class="market-control" placeholder="Select order type">
-                                                    <el-option label="Market Buy" value="Market Buy" />
-                                                    <el-option label="Limit Order" value="Limit Order" />
-                                                </el-select>
-                                            </el-form-item>
+                                <!-- Quality + Price row -->
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div>
+                                        <div class="lots-score-label">Quality Score</div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="lots-score-bar">
+                                                <div class="lots-score-bar__fill" :style="{ width: `${Math.min(100, (lot.qualityScore / 100) * 100)}%` }"></div>
+                                            </div>
+                                            <span class="lots-score-val">{{ lot.qualityScore.toFixed(1) }}</span>
                                         </div>
                                     </div>
-                                </el-form>
-
-                                <div class="market-total-card mt-3">
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span class="market-total-label"><el-icon><Document /></el-icon><span>Subtotal</span></span>
-                                        <strong>{{ formatCurrency(subtotal) }}</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span class="market-total-label"><el-icon><CollectionTag /></el-icon><span>Platform fee</span></span>
-                                        <strong>{{ formatCurrency(platformFee) }}</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span class="market-total-label"><el-icon><Van /></el-icon><span>Estimated logistics</span></span>
-                                        <strong>{{ formatCurrency(estimatedLogistics) }}</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between pt-2 mt-2 border-top">
-                                        <span class="fw-semibold market-total-label"><el-icon><ShoppingTrolley /></el-icon><span>Total payable</span></span>
-                                        <strong class="market-total-value">{{ formatCurrency(totalPayable) }}</strong>
+                                    <div class="text-end">
+                                        <div class="lots-score-label">Price / kg</div>
+                                        <div class="lots-price-val">${{ lot.pricePerKg.toFixed(2) }}</div>
                                     </div>
                                 </div>
 
-                                <div class="d-grid gap-2 mt-3">
-                                    <button type="button" class="btn btn-success market-cta-btn">
-                                        <el-icon><ShoppingTrolley /></el-icon>
-                                        <span>Buy Now</span>
+                                <!-- Actions -->
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm lots-btn-primary flex-fill">
+                                        <el-icon><ShoppingCart /></el-icon> Buy
                                     </button>
-                                    <button type="button" class="btn btn-outline-success market-cta-btn">
-                                        <el-icon><Collection /></el-icon>
-                                        <span>Place Limit Order</span>
+                                    <button class="btn btn-sm lots-btn-outline flex-fill">
+                                        <el-icon><View /></el-icon> View
                                     </button>
-                                    <button type="button" class="btn btn-light market-cta-btn">
-                                        <el-icon><Reading /></el-icon>
-                                        <span>Request Sample</span>
+                                    <button class="btn btn-sm lots-btn-ghost">
+                                        <el-icon><Medal /></el-icon>
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
 
-                                <div class="row g-2 mt-3">
-                                    <div class="col-6">
-                                        <div class="trust-badge">
-                                            <el-icon><Check /></el-icon>
-                                            <span>Secure Payment</span>
-                                        </div>
+                    <!-- Grid empty state -->
+                    <div v-else class="lots-empty mb-4">
+                        <el-icon class="lots-empty__icon"><Box /></el-icon>
+                        <strong>No lots match your filters</strong>
+                        <span>Try adjusting the filters above or <button class="btn btn-link p-0" @click="clearFilters">clear all</button></span>
+                    </div>
+                </div>
+
+                <!-- ── 6. Table View ─────────────────────────────────────── -->
+                <div v-else class="lots-table-card mb-4">
+                    <table class="table align-middle mb-0 lots-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" class="form-check-input"></th>
+                                <th>Lot</th>
+                                <th>Origin</th>
+                                <th>Type</th>
+                                <th>Process</th>
+                                <th>Quality</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Demand</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody v-if="filteredLots.length">
+                            <tr v-for="lot in filteredLots" :key="lot.id" :class="{ 'lots-table__row--selected': isSelected(lot.id) }">
+                                <td><input type="checkbox" class="form-check-input" :checked="isSelected(lot.id)" @change="toggleSelect(lot.id)"></td>
+                                <td>
+                                    <div class="fw-semibold" style="font-size:0.8125rem;">{{ lot.lot_code }}</div>
+                                    <div class="text-muted" style="font-size:0.75rem;">{{ lot.name }}</div>
+                                </td>
+                                <td style="font-size:0.8125rem;">{{ lot.origin }}</td>
+                                <td><span class="badge bg-light text-dark border" style="font-size:0.7rem;">{{ lot.type }}</span></td>
+                                <td style="font-size:0.8125rem;">{{ lot.process }}</td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle" style="font-size:0.7rem;">
+                                        {{ lot.qualityScore.toFixed(1) }}
+                                    </span>
+                                </td>
+                                <td style="font-size:0.8125rem;">{{ lot.availableLabel }}</td>
+                                <td class="fw-semibold" style="font-size:0.8125rem;">${{ lot.pricePerKg.toFixed(2) }}/kg</td>
+                                <td>
+                                    <span class="badge rounded-pill" :class="`bg-${lot.demandTone}-subtle text-${lot.demandTone}-emphasis border border-${lot.demandTone}-subtle`" style="font-size:0.7rem;">
+                                        {{ lot.demand }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <span v-for="badge in lot.badges" :key="badge" class="badge rounded-pill lots-badge" :class="badgeClass(badge)">{{ badge }}</span>
                                     </div>
-                                    <div class="col-6">
-                                        <div class="trust-badge">
-                                            <el-icon><Checked /></el-icon>
-                                            <span>Verified Lot</span>
-                                        </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <button class="btn btn-sm lots-btn-primary px-2"><el-icon><View /></el-icon></button>
+                                        <button class="btn btn-sm lots-btn-outline px-2"><el-icon><ShoppingCart /></el-icon></button>
+                                        <button class="btn btn-sm lots-btn-ghost px-2"><el-icon><Medal /></el-icon></button>
                                     </div>
-                                    <div class="col-6">
-                                        <div class="trust-badge">
-                                            <el-icon><Van /></el-icon>
-                                            <span>Export Ready</span>
-                                        </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tbody v-else>
+                            <tr><td colspan="11" class="text-center py-5 text-muted" style="font-size:0.875rem;">No lots match your current filters.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ── 7. Featured Lots ──────────────────────────────────── -->
+                <div v-if="featuredLots.length" class="mb-4">
+                    <div class="lots-section-heading mb-3">
+                        <el-icon><Star /></el-icon>
+                        <span>Featured Lots</span>
+                    </div>
+                    <div class="row g-3">
+                        <div v-for="f in featuredLots" :key="f.title" class="col-12 col-md-4">
+                            <div class="lots-featured-card" :class="`lots-featured-card--${f.tone}`">
+                                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                    <div>
+                                        <div class="lots-featured-label">{{ f.title }}</div>
+                                        <div class="lots-featured-name">{{ f.lot.name }}</div>
                                     </div>
-                                    <div class="col-6">
-                                        <div class="trust-badge">
-                                            <el-icon><Connection /></el-icon>
-                                            <span>Blockchain Verified</span>
-                                        </div>
-                                    </div>
+                                    <span class="lots-featured-score">{{ f.lot.qualityScore.toFixed(1) }}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mb-3" style="font-size:0.8125rem;color:#6b7280;">
+                                    <el-icon><Location /></el-icon>
+                                    <span>{{ f.lot.origin }}</span>
+                                    <span>·</span>
+                                    <span>${{ f.lot.pricePerKg.toFixed(2) }}/kg</span>
+                                    <span>·</span>
+                                    <span>{{ f.lot.process }}</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm lots-btn-primary flex-fill">View Lot</button>
+                                    <button class="btn btn-sm lots-btn-outline flex-fill"><el-icon><ShoppingCart /></el-icon> Buy</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- ── 8–11. Bottom row ──────────────────────────────────── -->
+                <div class="row g-3 mb-4">
+
+                    <!-- 8. Price & Demand Trends -->
+                    <div class="col-12 col-lg-5">
+                        <div class="lots-card h-100">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="lots-section-heading">
+                                    <el-icon><TrendCharts /></el-icon>
+                                    <span>Price &amp; Demand Trends</span>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button v-for="r in ['7D','30D','90D']" :key="r" class="btn" :class="timeRange === r ? 'lots-btn-primary' : 'lots-btn-outline'" @click="timeRange = r">{{ r }}</button>
+                                </div>
+                            </div>
+                            <div class="lots-chart">
+                                <div v-for="bar in trendBars" :key="bar.label" class="lots-chart-col">
+                                    <div class="lots-chart-bars">
+                                        <div class="lots-chart-bar lots-chart-bar--arabica" :style="{ height: `${bar.arabica}%` }"></div>
+                                        <div class="lots-chart-bar lots-chart-bar--robusta" :style="{ height: `${bar.robusta}%` }"></div>
+                                    </div>
+                                    <span class="lots-chart-label">{{ bar.label }}</span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-3 mt-2">
+                                <span class="lots-legend"><span class="lots-legend-dot lots-legend-dot--arabica"></span>Arabica</span>
+                                <span class="lots-legend"><span class="lots-legend-dot lots-legend-dot--robusta"></span>Robusta</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 9. Lot Readiness Indicator -->
+                    <div class="col-12 col-lg-4">
+                        <div class="lots-card h-100">
+                            <div class="lots-section-heading mb-3">
+                                <el-icon><Check /></el-icon>
+                                <span>Lot Readiness</span>
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                <div v-for="item in readiness" :key="item.label" class="lots-readiness-row">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <el-icon :class="`text-${item.tone}`"><component :is="item.icon" /></el-icon>
+                                        <span>{{ item.label }}</span>
+                                    </div>
+                                    <span class="badge rounded-pill" :class="`bg-${item.tone}-subtle text-${item.tone}-emphasis border border-${item.tone}-subtle`">{{ item.count }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 10 & 12. Seller Preview + Alerts -->
+                    <div class="col-12 col-lg-3 d-flex flex-column gap-3">
+
+                        <!-- Seller Preview -->
+                        <div class="lots-card">
+                            <div class="lots-section-heading mb-3">
+                                <el-icon><User /></el-icon>
+                                <span>Seller Preview</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="lots-seller-avatar"><el-icon><User /></el-icon></div>
+                                <div>
+                                    <div class="lots-seller-name">Bean Origin Co-op</div>
+                                    <div class="lots-seller-meta">Uganda · <span class="text-success">Verified</span></div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm lots-btn-outline flex-fill"><el-icon><Message /></el-icon> Contact</button>
+                                <button class="btn btn-sm lots-btn-ghost flex-fill"><el-icon><View /></el-icon> Profile</button>
+                            </div>
+                        </div>
+
+                        <!-- Smart Alerts -->
+                        <div class="lots-card flex-fill">
+                            <div class="lots-section-heading mb-3">
+                                <el-icon><TrendCharts /></el-icon>
+                                <span>Smart Alerts</span>
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                <div v-for="(key, label) in { 'New Lots': 'newLots', 'Price Drops': 'priceDrops', 'Demand Spikes': 'demandSpikes', 'Export Ready': 'exportReady' }" :key="key" class="lots-alert-row">
+                                    <span>{{ key }}</span>
+                                    <el-switch v-model="alerts[label]" size="small" />
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div><!-- /container -->
+
+            <!-- ── 11. Bulk Actions Bar ──────────────────────────────────── -->
+            <Transition name="lots-bulk-slide">
+                <div v-if="selectedLots.length" class="lots-bulk-bar">
+                    <span class="lots-bulk-count">{{ selectedLots.length }} lot{{ selectedLots.length > 1 ? 's' : '' }} selected</span>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm lots-btn-primary"><el-icon><ShoppingCart /></el-icon> Bulk Buy</button>
+                        <button class="btn btn-sm lots-btn-outline"><el-icon><View /></el-icon> Compare</button>
+                        <button class="btn btn-sm lots-btn-outline"><el-icon><Download /></el-icon> Export</button>
+                        <button class="btn btn-sm lots-btn-ghost" @click="clearSelection">Clear</button>
+                    </div>
+                </div>
+            </Transition>
+
+            <!-- ── 13. Floating Chatbot ──────────────────────────────────── -->
+            <div class="lots-fab-wrap">
+                <Transition name="lots-chat-slide">
+                    <div v-if="chatOpen" class="lots-chatbot">
+                        <div class="lots-chatbot__header">
+                            <div>
+                                <div class="lots-chatbot__title">Lots Advisor</div>
+                                <div class="lots-chatbot__sub">Bean Origin AI</div>
+                            </div>
+                            <button class="lots-chatbot__close" @click="chatOpen = false">×</button>
+                        </div>
+                        <div class="lots-chatbot__body">
+                            <div v-for="(msg, i) in chatMessages" :key="i" class="lots-chat-msg" :class="`lots-chat-msg--${msg.role}`">
+                                {{ msg.text }}
+                            </div>
+                        </div>
+                        <div class="lots-chatbot__prompts">
+                            <button v-for="p in suggestedPrompts" :key="p" class="lots-prompt-chip" @click="usePrompt(p)">{{ p }}</button>
+                        </div>
+                        <div class="lots-chatbot__input">
+                            <input v-model="chatInput" placeholder="Ask about lots…" @keydown.enter="sendChat">
+                            <button @click="sendChat"><el-icon><Message /></el-icon></button>
+                        </div>
+                    </div>
+                </Transition>
+                <button class="lots-fab" @click="chatOpen = !chatOpen">
+                    <el-icon><ChatDotRound /></el-icon>
+                </button>
             </div>
-        </section>
+
+        </div>
     </AppLayout>
 </template>
 
 <style scoped>
-.market-page {
-    font-family: 'Source Sans 3', sans-serif;
-    color: #111827;
-    line-height: 1.45;
-}
-
-.market-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-    color: #111827;
-}
-
-.market-subtitle,
-.market-section-subtitle,
-.market-row-subtext,
-.market-summary-subtext,
-.market-detail-label,
-.market-total-card span {
-    color: #6b7280;
-}
-
-.market-subtitle,
-.market-section-subtitle,
-.market-row-subtext,
-.market-summary-subtext,
-.featured-lot-detail,
-.featured-lot-meta,
-.market-chart-note,
-.market-total-card,
-.trust-badge,
-.alert-row {
-    font-size: 0.8125rem;
-    line-height: 1.5;
-}
-
-.market-card {
-    background: #fff;
-    border: 1px solid #edf1f5;
-    border-radius: 20px;
-    box-shadow: none;
-}
-
-.market-toolbar-btn,
-.market-action-btn,
-.market-cta-btn,
-.market-control {
-    border-radius: 12px;
-}
-
-.market-toolbar-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.55rem 0.9rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-color: #e9eef3;
-    background: #fff;
-}
-
-.market-toolbar-btn .el-icon,
-.market-action-btn .el-icon,
-.market-cta-btn .el-icon {
-    font-size: 1rem;
-}
-
-.market-summary-card {
-    min-height: 128px;
-}
-
-.market-summary-label,
-.market-sidebar-kicker,
-.featured-lot-label,
-.market-form-label,
-.market-detail-label,
-.market-insight-label,
-.market-table thead th,
-.market-alert-badge,
-.featured-lot-chip,
-.market-buy-form :deep(.el-form-item__label) {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.625rem;
-    font-weight: 600;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: #94a3b8;
-}
-
-.market-summary-value {
-    margin-top: 0.35rem;
-    font-size: 1.5rem;
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -0.03em;
-    color: #111827;
-}
-
-.market-icon-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 14px;
-    background: #f3f8f5;
-    color: #2d6a4f;
-}
-
-.market-icon-badge .el-icon,
-.market-insight-icon .el-icon {
-    font-size: 1.15rem;
-}
-
-.market-section-heading {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-}
-
-.market-section-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.9rem;
-    height: 1.9rem;
-    border-radius: 999px;
-    background: #f8fafc;
-    color: #2d6a4f;
-}
-
-.market-section-icon .el-icon {
-    font-size: 1rem;
-}
-
-.market-insight-bar {
-    padding: 1rem 1.15rem;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #2d6a4f 0%, #24553f 100%);
-    box-shadow: none;
-    color: #fff;
-    border: 1px solid rgba(45, 106, 79, 0.12);
-}
-
-.market-insight-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.14);
-}
-
-.market-insight-label {
-    opacity: 0.8;
-}
-
-.market-insight-text {
-    font-size: 0.875rem;
-    font-weight: 600;
-    line-height: 1.45;
-}
-
-.market-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.45rem 0.7rem;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-}
-
-.market-section-title,
-.market-sidebar-title {
-    font-size: 1.125rem;
-    font-weight: 700;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    color: #111827;
-}
-
-.market-table thead th {
-    padding: 0.9rem 1rem;
-    background: #f8fafc;
-    border-bottom-color: #edf1f5;
-    white-space: nowrap;
-}
-
-.market-table tbody td {
-    padding: 0.95rem 1rem;
-    vertical-align: middle;
-    border-color: #edf1f5;
-    font-size: 0.875rem;
-}
-
-.market-filter-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.45rem 0.7rem;
-    color: #475569;
-}
-
-.market-filter-badge .el-icon {
-    font-size: 0.95rem;
-}
-
-.market-table tbody tr {
-    cursor: pointer;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.market-table tbody tr:hover {
-    background: #fbfcfd;
-}
-
-.market-table tbody tr.is-selected {
-    background: #f5fbf8;
-    box-shadow: inset 3px 0 0 #198754;
-}
-
-.market-status-badge {
-    font-weight: 600;
-}
-
-.market-meta-cluster {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem;
-    line-height: 1.35;
-}
-
-.market-meta-cluster--status {
-    max-width: 18rem;
-}
-
-.market-profile-badge {
-    color: #475569;
-    font-size: 0.72rem;
-    font-weight: 600;
-}
-
-.market-profile-score {
-    font-weight: 700;
-}
-
-.market-inline-meta {
-    color: #6b7280;
-    font-size: 0.72rem;
-    white-space: nowrap;
-}
-
-.market-action-btn,
-.market-cta-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-}
-
-.featured-lot {
-    padding: 1rem;
-    border: 1px solid #edf1f5;
-    border-radius: 18px;
+/* ── Base ───────────────────────────────────────────────────────────────────── */
+.lots-page {
+    background: #ffffff;
     min-height: 100%;
-}
-
-.featured-lot.is-mint {
-    background: linear-gradient(180deg, #f6fbf8 0%, #ffffff 100%);
-}
-
-.featured-lot.is-green {
-    background: linear-gradient(180deg, #f3f8f5 0%, #ffffff 100%);
-}
-
-.featured-lot.is-amber {
-    background: linear-gradient(180deg, #fffaf1 0%, #ffffff 100%);
-}
-
-.featured-lot-name,
-.market-detail-value,
-.market-total-value {
-    font-weight: 800;
+    font-family: 'Manrope', system-ui, sans-serif;
     color: #111827;
 }
 
-.featured-lot-detail {
-    margin-top: 0.25rem;
-    color: #6b7280;
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+.lots-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e9eef3;
 }
-
-.featured-lot-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    align-items: center;
-    margin-top: 0.7rem;
-    color: #64748b;
-    font-weight: 500;
-}
-
-.featured-lot-chip {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.28rem 0.55rem;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid #e4eaef;
-    color: #30543f;
-    letter-spacing: 0.08em;
-}
-
-.featured-lot-stat {
-    flex-shrink: 0;
-    min-width: 3.5rem;
-    padding: 0.6rem 0.75rem;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid #e4eaef;
-    text-align: center;
-    font-size: 1rem;
+.lots-title {
+    font-size: 1.125rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     color: #111827;
 }
-
-.market-mini-chart {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.55rem;
-    align-items: end;
-    min-height: 158px;
-    padding: 0.75rem;
-    border-radius: 16px;
-    background: #f8fafc;
-    border: 1px solid #edf1f5;
-}
-
-.market-mini-chart-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.market-bars {
-    display: flex;
-    align-items: end;
-    justify-content: center;
-    gap: 0.3rem;
-    height: 108px;
-}
-
-.market-bar {
-    display: inline-block;
-    width: 0.6rem;
-    border-radius: 999px 999px 0 0;
-}
-
-.market-bar.is-arabica {
-    background: #198754;
-}
-
-.market-bar.is-robusta {
-    background: #0dcaf0;
-}
-
-.market-legend-dot {
-    width: 0.6rem;
-    height: 0.6rem;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.market-chart-note {
-    padding: 0.75rem 0.85rem;
-    border-radius: 14px;
-    background: #f8fafc;
-    border: 1px solid #edf1f5;
-    color: #64748b;
-    line-height: 1.45;
-}
-
-.market-inline-icon {
-    margin-top: 0.1rem;
-    color: #2d6a4f;
-}
-
-.market-inline-icon .el-icon {
-    font-size: 1rem;
-}
-
-.alert-row,
-.market-selected-lot,
-.market-detail-card,
-.trust-badge {
-    padding: 0.9rem;
-    border: 1px solid #edf1f5;
-    border-radius: 16px;
-    background: #fbfcfd;
-}
-
-.market-detail-card {
-    height: 100%;
-}
-
-.alert-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.85rem;
-}
-
-.market-alert-badge {
-    flex-shrink: 0;
-    margin-top: 0.1rem;
-    letter-spacing: 0.08em;
-}
-
-.market-control {
-    min-height: 44px;
-    border-color: #e8edf3;
-    box-shadow: none;
-    font-size: 0.875rem;
-}
-
-.market-control:focus {
-    border-color: #198754;
-    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.12);
-}
-
-.market-buy-form :deep(.el-form-item) {
-    margin-bottom: 0.9rem;
-}
-
-.market-buy-form :deep(.el-form-item__label) {
-    padding-bottom: 0.45rem;
-    line-height: 1.2;
-}
-
-.market-buy-form :deep(.el-input),
-.market-buy-form :deep(.el-select) {
-    width: 100%;
-}
-
-.market-buy-form :deep(.el-input .el-input__wrapper),
-.market-buy-form :deep(.el-select .el-select__wrapper) {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 0 0 1px #e8edf3 inset;
-    min-height: 44px;
-    padding-left: 0.85rem;
-    padding-right: 0.85rem;
-}
-
-.market-buy-form :deep(.el-input .el-input__wrapper.is-focus),
-.market-buy-form :deep(.el-select .el-select__wrapper.is-focused),
-.market-buy-form :deep(.el-select .el-select__wrapper:focus-within) {
-    box-shadow: 0 0 0 1px #198754 inset, 0 0 0 0.2rem rgba(25, 135, 84, 0.12);
-}
-
-.market-total-card {
-    padding: 1rem;
-    border-radius: 18px;
-    background: #f8fafc;
-    border: 1px solid #edf1f5;
+.lots-subtitle { font-size: 0.8125rem; color: #6b7280; }
+.lots-filter-select {
+    width: auto;
+    min-width: 120px;
+    border-radius: 6px;
+    border-color: #e5e7eb;
     font-size: 0.8125rem;
+    height: 32px;
+    padding-top: 0;
+    padding-bottom: 0;
 }
+.lots-filter-label { font-size: 0.8125rem; color: #374151; }
 
-.market-total-label {
+/* ── Buttons ────────────────────────────────────────────────────────────────── */
+.lots-btn-primary {
+    background: #004532;
+    border-color: #004532;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 5px;
 }
-
-.market-total-label .el-icon {
-    font-size: 0.95rem;
-    color: #64748b;
-}
-
-.trust-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    height: 100%;
+.lots-btn-primary:hover { background: #065f46; border-color: #065f46; color: #fff; }
+.lots-btn-outline {
+    background: #fff;
+    border-color: #d1d5db;
+    color: #374151;
+    border-radius: 6px;
+    font-size: 0.8125rem;
     font-weight: 600;
-    color: #304153;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.lots-btn-outline:hover { background: #f9fafb; }
+.lots-btn-ghost {
+    background: #f3f4f6;
+    border-color: transparent;
+    color: #374151;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.lots-btn-ghost:hover { background: #e5e7eb; }
+
+/* ── Insight Strip ──────────────────────────────────────────────────────────── */
+.lots-insight-bar {
+    padding: 0.875rem 1.1rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #004532 0%, #065f46 100%);
+    color: #fff;
+}
+.lots-insight-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(255,255,255,0.14);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+}
+.lots-insight-kicker { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.1em; opacity: 0.7; text-transform: uppercase; }
+.lots-insight-text   { font-size: 0.875rem; font-weight: 600; line-height: 1.4; }
+.lots-insight-badge  { background: rgba(255,255,255,0.14); color: #fff; font-size: 0.6875rem; padding: 5px 10px; border-radius: 999px; }
+
+/* ── KPI Cards ──────────────────────────────────────────────────────────────── */
+.lots-kpi-card {
+    background: #fff;
+    border: 1px solid #e9eef3;
+    border-radius: 10px;
+    padding: 0.875rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.lots-kpi-label { font-size: 0.6875rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; }
+.lots-kpi-value { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.03em; color: #111827; line-height: 1; margin: 4px 0 2px; }
+.lots-kpi-sub   { font-size: 0.6875rem; color: #9ca3af; }
+.lots-kpi-icon  {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+}
+.lots-kpi-icon--default { background: #f3f4f6; color: #374151; }
+.lots-kpi-icon--success { background: #dcfce7; color: #15803d; }
+.lots-kpi-icon--info    { background: #dbeafe; color: #1d4ed8; }
+.lots-kpi-icon--warning { background: #fef9c3; color: #a16207; }
+
+/* ── Section headings ───────────────────────────────────────────────────────── */
+.lots-section-heading {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 0.9375rem; font-weight: 700; color: #111827;
+}
+.lots-section-label {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.875rem; font-weight: 700; color: #111827;
 }
 
-.trust-badge .el-icon {
-    color: #198754;
+/* ── Shared card ────────────────────────────────────────────────────────────── */
+.lots-card {
+    background: #fff;
+    border: 1px solid #e9eef3;
+    border-radius: 12px;
+    padding: 1.1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
-.market-sidebar-sticky {
-    position: sticky;
-    top: 88px;
+/* ── Grid cards ─────────────────────────────────────────────────────────────── */
+.lots-grid-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.lots-grid-card:hover         { box-shadow: 0 4px 12px rgba(0,69,50,0.08); border-color: #a7f3d0; }
+.lots-grid-card--selected     { border-color: #004532; background: #f0fdf4; }
+
+.lots-grid-code  { font-size: 0.6875rem; font-weight: 700; color: #9ca3af; }
+.lots-grid-name  { font-size: 0.9375rem; font-weight: 700; color: #111827; line-height: 1.3; }
+
+.lots-badge { font-size: 0.6rem; padding: 2px 8px; }
+
+.lots-meta-cell {
+    background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 7px;
+    padding: 6px 8px; display: flex; flex-direction: column; gap: 1px;
+}
+.lots-meta-cell span { font-size: 0.625rem; color: #9ca3af; display: flex; align-items: center; gap: 4px; }
+.lots-meta-cell strong { font-size: 0.8125rem; color: #111827; font-weight: 600; }
+
+.lots-score-label { font-size: 0.625rem; color: #9ca3af; font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+.lots-score-bar   { width: 80px; height: 5px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+.lots-score-bar__fill { height: 100%; background: #004532; border-radius: 999px; }
+.lots-score-val   { font-size: 0.8125rem; font-weight: 700; color: #004532; }
+.lots-price-val   { font-size: 1rem; font-weight: 800; color: #111827; }
+
+.lots-watchlist-btn {
+    border: none; background: none; padding: 2px; color: #d1d5db; font-size: 14px; cursor: pointer;
+    line-height: 1;
+}
+.lots-watchlist-btn:hover { color: #f59e0b; }
+
+/* ── Table ──────────────────────────────────────────────────────────────────── */
+.lots-table-card {
+    border: 1px solid #e9eef3;
+    border-radius: 12px;
+    overflow: hidden;
+    overflow-x: auto;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.lots-table thead th {
+    background: #f8fafc;
+    border-bottom-color: #e9eef3;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+    padding: 10px 12px;
+    white-space: nowrap;
+}
+.lots-table tbody td { padding: 10px 12px; border-color: #f3f4f6; vertical-align: middle; }
+.lots-table tbody tr { transition: background 0.1s; }
+.lots-table tbody tr:hover { background: #f9fafb; }
+.lots-table__row--selected { background: #f0fdf4 !important; }
+
+/* ── Featured Lots ──────────────────────────────────────────────────────────── */
+.lots-featured-card {
+    border-radius: 12px;
+    padding: 1.1rem;
+    border: 1px solid #e5e7eb;
+}
+.lots-featured-card--mint  { background: linear-gradient(160deg, #f0fdf4, #ffffff); }
+.lots-featured-card--green { background: linear-gradient(160deg, #f0fdf9, #ffffff); }
+.lots-featured-card--amber { background: linear-gradient(160deg, #fffbeb, #ffffff); }
+
+.lots-featured-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; }
+.lots-featured-name  { font-size: 1rem; font-weight: 700; color: #111827; }
+.lots-featured-score {
+    min-width: 42px; height: 42px; border-radius: 10px;
+    background: rgba(255,255,255,0.9); border: 1px solid #e5e7eb;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.9375rem; font-weight: 800; color: #111827; flex-shrink: 0;
 }
 
-:deep(.fab-shell) {
-    display: none;
+/* ── Trend Chart ────────────────────────────────────────────────────────────── */
+.lots-chart {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    align-items: end;
+    height: 110px;
+    background: #f8fafc;
+    border: 1px solid #e9eef3;
+    border-radius: 8px;
+    padding: 8px;
+}
+.lots-chart-col    { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.lots-chart-bars   { display: flex; gap: 2px; align-items: flex-end; height: 80px; }
+.lots-chart-bar    { width: 8px; border-radius: 3px 3px 0 0; }
+.lots-chart-bar--arabica { background: #004532; }
+.lots-chart-bar--robusta { background: #a7f3d0; }
+.lots-chart-label  { font-size: 0.625rem; color: #9ca3af; font-weight: 600; }
+.lots-legend       { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; color: #6b7280; }
+.lots-legend-dot   { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.lots-legend-dot--arabica { background: #004532; }
+.lots-legend-dot--robusta { background: #a7f3d0; }
+
+/* ── Readiness ──────────────────────────────────────────────────────────────── */
+.lots-readiness-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; background: #f9fafb; border-radius: 8px;
+    font-size: 0.8125rem; color: #374151;
 }
 
-@media (max-width: 1399.98px) {
-    .market-sidebar-sticky {
-        position: static;
-    }
+/* ── Seller ─────────────────────────────────────────────────────────────────── */
+.lots-seller-avatar {
+    width: 40px; height: 40px; border-radius: 999px;
+    background: linear-gradient(135deg, #004532, #065f46);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
 }
+.lots-seller-name { font-size: 0.9375rem; font-weight: 700; color: #111827; }
+.lots-seller-meta { font-size: 0.75rem; color: #6b7280; }
 
-@media (max-width: 991.98px) {
-    .market-title {
-        font-size: 1.35rem;
-    }
-
-    .market-card,
-    .market-insight-bar {
-        border-radius: 18px;
-    }
-
-    .market-table thead th,
-    .market-table tbody td {
-        padding-left: 0.8rem;
-        padding-right: 0.8rem;
-    }
-
-    .featured-lot-stat {
-        min-width: 3.1rem;
-        padding-inline: 0.65rem;
-    }
+/* ── Smart Alerts ───────────────────────────────────────────────────────────── */
+.lots-alert-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 0; border-bottom: 1px solid #f3f4f6;
+    font-size: 0.8125rem; color: #374151;
 }
+.lots-alert-row:last-child { border-bottom: none; }
 
-@media (max-width: 575.98px) {
-    .alert-row {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .market-alert-badge {
-        align-self: flex-start;
-    }
+/* ── Bulk Actions Bar ───────────────────────────────────────────────────────── */
+.lots-bulk-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: #111827; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    gap: 1rem; padding: 0.75rem 1.5rem;
+    flex-wrap: wrap;
 }
+.lots-bulk-count { font-size: 0.875rem; font-weight: 600; }
+.lots-bulk-slide-enter-active,
+.lots-bulk-slide-leave-active  { transition: transform 0.25s ease; }
+.lots-bulk-slide-enter-from,
+.lots-bulk-slide-leave-to      { transform: translateY(100%); }
+
+/* ── Chatbot ────────────────────────────────────────────────────────────────── */
+.lots-fab-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 300; display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; }
+.lots-fab {
+    width: 50px; height: 50px; border-radius: 999px; border: none;
+    background: #004532; color: #fff; font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,69,50,0.35); cursor: pointer;
+    transition: background 0.15s ease;
+}
+.lots-fab:hover { background: #065f46; }
+
+.lots-chatbot {
+    width: 320px; border-radius: 16px; overflow: hidden;
+    background: #fff; border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    display: flex; flex-direction: column;
+}
+.lots-chatbot__header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; background: #004532; color: #fff;
+}
+.lots-chatbot__title { font-size: 0.9375rem; font-weight: 700; }
+.lots-chatbot__sub   { font-size: 0.6875rem; opacity: 0.7; }
+.lots-chatbot__close { border: none; background: none; color: #fff; font-size: 20px; line-height: 1; cursor: pointer; }
+
+.lots-chatbot__body {
+    padding: 12px; max-height: 220px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.lots-chat-msg { font-size: 0.8125rem; padding: 8px 12px; border-radius: 10px; line-height: 1.5; max-width: 85%; }
+.lots-chat-msg--assistant { background: #f3f4f6; color: #111827; align-self: flex-start; }
+.lots-chat-msg--user      { background: #004532; color: #fff; align-self: flex-end; }
+
+.lots-chatbot__prompts { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 12px; border-top: 1px solid #f3f4f6; }
+.lots-prompt-chip {
+    font-size: 0.6875rem; padding: 4px 10px; border-radius: 999px;
+    background: #f3f4f6; border: 1px solid #e5e7eb; color: #374151;
+    cursor: pointer; white-space: nowrap;
+}
+.lots-prompt-chip:hover { background: #e5e7eb; }
+
+.lots-chatbot__input {
+    display: flex; gap: 6px; padding: 10px 12px; border-top: 1px solid #f3f4f6;
+}
+.lots-chatbot__input input {
+    flex: 1; border: 1px solid #e5e7eb; border-radius: 8px;
+    padding: 7px 10px; font-size: 0.8125rem; outline: none;
+}
+.lots-chatbot__input input:focus { border-color: #004532; }
+.lots-chatbot__input button {
+    border: none; background: #004532; color: #fff; border-radius: 8px;
+    width: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.lots-chat-slide-enter-active,
+.lots-chat-slide-leave-active  { transition: opacity 0.2s ease, transform 0.2s ease; }
+.lots-chat-slide-enter-from,
+.lots-chat-slide-leave-to      { opacity: 0; transform: translateY(10px); }
+
+/* ── Empty State ────────────────────────────────────────────────────────────── */
+.lots-empty {
+    padding: 3rem 2rem; text-align: center;
+    border: 1px dashed #e5e7eb; border-radius: 12px; background: #fafafa;
+}
+.lots-empty__icon { font-size: 2.5rem; color: #d1d5db; display: block; margin: 0 auto 0.75rem; }
+.lots-empty strong { display: block; font-size: 0.9375rem; color: #374151; margin-bottom: 6px; }
+.lots-empty span   { font-size: 0.8125rem; color: #9ca3af; }
+
+/* ── Element Plus overrides ─────────────────────────────────────────────────── */
+:deep(.el-switch) { --el-switch-on-color: #004532; }
 </style>

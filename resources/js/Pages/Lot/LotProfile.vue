@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PublishButton from '@/Components/Button/PublishButton.vue';
 import {
     Box,
     Checked,
@@ -149,10 +150,8 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                             <span class="lp-sub-sep">&middot;</span>
                             {{ process }}
                         </p>
-                        <div class="lp-hero__actions mt-1">
-                            <button class="lp-btn lp-btn--primary">
-                                <el-icon><ShoppingCart /></el-icon> Buy Now
-                            </button>
+                        <div class="lp-hero__actions mt-3">
+                            <PublishButton :lot="props.lot" />
                             <button class="lp-btn lp-btn--hero-outline">
                                 <el-icon><Money /></el-icon> Place Bid
                             </button>
@@ -450,7 +449,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                         <div class="lp-trade-card__eyebrow"><el-icon><ShoppingCart /></el-icon> BUY NOW</div>
                                         <div class="lp-trade-card__price">Shs. {{ pricePerKg }}<small>/kg</small></div>
                                         <div class="lp-trade-card__meta">Min. 60 kg · Fixed price</div>
-                                        <button class="lp-btn lp-btn--primary lp-btn--full">Buy Now</button>
+                                        <PublishButton :lot="props.lot" style="width:100%;justify-content:center;" />
                                     </div>
                                     <div class="lp-trade-card">
                                         <div class="lp-trade-card__eyebrow"><el-icon><Medal /></el-icon> PLACE BID</div>

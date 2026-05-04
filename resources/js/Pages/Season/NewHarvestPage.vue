@@ -574,7 +574,7 @@ onBeforeUnmount(() => {
                                 </article>
                             </div>
 
-                            <div class="submit-row">
+                            <div class="submit-row mt-2 border-top pt-4">
                                 <SubmitButton :loading="form.processing" :full-width="false">
                                     Save Harvest
                                 </SubmitButton>
