@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
-import { Plus, MapLocation, OfficeBuilding, Shield, ArrowRight, User, TrendCharts, Check, Tickets } from '@element-plus/icons-vue';
+import { Plus, MapLocation, OfficeBuilding, Lock, ArrowRight, User, TrendCharts, Check, Tickets } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -323,7 +323,7 @@ const goToFarmProfile = (farmId) => {
                     <aside class="producer-side-column">
                         <section class="producer-credentials-card">
                             <div class="producer-card-heading">
-                                <span class="producer-card-heading-icon"><el-icon><Shield /></el-icon></span>
+                                <span class="producer-card-heading-icon"><el-icon><Lock /></el-icon></span>
                                 <span>Credentials &amp; Certs</span>
                             </div>
 
@@ -343,7 +343,7 @@ const goToFarmProfile = (farmId) => {
                             </div>
 
                             <button type="button" class="producer-outline-button">
-                                <el-icon><Shield /></el-icon> Update Credentials
+                                <el-icon><Lock /></el-icon> Update Credentials
                             </button>
                         </section>
                     </aside>

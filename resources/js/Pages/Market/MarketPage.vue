@@ -84,7 +84,7 @@ const summaryCards = computed(() => {
         { label: 'Total Lots',     value: d.length.toString().padStart(2, '0'), sub: 'Live on market',       icon: Box,          tone: '' },
         { label: 'Export-Ready',   value: d.filter((l) => l.badges.includes('Export Ready')).length,         sub: 'Verified for export',    icon: Van,          tone: 'success' },
         { label: 'Tokenised',      value: d.filter((l) => l.badges.includes('Tokenised')).length,            sub: 'On-chain assets',        icon: Connection,   tone: 'info' },
-        { label: 'Avg. Price',     value: d.length ? `$${avgPrice.toFixed(2)}` : '—',                        sub: 'Per kg across lots',     icon: CollectionTag,tone: '' },
+        { label: 'Avg. Price',     value: d.length ? `Shs. ${avgPrice.toFixed(2)}` : '—',                        sub: 'Per kg across lots',     icon: CollectionTag,tone: '' },
         { label: 'High Demand',    value: d.filter((l) => ['High', 'Very High'].includes(l.demand)).length,  sub: 'Active buyer interest',  icon: TrendCharts,  tone: 'warning' },
     ];
 });
@@ -680,9 +680,10 @@ const badgeClass = (badge) => {
     border-radius: 6px;
     font-size: 0.8125rem;
     font-weight: 600;
+    padding: 7px 16px;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 .lots-btn-primary:hover { background: #065f46; border-color: #065f46; color: #fff; }
 .lots-btn-outline {
@@ -692,9 +693,10 @@ const badgeClass = (badge) => {
     border-radius: 6px;
     font-size: 0.8125rem;
     font-weight: 600;
+    padding: 7px 16px;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 .lots-btn-outline:hover { background: #f9fafb; }
 .lots-btn-ghost {
@@ -704,9 +706,10 @@ const badgeClass = (badge) => {
     border-radius: 6px;
     font-size: 0.8125rem;
     font-weight: 600;
+    padding: 7px 16px;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 .lots-btn-ghost:hover { background: #e5e7eb; }
 

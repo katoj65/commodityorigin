@@ -10,26 +10,206 @@ use Inertia\Response;
 
 class Dashboard extends Controller
 {
-    /**
-     * Display the authenticated user's dashboard.
-     */
-    public function userDashboard(Request $request): Response
-    {
-        $user = $request->user()->loadMissing('profile');
-        $roles = RoleMetadata::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get(['slug', 'name', 'description']);
-        $hasProfile = ! is_null($user->profile);
-        $showSelectRoleModal = $hasProfile
-            && $user->role === 'user';
+/**
+ * Display the authenticated user's dashboard.
+ */
+public function userDashboard(Request $request)
+{
 
-        return Inertia::render('Dashboard', [
-            'title' => 'Dashboard',
-            'hasProfile' => $hasProfile,
-            'currentRole' => $user->role,
-            'roles' => $roles,
-            'showSelectRoleModal' => $showSelectRoleModal,
-        ]);
-    }
+$role = $request->user()->role;
+
+if ($role === 'buyer') {
+return self::buyerDashboard($request);
+} elseif ($role === 'seller') {
+return self::sellerDashboard($request);
+} elseif ($role === 'admin') {
+return self::adminDashboard($request);
+}elseif ($role === 'investor') {
+return self::investorDashboard($request);
+}elseif ($role === 'farmer') {
+return self::farmerDashboard($request);
+}
+
+// Default fallback for 'user' role and any other role
+return Inertia::render('Dashboard', [
+'title' => 'Dashboard',
+]);
+
+
+
+// $user = $request->user()->loadMissing('profile');
+//     $roles = RoleMetadata::query()
+//         ->where('is_active', true)
+//         ->orderBy('sort_order')
+//         ->get(['slug', 'name', 'description']);
+//     $hasProfile = ! is_null($user->profile);
+//     $showSelectRoleModal = $hasProfile
+//         && $user->role === 'user';
+
+
+
+
+
+//     return Inertia::render('Dashboard', [
+//         'title' => 'Dashboard',
+//         'hasProfile' => $hasProfile,
+//         'currentRole' => $user->role,
+//         'roles' => $roles,
+//         'showSelectRoleModal' => $showSelectRoleModal,
+//     ]);
+}
+
+
+
+
+
+
+
+
+//buyer dashboard
+static function buyerDashboard($request)
+{
+
+$user = $request->user()->loadMissing('profile');
+$roles = RoleMetadata::query()
+->where('is_active', true)
+->orderBy('sort_order')
+->get(['slug', 'name', 'description']);
+$hasProfile = ! is_null($user->profile);
+$showSelectRoleModal = $hasProfile
+&& $user->role === 'user';
+
+return Inertia::render('Dashboards/BuyerDashboard', [
+'title' => 'Dashboard',
+'hasProfile' => $hasProfile,
+'currentRole' => $user->role,
+'roles' => $roles,
+'showSelectRoleModal' => $showSelectRoleModal,
+]);
+
+
+}
+
+
+
+
+
+
+
+
+//seller dashboard
+static function sellerDashboard($request)
+{
+
+
+$user = $request->user()->loadMissing('profile');
+$roles = RoleMetadata::query()
+->where('is_active', true)
+->orderBy('sort_order')
+->get(['slug', 'name', 'description']);
+$hasProfile = ! is_null($user->profile);
+$showSelectRoleModal = $hasProfile
+&& $user->role === 'user';
+
+return Inertia::render('Dashboard', [
+'title' => 'Dashboard',
+'hasProfile' => $hasProfile,
+'currentRole' => $user->role,
+'roles' => $roles,
+'showSelectRoleModal' => $showSelectRoleModal,
+]);
+
+
+
+}
+
+//admin dashboard
+static function adminDashboard($request)
+{
+$user = $request->user()->loadMissing('profile');
+$roles = RoleMetadata::query()
+->where('is_active', true)
+->orderBy('sort_order')
+->get(['slug', 'name', 'description']);
+$hasProfile = ! is_null($user->profile);
+$showSelectRoleModal = $hasProfile
+&& $user->role === 'user';
+
+return Inertia::render('Dashboard', [
+'title' => 'Dashboard',
+'hasProfile' => $hasProfile,
+'currentRole' => $user->role,
+'roles' => $roles,
+'showSelectRoleModal' => $showSelectRoleModal,
+]);
+}
+
+
+
+
+
+// investor dashboard
+static function investorDashboard($request)
+{
+$user = $request->user()->loadMissing('profile');
+$roles = RoleMetadata::query()
+->where('is_active', true)
+->orderBy('sort_order')
+->get(['slug', 'name', 'description']);
+$hasProfile = ! is_null($user->profile);
+$showSelectRoleModal = $hasProfile
+&& $user->role === 'user';
+
+return Inertia::render('Dashboards/DashboardInvestor', [
+'title' => 'Investor Dashboard',
+'hasProfile' => $hasProfile,
+'currentRole' => $user->role,
+'roles' => $roles,
+'showSelectRoleModal' => $showSelectRoleModal,
+]);
+}
+
+
+//farmer dashboard
+static function farmerDashboard($request){
+$user = $request->user()->loadMissing('profile');
+$roles = RoleMetadata::query()
+->where('is_active', true)
+->orderBy('sort_order')
+->get(['slug', 'name', 'description']);
+$hasProfile = ! is_null($user->profile);
+$showSelectRoleModal = $hasProfile
+&& $user->role === 'user';
+return Inertia::render('Dashboards/DashboardFarmer', [
+'title' => 'Farmer Dashboard',
+'hasProfile' => $hasProfile,
+'currentRole' => $user->role,
+'roles' => $roles,
+'showSelectRoleModal' => $showSelectRoleModal,
+]);
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
