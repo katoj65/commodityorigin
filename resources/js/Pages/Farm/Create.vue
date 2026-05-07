@@ -1,20 +1,14 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { Location, User, OfficeBuilding, Crop, MapLocation, Plus, InfoFilled } from '@element-plus/icons-vue';
+import { Location, User, OfficeBuilding, Crop, MapLocation, InfoFilled } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
 const props = defineProps({
-    farmer: {
-        type: Object,
-        required: true,
-    },
-    varietyOptions: {
-        type: Array,
-        default: () => [],
-    },
+    farmer: { type: Object, required: true },
+    varietyOptions: { type: Array, default: () => [] },
 });
 
 const farmerName = computed(() =>
@@ -26,9 +20,9 @@ const farmerLocation = computed(() =>
 );
 
 const farmerMeta = computed(() => [
-    { label: 'Coffee Type',  value: props.farmer.coffee_type || 'Not set',                icon: 'crop' },
-    { label: 'Cooperative',  value: props.farmer.cooperative || 'Independent producer',   icon: 'office' },
-    { label: 'Origin',       value: farmerLocation.value,                                  icon: 'map' },
+    { label: 'Coffee Type', value: props.farmer.coffee_type || 'Not set',              icon: 'crop'   },
+    { label: 'Cooperative', value: props.farmer.cooperative || 'Independent producer', icon: 'office' },
+    { label: 'Origin',      value: farmerLocation.value,                               icon: 'map'    },
 ]);
 
 const form = useForm({
@@ -48,91 +42,100 @@ const submit = () => form.post(route('farm.store'));
     <AppLayout title="Add Farm" full-width flush :show-banner="false">
         <Head title="Add Farm" />
 
-        <div class="af-root">
+        <div class="af-page">
 
-            <!-- ── Hero ──────────────────────────────────────────────────── -->
-            <section class="af-hero">
-                <div class="af-hero__inner">
-                    <div class="af-hero__left">
-                        <h1 class="af-hero__title">Add Farm</h1>
-                        <p class="af-hero__sub">
-                            Register a new farm location for <strong class="af-hero__farmer">{{ farmerName }}</strong> and capture its traceability details.
-                        </p>
+            <!-- ── Page Header ──────────────────────────────────────────── -->
+            <div class="af-header">
+                <div class="af-header__inner">
+                    <div>
+                        <div class="af-header__kicker">Farm Registration</div>
+                        <h1 class="af-header__title">Add Farm</h1>
+                        <p class="af-header__sub">Register and manage farm information for traceable coffee production.</p>
                     </div>
-                    <Link :href="route('farmer.show', farmer.id)" class="af-back-btn">
-                        Back to {{ farmerName }}
-                    </Link>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <Link :href="route('farm.index')" class="af-action-btn">View Farms</Link>
+                        <Link :href="route('farmer.show', farmer.id)" class="af-action-btn af-action-btn--primary">
+                            ← Back to {{ farmerName }}
+                        </Link>
+                    </div>
                 </div>
-            </section>
+            </div>
 
-            <!-- ── Body ──────────────────────────────────────────────────── -->
+            <!-- ── Body ────────────────────────────────────────────────── -->
             <div class="af-body">
-                <div class="af-grid">
+                <div class="af-layout">
 
-                    <!-- ── Form card ──────────────────────────────────────── -->
-                    <div class="af-card">
-                        <div class="af-card__head">
-                           
-                            <div>
-                                <div class="af-card__title">Farm Details</div>
-                                <div class="af-card__sub">Enter the farm's location, size, variety, and agronomic context.</div>
-                            </div>
-                        </div>
-
+                    <!-- ── Main form ────────────────────────────────────── -->
+                    <div class="af-main">
                         <form @submit.prevent="submit">
-                            <div class="af-form-grid">
 
-                                <!-- Farmer (readonly) -->
-                                <div class="af-field af-field--full">
-                                    <label class="af-label">Farmer</label>
-                                    <el-input :model-value="farmerName" readonly class="af-input" />
+                            <!-- Section: Farm Identity -->
+                            <div class="af-section">
+                                <div class="af-section__head">
+                                    <span class="af-section__title">Farm Identity</span>
                                 </div>
-
-                                <!-- Farm name -->
-                                <div class="af-field">
-                                    <label class="af-label">Farm Name <span class="af-required">*</span></label>
-                                    <el-input v-model="form.name" placeholder="e.g. Elgon Heights Farm" class="af-input" />
-                                    <InputError class="af-error" :message="form.errors.name" />
+                                <div class="af-section__body">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="af-label">Farm Name <span class="af-req">*</span></label>
+                                            <el-input v-model="form.name" placeholder="e.g. Elgon Heights Farm" class="af-input" />
+                                            <InputError class="af-err" :message="form.errors.name" />
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
 
-                                <!-- Location -->
-                                <div class="af-field">
-                                    <label class="af-label">Location</label>
-                                    <el-input v-model="form.location" placeholder="Village, parish, district" :prefix-icon="MapLocation" class="af-input" />
-                                    <InputError class="af-error" :message="form.errors.location" />
+                            <!-- Section: Location & Geography -->
+                            <div class="af-section">
+                                <div class="af-section__head">
+                                    <span class="af-section__title">Location &amp; Geography</span>
                                 </div>
-
-                                <!-- Farm size -->
-                                <div class="af-field">
-                                    <label class="af-label">Farm Size</label>
-                                    <el-input v-model="form.size" placeholder="e.g. 12 hectares" class="af-input" />
-                                    <InputError class="af-error" :message="form.errors.size" />
+                                <div class="af-section__body">
+                                    <div class="row g-3">
+                                        <div class="col-12 col-sm-6">
+                                            <label class="af-label">Location</label>
+                                            <el-input v-model="form.location" placeholder="Village, parish, district" :prefix-icon="MapLocation" class="af-input" />
+                                            <InputError class="af-err" :message="form.errors.location" />
+                                        </div>
+                                        <div class="col-12 col-sm-6">
+                                            <label class="af-label">Altitude</label>
+                                            <el-input v-model="form.altitude" placeholder="e.g. 1,850 masl" class="af-input" />
+                                            <InputError class="af-err" :message="form.errors.altitude" />
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
 
-                                <!-- Altitude -->
-                                <div class="af-field">
-                                    <label class="af-label">Altitude</label>
-                                    <el-input v-model="form.altitude" placeholder="e.g. 1,850 masl" class="af-input" />
-                                    <InputError class="af-error" :message="form.errors.altitude" />
+                            <!-- Section: Production Details -->
+                            <div class="af-section">
+                                <div class="af-section__head">
+                                    <span class="af-section__title">Production Details</span>
                                 </div>
-
-                                <!-- Variety -->
-                                <div class="af-field af-field--full">
-                                    <label class="af-label">Variety</label>
-                                    <el-select v-model="form.variety" placeholder="Select crop variety" clearable class="af-input">
-                                        <el-option
-                                            v-for="option in varietyOptions"
-                                            :key="option"
-                                            :label="option"
-                                            :value="option"
-                                        />
-                                    </el-select>
-                                    <InputError class="af-error" :message="form.errors.variety" />
+                                <div class="af-section__body">
+                                    <div class="row g-3">
+                                        <div class="col-12 col-sm-6">
+                                            <label class="af-label">Farm Size</label>
+                                            <el-input v-model="form.size" placeholder="e.g. 12 hectares" class="af-input" />
+                                            <InputError class="af-err" :message="form.errors.size" />
+                                        </div>
+                                        <div class="col-12 col-sm-6">
+                                            <label class="af-label">Variety <span class="af-req">*</span></label>
+                                            <el-select v-model="form.variety" placeholder="Select crop variety" clearable class="af-input w-100">
+                                                <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
+                                            </el-select>
+                                            <InputError class="af-err" :message="form.errors.variety" />
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
 
-                                <!-- Notes -->
-                                <div class="af-field af-field--full">
-                                    <label class="af-label">Notes</label>
+                            <!-- Section: Notes -->
+                            <div class="af-section af-section--last">
+                                <div class="af-section__head">
+                                    <span class="af-section__title">Notes &amp; Context</span>
+                                    <span class="af-section__opt">Optional</span>
+                                </div>
+                                <div class="af-section__body">
                                     <el-input
                                         v-model="form.notes"
                                         type="textarea"
@@ -140,65 +143,77 @@ const submit = () => form.post(route('farm.store'));
                                         placeholder="Add farm notes, access details, or agronomy context."
                                         class="af-input"
                                     />
-                                    <InputError class="af-error" :message="form.errors.notes" />
+                                    <InputError class="af-err" :message="form.errors.notes" />
                                 </div>
                             </div>
 
-                            <div class="af-actions">
-                                <SubmitButton :loading="form.processing" style="width: auto; min-width: 160px;">
+                            <!-- Action bar -->
+                            <div class="af-action-bar">
+                                <Link :href="route('farmer.show', farmer.id)" class="af-action-btn">Cancel</Link>
+                                <SubmitButton :loading="form.processing" :full-width="false">
                                     Save Farm
                                 </SubmitButton>
                             </div>
+
                         </form>
                     </div>
 
-                    <!-- ── Sidebar ─────────────────────────────────────────── -->
+                    <!-- ── Sidebar ──────────────────────────────────────── -->
                     <aside class="af-sidebar">
 
-                        <!-- Farmer summary -->
-                        <div class="af-farmer-card">
-                            <div class="af-farmer-card__top">
-                                <div>
-                                    <p class="af-farmer-card__eyebrow">Linked Farmer</p>
-                                    <h2 class="af-farmer-card__name">{{ farmerName }}</h2>
-                                    <div class="af-farmer-card__location">
-                                        <el-icon class="af-farmer-card__loc-icon"><Location /></el-icon>
-                                        <span>{{ farmerLocation }}</span>
+                        <!-- Linked farmer -->
+                        <div class="af-sidebar-block">
+                            <div class="af-sidebar-block__head">Linked Farmer</div>
+                            <div class="af-sidebar-block__body">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="af-farmer-avatar">
+                                        <el-icon :size="16"><User /></el-icon>
+                                    </div>
+                                    <div>
+                                        <div class="af-farmer-name">{{ farmerName }}</div>
+                                        <div class="af-farmer-loc">
+                                            <el-icon style="font-size:11px;"><Location /></el-icon>
+                                            {{ farmerLocation }}
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="af-farmer-avatar">
-                                    <el-icon :size="18"><User /></el-icon>
-                                </div>
-                            </div>
-
-                            <div class="af-meta-list">
-                                <div v-for="item in farmerMeta" :key="item.label" class="af-meta-item">
-                                    <span class="af-meta-item__icon">
-                                        <el-icon>
-                                            <Crop v-if="item.icon === 'crop'" />
-                                            <OfficeBuilding v-else-if="item.icon === 'office'" />
-                                            <MapLocation v-else />
-                                        </el-icon>
-                                    </span>
-                                    <div class="af-meta-item__body">
-                                        <span class="af-meta-item__label">{{ item.label }}</span>
-                                        <span class="af-meta-item__value">{{ item.value }}</span>
+                                <div class="af-meta-list">
+                                    <div v-for="item in farmerMeta" :key="item.label" class="af-meta-row">
+                                        <span class="af-meta-label">{{ item.label }}</span>
+                                        <span class="af-meta-value">{{ item.value }}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Intake guide -->
-                        <div class="af-guide">
-                            <div class="af-guide__head">
-                                <el-icon class="af-guide__icon"><InfoFilled /></el-icon>
-                                <span class="af-guide__title">Farm Intake Guide</span>
+                        <div class="af-sidebar-block">
+                            <div class="af-sidebar-block__head">
+                                <el-icon style="font-size:13px; color:#004532;"><InfoFilled /></el-icon>
+                                Farm Intake Guide
                             </div>
-                            <ul class="af-guide__list">
-                                <li>Use the exact farm name recognized by the farmer or cooperative.</li>
-                                <li>Select the registered crop variety so farm records stay standardized.</li>
-                                <li>Include altitude and notes that help future lot registration.</li>
-                            </ul>
+                            <div class="af-sidebar-block__body">
+                                <ul class="af-guide-list">
+                                    <li>Use the exact farm name recognised by the farmer or cooperative.</li>
+                                    <li>Select the registered crop variety to keep farm records standardised.</li>
+                                    <li>Include altitude and notes to help future lot registration.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Required fields -->
+                        <div class="af-sidebar-block">
+                            <div class="af-sidebar-block__head">Required Fields</div>
+                            <div class="af-sidebar-block__body">
+                                <div class="af-req-list">
+                                    <div class="af-req-row" :class="form.name ? 'af-req-row--done' : ''">
+                                        <span class="af-req-dot"></span> Farm Name
+                                    </div>
+                                    <div class="af-req-row" :class="form.variety ? 'af-req-row--done' : ''">
+                                        <span class="af-req-dot"></span> Crop Variety
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                     </aside>
@@ -211,319 +226,153 @@ const submit = () => form.post(route('farm.store'));
 
 <style scoped>
 /* ── Tokens ────────────────────────────────────────────────────────────────── */
-.af-root {
-    --primary:          #004532;
-    --primary-grad:     #065f46;
-    --on-primary:       #ffffff;
-    --on-surface:       #191c1e;
-    --on-surface-var:   #74777a;
-    --surface-white:    #ffffff;
-    --surface-low:      #f2f4f6;
-    --surface-high:     #e6e8ea;
-    --primary-fixed:    #a6f2d1;
-    --on-primary-fixed: #002116;
-    --required:         #c0392b;
-    --inner-pad:        2rem;
+.af-page {
+    --green:          #004532;
+    --on-surface:     #111827;
+    --on-surface-var: #6b7280;
+    --border:         #d1d5db;
+    --border-light:   #e5e7eb;
+    --surface-low:    #f8fafc;
+    --danger:         #dc2626;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface-white);
+    background: #ffffff;
     color: var(--on-surface);
     min-height: 100%;
 }
 
-/* ── Hero ──────────────────────────────────────────────────────────────────── */
-.af-hero {
-    background: var(--surface-white);
-    border-bottom: 1px solid var(--surface-high);
-    padding: 1.5rem 0;
-}
-.af-hero__inner {
-    padding: 0 var(--inner-pad);
+/* ── Header ────────────────────────────────────────────────────────────────── */
+.af-header { background: #fff; border-bottom: 1px solid var(--border-light); padding: 14px 0; }
+.af-header__inner {
+    padding: 0 1.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
+    gap: 1rem;
     flex-wrap: wrap;
 }
-.af-hero__title {
-    font-size: 1.25rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--on-surface);
-    margin: 0 0 0.25rem;
-    line-height: 1.2;
-}
-.af-hero__sub {
-    font-size: 0.8125rem;
-    color: var(--on-surface-var);
-    margin: 0;
-    line-height: 1.5;
-}
-.af-hero__farmer { color: var(--on-surface); font-weight: 700; }
+.af-header__kicker { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 2px; }
+.af-header__title  { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; color: var(--on-surface); margin: 0 0 2px; line-height: 1.2; }
+.af-header__sub    { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0; }
 
-.af-back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--on-surface);
-    text-decoration: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    border: 1px solid var(--surface-high);
-    background: var(--surface-white);
-    white-space: nowrap;
-    transition: background 0.12s ease;
-}
-.af-back-btn:hover { background: var(--surface-low); }
+/* Header buttons */
+.af-action-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); text-decoration: none; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--border); background: #fff; white-space: nowrap; }
+.af-action-btn:hover { background: var(--surface-low); color: var(--on-surface); }
+.af-action-btn--primary { background: var(--green); border-color: var(--green); color: #fff; }
+.af-action-btn--primary:hover { background: #065f46; color: #fff; }
 
 /* ── Body ──────────────────────────────────────────────────────────────────── */
-.af-body { padding: 2rem var(--inner-pad) 3rem; }
-
-.af-grid {
+.af-body { padding: 1.75rem 1.5rem 3rem; }
+.af-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 1fr) 280px;
     gap: 1.5rem;
     align-items: start;
+    max-width: 1100px;
 }
 
-/* ── Form card ─────────────────────────────────────────────────────────────── */
-.af-card {
-    background: var(--surface-white);
-    border: 1px solid var(--surface-high);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-}
-
-.af-card__head {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid var(--surface-low);
-}
-.af-card__icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: rgba(0,69,50,0.08);
-    color: var(--primary);
+/* ── Sections ──────────────────────────────────────────────────────────────── */
+.af-section { border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 1rem; overflow: hidden; }
+.af-section--last { margin-bottom: 0; }
+.af-section__head {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    flex-shrink: 0;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--surface-low);
+    border-bottom: 1px solid var(--border-light);
 }
-.af-card__title {
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: var(--on-surface);
-    margin-bottom: 2px;
-}
-.af-card__sub {
-    font-size: 0.8125rem;
-    color: var(--on-surface-var);
-    line-height: 1.5;
-}
+.af-section__title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface); }
+.af-section__opt   { font-size: 0.6875rem; color: var(--on-surface-var); font-weight: 400; margin-left: auto; }
+.af-section__body  { padding: 1.125rem 1rem; }
 
-/* ── Form grid ─────────────────────────────────────────────────────────────── */
-.af-form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.25rem;
-}
-.af-field         { display: flex; flex-direction: column; gap: 6px; }
-.af-field--full   { grid-column: 1 / -1; }
-
-.af-label {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--on-surface);
-}
-.af-required { color: var(--required); margin-left: 2px; }
-.af-error    { font-size: 0.75rem; color: var(--required); margin-top: 4px; }
-
-/* Input overrides */
+/* ── Labels & inputs ───────────────────────────────────────────────────────── */
+.af-label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--on-surface); margin-bottom: 6px; }
+.af-req   { color: var(--danger); }
+.af-err   { font-size: 0.75rem; color: var(--danger); margin-top: 4px; display: block; }
 .af-input { width: 100%; }
 
 :deep(.af-input .el-input__wrapper),
-:deep(.af-input .el-select__wrapper),
-:deep(.af-input.el-date-editor .el-input__wrapper) {
-    background: var(--surface-white);
-    border-radius: 6px !important;
-    box-shadow: 0 0 0 1px var(--surface-high) inset;
-    min-height: 42px;
-    font-family: 'Manrope', system-ui, sans-serif;
-    font-size: 0.875rem;
-}
-:deep(.af-input .el-input__wrapper.is-focus),
-:deep(.af-input .el-select__wrapper.is-focused) {
-    box-shadow: 0 0 0 1px var(--primary) inset,
-                0 0 0 3px rgba(0,69,50,0.08);
-}
+:deep(.af-input.el-select .el-select__wrapper),
 :deep(.af-input .el-textarea__inner) {
-    background: var(--surface-white);
     border-radius: 6px !important;
-    box-shadow: 0 0 0 1px var(--surface-high) inset;
+    border: 1.5px solid var(--border) !important;
+    box-shadow: none !important;
     font-family: 'Manrope', system-ui, sans-serif;
     font-size: 0.875rem;
-    padding: 10px 14px;
-    resize: vertical;
+    background: #fff;
+    transition: border-color 0.15s;
 }
+:deep(.af-input .el-input__wrapper:focus-within),
+:deep(.af-input.el-select .el-select__wrapper:focus-within),
 :deep(.af-input .el-textarea__inner:focus) {
-    box-shadow: 0 0 0 1px var(--primary) inset,
-                0 0 0 3px rgba(0,69,50,0.08);
+    border-color: var(--green) !important;
+    box-shadow: none !important;
     outline: none;
 }
-:deep(.af-input .el-input__inner[readonly]) {
+:deep(.af-input--readonly .el-input__inner) {
     color: var(--on-surface-var);
     cursor: default;
 }
 
-/* Actions */
-.af-actions {
+/* ── Action bar ────────────────────────────────────────────────────────────── */
+.af-action-bar {
     display: flex;
-    justify-content: flex-end;
-    padding-top: 1.25rem;
-    margin-top: 1.5rem;
-    border-top: 1px solid var(--surface-low);
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0 0;
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-light);
 }
 
 /* ── Sidebar ───────────────────────────────────────────────────────────────── */
-.af-sidebar { display: flex; flex-direction: column; gap: 1rem; }
+.af-sidebar { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 60px; }
+
+.af-sidebar-block { border: 1px solid var(--border-light); border-radius: 8px; overflow: hidden; }
+.af-sidebar-block__head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 14px;
+    background: var(--surface-low);
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--on-surface);
+}
+.af-sidebar-block__body { padding: 1rem; }
 
 /* Farmer card */
-.af-farmer-card {
-    background: var(--surface-white);
-    border: 1px solid var(--surface-high);
-    border-radius: 0.75rem;
-    overflow: hidden;
-}
-.af-farmer-card__top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1.25rem;
-    background: var(--surface-low);
-    border-bottom: 1px solid var(--surface-high);
-}
-.af-farmer-card__eyebrow {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: var(--on-surface-var);
-    letter-spacing: 0.04em;
-    margin: 0 0 4px;
-}
-.af-farmer-card__name {
-    font-size: 1rem;
-    font-weight: 800;
-    color: var(--on-surface);
-    margin: 0 0 6px;
-    line-height: 1.2;
-}
-.af-farmer-card__location {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.8125rem;
-    color: var(--on-surface-var);
-}
-.af-farmer-card__loc-icon { font-size: 13px; color: var(--primary); flex-shrink: 0; }
+.af-farmer-avatar { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border-light); background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.af-farmer-name   { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); line-height: 1.2; margin-bottom: 2px; }
+.af-farmer-loc    { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--on-surface-var); }
 
-.af-farmer-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
-    color: var(--on-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
+.af-meta-list { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border-light); border-radius: 6px; overflow: hidden; }
+.af-meta-row  { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 7px 10px; border-bottom: 1px solid var(--border-light); font-size: 0.8125rem; }
+.af-meta-row:last-child { border-bottom: none; }
+.af-meta-label { color: var(--on-surface-var); font-size: 0.75rem; flex-shrink: 0; }
+.af-meta-value { color: var(--on-surface); font-weight: 600; text-align: right; word-break: break-word; }
 
-/* Meta list */
-.af-meta-list {
-    padding: 1rem 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-}
-.af-meta-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-.af-meta-item__icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    background: rgba(0,69,50,0.07);
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    flex-shrink: 0;
-    margin-top: 1px;
-}
-.af-meta-item__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.af-meta-item__label {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: var(--on-surface-var);
-}
-.af-meta-item__value {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--on-surface);
-    line-height: 1.4;
-    overflow-wrap: anywhere;
-}
+/* Guide */
+.af-guide-list { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 6px; }
+.af-guide-list li { font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.6; }
 
-/* Intake guide */
-.af-guide {
-    background: var(--surface-white);
-    border: 1px solid var(--surface-high);
-    border-radius: 0.75rem;
-    padding: 1.25rem;
-}
-.af-guide__head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 0.875rem;
-}
-.af-guide__icon { font-size: 15px; color: var(--primary); flex-shrink: 0; }
-.af-guide__title {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: var(--on-surface);
-}
-.af-guide__list {
-    margin: 0;
-    padding-left: 1.1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-.af-guide__list li {
-    font-size: 0.8125rem;
-    color: var(--on-surface-var);
-    line-height: 1.6;
-}
+/* Required field checker */
+.af-req-list { display: flex; flex-direction: column; gap: 6px; }
+.af-req-row  { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; color: var(--on-surface-var); }
+.af-req-row--done { color: #166534; font-weight: 600; }
+.af-req-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--border); display: inline-block; flex-shrink: 0; }
+.af-req-row--done .af-req-dot { background: #16a34a; border-color: #16a34a; }
 
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 960px) {
-    .af-grid { grid-template-columns: 1fr; }
-    .af-root { --inner-pad: 1.25rem; }
-    .af-hero__inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .af-layout { grid-template-columns: 1fr; }
+    .af-sidebar { position: static; }
 }
 @media (max-width: 640px) {
-    .af-root { --inner-pad: 1rem; }
-    .af-form-grid { grid-template-columns: 1fr; }
-    .af-actions { justify-content: stretch; }
+    .af-body { padding: 1rem 1rem 3rem; }
+    .af-header__inner { flex-direction: column; align-items: flex-start; gap: 10px; }
 }
 </style>

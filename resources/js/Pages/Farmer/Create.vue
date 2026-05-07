@@ -47,7 +47,7 @@ const submit = () => {
             <div class="fc-top-bar">
                 <div class="fc-top-bar__inner">
                     <div>
-                        <div class="fc-top-bar__kicker">Bean Origin · Farmer Onboarding</div>
+                        <div class="fc-top-bar__kicker">Farmer Onboarding</div>
                         <div class="fc-top-bar__title">Register a new farmer profile</div>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
@@ -66,7 +66,7 @@ const submit = () => {
                     <div class="fc-success-circle">✓</div>
                     <h2 class="fc-success-title">Farmer Registered!</h2>
                     <p class="fc-success-sub">
-                        <strong>{{ form.first_name }} {{ form.last_name }}</strong> has been added to the Bean Origin traceability network.
+                        <strong>{{ form.first_name }} {{ form.last_name }}</strong> has been successfully registered and added to the traceability network.
                     </p>
                     <div class="d-flex flex-wrap gap-2 justify-content-center">
                         <a :href="route('farmer.index')" class="btn fc-btn-primary">View Farmer Directory</a>
