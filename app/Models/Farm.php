@@ -27,6 +27,18 @@ class Farm extends Model
         'longitude',
         'status',
         'notes',
+        'total_bags_produced',
+        'temperature',
+        'rainfall',
+        'humidity',
+        'soil_type',
+        'climatic_zone',
+    ];
+
+    protected $casts = [
+        'total_bags_produced' => 'integer',
+        'latitude'            => 'float',
+        'longitude'           => 'float',
     ];
 
     /**

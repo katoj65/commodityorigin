@@ -26,8 +26,14 @@ class FarmResource extends JsonResource
             'longitude' => $this->longitude,
             'status' => $this->status,
             'notes' => $this->notes,
-            'created_at' => optional($this->created_at)?->toDateTimeString(),
-            'updated_at' => optional($this->updated_at)?->toDateTimeString(),
+            'total_bags_produced' => $this->total_bags_produced,
+            'temperature'         => $this->temperature,
+            'rainfall'            => $this->rainfall,
+            'humidity'            => $this->humidity,
+            'soil_type'           => $this->soil_type,
+            'climatic_zone'       => $this->climatic_zone,
+            'created_at'          => optional($this->created_at)?->toDateTimeString(),
+            'updated_at'          => optional($this->updated_at)?->toDateTimeString(),
             'farmer' => $this->whenLoaded('farmer', function (): array {
                 return [
                     'id' => $this->farmer?->id,

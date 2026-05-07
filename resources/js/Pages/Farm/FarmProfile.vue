@@ -29,12 +29,15 @@ const estateBrief = computed(() =>
 const altitudeRange = computed(() => props.farm.altitude || '1,950m – 2,100m');
 const farmSize      = computed(() => props.farm.size || '—');
 const variety       = computed(() => props.farm.variety || props.farm.farmer?.coffee_type || 'Arabica');
-const rainfall      = computed(() => props.farm.altitude ? '1,850 mm' : '1,620 mm');
-const temperature   = computed(() => props.farm.altitude ? '18.5°C – 24.2°C' : '20.1°C – 26.8°C');
-const humidityIndex = computed(() => props.farm.status?.toLowerCase() === 'active' ? '62%' : '58%');
+const rainfall      = computed(() => props.farm.rainfall    || (props.farm.altitude ? '1,850 mm' : '1,620 mm'));
+const temperature   = computed(() => props.farm.temperature || (props.farm.altitude ? '18.5°C – 24.2°C' : '20.1°C – 26.8°C'));
+const humidityIndex = computed(() => props.farm.humidity    || (props.farm.status?.toLowerCase() === 'active' ? '62%' : '58%'));
+const soilType      = computed(() => props.farm.soil_type     || '—');
+const climaticZone  = computed(() => props.farm.climatic_zone || '—');
 const bagsEstimate  = computed(() => {
+    if (props.farm.total_bags_produced) return `${props.farm.total_bags_produced.toLocaleString()} Bags`;
     const d = String(props.farm.size || '').match(/\d+/);
-    return d?.[0] ? `${d[0]} Bags` : '420 Bags';
+    return d?.[0] ? `${d[0]} Bags` : '—';
 });
 const thumb = computed(() =>
     [props.farm.name?.[0], props.farm.variety?.[0]].filter(Boolean).join('').slice(0, 2).toUpperCase() || 'ES',
@@ -134,7 +137,7 @@ const sendChat = () => {
     setTimeout(() => chatMsgs.value.push({ role: 'bot', text: `${farmName.value} is performing excellently with a quality score of ${qualityScore.value}. It is export-ready with ${lots.length} active lots and strong buyer interest from EU and UAE markets.` }), 700);
 };
 const usePrompt = (p) => { chatInput.value = p; sendChat(); };
-
+const data=computed(()=>props.farm);
 
 
 
@@ -142,8 +145,6 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 
 <template>
     <AppLayout :title="farmName" full-width flush :show-banner="false">
-   
-
         <div class="fp-page">
 
             <!-- ── 1. Sticky Header ───────────────────────────────────── -->
@@ -202,14 +203,16 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                         <div class="col-12 col-md-4 fp-hero-specs">
                             <div class="fp-specs-title">Farm Specifications</div>
                             <div class="row g-2">
-                                <div class="col-6"><div class="fp-spec-cell"><span>Farm Size</span><strong>{{ farmSize }} Acres</strong></div></div>
+                                <div class="col-6"><div class="fp-spec-cell"><span>Farm Size</span><strong>{{ farmSize }}</strong></div></div>
                                 <div class="col-6"><div class="fp-spec-cell"><span>Altitude</span><strong>{{ altitudeRange }}</strong></div></div>
                                 <div class="col-6"><div class="fp-spec-cell"><span>Coffee Type</span><strong>{{ variety }}</strong></div></div>
-                                <div class="col-6"><div class="fp-spec-cell"><span>Est. Production</span><strong>{{ bagsEstimate }}</strong></div></div>
+                                <div class="col-6"><div class="fp-spec-cell"><span>Total Bags</span><strong>{{ bagsEstimate }}</strong></div></div>
                                 <div class="col-6"><div class="fp-spec-cell"><span>Rainfall</span><strong>{{ rainfall }}</strong></div></div>
                                 <div class="col-6"><div class="fp-spec-cell"><span>Temperature</span><strong>{{ temperature }}</strong></div></div>
                                 <div class="col-6"><div class="fp-spec-cell"><span>Humidity</span><strong>{{ humidityIndex }}</strong></div></div>
                                 <div class="col-6"><div class="fp-spec-cell"><span>Status</span><strong class="fp-up">{{ props.farm.status || 'Active' }}</strong></div></div>
+                                <div class="col-6"><div class="fp-spec-cell"><span>Soil Type</span><strong>{{ soilType }}</strong></div></div>
+                                <div class="col-6"><div class="fp-spec-cell"><span>Climatic Zone</span><strong>{{ climaticZone }}</strong></div></div>
                             </div>
                         </div>
 
@@ -279,8 +282,8 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                             <div class="fp-env-row"><span>Annual Rainfall</span><strong>{{ rainfall }}</strong></div>
                                             <div class="fp-env-row"><span>Temperature</span><strong>{{ temperature }}</strong></div>
                                             <div class="fp-env-row"><span>Humidity Index</span><strong>{{ humidityIndex }}</strong></div>
-                                            <div class="fp-env-row"><span>Soil Type</span><strong>Volcanic Red Clay</strong></div>
-                                            <div class="fp-env-row"><span>Climate Zone</span><strong>Highland Equatorial</strong></div>
+                                            <div class="fp-env-row"><span>Soil Type</span><strong>{{ soilType }}</strong></div>
+                                            <div class="fp-env-row"><span>Climate Zone</span><strong>{{ climaticZone }}</strong></div>
                                         </div>
                                     </div>
                                 </div>
