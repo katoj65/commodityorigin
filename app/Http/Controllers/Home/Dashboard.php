@@ -34,8 +34,8 @@ return self::exporterDashboard($request);
 
 
 // Default fallback for 'user' role and any other role
-return Inertia::render('Dashboard', [
-'title' => 'Dashboard',
+return Inertia::render('Dashboards', [
+'title' => 'AdminDashboard',
 ]);
 
 
@@ -138,8 +138,8 @@ $hasProfile = ! is_null($user->profile);
 $showSelectRoleModal = $hasProfile
 && $user->role === 'user';
 
-return Inertia::render('Dashboard', [
-'title' => 'Dashboard',
+return Inertia::render('Dashboards/AdminDashboard', [
+'title' => 'Admin Dashboard',
 'hasProfile' => $hasProfile,
 'currentRole' => $user->role,
 'roles' => $roles,

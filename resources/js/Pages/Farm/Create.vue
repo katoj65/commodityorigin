@@ -72,7 +72,7 @@ const submit = () => form.post(route('farm.store'));
                     <!-- ── Form card ──────────────────────────────────────── -->
                     <div class="af-card">
                         <div class="af-card__head">
-                            <span class="af-card__icon"><el-icon><Plus /></el-icon></span>
+                           
                             <div>
                                 <div class="af-card__title">Farm Details</div>
                                 <div class="af-card__sub">Enter the farm's location, size, variety, and agronomic context.</div>
