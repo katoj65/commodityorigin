@@ -43,6 +43,7 @@ defineProps({
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 10px;
     border: 1px solid #c8862a;
     background: #c8862a;
     color: #0e0b07;

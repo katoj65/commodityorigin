@@ -37,12 +37,12 @@ rel="stylesheet"
 
 <nav class="relative z-10 border-b border-white/[0.06] bg-bg/88 backdrop-blur-xl">
 <div class="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-6 lg:px-10">
-<Link :href="route('home')" class="flex items-center gap-3 no-underline">
+<div class="flex items-center gap-3">
 <ApplicationMark class="h-8 w-8 flex-shrink-0" />
 <span class="font-display text-base font-bold tracking-tight text-cream">
 Commodity <span class="text-gold">Origin</span>
 </span>
-</Link>
+</div>
 
 <div class="flex items-center gap-3">
 <span class="font-mono text-[9px] uppercase tracking-[0.18em] text-cream/45">
@@ -131,12 +131,6 @@ Set up your profile with the same identity fields used in the trading database.
 </p>
 </div>
 
-<Link
-:href="route('home')"
-class="rounded-sm border border-white/[0.1] px-3 py-2 font-mono text-[9px] uppercase tracking-[0.14em] text-cream/52 no-underline transition-colors hover:border-gold/30 hover:text-gold"
->
-Home
-</Link>
 </div>
 
 <form class="space-y-5" @submit.prevent="submit">

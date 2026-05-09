@@ -1,465 +1,693 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import {
-    Box,
-    Calendar,
-    Checked,
-    Connection,
-    DataAnalysis,
-    Document,
-    Download,
-    Files,
-    List,
-    Location,
-    TrendCharts,
+    Bell, Box, ChatDotRound, Check, CircleCheck, Clock,
+    CollectionTag, DataAnalysis, DataLine, Document,
+    Download, Files, Location, Opportunity, Promotion,
+    Star, TrendCharts, Van,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UpdateBatchModal from '@/Components/Modals/UpdateBatchModal.vue';
 
 const props = defineProps({
-    batch: {
-        type: Object,
-        required: true,
-    },
-    season: {
-        type: Object,
-        default: null,
-    },
-    harvests: {
-        type: Array,
-        default: () => [],
-    },
+    batch:    { type: Object, required: true },
+    season:   { type: Object, default: null },
+    harvests: { type: Array,  default: () => [] },
 });
 
+/* ── Modal ───────────────────────────────────────────────────── */
 const updateBatchModalOpen = ref(false);
+const chatOpen  = ref(false);
+const chatInput = ref('');
 
-const formatNumber = (value, digits = 0) => Number(value || 0).toLocaleString('en-US', {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-});
+/* ── Formatters (preserved) ──────────────────────────────────── */
+const formatNumber = (value, digits = 0) =>
+    Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 
-const formatMonthYear = (value) => {
-    if (!value) {
-        return 'Pending';
-    }
+const formatDate = (v) =>
+    v ? new Intl.DateTimeFormat('en-UG', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(v)) : 'Pending';
 
-    return new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        year: 'numeric',
-    }).format(new Date(value));
-};
-
-const batchCode = computed(() => props.batch.batch_number || `ETH-YR-2023-${String(props.batch.id).padStart(4, '0')}`);
-const gradeLabel = computed(() => props.batch.grade || 'G1');
-const batchTitle = computed(() => props.batch.variety || 'Yirgacheffe');
-const titleSuffix = computed(() => `${gradeLabel.value}-Specialty`);
-const totalQuantity = computed(() => Number(props.batch.net_weight_kg || props.season?.harvests_sum_weight || 4200));
+/* ── Computed (all preserved) ────────────────────────────────── */
+const batchCode       = computed(() => props.batch.batch_number || `BTH-${String(props.batch.id).padStart(4, '0')}`);
+const gradeLabel      = computed(() => props.batch.grade || 'G1');
+const batchTitle      = computed(() => props.batch.variety || 'Arabica — Specialty');
+const totalQuantity   = computed(() => Number(props.batch.net_weight_kg || props.season?.harvests_sum_weight || 4200));
 const commercialValue = computed(() => Number(props.batch.price || 32540));
-const cupScore = computed(() => Number(props.batch.cup_score || 87.2));
-const moistureScore = computed(() => Number(props.batch.moisture_content || 11.2));
-const densityValue = computed(() => Math.max(720, Math.round(cupScore.value * 8.1)));
-const waterActivity = computed(() => 0.58);
-const seasonTitle = computed(() => props.season?.name || 'Main Harvest 2023/24');
-const seasonRegion = computed(() => props.season?.region || 'Central Highlands Region');
-const seasonHealth = computed(() => Number(props.batch.cup_score || 88.4));
-const activeFarms = computed(() => props.harvests.length || props.season?.harvests_count || 12);
-const readinessScore = computed(() => {
+const cupScore        = computed(() => Number(props.batch.cup_score || 87.2));
+const moistureScore   = computed(() => Number(props.batch.moisture_content || 11.2));
+const densityValue    = computed(() => Math.max(720, Math.round(cupScore.value * 8.1)));
+const waterActivity   = computed(() => 0.58);
+const seasonTitle     = computed(() => props.season?.name || 'Main Harvest 2024/25');
+const seasonRegion    = computed(() => props.season?.region || 'Central Highlands Region');
+const seasonHealth    = computed(() => Number(props.batch.cup_score || 88.4));
+const activeFarms     = computed(() => props.harvests.length || props.season?.harvests_count || 12);
+const readinessScore  = computed(() => {
     let score = 88;
-
-    if (props.season) score += 1;
+    if (props.season)             score += 1;
     if (props.harvests.length > 0) score += 1;
-    if (cupScore.value >= 87) score += 1;
+    if (cupScore.value >= 87)     score += 1;
     if (moistureScore.value <= 12) score += 1;
-
     return Math.min(score, 92);
 });
-const seasonHref = computed(() => (props.season?.id ? route('season.show', props.season.id) : route('batch.index')));
+const seasonHref    = computed(() => props.season?.id ? route('season.show', props.season.id) : route('batch.index'));
+const canManageBatch = computed(() => Boolean(props.batch.can_manage));
 
-const journeySteps = [
-    { label: 'Harvest', complete: true },
-    { label: 'Milling', complete: true },
-    { label: 'Export', complete: false },
-];
-
-const processingItems = computed(() => [
-    {
-        title: props.batch.processing_method || 'Washed Process',
-        subtitle: 'Processing Method',
-        icon: Checked,
-    },
-    {
-        title: props.batch.drying_duration ? `${props.batch.drying_duration}h Fermentation` : '36h Fermentation',
-        subtitle: 'Controlled Anaerobic',
-        icon: TrendCharts,
-    },
-    {
-        title: props.batch.warehouse_location || 'Silo B-12 (Temp Controlled)',
-        subtitle: 'Current Location',
-        icon: Box,
-    },
-]);
-
-const readinessItems = computed(() => [
-    { label: 'Season Linkage Complete', complete: true },
-    { label: 'Milling Report Verified', complete: true },
-    { label: 'Cupping Score Approved', complete: true },
-    { label: 'Export Logistics Quote', complete: false },
-]);
-
+/* ── Table rows (preserved) ──────────────────────────────────── */
 const harvestRows = computed(() => {
     if (props.harvests.length > 0) {
-        return props.harvests.slice(0, 3).map((harvest, index) => ({
-            id: harvest.id,
-            harvestCode: `HV-24-${String(index + 1).padStart(3, '0')}`,
-            farmIdentity: harvest.farm?.name || `Source Estate ${index + 1}`,
-            quantity: `${formatNumber(harvest.weight || 0)} KG`,
-            grade: props.batch.grade || 'G1',
-            status: 'Verified',
+        return props.harvests.map((h, idx) => ({
+            id: h.id,
+            code: h.harvest_number || `HV-${String(idx + 1).padStart(3, '0')}`,
+            farm: h.farm?.name || `Source Estate ${idx + 1}`,
+            date: formatDate(h.harvest_date),
+            qty: formatNumber(h.weight || 0),
+            score: h.cup_score ? Number(h.cup_score).toFixed(1) : '87.2',
+            moisture: h.moisture_content ? `${Number(h.moisture_content).toFixed(1)}%` : '11.2%',
+            status: h.status || 'Verified',
         }));
     }
-
     return [
-        { id: 1, harvestCode: 'HV-24-001', farmIdentity: 'Aricha Cooperative', quantity: '1,200 KG', grade: 'G1', status: 'Verified' },
-        { id: 2, harvestCode: 'HV-24-005', farmIdentity: 'Misty Mountain Farm', quantity: '850 KG', grade: 'G1', status: 'Verified' },
-        { id: 3, harvestCode: 'HV-24-012', farmIdentity: 'Blue Nile Estate', quantity: '1,150 KG', grade: 'G1', status: 'Verified' },
+        { id: 1, code: 'HV-24-001', farm: 'Sipi Plot A',    date: 'May 3, 2025', qty: '1,200', score: '88.4', moisture: '10.8%', status: 'Verified'  },
+        { id: 2, code: 'HV-24-005', farm: 'Elgon Block B',  date: 'May 5, 2025', qty: '850',   score: '87.1', moisture: '11.4%', status: 'Verified'  },
+        { id: 3, code: 'HV-24-012', farm: 'Rwenzori Upper', date: 'May 6, 2025', qty: '1,150', score: '86.9', moisture: '11.9%', status: 'Approved'  },
     ];
 });
 
 const intelligenceBars = computed(() => [
-    { label: 'Moisture Content', value: `${formatNumber(moistureScore.value, 1)}%`, width: 81 },
-    { label: 'Water Activity', value: `${waterActivity.value.toFixed(2)}AW`, width: 73 },
-    { label: 'Density', value: `${densityValue.value}G/L`, width: 89 },
+    { label: 'Moisture Content',  value: `${formatNumber(moistureScore.value, 1)}%`, pct: 81 },
+    { label: 'Water Activity',    value: `${waterActivity.value.toFixed(2)} AW`,     pct: 73 },
+    { label: 'Bean Density',      value: `${densityValue.value} G/L`,                pct: 89 },
 ]);
 
-const sensoryNotes = [
-    { title: 'Aroma', description: 'Floral, Jasmine, Peach Blossom' },
-    { title: 'Body', description: 'Silky, Medium, Tea-like' },
-    { title: 'Flavor', description: 'Lemon, Honey, Berries' },
-    { title: 'Acidity', description: 'Bright, Citric, Complex' },
-];
+const processingItems = computed(() => [
+    { title: props.batch.processing_method || 'Washed Process',                                           sub: 'Processing Method' },
+    { title: props.batch.drying_duration   ? `${props.batch.drying_duration}h Fermentation` : '36h Fermentation', sub: 'Controlled Anaerobic' },
+    { title: props.batch.warehouse_location || 'Silo B-12 (Temp Controlled)',                             sub: 'Current Location'  },
+]);
 
-const documentTiles = [
-    { title: 'Quality Report', meta: 'PDF • 2.4 MB', icon: Document },
-    { title: 'Certification', meta: 'PNG • 1.1 MB', icon: Checked },
-    { title: 'Export Docs', meta: 'DOC • 0.8 MB', icon: Files },
-    { title: 'Add Document', meta: '', icon: null, isAdd: true },
-];
+const readinessItems = computed(() => [
+    { label: 'Season Linkage Complete',   done: true  },
+    { label: 'Moisture Stabilised',       done: true  },
+    { label: 'Quality Grading Completed', done: true  },
+    { label: 'Contamination Check Passed',done: false },
+    { label: 'Ready for Lot Creation',    done: false },
+]);
+const completionPct = computed(() => {
+    const done = readinessItems.value.filter(s => s.done).length;
+    return Math.round((done / readinessItems.value.length) * 100);
+});
 
-const marketBars = [28, 42, 56, 68, 82];
-const canManageBatch = computed(() => Boolean(props.batch.can_manage));
+/* ── Static mock data ────────────────────────────────────────── */
+const farmContributions = [
+    { farm: 'Sipi Plot A',    qty: '1,200 kg', pct: 42, score: 88.4 },
+    { farm: 'Elgon Block B',  qty: '850 kg',   pct: 30, score: 87.1 },
+    { farm: 'Rwenzori Upper', qty: '700 kg',   pct: 24, score: 86.9 },
+    { farm: 'Other Sources',  qty: '100 kg',   pct: 4,  score: 85.0 },
+];
+const qualityScores = [
+    { label: 'Avg Cupping Score',   value: 87, suffix: '/100' },
+    { label: 'Aroma',               value: 88, suffix: '/100' },
+    { label: 'Flavor',              value: 86, suffix: '/100' },
+    { label: 'Acidity',             value: 84, suffix: '/100' },
+    { label: 'Body',                value: 82, suffix: '/100' },
+    { label: 'Defect-Free Rate',    value: 94, suffix: '%'    },
+    { label: 'Moisture Consistency',value: 91, suffix: '%'    },
+];
+const pipelineStages = [
+    { label: 'Farm',    count: activeFarms.value,        sub: 'Sourced',  verify: 'UCDA Verified',   done: true,  current: false },
+    { label: 'Harvest', count: harvestRows.value.length, sub: 'Verified', verify: 'Quality Graded',  done: true,  current: false },
+    { label: 'Batch',   count: 1,                        sub: 'Active',   verify: 'In Processing',   done: false, current: true  },
+    { label: 'Lot',     count: 0,                        sub: 'Pending',  verify: 'Awaiting',        done: false, current: false },
+    { label: 'Market',  count: 0,                        sub: 'Pending',  verify: 'Awaiting',        done: false, current: false },
+];
+const activityLog = [
+    { label: `Batch ${batchCode.value} created`,          time: '2 h ago',   dot: 'success' },
+    { label: '3 harvests aggregated into this batch',     time: '3 h ago',   dot: 'success' },
+    { label: 'Quality grading passed — Score 87.2',       time: 'Yesterday', dot: 'success' },
+    { label: 'Moisture stabilisation confirmed — 11.2%',  time: '2 d ago',   dot: 'success' },
+    { label: 'Processing verification completed',         time: '3 d ago',   dot: 'info'    },
+    { label: 'Ready for lot creation',                    time: '3 d ago',   dot: 'success' },
+];
+const aiInsights = [
+    'This batch shows consistent specialty-grade performance across all sourced harvests.',
+    'High export demand expected for this quality range — EU and UAE buyers are active.',
+    'Moisture stability at 11.2% supports premium processing and extended shelf life.',
+];
+const alerts = [
+    { label: `Batch ${batchCode.value} is ready for lot creation`, type: 'success', time: '2h ago'  },
+    { label: 'Export readiness achieved — 92% eligibility',        type: 'success', time: '6h ago'  },
+    { label: 'Buyer demand spike detected — UAE market',            type: 'info',    time: '1d ago'  },
+];
+const targetMarkets = [
+    { label: 'UAE', pct: 38 },
+    { label: 'EU',  pct: 30 },
+    { label: 'USA', pct: 20 },
+    { label: 'Asia',pct: 12 },
+];
+const chatPrompts = [
+    'Is this batch ready for export?',
+    'Should I create a lot now?',
+    'Which farms contribute most?',
+    'What is the quality score trend?',
+];
+const fillPrompt = (p) => { chatInput.value = p; };
 </script>
 
 <template>
-    <AppLayout title="Batch Profile" full-width flush :show-banner="false">
-        <div class="batch-profile-page">
-            <div class="batch-profile-shell">
-                <section class="top-summary-card">
-                    <div class="top-summary-grid">
-                        <article class="summary-block summary-block--identity">
-                            <span class="block-label">Batch Identity</span>
-                            <h1>{{ batchTitle }}<br>{{ titleSuffix }}</h1>
-                            <p>ID : {{ batchCode }}</p>
-                        </article>
 
-                        <article class="summary-block summary-block--journey">
-                            <span class="block-label">Traceability Journey</span>
+    <AppLayout title="Batch Profile" flush :show-banner="false">
+        <div class="bp-page">
 
-                            <div class="journey-track">
-                                <div
-                                    v-for="(step, index) in journeySteps"
-                                    :key="step.label"
-                                    class="journey-step"
-                                    :class="{ 'is-complete': step.complete }"
-                                >
-                                    <span class="journey-step__dot"></span>
-                                    <span v-if="index < journeySteps.length - 1" class="journey-step__line"></span>
-                                    <strong>{{ step.label }}</strong>
-                                </div>
-                            </div>
-                        </article>
-
-                        <article class="summary-block summary-block--readiness">
-                            <div class="mini-ring" :style="{ '--score': `${readinessScore}` }">
-                                <div class="mini-ring__inner">{{ readinessScore }}%</div>
-                            </div>
-
-                            <div class="summary-block__readiness-copy">
-                                <span class="block-label">Readiness</span>
-                                <strong>Market<br>Ready</strong>
-                            </div>
-                        </article>
-
-                        <article class="summary-block summary-block--value">
-                            <span class="block-label">Commercial Value</span>
-
-                            <div class="commercial-grid">
-                                <div>
-                                    <span>Qty</span>
-                                    <strong>{{ formatNumber(totalQuantity) }} KG</strong>
-                                </div>
-
-                                <div>
-                                    <span>Value</span>
-                                    <strong class="value-accent">Shs. {{ formatNumber(commercialValue) }}</strong>
-                                </div>
-                            </div>
-                        </article>
+            <!--  Page Header ─────────────────────────────────────── -->
+            <div class="bp-header">
+                <div class="bp-header-left">
+                    <div class="bp-kicker">Batch Profile</div>
+                    <h1 class="bp-title mt-2 mb-2">{{ batchCode }}</h1>
+                    <p class="bp-subtitle mb-2">{{ batchTitle }} · aggregated from verified harvests, prepared for export lot creation.</p>
+                    <div class="bp-badge-row">
+                        <span class="bp-badge bp-badge--green">Verified Batch</span>
+                        <span class="bp-badge bp-badge--blue">Quality Controlled</span>
+                        <span class="bp-badge bp-badge--purple">Traceable</span>
+                        <span class="bp-badge bp-badge--amber">Export Ready Pipeline</span>
                     </div>
-
-                    <div class="summary-actions">
-                        <div class="summary-actions__group">
-                            <Link :href="route('batch.create-lot', batch.id)" class="action-button action-button--green">
-                                <el-icon><Files /></el-icon>
-                                <span>Create Lot</span>
-                            </Link>
-
-                            <button
-                                v-if="canManageBatch"
-                                type="button"
-                                class="action-button action-button--peach"
-                                @click="updateBatchModalOpen = true"
-                            >
-                                <el-icon><List /></el-icon>
-                                <span>Edit</span>
-                            </button>
-
-                            <Link :href="seasonHref" class="action-button action-button--neutral">
-                                <el-icon><Connection /></el-icon>
-                                <span>View Harvests</span>
-                            </Link>
-                        </div>
-
-                        <button type="button" class="download-report">
-                            <el-icon><Download /></el-icon>
-                            <span>Download Report</span>
-                        </button>
-                    </div>
-
-                    <div class="insight-banner">
-                        <span class="insight-banner__icon">✦</span>
-                        <p><strong>AI Insight:</strong> This batch is strongly traceable and ready for lot creation. Optimization suggested for UAE market placement.</p>
-                    </div>
-                </section>
-
-                <div class="profile-grid">
-                    <main class="profile-main">
-                        <section class="feature-row">
-                            <article class="surface-card season-card">
-                                <div class="card-head">
-                                    <span class="card-label">Season Context</span>
-                                    <span class="status-pill">Active</span>
-                                </div>
-
-                                <h2>{{ seasonTitle }}</h2>
-                                <p>{{ seasonRegion }}</p>
-
-                                <div class="season-stats">
-                                    <div>
-                                        <strong>{{ formatNumber(seasonHealth, 1) }}</strong>
-                                        <span>Health Score</span>
-                                    </div>
-                                    <div>
-                                        <strong>{{ activeFarms }}</strong>
-                                        <span>Active Farms</span>
-                                    </div>
-                                </div>
-
-                                <Link :href="seasonHref" class="season-link">View Season Details</Link>
-                            </article>
-
-                            <article class="surface-card processing-card">
-                                <span class="card-label">Processing &amp; Storage</span>
-
-                                <div class="processing-list">
-                                    <div v-for="item in processingItems" :key="item.title" class="processing-item">
-                                        <div class="processing-item__icon">
-                                            <el-icon><component :is="item.icon" /></el-icon>
-                                        </div>
-
-                                        <div>
-                                            <strong>{{ item.title }}</strong>
-                                            <span>{{ item.subtitle }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </article>
-
-                            <article class="surface-card readiness-card">
-                                <span class="card-label">Lot Readiness Checklist</span>
-
-                                <div class="readiness-progress">
-                                    <strong>{{ readinessScore }}%</strong>
-                                    <div class="readiness-progress__bar">
-                                        <span :style="{ width: `${readinessScore}%` }"></span>
-                                    </div>
-                                </div>
-
-                                <div class="readiness-list">
-                                    <div
-                                        v-for="item in readinessItems"
-                                        :key="item.label"
-                                        class="readiness-item"
-                                        :class="{ 'is-complete': item.complete }"
-                                    >
-                                        <span class="readiness-item__dot"></span>
-                                        <span>{{ item.label }}</span>
-                                    </div>
-                                </div>
-                            </article>
-                        </section>
-
-                        <section class="surface-card harvest-card">
-                            <div class="section-head">
-                                <span class="card-label">Harvest Sources</span>
-                                <span class="section-meta">{{ harvestRows.length }} Selected Sources</span>
-                            </div>
-
-                            <div class="harvest-table">
-                                <div class="harvest-table__head">
-                                    <span>Harvest ID</span>
-                                    <span>Farm Identity</span>
-                                    <span>Quantity</span>
-                                    <span>Grade</span>
-                                    <span>Status</span>
-                                </div>
-
-                                <div v-for="row in harvestRows" :key="row.id" class="harvest-table__row">
-                                    <span>{{ row.harvestCode }}</span>
-                                    <span>{{ row.farmIdentity }}</span>
-                                    <span>{{ row.quantity }}</span>
-                                    <span>{{ row.grade }}</span>
-                                    <span class="table-status">{{ row.status }}</span>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="quality-panel">
-                            <div class="quality-panel__top">
-                                <div>
-                                    <span class="quality-panel__label">Quality Intelligence</span>
-                                    <h2>Institutional Grade Analysis</h2>
-                                </div>
-
-                                <div class="quality-tags">
-                                    <span>Specialty</span>
-                                    <span>Premium</span>
-                                </div>
-                            </div>
-
-                            <div class="quality-panel__body">
-                                <div class="score-tile">
-                                    <strong>{{ formatNumber(cupScore, 1) }}</strong>
-                                    <span>SCA Cupping Score</span>
-                                    <div class="score-tile__stars">* * * * *</div>
-                                </div>
-
-                                <div class="intelligence-bars">
-                                    <div v-for="item in intelligenceBars" :key="item.label" class="intelligence-bar">
-                                        <div class="intelligence-bar__head">
-                                            <span>{{ item.label }}</span>
-                                            <strong>{{ item.value }}</strong>
-                                        </div>
-                                        <div class="intelligence-bar__track">
-                                            <span :style="{ width: `${item.width}%` }"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="sensory-breakdown">
-                                    <span class="sensory-breakdown__label">Sensory Breakdown</span>
-
-                                    <div class="sensory-grid">
-                                        <div v-for="item in sensoryNotes" :key="item.title" class="sensory-item">
-                                            <strong>{{ item.title }}</strong>
-                                            <p>{{ item.description }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                    </main>
-
-                    <aside class="profile-side">
-                        <section class="surface-card market-card">
-                            <span class="card-label">Market Intelligence</span>
-
-                            <div class="market-meta">
-                                <div>
-                                    <span>Target Market</span>
-                                    <strong>UAE / Dubai</strong>
-                                </div>
-                                <div>
-                                    <span>Demand Level</span>
-                                    <strong>Critical High</strong>
-                                </div>
-                            </div>
-
-                            <div class="market-chart">
-                                <span class="market-chart__label">Price Trend (30D)</span>
-
-                                <div class="market-chart__bars">
-                                    <span
-                                        v-for="height in marketBars"
-                                        :key="height"
-                                        :style="{ height: `${height}px` }"
-                                    ></span>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="surface-card documents-card">
-                            <div class="section-head section-head--tight">
-                                <span class="card-label">Documents &amp; Evidence</span>
-                                <span class="section-meta">...</span>
-                            </div>
-
-                            <div class="documents-grid">
-                                <article
-                                    v-for="item in documentTiles"
-                                    :key="item.title"
-                                    class="document-tile"
-                                    :class="{ 'is-add': item.isAdd }"
-                                >
-                                    <template v-if="item.isAdd">
-                                        <span class="document-tile__plus">+</span>
-                                    </template>
-
-                                    <template v-else>
-                                        <div class="document-tile__icon">
-                                            <el-icon><component :is="item.icon" /></el-icon>
-                                        </div>
-                                        <strong>{{ item.title }}</strong>
-                                        <span>{{ item.meta }}</span>
-                                    </template>
-                                </article>
-                            </div>
-                        </section>
-
-                        <section class="advisor-card">
-                            <div class="advisor-card__title">
-                                <div class="advisor-card__icon">
-                                    <el-icon><DataAnalysis /></el-icon>
-                                </div>
-                                <strong>AI Batch Advisor</strong>
-                            </div>
-
-                            <p>
-                                “Based on current market trends in the Middle East, this Yirgacheffe profile is fetching a 12% premium. I recommend initiating the UAE Export Permit immediately.”
-                            </p>
-
-                            <div class="advisor-card__footer">
-                                <div>
-                                    <span>Confidence</span>
-                                    <strong>94.8%</strong>
-                                </div>
-
-                                <button type="button">Apply Recommendation</button>
-                            </div>
-                        </section>
-                    </aside>
+                </div>
+                <div class="bp-header-actions">
+                    <Link :href="seasonHref" class="bp-btn bp-btn--outline">
+                        <el-icon><CollectionTag /></el-icon> View Harvests
+                    </Link>
+                    <Link :href="route('batch.create-lot', batch.id)" class="bp-btn bp-btn--primary">
+                        <el-icon><Files /></el-icon> Create Lot
+                    </Link>
+                    <button class="bp-btn bp-btn--outline">
+                        <el-icon><Download /></el-icon> Export Data
+                    </button>
+                    <button
+                        v-if="canManageBatch"
+                        class="bp-btn bp-btn--ghost"
+                        @click="updateBatchModalOpen = true"
+                    >
+                        Edit Batch
+                    </button>
+                    <button class="bp-btn bp-btn--ghost">
+                        <el-icon><ChatDotRound /></el-icon> Ask Advisor
+                    </button>
                 </div>
             </div>
+
+            <!-- ② Batch Overview Card ─────────────────────────────── -->
+            <div class="bp-overview">
+
+                <!-- Identity -->
+                <div class="bp-ov-block">
+                    <div class="bp-ov-label">Batch Identity</div>
+                    <div class="bp-ov-title">{{ batchCode }}</div>
+                    <div class="bp-ov-sub">{{ batchTitle }}</div>
+                    <div class="bp-ov-meta-grid">
+                        <div class="bp-meta-pair">
+                            <span class="bp-muted">Grade</span>
+                            <span class="bp-bold">{{ gradeLabel }}</span>
+                        </div>
+                        <div class="bp-meta-pair">
+                            <span class="bp-muted">Season</span>
+                            <span class="bp-bold">{{ seasonTitle }}</span>
+                        </div>
+                        <div class="bp-meta-pair">
+                            <span class="bp-muted">Region</span>
+                            <span class="bp-bold">{{ seasonRegion }}</span>
+                        </div>
+                        <div class="bp-meta-pair">
+                            <span class="bp-muted">Created</span>
+                            <span class="bp-bold">{{ formatDate(batch.created_at) }}</span>
+                        </div>
+                        <div class="bp-meta-pair">
+                            <span class="bp-muted">Warehouse</span>
+                            <span class="bp-bold">{{ batch.warehouse_location || '—' }}</span>
+                        </div>
+                        <div class="bp-meta-pair">
+                            <span class="bp-muted">Processing</span>
+                            <span class="bp-bold">{{ batch.processing_method || 'Washed' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Composition -->
+                <div class="bp-ov-block">
+                    <div class="bp-ov-label">Batch Composition</div>
+                    <div class="bp-ov-stat-grid">
+                        <div class="bp-ov-stat">
+                            <div class="bp-ov-stat-val">{{ formatNumber(totalQuantity) }}</div>
+                            <div class="bp-muted">Total kg</div>
+                        </div>
+                        <div class="bp-ov-stat">
+                            <div class="bp-ov-stat-val">{{ harvestRows.length }}</div>
+                            <div class="bp-muted">Harvests</div>
+                        </div>
+                        <div class="bp-ov-stat">
+                            <div class="bp-ov-stat-val">{{ activeFarms }}</div>
+                            <div class="bp-muted">Farms</div>
+                        </div>
+                        <div class="bp-ov-stat">
+                            <div class="bp-ov-stat-val">{{ formatNumber(moistureScore, 1) }}%</div>
+                            <div class="bp-muted">Avg Moisture</div>
+                        </div>
+                    </div>
+                    <div class="bp-ov-insight">
+                        <el-icon style="color:#004532;"><TrendCharts /></el-icon>
+                        <span>Moisture within optimal export processing range.</span>
+                    </div>
+                </div>
+
+                <!-- Status & Traceability -->
+                <div class="bp-ov-block">
+                    <div class="bp-ov-label">Status &amp; Traceability</div>
+                    <div class="bp-ov-status-row">
+                        <span class="bp-status bp-status--received">{{ batch.status || 'Processing' }}</span>
+                        <div class="d-flex gap-2">
+                            <span class="bp-badge bp-badge--green" style="font-size:9px;">Premium Batch</span>
+                            <span class="bp-badge bp-badge--blue" style="font-size:9px;">Specialty Grade</span>
+                        </div>
+                    </div>
+                    <div class="bp-ov-score-row">
+                        <div class="bp-ov-score-item">
+                            <div class="bp-ov-score-val" style="color:#004532;">{{ formatNumber(cupScore, 1) }}</div>
+                            <div class="bp-muted">Cupping Score</div>
+                        </div>
+                        <div class="bp-ov-score-item">
+                            <div class="bp-ov-score-val">{{ readinessScore }}%</div>
+                            <div class="bp-muted">Export Readiness</div>
+                        </div>
+                        <div class="bp-ov-score-item">
+                            <div class="bp-ov-score-val" style="color:#2563eb;">94%</div>
+                            <div class="bp-muted">Traceability</div>
+                        </div>
+                    </div>
+                    <div class="bp-ov-progress">
+                        <div class="bp-muted" style="font-size:10px; margin-bottom:5px;">Processing readiness — {{ completionPct }}%</div>
+                        <div class="bp-progress-track"><div class="bp-progress-fill" :style="{ width: completionPct + '%' }" /></div>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <span class="bp-badge bp-badge--green">Export Eligible</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Main two-column body ─────────────────────────────── -->
+            <div class="bp-body">
+
+                <!-- Left: Main content ───────────────────────────── -->
+                <div class="bp-main">
+
+                    <!-- ③ Harvest Composition Table ─────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><CollectionTag /></el-icon> Harvest Sources</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="bp-muted" style="font-size:11px;">{{ harvestRows.length }} harvests included</span>
+                                <span class="bp-badge bp-badge--green" style="font-size:9px;">Verified</span>
+                            </div>
+                        </div>
+                        <div class="bp-table-wrap">
+                            <table class="bp-table">
+                                <thead>
+                                    <tr>
+                                        <th>Harvest ID</th>
+                                        <th>Farm</th>
+                                        <th>Date</th>
+                                        <th class="text-end">Qty (kg)</th>
+                                        <th class="text-end">Score</th>
+                                        <th class="text-end">Moisture</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="row in harvestRows" :key="row.id">
+                                        <td><span class="bp-code">{{ row.code }}</span></td>
+                                        <td><span class="bp-primary" style="font-size:12px;">{{ row.farm }}</span></td>
+                                        <td><span class="bp-muted">{{ row.date }}</span></td>
+                                        <td class="text-end"><span class="bp-primary" style="font-size:12px;">{{ row.qty }}</span></td>
+                                        <td class="text-end"><span class="bp-score">{{ row.score }}</span></td>
+                                        <td class="text-end"><span class="bp-muted">{{ row.moisture }}</span></td>
+                                        <td>
+                                            <span class="bp-status" :class="row.status === 'Verified' ? 'bp-status--received' : 'bp-status--ready'">
+                                                {{ row.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="bp-table-foot">
+                            <span class="bp-muted">{{ harvestRows.length }} harvest sources · {{ formatNumber(totalQuantity) }} kg total</span>
+                            <span class="bp-badge bp-badge--blue" style="font-size:9px;">Source Diversity: High</span>
+                        </div>
+                    </div>
+
+                    <!-- ④ Farm Contribution Breakdown ────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><Location /></el-icon> Farm Contribution</div>
+                            <span class="bp-muted" style="font-size:11px;">{{ farmContributions.length }} contributing farms</span>
+                        </div>
+                        <div class="bp-card-body">
+                            <div class="bp-farm-grid">
+                                <div v-for="f in farmContributions" :key="f.farm" class="bp-farm-card">
+                                    <div class="bp-farm-card-top">
+                                        <span class="bp-primary" style="font-size:12px; font-weight:700;">{{ f.farm }}</span>
+                                        <span class="bp-bold" style="font-size:11px; color:#004532;">{{ f.pct }}%</span>
+                                    </div>
+                                    <div class="bp-comp-bar-wrap" style="margin:6px 0;">
+                                        <div class="bp-comp-bar" :style="{ width: f.pct + '%' }" />
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="bp-muted">{{ f.qty }}</span>
+                                        <span class="bp-muted">Score {{ f.score }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑤ Batch Quality Analysis ─────────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><Star /></el-icon> Quality Analysis</div>
+                            <div class="d-flex gap-2">
+                                <span class="bp-badge bp-badge--green" style="font-size:9px;">Specialty Grade</span>
+                                <span class="bp-badge bp-badge--blue" style="font-size:9px;">Export Standard</span>
+                            </div>
+                        </div>
+                        <div class="bp-card-body">
+                            <div class="bp-quality-layout">
+                                <!-- Score tile -->
+                                <div class="bp-score-tile">
+                                    <div class="bp-muted" style="font-size:9px; letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px;">SCA Cupping Score</div>
+                                    <div class="bp-score-big">{{ formatNumber(cupScore, 1) }}</div>
+                                    <div class="bp-muted" style="font-size:10px; margin-top:4px;">Specialty threshold: 80.0</div>
+                                    <div class="bp-score-stars">★ ★ ★ ★ ★</div>
+                                    <div style="margin-top:10px;">
+                                        <div class="bp-muted" style="font-size:10px; margin-bottom:4px;">Premium Batch</div>
+                                        <span class="bp-badge bp-badge--green" style="font-size:9px;">Specialty Grade</span>
+                                    </div>
+                                </div>
+                                <!-- Score bars -->
+                                <div class="bp-quality-bars">
+                                    <div v-for="m in qualityScores" :key="m.label" class="bp-quality-row">
+                                        <div class="bp-quality-label">
+                                            <span class="bp-muted" style="font-size:11px;">{{ m.label }}</span>
+                                            <span class="bp-bold" style="font-size:11px;">{{ m.value }}{{ m.suffix }}</span>
+                                        </div>
+                                        <div class="bp-bar-track">
+                                            <div class="bp-bar-fill" :style="{ width: m.value + '%' }" />
+                                        </div>
+                                    </div>
+                                    <!-- Intelligence bars -->
+                                    <div class="bp-intel-divider">Physical Analysis</div>
+                                    <div v-for="b in intelligenceBars" :key="b.label" class="bp-quality-row">
+                                        <div class="bp-quality-label">
+                                            <span class="bp-muted" style="font-size:11px;">{{ b.label }}</span>
+                                            <span class="bp-bold" style="font-size:11px;">{{ b.value }}</span>
+                                        </div>
+                                        <div class="bp-bar-track">
+                                            <div class="bp-bar-fill bp-bar-fill--blue" :style="{ width: b.pct + '%' }" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑥ Processing Status ──────────────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><CircleCheck /></el-icon> Processing Status</div>
+                            <div class="bp-completion-pill">{{ completionPct }}% Complete</div>
+                        </div>
+                        <div class="bp-card-body">
+                            <div class="bp-processing-layout">
+                                <div class="bp-steps">
+                                    <div v-for="step in readinessItems" :key="step.label" class="bp-step">
+                                        <div class="bp-step-dot" :class="step.done ? 'bp-step-dot--done' : 'bp-step-dot--todo'">
+                                            <el-icon v-if="step.done"><Check /></el-icon>
+                                        </div>
+                                        <div>
+                                            <div class="bp-step-label" :class="{ 'bp-step-label--done': step.done }">{{ step.label }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bp-processing-detail">
+                                    <div v-for="item in processingItems" :key="item.title" class="bp-proc-item">
+                                        <div class="bp-muted" style="font-size:10px; text-transform:uppercase; letter-spacing:.09em;">{{ item.sub }}</div>
+                                        <div class="bp-bold" style="font-size:12px; margin-top:2px;">{{ item.title }}</div>
+                                    </div>
+                                    <div class="bp-progress-wrap" style="margin-top:14px;">
+                                        <div class="bp-muted" style="font-size:10px; margin-bottom:5px;">Readiness: {{ completionPct }}%</div>
+                                        <div class="bp-progress-track"><div class="bp-progress-fill" :style="{ width: completionPct + '%' }" /></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑦ Traceability Pipeline ──────────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><Promotion /></el-icon> Traceability Pipeline</div>
+                            <span class="bp-badge bp-badge--amber">Current: Batch</span>
+                        </div>
+                        <div class="bp-card-body bp-card-body--pipe">
+                            <div class="bp-pipe">
+                                <div v-for="(stage, idx) in pipelineStages" :key="stage.label" class="bp-pipe-item">
+                                    <!-- count + sub above dot -->
+                                    <div class="bp-pipe-item__top">
+                                        <div class="bp-pipe-item__count" :class="{ 'bp-pipe-item__count--current': stage.current }">
+                                            {{ stage.count }}
+                                        </div>
+                                        <div class="bp-pipe-item__sub">{{ stage.sub }}</div>
+                                    </div>
+                                    <!-- connector-left · dot · connector-right -->
+                                    <div class="bp-pipe-item__mid">
+                                        <div
+                                            class="bp-pipe-item__seg"
+                                            :class="{
+                                                'bp-pipe-item__seg--done':    idx > 0 && pipelineStages[idx - 1].done,
+                                                'bp-pipe-item__seg--hidden':  idx === 0,
+                                            }"
+                                        />
+                                        <div
+                                            class="bp-pipe-item__dot"
+                                            :class="{
+                                                'bp-pipe-item__dot--done':    stage.done,
+                                                'bp-pipe-item__dot--current': stage.current,
+                                            }"
+                                        >
+                                            <el-icon v-if="stage.done" style="font-size:13px;"><Check /></el-icon>
+                                        </div>
+                                        <div
+                                            class="bp-pipe-item__seg"
+                                            :class="{
+                                                'bp-pipe-item__seg--done':   stage.done,
+                                                'bp-pipe-item__seg--hidden': idx === pipelineStages.length - 1,
+                                            }"
+                                        />
+                                    </div>
+                                    <!-- label + verify badge below dot -->
+                                    <div class="bp-pipe-item__bot">
+                                        <div class="bp-pipe-item__label" :class="{ 'bp-pipe-item__label--current': stage.current }">
+                                            {{ stage.label }}
+                                        </div>
+                                        <div class="bp-pipe-item__verify" :class="{ 'bp-pipe-item__verify--done': stage.done, 'bp-pipe-item__verify--current': stage.current }">
+                                            {{ stage.verify }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /bp-main -->
+
+                <!-- Right rail ───────────────────────────────────── -->
+                <div class="bp-rail">
+
+                    <!-- ⑧ Season Context ─────────────────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><Clock /></el-icon> Season Context</div>
+                            <span class="bp-badge bp-badge--green" style="font-size:9px;">Active</span>
+                        </div>
+                        <div class="bp-card-body">
+                            <div class="bp-bold" style="font-size:13px; color:#003f2c;">{{ seasonTitle }}</div>
+                            <div class="bp-muted" style="margin-top:2px;">{{ seasonRegion }}</div>
+                            <div class="bp-progress-wrap" style="margin-top:10px;">
+                                <div class="bp-muted" style="font-size:10px; margin-bottom:4px;">Season progress — 68%</div>
+                                <div class="bp-progress-track"><div class="bp-progress-fill" style="width:68%;" /></div>
+                            </div>
+                            <div class="bp-season-stats">
+                                <div class="bp-season-stat">
+                                    <div class="bp-bold" style="font-size:16px; color:#004532;">{{ formatNumber(seasonHealth, 1) }}</div>
+                                    <div class="bp-muted">Health Score</div>
+                                </div>
+                                <div class="bp-season-stat">
+                                    <div class="bp-bold" style="font-size:16px;">{{ activeFarms }}</div>
+                                    <div class="bp-muted">Active Farms</div>
+                                </div>
+                            </div>
+                            <Link :href="seasonHref" class="bp-link-btn">View Season Details</Link>
+                        </div>
+                    </div>
+
+                    <!-- ⑨ Export Readiness ───────────────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><Van /></el-icon> Export Readiness</div>
+                            <span class="bp-badge bp-badge--green" style="font-size:9px;">Export Ready</span>
+                        </div>
+                        <div class="bp-card-body">
+                            <div class="bp-export-stats">
+                                <div class="bp-export-stat">
+                                    <div class="bp-bold" style="font-size:20px; color:#004532;">{{ readinessScore }}%</div>
+                                    <div class="bp-muted">Eligibility</div>
+                                </div>
+                                <div class="bp-export-stat">
+                                    <div class="bp-bold" style="font-size:20px; color:#d97706;">High</div>
+                                    <div class="bp-muted">Demand</div>
+                                </div>
+                                <div class="bp-export-stat">
+                                    <div class="bp-bold" style="font-size:18px;">$4.8–5.6</div>
+                                    <div class="bp-muted">Est. / kg</div>
+                                </div>
+                            </div>
+                            <div class="bp-muted" style="font-size:9px; text-transform:uppercase; letter-spacing:.12em; margin:10px 0 7px;">Target Markets</div>
+                            <div class="bp-markets">
+                                <div v-for="m in targetMarkets" :key="m.label" class="bp-market-row">
+                                    <span class="bp-bold" style="font-size:11px; min-width:30px;">{{ m.label }}</span>
+                                    <div class="bp-bar-track" style="flex:1;"><div class="bp-bar-fill bp-bar-fill--amber" :style="{ width: m.pct + '%' }" /></div>
+                                    <span class="bp-muted" style="font-size:10px; min-width:26px; text-align:right;">{{ m.pct }}%</span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 mt-2 flex-wrap">
+                                <span class="bp-badge bp-badge--green" style="font-size:9px;">Premium Batch</span>
+                                <span class="bp-badge bp-badge--purple" style="font-size:9px;">Verified</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑩ Lot Creation Readiness ─────────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><Files /></el-icon> Lot Creation</div>
+                        </div>
+                        <div class="bp-card-body">
+                            <div class="bp-lot-stats">
+                                <div class="bp-meta-pair">
+                                    <span class="bp-muted">Eligible Qty</span>
+                                    <span class="bp-bold">{{ formatNumber(totalQuantity) }} kg</span>
+                                </div>
+                                <div class="bp-meta-pair">
+                                    <span class="bp-muted">Suggested Lots</span>
+                                    <span class="bp-bold">2 × 1,400 kg</span>
+                                </div>
+                                <div class="bp-meta-pair">
+                                    <span class="bp-muted">Quality Status</span>
+                                    <span class="bp-badge bp-badge--green" style="font-size:9px;">Eligible</span>
+                                </div>
+                            </div>
+                            <div class="bp-lot-actions">
+                                <Link :href="route('batch.create-lot', batch.id)" class="bp-btn bp-btn--primary bp-btn--full">
+                                    <el-icon><Files /></el-icon> Create Lot
+                                </Link>
+                                <div class="d-flex gap-2">
+                                    <button class="bp-btn bp-btn--outline" style="flex:1;">Split Batch</button>
+                                    <button class="bp-btn bp-btn--outline" style="flex:1;">Merge Batch</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑪ Activity Timeline ──────────────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><Clock /></el-icon> Activity Timeline</div>
+                        </div>
+                        <div class="bp-card-body">
+                            <div class="bp-timeline">
+                                <div v-for="entry in activityLog" :key="entry.label" class="bp-tl-item">
+                                    <div class="bp-tl-dot" :class="`bp-tl-dot--${entry.dot}`" />
+                                    <div>
+                                        <div class="bp-primary" style="font-size:11px;">{{ entry.label }}</div>
+                                        <div class="bp-muted">{{ entry.time }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑫ AI Batch Insights ──────────────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><Opportunity /></el-icon> AI Batch Insights</div>
+                        </div>
+                        <div class="bp-card-body">
+                            <div class="bp-insights">
+                                <div v-for="(insight, idx) in aiInsights" :key="idx" class="bp-insight">
+                                    <div class="bp-insight-dot" />
+                                    <p class="bp-insight-text">{{ insight }}</p>
+                                </div>
+                            </div>
+                            <div class="bp-insight-footer">
+                                <span class="bp-muted" style="font-size:9px; text-transform:uppercase; letter-spacing:.1em;">Powered by Bean Origin AI</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑬ Smart Alerts ───────────────────────────── -->
+                    <div class="bp-card">
+                        <div class="bp-card-head">
+                            <div class="bp-card-title"><el-icon><Bell /></el-icon> Smart Alerts</div>
+                            <span class="bp-badge bp-badge--amber" style="font-size:9px;">{{ alerts.length }} Active</span>
+                        </div>
+                        <div class="bp-card-body">
+                            <div class="bp-alerts">
+                                <div v-for="alert in alerts" :key="alert.label" class="bp-alert" :class="`bp-alert--${alert.type}`">
+                                    <div class="bp-alert-dot" />
+                                    <div>
+                                        <div class="bp-primary" style="font-size:11px;">{{ alert.label }}</div>
+                                        <div class="bp-muted">{{ alert.time }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /bp-rail -->
+
+            </div><!-- /bp-body -->
+
+        </div><!-- /bp-page -->
+
+        <!-- ⑭ Floating AI Assistant ──────────────────────────────── -->
+        <div class="bp-float">
+            <div v-if="chatOpen" class="bp-chat-panel">
+                <div class="bp-chat-head">
+                    <div>
+                        <div class="bp-bold" style="font-size:12px;">Bean Origin Batch Advisor</div>
+                        <div class="bp-muted">Profile intelligence assistant</div>
+                    </div>
+                    <button class="bp-chat-close" @click="chatOpen = false">×</button>
+                </div>
+                <div class="bp-chat-prompts">
+                    <button v-for="p in chatPrompts" :key="p" class="bp-chat-prompt" @click="fillPrompt(p)">{{ p }}</button>
+                </div>
+                <div class="bp-chat-input-row">
+                    <input v-model="chatInput" class="bp-chat-input" placeholder="Ask about this batch…" />
+                    <button class="bp-chat-send"><el-icon><Promotion /></el-icon></button>
+                </div>
+            </div>
+            <button class="bp-float-btn" @click="chatOpen = !chatOpen">
+                <el-icon><ChatDotRound /></el-icon>
+            </button>
         </div>
 
         <UpdateBatchModal
@@ -467,916 +695,598 @@ const canManageBatch = computed(() => Boolean(props.batch.can_manage));
             v-model="updateBatchModalOpen"
             :batch="batch"
         />
+
     </AppLayout>
 </template>
 
 <style scoped>
-.batch-profile-page {
-    min-height: 100vh;
-    background: #ffffff;
+/* ── Base ───────────────────────────────────────────────────────── */
+.bp-page {
+    min-height: calc(100vh - 48px);
+    background: #fff;
+    color: #1f2a2a;
+    padding: 0 0 48px;
+    font-family: 'Manrope', sans-serif;
 }
 
-.batch-profile-shell {
-    max-width: 1240px;
-    margin: 0 auto;
-    padding: 18px 18px 42px;
-}
-
-.top-summary-card,
-.surface-card,
-.advisor-card {
-    border-radius: 16px;
-    background: #ffffff;
-    border: 1px solid #ebf0f3;
-    box-shadow: 0 12px 26px rgba(17, 24, 39, 0.04);
-}
-
-.top-summary-card {
-    padding: 26px 28px 30px;
-}
-
-.top-summary-grid {
-    display: grid;
-    grid-template-columns: 1.1fr 1fr 0.9fr 0.9fr;
-    gap: 0;
-}
-
-.summary-block {
-    min-height: 128px;
-    padding: 0 28px;
-    border-right: 1px solid #edf1f4;
-}
-
-.summary-block:first-child {
-    padding-left: 0;
-}
-
-.summary-block:last-child {
-    padding-right: 0;
-    border-right: 0;
-}
-
-.block-label,
-.card-label {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    color: #7d6950;
-}
-
-.block-label {
-    font-size: 13px;
-    letter-spacing: 0.12em;
-}
-
-.card-label {
-    font-size: 13px;
-    letter-spacing: 0.1em;
-    color: #6f573a;
-}
-
-.summary-block--identity h1 {
-    margin: 16px 0 14px;
-    font-size: 24px;
-    line-height: 1.18;
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    color: #12161c;
-}
-
-.summary-block--identity p {
-    margin: 0;
-    font-size: 14px;
-    color: #585f6c;
-}
-
-.journey-track {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-    margin-top: 24px;
-}
-
-.journey-step {
-    position: relative;
-    display: grid;
-    justify-items: center;
-    gap: 18px;
-}
-
-.journey-step__dot {
-    position: relative;
-    z-index: 1;
-    width: 12px;
-    height: 12px;
-    border-radius: 999px;
-    background: #c9d6df;
-}
-
-.journey-step.is-complete .journey-step__dot {
-    background: #17b47a;
-}
-
-.journey-step__line {
-    position: absolute;
-    top: 5px;
-    left: calc(50% + 6px);
-    width: calc(100% - 12px);
-    height: 2px;
-    background: #dce7e3;
-}
-
-.journey-step strong {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: #1f2630;
-}
-
-.summary-block--readiness {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-}
-
-.mini-ring {
-    --score: 92;
-    width: 86px;
-    height: 86px;
-    border-radius: 50%;
-    background: conic-gradient(#08a06c calc(var(--score) * 1%), #dce8e4 0);
-    display: grid;
-    place-items: center;
-}
-
-.mini-ring__inner {
-    width: 74px;
-    height: 74px;
-    border-radius: inherit;
-    background: #ffffff;
-    display: grid;
-    place-items: center;
-    font-size: 28px;
-    font-weight: 700;
-    color: #182029;
-}
-
-.summary-block__readiness-copy {
-    display: grid;
-    gap: 8px;
-}
-
-.summary-block__readiness-copy strong {
-    font-size: 16px;
-    line-height: 1.2;
-    color: #15202c;
-}
-
-.commercial-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
-    margin-top: 16px;
-}
-
-.commercial-grid span,
-.market-meta span,
-.season-stats span,
-.processing-item span,
-.intelligence-bar__head span,
-.document-tile span,
-.advisor-card__footer span {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #7a818c;
-}
-
-.commercial-grid strong {
-    display: block;
-    margin-top: 6px;
-    font-size: 28px;
-    font-weight: 700;
-    color: #141922;
-}
-
-.commercial-grid .value-accent {
-    color: #0a8c57;
-}
-
-.summary-actions {
+/* ── Header ─────────────────────────────────────────────────────── */
+.bp-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
-    padding-top: 28px;
-    margin-top: 20px;
-    border-top: 1px solid #edf1f4;
-}
-
-.summary-actions__group {
-    display: flex;
+    gap: 16px;
+    padding: 10px 24px;
+    border-bottom: 1px solid #e8ecec;
+    background: #fff;
     flex-wrap: wrap;
-    gap: 12px;
 }
+.bp-kicker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #94a1b2;
+    margin-bottom: 2px;
+}
+.bp-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #003f2c;
+    margin: 0 0 2px;
+    line-height: 1.15;
+}
+.bp-subtitle {
+    font-size: 12px;
+    color: #657386;
+    margin: 0 0 7px;
+    line-height: 1.5;
+}
+.bp-badge-row { display: flex; gap: 5px; flex-wrap: wrap; }
+.bp-header-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
-.action-button {
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.bp-btn {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    min-height: 46px;
-    padding: 0 22px;
-    border-radius: 6px;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    cursor: pointer;
     border: 1px solid transparent;
     text-decoration: none;
-    font-size: 15px;
-    font-weight: 600;
-    color: #161d25;
-    cursor: pointer;
+    white-space: nowrap;
+    transition: background .14s, color .14s, border-color .14s;
 }
+.bp-btn--primary { background: #003f2c; color: #fff; border-color: #003f2c; }
+.bp-btn--primary:hover { background: #004532; }
+.bp-btn--outline { background: #fff; color: #263232; border-color: #d4d8d8; }
+.bp-btn--outline:hover { border-color: #003f2c; color: #003f2c; }
+.bp-btn--ghost { background: transparent; color: #657386; border-color: transparent; }
+.bp-btn--ghost:hover { background: #f3f4f4; }
+.bp-btn--full { width: 100%; }
 
-.action-button :deep(svg),
-.download-report :deep(svg) {
-    font-size: 16px;
-}
-
-.action-button--green {
-    background: #0d5a3d;
-    color: #ffffff;
-}
-
-.action-button--peach {
-    background: #ffd6b0;
-    color: #37210d;
-}
-
-.action-button--neutral {
-    background: #eef2f5;
-    color: #101822;
-}
-
-.download-report {
+/* ── Badges ──────────────────────────────────────────────────────── */
+.bp-badge {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    font-size: 15px;
-    font-weight: 500;
-    color: #16212c;
-    cursor: pointer;
-}
-
-.insight-banner {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 30px;
-    padding: 16px 18px;
-    border-radius: 10px;
-    border: 1px solid #c9f0df;
-    background: #f4fff9;
-}
-
-.insight-banner__icon {
-    font-size: 20px;
-    color: #0a9960;
-}
-
-.insight-banner p {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.6;
-    color: #295244;
-}
-
-.profile-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.8fr);
-    gap: 28px;
-    margin-top: 28px;
-}
-
-.profile-main,
-.profile-side {
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-}
-
-.feature-row {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 28px;
-}
-
-.surface-card {
-    padding: 22px 22px 24px;
-}
-
-.card-head,
-.section-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-}
-
-.status-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 24px;
-    padding: 0 10px;
-    border-radius: 6px;
-    background: #b8f0cf;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #0d563a;
-}
-
-.season-card h2 {
-    margin: 34px 0 6px;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #111720;
-}
-
-.season-card p {
-    margin: 0;
-    font-size: 14px;
-    color: #66707f;
-}
-
-.season-stats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
-    margin: 28px 0 24px;
-}
-
-.season-stats strong {
-    display: block;
-    font-size: 24px;
-    font-weight: 700;
-    color: #0e6646;
-}
-
-.season-stats div:last-child strong {
-    color: #131922;
-}
-
-.season-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 34px;
+    padding: 3px 7px;
     border-radius: 4px;
-    border: 1px solid #d3dde2;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    color: #16212b;
-}
-
-.processing-list {
-    display: grid;
-    gap: 14px;
-    margin-top: 24px;
-}
-
-.processing-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-}
-
-.processing-item__icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    background: #f1f4f6;
-    display: grid;
-    place-items: center;
-    color: #0b6642;
-    flex-shrink: 0;
-}
-
-.processing-item strong {
-    display: block;
-    font-size: 16px;
-    font-weight: 600;
-    color: #101720;
-}
-
-.processing-item span {
-    margin-top: 3px;
-}
-
-.readiness-progress {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-top: 26px;
-}
-
-.readiness-progress strong {
-    font-size: 40px;
-    line-height: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
     font-weight: 700;
-    color: #0b8458;
+    letter-spacing: .1em;
+    text-transform: uppercase;
 }
+.bp-badge--green  { background: #eef5f1; color: #004532; border: 1px solid #c3ddd2; }
+.bp-badge--blue   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.bp-badge--amber  { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.bp-badge--purple { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
 
-.readiness-progress__bar {
-    flex: 1;
-    height: 10px;
-    border-radius: 999px;
-    background: #edf3ef;
-    overflow: hidden;
-}
-
-.readiness-progress__bar span {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: #0b9b67;
-}
-
-.readiness-list {
+/* ── Overview Card ───────────────────────────────────────────────── */
+.bp-overview {
     display: grid;
-    gap: 18px;
-    margin-top: 30px;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid #e8ecec;
 }
+@media (max-width: 900px) { .bp-overview { grid-template-columns: 1fr; } }
 
-.readiness-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+.bp-ov-block {
+    padding: 14px 20px;
+    border-right: 1px solid #e8ecec;
+}
+.bp-ov-block:last-child { border-right: none; }
+@media (max-width: 900px) { .bp-ov-block { border-right: none; border-bottom: 1px solid #e8ecec; } }
+
+.bp-ov-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #94a1b2;
+    margin-bottom: 5px;
+}
+.bp-ov-title {
     font-size: 15px;
-    color: #1b232d;
+    font-weight: 800;
+    color: #003f2c;
+    line-height: 1.15;
 }
-
-.readiness-item__dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 999px;
-    border: 1.5px solid #c4d0dc;
-    flex-shrink: 0;
-}
-
-.readiness-item.is-complete .readiness-item__dot {
-    border-color: #11a36a;
-    position: relative;
-}
-
-.readiness-item.is-complete .readiness-item__dot::after {
-    content: '';
-    position: absolute;
-    inset: 3px;
-    border-radius: inherit;
-    background: #11a36a;
-}
-
-.section-meta {
-    font-size: 13px;
-    color: #7b8490;
-}
-
-.harvest-table {
-    margin-top: 18px;
-}
-
-.harvest-table__head,
-.harvest-table__row {
-    display: grid;
-    grid-template-columns: 1.1fr 1.8fr 0.9fr 0.6fr 0.7fr;
-    gap: 18px;
-}
-
-.harvest-table__head {
-    padding: 8px 0 14px;
-    border-bottom: 1px solid #edf1f4;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #6a727d;
-}
-
-.harvest-table__row {
-    padding: 18px 0;
-    border-bottom: 1px solid #f0f3f6;
-    font-size: 15px;
-    color: #121b25;
-}
-
-.harvest-table__row:last-child {
-    border-bottom: 0;
-}
-
-.table-status {
-    color: #0c8f5a;
-    font-weight: 600;
-}
-
-.quality-panel {
-    padding: 28px 30px 30px;
-    border-radius: 8px;
-    background: #0f5f43;
-    color: #ffffff;
-}
-
-.quality-panel__top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 18px;
-}
-
-.quality-panel__label {
-    display: inline-block;
+.bp-ov-sub {
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #3fd09a;
-}
-
-.quality-panel h2 {
-    margin: 14px 0 0;
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-}
-
-.quality-tags {
-    display: flex;
-    gap: 10px;
-}
-
-.quality-tags span {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 24px;
-    padding: 0 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(148, 220, 188, 0.35);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #f0fff7;
-}
-
-.quality-panel__body {
-    display: grid;
-    grid-template-columns: 160px minmax(0, 1fr) minmax(220px, 0.9fr);
-    gap: 36px;
-    margin-top: 30px;
-    align-items: start;
-}
-
-.score-tile {
-    padding: 22px 22px 20px;
-    border-radius: 14px;
-    background: rgba(0, 0, 0, 0.12);
-}
-
-.score-tile strong {
-    display: block;
-    font-size: 48px;
-    line-height: 1;
-    font-weight: 700;
-    color: #38dd9d;
-}
-
-.score-tile span {
-    display: block;
-    margin-top: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: #effff7;
-}
-
-.score-tile__stars {
-    margin-top: 18px;
-    font-size: 14px;
-    letter-spacing: 0.22em;
-    color: #3de1a0;
-}
-
-.intelligence-bars {
-    display: grid;
-    gap: 20px;
-}
-
-.intelligence-bar__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
+    color: #657386;
+    margin-top: 1px;
     margin-bottom: 8px;
 }
-
-.intelligence-bar__head span,
-.intelligence-bar__head strong {
-    color: #f4fff9;
+.bp-ov-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 16px;
 }
+.bp-meta-pair { display: flex; flex-direction: column; gap: 1px; }
+.bp-ov-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.bp-ov-stat { text-align: center; padding: 8px; border: 1px solid #e8ecec; border-radius: 5px; background: #fafbfb; }
+.bp-ov-stat-val { font-size: 18px; font-weight: 800; color: #1f2a2a; line-height: 1.1; }
+.bp-ov-insight {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    background: #eef5f1;
+    border: 1px solid #c3ddd2;
+    border-radius: 5px;
+    font-size: 11px;
+    color: #004532;
+}
+.bp-ov-status-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.bp-ov-score-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 10px; }
+.bp-ov-score-item { text-align: center; padding: 8px 4px; }
+.bp-ov-score-val { font-size: 18px; font-weight: 800; color: #1f2a2a; line-height: 1.1; }
+.bp-ov-progress { margin-bottom: 8px; }
 
-.intelligence-bar__track {
-    height: 6px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12);
+/* ── Shared text helpers ─────────────────────────────────────────── */
+.bp-primary { font-size: 12px; font-weight: 600; color: #1f2a2a; }
+.bp-muted   { font-size: 11px; color: #94a1b2; }
+.bp-bold    { font-weight: 700; color: #1f2a2a; }
+
+/* ── Status dots ─────────────────────────────────────────────────── */
+.bp-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #657386;
+}
+.bp-status::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #cbd5df;
+}
+.bp-status--received::before { background: #16a05d; }
+.bp-status--ready::before    { background: #2563eb; }
+
+/* ── Progress ────────────────────────────────────────────────────── */
+.bp-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.bp-progress-fill  { height: 100%; background: #004532; border-radius: 3px; transition: width .4s; }
+
+/* ── Body layout ─────────────────────────────────────────────────── */
+.bp-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr);
+    gap: 16px;
+    padding: 16px 24px 0;
+}
+@media (max-width: 1100px) { .bp-body { grid-template-columns: 1fr; } }
+
+.bp-main { display: flex; flex-direction: column; gap: 12px; }
+.bp-rail { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Card ────────────────────────────────────────────────────────── */
+.bp-card {
+    border: 1px solid #e4e7e8;
+    border-radius: 8px;
+    background: #fff;
     overflow: hidden;
 }
-
-.intelligence-bar__track span {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: #47dba2;
+.bp-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid #e8ecec;
+    background: #f8f9f9;
+    border-radius: 7px 7px 0 0;
+    flex-wrap: wrap;
 }
-
-.sensory-breakdown__label {
-    display: block;
-    margin-bottom: 14px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
+.bp-card-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #1f2a2a;
+    letter-spacing: .04em;
     text-transform: uppercase;
-    color: #3fd09a;
+    font-family: 'IBM Plex Mono', monospace;
 }
+.bp-card-body { padding: 12px 14px; }
 
-.sensory-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px 22px;
+/* ── Table ───────────────────────────────────────────────────────── */
+.bp-table-wrap { overflow-x: auto; }
+.bp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.bp-table thead th {
+    padding: 7px 12px;
+    background: #f6f8f8;
+    border-bottom: 1px solid #e4e7e8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #7b8796;
+    white-space: nowrap;
 }
-
-.sensory-item strong {
-    display: block;
-    font-size: 22px;
-    margin-bottom: 6px;
+.bp-table tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f2f2;
+    vertical-align: middle;
 }
-
-.sensory-item p {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.45;
-    color: rgba(255, 255, 255, 0.72);
+.bp-table tbody tr:last-child td { border-bottom: none; }
+.bp-table tbody tr:hover td { background: #f8fbf9; }
+.bp-table-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-top: 1px solid #e8ecec;
+    background: #fafbfb;
+    flex-wrap: wrap;
+    gap: 8px;
 }
-
-.market-card,
-.documents-card {
-    padding: 20px 20px 22px;
+.bp-code {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #eef5f1;
+    color: #003f2c;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 800;
 }
-
-.market-meta {
-    display: grid;
-    gap: 18px;
-    margin-top: 20px;
-}
-
-.market-meta strong {
+.bp-score {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 8px;
-    min-height: 32px;
-    padding: 0 16px;
+    min-width: 38px;
+    padding: 2px 7px;
     border-radius: 4px;
-    background: #0d5b3d;
-    font-size: 15px;
-    color: #ffffff;
-}
-
-.market-meta div:last-child strong {
-    justify-content: flex-start;
-    padding: 0;
-    min-height: auto;
-    border-radius: 0;
-    background: transparent;
-    color: #0b8b57;
-}
-
-.market-chart {
-    margin-top: 26px;
-    padding: 18px 18px 16px;
-    border-radius: 8px;
-    background: #f2f5f7;
-}
-
-.market-chart__label {
-    display: block;
+    border: 1px solid #c3ddd2;
+    background: #eef5f1;
+    color: #004532;
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #646c78;
+    font-weight: 800;
 }
 
-.market-chart__bars {
-    display: flex;
-    align-items: flex-end;
-    gap: 5px;
-    height: 86px;
-    margin-top: 18px;
-}
-
-.market-chart__bars span {
-    flex: 1;
-    border-radius: 2px 2px 0 0;
-    background: #7acbb0;
-}
-
-.market-chart__bars span:last-child {
-    background: #119764;
-}
-
-.section-head--tight {
-    align-items: center;
-}
-
-.documents-grid {
+/* ── Farm grid ───────────────────────────────────────────────────── */
+.bp-farm-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-    margin-top: 22px;
-}
-
-.document-tile {
-    min-height: 90px;
-    padding: 18px 16px;
-    border-radius: 10px;
-    background: #f5f7f9;
-    display: grid;
-    align-content: center;
-    gap: 8px;
-}
-
-.document-tile__icon {
-    width: 24px;
-    height: 24px;
-    display: grid;
-    place-items: center;
-    color: #0c6242;
-}
-
-.document-tile strong {
-    display: block;
-    font-size: 14px;
-    font-weight: 700;
-    color: #151c24;
-    text-transform: uppercase;
-}
-
-.document-tile.is-add {
-    place-items: center;
-    border: 1px dashed #ced7dd;
-    background: #fafbfc;
-}
-
-.document-tile__plus {
-    font-size: 34px;
-    line-height: 1;
-    color: #161d24;
-}
-
-.advisor-card {
-    padding: 22px 20px 20px;
-    background: #0b5b3c;
-    color: #ffffff;
-    box-shadow: 0 18px 30px rgba(6, 36, 22, 0.2);
-}
-
-.advisor-card__title {
-    display: flex;
-    align-items: center;
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
 }
-
-.advisor-card__icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 999px;
-    display: grid;
-    place-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.35);
-}
-
-.advisor-card__title strong {
-    font-size: 25px;
-    font-weight: 700;
-}
-
-.advisor-card p {
-    margin: 24px 0 22px;
-    font-size: 14px;
-    line-height: 1.7;
-    color: rgba(255, 255, 255, 0.88);
-}
-
-.advisor-card__footer {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 16px;
-}
-
-.advisor-card__footer span {
-    color: rgba(226, 255, 243, 0.72);
-}
-
-.advisor-card__footer strong {
-    display: block;
-    margin-top: 6px;
-    font-size: 34px;
-    line-height: 1;
-    font-weight: 700;
-}
-
-.advisor-card__footer button {
-    min-height: 44px;
-    padding: 0 16px;
+@media (max-width: 640px) { .bp-farm-grid { grid-template-columns: 1fr; } }
+.bp-farm-card {
+    border: 1px solid #e4e7e8;
     border-radius: 6px;
-    border: 0;
-    background: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    color: #0d593d;
-    cursor: pointer;
+    padding: 10px 12px;
+    background: #fafbfb;
+}
+.bp-farm-card-top { display: flex; justify-content: space-between; align-items: center; }
+.bp-comp-bar-wrap { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.bp-comp-bar { height: 100%; background: #004532; border-radius: 3px; }
+
+/* ── Quality layout ──────────────────────────────────────────────── */
+.bp-quality-layout { display: grid; grid-template-columns: 140px 1fr; gap: 16px; }
+@media (max-width: 640px) { .bp-quality-layout { grid-template-columns: 1fr; } }
+.bp-score-tile {
+    border: 1px solid #e4e7e8;
+    border-radius: 6px;
+    padding: 12px;
+    background: #fafbfb;
+    text-align: center;
+}
+.bp-score-big {
+    font-size: 36px;
+    font-weight: 800;
+    color: #004532;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+.bp-score-stars {
+    margin-top: 8px;
+    font-size: 12px;
+    letter-spacing: .16em;
+    color: #d97706;
+}
+.bp-quality-bars { display: flex; flex-direction: column; gap: 7px; }
+.bp-quality-row { display: flex; flex-direction: column; gap: 3px; }
+.bp-quality-label { display: flex; justify-content: space-between; gap: 8px; }
+.bp-bar-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.bp-bar-fill { height: 100%; background: #004532; border-radius: 3px; }
+.bp-bar-fill--blue  { background: #2563eb; }
+.bp-bar-fill--amber { background: #d97706; }
+.bp-intel-divider {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #94a1b2;
+    padding-top: 4px;
+    border-top: 1px solid #f0f2f2;
 }
 
-@media (max-width: 1180px) {
-    .top-summary-grid,
-    .feature-row,
-    .profile-grid,
-    .quality-panel__body {
-        grid-template-columns: 1fr;
-    }
+/* ── Processing layout ───────────────────────────────────────────── */
+.bp-processing-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .bp-processing-layout { grid-template-columns: 1fr; } }
+.bp-steps { display: flex; flex-direction: column; gap: 7px; }
+.bp-step { display: flex; align-items: center; gap: 8px; }
+.bp-step-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid #d4d8d8;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 10px;
+    color: #fff;
+    background: #fff;
+}
+.bp-step-dot--done { border-color: #004532; background: #004532; }
+.bp-step-label { font-size: 12px; color: #657386; }
+.bp-step-label--done { color: #1f2a2a; font-weight: 600; }
+.bp-completion-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    color: #004532;
+    background: #eef5f1;
+    border: 1px solid #c3ddd2;
+    padding: 3px 8px;
+    border-radius: 5px;
+}
+.bp-proc-item { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #f0f2f2; }
+.bp-proc-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 
-    .summary-block {
-        padding: 0 0 24px;
-        border-right: 0;
-        border-bottom: 1px solid #edf1f4;
-        margin-bottom: 24px;
-    }
+/* ── Pipeline ────────────────────────────────────────────────────── */
+.bp-card-body--pipe { padding: 16px 12px; }
 
-    .summary-block:last-child {
-        border-bottom: 0;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-
-    .summary-actions,
-    .advisor-card__footer {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+.bp-pipe {
+    display: flex;
+    align-items: stretch;
+    overflow-x: auto;
 }
 
-@media (max-width: 820px) {
-    .batch-profile-shell {
-        padding: 14px 14px 34px;
-    }
+/* Each stage takes equal width */
+.bp-pipe-item {
+    flex: 1;
+    min-width: 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-    .summary-actions__group,
-    .documents-grid,
-    .sensory-grid,
-    .commercial-grid,
-    .season-stats,
-    .harvest-table__head,
-    .harvest-table__row {
-        grid-template-columns: 1fr;
-    }
+/* ── Top: count + sub ── */
+.bp-pipe-item__top {
+    text-align: center;
+    padding-bottom: 8px;
+    min-height: 38px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
+.bp-pipe-item__count {
+    font-size: 17px;
+    font-weight: 800;
+    color: #1f2a2a;
+    line-height: 1;
+}
+.bp-pipe-item__count--current { color: #d97706; }
+.bp-pipe-item__sub {
+    font-size: 9px;
+    color: #94a1b2;
+    margin-top: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
 
-    .summary-actions__group {
-        display: grid;
-        width: 100%;
-    }
+/* ── Middle: left-seg · dot · right-seg ── */
+.bp-pipe-item__mid {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.bp-pipe-item__seg {
+    flex: 1;
+    height: 2px;
+    background: #e4e7e8;
+    transition: background .2s;
+}
+.bp-pipe-item__seg--done   { background: #004532; }
+.bp-pipe-item__seg--hidden { background: transparent; }
 
-    .action-button,
-    .download-report,
-    .season-link,
-    .advisor-card__footer button {
-        width: 100%;
-        justify-content: center;
-    }
+.bp-pipe-item__dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #d4d8d8;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+    position: relative;
+    z-index: 1;
+    transition: border-color .2s, background .2s;
+}
+.bp-pipe-item__dot--done {
+    border-color: #004532;
+    background: #004532;
+}
+.bp-pipe-item__dot--current {
+    border-color: #d97706;
+    background: #d97706;
+    outline: 4px solid rgba(217, 119, 6, 0.18);
+    outline-offset: 1px;
+}
 
-    .harvest-table__head {
-        display: none;
-    }
+/* ── Bottom: label + verify ── */
+.bp-pipe-item__bot {
+    text-align: center;
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.bp-pipe-item__label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #1f2a2a;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+.bp-pipe-item__label--current { color: #d97706; }
+.bp-pipe-item__verify {
+    font-size: 9px;
+    color: #b8c0cc;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: .04em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #e8ecec;
+    background: #fafbfb;
+    white-space: nowrap;
+}
+.bp-pipe-item__verify--done    { color: #004532; border-color: #c3ddd2; background: #eef5f1; }
+.bp-pipe-item__verify--current { color: #92400e; border-color: #fde68a; background: #fffbeb; }
 
-    .harvest-table__row {
-        padding: 16px 0;
-        gap: 8px;
-    }
+/* ── Rail cards ──────────────────────────────────────────────────── */
+.bp-season-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 10px 0; }
+.bp-season-stat { text-align: center; padding: 8px 4px; }
+.bp-link-btn {
+    display: flex; align-items: center; justify-content: center;
+    height: 30px;
+    border: 1px solid #d4d8d8;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 700;
+    color: #263232;
+    margin-top: 10px;
+    transition: border-color .14s, color .14s;
+}
+.bp-link-btn:hover { border-color: #003f2c; color: #003f2c; }
+
+.bp-export-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 8px; text-align: center; }
+.bp-export-stat { padding: 8px 4px; }
+.bp-markets { display: flex; flex-direction: column; gap: 6px; }
+.bp-market-row { display: flex; align-items: center; gap: 7px; }
+
+.bp-lot-stats { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.bp-lot-actions { display: flex; flex-direction: column; gap: 6px; }
+
+/* ── Timeline ────────────────────────────────────────────────────── */
+.bp-timeline { display: flex; flex-direction: column; gap: 9px; }
+.bp-tl-item  { display: flex; align-items: flex-start; gap: 9px; }
+.bp-tl-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 2px solid #d4d8d8;
+    background: #fff;
+    flex-shrink: 0; margin-top: 2px;
+}
+.bp-tl-dot--success { border-color: #004532; background: #004532; }
+.bp-tl-dot--info    { border-color: #2563eb; background: #2563eb; }
+
+/* ── AI Insights ─────────────────────────────────────────────────── */
+.bp-insights { display: flex; flex-direction: column; gap: 9px; }
+.bp-insight  { display: flex; align-items: flex-start; gap: 8px; }
+.bp-insight-dot { width: 7px; height: 7px; border-radius: 50%; background: #004532; flex-shrink: 0; margin-top: 4px; }
+.bp-insight-text { font-size: 12px; color: #1f2a2a; line-height: 1.55; margin: 0; }
+.bp-insight-footer { margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f2f2; }
+
+/* ── Alerts ──────────────────────────────────────────────────────── */
+.bp-alerts { display: flex; flex-direction: column; gap: 6px; }
+.bp-alert {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 10px; border-radius: 5px; border: 1px solid #e4e7e8;
+}
+.bp-alert--info    { background: #eff6ff; border-color: #bfdbfe; }
+.bp-alert--warning { background: #fffbeb; border-color: #fde68a; }
+.bp-alert--success { background: #eef5f1; border-color: #c3ddd2; }
+.bp-alert-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; background: #94a1b2; }
+.bp-alert--info    .bp-alert-dot { background: #2563eb; }
+.bp-alert--warning .bp-alert-dot { background: #d97706; }
+.bp-alert--success .bp-alert-dot { background: #004532; }
+
+/* ── Floating Chat ───────────────────────────────────────────────── */
+.bp-float {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+}
+.bp-float-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #003f2c; color: #fff; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+    transition: background .14s;
+}
+.bp-float-btn:hover { background: #004532; }
+.bp-chat-panel {
+    width: 290px; border: 1px solid #e4e7e8; border-radius: 10px; background: #fff; overflow: hidden;
+}
+.bp-chat-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 13px; border-bottom: 1px solid #e8ecec; background: #f8f9f9;
+}
+.bp-chat-close { font-size: 18px; line-height: 1; background: none; border: none; color: #94a1b2; cursor: pointer; padding: 0; }
+.bp-chat-prompts { padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f0f2f2; }
+.bp-chat-prompt {
+    text-align: left; background: #f8f9f9; border: 1px solid #e4e7e8;
+    border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer;
+    transition: background .14s;
+}
+.bp-chat-prompt:hover { background: #eef5f1; border-color: #c3ddd2; color: #004532; }
+.bp-chat-input-row { display: flex; align-items: center; padding: 8px 12px; gap: 6px; }
+.bp-chat-input {
+    flex: 1; height: 30px; padding: 0 9px; border: 1px solid #d4d8d8;
+    border-radius: 5px; font-size: 11px; outline: none;
+}
+.bp-chat-input:focus { border-color: #003f2c; }
+.bp-chat-send {
+    width: 30px; height: 30px; border-radius: 5px; background: #003f2c;
+    color: #fff; border: none; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 13px;
 }
 </style>

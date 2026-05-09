@@ -1,190 +1,96 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ElMessageBox, ElNotification } from 'element-plus';
 import {
-    ArrowDown,
-    Calendar,
-    Checked,
-    CircleCheckFilled,
-    CollectionTag,
-    DataAnalysis,
-    Delete,
-    Document,
-    EditPen,
-    Files,
-    Location,
-    MostlyCloudy,
-    Plus,
-    Tickets,
-    TrendCharts,
+    ArrowDown, Bell, Box, ChatDotRound, Check, CircleCheckFilled,
+    Clock, CollectionTag, DataLine, Delete, Document, Download,
+    EditPen, Files, Filter, Histogram, Location,
+    Opportunity, Plus, Promotion, Star, Tickets, TrendCharts,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import EditSeasonModal from '@/Components/Modals/EditSeasonModal.vue';
 
 const props = defineProps({
-    season: {
-        type: Object,
-        required: true,
-    },
-    harvests: {
-        type: Array,
-        default: () => [],
-    },
-    regionOptions: {
-        type: Array,
-        default: () => [],
-    },
-    farmOptions: {
-        type: Array,
-        default: () => [],
-    },
-    pickMethodOptions: {
-        type: Array,
-        default: () => [],
-    },
-    harvestSeasonOptions: {
-        type: Array,
-        default: () => [],
-    },
-    statusOptions: {
-        type: Array,
-        default: () => [],
-    },
+    season:               { type: Object, required: true },
+    harvests:             { type: Array,  default: () => [] },
+    regionOptions:        { type: Array,  default: () => [] },
+    farmOptions:          { type: Array,  default: () => [] },
+    pickMethodOptions:    { type: Array,  default: () => [] },
+    harvestSeasonOptions: { type: Array,  default: () => [] },
+    statusOptions:        { type: Array,  default: () => [] },
 });
 
+/* ── Modal / chat state ──────────────────────────────────────── */
 const editModalOpen = ref(false);
+const chatOpen      = ref(false);
+const chatInput     = ref('');
+
+/* ── Formatters ──────────────────────────────────────────────── */
+const formatDate = (v) =>
+    v ? new Intl.DateTimeFormat('en-UG', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(v)) : '—';
+
+const formatShort = (v) =>
+    v ? new Intl.DateTimeFormat('en-UG', { month: 'short', day: 'numeric' }).format(new Date(v)) : '—';
+
+/* ── Computed (all preserved) ────────────────────────────────── */
 const seasonName = computed(() => props.season.name || 'Main Crop 2026');
 const seasonCode = computed(() => {
     const year = props.season.start_date ? new Date(props.season.start_date).getFullYear() : 2026;
-
     return `#SEA-UGA-${year}-${String(props.season.id).padStart(2, '0')}`;
 });
 const seasonTimeline = computed(() => {
     const start = props.season.start_date ? new Date(props.season.start_date) : new Date('2026-01-15');
-    const end = props.season.end_date ? new Date(props.season.end_date) : new Date('2026-06-20');
-
-    const format = (date) => new Intl.DateTimeFormat('en-UG', {
-        month: 'short',
-        day: 'numeric',
-    }).format(date);
-
-    return `${format(start)} - ${format(end)}`;
+    const end   = props.season.end_date   ? new Date(props.season.end_date)   : new Date('2026-06-20');
+    return `${formatShort(start)} – ${formatShort(end)}`;
 });
+const totalHarvests      = computed(() => props.season.harvests_count    ?? props.harvests.length);
+const totalQuantity      = computed(() => props.season.harvests_sum_weight ?? 0);
+const totalHarvestValue  = computed(() => props.season.harvests_sum_price  ?? 0);
 
-const totalHarvests = computed(() => props.season.harvests_count ?? props.harvests.length);
-const totalQuantity = computed(() => props.season.harvests_sum_weight ?? 0);
-const totalHarvestValue = computed(() => props.season.harvests_sum_price ?? 0);
-
-const summaryCards = computed(() => [
-    { label: 'Timeline', value: seasonTimeline.value, note: '', icon: 'Calendar' },
-    { label: 'Total Harvests', value: String(totalHarvests.value).padStart(2, '0'), note: '', icon: 'Tickets' },
-    { label: 'Total Quantity', value: `${Number(totalQuantity.value).toLocaleString()} kg`, note: '', icon: 'Files' },
-    { label: 'Total Value', value: `Shs. ${Number(totalHarvestValue.value).toLocaleString()}`, note: '', icon: 'TrendCharts' },
-    { label: 'Health Score', value: '92 /100', note: '', tone: 'dark', icon: 'Checked' },
-]);
-
-const insightCards = [
-    { icon: Files, text: '3 harvests ready for batching' },
-    { icon: MostlyCloudy, text: 'Moisture levels optimal (11.2%)' },
-    { icon: TrendCharts, text: 'Yield above last season trend' },
-];
-
-const seasonHarvests = computed(() => props.harvests.map((harvest) => ({
-    rawId: harvest.id,
-    id: `#HAR-${String(harvest.id).padStart(3, '0')}`,
-    farm: harvest.farm?.name || 'Unassigned farm',
-    lot: harvest.farm?.location || harvest.variety || '—',
-    quantity: harvest.weight ? `${Number(harvest.weight).toLocaleString()}kg` : '—',
-    moisture: harvest.ripeness_percentage !== null ? `${Number(harvest.ripeness_percentage).toFixed(1)}%` : '—',
-    score: harvest.price ? Number(harvest.price).toLocaleString() : '—',
-    status: (harvest.status || 'pending').toUpperCase(),
-    showUrl: route('harvest.show', harvest.id),
+const seasonHarvests = computed(() => props.harvests.map((h) => ({
+    rawId:    h.id,
+    id:       `HV-${String(h.id).padStart(3, '0')}`,
+    farm:     h.farm?.name  || 'Unassigned',
+    region:   h.farm?.location || h.variety || '—',
+    date:     formatDate(h.harvest_date),
+    quantity: h.weight  ? `${Number(h.weight).toLocaleString()} kg` : '—',
+    score:    h.cup_score    ? Number(h.cup_score).toFixed(1)      : '—',
+    moisture: h.moisture_content ? `${Number(h.moisture_content).toFixed(1)}%` : '—',
+    status:   (h.status || 'pending').toUpperCase(),
+    showUrl:  route('harvest.show', h.id),
 })));
 
-const recentActivities = [
-    { date: 'Mar 12, 2026', activity: 'Organic Weeding', note: 'Maintenance', farm: 'Moses W. / Lot A', status: 'Completed', evidence: 'View Photo' },
-    { date: 'Mar 10, 2026', activity: 'Selective Pruning', note: 'Canopy Mgmt', farm: 'Mount Elgon Coop', status: 'Completed', evidence: 'View Photo' },
-];
-
-const qualityDocs = [
-    { icon: Document, title: 'Field Reports', subtitle: 'Soil Analysis Q1...' },
-    { icon: CollectionTag, title: 'Harvest Photos', subtitle: '12 New Files' },
-    { icon: EditPen, title: 'Quality Notes', subtitle: 'SL-14 Cupping V1' },
-];
-
-const climateCards = [
-    { label: 'Rainfall', value: 'Moderate', badge: 'MED', tone: 'amber' },
-    { label: 'Drought', value: 'Stable', badge: 'LOW', tone: 'mint' },
-    { label: 'Pest Risk', value: 'High Alert', badge: 'HIGH', tone: 'rose' },
-    { label: 'Disease', value: 'Controlled', badge: 'LOW', tone: 'mint' },
-];
-
+/* ── Preserved actions ───────────────────────────────────────── */
 const handleOptionsCommand = (command) => {
-    if (command === 'edit') {
-        editModalOpen.value = true;
-        return;
-    }
-
-    if (command === 'add-harvest') {
-        router.get(route('season.create-harvest', props.season.id));
-        return;
-    }
-
+    if (command === 'edit') { editModalOpen.value = true; return; }
+    if (command === 'add-harvest') { router.get(route('season.create-harvest', props.season.id)); return; }
     if (command === 'delete') {
         ElMessageBox.confirm(
             'This will permanently delete the current season. Continue?',
             'Delete season',
-            {
-                confirmButtonText: 'Delete',
-                cancelButtonText: 'Cancel',
-                type: 'warning',
-            },
+            { confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning' },
         ).then(() => {
-            router.delete(route('season.destroy', props.season.id), {
-                preserveScroll: true,
-            });
+            router.delete(route('season.destroy', props.season.id), { preserveScroll: true });
         }).catch(() => {});
     }
 };
 
 const notifySeasonUpdateSuccess = (message) => {
-    ElNotification({
-        title: 'Season Saved',
-        message,
-        type: 'success',
-        duration: 3200,
-        offset: 84,
-    });
+    ElNotification({ title: 'Season Saved', message, type: 'success', duration: 3200, offset: 84 });
 };
 
 const notifyHarvestDeleteSuccess = (message) => {
-    ElNotification({
-        title: 'Harvest Deleted',
-        message,
-        type: 'success',
-        duration: 3200,
-        offset: 84,
-    });
+    ElNotification({ title: 'Harvest Deleted', message, type: 'success', duration: 3200, offset: 84 });
 };
 
-const openHarvestProfile = (row) => {
-    if (!row?.showUrl) {
-        return;
-    }
-
-    router.get(row.showUrl);
-};
+const openHarvestProfile = (row) => { if (row?.showUrl) router.get(row.showUrl); };
 
 const deleteHarvest = (row) => {
     ElMessageBox.confirm(
         `This will permanently delete ${row.id}. Continue?`,
         'Delete harvest',
-        {
-            confirmButtonText: 'Delete',
-            cancelButtonText: 'Cancel',
-            type: 'warning',
-        },
+        { confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning' },
     ).then(() => {
         router.delete(route('season.harvest.destroy', [props.season.id, row.rawId]), {
             preserveScroll: true,
@@ -195,279 +101,633 @@ const deleteHarvest = (row) => {
     }).catch(() => {});
 };
 
+/* ── Static mock data ────────────────────────────────────────── */
+const timelineStages = [
+    { label: 'Planting',     date: 'Jan 2025', done: true,  current: false, verify: 'Completed'  },
+    { label: 'Flowering',    date: 'Mar 2025', done: true,  current: false, verify: 'Completed'  },
+    { label: 'Harvest Start',date: 'May 2025', done: true,  current: false, verify: 'Verified'   },
+    { label: 'Peak Harvest', date: 'Jun 2025', done: false, current: true,  verify: 'In Progress'},
+    { label: 'Processing',   date: 'Jul 2025', done: false, current: false, verify: 'Pending'    },
+    { label: 'Export Window',date: 'Aug 2025', done: false, current: false, verify: 'Pending'    },
+];
 
+const regionBreakdown = [
+    { name: 'Mount Elgon',       vol: '12,400 kg', farms: 8,  score: 88.2, readiness: 92 },
+    { name: 'Rwenzori',          vol: '9,800 kg',  farms: 6,  score: 87.4, readiness: 88 },
+    { name: 'Central Uganda',    vol: '7,200 kg',  farms: 5,  score: 86.1, readiness: 82 },
+    { name: 'Southwestern Uganda',vol: '5,600 kg', farms: 4,  score: 85.8, readiness: 76 },
+];
 
+const batchRows = [
+    { id: 'BTH-0042', type: 'Arabica',  qty: '4,200 kg', moisture: '11.2%', score: '87.4', status: 'Processing' },
+    { id: 'BTH-0041', type: 'Arabica',  qty: '3,800 kg', moisture: '10.8%', score: '88.1', status: 'Ready'      },
+    { id: 'BTH-0039', type: 'Robusta',  qty: '2,600 kg', moisture: '12.1%', score: '85.2', status: 'Exported'   },
+];
 
+const lotRows = [
+    { id: 'LOT-0018', batch: 'BTH-0041', qty: '2,000 kg', price: '$5.2/kg', score: '88.1', status: 'Export Ready' },
+    { id: 'LOT-0017', batch: 'BTH-0039', qty: '1,800 kg', price: '$4.8/kg', score: '85.2', status: 'Tokenised'    },
+];
+
+const pipelineStages = [
+    { label: 'Farm',    count: props.season.farms_count   || 23, sub: 'Sourced',  verify: 'UCDA Verified', done: true,  current: false },
+    { label: 'Harvest', count: totalHarvests.value        || 0,  sub: 'Verified', verify: 'Quality Graded',done: true,  current: false },
+    { label: 'Batch',   count: props.season.batches_count || 3,  sub: 'Active',   verify: 'Processing',   done: false, current: true  },
+    { label: 'Lot',     count: props.season.lots_count    || 2,  sub: 'Created',  verify: 'Pending',      done: false, current: false },
+    { label: 'Market',  count: 0,                                sub: 'Pending',  verify: 'Awaiting',     done: false, current: false },
+];
+
+const qualityBars = [
+    { label: 'Avg Cupping Score',   value: 87, suffix: '/100' },
+    { label: 'Aroma',               value: 89, suffix: '/100' },
+    { label: 'Flavor',              value: 86, suffix: '/100' },
+    { label: 'Acidity',             value: 84, suffix: '/100' },
+    { label: 'Body',                value: 83, suffix: '/100' },
+    { label: 'Defect-Free Rate',    value: 93, suffix: '%'    },
+    { label: 'Moisture Consistency',value: 91, suffix: '%'    },
+];
+
+const targetMarkets = [
+    { label: 'UAE', pct: 38 },
+    { label: 'EU',  pct: 30 },
+    { label: 'USA', pct: 20 },
+    { label: 'Asia',pct: 12 },
+];
+
+const sustainabilityMetrics = [
+    { label: 'Organic Compliance',     value: 84, suffix: '%', color: '#004532' },
+    { label: 'Shade-Grown Coverage',   value: 72, suffix: '%', color: '#16a05d' },
+    { label: 'Climate-Smart Farming',  value: 68, suffix: '%', color: '#2563eb' },
+    { label: 'Water Efficiency Score', value: 91, suffix: '%', color: '#d97706' },
+];
+
+const activityLog = [
+    { label: `Season ${seasonCode.value} created`,        time: '3 mo ago',  dot: 'success' },
+    { label: `${pipelineStages[0].count} farms onboarded`,time: '2 mo ago',  dot: 'success' },
+    { label: 'Harvest phase started',                     time: '6 wk ago',  dot: 'success' },
+    { label: 'Peak production phase reached',             time: '2 wk ago',  dot: 'success' },
+    { label: `${batchRows.length} batches created`,       time: '1 wk ago',  dot: 'info'    },
+    { label: `${lotRows.length} lots ready for export`,   time: '3 d ago',   dot: 'success' },
+    { label: 'Export window opens soon',                  time: '1 d ago',   dot: 'info'    },
+];
+
+const aiInsights = [
+    'This season shows higher-than-average specialty coffee output across all contributing farms.',
+    'Export demand is strongest in EU and UAE markets — initiate lot listings early.',
+    'Quality consistency improved across all regions compared to the previous season.',
+];
+
+const alerts = [
+    { label: `${totalHarvests.value} new harvests added this season`, type: 'success', time: '2h ago'  },
+    { label: 'Batch BTH-0041 is ready for lot creation',             type: 'success', time: '6h ago'  },
+    { label: 'Export demand spike detected — UAE market',             type: 'info',    time: '1d ago'  },
+    { label: 'Quality anomaly flagged — Batch BTH-0040 (moisture)',   type: 'warning', time: '2d ago'  },
+];
+
+const chatPrompts = [
+    'How is this season performing?',
+    'Is it export ready?',
+    'Which region is best performing?',
+    'What should be improved?',
+];
+
+const fillPrompt = (p) => { chatInput.value = p; };
 </script>
 
 <template>
-    <AppLayout :title="seasonName" full-width>
-        <div class="season-profile-page">
-            <div class="season-profile-shell">
-                <div class="season-content">
-                    <section class="season-hero">
-                        <div class="season-hero__crumbs">Seasons <span class="season-crumb-sep">›</span> {{ seasonName }}</div>
-                        <div class="season-hero__head">
-                            <div>
-                                <h1>{{ seasonName }}</h1>
-                                <p>
-                                    Season ID: <strong>{{ seasonCode }}</strong> | {{ season.region }} | {{ season.start_date }} / {{ season.end_date }}
-                                </p>
-                            </div>
+    <AppLayout :title="seasonName" flush>
+        <div class="sp-page">
 
-                            <div class="season-hero__actions">
-                                <button
-                                    type="button"
-                                    class="season-btn is-primary"
-                                    @click="router.get(route('batch.create-season', season.id))"
-                                >
-                                    <el-icon><Plus /></el-icon>
-                                    <span>Create Batch</span>
-                                </button>
-
-                                <el-dropdown trigger="click" @command="handleOptionsCommand">
-                                    <button type="button" class="season-btn is-soft">
-                                        <span>Options</span>
-                                        <el-icon class="season-btn__caret"><ArrowDown /></el-icon>
-                                    </button>
-                                    <template #dropdown>
-                                        <el-dropdown-menu>
-                                            <el-dropdown-item command="edit">
-                                                <el-icon><EditPen /></el-icon>
-                                                <span>Edit</span>
-                                            </el-dropdown-item>
-                                            <el-dropdown-item command="delete" class="season-dropdown__danger">
-                                                <el-icon><Delete /></el-icon>
-                                                <span>Delete</span>
-                                            </el-dropdown-item>
-                                        </el-dropdown-menu>
-                                    </template>
-                                </el-dropdown>
-                            </div>
-                        </div>
-
-                        <div class="season-pills">
-                            <span class="season-pill is-green"><span class="dot"></span>Active Season</span>
-                            <span class="season-pill">Traceable</span>
-                            <span class="season-pill">Harvesting Phase</span>
-                            <span class="season-pill">Export Potential</span>
-                        </div>
-                    </section>
-
-                    <section class="season-summary-grid">
-                        <article
-                            v-for="card in summaryCards"
-                            :key="card.label"
-                            class="season-summary-card"
-                            :class="{ 'is-dark': card.tone === 'dark' }"
-                        >
-
-                            <span>{{ card.label }}</span>
-                            <strong>{{ card.value }}</strong>
-                            <small v-if="card.note">{{ card.note }}</small>
-                      
-                        </article>
-                    </section>
-
-                    <section class="season-grid">
-                        <div class="season-left-column">
-                            <article class="season-card season-insights">
-                                <div class="season-card__title"><span>AI Season Insights</span></div>
-                                <div class="season-insights__list">
-                                    <div v-for="item in insightCards" :key="item.text" class="season-insight-item">
-                                        <span class="season-insight-item__icon"><el-icon><component :is="item.icon" /></el-icon></span>
-                                        <span>{{ item.text }}</span>
-                                    </div>
-                                </div>
-                            </article>
-
-                            <article class="season-card season-quality">
-                                <div class="season-card__title">
-
-                                    <span>Quality Outlook</span>
-                                </div>
-                                <div class="season-quality__metrics">
-                                    <div>
-                                        <span>Avg Moisture</span>
-                                        <strong>11.4%</strong>
-                                    </div>
-                                    <div>
-                                        <span>Cupping Potential</span>
-                                        <strong>86.5-88</strong>
-                                    </div>
-                                </div>
-                                <div class="season-quality__risk">
-                                    <span class="season-quality__risk-tag">LOW</span>
-                                    <span>Stable drying conditions observed</span>
-                                </div>
-                                <div class="season-quality__pills">
-                                    <span class="season-quality__pill is-peach">Premium Potential</span>
-                                    <span class="season-quality__pill is-mint">Export Ready Soon</span>
-                                </div>
-                            </article>
-
-                            <article class="season-card season-climate">
-                                <div class="season-card__title">
-
-                                    <span>Climate Risk</span>
-                                </div>
-                                <div class="season-climate__grid">
-                                    <div v-for="item in climateCards" :key="item.label" class="season-climate__item">
-                                        <span>{{ item.label }}</span>
-                                        <strong>{{ item.value }}</strong>
-                                        <em :class="`is-${item.tone}`">{{ item.badge }}</em>
-                                    </div>
-                                </div>
-                            </article>
-                        </div>
-
-                        <div class="season-right-column">
-                            <article class="season-card season-table-card">
-                                <div class="season-card__title">
-
-                                    <span>Harvests Attached to This Season</span>
-                                    <button
-                                        type="button"
-                                        class="season-add-harvest-btn"
-                                        @click="router.get(route('season.create-harvest', season.id))"
-                                    >
-                                        <el-icon><Plus /></el-icon> Add Harvest
-                                    </button>
-                                </div>
-                                <el-table
-                                    :data="seasonHarvests"
-                                    class="season-data-table season-harvests-table"
-                                    empty-text="No harvests are attached to this season yet"
-                                    @row-click="openHarvestProfile"
-                                >
-                                    <el-table-column label="ID" min-width="120">
-                                        <template #default="{ row }">
-                                            <span class="season-table-info">
-                                                <el-icon><Tickets /></el-icon>
-                                                <strong>{{ row.id }}</strong>
-                                            </span>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="Farm / Lot" min-width="210">
-                                        <template #default="{ row }">
-                                            <div class="season-table-info season-table-info--stack">
-                                                <span class="season-table-info__line">
-                                                    <el-icon><CollectionTag /></el-icon>
-                                                    <strong>{{ row.farm }}</strong>
-                                                </span>
-                                                <span class="season-table-info__line is-subtle">
-                                                    <el-icon><Location /></el-icon>
-                                                    <small>{{ row.lot }}</small>
-                                                </span>
-                                            </div>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="Quantity" min-width="130">
-                                        <template #default="{ row }">
-                                            <span class="season-table-info">
-                                                <el-icon><Files /></el-icon>
-                                                <span>{{ row.quantity }}</span>
-                                            </span>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="Moisture" min-width="110">
-                                        <template #default="{ row }">
-                                            <span class="season-table-info">
-                                                <el-icon><MostlyCloudy /></el-icon>
-                                                <span>{{ row.moisture }}</span>
-                                            </span>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="Price" min-width="90">
-                                        <template #default="{ row }">
-                                            <span class="season-table-info">
-                                                <el-icon><TrendCharts /></el-icon>
-                                                <span>{{ row.score }}</span>
-                                            </span>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="Action" min-width="110" align="right">
-                                        <template #default="{ row }">
-                                            <button
-                                                type="button"
-                                                class="season-delete-harvest-btn"
-                                                @click.stop="deleteHarvest(row)"
-                                                aria-label="Delete harvest"
-                                                title="Delete harvest"
-                                            >
-                                                <el-icon><Delete /></el-icon>
-                                            </button>
-                                        </template>
-                                    </el-table-column>
-                                </el-table>
-                            </article>
-
-                            <div class="season-docs-row">
-                                <article v-for="item in qualityDocs" :key="item.title" class="season-doc-card">
-                                    <span class="season-doc-card__icon"><el-icon><component :is="item.icon" /></el-icon></span>
-                                    <div>
-                                        <strong>{{ item.title }}</strong>
-                                        <small>{{ item.subtitle }}</small>
-                                    </div>
-                                </article>
-                            </div>
-
-                            <article class="season-card season-table-card">
-                                <div class="season-card__title">
-
-                                    <span>Recent Activities</span>
-                                </div>
-                                <el-table :data="recentActivities" class="season-data-table" empty-text="No activity yet">
-                                    <el-table-column label="Date" min-width="140">
-                                        <template #default="{ row }">
-                                            <span class="season-table-info">
-                                                <el-icon><Calendar /></el-icon>
-                                                <span>{{ row.date }}</span>
-                                            </span>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="Activity" min-width="180">
-                                        <template #default="{ row }">
-                                            <div class="season-table-info season-table-info--stack">
-                                                <span class="season-table-info__line">
-                                                    <el-icon><EditPen /></el-icon>
-                                                    <strong>{{ row.activity }}</strong>
-                                                </span>
-                                                <span class="season-table-info__line is-subtle">
-                                                    <el-icon><Opportunity /></el-icon>
-                                                    <small>{{ row.note }}</small>
-                                                </span>
-                                            </div>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="Farmer / Lot" min-width="180">
-                                        <template #default="{ row }">
-                                            <span class="season-table-info">
-                                                <el-icon><CollectionTag /></el-icon>
-                                                <span>{{ row.farm }}</span>
-                                            </span>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="Status" min-width="130">
-                                        <template #default="{ row }">
-                                            <span class="season-completed-status"><el-icon><CircleCheckFilled /></el-icon>{{ row.status }}</span>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="Evidence" min-width="130">
-                                        <template #default="{ row }">
-                                            <span class="season-table-info">
-                                                <el-icon><Document /></el-icon>
-                                                <span>{{ row.evidence }}</span>
-                                            </span>
-                                        </template>
-                                    </el-table-column>
-                                </el-table>
-                            </article>
-                        </div>
-                    </section>
+            <!-- Page Header ─────────────────────────────────────── -->
+            <div class="sp-header">
+                <div class="sp-header-left">
+                    <div class="sp-kicker">Season Profile</div>
+                    <h1 class="sp-title mt-2 mb-2">{{ seasonName }}</h1>
+                    <p class="sp-subtitle mb-2">{{ seasonCode }} · Comprehensive coffee production season overview with traceability from farms to export-ready lots.</p>
+                    <div class="sp-badge-row">
+                        <span class="sp-badge sp-badge--green">Active Season</span>
+                        <span class="sp-badge sp-badge--blue">Traceable Production</span>
+                        <span class="sp-badge sp-badge--amber">Export Pipeline</span>
+                        <span class="sp-badge sp-badge--purple">Verified Data</span>
+                    </div>
+                </div>
+                <div class="sp-header-actions">
+                    <button class="sp-btn sp-btn--primary" @click="router.get(route('harvest.index'))">
+                        <el-icon><Tickets /></el-icon> View Harvests
+                    </button>
+                    <button class="sp-btn sp-btn--outline" @click="router.get(route('batch.index'))">
+                        <el-icon><Box /></el-icon> View Batches
+                    </button>
+                    <button class="sp-btn sp-btn--outline" @click="router.get(route('batch.create-season', season.id))">
+                        <el-icon><Plus /></el-icon> Create Batch
+                    </button>
+                    <button class="sp-btn sp-btn--outline">
+                        <el-icon><Download /></el-icon> Export Data
+                    </button>
+                    <el-dropdown trigger="click" @command="handleOptionsCommand">
+                        <button type="button" class="sp-btn sp-btn--ghost">
+                            Options <el-icon style="font-size:11px; margin-left:3px;"><ArrowDown /></el-icon>
+                        </button>
+                        <template #dropdown>
+                            <el-dropdown-menu>
+                                <el-dropdown-item command="edit"><el-icon><EditPen /></el-icon> Edit Season</el-dropdown-item>
+                                <el-dropdown-item command="add-harvest"><el-icon><Plus /></el-icon> Add Harvest</el-dropdown-item>
+                                <el-dropdown-item command="delete" class="sp-dropdown-danger"><el-icon><Delete /></el-icon> Delete Season</el-dropdown-item>
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
+                    <button class="sp-btn sp-btn--ghost">
+                        <el-icon><ChatDotRound /></el-icon> Ask Advisor
+                    </button>
                 </div>
             </div>
+
+            <!-- ② Season Overview Card ────────────────────────────── -->
+            <div class="sp-overview">
+
+                <!-- Identity -->
+                <div class="sp-ov-block">
+                    <div class="sp-ov-label">Season Identity</div>
+                    <div class="sp-ov-title">{{ seasonName }}</div>
+                    <div class="sp-ov-sub">{{ seasonCode }}</div>
+                    <div class="sp-ov-meta-grid">
+                        <div class="sp-meta-pair">
+                            <span class="sp-muted">Start Date</span>
+                            <span class="sp-bold">{{ formatDate(season.start_date) }}</span>
+                        </div>
+                        <div class="sp-meta-pair">
+                            <span class="sp-muted">End Date</span>
+                            <span class="sp-bold">{{ formatDate(season.end_date) }}</span>
+                        </div>
+                        <div class="sp-meta-pair">
+                            <span class="sp-muted">Status</span>
+                            <span class="sp-status sp-status--received">{{ season.status || 'Active' }}</span>
+                        </div>
+                        <div class="sp-meta-pair">
+                            <span class="sp-muted">Timeline</span>
+                            <span class="sp-bold">{{ seasonTimeline }}</span>
+                        </div>
+                        <div class="sp-meta-pair sp-meta-pair--full">
+                            <span class="sp-muted">Region(s)</span>
+                            <span class="sp-bold">{{ season.region || 'Uganda — Multi-region' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Production Summary -->
+                <div class="sp-ov-block">
+                    <div class="sp-ov-label">Production Summary</div>
+                    <div class="sp-ov-stat-grid">
+                        <div class="sp-ov-stat">
+                            <div class="sp-ov-stat-val">{{ season.farms_count || 23 }}</div>
+                            <div class="sp-muted">Farms</div>
+                        </div>
+                        <div class="sp-ov-stat">
+                            <div class="sp-ov-stat-val">{{ totalHarvests }}</div>
+                            <div class="sp-muted">Harvests</div>
+                        </div>
+                        <div class="sp-ov-stat">
+                            <div class="sp-ov-stat-val">{{ batchRows.length }}</div>
+                            <div class="sp-muted">Batches</div>
+                        </div>
+                        <div class="sp-ov-stat">
+                            <div class="sp-ov-stat-val">{{ lotRows.length }}</div>
+                            <div class="sp-muted">Lots</div>
+                        </div>
+                    </div>
+                    <div class="sp-ov-total">
+                        <div class="sp-ov-total-val">{{ Number(totalQuantity).toLocaleString() }} kg</div>
+                        <div class="sp-muted">Total Production</div>
+                    </div>
+                </div>
+
+                <!-- Performance & Quality -->
+                <div class="sp-ov-block">
+                    <div class="sp-ov-label">Performance &amp; Quality</div>
+                    <div class="sp-ov-score-row">
+                        <div class="sp-ov-score-item">
+                            <div class="sp-ov-score-val" style="color:#004532;">87.4</div>
+                            <div class="sp-muted">Cupping Score</div>
+                        </div>
+                        <div class="sp-ov-score-item">
+                            <div class="sp-ov-score-val" style="color:#2563eb;">92%</div>
+                            <div class="sp-muted">Quality Consistency</div>
+                        </div>
+                        <div class="sp-ov-score-item">
+                            <div class="sp-ov-score-val" style="color:#d97706;">88%</div>
+                            <div class="sp-muted">Export Readiness</div>
+                        </div>
+                    </div>
+                    <div class="sp-progress-wrap" style="margin-top:10px;">
+                        <div class="sp-muted" style="font-size:10px; margin-bottom:4px;">Yield Efficiency — 84%</div>
+                        <div class="sp-progress-track"><div class="sp-progress-fill" style="width:84%;" /></div>
+                    </div>
+                    <div class="d-flex gap-2 mt-2 flex-wrap">
+                        <span class="sp-badge sp-badge--green" style="font-size:9px;">Premium Season</span>
+                        <span class="sp-badge sp-badge--blue" style="font-size:9px;">Specialty Output</span>
+                        <span class="sp-badge sp-badge--amber" style="font-size:9px;">Export Grade</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Main two-column body ─────────────────────────────── -->
+            <div class="sp-body">
+
+                <!-- Left: Main content ───────────────────────────── -->
+                <div class="sp-main">
+
+                    <!-- ③ Season Timeline ────────────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><Clock /></el-icon> Season Timeline</div>
+                            <span class="sp-badge sp-badge--amber" style="font-size:9px;">Current: Peak Harvest</span>
+                        </div>
+                        <div class="sp-card-body sp-card-body--pipe">
+                            <div class="sp-pipe">
+                                <div v-for="(stage, idx) in timelineStages" :key="stage.label" class="sp-pipe-item">
+                                    <div class="sp-pipe-item__top">
+                                        <div class="sp-pipe-item__date" :class="{ 'sp-pipe-item__date--current': stage.current }">{{ stage.date }}</div>
+                                    </div>
+                                    <div class="sp-pipe-item__mid">
+                                        <div class="sp-pipe-item__seg" :class="{ 'sp-pipe-item__seg--done': idx > 0 && timelineStages[idx - 1].done, 'sp-pipe-item__seg--hidden': idx === 0 }" />
+                                        <div class="sp-pipe-item__dot" :class="{ 'sp-pipe-item__dot--done': stage.done, 'sp-pipe-item__dot--current': stage.current }">
+                                            <el-icon v-if="stage.done" style="font-size:12px;"><Check /></el-icon>
+                                        </div>
+                                        <div class="sp-pipe-item__seg" :class="{ 'sp-pipe-item__seg--done': stage.done, 'sp-pipe-item__seg--hidden': idx === timelineStages.length - 1 }" />
+                                    </div>
+                                    <div class="sp-pipe-item__bot">
+                                        <div class="sp-pipe-item__label" :class="{ 'sp-pipe-item__label--current': stage.current }">{{ stage.label }}</div>
+                                        <div class="sp-pipe-item__verify" :class="{ 'sp-pipe-item__verify--done': stage.done, 'sp-pipe-item__verify--current': stage.current }">{{ stage.verify }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑤ Harvests Table ─────────────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><Tickets /></el-icon> Harvest Overview</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="sp-muted" style="font-size:11px;">{{ totalHarvests }} total</span>
+                                <button class="sp-btn sp-btn--primary sp-btn--sm" @click="router.get(route('season.create-harvest', season.id))">
+                                    <el-icon><Plus /></el-icon> Add Harvest
+                                </button>
+                            </div>
+                        </div>
+                        <div class="sp-table-wrap">
+                            <table class="sp-table">
+                                <thead>
+                                    <tr>
+                                        <th>Harvest ID</th>
+                                        <th>Farm</th>
+                                        <th>Region</th>
+                                        <th>Date</th>
+                                        <th class="text-end">Qty (kg)</th>
+                                        <th class="text-end">Score</th>
+                                        <th class="text-end">Moisture</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="seasonHarvests.length === 0">
+                                        <td colspan="9" class="sp-empty">No harvests attached to this season yet.</td>
+                                    </tr>
+                                    <tr
+                                        v-for="row in seasonHarvests"
+                                        :key="row.rawId"
+                                        class="sp-table-row--clickable"
+                                        @click="openHarvestProfile(row)"
+                                    >
+                                        <td><span class="sp-code">{{ row.id }}</span></td>
+                                        <td><span class="sp-primary" style="font-size:12px;">{{ row.farm }}</span></td>
+                                        <td><span class="sp-muted">{{ row.region }}</span></td>
+                                        <td><span class="sp-muted">{{ row.date }}</span></td>
+                                        <td class="text-end"><span class="sp-primary" style="font-size:12px;">{{ row.quantity }}</span></td>
+                                        <td class="text-end"><span class="sp-score">{{ row.score }}</span></td>
+                                        <td class="text-end"><span class="sp-muted">{{ row.moisture }}</span></td>
+                                        <td>
+                                            <span class="sp-status" :class="row.status === 'VERIFIED' ? 'sp-status--received' : 'sp-status--ready'">
+                                                {{ row.status }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end" @click.stop>
+                                            <button class="sp-del-btn" title="Delete harvest" @click="deleteHarvest(row)">
+                                                <el-icon><Delete /></el-icon>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="sp-table-foot">
+                            <span class="sp-muted">{{ totalHarvests }} harvests · {{ Number(totalQuantity).toLocaleString() }} kg total</span>
+                            <span class="sp-badge sp-badge--green" style="font-size:9px;">Average quality trend: ↑</span>
+                        </div>
+                    </div>
+
+                    <!-- ④ Regional Breakdown ─────────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><Location /></el-icon> Regional Production Breakdown</div>
+                        </div>
+                        <div class="sp-card-body">
+                            <div class="sp-region-grid">
+                                <div v-for="r in regionBreakdown" :key="r.name" class="sp-region-card">
+                                    <div class="sp-region-name">{{ r.name }}</div>
+                                    <div class="sp-region-vol">{{ r.vol }}</div>
+                                    <div class="sp-region-meta">
+                                        <span class="sp-muted">{{ r.farms }} farms</span>
+                                        <span class="sp-muted">Score {{ r.score }}</span>
+                                    </div>
+                                    <div class="sp-progress-wrap" style="margin-top:8px;">
+                                        <div class="sp-muted" style="font-size:9px; margin-bottom:3px;">Export readiness {{ r.readiness }}%</div>
+                                        <div class="sp-progress-track"><div class="sp-progress-fill" :style="{ width: r.readiness + '%' }" /></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑥ Batch Overview ─────────────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><CollectionTag /></el-icon> Batch Overview</div>
+                            <button class="sp-btn sp-btn--outline sp-btn--sm" @click="router.get(route('batch.create-season', season.id))">
+                                <el-icon><Plus /></el-icon> Create Batch
+                            </button>
+                        </div>
+                        <div class="sp-table-wrap">
+                            <table class="sp-table">
+                                <thead>
+                                    <tr>
+                                        <th>Batch ID</th>
+                                        <th>Coffee Type</th>
+                                        <th class="text-end">Quantity</th>
+                                        <th class="text-end">Moisture</th>
+                                        <th class="text-end">Score</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="row in batchRows" :key="row.id">
+                                        <td><span class="sp-code">{{ row.id }}</span></td>
+                                        <td><span class="sp-muted">{{ row.type }}</span></td>
+                                        <td class="text-end"><span class="sp-primary" style="font-size:12px;">{{ row.qty }}</span></td>
+                                        <td class="text-end"><span class="sp-muted">{{ row.moisture }}</span></td>
+                                        <td class="text-end"><span class="sp-score">{{ row.score }}</span></td>
+                                        <td>
+                                            <span class="sp-status" :class="row.status === 'Ready' ? 'sp-status--received' : row.status === 'Exported' ? 'sp-status--ready' : 'sp-status--pending'">
+                                                {{ row.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ⑦ Lot Overview ───────────────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><Files /></el-icon> Lot Production Overview</div>
+                        </div>
+                        <div class="sp-table-wrap">
+                            <table class="sp-table">
+                                <thead>
+                                    <tr>
+                                        <th>Lot ID</th>
+                                        <th>Batch Source</th>
+                                        <th class="text-end">Quantity</th>
+                                        <th class="text-end">Price</th>
+                                        <th class="text-end">Score</th>
+                                        <th>Export Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="lotRows.length === 0">
+                                        <td colspan="6" class="sp-empty">No lots created this season yet.</td>
+                                    </tr>
+                                    <tr v-for="row in lotRows" :key="row.id">
+                                        <td><span class="sp-code">{{ row.id }}</span></td>
+                                        <td><span class="sp-muted">{{ row.batch }}</span></td>
+                                        <td class="text-end"><span class="sp-primary" style="font-size:12px;">{{ row.qty }}</span></td>
+                                        <td class="text-end"><span class="sp-bold" style="font-size:12px; color:#004532;">{{ row.price }}</span></td>
+                                        <td class="text-end"><span class="sp-score">{{ row.score }}</span></td>
+                                        <td>
+                                            <span class="sp-status" :class="row.status === 'Export Ready' ? 'sp-status--received' : 'sp-status--ready'">
+                                                {{ row.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ⑧ Traceability Pipeline ──────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><Promotion /></el-icon> Season Traceability Pipeline</div>
+                            <span class="sp-badge sp-badge--amber" style="font-size:9px;">Current: Batch</span>
+                        </div>
+                        <div class="sp-card-body sp-card-body--pipe">
+                            <div class="sp-pipe">
+                                <div v-for="(stage, idx) in pipelineStages" :key="stage.label" class="sp-pipe-item">
+                                    <div class="sp-pipe-item__top">
+                                        <div class="sp-pipe-item__date" :class="{ 'sp-pipe-item__date--current': stage.current }">{{ stage.count }}</div>
+                                        <div class="sp-pipe-item__sub">{{ stage.sub }}</div>
+                                    </div>
+                                    <div class="sp-pipe-item__mid">
+                                        <div class="sp-pipe-item__seg" :class="{ 'sp-pipe-item__seg--done': idx > 0 && pipelineStages[idx - 1].done, 'sp-pipe-item__seg--hidden': idx === 0 }" />
+                                        <div class="sp-pipe-item__dot" :class="{ 'sp-pipe-item__dot--done': stage.done, 'sp-pipe-item__dot--current': stage.current }">
+                                            <el-icon v-if="stage.done" style="font-size:12px;"><Check /></el-icon>
+                                        </div>
+                                        <div class="sp-pipe-item__seg" :class="{ 'sp-pipe-item__seg--done': stage.done, 'sp-pipe-item__seg--hidden': idx === pipelineStages.length - 1 }" />
+                                    </div>
+                                    <div class="sp-pipe-item__bot">
+                                        <div class="sp-pipe-item__label" :class="{ 'sp-pipe-item__label--current': stage.current }">{{ stage.label }}</div>
+                                        <div class="sp-pipe-item__verify" :class="{ 'sp-pipe-item__verify--done': stage.done, 'sp-pipe-item__verify--current': stage.current }">{{ stage.verify }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /sp-main -->
+
+                <!-- Right rail ───────────────────────────────────── -->
+                <div class="sp-rail">
+
+                    <!-- ⑩ Quality Analysis ───────────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><Star /></el-icon> Quality Analysis</div>
+                            <span class="sp-badge sp-badge--green" style="font-size:9px;">Specialty Grade</span>
+                        </div>
+                        <div class="sp-card-body">
+                            <div class="sp-score-tile">
+                                <div class="sp-muted" style="font-size:9px; letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px;">Avg SCA Cupping Score</div>
+                                <div class="sp-score-big">87.4</div>
+                                <div class="sp-score-stars">★ ★ ★ ★ ★</div>
+                            </div>
+                            <div class="sp-quality-bars">
+                                <div v-for="m in qualityBars" :key="m.label" class="sp-quality-row">
+                                    <div class="sp-quality-label">
+                                        <span class="sp-muted" style="font-size:11px;">{{ m.label }}</span>
+                                        <span class="sp-bold" style="font-size:11px;">{{ m.value }}{{ m.suffix }}</span>
+                                    </div>
+                                    <div class="sp-bar-track"><div class="sp-bar-fill" :style="{ width: m.value + '%' }" /></div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <span class="sp-badge sp-badge--green" style="font-size:9px;">Export Quality</span>
+                                <span class="sp-badge sp-badge--blue" style="font-size:9px;">Premium Season</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑪ Export & Market Performance ───────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><TrendCharts /></el-icon> Export &amp; Market</div>
+                            <span class="sp-badge sp-badge--green" style="font-size:9px;">Export Ready</span>
+                        </div>
+                        <div class="sp-card-body">
+                            <div class="sp-export-stats">
+                                <div class="sp-export-stat">
+                                    <div class="sp-bold" style="font-size:20px; color:#004532;">88%</div>
+                                    <div class="sp-muted">Eligibility</div>
+                                </div>
+                                <div class="sp-export-stat">
+                                    <div class="sp-bold" style="font-size:20px; color:#d97706;">High</div>
+                                    <div class="sp-muted">Demand</div>
+                                </div>
+                                <div class="sp-export-stat">
+                                    <div class="sp-bold" style="font-size:18px;">$4.8–5.6</div>
+                                    <div class="sp-muted">Avg / kg</div>
+                                </div>
+                            </div>
+                            <div class="sp-muted" style="font-size:9px; text-transform:uppercase; letter-spacing:.12em; margin:10px 0 7px;">Target Markets</div>
+                            <div class="sp-markets">
+                                <div v-for="m in targetMarkets" :key="m.label" class="sp-market-row">
+                                    <span class="sp-bold" style="font-size:11px; min-width:32px;">{{ m.label }}</span>
+                                    <div class="sp-bar-track" style="flex:1;"><div class="sp-bar-fill sp-bar-fill--amber" :style="{ width: m.pct + '%' }" /></div>
+                                    <span class="sp-muted" style="font-size:10px; min-width:26px; text-align:right;">{{ m.pct }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑫ Sustainability ─────────────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><Opportunity /></el-icon> Sustainability</div>
+                            <span class="sp-badge sp-badge--green" style="font-size:9px;">Eco Certified</span>
+                        </div>
+                        <div class="sp-card-body">
+                            <div class="sp-sustain-bars">
+                                <div v-for="m in sustainabilityMetrics" :key="m.label" class="sp-quality-row">
+                                    <div class="sp-quality-label">
+                                        <span class="sp-muted" style="font-size:11px;">{{ m.label }}</span>
+                                        <span class="sp-bold" style="font-size:11px;">{{ m.value }}{{ m.suffix }}</span>
+                                    </div>
+                                    <div class="sp-bar-track"><div class="sp-bar-fill" :style="{ width: m.value + '%', background: m.color }" /></div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mt-3">
+                                <span class="sp-badge sp-badge--green" style="font-size:9px;">Sustainable Season</span>
+                                <span class="sp-badge sp-badge--blue" style="font-size:9px;">Ethical Production</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑬ Activity Timeline ──────────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><Clock /></el-icon> Activity Timeline</div>
+                        </div>
+                        <div class="sp-card-body">
+                            <div class="sp-timeline">
+                                <div v-for="entry in activityLog" :key="entry.label" class="sp-tl-item">
+                                    <div class="sp-tl-dot" :class="`sp-tl-dot--${entry.dot}`" />
+                                    <div>
+                                        <div class="sp-primary" style="font-size:11px;">{{ entry.label }}</div>
+                                        <div class="sp-muted">{{ entry.time }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑭ AI Season Insights ─────────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><DataLine /></el-icon> AI Season Insights</div>
+                        </div>
+                        <div class="sp-card-body">
+                            <div class="sp-insights">
+                                <div v-for="(insight, idx) in aiInsights" :key="idx" class="sp-insight">
+                                    <div class="sp-insight-dot" />
+                                    <p class="sp-insight-text">{{ insight }}</p>
+                                </div>
+                            </div>
+                            <div class="sp-insight-footer">
+                                <span class="sp-muted" style="font-size:9px; text-transform:uppercase; letter-spacing:.1em;">Powered by Bean Origin AI</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑮ Smart Alerts ───────────────────────────── -->
+                    <div class="sp-card">
+                        <div class="sp-card-head">
+                            <div class="sp-card-title"><el-icon><Bell /></el-icon> Smart Alerts</div>
+                            <span class="sp-badge sp-badge--amber" style="font-size:9px;">{{ alerts.length }} Active</span>
+                        </div>
+                        <div class="sp-card-body">
+                            <div class="sp-alerts">
+                                <div v-for="alert in alerts" :key="alert.label" class="sp-alert" :class="`sp-alert--${alert.type}`">
+                                    <div class="sp-alert-dot" />
+                                    <div>
+                                        <div class="sp-primary" style="font-size:11px;">{{ alert.label }}</div>
+                                        <div class="sp-muted">{{ alert.time }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /sp-rail -->
+
+            </div><!-- /sp-body -->
+
+        </div><!-- /sp-page -->
+
+        <!-- ⑯ Floating AI Assistant ──────────────────────────────── -->
+        <div class="sp-float">
+            <div v-if="chatOpen" class="sp-chat-panel">
+                <div class="sp-chat-head">
+                    <div>
+                        <div class="sp-bold" style="font-size:12px;">Bean Origin Season Advisor</div>
+                        <div class="sp-muted">Season intelligence assistant</div>
+                    </div>
+                    <button class="sp-chat-close" @click="chatOpen = false">×</button>
+                </div>
+                <div class="sp-chat-prompts">
+                    <button v-for="p in chatPrompts" :key="p" class="sp-chat-prompt" @click="fillPrompt(p)">{{ p }}</button>
+                </div>
+                <div class="sp-chat-input-row">
+                    <input v-model="chatInput" class="sp-chat-input" placeholder="Ask about this season…" />
+                    <button class="sp-chat-send"><el-icon><Promotion /></el-icon></button>
+                </div>
+            </div>
+            <button class="sp-float-btn" @click="chatOpen = !chatOpen">
+                <el-icon><ChatDotRound /></el-icon>
+            </button>
         </div>
+
         <EditSeasonModal
             v-model="editModalOpen"
             :season="season"
@@ -475,610 +735,307 @@ const deleteHarvest = (row) => {
             :status-options="statusOptions"
             @success="notifySeasonUpdateSuccess"
         />
+
     </AppLayout>
 </template>
 
 <style scoped>
-.season-profile-page {
-    --primary: #004532;
-    --primary-grad: #065f46;
-    --on-surface: #191c1e;
-    --on-surface-var: #74777a;
-    --surface: #f7f9fb;
-    --surface-low: #f2f4f6;
-    --surface-high: #e6e8ea;
-    --surface-white: #ffffff;
-    --primary-fixed: #a6f2d1;
-    --on-primary-fixed: #002116;
-    background: var(--surface-white);
-    font-family: 'Manrope', system-ui, sans-serif;
-    min-height: calc(100vh - 3.5rem);
+/* ── Base ───────────────────────────────────────────────────────── */
+.sp-page {
+    min-height: calc(100vh - 48px);
+    background: #fff;
+    color: #1f2a2a;
+    padding: 0 0 48px;
+    font-family: 'Manrope', sans-serif;
 }
 
-.season-profile-shell {
-    margin: 0 auto;
-    max-width: 1180px;
-    min-height: calc(100vh - 3.5rem);
-}
-
-.season-content {
-    padding: 28px 12px 36px;
-}
-
-/* ── Hero ── */
-.season-hero__crumbs {
-    color: var(--on-surface-var);
-    font-size: 12px;
-}
-
-.season-crumb-sep {
-    margin: 0 8px;
-}
-
-.season-hero__head {
-    align-items: flex-start;
+/* ── Header ─────────────────────────────────────────────────────── */
+.sp-header {
     display: flex;
-    gap: 24px;
-    justify-content: space-between;
-    margin-top: 12px;
-}
-
-.season-hero h1 {
-    color: var(--on-surface);
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    margin: 0;
-}
-
-.season-hero p {
-    color: var(--on-surface-var);
-    font-size: 13px;
-    line-height: 1.45;
-    margin: 10px 0 0;
-    max-width: 760px;
-}
-
-.season-hero__actions {
-    display: grid;
-    gap: 10px;
-    grid-template-columns: repeat(3, auto);
-    justify-items: end;
-}
-
-/* ── Buttons ── */
-.season-btn {
     align-items: center;
-    border-radius: 6px;
-    display: inline-flex;
-    font-size: 13px;
-    font-weight: 600;
-    gap: 8px;
-    justify-content: center;
-    min-height: 38px;
-    min-width: 96px;
-    padding: 0 16px;
-}
-
-.season-btn__caret {
-    font-size: 12px;
-    margin-left: 2px;
-}
-
-:deep(.season-dropdown__danger) {
-    color: #dc2626;
-}
-
-.season-btn.is-soft {
-    background: var(--surface-low);
-    border: 1px solid var(--surface-high);
-    color: var(--on-surface);
-}
-
-.season-btn.is-primary {
-    background: linear-gradient(135deg, #004532, #065f46);
-    border: none;
-    border-radius: 6px;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 700;
-    min-height: 38px;
-}
-
-/* ── Pills ── */
-.season-pills {
-    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 24px;
+    border-bottom: 1px solid #e8ecec;
+    background: #fff;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 16px;
 }
-
-.season-pill {
-    align-items: center;
-    background: var(--surface-low);
-    border-radius: 999px;
-    color: var(--on-surface-var);
-    display: inline-flex;
-    font-size: 11px;
-    font-weight: 700;
-    gap: 7px;
-    letter-spacing: 0.04em;
-    min-height: 26px;
-    padding: 0 10px;
+.sp-kicker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 800;
+    letter-spacing: .16em; text-transform: uppercase;
+    color: #94a1b2; margin-bottom: 2px;
 }
+.sp-title   { font-size: 18px; font-weight: 800; color: #003f2c; margin: 0 0 2px; line-height: 1.15; }
+.sp-subtitle { font-size: 12px; color: #657386; margin: 0 0 7px; line-height: 1.5; }
+.sp-badge-row { display: flex; gap: 5px; flex-wrap: wrap; }
+.sp-header-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
-.season-pill.is-green {
-    background: var(--primary-fixed);
-    color: var(--on-primary-fixed);
+:deep(.sp-dropdown-danger) { color: #dc2626 !important; }
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.sp-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 0 12px; height: 30px; border-radius: 5px;
+    font-size: 11px; font-weight: 700; letter-spacing: .03em;
+    cursor: pointer; border: 1px solid transparent;
+    text-decoration: none; white-space: nowrap;
+    transition: background .14s, color .14s, border-color .14s;
 }
+.sp-btn--primary { background: #003f2c; color: #fff; border-color: #003f2c; }
+.sp-btn--primary:hover { background: #004532; }
+.sp-btn--outline { background: #fff; color: #263232; border-color: #d4d8d8; }
+.sp-btn--outline:hover { border-color: #003f2c; color: #003f2c; }
+.sp-btn--ghost { background: transparent; color: #657386; border-color: transparent; }
+.sp-btn--ghost:hover { background: #f3f4f4; }
+.sp-btn--sm { height: 26px; padding: 0 9px; font-size: 10px; }
 
-.season-pill .dot {
-    background: var(--primary);
-    border-radius: 50%;
-    display: inline-block;
-    height: 7px;
-    width: 7px;
+/* ── Badges ──────────────────────────────────────────────────────── */
+.sp-badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 7px; border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
 }
+.sp-badge--green  { background: #eef5f1; color: #004532; border: 1px solid #c3ddd2; }
+.sp-badge--blue   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.sp-badge--amber  { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.sp-badge--purple { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
 
-/* ── Summary Cards ── */
-.season-summary-grid {
+/* ── Overview Card ───────────────────────────────────────────────── */
+.sp-overview {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid #e8ecec;
+}
+@media (max-width: 900px) { .sp-overview { grid-template-columns: 1fr; } }
+
+.sp-ov-block { padding: 14px 20px; border-right: 1px solid #e8ecec; }
+.sp-ov-block:last-child { border-right: none; }
+@media (max-width: 900px) { .sp-ov-block { border-right: none; border-bottom: 1px solid #e8ecec; } }
+
+.sp-ov-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 800; letter-spacing: .14em;
+    text-transform: uppercase; color: #94a1b2; margin-bottom: 5px;
+}
+.sp-ov-title { font-size: 15px; font-weight: 800; color: #003f2c; line-height: 1.15; }
+.sp-ov-sub   { font-size: 11px; color: #657386; margin-top: 1px; margin-bottom: 8px; }
+
+.sp-ov-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+.sp-meta-pair { display: flex; flex-direction: column; gap: 1px; }
+.sp-meta-pair--full { grid-column: 1 / -1; }
+
+.sp-ov-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 10px; }
+.sp-ov-stat { text-align: center; padding: 7px; border: 1px solid #e8ecec; border-radius: 5px; background: #fafbfb; }
+.sp-ov-stat-val { font-size: 18px; font-weight: 800; color: #1f2a2a; line-height: 1.1; }
+.sp-ov-total { text-align: center; padding: 8px; border: 1px solid #c3ddd2; border-radius: 5px; background: #eef5f1; }
+.sp-ov-total-val { font-size: 20px; font-weight: 800; color: #004532; line-height: 1.1; }
+
+.sp-ov-score-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 10px; }
+.sp-ov-score-item { text-align: center; padding: 8px 4px; }
+.sp-ov-score-val { font-size: 18px; font-weight: 800; color: #1f2a2a; line-height: 1.1; }
+
+/* ── Shared text helpers ─────────────────────────────────────────── */
+.sp-primary { font-size: 12px; font-weight: 600; color: #1f2a2a; }
+.sp-muted   { font-size: 11px; color: #94a1b2; }
+.sp-bold    { font-weight: 700; color: #1f2a2a; }
+
+/* ── Status dots ─────────────────────────────────────────────────── */
+.sp-status {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #657386;
+}
+.sp-status::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #cbd5df; }
+.sp-status--received::before { background: #16a05d; }
+.sp-status--ready::before    { background: #2563eb; }
+.sp-status--pending::before  { background: #d97706; }
+
+/* ── Progress ────────────────────────────────────────────────────── */
+.sp-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.sp-progress-fill  { height: 100%; background: #004532; border-radius: 3px; transition: width .4s; }
+
+/* ── Body layout ─────────────────────────────────────────────────── */
+.sp-body {
     display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr);
     gap: 16px;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    margin-top: 28px;
+    padding: 16px 24px 0;
 }
+@media (max-width: 1100px) { .sp-body { grid-template-columns: 1fr; } }
+.sp-main { display: flex; flex-direction: column; gap: 12px; }
+.sp-rail { display: flex; flex-direction: column; gap: 12px; }
 
-.season-summary-card,
-.season-card,
-.season-doc-card {
-    background: var(--surface-white);
-    border: 1px solid var(--surface-high);
-    border-radius: 10px;
+/* ── Card ────────────────────────────────────────────────────────── */
+.sp-card { border: 1px solid #e4e7e8; border-radius: 8px; background: #fff; overflow: hidden; }
+.sp-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 8px 14px;
+    border-bottom: 1px solid #e8ecec; background: #f8f9f9;
+    border-radius: 7px 7px 0 0; flex-wrap: wrap;
 }
-
-.season-summary-card {
-    min-height: 96px;
-    padding: 16px;
-    position: relative;
+.sp-card-title {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 800; color: #1f2a2a;
+    letter-spacing: .04em; text-transform: uppercase;
+    font-family: 'IBM Plex Mono', monospace;
 }
+.sp-card-body { padding: 12px 14px; }
+.sp-card-body--pipe { padding: 16px 12px; }
 
-.season-summary-card__icon-row {
-    color: var(--on-surface-var);
-    font-size: 14px;
-    margin-bottom: 8px;
+/* ── Pipeline (shared for timeline + traceability) ───────────────── */
+.sp-pipe { display: flex; align-items: stretch; overflow-x: auto; }
+
+.sp-pipe-item {
+    flex: 1; min-width: 70px;
+    display: flex; flex-direction: column; align-items: center;
 }
-
-.season-summary-card__icon-row :deep(.el-icon) {
-    font-size: 14px;
-    color: var(--on-surface-var);
+.sp-pipe-item__top {
+    text-align: center; padding-bottom: 8px;
+    min-height: 36px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
 }
-
-.season-summary-card span,
-.season-climate__item span,
-.season-quality__metrics span {
-    color: var(--on-surface-var);
-    display: block;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+.sp-pipe-item__date {
+    font-size: 13px; font-weight: 800; color: #1f2a2a; line-height: 1;
 }
-
-.season-summary-card strong {
-    color: var(--on-surface);
-    display: block;
-    font-size: 16px;
-    font-weight: 800;
-    margin-top: 10px;
+.sp-pipe-item__date--current { color: #d97706; }
+.sp-pipe-item__sub {
+    font-size: 9px; color: #94a1b2; margin-top: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: .06em; text-transform: uppercase;
 }
-
-.season-summary-card small {
-    color: var(--primary);
-    display: block;
-    font-size: 12px;
-    font-weight: 700;
-    margin-top: 8px;
+.sp-pipe-item__mid { display: flex; align-items: center; width: 100%; }
+.sp-pipe-item__seg { flex: 1; height: 2px; background: #e4e7e8; transition: background .2s; }
+.sp-pipe-item__seg--done   { background: #004532; }
+.sp-pipe-item__seg--hidden { background: transparent; }
+.sp-pipe-item__dot {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid #d4d8d8; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: #fff; position: relative; z-index: 1;
+    transition: border-color .2s, background .2s;
 }
-
-.season-summary-card.is-dark {
-    background: linear-gradient(135deg, #004532, #065f46);
-    border-color: #004532;
+.sp-pipe-item__dot--done    { border-color: #004532; background: #004532; }
+.sp-pipe-item__dot--current { border-color: #d97706; background: #d97706; outline: 4px solid rgba(217,119,6,.16); outline-offset: 1px; }
+.sp-pipe-item__bot { text-align: center; padding-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.sp-pipe-item__label {
+    font-size: 10px; font-weight: 800; color: #1f2a2a;
+    font-family: 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase;
 }
-
-.season-summary-card.is-dark span,
-.season-summary-card.is-dark strong,
-.season-summary-card.is-dark small {
-    color: #fff;
+.sp-pipe-item__label--current { color: #d97706; }
+.sp-pipe-item__verify {
+    font-size: 9px; color: #b8c0cc;
+    font-family: 'IBM Plex Mono', monospace; letter-spacing: .04em;
+    padding: 2px 6px; border-radius: 3px;
+    border: 1px solid #e8ecec; background: #fafbfb; white-space: nowrap;
 }
+.sp-pipe-item__verify--done    { color: #004532; border-color: #c3ddd2; background: #eef5f1; }
+.sp-pipe-item__verify--current { color: #92400e; border-color: #fde68a; background: #fffbeb; }
 
-.season-summary-card.is-dark .season-summary-card__icon-row,
-.season-summary-card.is-dark .season-summary-card__icon-row :deep(.el-icon) {
-    color: rgba(255, 255, 255, 0.6);
+/* ── Table ───────────────────────────────────────────────────────── */
+.sp-table-wrap { overflow-x: auto; }
+.sp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sp-table thead th {
+    padding: 7px 12px; background: #f6f8f8;
+    border-bottom: 1px solid #e4e7e8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: #7b8796; white-space: nowrap;
 }
-
-.season-summary-card__badge {
-    bottom: 18px;
-    color: #fff;
-    font-size: 20px;
-    position: absolute;
-    right: 18px;
+.sp-table tbody td {
+    padding: 8px 12px; border-bottom: 1px solid #f0f2f2; vertical-align: middle;
 }
-
-/* ── Two-column grid ── */
-.season-grid {
-    display: grid;
-    gap: 22px;
-    grid-template-columns: 290px minmax(0, 1fr);
-    margin-top: 30px;
+.sp-table tbody tr:last-child td { border-bottom: none; }
+.sp-table-row--clickable { cursor: pointer; }
+.sp-table-row--clickable:hover td { background: #f8fbf9; }
+.sp-table-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; border-top: 1px solid #e8ecec; background: #fafbfb;
+    flex-wrap: wrap; gap: 8px;
 }
-
-.season-left-column,
-.season-right-column {
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
+.sp-empty { text-align: center; color: #94a1b2; font-size: 12px; padding: 32px 0; }
+.sp-code {
+    display: inline-flex; align-items: center; padding: 2px 7px;
+    border-radius: 4px; background: #eef5f1; color: #003f2c;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 800;
 }
-
-/* ── Cards ── */
-.season-card {
-    border-radius: 12px;
-    padding: 24px;
+.sp-score {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 38px; padding: 2px 7px; border-radius: 4px;
+    border: 1px solid #c3ddd2; background: #eef5f1;
+    color: #004532; font-size: 11px; font-weight: 800;
 }
-
-.season-card__title,
-.season-card__bar {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
+.sp-del-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 4px;
+    background: transparent; border: 1px solid #fee2e2; color: #dc2626;
+    cursor: pointer; font-size: 13px; transition: background .14s;
 }
+.sp-del-btn:hover { background: #fee2e2; }
 
-.season-card__title {
-    color: var(--on-surface);
-    font-size: 13px;
-    font-weight: 700;
-    gap: 8px;
-    letter-spacing: 0;
-    text-transform: capitalize;
-}
+/* ── Regional grid ───────────────────────────────────────────────── */
+.sp-region-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (max-width: 600px) { .sp-region-grid { grid-template-columns: 1fr; } }
+.sp-region-card { border: 1px solid #e4e7e8; border-radius: 6px; padding: 10px 12px; background: #fafbfb; }
+.sp-region-name { font-size: 12px; font-weight: 700; color: #1f2a2a; margin-bottom: 2px; }
+.sp-region-vol  { font-size: 16px; font-weight: 800; color: #004532; margin-bottom: 4px; }
+.sp-region-meta { display: flex; justify-content: space-between; gap: 8px; }
 
-.season-card__title :deep(.el-icon) {
-    color: var(--primary);
-    font-size: 15px;
-}
+/* ── Quality / bar panels ────────────────────────────────────────── */
+.sp-score-tile { border: 1px solid #e4e7e8; border-radius: 6px; padding: 10px 12px; background: #fafbfb; text-align: center; margin-bottom: 12px; }
+.sp-score-big  { font-size: 32px; font-weight: 800; color: #004532; line-height: 1; }
+.sp-score-stars { margin-top: 6px; font-size: 12px; letter-spacing: .14em; color: #d97706; }
+.sp-quality-bars   { display: flex; flex-direction: column; gap: 7px; }
+.sp-sustain-bars   { display: flex; flex-direction: column; gap: 7px; }
+.sp-quality-row    { display: flex; flex-direction: column; gap: 3px; }
+.sp-quality-label  { display: flex; justify-content: space-between; gap: 8px; }
+.sp-bar-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.sp-bar-fill  { height: 100%; background: #004532; border-radius: 3px; }
+.sp-bar-fill--amber { background: #d97706; }
 
-/* ── Insights ── */
-.season-insights__list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 20px;
-}
+/* ── Export / markets ────────────────────────────────────────────── */
+.sp-export-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 8px; text-align: center; }
+.sp-export-stat  { padding: 8px 4px; }
+.sp-markets      { display: flex; flex-direction: column; gap: 6px; }
+.sp-market-row   { display: flex; align-items: center; gap: 7px; }
 
-.season-insight-item {
-    align-items: center;
-    background: var(--surface-low);
-    border-radius: 8px;
-    display: flex;
-    gap: 12px;
-    min-height: 50px;
-    padding: 0 12px;
-}
+/* ── Timeline ────────────────────────────────────────────────────── */
+.sp-timeline { display: flex; flex-direction: column; gap: 9px; }
+.sp-tl-item  { display: flex; align-items: flex-start; gap: 9px; }
+.sp-tl-dot   { width: 9px; height: 9px; border-radius: 50%; border: 2px solid #d4d8d8; background: #fff; flex-shrink: 0; margin-top: 2px; }
+.sp-tl-dot--success { border-color: #004532; background: #004532; }
+.sp-tl-dot--info    { border-color: #2563eb; background: #2563eb; }
 
-.season-insight-item__icon {
-    align-items: center;
-    background: var(--primary-fixed);
-    border-radius: 6px;
-    color: var(--on-primary-fixed);
-    display: inline-flex;
-    font-size: 14px;
-    height: 28px;
-    justify-content: center;
-    width: 28px;
-}
+/* ── AI Insights ─────────────────────────────────────────────────── */
+.sp-insights { display: flex; flex-direction: column; gap: 9px; }
+.sp-insight  { display: flex; align-items: flex-start; gap: 8px; }
+.sp-insight-dot { width: 7px; height: 7px; border-radius: 50%; background: #004532; flex-shrink: 0; margin-top: 4px; }
+.sp-insight-text { font-size: 12px; color: #1f2a2a; line-height: 1.55; margin: 0; }
+.sp-insight-footer { margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f2f2; }
 
-/* ── Quality Outlook ── */
-.season-quality__metrics {
-    display: grid;
-    gap: 16px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: 20px;
-}
+/* ── Alerts ──────────────────────────────────────────────────────── */
+.sp-alerts { display: flex; flex-direction: column; gap: 6px; }
+.sp-alert { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 5px; border: 1px solid #e4e7e8; }
+.sp-alert--info    { background: #eff6ff; border-color: #bfdbfe; }
+.sp-alert--warning { background: #fffbeb; border-color: #fde68a; }
+.sp-alert--success { background: #eef5f1; border-color: #c3ddd2; }
+.sp-alert-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; background: #94a1b2; }
+.sp-alert--info    .sp-alert-dot { background: #2563eb; }
+.sp-alert--warning .sp-alert-dot { background: #d97706; }
+.sp-alert--success .sp-alert-dot { background: #004532; }
 
-.season-quality__metrics strong {
-    color: var(--on-surface);
-    display: block;
-    font-size: 16px;
-    margin-top: 10px;
-}
-
-.season-quality__risk {
-    align-items: center;
-    border-top: 1px solid var(--surface-high);
-    display: flex;
-    gap: 10px;
-    margin-top: 18px;
-    padding-top: 18px;
-}
-
-.season-quality__risk-tag,
-.season-quality__pill,
-.season-status-pill,
-.season-climate__item em {
-    align-items: center;
-    border-radius: 999px;
-    display: inline-flex;
-    font-size: 11px;
-    font-style: normal;
-    font-weight: 700;
-    justify-content: center;
-    min-height: 22px;
-    padding: 0 10px;
-}
-
-.season-quality__risk-tag {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.season-quality__pill.is-mint,
-.season-climate__item em.is-mint,
-.season-status-pill {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.season-quality__pills {
-    display: flex;
-    gap: 10px;
-    margin-top: 16px;
-}
-
-.season-quality__pill.is-peach,
-.season-climate__item em.is-amber {
-    background: #ffd7b4;
-    color: #995f21;
-}
-
-.season-climate__item em.is-rose {
-    background: #ffd1d9;
-    color: #d14b5f;
-}
-
-/* ── Climate Risk ── */
-.season-climate__grid {
-    display: grid;
-    gap: 10px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: 18px;
-}
-
-.season-climate__item {
-    background: var(--surface-low);
-    border-radius: 8px;
-    min-height: 92px;
-    padding: 16px;
-}
-
-.season-climate__item span {
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.season-climate__item strong {
-    color: var(--on-surface);
-    display: block;
-    font-size: 14px;
-    margin-top: 12px;
-}
-
-.season-climate__item em {
-    border-radius: 999px;
-    margin-top: 10px;
-}
-
-/* ── Table Cards ── */
-.season-table-card {
-    overflow: hidden;
-    padding: 0;
-}
-
-.season-table-card .season-card__title {
-    padding: 20px 22px;
-}
-
-.season-add-harvest-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
-    color: #ffffff !important;
-    border: none;
-    border-radius: 6px;
-    font-family: 'Manrope', system-ui, sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 6px 12px;
-    cursor: pointer;
-    transition: opacity 0.15s ease;
-    margin-left: auto;
-}
-.season-add-harvest-btn:hover { opacity: 0.88; }
-.season-add-harvest-btn .el-icon { font-size: 13px; color: #ffffff !important; }
-
-:deep(.season-data-table) {
-    border-top: 1px solid var(--surface-high);
-}
-
-:deep(.season-data-table .el-table__header-wrapper th) {
-    background: var(--surface-low);
-    color: var(--on-surface-var);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-:deep(.season-data-table .el-table__row td) {
-    color: var(--on-surface);
-    font-size: 14px;
-}
-
-:deep(.season-data-table .el-table__row:hover td) {
-    background: var(--surface);
-}
-
-:deep(.season-data-table .el-table__border-left-patch),
-:deep(.season-data-table .el-table__border-bottom-patch),
-:deep(.season-data-table td.el-table__cell),
-:deep(.season-data-table th.el-table__cell) {
-    border-color: var(--surface-high);
-}
-
-:deep(.season-harvests-table .el-table__row) {
-    cursor: pointer;
-}
-
-.season-status-pill.is-blue {
-    background: #dce9ff;
-    color: #2158d8;
-}
-
-/* ── Doc Cards ── */
-.season-docs-row {
-    display: grid;
-    gap: 18px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.season-doc-card {
-    align-items: center;
-    border-radius: 10px;
-    display: flex;
-    gap: 14px;
-    min-height: 72px;
-    padding: 0 18px;
-}
-
-.season-doc-card__icon {
-    align-items: center;
-    background: var(--primary-fixed);
-    border-radius: 8px;
-    color: var(--on-primary-fixed);
-    display: inline-flex;
-    font-size: 18px;
-    height: 36px;
-    justify-content: center;
-    width: 36px;
-    flex-shrink: 0;
-}
-
-.season-doc-card strong,
-.season-activity-cell strong {
-    color: var(--on-surface);
-    display: block;
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.season-doc-card small,
-.season-activity-cell small {
-    color: var(--on-surface-var);
-    display: block;
-    font-size: 11px;
-    margin-top: 4px;
-}
-
-/* ── Table info cells ── */
-.season-table-info {
-    align-items: center;
-    color: var(--on-surface);
-    display: inline-flex;
-    gap: 8px;
-}
-
-.season-table-info :deep(.el-icon) {
-    color: var(--primary);
-    font-size: 15px;
-}
-
-.season-table-info strong {
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.season-table-info--stack {
-    align-items: flex-start;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.season-table-info__line {
-    align-items: center;
-    display: inline-flex;
-    gap: 8px;
-}
-
-.season-table-info__line.is-subtle {
-    color: var(--on-surface-var);
-}
-
-/* ── Completed status ── */
-.season-completed-status {
-    align-items: center;
-    color: var(--primary);
-    display: inline-flex;
-    font-weight: 600;
-    gap: 6px;
-}
-
-/* ── Delete button ── */
-.season-delete-harvest-btn {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    color: #dc2626;
-    cursor: pointer;
-    display: inline-flex;
-    font-size: 13px;
-    font-weight: 700;
-    justify-content: flex-end;
-    line-height: 1;
-    padding: 0;
-}
-
-.season-delete-harvest-btn :deep(.el-icon) {
-    font-size: 16px;
-}
-
-.season-delete-harvest-btn:hover {
-    color: #b91c1c;
-}
-
-/* ── Responsive ── */
-@media (max-width: 1280px) {
-    .season-summary-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .season-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 980px) {
-    .season-content {
-        padding-inline: 0;
-    }
-
-    .season-hero__head {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .season-docs-row,
-    .season-summary-grid {
-        grid-template-columns: 1fr;
-    }
-}
+/* ── Floating Chat ───────────────────────────────────────────────── */
+.sp-float { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.sp-float-btn { width: 44px; height: 44px; border-radius: 50%; background: #003f2c; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: background .14s; }
+.sp-float-btn:hover { background: #004532; }
+.sp-chat-panel { width: 290px; border: 1px solid #e4e7e8; border-radius: 10px; background: #fff; overflow: hidden; }
+.sp-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid #e8ecec; background: #f8f9f9; }
+.sp-chat-close { font-size: 18px; line-height: 1; background: none; border: none; color: #94a1b2; cursor: pointer; padding: 0; }
+.sp-chat-prompts { padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f0f2f2; }
+.sp-chat-prompt { text-align: left; background: #f8f9f9; border: 1px solid #e4e7e8; border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer; transition: background .14s; }
+.sp-chat-prompt:hover { background: #eef5f1; border-color: #c3ddd2; color: #004532; }
+.sp-chat-input-row { display: flex; align-items: center; padding: 8px 12px; gap: 6px; }
+.sp-chat-input { flex: 1; height: 30px; padding: 0 9px; border: 1px solid #d4d8d8; border-radius: 5px; font-size: 11px; outline: none; }
+.sp-chat-input:focus { border-color: #003f2c; }
+.sp-chat-send { width: 30px; height: 30px; border-radius: 5px; background: #003f2c; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; }
 </style>

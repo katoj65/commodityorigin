@@ -159,7 +159,7 @@ const badgeClass = (b) => {
                             <p class="cp-subtitle mb-0">Discover verified coffee cooperatives across producing regions</p>
                         </div>
                         <div class="d-flex flex-wrap gap-2">
-                            <button class="btn cp-btn-primary btn-sm"><el-icon><Star /></el-icon> Add Cooperative</button>
+                            <Link :href="route('cooperative.create')" class="btn cp-btn-primary btn-sm"><el-icon><Star /></el-icon> Add Cooperative</Link>
                             <button class="btn cp-btn-outline btn-sm"><el-icon><Download /></el-icon> Export Directory</button>
                             <button class="btn cp-btn-ghost btn-sm"><el-icon><ChatDotRound /></el-icon> Ask Advisor</button>
                         </div>

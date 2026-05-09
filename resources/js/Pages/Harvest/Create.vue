@@ -130,7 +130,7 @@ const submit = () => {
 
 <template>
     <AppLayout title="Add Harvest">
-        <Head title="Add Harvest" />
+      
 
         <div class="space-y-4">
             <section class="rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 sm:px-5">
