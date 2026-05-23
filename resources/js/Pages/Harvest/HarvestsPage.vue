@@ -124,8 +124,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                             <p class="hv-subtitle mb-0">Track coffee harvests from farms and seasons with full traceability into batches and lots.</p>
                         </div>
                         <div class="d-flex flex-wrap gap-2 align-items-center">
-                            <button class="btn hv-btn-outline btn-sm"><el-icon><Download /></el-icon> Export Data</button>
-                            <button class="btn hv-btn-ghost btn-sm" @click="chatOpen = true"><el-icon><ChatDotRound /></el-icon> Ask Advisor</button>
+                            <button class="btn hv-btn-outline btn-sm" style="border-color:#c8c8c8;"><el-icon><Download /></el-icon> Export Data</button>
                             <Link :href="route('season.index')" class="btn hv-btn-primary btn-sm"><el-icon><Box /></el-icon> Add Harvest</Link>
                         </div>
                     </div>

@@ -74,6 +74,7 @@ Route::middleware([
     Route::prefix('lot')->name('lot.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/create', [LotController::class, 'create'])->name('create');
         Route::post('/', [LotController::class, 'store'])->name('store');
+        Route::get('/{lot}/traceability', [LotController::class, 'lotTraceability'])->name('traceability');
         Route::get('/{lot}', [LotController::class, 'show'])->name('show');
         Route::post('/{lot}/publish', [LotController::class, 'publish'])->name('publish');
     });
@@ -118,6 +119,9 @@ Route::middleware([
     // Bid workspace routes.
     Route::prefix('bid')->name('bid.')->middleware('role:buyer,admin')->group(function () {
         Route::get('/', [BidController::class, 'index'])->name('index');
+        Route::get('/confirmation/status', [BidController::class, 'bidStatus'])->name('status');
+        Route::post('/store', [BidController::class, 'storeBid'])->name('store');
+        Route::get('/{lot}', [BidController::class, 'placeBid'])->name('place');
     });
 
     // Auction workspace routes.
@@ -128,11 +132,13 @@ Route::middleware([
     // Checkout workspace routes.
     Route::prefix('checkout')->name('checkout.')->middleware('role:buyer,admin')->group(function () {
         Route::get('/', [CheckoutController::class, 'index'])->name('index');
+        Route::get('/order/confirmation', [CheckoutController::class, 'orderConfirmation'])->name('confirmation');
     });
 
     // Marketplace routes.
     Route::prefix('market')->name('market.')->group(function () {
         Route::get('/', [MarketController::class, 'index'])->name('index');
+        Route::get('/active', [MarketController::class, 'activeMarket'])->name('active');
         Route::get('/auction', [MarketController::class, 'auction'])->name('auction');
     });
 

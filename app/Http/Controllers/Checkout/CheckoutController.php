@@ -48,4 +48,18 @@ class CheckoutController extends Controller
     {
         //
     }
+
+
+    public function orderConfirmation(): Response
+    {
+        return Inertia::render('Checkout/OrderConfirmation');
+    }
+
+
+
+
+
+
+
+
 }

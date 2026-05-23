@@ -239,9 +239,11 @@ and
 </label>
 <InputError class="mt-2" :message="form.errors.terms" />
 
+<div style="margin-top:15px;">
 <SubmitButton :loading="form.processing" :disabled="form.processing">
 Create account
 </SubmitButton>
+</div>
 </form>
 
 <div class="mt-6 flex items-center justify-between gap-4 border-t border-white/[0.06] pt-5">

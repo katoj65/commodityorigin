@@ -30,9 +30,9 @@ const sideSections = computed(() => [
             },
             {
                 label: 'Live Market',
-                href: '#',
-                active: false,
-                inertia: false,
+                href: route('market.active'),
+                active: route().current('market.active'),
+                inertia: true,
                 show: true,
                 badge: null,
                 icon: 'pulse',

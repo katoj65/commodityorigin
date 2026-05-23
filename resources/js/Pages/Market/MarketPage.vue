@@ -1,11 +1,11 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import {
     Box, Check, Checked, Collection, CollectionTag, Connection,
     Download, Filter, Location, Medal, Message, Opportunity,
-    Plus, ShoppingCart, Star, Tickets, TrendCharts, Van, View,
-    WarningFilled, User, ChatDotRound, Grid, List,
+    Plus, Search, ShoppingCart, Star, Tickets, TrendCharts, Van, View,
+    WarningFilled, User, ChatDotRound,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -67,7 +67,6 @@ const hasActiveFilters = computed(() =>
 const clearFilters = () => Object.assign(filters, { origin: '', type: '', minQuality: '', maxPrice: '', exportReady: false, tokenised: false });
 
 // ── View / selection ─────────────────────────────────────────────────────────
-const viewMode     = ref('grid');
 const selectedLots = ref([]);
 const toggleSelect = (id) => {
     const i = selectedLots.value.indexOf(id);
@@ -154,6 +153,9 @@ const sendChat = () => {
     }, 800);
 };
 const usePrompt = (p) => { chatInput.value = p; sendChat(); };
+
+// ── Quick Buy ────────────────────────────────────────────────────────────────
+const quickBuy = ref({ type: '', origin: '', qty: null, priceMax: null });
 
 // ── Badge class ──────────────────────────────────────────────────────────────
 const badgeClass = (badge) => {
@@ -275,284 +277,228 @@ const badgeClass = (badge) => {
                     </div>
                 </div>
 
-                <!-- ── 4. View Toggle ────────────────────────────────────── -->
-                <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="lots-section-label">
-                            <el-icon><Tickets /></el-icon> All Lots
-                        </span>
-                        <span class="badge bg-light text-secondary border">{{ filteredLots.length }}</span>
-                    </div>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button
-                            class="btn"
-                            :class="viewMode === 'grid' ? 'lots-btn-primary' : 'lots-btn-outline'"
-                            @click="viewMode = 'grid'"
-                        >
-                            <el-icon><Grid /></el-icon> Grid
-                        </button>
-                        <button
-                            class="btn"
-                            :class="viewMode === 'table' ? 'lots-btn-primary' : 'lots-btn-outline'"
-                            @click="viewMode = 'table'"
-                        >
-                            <el-icon><List /></el-icon> Table
-                        </button>
-                    </div>
-                </div>
+                <!-- ── 4. Lots + Sidebar ──────────────────────────────────── -->
+                <div class="row g-4 align-items-start">
 
-                <!-- ── 5. Grid View ──────────────────────────────────────── -->
-                <div v-if="viewMode === 'grid'">
-                    <div v-if="filteredLots.length" class="row g-3 mb-4">
-                        <div v-for="lot in filteredLots" :key="lot.id" class="col-12 col-sm-6 col-xl-4">
-                            <div
-                                class="lots-grid-card h-100"
-                                :class="{ 'lots-grid-card--selected': isSelected(lot.id) }"
-                            >
-                                <!-- Card header -->
-                                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                    <div>
-                                        <div class="lots-grid-code">{{ lot.lot_code }}</div>
-                                        <div class="lots-grid-name">{{ lot.name }}</div>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-1">
-                                        <input
-                                            type="checkbox"
-                                            class="form-check-input mt-0"
-                                            :checked="isSelected(lot.id)"
-                                            @change="toggleSelect(lot.id)"
-                                        >
-                                        <button class="lots-watchlist-btn"><el-icon><Star /></el-icon></button>
-                                    </div>
-                                </div>
+                    <!-- Main column: table + featured -->
+                    <div class="col-12 col-lg-8">
 
-                                <!-- Badges -->
-                                <div class="d-flex flex-wrap gap-1 mb-2">
-                                    <span
-                                        v-for="badge in lot.badges"
-                                        :key="badge"
-                                        class="badge rounded-pill lots-badge"
-                                        :class="badgeClass(badge)"
-                                    >{{ badge }}</span>
-                                    <span class="badge rounded-pill" :class="`bg-${lot.demandTone}-subtle text-${lot.demandTone}-emphasis border border-${lot.demandTone}-subtle lots-badge`">
-                                        {{ lot.demand }}
-                                    </span>
-                                </div>
+                        <!-- All Lots Table -->
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="lots-section-label">
+                                <el-icon><Tickets /></el-icon> All Lots
+                            </span>
+                            <span class="badge bg-light text-secondary border">{{ filteredLots.length }}</span>
+                        </div>
 
-                                <!-- Meta grid -->
-                                <div class="row g-1 mb-2">
-                                    <div class="col-6">
-                                        <div class="lots-meta-cell">
-                                            <span><el-icon><Location /></el-icon> Origin</span>
-                                            <strong>{{ lot.origin }}</strong>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="lots-meta-cell">
-                                            <span><el-icon><Collection /></el-icon> Type</span>
-                                            <strong>{{ lot.type }}</strong>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="lots-meta-cell">
-                                            <span><el-icon><Box /></el-icon> Quantity</span>
-                                            <strong>{{ lot.availableLabel }}</strong>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="lots-meta-cell">
-                                            <span><el-icon><CollectionTag /></el-icon> Process</span>
-                                            <strong>{{ lot.process }}</strong>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Quality + Price row -->
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <div>
-                                        <div class="lots-score-label">Quality Score</div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="lots-score-bar">
-                                                <div class="lots-score-bar__fill" :style="{ width: `${Math.min(100, (lot.qualityScore / 100) * 100)}%` }"></div>
+                        <div class="lots-table-card mb-4">
+                            <table class="table align-middle mb-0 lots-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" class="form-check-input"></th>
+                                        <th>Image</th>
+                                        <th>Lot</th>
+                                        <th>Origin</th>
+                                        <th>Type</th>
+                                        <th>Process</th>
+                                        <th>Quality</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Demand</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody v-if="filteredLots.length">
+                                    <tr v-for="lot in filteredLots" :key="lot.id" :class="{ 'lots-table__row--selected': isSelected(lot.id) }">
+                                        <td><input type="checkbox" class="form-check-input" :checked="isSelected(lot.id)" @change="toggleSelect(lot.id)"></td>
+                                        <td>
+                                            <div class="lots-lot-img">
+                                                <img v-if="lot.image" :src="lot.image" :alt="lot.name" class="lots-lot-img__photo" />
+                                                <div v-else class="lots-lot-img__placeholder">☕</div>
                                             </div>
-                                            <span class="lots-score-val">{{ lot.qualityScore.toFixed(1) }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold" style="font-size:0.8125rem;">{{ lot.lot_code }}</div>
+                                            <div class="text-muted" style="font-size:0.75rem;">{{ lot.name }}</div>
+                                        </td>
+                                        <td style="font-size:0.8125rem;">{{ lot.origin }}</td>
+                                        <td><span class="badge bg-light text-dark border" style="font-size:0.7rem;">{{ lot.type }}</span></td>
+                                        <td style="font-size:0.8125rem;">{{ lot.process }}</td>
+                                        <td>
+                                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle" style="font-size:0.7rem;">
+                                                {{ lot.qualityScore.toFixed(1) }}
+                                            </span>
+                                        </td>
+                                        <td style="font-size:0.8125rem;">{{ lot.availableLabel }}</td>
+                                        <td class="fw-semibold" style="font-size:0.8125rem;">${{ lot.pricePerKg.toFixed(2) }}/kg</td>
+                                        <td>
+                                            <span class="badge rounded-pill" :class="`bg-${lot.demandTone}-subtle text-${lot.demandTone}-emphasis border border-${lot.demandTone}-subtle`" style="font-size:0.7rem;">
+                                                {{ lot.demand }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <span v-for="badge in lot.badges" :key="badge" class="badge rounded-pill lots-badge" :class="badgeClass(badge)">{{ badge }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex justify-content-end gap-1">
+                                                <Link :href="route('lot.show', lot.id)" class="btn btn-sm lots-btn-primary px-2"><el-icon><View /></el-icon></Link>
+                                                <button class="btn btn-sm lots-btn-outline px-2"><el-icon><ShoppingCart /></el-icon></button>
+                                                <button class="btn btn-sm lots-btn-ghost px-2"><el-icon><Medal /></el-icon></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tbody v-else>
+                                    <tr><td colspan="12" class="text-center py-5 text-muted" style="font-size:0.875rem;">No lots match your current filters.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Featured Lots -->
+                        <div v-if="featuredLots.length" class="mb-4">
+                            <div class="lots-section-heading mb-3">
+                                <el-icon><Star /></el-icon>
+                                <span>Featured Lots</span>
+                            </div>
+                            <div class="row g-3">
+                                <div v-for="f in featuredLots" :key="f.title" class="col-12 col-md-4">
+                                    <div class="lots-featured-card" :class="`lots-featured-card--${f.tone}`">
+                                        <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                            <div>
+                                                <div class="lots-featured-label">{{ f.title }}</div>
+                                                <div class="lots-featured-name">{{ f.lot.name }}</div>
+                                            </div>
+                                            <span class="lots-featured-score">{{ f.lot.qualityScore.toFixed(1) }}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 mb-3" style="font-size:0.8125rem;color:#6b7280;">
+                                            <el-icon><Location /></el-icon>
+                                            <span>{{ f.lot.origin }}</span>
+                                            <span>·</span>
+                                            <span>${{ f.lot.pricePerKg.toFixed(2) }}/kg</span>
+                                            <span>·</span>
+                                            <span>{{ f.lot.process }}</span>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm lots-btn-primary flex-fill">View Lot</button>
+                                            <button class="btn btn-sm lots-btn-outline flex-fill"><el-icon><ShoppingCart /></el-icon> Buy</button>
                                         </div>
                                     </div>
-                                    <div class="text-end">
-                                        <div class="lots-score-label">Price / kg</div>
-                                        <div class="lots-price-val">${{ lot.pricePerKg.toFixed(2) }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price & Demand Trends + Lot Readiness -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-md-6">
+                                <div class="lots-card h-100">
+                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <div class="lots-section-heading">
+                                            <el-icon><TrendCharts /></el-icon>
+                                            <span>Price &amp; Demand Trends</span>
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <button v-for="r in ['7D','30D','90D']" :key="r" class="btn" :class="timeRange === r ? 'lots-btn-primary' : 'lots-btn-outline'" @click="timeRange = r">{{ r }}</button>
+                                        </div>
+                                    </div>
+                                    <div class="lots-chart">
+                                        <div v-for="bar in trendBars" :key="bar.label" class="lots-chart-col">
+                                            <div class="lots-chart-bars">
+                                                <div class="lots-chart-bar lots-chart-bar--arabica" :style="{ height: `${bar.arabica}%` }"></div>
+                                                <div class="lots-chart-bar lots-chart-bar--robusta" :style="{ height: `${bar.robusta}%` }"></div>
+                                            </div>
+                                            <span class="lots-chart-label">{{ bar.label }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-3 mt-2">
+                                        <span class="lots-legend"><span class="lots-legend-dot lots-legend-dot--arabica"></span>Arabica</span>
+                                        <span class="lots-legend"><span class="lots-legend-dot lots-legend-dot--robusta"></span>Robusta</span>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="lots-card h-100">
+                                    <div class="lots-section-heading mb-3">
+                                        <el-icon><Check /></el-icon>
+                                        <span>Lot Readiness</span>
+                                    </div>
+                                    <div class="d-flex flex-column gap-2">
+                                        <div v-for="item in readiness" :key="item.label" class="lots-readiness-row">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <el-icon :class="`text-${item.tone}`"><component :is="item.icon" /></el-icon>
+                                                <span>{{ item.label }}</span>
+                                            </div>
+                                            <span class="badge rounded-pill" :class="`bg-${item.tone}-subtle text-${item.tone}-emphasis border border-${item.tone}-subtle`">{{ item.count }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                <!-- Actions -->
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm lots-btn-primary flex-fill">
-                                        <el-icon><ShoppingCart /></el-icon> Buy
+                    </div><!-- /col-lg-8 -->
+
+                    <!-- Sidebar -->
+                    <div class="col-12 col-lg-4 lots-sidebar">
+
+                        <!-- Quick Buy -->
+                        <div class="lots-card lots-qb mb-3">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <el-icon class="lots-qb__icon"><ShoppingCart /></el-icon>
+                                <span class="lots-qb__title">Quick Buy</span>
+                            </div>
+                            <div class="d-flex flex-column gap-3">
+                                <div>
+                                    <label class="lots-qb__label">Coffee Type</label>
+                                    <el-select v-model="quickBuy.type" placeholder="Select type…" size="default" style="width:100%">
+                                        <el-option label="Uganda Arabica"   value="Uganda Arabica" />
+                                        <el-option label="Uganda Robusta"   value="Uganda Robusta" />
+                                        <el-option label="Ethiopia Arabica" value="Ethiopia Arabica" />
+                                        <el-option label="Brazil Arabica"   value="Brazil Arabica" />
+                                    </el-select>
+                                </div>
+                                <div>
+                                    <label class="lots-qb__label">Origin</label>
+                                    <el-select v-model="quickBuy.origin" placeholder="Any origin…" size="default" style="width:100%">
+                                        <el-option label="Mt. Elgon, Uganda"     value="Mt. Elgon, Uganda" />
+                                        <el-option label="Rwenzori, Uganda"      value="Rwenzori, Uganda" />
+                                        <el-option label="Yirgacheffe, Ethiopia" value="Yirgacheffe, Ethiopia" />
+                                        <el-option label="Cerrado, Brazil"       value="Cerrado, Brazil" />
+                                    </el-select>
+                                </div>
+                                <div>
+                                    <label class="lots-qb__label">Quantity (kg)</label>
+                                    <el-input-number v-model="quickBuy.qty" :min="0" controls-position="right" style="width:100%" />
+                                </div>
+                                <div>
+                                    <label class="lots-qb__label">Max Price (Shs./kg)</label>
+                                    <el-input-number v-model="quickBuy.priceMax" :min="0" :step="0.01" :precision="2" controls-position="right" style="width:100%" />
+                                </div>
+                                <div class="d-flex gap-2 pt-1">
+                                    <button class="btn lots-btn-outline flex-fill btn-sm">
+                                        <el-icon><Search /></el-icon> Search
                                     </button>
-                                    <button class="btn btn-sm lots-btn-outline flex-fill">
-                                        <el-icon><View /></el-icon> View
-                                    </button>
-                                    <button class="btn btn-sm lots-btn-ghost">
-                                        <el-icon><Medal /></el-icon>
+                                    <button class="btn lots-btn-primary flex-fill btn-sm" @click="router.visit(route('checkout.index'))">
+                                        <el-icon><ShoppingCart /></el-icon> Buy Now
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Grid empty state -->
-                    <div v-else class="lots-empty mb-4">
-                        <el-icon class="lots-empty__icon"><Box /></el-icon>
-                        <strong>No lots match your filters</strong>
-                        <span>Try adjusting the filters above or <button class="btn btn-link p-0" @click="clearFilters">clear all</button></span>
-                    </div>
-                </div>
-
-                <!-- ── 6. Table View ─────────────────────────────────────── -->
-                <div v-else class="lots-table-card mb-4">
-                    <table class="table align-middle mb-0 lots-table">
-                        <thead>
-                            <tr>
-                                <th><input type="checkbox" class="form-check-input"></th>
-                                <th>Lot</th>
-                                <th>Origin</th>
-                                <th>Type</th>
-                                <th>Process</th>
-                                <th>Quality</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Demand</th>
-                                <th>Status</th>
-                                <th class="text-end">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody v-if="filteredLots.length">
-                            <tr v-for="lot in filteredLots" :key="lot.id" :class="{ 'lots-table__row--selected': isSelected(lot.id) }">
-                                <td><input type="checkbox" class="form-check-input" :checked="isSelected(lot.id)" @change="toggleSelect(lot.id)"></td>
-                                <td>
-                                    <div class="fw-semibold" style="font-size:0.8125rem;">{{ lot.lot_code }}</div>
-                                    <div class="text-muted" style="font-size:0.75rem;">{{ lot.name }}</div>
-                                </td>
-                                <td style="font-size:0.8125rem;">{{ lot.origin }}</td>
-                                <td><span class="badge bg-light text-dark border" style="font-size:0.7rem;">{{ lot.type }}</span></td>
-                                <td style="font-size:0.8125rem;">{{ lot.process }}</td>
-                                <td>
-                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle" style="font-size:0.7rem;">
-                                        {{ lot.qualityScore.toFixed(1) }}
-                                    </span>
-                                </td>
-                                <td style="font-size:0.8125rem;">{{ lot.availableLabel }}</td>
-                                <td class="fw-semibold" style="font-size:0.8125rem;">${{ lot.pricePerKg.toFixed(2) }}/kg</td>
-                                <td>
-                                    <span class="badge rounded-pill" :class="`bg-${lot.demandTone}-subtle text-${lot.demandTone}-emphasis border border-${lot.demandTone}-subtle`" style="font-size:0.7rem;">
-                                        {{ lot.demand }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="d-flex flex-wrap gap-1">
-                                        <span v-for="badge in lot.badges" :key="badge" class="badge rounded-pill lots-badge" :class="badgeClass(badge)">{{ badge }}</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="d-flex justify-content-end gap-1">
-                                        <button class="btn btn-sm lots-btn-primary px-2"><el-icon><View /></el-icon></button>
-                                        <button class="btn btn-sm lots-btn-outline px-2"><el-icon><ShoppingCart /></el-icon></button>
-                                        <button class="btn btn-sm lots-btn-ghost px-2"><el-icon><Medal /></el-icon></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tbody v-else>
-                            <tr><td colspan="11" class="text-center py-5 text-muted" style="font-size:0.875rem;">No lots match your current filters.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- ── 7. Featured Lots ──────────────────────────────────── -->
-                <div v-if="featuredLots.length" class="mb-4">
-                    <div class="lots-section-heading mb-3">
-                        <el-icon><Star /></el-icon>
-                        <span>Featured Lots</span>
-                    </div>
-                    <div class="row g-3">
-                        <div v-for="f in featuredLots" :key="f.title" class="col-12 col-md-4">
-                            <div class="lots-featured-card" :class="`lots-featured-card--${f.tone}`">
-                                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                    <div>
-                                        <div class="lots-featured-label">{{ f.title }}</div>
-                                        <div class="lots-featured-name">{{ f.lot.name }}</div>
-                                    </div>
-                                    <span class="lots-featured-score">{{ f.lot.qualityScore.toFixed(1) }}</span>
-                                </div>
-                                <div class="d-flex align-items-center gap-2 mb-3" style="font-size:0.8125rem;color:#6b7280;">
-                                    <el-icon><Location /></el-icon>
-                                    <span>{{ f.lot.origin }}</span>
-                                    <span>·</span>
-                                    <span>${{ f.lot.pricePerKg.toFixed(2) }}/kg</span>
-                                    <span>·</span>
-                                    <span>{{ f.lot.process }}</span>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm lots-btn-primary flex-fill">View Lot</button>
-                                    <button class="btn btn-sm lots-btn-outline flex-fill"><el-icon><ShoppingCart /></el-icon> Buy</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── 8–11. Bottom row ──────────────────────────────────── -->
-                <div class="row g-3 mb-4">
-
-                    <!-- 8. Price & Demand Trends -->
-                    <div class="col-12 col-lg-5">
-                        <div class="lots-card h-100">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <div class="lots-section-heading">
-                                    <el-icon><TrendCharts /></el-icon>
-                                    <span>Price &amp; Demand Trends</span>
-                                </div>
-                                <div class="btn-group btn-group-sm">
-                                    <button v-for="r in ['7D','30D','90D']" :key="r" class="btn" :class="timeRange === r ? 'lots-btn-primary' : 'lots-btn-outline'" @click="timeRange = r">{{ r }}</button>
-                                </div>
-                            </div>
-                            <div class="lots-chart">
-                                <div v-for="bar in trendBars" :key="bar.label" class="lots-chart-col">
-                                    <div class="lots-chart-bars">
-                                        <div class="lots-chart-bar lots-chart-bar--arabica" :style="{ height: `${bar.arabica}%` }"></div>
-                                        <div class="lots-chart-bar lots-chart-bar--robusta" :style="{ height: `${bar.robusta}%` }"></div>
-                                    </div>
-                                    <span class="lots-chart-label">{{ bar.label }}</span>
-                                </div>
-                            </div>
-                            <div class="d-flex gap-3 mt-2">
-                                <span class="lots-legend"><span class="lots-legend-dot lots-legend-dot--arabica"></span>Arabica</span>
-                                <span class="lots-legend"><span class="lots-legend-dot lots-legend-dot--robusta"></span>Robusta</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 9. Lot Readiness Indicator -->
-                    <div class="col-12 col-lg-4">
-                        <div class="lots-card h-100">
+                        <!-- Smart Alerts -->
+                        <div class="lots-card mb-3">
                             <div class="lots-section-heading mb-3">
-                                <el-icon><Check /></el-icon>
-                                <span>Lot Readiness</span>
+                                <el-icon><TrendCharts /></el-icon>
+                                <span>Smart Alerts</span>
                             </div>
                             <div class="d-flex flex-column gap-2">
-                                <div v-for="item in readiness" :key="item.label" class="lots-readiness-row">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <el-icon :class="`text-${item.tone}`"><component :is="item.icon" /></el-icon>
-                                        <span>{{ item.label }}</span>
-                                    </div>
-                                    <span class="badge rounded-pill" :class="`bg-${item.tone}-subtle text-${item.tone}-emphasis border border-${item.tone}-subtle`">{{ item.count }}</span>
+                                <div v-for="(key, label) in { 'New Lots': 'newLots', 'Price Drops': 'priceDrops', 'Demand Spikes': 'demandSpikes', 'Export Ready': 'exportReady' }" :key="key" class="lots-alert-row">
+                                    <span>{{ key }}</span>
+                                    <el-switch v-model="alerts[label]" size="small" />
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- 10 & 12. Seller Preview + Alerts -->
-                    <div class="col-12 col-lg-3 d-flex flex-column gap-3">
 
                         <!-- Seller Preview -->
                         <div class="lots-card">
@@ -573,22 +519,10 @@ const badgeClass = (badge) => {
                             </div>
                         </div>
 
-                        <!-- Smart Alerts -->
-                        <div class="lots-card flex-fill">
-                            <div class="lots-section-heading mb-3">
-                                <el-icon><TrendCharts /></el-icon>
-                                <span>Smart Alerts</span>
-                            </div>
-                            <div class="d-flex flex-column gap-2">
-                                <div v-for="(key, label) in { 'New Lots': 'newLots', 'Price Drops': 'priceDrops', 'Demand Spikes': 'demandSpikes', 'Export Ready': 'exportReady' }" :key="key" class="lots-alert-row">
-                                    <span>{{ key }}</span>
-                                    <el-switch v-model="alerts[label]" size="small" />
-                                </div>
-                            </div>
-                        </div>
+                    </div><!-- /sidebar -->
 
-                    </div>
-                </div>
+                </div><!-- /row -->
+
 
             </div><!-- /container -->
 
@@ -730,6 +664,15 @@ const badgeClass = (badge) => {
 .lots-insight-text   { font-size: 0.875rem; font-weight: 600; line-height: 1.4; }
 .lots-insight-badge  { background: rgba(255,255,255,0.14); color: #fff; font-size: 0.6875rem; padding: 5px 10px; border-radius: 999px; }
 
+/* ── Sidebar ────────────────────────────────────────────────────────────────── */
+.lots-sidebar { position: sticky; top: 1rem; align-self: flex-start; }
+
+/* ── Quick Buy ──────────────────────────────────────────────────────────────── */
+.lots-qb { background: #f9fafb; }
+.lots-qb__icon { font-size: 1rem; color: #004532; }
+.lots-qb__title { font-size: 0.875rem; font-weight: 700; color: #111827; }
+.lots-qb__label { display: block; font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 4px; }
+
 /* ── KPI Cards ──────────────────────────────────────────────────────────────── */
 .lots-kpi-card {
     background: #fff;
@@ -770,41 +713,17 @@ const badgeClass = (badge) => {
     box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
-/* ── Grid cards ─────────────────────────────────────────────────────────────── */
-.lots-grid-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    transition: box-shadow 0.15s ease, border-color 0.15s ease;
-}
-.lots-grid-card:hover         { box-shadow: 0 4px 12px rgba(0,69,50,0.08); border-color: #a7f3d0; }
-.lots-grid-card--selected     { border-color: #004532; background: #f0fdf4; }
-
-.lots-grid-code  { font-size: 0.6875rem; font-weight: 700; color: #9ca3af; }
-.lots-grid-name  { font-size: 0.9375rem; font-weight: 700; color: #111827; line-height: 1.3; }
-
 .lots-badge { font-size: 0.6rem; padding: 2px 8px; }
 
-.lots-meta-cell {
-    background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 7px;
-    padding: 6px 8px; display: flex; flex-direction: column; gap: 1px;
+/* ── Lot image thumbnail ─────────────────────────────────────────────────────── */
+.lots-lot-img { width: 44px; height: 44px; border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 1px solid #e5e7eb; }
+.lots-lot-img__photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lots-lot-img__placeholder {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem;
 }
-.lots-meta-cell span { font-size: 0.625rem; color: #9ca3af; display: flex; align-items: center; gap: 4px; }
-.lots-meta-cell strong { font-size: 0.8125rem; color: #111827; font-weight: 600; }
-
-.lots-score-label { font-size: 0.625rem; color: #9ca3af; font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
-.lots-score-bar   { width: 80px; height: 5px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
-.lots-score-bar__fill { height: 100%; background: #004532; border-radius: 999px; }
-.lots-score-val   { font-size: 0.8125rem; font-weight: 700; color: #004532; }
-.lots-price-val   { font-size: 1rem; font-weight: 800; color: #111827; }
-
-.lots-watchlist-btn {
-    border: none; background: none; padding: 2px; color: #d1d5db; font-size: 14px; cursor: pointer;
-    line-height: 1;
-}
-.lots-watchlist-btn:hover { color: #f59e0b; }
 
 /* ── Table ──────────────────────────────────────────────────────────────────── */
 .lots-table-card {

@@ -68,13 +68,6 @@ const railLinks = computed(() => [
         icon: 'grid',
     },
     {
-        label: 'Market',
-        href: route('market.index'),
-        active: route().current('market.*'),
-        inertia: true,
-        icon: 'pulse',
-    },
-    {
         label: 'Lots',
         href: '#',
         active: false,
@@ -173,15 +166,6 @@ const sideSections = computed(() => [
                 show: true,
                 badge: null,
                 icon: 'grid',
-            },
-            {
-                label: 'Live Market',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: null,
-                icon: 'pulse',
             },
             {
                 label: 'Farmers',
@@ -839,6 +823,9 @@ onBeforeUnmount(() => {
                             <rect x="14" y="3" width="7" height="7" rx="1.5" />
                             <rect x="3" y="14" width="7" height="7" rx="1.5" />
                             <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                        </svg>
+                        <svg v-else-if="link.icon === 'pulse'" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                         </svg>
                         <svg v-else-if="link.icon === 'user'" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <circle cx="12" cy="7" r="4" />

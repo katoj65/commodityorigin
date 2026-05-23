@@ -1,13 +1,13 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import EditHarvestQualityModel from '@/Components/Modals/EditHarvestQualityModel.vue';
 import {
-    Bell, Box, Calendar, ChatDotRound, Check,
+    Box, Calendar, ChatDotRound, Check,
     Clock, CollectionTag, DataLine, Document, Download,
-    EditPen, Location, Opportunity, Promotion,
-    ShoppingCart, Star, Tickets, TrendCharts, Van, Warning,
+    EditPen, Location, Promotion,
+    ShoppingCart, Star, TrendCharts, Van, Warning,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -157,9 +157,6 @@ const markets = [
     { region: 'USA',          demand: 'High',    price: '$4.80–5.20', pct: 78 },
     { region: 'Japan',        demand: 'Medium',  price: '$5.20–5.80', pct: 62 },
 ];
-
-/* ── Smart alerts ──────────────────────────────────────────────── */
-const alerts = reactive({ qualityIssue: false, batchReady: true, exportUpdate: true, demandSpike: false, peakAlert: true });
 
 /* ── Chatbot ───────────────────────────────────────────────────── */
 const chatOpen  = ref(false);
@@ -610,44 +607,6 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                 </div>
                             </div>
 
-                            <!-- 13. AI Insights -->
-                            <div>
-                                <div class="hp-section-head hp-section-head--plain mb-2">
-                                    <el-icon class="hp-section-icon"><Opportunity /></el-icon>
-                                    AI Harvest Insights
-                                </div>
-                                <div class="d-flex flex-column gap-2">
-                                    <div class="hp-insight-card hp-insight-card--success">
-                                        <el-icon class="hp-insight-icon"><Opportunity /></el-icon>
-                                        <p class="hp-insight-text">This harvest meets premium export standards with a cupping range of {{ cupScoreLabel }} SCA.</p>
-                                    </div>
-                                    <div class="hp-insight-card hp-insight-card--primary">
-                                        <el-icon class="hp-insight-icon"><Opportunity /></el-icon>
-                                        <p class="hp-insight-text">Moisture at {{ moistureLevel.toFixed(1) }}% is ideal for specialty processing and export.</p>
-                                    </div>
-                                    <div class="hp-insight-card hp-insight-card--warning">
-                                        <el-icon class="hp-insight-icon"><Opportunity /></el-icon>
-                                        <p class="hp-insight-text">Strong buyer demand expected for this coffee profile in EU and UAE markets.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 14. Smart Alerts -->
-                            <div class="hp-section">
-                                <div class="hp-section-head">
-                                    <el-icon class="hp-section-icon"><Bell /></el-icon>
-                                    Smart Alerts
-                                </div>
-                                <div class="hp-section-body">
-                                    <div class="d-flex flex-column gap-2">
-                                        <div v-for="(val, key) in alerts" :key="key" class="hp-alert-row">
-                                            <span style="font-size:.8125rem;">{{ { qualityIssue: 'Quality Issue Detected', batchReady: 'Ready for Batching', exportUpdate: 'Export Readiness Updated', demandSpike: 'Market Demand Spike', peakAlert: 'Seasonal Peak Alert' }[key] }}</span>
-                                            <button class="hp-toggle" :class="{ 'hp-toggle--on': alerts[key] }" @click="alerts[key] = !alerts[key]"><i></i></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                         </div>
                     </div>
 
@@ -853,21 +812,6 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .hp-evidence-row:last-child { border-bottom: none; }
 .hp-evidence-icon { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
-/* ── AI Insights ───────────────────────────────────────────────────────────── */
-.hp-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: .875rem; border-radius: 8px; border: 1px solid; }
-.hp-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
-.hp-insight-card--primary { background: #eff6ff; border-color: #bfdbfe; }
-.hp-insight-card--warning { background: #fffbeb; border-color: #fde68a; }
-.hp-insight-icon { font-size: 13px; color: var(--green); flex-shrink: 0; margin-top: 1px; }
-.hp-insight-text { font-size: .8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
-
-/* ── Alerts ────────────────────────────────────────────────────────────────── */
-.hp-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--border); }
-.hp-alert-row:last-child { border-bottom: none; }
-.hp-toggle { width: 32px; height: 18px; border-radius: 999px; border: 1px solid var(--border); padding: 2px; background: #fff; cursor: pointer; transition: background .2s; flex-shrink: 0; }
-.hp-toggle i { display: block; width: 12px; height: 12px; border-radius: 50%; background: var(--border); transition: transform .2s; }
-.hp-toggle--on { background: var(--green); border-color: var(--green); }
-.hp-toggle--on i { background: #fff; transform: translateX(14px); }
 
 /* ── Right rail ────────────────────────────────────────────────────────────── */
 .hp-rail { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 60px; }

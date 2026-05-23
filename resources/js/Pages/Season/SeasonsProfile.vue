@@ -3,9 +3,9 @@ import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ElMessageBox, ElNotification } from 'element-plus';
 import {
-    ArrowDown, Bell, Box, ChatDotRound, Check, CircleCheckFilled,
-    Clock, CollectionTag, DataLine, Delete, Document, Download,
-    EditPen, Files, Filter, Histogram, Location,
+    ArrowDown, Box, ChatDotRound, Check, CircleCheckFilled,
+    Clock, CollectionTag, Delete, Download,
+    EditPen, Files, Location,
     Opportunity, Plus, Promotion, Star, Tickets, TrendCharts,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -169,19 +169,6 @@ const activityLog = [
     { label: `${batchRows.length} batches created`,       time: '1 wk ago',  dot: 'info'    },
     { label: `${lotRows.length} lots ready for export`,   time: '3 d ago',   dot: 'success' },
     { label: 'Export window opens soon',                  time: '1 d ago',   dot: 'info'    },
-];
-
-const aiInsights = [
-    'This season shows higher-than-average specialty coffee output across all contributing farms.',
-    'Export demand is strongest in EU and UAE markets — initiate lot listings early.',
-    'Quality consistency improved across all regions compared to the previous season.',
-];
-
-const alerts = [
-    { label: `${totalHarvests.value} new harvests added this season`, type: 'success', time: '2h ago'  },
-    { label: 'Batch BTH-0041 is ready for lot creation',             type: 'success', time: '6h ago'  },
-    { label: 'Export demand spike detected — UAE market',             type: 'info',    time: '1d ago'  },
-    { label: 'Quality anomaly flagged — Batch BTH-0040 (moisture)',   type: 'warning', time: '2d ago'  },
 ];
 
 const chatPrompts = [
@@ -662,43 +649,6 @@ const fillPrompt = (p) => { chatInput.value = p; };
                         </div>
                     </div>
 
-                    <!-- ⑭ AI Season Insights ─────────────────────── -->
-                    <div class="sp-card">
-                        <div class="sp-card-head">
-                            <div class="sp-card-title"><el-icon><DataLine /></el-icon> AI Season Insights</div>
-                        </div>
-                        <div class="sp-card-body">
-                            <div class="sp-insights">
-                                <div v-for="(insight, idx) in aiInsights" :key="idx" class="sp-insight">
-                                    <div class="sp-insight-dot" />
-                                    <p class="sp-insight-text">{{ insight }}</p>
-                                </div>
-                            </div>
-                            <div class="sp-insight-footer">
-                                <span class="sp-muted" style="font-size:9px; text-transform:uppercase; letter-spacing:.1em;">Powered by Bean Origin AI</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ⑮ Smart Alerts ───────────────────────────── -->
-                    <div class="sp-card">
-                        <div class="sp-card-head">
-                            <div class="sp-card-title"><el-icon><Bell /></el-icon> Smart Alerts</div>
-                            <span class="sp-badge sp-badge--amber" style="font-size:9px;">{{ alerts.length }} Active</span>
-                        </div>
-                        <div class="sp-card-body">
-                            <div class="sp-alerts">
-                                <div v-for="alert in alerts" :key="alert.label" class="sp-alert" :class="`sp-alert--${alert.type}`">
-                                    <div class="sp-alert-dot" />
-                                    <div>
-                                        <div class="sp-primary" style="font-size:11px;">{{ alert.label }}</div>
-                                        <div class="sp-muted">{{ alert.time }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div><!-- /sp-rail -->
 
             </div><!-- /sp-body -->
@@ -1006,23 +956,6 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-tl-dot--success { border-color: #004532; background: #004532; }
 .sp-tl-dot--info    { border-color: #2563eb; background: #2563eb; }
 
-/* ── AI Insights ─────────────────────────────────────────────────── */
-.sp-insights { display: flex; flex-direction: column; gap: 9px; }
-.sp-insight  { display: flex; align-items: flex-start; gap: 8px; }
-.sp-insight-dot { width: 7px; height: 7px; border-radius: 50%; background: #004532; flex-shrink: 0; margin-top: 4px; }
-.sp-insight-text { font-size: 12px; color: #1f2a2a; line-height: 1.55; margin: 0; }
-.sp-insight-footer { margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f2f2; }
-
-/* ── Alerts ──────────────────────────────────────────────────────── */
-.sp-alerts { display: flex; flex-direction: column; gap: 6px; }
-.sp-alert { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 5px; border: 1px solid #e4e7e8; }
-.sp-alert--info    { background: #eff6ff; border-color: #bfdbfe; }
-.sp-alert--warning { background: #fffbeb; border-color: #fde68a; }
-.sp-alert--success { background: #eef5f1; border-color: #c3ddd2; }
-.sp-alert-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; background: #94a1b2; }
-.sp-alert--info    .sp-alert-dot { background: #2563eb; }
-.sp-alert--warning .sp-alert-dot { background: #d97706; }
-.sp-alert--success .sp-alert-dot { background: #004532; }
 
 /* ── Floating Chat ───────────────────────────────────────────────── */
 .sp-float { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }

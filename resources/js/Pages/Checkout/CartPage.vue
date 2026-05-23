@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 import { Delete, Document, Van } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -187,7 +188,7 @@ const removeItem = (id) => {
                                 <div class="basket-total-block__currency">USD</div>
                             </div>
 
-                            <el-button class="basket-finalize-button">
+                            <el-button class="basket-finalize-button" @click="router.visit(route('checkout.confirmation'))">
                                 Finalize Order
                                 <span class="basket-finalize-arrow">→</span>
                             </el-button>

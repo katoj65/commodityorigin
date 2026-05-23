@@ -494,13 +494,49 @@ public function publishLot(){
 
 
 
-
-
-
-
 }
 
+public function lotTraceability(Lot $lot): Response
+{
+    $lot->loadMissing(['batch.season']);
 
+    $batch  = $lot->batch;
+    $season = $batch?->season;
+
+    return Inertia::render('Lot/LotTraceability', [
+        'lot' => [
+            'id'             => $lot->id,
+            'lot_number'     => $lot->lot_number,
+            'lot_name'       => $lot->lot_name,
+            'status'         => $lot->status,
+            'process'        => $lot->process,
+            'grade'          => $lot->grade,
+            'net_weight_kg'  => (float) ($lot->net_weight_kg ?? 0),
+            'quality_score'  => (float) ($lot->quality_score ?? 0),
+            'price_per_kg'   => (float) ($lot->price ?? 0),
+            'packaging_type' => $lot->packaging_type,
+            'created_at'     => $lot->created_at?->format('d M Y'),
+            'image'          => $lot->image,
+        ],
+        'batch' => $batch ? [
+            'id'                 => $batch->id,
+            'batch_number'       => $batch->batch_number,
+            'variety'            => $batch->variety,
+            'processing_method'  => $batch->processing_method,
+            'moisture_content'   => (float) ($batch->moisture_content ?? 0),
+            'cup_score'          => (float) ($batch->cup_score ?? 0),
+            'weight'             => (float) ($batch->weight ?? 0),
+            'warehouse_location' => $batch->warehouse_location,
+        ] : null,
+        'season' => $season ? [
+            'id'         => $season->id,
+            'name'       => $season->name,
+            'start_date' => $season->start_date?->format('d M Y'),
+            'end_date'   => $season->end_date?->format('d M Y'),
+            'status'     => $season->status,
+        ] : null,
+    ]);
+}
 
 
 

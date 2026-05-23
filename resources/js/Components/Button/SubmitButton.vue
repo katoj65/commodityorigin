@@ -48,7 +48,7 @@ defineProps({
     background: #c8862a;
     color: #0e0b07;
     border-radius: 6px;
-    padding: 0.95rem 1rem;
+    padding: 0.95rem 10px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     line-height: 1.2;

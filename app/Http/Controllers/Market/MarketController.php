@@ -54,7 +54,26 @@ class MarketController extends Controller
      */
     public function liveMarket(): Response
     {
-        return Inertia::render('Market/LiveMarket');
+        $lots = Market::query()
+            ->where('status', 'live')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (Market $market): array => [
+                'id'           => $market->id,
+                'lot_code'     => $market->lot_code,
+                'name'         => $market->name,
+                'origin'       => $market->origin,
+                'type'         => $market->type,
+                'price_per_kg' => (float) ($market->price_per_kg ?? 0),
+                'quantity'     => (float) ($market->quantity ?? 0),
+                'demand'       => $market->demand,
+                'badges'       => $market->badges ?? [],
+                'status'       => $market->status,
+            ]);
+
+        return Inertia::render('Market/LiveMarket', [
+            'lots' => $lots,
+        ]);
     }
 
     /**
@@ -99,10 +118,33 @@ class MarketController extends Controller
 
 
 
+    public function activeMarket(): Response
+    {
+        $lots = Market::query()
+            ->where('status', 'live')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (Market $market): array => [
+                'id'           => $market->id,
+                'code'         => $market->lot_code,
+                'name'         => $market->name,
+                'origin'       => $market->origin,
+                'type'         => $market->type,
+                'qty'          => number_format((float) ($market->quantity ?? 0)) . ' kg',
+                'score'        => (float) ($market->quality_score ?? 0),
+                'price'        => 'Shs. ' . number_format((float) ($market->price_per_kg ?? 0), 2),
+                'demand'       => $market->demand,
+                'seller'       => $market->seller ?? '—',
+                'status'       => $market->status,
+            ]);
+
+        return Inertia::render('Market/ActiveMarketPage', [
+            'lots' => $lots,
+        ]);
+    }
 
 
 
 
 
-    
 }
