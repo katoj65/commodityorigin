@@ -150,6 +150,7 @@ Route::middleware([
     // Seller workspace routes.
     Route::prefix('seller')->name('seller.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [SellController::class, 'index'])->name('index');
+        Route::get('/sell-coffee', [SellController::class, 'sellCoffee'])->name('sell-coffee');
     });
 
     // Analysis workspace routes.

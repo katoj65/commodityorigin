@@ -48,4 +48,9 @@ class SellController extends Controller
     {
         //
     }
+
+    public function sellCoffee(): Response
+    {
+        return Inertia::render('Sell/SellCoffeePage');
+    }
 }
