@@ -172,9 +172,9 @@ const badgeClass = (b) => {
                             <button class="btn lm-btn-buy btn-sm">
                                 <el-icon><ShoppingCart /></el-icon> Buy Coffee
                             </button>
-                            <Link :href="route('seller.sell-coffee')" class="btn lm-btn-sell btn-sm">
+                            <a href="/sell-coffee" class="btn lm-btn-sell btn-sm">
                                 <el-icon><Share /></el-icon> Sell Coffee
-                            </Link>
+                            </a>
                             <button class="btn lm-btn-ghost btn-sm">
                                 <el-icon><Bell /></el-icon> Set Alert
                             </button>
