@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import {
     Bell, Box, ChatDotRound, Check, Checked, Clock,
     CollectionTag, Connection, Document,
@@ -171,9 +172,9 @@ const badgeClass = (b) => {
                             <button class="btn lm-btn-buy btn-sm">
                                 <el-icon><ShoppingCart /></el-icon> Buy Coffee
                             </button>
-                            <button class="btn lm-btn-sell btn-sm">
+                            <Link :href="route('seller.sell-coffee')" class="btn lm-btn-sell btn-sm">
                                 <el-icon><Share /></el-icon> Sell Coffee
-                            </button>
+                            </Link>
                             <button class="btn lm-btn-ghost btn-sm">
                                 <el-icon><Bell /></el-icon> Set Alert
                             </button>
