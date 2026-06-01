@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\RoleMetadata;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -59,6 +60,10 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'roles' => fn () => RoleMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get(['slug', 'name', 'description']),
         ];
     }
 }

@@ -18,48 +18,29 @@ public function userDashboard(Request $request)
 
 $role = $request->user()->role;
 
-if ($role === 'buyer') {
-return self::buyerDashboard($request);
-} elseif ($role === 'seller') {
-return self::sellerDashboard($request);
-} elseif ($role === 'admin') {
-return self::adminDashboard($request);
-}elseif ($role === 'investor') {
-return self::investorDashboard($request);
-}elseif ($role === 'farmer') {
-return self::farmerDashboard($request);
-}elseif ($role === 'exporter') {
-return self::exporterDashboard($request);
-}
+// if ($role === 'buyer') {
+// return self::buyerDashboard($request);
+// } elseif ($role === 'seller') {
+// return self::sellerDashboard($request);
+// } elseif ($role === 'admin') {
+// return self::adminDashboard($request);
+// }elseif ($role === 'investor') {
+// return self::investorDashboard($request);
+// }elseif ($role === 'farmer') {
+// return self::farmerDashboard($request);
+// }elseif ($role === 'exporter') {
+// return self::exporterDashboard($request);
+// }
 
 
 // Default fallback for 'user' role and any other role
-return Inertia::render('Dashboards', [
-'title' => 'AdminDashboard',
-]);
+// return Inertia::render('Dashboards', [
+// 'title' => 'AdminDashboard',
+// ]);
+
+return Inertia::render('Dashboard');
 
 
-
-// $user = $request->user()->loadMissing('profile');
-//     $roles = RoleMetadata::query()
-//         ->where('is_active', true)
-//         ->orderBy('sort_order')
-//         ->get(['slug', 'name', 'description']);
-//     $hasProfile = ! is_null($user->profile);
-//     $showSelectRoleModal = $hasProfile
-//         && $user->role === 'user';
-
-
-
-
-
-//     return Inertia::render('Dashboard', [
-//         'title' => 'Dashboard',
-//         'hasProfile' => $hasProfile,
-//         'currentRole' => $user->role,
-//         'roles' => $roles,
-//         'showSelectRoleModal' => $showSelectRoleModal,
-//     ]);
 }
 
 
@@ -173,6 +154,7 @@ return Inertia::render('Dashboards/DashboardInvestor', [
 }
 
 
+
 //farmer dashboard
 static function farmerDashboard($request){
 $user = $request->user()->loadMissing('profile');
@@ -213,12 +195,31 @@ return Inertia::render('Dashboards/DashboardExporter', [
 'showSelectRoleModal' => $showSelectRoleModal,
 ]);
 
-
-
 }
 
 
 
+
+
+
+// Default fallback for 'user' role and any other role
+public function dashboard(Request $request)
+{
+    $user = $request->user()->loadMissing('profile', 'userRole');
+    $hasProfile = ! is_null($user->profile);
+    $hasRole    = ! is_null($user->userRole);
+
+    $roles = RoleMetadata::query()
+        ->where('is_active',1)
+        ->orderBy('sort_order')
+        ->get(['slug', 'name', 'description']);
+
+    return Inertia::render('UserDashboard', [
+        'hasProfile' => $hasProfile,
+        'hasRole'    => $hasRole,
+        'roles'      => $roles,
+    ]);
+}
 
 
 

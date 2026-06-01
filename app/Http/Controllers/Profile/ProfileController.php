@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Profile;
 
 use App\Http\Controllers\Controller;
 use App\Models\UserProfile;
+use App\Models\UserRole;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -46,6 +47,9 @@ class ProfileController extends Controller
     /**
      * Update the authenticated user's selected role.
      */
+
+
+
     public function updateRole(Request $request): RedirectResponse
     {
         $request->validate([
@@ -58,9 +62,14 @@ class ProfileController extends Controller
 
         abort_unless($request->user()->profile()->exists(), 403, 'Create a profile before selecting a role.');
 
-        $request->user()->forceFill([
-            'role' => $request->string('role')->toString(),
-        ])->save();
+        $role = $request->string('role')->toString();
+
+        UserRole::firstOrCreate([
+            'user_id' => $request->user()->id,
+            'role'    => $role,
+        ]);
+
+        $request->user()->forceFill(['role' => $role])->save();
 
         return back()->with('success', 'Role selected successfully.');
     }

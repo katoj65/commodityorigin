@@ -99,6 +99,11 @@ class User extends Authenticatable
         return $this->hasOne(UserProfile::class);
     }
 
+    public function userRole(): HasOne
+    {
+        return $this->hasOne(UserRole::class);
+    }
+
     /**
      * Determine whether the user has the given role.
      */
