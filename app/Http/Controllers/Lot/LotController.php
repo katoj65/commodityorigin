@@ -539,6 +539,35 @@ public function lotTraceability(Lot $lot): Response
 }
 
 
+public function index(): Response
+{
+    return Inertia::render('Lot/LotPage', [
+        'lots'    => ['data' => [], 'meta' => ['total' => 0, 'current_page' => 1, 'last_page' => 1, 'from' => 0, 'to' => 0]],
+        'filters' => [],
+    ]);
+}
+
+
+
+public function storeLotRequest(Request $request): RedirectResponse
+{
+    $validated = $request->validate([
+        'coffee_type' => ['required', 'string', 'max:255'],
+        'variety' => ['required', 'string', 'max:255'],
+        'grade' => ['required', 'string', 'max:255'],
+        'amount' => ['required', 'numeric', 'min:0.01'],
+        'quantity' => ['required', 'numeric', 'min:0.01'],
+        'notes' => ['nullable', 'string', 'max:2000'],
+    ]);
+
+    $request->user()->lotRequests()->create($validated);
+
+    return redirect()->back()->with('success', 'Your lot request has been submitted successfully.');
+
+
+}
+
+
 
 
 

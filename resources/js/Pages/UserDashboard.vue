@@ -7,6 +7,7 @@ import ApplicationMark from '@/Components/ApplicationMark.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import AppAside from '@/Components/Aside/AppAside.vue';
 import InputError from '@/Components/InputError.vue';
+import QuickBuyModal from '@/Components/Modals/QuickBuyModal.vue';
 
 const props = defineProps({
     title:      String,
@@ -96,6 +97,9 @@ const displayedRange = computed(() => rangeData[selectedRange.value]);
 const maxChartValue  = computed(() => Math.max(...displayedRange.value.arabica, ...displayedRange.value.robusta));
 const chartBars      = computed(() => displayedRange.value.labels.map((label, i) => ({ label, arabica: displayedRange.value.arabica[i], robusta: displayedRange.value.robusta[i] })));
 const filteredLots   = computed(() => selectedType.value === 'all' ? lots : lots.filter(l => l.type === selectedType.value));
+
+// ── Quick Buy modal ────────────────────────────────────────────
+const showQuickBuy = ref(false);
 
 // ── Role dialog ────────────────────────────────────────────────
 const roleIconMap = { user: User, farmer: Crop, buyer: ShoppingCart, exporter: Van, investor: TrendCharts, admin: Setting };
@@ -359,19 +363,21 @@ onBeforeUnmount(() => {
                             <!-- Page header -->
                             <div class="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
                                 <div class="min-w-0">
-                                    <h1 class="font-display text-[20px] font-bold leading-none tracking-tight text-[#111827]">Trader Dashboard</h1>
+                                    <h1 class="font-display text-[20px] font-bold leading-none tracking-tight text-[#111827]">
+                                        {{ user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'My' }} Dashboard
+                                    </h1>
                                     <p class="mt-1 max-w-2xl text-[13px] leading-relaxed text-[#6B7280]">
                                         Uganda Coffee Commodity Exchange · From Farm to Cup, Transparently
                                     </p>
                                 </div>
                                 <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-                                    <button class="dashboard-secondary-btn">
+                                    <button class="dashboard-secondary-btn" @click="showQuickBuy = true">
                                         <svg class="dashboard-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                                            <path d="M7 10l5 5 5-5"/>
-                                            <path d="M12 15V3"/>
+                                            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                                            <path d="M3 6h18"/>
+                                            <path d="M16 10a4 4 0 01-8 0"/>
                                         </svg>
-                                        Export
+                                        Request Lot
                                     </button>
                                     <button class="dashboard-secondary-btn">
                                         <svg class="dashboard-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -599,6 +605,8 @@ onBeforeUnmount(() => {
 
 
 
+
+                    <QuickBuyModal v-model="showQuickBuy" />
 
                     <!-- ── Edit Profile Dialog ───────────────────────── -->
                     <el-dialog

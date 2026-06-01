@@ -6,6 +6,8 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\LotRequest;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -102,6 +104,11 @@ class User extends Authenticatable
     public function userRole(): HasOne
     {
         return $this->hasOne(UserRole::class);
+    }
+
+    public function lotRequests(): HasMany
+    {
+        return $this->hasMany(LotRequest::class);
     }
 
     /**

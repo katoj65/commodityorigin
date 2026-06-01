@@ -32,13 +32,12 @@ Route::get('/origins', [OriginController::class, 'index'])->name('origin.index')
 
 // Authenticated application routes.
 Route::middleware([
-    'auth:sanctum',
+    'auth',
     config('jetstream.auth_session'),
-    'verified',
 ])->group(function () {
 
     // Main dashboard.
-    Route::get('/dashboard', [DashboardController::class, 'userDashboard'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
     // User profile routes.
     Route::post('/profile', [ProfileController::class, 'store'])->name('profile.store');
@@ -72,11 +71,13 @@ Route::middleware([
 
     // Lot workspace routes.
     Route::prefix('lot')->name('lot.')->middleware('role:farmer,admin')->group(function () {
+        Route::get('/', [LotController::class, 'index'])->name('index');
         Route::get('/create', [LotController::class, 'create'])->name('create');
         Route::post('/', [LotController::class, 'store'])->name('store');
         Route::get('/{lot}/traceability', [LotController::class, 'lotTraceability'])->name('traceability');
         Route::get('/{lot}', [LotController::class, 'show'])->name('show');
         Route::post('/{lot}/publish', [LotController::class, 'publish'])->name('publish');
+        Route::post('/request', [LotController::class, 'storeLotRequest'])->name('request.store')->withoutMiddleware('role:farmer,admin')->middleware('role:farmer,admin,buyer');
     });
 
     // Batch workspace routes.
@@ -153,6 +154,7 @@ Route::middleware([
     });
 
     Route::get('/sell-coffee', [SellController::class, 'sellCoffee'])->name('seller.sell-coffee')->middleware('role:farmer,admin');
+    Route::post('/sell-coffee', [SellController::class, 'storeSell'])->name('seller.sell-coffee.store')->middleware('role:farmer,admin');
 
     // Analysis workspace routes.
     Route::prefix('analysis')->name('analysis.')->middleware('role:investor,admin')->group(function () {
