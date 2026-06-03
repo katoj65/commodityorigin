@@ -1,28 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Home;
+namespace App\Http\Controllers\Wallet;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class HomeController extends Controller
+class WalletController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(): Response|RedirectResponse
+    public function index(): Response
     {
-        if (auth()->check()) {
-            return redirect()->route('dashboard');
-        }
-
-        return Inertia::render('Welcome',[
-
-
-
+        return Inertia::render('Wallet/WalletPage', [
+            'title' => 'Wallet',
         ]);
     }
 
@@ -57,24 +47,4 @@ class HomeController extends Controller
     {
         //
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
 }

@@ -19,10 +19,10 @@ class QualityMetadataSeeder extends Seeder
         $qualities = [
             'quality score',
             'grade',
-            'moisture content ',
+            'moisture content',
             'bean size',
             'defect count',
-        
+
         ];
 
         foreach ($qualities as $index => $quality) {

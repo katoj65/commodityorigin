@@ -18,6 +18,7 @@ use App\Http\Controllers\Origin\OriginController;
 use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\Season\SeasonController;
 use App\Http\Controllers\Sell\SellController;
+use App\Http\Controllers\Wallet\WalletController;
 use Illuminate\Support\Facades\Route;
 
 // Public landing page.
@@ -70,14 +71,17 @@ Route::middleware([
     });
 
     // Lot workspace routes.
-    Route::prefix('lot')->name('lot.')->middleware('role:farmer,admin')->group(function () {
+    Route::prefix('lot')->name('lot.')->middleware('role:farmer,admin,buyer')->group(function () {
         Route::get('/', [LotController::class, 'index'])->name('index');
         Route::get('/create', [LotController::class, 'create'])->name('create');
         Route::post('/', [LotController::class, 'store'])->name('store');
+        Route::post('/request', [LotController::class, 'storeLotRequest'])->name('request.store')->middleware('role:farmer,admin,buyer');
+        Route::get('/request/{lotRequest}', [LotController::class, 'showLotRequest'])->name('request.show')->middleware('role:farmer,admin,buyer');
+        Route::put('/request/{lotRequest}', [LotController::class, 'updateLotRequest'])->name('request.update')->middleware('role:farmer,admin,buyer');
+        Route::delete('/request/{lotRequest}', [LotController::class, 'destroyLotRequest'])->name('request.destroy')->middleware('role:farmer,admin,buyer');
         Route::get('/{lot}/traceability', [LotController::class, 'lotTraceability'])->name('traceability');
         Route::get('/{lot}', [LotController::class, 'show'])->name('show');
         Route::post('/{lot}/publish', [LotController::class, 'publish'])->name('publish');
-        Route::post('/request', [LotController::class, 'storeLotRequest'])->name('request.store')->withoutMiddleware('role:farmer,admin')->middleware('role:farmer,admin,buyer');
     });
 
     // Batch workspace routes.
@@ -159,6 +163,13 @@ Route::middleware([
     // Analysis workspace routes.
     Route::prefix('analysis')->name('analysis.')->middleware('role:investor,admin')->group(function () {
         Route::get('/', [AnalysisController::class, 'index'])->name('index');
+    });
+
+    // Wallet workspace routes.
+    Route::prefix('wallet')->name('wallet.')->group(function () {
+        Route::get('/', [WalletController::class, 'index'])->name('index');
+        Route::post('/deposit', [WalletController::class, 'store'])->name('deposit');
+        Route::post('/withdraw', [WalletController::class, 'update'])->name('withdraw');
     });
 
 });

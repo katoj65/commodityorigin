@@ -27,7 +27,6 @@ const props = defineProps({
 const page = usePage();
 const mobileMenuOpen = ref(false);
 const showMobileMenuButton = ref(false);
-const fabOpen = ref(false);
 
 const user = computed(() => page.props.auth.user);
 const userInitials = computed(() => {
@@ -124,38 +123,6 @@ const railLinks = computed(() => [
     },
 ]);
 
-const fabActions = [
-    {
-        label: 'Register farmer',
-        icon: 'farmer',
-        href: route('farmer.create'),
-        inertia: true,
-    },
-    {
-        label: 'Register cooperative',
-        icon: 'cooperative',
-        href: route('cooperative.create'),
-        inertia: true,
-    },
-    {
-        label: 'Add lot',
-        icon: 'lot',
-        href: route('lot.create'),
-        inertia: true,
-    },
-    {
-        label: 'Add batch',
-        icon: 'batch',
-        href: route('batch.create'),
-        inertia: true,
-    },
-    {
-        label: 'Add harvest',
-        icon: 'harvest',
-        href: route('harvest.create'),
-        inertia: true,
-    },
-];
 
 const sideSections = computed(() => [
     {
@@ -386,13 +353,6 @@ const closeMobileMenu = () => {
     mobileMenuOpen.value = false;
 };
 
-const toggleFabMenu = () => {
-    fabOpen.value = !fabOpen.value;
-};
-
-const closeFabMenu = () => {
-    fabOpen.value = false;
-};
 
 const syncMobileNavState = () => {
     showMobileMenuButton.value = window.innerWidth < 1024;
@@ -528,12 +488,7 @@ onBeforeUnmount(() => {
                         <span class="absolute right-1 top-1 h-2 w-2 rounded-full bg-dn"></span>
                     </button>
 
-                    <button type="button" class="shell-icon-button hidden sm:inline-flex">
-                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.07 4.93A10 10 0 115 19.07" />
-                        </svg>
-                    </button>
+            
 
                     <Dropdown
                         align="right"
@@ -613,14 +568,6 @@ onBeforeUnmount(() => {
             class="fixed inset-0 z-40 bg-[#111827]/45 backdrop-blur-[1px] lg:hidden"
             @click="closeMobileMenu"
         ></div>
-
-        <div
-            v-if="fabOpen"
-            class="fixed inset-0 z-40"
-            @click="closeFabMenu"
-        ></div>
-
-
 
 
         <aside
@@ -986,203 +933,6 @@ onBeforeUnmount(() => {
             </template>
         </el-dialog>
 
-        <div class="fab-shell">
-            <transition-group
-                name="fab-action"
-                tag="div"
-                class="fab-actions"
-            >
-                <Link
-                    v-for="action in fabOpen ? fabActions.filter((action) => action.inertia) : []"
-                    :key="action.label"
-                    :href="action.href"
-                    class="fab-action-button"
-                    @click="closeFabMenu"
-                >
-                    <svg
-                        v-if="action.icon === 'farmer'"
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path d="M12 3l7 4-7 4-7-4 7-4z" />
-                        <path d="M7 10v3a5 5 0 0010 0v-3" />
-                        <path d="M5 21a7 7 0 0114 0" />
-                    </svg>
-                    <svg
-                        v-else-if="action.icon === 'lot'"
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path d="M4 7h16" />
-                        <path d="M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
-                        <path d="M12 10v6" />
-                        <path d="M9 13h6" />
-                    </svg>
-                    <svg
-                        v-else-if="action.icon === 'cooperative'"
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path d="M4 20h16" />
-                        <path d="M6 20v-7" />
-                        <path d="M12 20V9" />
-                        <path d="M18 20v-5" />
-                        <path d="M3 9l9-5 9 5" />
-                        <path d="M8.5 12h1" />
-                        <path d="M14.5 12h1" />
-                    </svg>
-                    <svg
-                        v-else-if="action.icon === 'harvest'"
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path d="M18.5 3C13 3 8.8 4.8 6.4 7.3A8.8 8.8 0 004 13.7c0 2.2.7 4.3 2.1 6.1" />
-                        <path d="M7.1 19.8c1.3-1.9 3.2-3.1 5.3-3.1 4 0 7.3-3.3 7.3-7.3V3.9" />
-                        <path d="M8 20h8" />
-                    </svg>
-                    <svg
-                        v-else-if="action.icon === 'batch'"
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path d="M4 7.5l8-4 8 4-8 4-8-4z" />
-                        <path d="M4 12l8 4 8-4" />
-                        <path d="M4 16.5l8 4 8-4" />
-                    </svg>
-                    <svg
-                        v-else
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <rect x="4" y="5" width="7" height="7" rx="1.25" />
-                        <rect x="13" y="5" width="7" height="7" rx="1.25" />
-                        <rect x="4" y="14" width="7" height="7" rx="1.25" />
-                        <path d="M16.5 15v5" />
-                        <path d="M14 17.5h5" />
-                    </svg>
-                    <span>{{ action.label }}</span>
-                </Link>
-
-                <button
-                    v-for="action in fabOpen ? fabActions.filter((action) => !action.inertia) : []"
-                    :key="action.label"
-                    type="button"
-                    class="fab-action-button"
-                    @click="closeFabMenu"
-                >
-                    <svg
-                        v-if="action.icon === 'farmer'"
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path d="M12 3l7 4-7 4-7-4 7-4z" />
-                        <path d="M7 10v3a5 5 0 0010 0v-3" />
-                        <path d="M5 21a7 7 0 0114 0" />
-                    </svg>
-                    <svg
-                        v-else-if="action.icon === 'lot'"
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path d="M4 7h16" />
-                        <path d="M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
-                        <path d="M12 10v6" />
-                        <path d="M9 13h6" />
-                    </svg>
-                    <svg
-                        v-else-if="action.icon === 'cooperative'"
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path d="M4 20h16" />
-                        <path d="M6 20v-7" />
-                        <path d="M12 20V9" />
-                        <path d="M18 20v-5" />
-                        <path d="M3 9l9-5 9 5" />
-                        <path d="M8.5 12h1" />
-                        <path d="M14.5 12h1" />
-                    </svg>
-                    <svg
-                        v-else-if="action.icon === 'harvest'"
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path d="M18.5 3C13 3 8.8 4.8 6.4 7.3A8.8 8.8 0 004 13.7c0 2.2.7 4.3 2.1 6.1" />
-                        <path d="M7.1 19.8c1.3-1.9 3.2-3.1 5.3-3.1 4 0 7.3-3.3 7.3-7.3V3.9" />
-                        <path d="M8 20h8" />
-                    </svg>
-                    <svg
-                        v-else-if="action.icon === 'batch'"
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path d="M4 7.5l8-4 8 4-8 4-8-4z" />
-                        <path d="M4 12l8 4 8-4" />
-                        <path d="M4 16.5l8 4 8-4" />
-                    </svg>
-                    <svg
-                        v-else
-                        class="fab-action-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <rect x="4" y="5" width="7" height="7" rx="1.25" />
-                        <rect x="13" y="5" width="7" height="7" rx="1.25" />
-                        <rect x="4" y="14" width="7" height="7" rx="1.25" />
-                        <path d="M16.5 15v5" />
-                        <path d="M14 17.5h5" />
-                    </svg>
-                    <span>{{ action.label }}</span>
-                </button>
-            </transition-group>
-
-            <button
-                type="button"
-                class="fab-trigger"
-                :class="{ open: fabOpen }"
-                @click="toggleFabMenu"
-            >
-                <svg class="fab-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 5v14" />
-                    <path d="M5 12h14" />
-                </svg>
-            </button>
-        </div>
     </div>
 </template>
 
@@ -1342,98 +1092,6 @@ onBeforeUnmount(() => {
     flex-shrink: 0;
 }
 
-.fab-shell {
-    position: fixed;
-    right: 1rem;
-    bottom: 1rem;
-    z-index: 50;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.75rem;
-}
-
-.fab-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.625rem;
-}
-
-.fab-action-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.625rem;
-    border: 1px solid rgba(229, 231, 235, 0.95);
-    border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.98);
-    padding: 0.75rem 1rem;
-    box-shadow: 0 18px 45px rgba(17, 24, 39, 0.14);
-    color: #111827;
-    font-size: 0.875rem;
-    font-weight: 600;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
-}
-
-.fab-action-button:hover {
-    transform: translateY(-1px);
-    color: #c8862a;
-    box-shadow: 0 22px 55px rgba(17, 24, 39, 0.18);
-}
-
-.fab-action-icon {
-    width: 1rem;
-    height: 1rem;
-    flex-shrink: 0;
-}
-
-.fab-trigger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 3.5rem;
-    height: 3.5rem;
-    border: 0;
-    border-radius: 9999px;
-    background: linear-gradient(135deg, #c8862a, #e09b3a);
-    box-shadow: 0 22px 55px rgba(200, 134, 42, 0.32);
-    color: #ffffff;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.fab-trigger:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 26px 62px rgba(200, 134, 42, 0.38);
-}
-
-.fab-trigger.open .fab-trigger-icon {
-    transform: rotate(45deg);
-}
-
-.fab-trigger-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    transition: transform 0.15s ease;
-}
-
-.fab-action-enter-active,
-.fab-action-leave-active {
-    transition: all 0.18s ease;
-}
-
-.fab-action-enter-from,
-.fab-action-leave-to {
-    opacity: 0;
-    transform: translateY(8px) scale(0.96);
-}
-
-@media (min-width: 640px) {
-    .fab-shell {
-        right: 1.5rem;
-        bottom: 1.5rem;
-    }
-}
 
 .rail-item {
     position: relative;

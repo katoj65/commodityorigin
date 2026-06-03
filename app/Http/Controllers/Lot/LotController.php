@@ -20,6 +20,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\LotRequest;
 
 class LotController extends Controller
 {
@@ -549,23 +550,75 @@ public function index(): Response
 
 
 
-public function storeLotRequest(Request $request): RedirectResponse
+public function storeLotRequest(Request $request)
+//: RedirectResponse
 {
     $validated = $request->validate([
-        'coffee_type' => ['required', 'string', 'max:255'],
-        'variety' => ['required', 'string', 'max:255'],
+        'crop_type' => ['required', 'string', 'max:255'],
+        'variety' => ['nullable', 'string', 'max:255'],
         'grade' => ['required', 'string', 'max:255'],
-        'amount' => ['required', 'numeric', 'min:0.01'],
+        'amount' => ['nullable'],
         'quantity' => ['required', 'numeric', 'min:0.01'],
         'notes' => ['nullable', 'string', 'max:2000'],
     ]);
 
-    $request->user()->lotRequests()->create($validated);
+    $userId = $request->user()->id;
+    LotRequest::create(array_merge($validated, ['user_id' => $userId]));
 
-    return redirect()->back()->with('success', 'Your lot request has been submitted successfully.');
-
+   return redirect()->back()->with('success', 'Your lot request has been submitted successfully.');
 
 }
+
+
+
+
+public function showLotRequest(Request $request, LotRequest $lotRequest): Response
+{
+    $lotRequest->load('user');
+
+    return Inertia::render('Lot/LotRequestDetails', [
+        'lotRequest' => $lotRequest,
+        'canEdit'    => $request->user()->can('update', $lotRequest),
+        'canDelete'  => $request->user()->can('delete', $lotRequest),
+    ]);
+}
+
+public function updateLotRequest(Request $request, LotRequest $lotRequest): RedirectResponse
+{
+    Gate::authorize('update', $lotRequest);
+
+    $data = $request->validate([
+        'crop_type' => ['required', 'string', 'max:100'],
+        'variety'   => ['nullable', 'string', 'max:100'],
+        'grade'     => ['nullable', 'string', 'max:50'],
+        'quantity'  => ['required', 'numeric', 'min:0.01'],
+        'amount'    => ['nullable', 'numeric', 'min:0'],
+        'notes'     => ['nullable', 'string', 'max:2000'],
+    ]);
+
+    $lotRequest->update($data);
+
+    return redirect()->route('lot.request.show', $lotRequest)
+        ->with('success', 'Lot request updated.');
+}
+
+public function destroyLotRequest(LotRequest $lotRequest): RedirectResponse
+{
+    Gate::authorize('delete', $lotRequest);
+
+    $lotRequest->delete();
+
+    return redirect()->route('dashboard')
+        ->with('success', 'Lot request deleted.');
+}
+
+
+
+
+
+
+
+
 
 
 

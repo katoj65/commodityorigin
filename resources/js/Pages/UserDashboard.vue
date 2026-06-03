@@ -10,12 +10,14 @@ import InputError from '@/Components/InputError.vue';
 import QuickBuyModal from '@/Components/Modals/QuickBuyModal.vue';
 
 const props = defineProps({
-    title:      String,
-    fullWidth:  { type: Boolean, default: false },
-    flush:      { type: Boolean, default: false },
-    hasProfile: { type: Boolean, default: false },
-    hasRole:    { type: Boolean, default: false },
-    roles:      { type: Array,   default: () => [] },
+    title:       String,
+    fullWidth:   { type: Boolean, default: false },
+    flush:       { type: Boolean, default: false },
+    hasProfile:  { type: Boolean, default: false },
+    hasRole:     { type: Boolean, default: false },
+    roles:       { type: Array,   default: () => [] },
+    cropGrades:  { type: Array,   default: () => [] },
+    lotRequests: { type: Array,   default: () => [] },
 });
 
 // ── Shell state ────────────────────────────────────────────────
@@ -78,12 +80,30 @@ const lots = [
     { id: 'BOE-0421', name: 'West Nile FAQ Grade 1', origin: 'Arua · Natural · 1,000m',     type: 'robusta', score: '79.4', price: '$1.98', delta: '▲ 0.3%', deltaClass: 'text-[#2D7A55]', availability: 90, sparkline: '0,17 12,19 24,16 36,17 48,15 60,16 72,14' },
 ];
 
-const actionItems = [
-    { title: 'Pending Bids to Review', body: 'You have 14 active bids and 3 expiring today. Review and take action.',  accent: 'text-[#C0392B]', bg: 'bg-[#FEF2F2]', icon: 'wallet'  },
-    { title: 'UCDA Lot Verifications', body: 'There are 8 new verified lots matching your watchlist filters.',           accent: 'text-[#1B6E4B]', bg: 'bg-[#F0FBF5]', icon: 'shield'  },
-    { title: 'Farm Messages',          body: 'There are 5 new messages from partner farms and cooperatives.',            accent: 'text-[#C8862A]', bg: 'bg-[#FFF8F0]', icon: 'message' },
-    { title: 'Incoming Shipments',     body: 'You have 3 shipments in transit — track on-chain provenance.',             accent: 'text-[#2D7A55]', bg: 'bg-[#ECFDF5]', icon: 'pin'     },
-];
+const statusStyle = {
+    pending:    { accent: 'text-[#C0392B]', bg: 'bg-[#FEF2F2]', icon: 'wallet'  },
+    processing: { accent: 'text-[#C8862A]', bg: 'bg-[#FFF8F0]', icon: 'shield'  },
+    approved:   { accent: 'text-[#1B6E4B]', bg: 'bg-[#F0FBF5]', icon: 'shield'  },
+    completed:  { accent: 'text-[#2D7A55]', bg: 'bg-[#ECFDF5]', icon: 'pin'     },
+    rejected:   { accent: 'text-[#C0392B]', bg: 'bg-[#FEF2F2]', icon: 'message' },
+};
+
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+
+const actionItems = computed(() => props.lotRequests.map(req => {
+    const style = statusStyle[req.status] ?? { accent: 'text-[#6B7280]', bg: 'bg-[#F9FAFB]', icon: 'wallet' };
+    const crop = [req.crop_type, req.variety].filter(Boolean).map(cap).join(' · ');
+    return {
+        id:       req.id,
+        title:    crop || 'Lot Request',
+        status:   cap(req.status),
+        notes:    req.notes || null,
+        grade:    req.grade    ? cap(req.grade)                            : null,
+        quantity: req.quantity ? `${req.quantity} kg`                      : null,
+        amount:   req.amount   ? `$${Number(req.amount).toLocaleString()}` : null,
+        ...style,
+    };
+}));
 
 const regionVolumes = [
     { label: 'Bugisu',    value: 38, color: '#C8862A' },
@@ -536,24 +556,36 @@ onBeforeUnmount(() => {
                         <!-- Right sidebar -->
                         <div class="flex w-full flex-shrink-0 flex-col gap-3 xl:w-72">
 
-                            <!-- Action Center -->
+                            <!-- Lot Requests -->
                             <div class="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
-                                <div class="flex items-center justify-between border-b border-[#E5E7EB] px-3.5 py-3">
-                                    <h3 class="font-display text-[14px] font-bold tracking-tight text-[#111827]">Action Center</h3>
+                                <div class="flex items-center justify-between border-b border-[#E5E7EB] px-3.5 py-2.5">
+                                    <h3 class="font-display text-[14px] font-bold tracking-tight text-[#111827]">Lot Requests</h3>
+                                    <span v-if="actionItems.length" class="rounded-full bg-[#F3F4F6] px-1.5 py-0.5 font-mono text-[10px] text-[#6B7280]">{{ actionItems.length }}</span>
                                 </div>
-                                <a v-for="item in actionItems" :key="item.title" href="#" class="action-row flex items-start gap-3 border-b border-[#E5E7EB]/60 px-3.5 py-3 no-underline last:border-b-0" @click.prevent>
-                                    <div class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-[#E5E7EB]" :class="item.bg">
-                                        <svg v-if="item.icon === 'wallet'"  class="h-4 w-4" :class="item.accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><circle cx="9" cy="12" r="2"/></svg>
-                                        <svg v-else-if="item.icon === 'shield'"  class="h-4 w-4" :class="item.accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 5.591-3.824 10.29-9 11.622C6.824 22.29 3 17.591 3 12c0-1.042.133-2.052.382-3.016A11.955 11.955 0 0112 5.944a11.955 11.955 0 018.618 3.04A12.02 12.02 0 0121 12z"/></svg>
-                                        <svg v-else-if="item.icon === 'message'" class="h-4 w-4" :class="item.accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 10h.01M12 10h.01M16 10h.01"/><path d="M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-                                        <svg v-else                             class="h-4 w-4" :class="item.accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                    </div>
+
+                                <div v-if="!actionItems.length" class="px-3.5 py-5 text-center font-mono text-[12px] text-[#9CA3AF]">No lot requests yet.</div>
+
+                                <Link v-for="item in actionItems" :key="item.id"
+                                   :href="route('lot.request.show', item.id)"
+                                   class="action-row flex items-center gap-2.5 border-b border-[#E5E7EB]/60 px-3.5 py-3 no-underline last:border-b-0">
+                                    <!-- Status dot -->
+                                    <div class="h-2 w-2 flex-shrink-0 rounded-full" :class="item.accent.replace('text-', 'bg-')"></div>
+
+                                    <!-- Main info -->
                                     <div class="min-w-0 flex-1">
-                                        <div class="mb-0.5 text-[12px] font-medium text-[#111827]">{{ item.title }}</div>
-                                        <div class="text-[11px] leading-relaxed text-[#6B7280]">{{ item.body }}</div>
+                                        <div class="flex items-center justify-between gap-1">
+                                            <span class="truncate text-[13px] font-semibold text-[#111827]">{{ item.title }}</span>
+                                            <span class="flex-shrink-0 font-mono text-[10px]" :class="item.accent">{{ item.status }}</span>
+                                        </div>
+                                        <div class="mt-0.5 flex items-center gap-1.5 font-mono text-[11px] text-[#9CA3AF]">
+                                            <span v-if="item.grade">{{ item.grade }}</span>
+                                            <span v-if="item.grade && (item.quantity || item.amount)" class="text-[#D1D5DB]">·</span>
+                                            <span v-if="item.quantity">{{ item.quantity }}</span>
+                                            <span v-if="item.quantity && item.amount" class="text-[#D1D5DB]">·</span>
+                                            <span v-if="item.amount" class="font-medium text-[#374151]">{{ item.amount }}</span>
+                                        </div>
                                     </div>
-                                    <svg class="mt-1 h-4 w-4 flex-shrink-0 text-[#6B7280]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                                </a>
+                                </Link>
                             </div>
 
                             <!-- Volume by Region -->
@@ -606,7 +638,7 @@ onBeforeUnmount(() => {
 
 
 
-                    <QuickBuyModal v-model="showQuickBuy" />
+                    <QuickBuyModal v-model="showQuickBuy" :crop-grades="props.cropGrades" />
 
                     <!-- ── Edit Profile Dialog ───────────────────────── -->
                     <el-dialog

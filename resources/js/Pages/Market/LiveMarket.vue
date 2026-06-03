@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import {
     Bell, Box, ChatDotRound, Check, Checked, Clock,
     CollectionTag, Connection, Document,
@@ -128,6 +128,17 @@ const news = [
     { title: 'UGX weakens against USD',          impact: 'Low',    action: 'Monitor exchange rate impact',  tone: 'info'    },
 ];
 
+/* ── Quick trade navigation ────────────────────────────────────── */
+const submitTrade = () => {
+    if (tradeMode.value === 'Sell') {
+        router.visit(route('seller.sell-coffee'));
+    } else {
+        router.visit(route('checkout.index'));
+    }
+};
+const placeLimitOrder = () => router.visit(route('bid.place', selectedLot.value.id));
+const requestSample   = () => router.visit(route('lot.show', selectedLot.value.id));
+
 /* ── Chatbot ───────────────────────────────────────────────────── */
 const chatOpen  = ref(false);
 const chatInput = ref('');
@@ -172,9 +183,9 @@ const badgeClass = (b) => {
                             <button class="btn lm-btn-buy btn-sm">
                                 <el-icon><ShoppingCart /></el-icon> Buy Coffee
                             </button>
-                            <a href="/sell-coffee" class="btn lm-btn-sell btn-sm">
+                            <Link href="/sell-coffee" class="btn lm-btn-sell btn-sm">
                                 <el-icon><Share /></el-icon> Sell Coffee
-                            </a>
+                            </Link>
                             <button class="btn lm-btn-ghost btn-sm">
                                 <el-icon><Bell /></el-icon> Set Alert
                             </button>
@@ -469,11 +480,11 @@ const badgeClass = (b) => {
                                 </div>
 
                                 <div class="d-grid gap-2 mt-3">
-                                    <button class="btn btn-sm" :class="tradeMode === 'Buy' ? 'lm-btn-buy' : 'lm-btn-sell'">
+                                    <button class="btn btn-sm" :class="tradeMode === 'Buy' ? 'lm-btn-buy' : 'lm-btn-sell'" @click="submitTrade">
                                         {{ tradeMode }} Now
                                     </button>
-                                    <button class="btn lm-btn-outline btn-sm">Place Limit Order</button>
-                                    <button class="btn lm-btn-ghost btn-sm">
+                                    <button class="btn lm-btn-outline btn-sm" @click="placeLimitOrder">Place Limit Order</button>
+                                    <button class="btn lm-btn-ghost btn-sm" @click="requestSample">
                                         <el-icon><Document /></el-icon> Request Sample
                                     </button>
                                 </div>

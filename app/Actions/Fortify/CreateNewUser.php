@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Laravel\Jetstream\Jetstream;
@@ -30,11 +31,12 @@ class CreateNewUser implements CreatesNewUsers
 
         return User::create([
             'first_name' => $input['first_name'],
-            'last_name' => $input['last_name'],
-            'role' => 'user',
-            'telephone' => $input['telephone'],
-            'email' => $input['email'],
-            'password' => Hash::make($input['password']),
+            'last_name'  => $input['last_name'],
+            'role'       => 'user', // Ensure your middleware allows this role
+            'telephone'  => $input['telephone'],
+            'email'      => $input['email'],
+            'password'   => Hash::make($input['password']),
+            'email_verified_at' => now(), // Auto-verify since feature is off in config
         ]);
     }
 }

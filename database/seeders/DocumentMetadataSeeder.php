@@ -18,7 +18,7 @@ class DocumentMetadataSeeder extends Seeder
     {
         $items = [
             'harvest intake sheet',
-            'huality assessment report',
+            'quality assessment report',
             'moisture analysis record',
             'delivery note',
             'purchase receipt',

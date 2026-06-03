@@ -17,10 +17,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        User::query()->firstOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'first_name' => 'Test',
+                'last_name' => 'User',
+                'role' => 'user',
+                'telephone' => '+1234567890',
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'remember_token' => Str::random(10),
+            ],
+        );
+
         $this->call([
             RoleMetadataSeeder::class,
             CropMetadataSeeder::class,
             CropVarietyMetadataSeeder::class,
+            ClimateZoneMetadataSeeder::class,
             RipenessGradeMetadataSeeder::class,
             PickMethodMetadataSeeder::class,
             QualityMetadataSeeder::class,
@@ -42,21 +56,7 @@ class DatabaseSeeder extends Seeder
             SensoryMetadataSeeder::class,
             ProcessingMetadataSeeder::class,
             MarketMetadataSeeder::class,
+            CropGradeMetadataSeeder::class,
         ]);
-
-        // User::factory(10)->create();
-
-        User::query()->firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'first_name' => 'Test',
-                'last_name' => 'User',
-                'role' => 'user',
-                'telephone' => '+1234567890',
-                'email_verified_at' => now(),
-                'password' => Hash::make('password'),
-                'remember_token' => Str::random(10),
-            ],
-        );
     }
 }

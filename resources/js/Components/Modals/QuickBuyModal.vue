@@ -8,13 +8,14 @@ import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
+    cropGrades: { type: Array,   default: () => [] },
 });
 
 const emit = defineEmits(['update:modelValue', 'success']);
 
 
 const form = useForm({
-    coffee_type: '',
+    crop_type: '',
     variety:     '',
     grade:       '',
     amount:      '',
@@ -39,7 +40,7 @@ const submit = () => {
         preserveScroll: true,
         preserveState:  true,
         onSuccess: () => {
-            ElMessage.success('Bid placed successfully.');
+            ElMessage.success('Saved successfully.');
             emit('success');
             close();
         },
@@ -76,12 +77,12 @@ const submit = () => {
                 <el-form label-position="top" class="qb-section">
 
                     <el-form-item label="Coffee Type">
-                        <el-select v-model="form.coffee_type" placeholder="Select type" class="!w-full">
+                        <el-select v-model="form.crop_type" placeholder="Select type" class="!w-full">
                             <el-option label="Arabica"  value="arabica" />
                             <el-option label="Robusta"  value="robusta" />
                             <el-option label="Liberica" value="liberica" />
                         </el-select>
-                        <InputError :message="form.errors.coffee_type" class="qb-error-field mt-1" />
+                        <InputError :message="form.errors.crop_type" class="qb-error-field mt-1" />
                     </el-form-item>
 
                     <el-form-item label="Variety">
@@ -91,12 +92,12 @@ const submit = () => {
 
                     <el-form-item label="Grade">
                         <el-select v-model="form.grade" placeholder="Select grade" class="!w-full">
-                            <el-option label="AA"           value="AA" />
-                            <el-option label="AB"           value="AB" />
-                            <el-option label="C"            value="C" />
-                            <el-option label="PB (Peaberry)" value="PB" />
-                            <el-option label="E (Elephant)" value="E" />
-                            <el-option label="T (Triage)"   value="T" />
+                            <el-option
+                                v-for="grade in props.cropGrades"
+                                :key="grade.slug"
+                                :label="grade.name"
+                                :value="grade.slug"
+                            />
                         </el-select>
                         <InputError :message="form.errors.grade" class="qb-error-field mt-1" />
                     </el-form-item>

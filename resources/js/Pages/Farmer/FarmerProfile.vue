@@ -6,7 +6,7 @@ import {
     Bell, Box, ChatDotRound, Check, Checked, Clock,
     CollectionTag, Download,
     Location, Medal, Opportunity, Promotion,
-    ShoppingCart, Star, TrendCharts, Van, View,
+    ShoppingCart, Star, TrendCharts, UserFilled, Van, View,
     Warning,
 } from '@element-plus/icons-vue';
 
@@ -180,7 +180,10 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                     <div class="row g-0 align-items-stretch">
                         <!-- Left: Identity -->
                         <div class="col-12 col-md-4 fpr-hero-identity">
-                            <div class="fpr-avatar-xl">{{ initials }}</div>
+                            <div class="fpr-avatar-xl">
+                                <el-icon class="fpr-avatar-icon"><UserFilled /></el-icon>
+                                <span class="fpr-avatar-initials">{{ initials }}</span>
+                            </div>
                             <div class="fpr-hero-name">{{ fullName }}</div>
                             <div class="fpr-hero-sub">ID: FMR-{{ String(props.farmer.id).padStart(4, '0') }}</div>
                             <div class="d-flex align-items-center gap-1 mb-2">
@@ -480,7 +483,10 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                 <div class="d-flex flex-column gap-2">
                                     <div v-for="rev in buyerReviews" :key="rev.buyer" class="fpr-review-card">
                                         <div class="d-flex align-items-center gap-2 mb-1">
-                                            <div class="fpr-review-avatar">{{ rev.buyer[0] }}</div>
+                                            <div class="fpr-review-avatar">
+                                                <el-icon class="fpr-avatar-icon"><UserFilled /></el-icon>
+                                                <span class="fpr-avatar-initials">{{ rev.buyer[0] }}</span>
+                                            </div>
                                             <div>
                                                 <div class="fpr-item-name">{{ rev.buyer }}</div>
                                                 <div class="fpr-td-muted" style="font-size:.7rem;">{{ rev.country }}</div>
@@ -697,7 +703,9 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .fpr-hero-identity { padding: 1.25rem; border-right: 1px solid var(--surface-high); background: linear-gradient(180deg, #f0fdf4, #ffffff); display: flex; flex-direction: column; }
 .fpr-hero-center, .fpr-hero-perf { padding: 1.25rem; }
 .fpr-hero-center { border-right: 1px solid var(--surface-high); }
-.fpr-avatar-xl { width: 60px; height: 60px; border-radius: 14px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 1.25rem; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+.fpr-avatar-xl { width: 60px; height: 60px; border-radius: 14px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 1.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 12px; }
+.fpr-avatar-icon     { font-size: 16px; line-height: 1; opacity: 0.7; }
+.fpr-avatar-initials { font-size: 0.5rem; font-weight: 800; line-height: 1; letter-spacing: 0.03em; margin-top: 2px; }
 .fpr-hero-name { font-size: 1.0625rem; font-weight: 800; color: var(--on-surface); margin-bottom: 2px; }
 .fpr-hero-sub  { font-size: 0.75rem; color: var(--on-surface-var); margin-bottom: 6px; }
 .fpr-contact-row { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--on-surface-var); padding: 3px 0; }
@@ -783,7 +791,9 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 
 /* ── Reviews ───────────────────────────────────────────────────────────────── */
 .fpr-review-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; }
-.fpr-review-avatar { width: 32px; height: 32px; border-radius: 8px; background: var(--green); color: #fff; font-weight: 800; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fpr-review-avatar { width: 32px; height: 32px; border-radius: 8px; background: var(--green); color: #fff; font-weight: 800; font-size: 0.875rem; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+.fpr-review-avatar .fpr-avatar-icon     { font-size: 11px; opacity: 0.8; }
+.fpr-review-avatar .fpr-avatar-initials { font-size: 0.45rem; margin-top: 1px; }
 .fpr-review-text { font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.5; margin: 0; }
 
 /* ── Documents ─────────────────────────────────────────────────────────────── */

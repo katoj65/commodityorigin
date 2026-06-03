@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
+import WalletNavLink from '@/Components/WalletNavLink.vue';
 
 const page = usePage();
 
@@ -80,11 +81,11 @@ const sideSections = computed(() => [
             },
             {
                 label: 'All Lots',
-                href: '#',
-                active: false,
-                inertia: false,
+                href: route('lot.index'),
+                active: route().current('lot.index'),
+                inertia: true,
                 show: true,
-                badge: '312',
+                badge: null,
                 icon: 'cup',
             },
             {
@@ -184,6 +185,15 @@ const sideSections = computed(() => [
     {
         title: 'Account',
         items: [
+            {
+                label: 'Wallet',
+                href: route('wallet.index'),
+                active: route().current('wallet.*'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'wallet',
+            },
             {
                 label: 'Alerts',
                 href: '#',
@@ -302,6 +312,15 @@ const sideSections = computed(() => [
                             <path d="M4 7.5l8-4 8 4-8 4-8-4z" />
                             <path d="M4 12l8 4 8-4" />
                             <path d="M4 16.5l8 4 8-4" />
+                        </svg>
+                        <svg v-else-if="item.icon === 'cup'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M17 8h1a4 4 0 010 8h-1" />
+                            <path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z" />
+                        </svg>
+                        <svg v-else-if="item.icon === 'wallet'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="7" width="20" height="14" rx="2" />
+                            <path d="M2 12h20" />
+                            <circle cx="16" cy="16" r="1.25" fill="currentColor" stroke="none" />
                         </svg>
                         <span class="snav-label">{{ item.label }}</span>
                         <span v-if="item.badge" class="snav-trailing">

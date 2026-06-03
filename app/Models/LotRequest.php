@@ -12,7 +12,7 @@ class LotRequest extends Model
 
     protected $fillable = [
         'user_id',
-        'coffee_type',
+        'crop_type',
         'variety',
         'grade',
         'amount',

@@ -6,7 +6,7 @@ import {
     Bell, Box, ChatDotRound, Check, Checked,
     CollectionTag, DataLine, Download,
     Location, Medal, Opportunity, Promotion,
-    ShoppingCart, Star, TrendCharts, Van, View,
+    ShoppingCart, Star, TrendCharts, UserFilled, Van, View,
     Warning,
 } from '@element-plus/icons-vue';
 
@@ -301,7 +301,10 @@ const badgeClass = (b) => {
                                 <tr v-for="farmer in filteredRows" :key="farmer.id" class="fd-table-row">
                                     <td style="min-width:200px;">
                                         <div class="d-flex align-items-center gap-2">
-                                            <div class="fd-avatar-sm">{{ farmer.initials }}</div>
+                                            <div class="fd-avatar-sm">
+                                                <el-icon class="fd-avatar-icon"><UserFilled /></el-icon>
+                                                <span class="fd-avatar-initials">{{ farmer.initials }}</span>
+                                            </div>
                                             <div>
                                                 <div class="fd-item-name">{{ farmer.fullName }}</div>
                                                 <div class="fd-td-muted" style="font-size:.7rem;">FMR-{{ String(farmer.id).padStart(4,'0') }}</div>
@@ -365,7 +368,10 @@ const badgeClass = (b) => {
                             <div class="fd-farmer-card h-100">
                                 <!-- Top: Identity -->
                                 <div class="d-flex align-items-start gap-3 mb-3">
-                                    <div class="fd-avatar-lg">{{ farmer.initials }}</div>
+                                    <div class="fd-avatar-lg">
+                                        <el-icon class="fd-avatar-icon"><UserFilled /></el-icon>
+                                        <span class="fd-avatar-initials">{{ farmer.initials }}</span>
+                                    </div>
                                     <div class="flex-fill min-w-0">
                                         <div class="fd-farmer-name">{{ farmer.fullName }}</div>
                                         <div class="d-flex align-items-center gap-1">
@@ -442,7 +448,10 @@ const badgeClass = (b) => {
                         <div v-for="feat in featured" :key="feat.label" class="col-12 col-sm-6 col-lg-3">
                             <div class="fd-featured-card h-100">
                                 <div class="fd-featured-label">{{ feat.label }}</div>
-                                <div class="fd-featured-avatar">{{ feat.farmer.initials }}</div>
+                                <div class="fd-featured-avatar">
+                                    <el-icon class="fd-avatar-icon"><UserFilled /></el-icon>
+                                    <span class="fd-avatar-initials">{{ feat.farmer.initials }}</span>
+                                </div>
                                 <div class="fd-featured-name">{{ feat.farmer.fullName }}</div>
                                 <div class="fd-td-muted mb-2" style="font-size:.75rem;">{{ feat.farmer.location }}</div>
                                 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -791,8 +800,12 @@ const badgeClass = (b) => {
 .fd-warn { color: #92400e; font-weight: 700; }
 
 /* ── Avatars ───────────────────────────────────────────────────────────────── */
-.fd-avatar-sm { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 0.8125rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fd-avatar-lg { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fd-avatar-sm { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 0.8125rem; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; gap: 0; }
+.fd-avatar-lg { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; gap: 0; }
+.fd-avatar-icon     { font-size: 12px; line-height: 1; opacity: 0.7; }
+.fd-avatar-sm .fd-avatar-icon { font-size: 11px; }
+.fd-avatar-lg .fd-avatar-icon { font-size: 14px; }
+.fd-avatar-initials { font-size: 0.5rem; font-weight: 800; line-height: 1; letter-spacing: 0.03em; margin-top: 1px; }
 
 /* ── Score pills / rings ───────────────────────────────────────────────────── */
 .fd-score-pill { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 800; padding: 2px 8px; }
@@ -833,7 +846,9 @@ const badgeClass = (b) => {
 /* ── Featured ──────────────────────────────────────────────────────────────── */
 .fd-featured-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; display: flex; flex-direction: column; }
 .fd-featured-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green); margin-bottom: 8px; }
-.fd-featured-avatar { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+.fd-featured-avatar { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 8px; }
+.fd-featured-avatar .fd-avatar-icon     { font-size: 14px; }
+.fd-featured-avatar .fd-avatar-initials { font-size: 0.5rem; }
 .fd-featured-name { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); margin-bottom: 2px; }
 
 /* ── Regional cards ────────────────────────────────────────────────────────── */
