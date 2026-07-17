@@ -133,32 +133,31 @@ const userInitials = computed(() => {
             <!-- ── Hero ─────────────────────────────────────────────────────── -->
             <section class="lp-hero">
 
-                <!-- Owner dropdown — extreme top-right -->
-                <div v-if="canEdit || canDelete" class="lr-hero-menu">
-                    <el-dropdown trigger="click" @command="handleCommand">
-                        <button class="lr-menu-btn" aria-label="Request options">
-                            <el-icon><MoreFilled /></el-icon>
-                        </button>
-                        <template #dropdown>
-                            <el-dropdown-menu>
-                                <el-dropdown-item v-if="canEdit" command="edit">
-                                    <el-icon><Edit /></el-icon> Edit Request
-                                </el-dropdown-item>
-                                <el-dropdown-item v-if="canDelete" command="delete" class="lr-dropdown-danger">
-                                    <el-icon><Delete /></el-icon> Delete Request
-                                </el-dropdown-item>
-                            </el-dropdown-menu>
-                        </template>
-                    </el-dropdown>
-                </div>
-
-                <div class="lp-hero__inner mt-4">
+                <div class="lp-hero__inner">
 
                     <!-- Left -->
                     <div class="lp-hero__left">
                         <div class="lp-tag-row">
                             <span class="lp-hero-tag">Buyer Request</span>
                             <span class="lp-hero-tag lp-hero-tag--warm">{{ cap(req.crop_type) }}</span>
+                            <!-- Owner dropdown — same row as tags, pinned right -->
+                            <div v-if="canEdit || canDelete" class="lr-hero-menu">
+                                <el-dropdown trigger="click" @command="handleCommand">
+                                    <button class="lr-menu-btn" aria-label="Request options">
+                                        <el-icon><MoreFilled /></el-icon>
+                                    </button>
+                                    <template #dropdown>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item v-if="canEdit" command="edit">
+                                                <el-icon><Edit /></el-icon> Edit Request
+                                            </el-dropdown-item>
+                                            <el-dropdown-item v-if="canDelete" command="delete" class="lr-dropdown-danger">
+                                                <el-icon><Delete /></el-icon> Delete Request
+                                            </el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+                            </div>
                         </div>
                         <h1 class="lp-hero__title">
                             Lot Request
@@ -176,7 +175,7 @@ const userInitials = computed(() => {
                     </div>
 
                     <!-- Right: Requester card -->
-                    <div class="lp-hero__right">
+                    <!-- <div class="lp-hero__right">
                         <div class="lr-requester-hero">
                             <p class="lp-qr-label">Requester</p>
                             <div class="lr-hero-avatar">{{ userInitials }}</div>
@@ -184,7 +183,7 @@ const userInitials = computed(() => {
                             <p class="lr-hero-email">{{ req.user?.email ?? '—' }}</p>
                             <span :style="statusPillStyle" class="lr-hero-status-pill">{{ status.label }}</span>
                         </div>
-                    </div>
+                    </div> -->
 
                 </div>
 
@@ -285,9 +284,9 @@ const userInitials = computed(() => {
             </section>
 
             <!-- ── Main Grid ─────────────────────────────────────────────────── -->
-            <section class="lp-section lp-section--base">
-                <div class="lp-section__inner">
-                    <div class="lp-main-grid">
+            <section class="lp-section lp-section--base p-0">
+                <div class="lp-section__inner p-3">
+                    <div class="lp-main-grid p-1">
 
                         <!-- LEFT COLUMN -->
                         <div class="lp-main-col">
@@ -559,12 +558,7 @@ const userInitials = computed(() => {
 }
 
 /* ── Owner menu ──────────────────────────────────────────────────────────── */
-.lr-hero-menu {
-    position: absolute;
-    top: 1.5rem;
-    right: var(--inner-pad);
-    z-index: 10;
-}
+.lr-hero-menu { margin-left: auto; }
 .lr-menu-btn {
     display: flex; align-items: center; justify-content: center;
     width: 34px; height: 34px; border-radius: 8px;
@@ -577,10 +571,9 @@ const userInitials = computed(() => {
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
 .lp-hero {
-    position: relative;
     background: #ffffff;
     border-bottom: 1px solid var(--surface-high);
-    padding: 2.5rem 0 0;
+    padding: 1.25rem 0 0;
 }
 .lp-hero__inner {
     padding: 0 var(--inner-pad) 2.25rem;
@@ -1028,7 +1021,7 @@ const userInitials = computed(() => {
 }
 @media (max-width: 900px) {
     .lr-root { --inner-pad: 1.25rem; }
-    .lp-hero { padding: 1.75rem 0 0; }
+    .lp-hero { padding: 1rem 0 0; }
     .lp-hero__inner { gap: 1.25rem; padding-bottom: 1.5rem; }
     .lp-hero__title { font-size: 1.25rem; }
     .lp-main-grid { grid-template-columns: 1fr; }

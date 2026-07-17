@@ -57,6 +57,7 @@ class DatabaseSeeder extends Seeder
             ProcessingMetadataSeeder::class,
             MarketMetadataSeeder::class,
             CropGradeMetadataSeeder::class,
+            AgentSeeder::class,
         ]);
     }
 }

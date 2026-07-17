@@ -7,13 +7,10 @@ use App\Http\Resources\BatchResource;
 use App\Http\Resources\HarvestResource;
 use App\Http\Resources\SeasonResource;
 use App\Models\Batch;
-use App\Models\BatchCompliance;
-use App\Models\BatchOwnership;
-use App\Models\Harvest;
 use App\Models\Season;
+use App\Services\BatchService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -22,6 +19,10 @@ use Inertia\Response;
 
 class BatchController extends Controller
 {
+    public function __construct(private readonly BatchService $batches)
+    {
+    }
+
     /**
      * Display the batch directory.
      */
@@ -29,16 +30,8 @@ class BatchController extends Controller
     {
         $search = trim((string) $request->string('search')->value());
 
-        $paginator = Batch::query()
-            ->when($search !== '', function ($query) use ($search): void {
-                $query
-                    ->where('batch_number', 'like', "%{$search}%")
-                    ->orWhere('warehouse_location', 'like', "%{$search}%");
-            })
-            ->latest('created_at')
-            ->latest('id')
-            ->paginate(10)
-            ->withQueryString()
+        $paginator = $this->batches
+            ->paginate($search)
             ->through(fn (Batch $batch): array => [
                 ...BatchResource::make($batch)->resolve(),
                 'show_url' => route('batch.show', $batch),
@@ -56,11 +49,7 @@ class BatchController extends Controller
                     'to' => $paginator->lastItem(),
                 ],
             ],
-            'stats' => [
-                'total_batches' => Batch::query()->count(),
-                'received_batches' => Batch::query()->where('status', 'received')->count(),
-                'total_weight' => (float) Batch::query()->sum('weight'),
-            ],
+            'stats' => $this->batches->stats(),
             'filters' => [
                 'search' => $search,
             ],
@@ -81,32 +70,15 @@ class BatchController extends Controller
     public function show(Batch $batch): Response
     {
         Gate::authorize('view', $batch);
-        $batch->load(['compliances', 'ownerships', 'season']);
+        $this->batches->loadProfileRelations($batch);
 
-        $seasonId = $batch->season_id ?: $batch->ownerships
-            ->firstWhere('owner_type', Season::class)
-            ?->owner_id;
-
-        /** @var Collection<int, int> $harvestIds */
-        $harvestIds = $batch->ownerships
-            ->where('owner_type', Harvest::class)
-            ->pluck('owner_id')
-            ->filter()
-            ->map(fn ($id): int => (int) $id)
-            ->values();
+        $seasonId = $this->batches->resolveSeasonId($batch);
 
         $season = $seasonId
-            ? Season::query()
-                ->withCount('harvests')
-                ->withSum('harvests', 'weight')
-                ->withSum('harvests', 'price')
-                ->find($seasonId)
+            ? $this->batches->findSeasonWithHarvestStats($seasonId)
             : null;
 
-        $harvests = Harvest::query()
-            ->where("season_id",$seasonId)
-            ->with('farm')
-            ->get();
+        $harvests = $this->batches->harvestsForSeason($seasonId);
 
         return Inertia::render('Batch/BatchProfile', [
             'batch' => BatchResource::make($batch)->resolve(),
@@ -128,43 +100,11 @@ class BatchController extends Controller
             Gate::authorize('view', $season);
         }
 
-        $batch = Batch::query()->create([
-            'user_id' => $request->user()->id,
-            'season_id' => $seasonId,
-            'batch_number' => $validated['batch_number'],
-            'variety' => $validated['variety'] ?? null,
-            'warehouse_location' => $validated['warehouse_location'],
-            'quantity' => $validated['quantity_bags'],
-            'weight' => $validated['net_weight_kg'],
-            'price' => $validated['price'] ?? null,
-            'moisture_content' => $validated['moisture_content'] ?? null,
-            'processing_date' => $validated['processing_date'] ?? null,
-            'processing_method' => $validated['processing_method'] ?? null,
-            'drying_method' => $validated['drying_method'] ?? null,
-            'drying_duration' => $validated['drying_duration'] ?? null,
-            'milling_status' => $validated['milling_status'] ?? null,
-            'screen_size' => $validated['screen_size'] ?? null,
-            'defect_count' => $validated['defect_count'] ?? null,
-            'cup_score' => $validated['cup_score'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-            'status' => 'received',
-        ]);
+        $batch = $this->batches->create($validated, $request->user()->id);
 
-        $harvestIds = collect($validated['harvest_ids'] ?? [])->map(fn ($id): int => (int) $id);
+        $harvestIds = collect($validated['harvest_ids'] ?? [])->map(fn ($id): int => (int) $id)->all();
 
-        if ($harvestIds->isNotEmpty()) {
-            Harvest::query()
-                ->whereKey($harvestIds)
-                ->get()
-                ->each(function (Harvest $harvest) use ($batch, $request): void {
-                    BatchOwnership::query()->create([
-                        'batch_id' => $batch->id,
-                        'user_id' => $request->user()->id,
-                        'owner_id' => $harvest->id,
-                        'owner_type' => Harvest::class,
-                    ]);
-                });
-        }
+        $this->batches->attachHarvests($batch, $harvestIds, $request->user()->id);
 
         return redirect()
             ->route('batch.show', $batch)
@@ -186,27 +126,23 @@ class BatchController extends Controller
             Gate::authorize('view', $season);
         }
 
-        $batch->update([
-            'season_id' => $seasonId,
-            'batch_number' => $validated['batch_number'],
-            'variety' => $validated['variety'],
-            'warehouse_location' => $validated['warehouse_location'],
-            'quantity' => $validated['quantity_bags'],
-            'weight' => $validated['net_weight_kg'],
-            'price' => $validated['price'],
-            'moisture_content' => $validated['moisture_content'] ?? null,
-            'processing_date' => $validated['processing_date'],
-            'processing_method' => $validated['processing_method'],
-            'drying_method' => $validated['drying_method'],
-            'drying_duration' => $validated['drying_duration'] ?? null,
-            'milling_status' => $validated['milling_status'] ?? null,
-            'screen_size' => $validated['screen_size'] ?? null,
-            'defect_count' => $validated['defect_count'] ?? null,
-            'cup_score' => $validated['cup_score'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        $this->batches->update($batch, $validated, $seasonId);
 
         return back()->with('success', 'Batch updated successfully.');
+    }
+
+    /**
+     * Delete the specified batch.
+     */
+    public function destroy(Batch $batch): RedirectResponse
+    {
+        Gate::authorize('delete', $batch);
+
+        $this->batches->destroy($batch);
+
+        return redirect()
+            ->route('batch.index')
+            ->with('success', 'Batch deleted successfully.');
     }
 
     /**
@@ -226,11 +162,7 @@ class BatchController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        BatchCompliance::query()->create([
-            'batch_id' => $batch->id,
-            'user_id' => $request->user()->id,
-            ...$validated,
-        ]);
+        $this->batches->createCompliance($batch, $request->user()->id, $validated);
 
         return back()->with('success', 'Batch compliance saved successfully.');
     }
@@ -270,10 +202,10 @@ class BatchController extends Controller
         ]);
 
         if (!empty($validated['season_id']) && !empty($validated['harvest_ids'])) {
-            $mismatchedHarvest = Harvest::query()
-                ->whereKey($validated['harvest_ids'])
-                ->where('season_id', '!=', $validated['season_id'])
-                ->exists();
+            $mismatchedHarvest = $this->batches->hasHarvestsOutsideSeason(
+                $validated['harvest_ids'],
+                $validated['season_id'],
+            );
 
             if ($mismatchedHarvest) {
                 throw ValidationException::withMessages([

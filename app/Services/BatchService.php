@@ -1,0 +1,238 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Batch;
+use App\Models\BatchCompliance;
+use App\Models\BatchOwnership;
+use App\Models\Harvest;
+use App\Models\Season;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+class BatchService
+{
+    /**
+     * Paginate batches, optionally filtered by a search term.
+     */
+    public function paginate(string $search, int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->search($search)
+            ->latest('created_at')
+            ->latest('id')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    /**
+     * Build a batch query filtered by a free-text search term.
+     *
+     * Matches against batch number, warehouse location, notes, price,
+     * quantity, weight, and the associated season's name.
+     */
+    public function search(string $term): Builder
+    {
+        $term = trim($term);
+
+        return Batch::query()
+            ->when($term !== '', function (Builder $query) use ($term): void {
+                $query->where(function (Builder $query) use ($term): void {
+                    $query
+                        ->where('batch_number', 'like', "%{$term}%")
+                        ->orWhere('warehouse_location', 'like', "%{$term}%")
+                        ->orWhere('notes', 'like', "%{$term}%")
+                        ->orWhere('price', 'like', "%{$term}%")
+                        ->orWhere('quantity', 'like', "%{$term}%")
+                        ->orWhere('weight', 'like', "%{$term}%")
+                        ->orWhereHas('season', function (Builder $query) use ($term): void {
+                            $query->where('name', 'like', "%{$term}%");
+                        });
+                });
+            });
+    }
+
+    /**
+     * Aggregate batch stats for the directory page.
+     *
+     * @return array<string, int|float>
+     */
+    public function stats(): array
+    {
+        return [
+            'total_batches' => Batch::query()->count(),
+            'received_batches' => Batch::query()->where('status', 'received')->count(),
+            'total_weight' => (float) Batch::query()->sum('weight'),
+        ];
+    }
+
+    /**
+     * Load the relations required to render a batch profile.
+     */
+    public function loadProfileRelations(Batch $batch): Batch
+    {
+        return $batch->load(['compliances', 'ownerships', 'season']);
+    }
+
+    /**
+     * Resolve the season id associated with a batch, falling back to its ownerships.
+     */
+    public function resolveSeasonId(Batch $batch): ?int
+    {
+        return $batch->season_id ?: $batch->ownerships
+            ->firstWhere('owner_type', Season::class)
+            ?->owner_id;
+    }
+
+    /**
+     * Fetch a season with harvest aggregates for the batch profile.
+     */
+    public function findSeasonWithHarvestStats(int $seasonId): ?Season
+    {
+        return Season::query()
+            ->withCount('harvests')
+            ->withSum('harvests', 'weight')
+            ->withSum('harvests', 'price')
+            ->find($seasonId);
+    }
+
+    /**
+     * Fetch harvests belonging to a season, with their farm loaded.
+     *
+     * @return Collection<int, Harvest>
+     */
+    public function harvestsForSeason(?int $seasonId): Collection
+    {
+        return Harvest::query()
+            ->where('season_id', $seasonId)
+            ->with('farm')
+            ->get();
+    }
+
+    /**
+     * Determine whether any of the given harvests belong to a different season.
+     *
+     * @param  array<int, int>  $harvestIds
+     */
+    public function hasHarvestsOutsideSeason(array $harvestIds, int $seasonId): bool
+    {
+        return Harvest::query()
+            ->whereKey($harvestIds)
+            ->where('season_id', '!=', $seasonId)
+            ->exists();
+    }
+
+    /**
+     * Create a batch from validated payload data.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    public function create(array $validated, int $userId): Batch
+    {
+        return Batch::query()->create([
+            'user_id' => $userId,
+            'season_id' => $validated['season_id'] ?? null,
+            'batch_number' => $validated['batch_number'],
+            'variety' => $validated['variety'] ?? null,
+            'warehouse_location' => $validated['warehouse_location'],
+            'quantity' => $validated['quantity_bags'],
+            'weight' => $validated['net_weight_kg'],
+            'price' => $validated['price'] ?? null,
+            'moisture_content' => $validated['moisture_content'] ?? null,
+            'processing_date' => $validated['processing_date'] ?? null,
+            'processing_method' => $validated['processing_method'] ?? null,
+            'drying_method' => $validated['drying_method'] ?? null,
+            'drying_duration' => $validated['drying_duration'] ?? null,
+            'milling_status' => $validated['milling_status'] ?? null,
+            'screen_size' => $validated['screen_size'] ?? null,
+            'defect_count' => $validated['defect_count'] ?? null,
+            'cup_score' => $validated['cup_score'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'status' => 'received',
+        ]);
+    }
+
+    /**
+     * Attach harvests to a batch via BatchOwnership records.
+     *
+     * @param  array<int, int>  $harvestIds
+     */
+    public function attachHarvests(Batch $batch, array $harvestIds, int $userId): void
+    {
+        if ($harvestIds === []) {
+            return;
+        }
+
+        Harvest::query()
+            ->whereKey($harvestIds)
+            ->get()
+            ->each(function (Harvest $harvest) use ($batch, $userId): void {
+                BatchOwnership::query()->create([
+                    'batch_id' => $batch->id,
+                    'user_id' => $userId,
+                    'owner_id' => $harvest->id,
+                    'owner_type' => Harvest::class,
+                ]);
+            });
+    }
+
+    /**
+     * Update a batch from validated payload data.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    public function update(Batch $batch, array $validated, ?int $seasonId): Batch
+    {
+        $batch->update([
+            'season_id' => $seasonId,
+            'batch_number' => $validated['batch_number'],
+            'variety' => $validated['variety'],
+            'warehouse_location' => $validated['warehouse_location'],
+            'quantity' => $validated['quantity_bags'],
+            'weight' => $validated['net_weight_kg'],
+            'price' => $validated['price'],
+            'moisture_content' => $validated['moisture_content'] ?? null,
+            'processing_date' => $validated['processing_date'],
+            'processing_method' => $validated['processing_method'],
+            'drying_method' => $validated['drying_method'],
+            'drying_duration' => $validated['drying_duration'] ?? null,
+            'milling_status' => $validated['milling_status'] ?? null,
+            'screen_size' => $validated['screen_size'] ?? null,
+            'defect_count' => $validated['defect_count'] ?? null,
+            'cup_score' => $validated['cup_score'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return $batch;
+    }
+
+    /**
+     * Delete a batch.
+     */
+    public function destroy(Batch $batch): void
+    {
+        $batch->delete();
+    }
+
+    /**
+     * Delete a single batch by id.
+     */
+    public function destroyById(int $id): void
+    {
+        Batch::query()->findOrFail($id)->delete();
+    }
+
+    /**
+     * Create a compliance record for a batch.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    public function createCompliance(Batch $batch, int $userId, array $validated): BatchCompliance
+    {
+        return BatchCompliance::query()->create([
+            'batch_id' => $batch->id,
+            'user_id' => $userId,
+            ...$validated,
+        ]);
+    }
+}

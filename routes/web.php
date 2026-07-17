@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\Analysis\AnalysisController;
 use App\Http\Controllers\Bid\BidController;
 use App\Http\Controllers\Auction\AuctionController;
@@ -40,6 +41,21 @@ Route::middleware([
     // Main dashboard.
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
+    // Apps (agents) directory.
+    Route::prefix('apps')->name('apps.')->group(function () {
+        Route::get('/', [AgentController::class, 'index'])->name('index');
+        Route::post('/', [AgentController::class, 'store'])->name('store');
+        Route::get('/{agent}', [AgentController::class, 'show'])->name('show');
+        Route::patch('/{agent}', [AgentController::class, 'update'])->name('update');
+        Route::delete('/{agent}', [AgentController::class, 'destroy'])->name('destroy');
+    });
+
+    // Agent subscriptions.
+    Route::prefix('agent')->name('agent.')->group(function () {
+        Route::post('/{agent}/subscribe', [AgentController::class, 'userSubscription'])->name('subscribe');
+        Route::delete('/{agent}/subscribe', [AgentController::class, 'unsubscribe'])->name('unsubscribe');
+    });
+
     // User profile routes.
     Route::post('/profile', [ProfileController::class, 'store'])->name('profile.store');
     Route::post('/profile/role', [ProfileController::class, 'updateRole'])->name('profile.role');
@@ -76,6 +92,7 @@ Route::middleware([
         Route::get('/create', [LotController::class, 'create'])->name('create');
         Route::post('/', [LotController::class, 'store'])->name('store');
         Route::post('/request', [LotController::class, 'storeLotRequest'])->name('request.store')->middleware('role:farmer,admin,buyer');
+        Route::get('/requests', [LotController::class, 'lotRequestIndex'])->name('requests.index')->middleware('role:farmer,admin,buyer');
         Route::get('/request/{lotRequest}', [LotController::class, 'showLotRequest'])->name('request.show')->middleware('role:farmer,admin,buyer');
         Route::put('/request/{lotRequest}', [LotController::class, 'updateLotRequest'])->name('request.update')->middleware('role:farmer,admin,buyer');
         Route::delete('/request/{lotRequest}', [LotController::class, 'destroyLotRequest'])->name('request.destroy')->middleware('role:farmer,admin,buyer');
@@ -93,6 +110,7 @@ Route::middleware([
         Route::post('/{batch}/create-lot', [LotController::class, 'storeFromBatch'])->name('store-lot');
         Route::post('/', [BatchController::class, 'store'])->name('store');
         Route::patch('/{batch}', [BatchController::class, 'update'])->name('update');
+        Route::delete('/{batch}', [BatchController::class, 'destroy'])->name('destroy');
         Route::post('/{batch}/compliance', [BatchController::class, 'storeCompliance'])->name('compliance.store');
         Route::get('/{batch}', [BatchController::class, 'show'])->name('show');
     });

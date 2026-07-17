@@ -480,6 +480,15 @@ onBeforeUnmount(() => {
                         </svg>
                     </Link>
 
+                    <Link :href="route('apps.index')" class="shell-icon-button hidden sm:inline-flex" title="Apps">
+                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                        </svg>
+                    </Link>
+
                     <button type="button" class="shell-icon-button relative hidden sm:inline-flex">
                         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />

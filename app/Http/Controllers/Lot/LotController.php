@@ -447,18 +447,24 @@ class LotController extends Controller
     }
 
 
-public function show(Lot $lot): Response
-{
-    $lot->loadMissing('batch');
+    /**
+     * Show the lot profile page.
+     */
+    public function show(Lot $lot): Response
+    {
+        $lot->loadMissing('batch');
 
-    return Inertia::render('Lot/LotProfile', [
-        'lot' => $lot,
-    ]);
-}
+        return Inertia::render('Lot/LotProfile', [
+            'lot' => $lot,
+        ]);
+    }
 
-public function publish(Lot $lot): RedirectResponse
-{
-    Gate::authorize('update', $lot);
+    /**
+     * Publish a lot to the live market.
+     */
+    public function publish(Lot $lot): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
 
     if (Market::where('lot_id', $lot->id)->exists()) {
         return back()->with('error', 'This lot is already published to the market.');
@@ -482,22 +488,18 @@ public function publish(Lot $lot): RedirectResponse
         'image'         => $lot->image,
     ]);
 
-    return back()->with('success', 'Lot published to market successfully.');
-}
+        return back()->with('success', 'Lot published to market successfully.');
+    }
 
+    /**
+     * Placeholder for tokenized lot publishing — not yet implemented.
+     */
+    public function publishLot(): void {}
 
-
-
-//publish
-
-
-public function publishLot(){
-
-
-
-}
-
-public function lotTraceability(Lot $lot): Response
+    /**
+     * Show the lot traceability timeline page.
+     */
+    public function lotTraceability(Lot $lot): Response
 {
     $lot->loadMissing(['batch.season']);
 
@@ -540,17 +542,21 @@ public function lotTraceability(Lot $lot): Response
 }
 
 
-public function index(): Response
-{
-    return Inertia::render('Lot/LotPage', [
-        'lots'    => ['data' => [], 'meta' => ['total' => 0, 'current_page' => 1, 'last_page' => 1, 'from' => 0, 'to' => 0]],
-        'filters' => [],
-    ]);
-}
+    /**
+     * Show the lot index page.
+     */
+    public function index(): Response
+    {
+        return Inertia::render('Lot/LotPage', [
+            'lots'    => ['data' => [], 'meta' => ['total' => 0, 'current_page' => 1, 'last_page' => 1, 'from' => 0, 'to' => 0]],
+            'filters' => [],
+        ]);
+    }
 
-
-
-public function storeLotRequest(Request $request)
+    /**
+     * Store a new buyer lot request.
+     */
+    public function storeLotRequest(Request $request)
 //: RedirectResponse
 {
     $validated = $request->validate([
@@ -572,7 +578,10 @@ public function storeLotRequest(Request $request)
 
 
 
-public function showLotRequest(Request $request, LotRequest $lotRequest): Response
+    /**
+     * Show the detail page for a single lot request.
+     */
+    public function showLotRequest(Request $request, LotRequest $lotRequest): Response
 {
     $lotRequest->load('user');
 
@@ -583,7 +592,10 @@ public function showLotRequest(Request $request, LotRequest $lotRequest): Respon
     ]);
 }
 
-public function updateLotRequest(Request $request, LotRequest $lotRequest): RedirectResponse
+    /**
+     * Update an existing lot request (owner or admin only).
+     */
+    public function updateLotRequest(Request $request, LotRequest $lotRequest): RedirectResponse
 {
     Gate::authorize('update', $lotRequest);
 
@@ -602,7 +614,12 @@ public function updateLotRequest(Request $request, LotRequest $lotRequest): Redi
         ->with('success', 'Lot request updated.');
 }
 
-public function destroyLotRequest(LotRequest $lotRequest): RedirectResponse
+
+
+    /**
+     * Delete a lot request (owner or admin only).
+     */
+    public function destroyLotRequest(LotRequest $lotRequest): RedirectResponse
 {
     Gate::authorize('delete', $lotRequest);
 
@@ -617,6 +634,29 @@ public function destroyLotRequest(LotRequest $lotRequest): RedirectResponse
 
 
 
+
+    /**
+     * Show the paginated lot requests index with search and filter support.
+     */
+    public function lotRequestIndex(Request $request): Response
+{
+    $requests = LotRequest::with('user')
+        ->when($request->search, function ($q, $s) {
+            $q->where('crop_type', 'like', "%{$s}%")
+              ->orWhere('variety', 'like', "%{$s}%")
+              ->orWhere('grade', 'like', "%{$s}%");
+        })
+        ->when($request->status, fn ($q, $s) => $q->where('status', $s))
+        ->when($request->crop_type, fn ($q, $c) => $q->where('crop_type', $c))
+        ->latest()
+        ->paginate(20)
+        ->withQueryString();
+
+    return Inertia::render('Lot/LotRequests', [
+        'requests' => $requests,
+        'filters'  => $request->only(['search', 'status', 'crop_type']),
+    ]);
+}
 
 
 

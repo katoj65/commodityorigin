@@ -26,4 +26,12 @@ class BatchPolicy
     {
         return (int) $batch->user_id === (int) $user->id;
     }
+
+    /**
+     * Determine whether the user can delete the batch.
+     */
+    public function delete(User $user, Batch $batch): bool
+    {
+        return (int) $batch->user_id === (int) $user->id;
+    }
 }
