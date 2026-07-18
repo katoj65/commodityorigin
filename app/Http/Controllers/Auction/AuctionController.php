@@ -3,49 +3,47 @@
 namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CalendarResource;
+use App\Services\AuctionService;
+use App\Services\CalendarService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AuctionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(): Response
-    {
-        return Inertia::render('Auction/AcutionPage');
+    public function __construct(
+        private readonly AuctionService $auctions,
+        private readonly CalendarService $calendar,
+    ) {
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Display the coffee auction exchange.
      */
-    public function store(Request $request)
+    public function index(Request $request): Response
     {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return Inertia::render('Auction/AcutionPage', [
+            'overview' => $this->auctions->overview(),
+            'calendarEvents' => CalendarResource::collection(
+                $this->calendar->eventsForUser($request->user()->id),
+            )->resolve(),
+            'featuredLots' => $this->auctions->featuredLots(),
+            'liveBids' => $this->auctions->liveBidFeed(),
+            'upcomingLots' => $this->auctions->draftLots()->map(fn ($lot) => [
+                'id' => $lot->id,
+                'lot_number' => $lot->lot_number,
+                'origin' => $lot->batch?->warehouse_location,
+                'grower' => $lot->user?->name,
+                'listed_ago' => optional($lot->created_at)?->diffForHumans(),
+            ])->values()->all(),
+            'lotExplorer' => $this->auctions->lotExplorer(),
+            'qualityProfiles' => $this->auctions->qualityProfiles(),
+            'analytics' => $this->auctions->analytics(),
+            'originIntelligence' => $this->auctions->originIntelligence(),
+            'aiIntelligence' => $this->auctions->aiIntelligence(),
+            'leaderboard' => $this->auctions->leaderboard(),
+            'lotDetails' => $this->auctions->lotDetails(),
+        ]);
     }
 }

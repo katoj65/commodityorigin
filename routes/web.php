@@ -1,14 +1,18 @@
 <?php
 
 use App\Http\Controllers\Agent\AgentController;
+use App\Http\Controllers\AI\AiChatController;
 use App\Http\Controllers\Analysis\AnalysisController;
 use App\Http\Controllers\Bid\BidController;
 use App\Http\Controllers\Auction\AuctionController;
 use App\Http\Controllers\Batch\BatchController;
 use App\Http\Controllers\Buy\BuyController;
+use App\Http\Controllers\Calendar\CalendarController;
 use App\Http\Controllers\Checkout\CheckoutController;
 use App\Http\Controllers\Cooperative\CooperativeController;
+use App\Http\Controllers\Country\CountryController;
 use App\Http\Controllers\Farm\FarmController;
+use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Harvest\HarvestController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
@@ -54,6 +58,39 @@ Route::middleware([
     Route::prefix('agent')->name('agent.')->group(function () {
         Route::post('/{agent}/subscribe', [AgentController::class, 'userSubscription'])->name('subscribe');
         Route::delete('/{agent}/subscribe', [AgentController::class, 'unsubscribe'])->name('unsubscribe');
+    });
+
+    // AI chat.
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [AiChatController::class, 'index'])->name('index');
+        Route::post('/', [AiChatController::class, 'store'])->name('store');
+        Route::patch('/{chat}', [AiChatController::class, 'update'])->name('update');
+        Route::delete('/{chat}', [AiChatController::class, 'destroy'])->name('destroy');
+    });
+
+    // Calendar.
+    Route::prefix('calendar')->name('calendar.')->group(function () {
+        Route::get('/', [CalendarController::class, 'index'])->name('index');
+        Route::post('/', [CalendarController::class, 'store'])->name('store');
+        Route::patch('/{calendar}', [CalendarController::class, 'update'])->name('update');
+        Route::delete('/{calendar}', [CalendarController::class, 'destroy'])->name('destroy');
+    });
+
+    // Market forecast.
+    Route::prefix('forecast')->name('forecast.')->group(function () {
+        Route::get('/', [ForecastController::class, 'index'])->name('index');
+        Route::post('/', [ForecastController::class, 'store'])->name('store');
+        Route::patch('/{forecast}', [ForecastController::class, 'update'])->name('update');
+        Route::delete('/{forecast}', [ForecastController::class, 'destroy'])->name('destroy');
+    });
+
+    // Countries directory.
+    Route::prefix('country')->name('country.')->group(function () {
+        Route::get('/', [CountryController::class, 'index'])->name('index');
+        Route::get('/compare', [CountryController::class, 'compare'])->name('compare');
+        Route::post('/', [CountryController::class, 'store'])->name('store');
+        Route::patch('/{country}', [CountryController::class, 'update'])->name('update');
+        Route::delete('/{country}', [CountryController::class, 'destroy'])->name('destroy');
     });
 
     // User profile routes.
@@ -163,11 +200,19 @@ Route::middleware([
         Route::get('/', [MarketController::class, 'index'])->name('index');
         Route::get('/active', [MarketController::class, 'activeMarket'])->name('active');
         Route::get('/auction', [MarketController::class, 'auction'])->name('auction');
+        Route::get('/analysis', [MarketController::class, 'analyseMarket'])->name('analysis');
     });
 
     // Buyer workspace routes.
     Route::prefix('buyer')->name('buyer.')->middleware('role:buyer,admin')->group(function () {
         Route::get('/', [BuyController::class, 'index'])->name('index');
+    });
+
+    // Buy — coffee requests (buyers submit, sellers discover & respond).
+    Route::prefix('buy')->name('buy.')->group(function () {
+        Route::get('/', [BuyController::class, 'buyer'])->name('index');
+        Route::post('/', [BuyController::class, 'store'])->name('store');
+        Route::post('/{lotRequest}/respond', [BuyController::class, 'respond'])->name('respond');
     });
 
     // Seller workspace routes.

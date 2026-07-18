@@ -2,12 +2,22 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Resources\CalendarResource;
+use App\Http\Resources\ChatResource;
 use App\Models\RoleMetadata;
+use App\Services\CalendarService;
+use App\Services\ChatService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(
+        private readonly ChatService $chats,
+        private readonly CalendarService $calendar,
+    ) {
+    }
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -64,6 +74,12 @@ class HandleInertiaRequests extends Middleware
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->get(['slug', 'name', 'description']),
+            'chatMessages' => fn () => $authenticatedUser
+                ? ChatResource::collection($this->chats->messagesForUser($authenticatedUser->id))->resolve()
+                : [],
+            'dueCalendarEvents' => fn () => $authenticatedUser
+                ? CalendarResource::collection($this->calendar->dueTodayForUser($authenticatedUser->id))->resolve()
+                : [],
         ];
     }
 }

@@ -1,12 +1,13 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Head, Link, router, usePage, useForm } from '@inertiajs/vue3';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElNotification } from 'element-plus';
 import { User, Crop, ShoppingCart, Van, TrendCharts, Setting } from '@element-plus/icons-vue';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import AppAside from '@/Components/Aside/AppAside.vue';
 import InputError from '@/Components/InputError.vue';
+import AiChatWidget from '@/Components/AiChatWidget.vue';
 
 const props = defineProps({
     title: String,
@@ -362,11 +363,32 @@ const syncMobileNavState = () => {
     }
 };
 
+const CALENDAR_NOTIFIED_STORAGE_KEY = 'calendarDueNotifiedDate';
+
+function notifyDueCalendarEvents() {
+    const dueEvents = page.props.dueCalendarEvents ?? [];
+    if (!dueEvents.length) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem(CALENDAR_NOTIFIED_STORAGE_KEY) === today) return;
+
+    localStorage.setItem(CALENDAR_NOTIFIED_STORAGE_KEY, today);
+
+    ElNotification({
+        title: `${dueEvents.length} event${dueEvents.length > 1 ? 's' : ''} due today`,
+        message: dueEvents.map((e) => e.title).join(', '),
+        type: 'warning',
+        duration: 8000,
+        position: 'bottom-right',
+    });
+}
+
 onMounted(() => {
     document.documentElement.classList.add('app-layout-scrollless');
     document.body.classList.add('app-layout-scrollless');
     syncMobileNavState();
     window.addEventListener('resize', syncMobileNavState);
+    notifyDueCalendarEvents();
 });
 
 onBeforeUnmount(() => {
@@ -941,6 +963,8 @@ onBeforeUnmount(() => {
                 </div>
             </template>
         </el-dialog>
+
+        <AiChatWidget />
 
     </div>
 </template>

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Home;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ExchangeRateResource;
 use App\Models\CropGradeMetadata;
 use App\Models\RoleMetadata;
+use App\Services\ExchangeRateService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,6 +14,10 @@ use App\Models\LotRequest;
 
 class Dashboard extends Controller
 {
+    public function __construct(private readonly ExchangeRateService $exchangeRates)
+    {
+    }
+
     /**
      * Legacy entry point — role-based routing was moved to dashboard().
      * Kept to avoid breaking any existing route references.
@@ -197,12 +203,14 @@ class Dashboard extends Controller
             ->limit(6)
             ->get();
 
-        return Inertia::render('UserDashboard', [
+
+        return Inertia::render('GeneralDashboard', [
             'hasProfile' => $hasProfile,
             'hasRole'    => $hasRole,
             'roles'      => $roles,
             'cropGrades' => $cropGrades,
             'lotRequests' => $lotRequest,
+            'exchangeRates' => ExchangeRateResource::collection($this->exchangeRates->all())->resolve(),
         ]);
     }
 }
