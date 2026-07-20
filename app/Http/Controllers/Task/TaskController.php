@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Task;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
+use App\Services\CalendarService;
 use App\Services\TaskService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,8 +17,10 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class TaskController extends Controller
 {
-    public function __construct(private readonly TaskService $tasks)
-    {
+    public function __construct(
+        private readonly TaskService $tasks,
+        private readonly CalendarService $calendar,
+    ) {
     }
 
     /**
@@ -36,13 +39,26 @@ class TaskController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateTask($request);
+        $addToCalendar = $request->boolean('add_to_calendar');
+
+        if ($addToCalendar) {
+            $event = $this->calendar->create([
+                'user_id' => $request->user()->id,
+                'title' => $validated['title'],
+                'description' => $validated['description'] ?? null,
+                'event_date' => $validated['task_date'],
+                'type' => 'task',
+                'status' => $validated['status'] ?? 'pending',
+            ]);
+            $validated['calendar_id'] = $event->id;
+        }
 
         $this->tasks->create([
             'user_id' => $request->user()->id,
             ...$validated,
         ]);
 
-        return back()->with('success', 'Task created successfully.');
+        return back()->with('success', $addToCalendar ? 'Task created and added to your calendar.' : 'Task created successfully.');
     }
 
     /**
