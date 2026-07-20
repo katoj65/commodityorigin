@@ -23,6 +23,7 @@ use App\Http\Controllers\Origin\OriginController;
 use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\Season\SeasonController;
 use App\Http\Controllers\Sell\SellController;
+use App\Http\Controllers\Task\TaskController;
 use App\Http\Controllers\Wallet\WalletController;
 use Illuminate\Support\Facades\Route;
 
@@ -74,6 +75,15 @@ Route::middleware([
         Route::post('/', [CalendarController::class, 'store'])->name('store');
         Route::patch('/{calendar}', [CalendarController::class, 'update'])->name('update');
         Route::delete('/{calendar}', [CalendarController::class, 'destroy'])->name('destroy');
+    });
+
+    // Tasks.
+    Route::prefix('task')->name('task.')->group(function () {
+        Route::get('/', [TaskController::class, 'index'])->name('index');
+        Route::post('/', [TaskController::class, 'store'])->name('store');
+        Route::get('/{task}', [TaskController::class, 'show'])->name('show');
+        Route::patch('/{task}', [TaskController::class, 'update'])->name('update');
+        Route::delete('/{task}', [TaskController::class, 'destroy'])->name('destroy');
     });
 
     // Market forecast.

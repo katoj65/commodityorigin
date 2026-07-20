@@ -383,12 +383,34 @@ function notifyDueCalendarEvents() {
     });
 }
 
+const TASK_NOTIFIED_STORAGE_KEY = 'taskDueNotifiedDate';
+
+function notifyDueTasks() {
+    const dueTasks = page.props.dueTasksToday ?? [];
+    if (!dueTasks.length) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem(TASK_NOTIFIED_STORAGE_KEY) === today) return;
+
+    localStorage.setItem(TASK_NOTIFIED_STORAGE_KEY, today);
+
+    ElNotification({
+        title: `${dueTasks.length} task${dueTasks.length > 1 ? 's' : ''} need${dueTasks.length > 1 ? '' : 's'} a decision today`,
+        message: dueTasks.map((t) => t.title).join(', '),
+        type: 'error',
+        duration: 8000,
+        position: 'bottom-right',
+        onClick: () => router.visit(route('calendar.index')),
+    });
+}
+
 onMounted(() => {
     document.documentElement.classList.add('app-layout-scrollless');
     document.body.classList.add('app-layout-scrollless');
     syncMobileNavState();
     window.addEventListener('resize', syncMobileNavState);
     notifyDueCalendarEvents();
+    notifyDueTasks();
 });
 
 onBeforeUnmount(() => {

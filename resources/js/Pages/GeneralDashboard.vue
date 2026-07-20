@@ -3,6 +3,8 @@ import { computed, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ExchangeRates from '@/Components/ExchangeRates.vue';
+import Calendar from '@/Components/Calendar.vue';
+import Task from '@/Components/Task.vue';
 import { Line } from 'vue-chartjs';
 import {
     Chart as ChartJS, CategoryScale, LinearScale, PointElement,
@@ -10,7 +12,7 @@ import {
 } from 'chart.js';
 import {
     CoffeeCup, PriceTag, Opportunity, TrendCharts, Refresh,
-    ArrowRight, Flag, MapLocation, Ship, Position, SetUp, Tickets, Histogram,
+    ArrowRight, Flag, MapLocation, Ship, Position, Tickets, Histogram,
     MagicStick, Notebook, Sunny, Cloudy, Pouring, UserFilled, Timer,
 } from '@element-plus/icons-vue';
 
@@ -18,6 +20,8 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, 
 
 const props = defineProps({
     exchangeRates: { type: Array, default: () => [] },
+    calendarEvents: { type: Array, default: () => [] },
+    tasks: { type: Array, default: () => [] },
 });
 
 const chartOptions = {
@@ -228,34 +232,7 @@ const orderStatusCls = (s) => ({
     Completed: 'cp-badge--green',
 }[s] ?? 'cp-badge--muted');
 
-const myTasks = [
-    { label: 'Confirm Q3 shipping contract with freight partner', due: 'Today' },
-    { label: 'Upload updated EUDR geolocation data', due: 'Tomorrow' },
-    { label: 'Review buyer offer from Nordic Roasters', due: 'In 2 days' },
-];
 
-const calendarToday = new Date();
-const calendarMonthLabel = calendarToday.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-const calendarWeekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-const calendarEvents = [
-    { day: calendarToday.getDate(), label: 'Confirm shipping contract' },
-    { day: calendarToday.getDate() + 1, label: 'Upload EUDR geolocation data' },
-    { day: calendarToday.getDate() + 3, label: 'Review buyer offer' },
-];
-
-const calendarCells = computed(() => {
-    const year = calendarToday.getFullYear();
-    const month = calendarToday.getMonth();
-    const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
-    const totalDays = new Date(year, month + 1, 0).getDate();
-    const cells = Array.from({ length: firstWeekday }, () => null);
-    for (let d = 1; d <= totalDays; d++) cells.push(d);
-    return cells;
-});
-
-const isCalendarToday = (day) => day === calendarToday.getDate();
-const calendarEventFor = (day) => calendarEvents.find((e) => e.day === day);
 </script>
 
 <template>
@@ -309,38 +286,12 @@ const calendarEventFor = (day) => calendarEvents.find((e) => e.day === day);
                         </div>
                         <div class="col-12 col-lg-4">
                             <div class="cp-card h-100">
-                                <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><SetUp /></el-icon> Tasks</div>
-                                <div v-for="(t, i) in myTasks" :key="i" class="cp-hotspot-row">
-                                    <div class="cp-item-name" style="font-weight:600;">{{ t.label }}</div>
-                                    <span class="cp-muted" style="font-size:.7rem;white-space:nowrap;">{{ t.due }}</span>
-                                </div>
+                                <Task :tasks="props.tasks" title="Tasks" />
                             </div>
                         </div>
                         <div class="col-12 col-lg-4">
                             <div class="cp-card h-100">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <div class="cp-card-title"><el-icon class="cp-card-icon"><Notebook /></el-icon> {{ calendarMonthLabel }}</div>
-                                    <Link :href="route('calendar.index')" class="cp-link">Open <el-icon><ArrowRight /></el-icon></Link>
-                                </div>
-                                <div class="cp-cal-weekdays">
-                                    <span v-for="(w, i) in calendarWeekdays" :key="i">{{ w }}</span>
-                                </div>
-                                <div class="cp-cal-grid">
-                                    <div
-                                        v-for="(day, i) in calendarCells"
-                                        :key="i"
-                                        class="cp-cal-cell"
-                                        :class="{ 'cp-cal-cell--today': day && isCalendarToday(day), 'cp-cal-cell--event': day && calendarEventFor(day) }"
-                                    >
-                                        <span v-if="day">{{ day }}</span>
-                                    </div>
-                                </div>
-                                <div class="cp-cal-agenda">
-                                    <div v-for="e in calendarEvents" :key="e.label" class="cp-cal-agenda-row">
-                                        <span class="cp-cal-agenda-day">{{ e.day }}</span>
-                                        <span>{{ e.label }}</span>
-                                    </div>
-                                </div>
+                                <Calendar :events="props.calendarEvents" title="My Calendar" />
                             </div>
                         </div>
                     </div>
@@ -733,18 +684,6 @@ const calendarEventFor = (day) => calendarEvents.find((e) => e.day === day);
 .cp-weather-row:last-child { border-bottom: none; }
 .cp-weather-icon { width: 30px; height: 30px; border-radius: 8px; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
 .cp-weather-temp { font-size: .875rem; font-weight: 800; color: var(--on-surface); flex-shrink: 0; }
-
-/* ── Calendar ─────────────────────────────────────────────────────────── */
-.cp-cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
-.cp-cal-weekdays span { text-align: center; font-size: .625rem; font-weight: 700; color: var(--on-surface-var); }
-.cp-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 10px; }
-.cp-cal-cell { position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: .6875rem; font-weight: 600; color: var(--on-surface); border-radius: 6px; }
-.cp-cal-cell--today { background: var(--green); color: #fff; font-weight: 800; }
-.cp-cal-cell--event::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--gold); }
-.cp-cal-cell--today.cp-cal-cell--event::after { background: #fff; }
-.cp-cal-agenda { border-top: 1px solid var(--surface-low); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-.cp-cal-agenda-row { display: flex; align-items: center; gap: 8px; font-size: .75rem; color: var(--on-surface-var); }
-.cp-cal-agenda-day { width: 20px; height: 20px; border-radius: 50%; background: rgba(0,69,50,0.08); color: var(--green); font-size: .625rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
 /* ── Table ────────────────────────────────────────────────────────────── */
 .cp-table thead th { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }

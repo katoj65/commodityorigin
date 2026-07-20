@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CalendarResource;
 use App\Models\Calendar;
 use App\Services\CalendarService;
+use App\Services\TaskService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,8 +16,10 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class CalendarController extends Controller
 {
-    public function __construct(private readonly CalendarService $calendar)
-    {
+    public function __construct(
+        private readonly CalendarService $calendar,
+        private readonly TaskService $tasks,
+    ) {
     }
 
     /**
@@ -37,13 +40,18 @@ class CalendarController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateEvent($request);
+        $makeTask = $request->boolean('make_task');
 
-        $this->calendar->create([
+        $event = $this->calendar->create([
             'user_id' => $request->user()->id,
             ...$validated,
         ]);
 
-        return back()->with('success', 'Event saved successfully.');
+        if ($makeTask) {
+            $this->tasks->createFromCalendarEvent($event);
+        }
+
+        return back()->with('success', $makeTask ? 'Event saved and added to your tasks.' : 'Event saved successfully.');
     }
 
     /**
@@ -56,6 +64,7 @@ class CalendarController extends Controller
         $validated = $this->validateEvent($request);
 
         $this->calendar->update($calendar, $validated);
+        $this->tasks->syncFromCalendarEvent($calendar);
 
         return back()->with('success', 'Event updated successfully.');
     }

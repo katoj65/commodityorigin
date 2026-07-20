@@ -4,9 +4,11 @@ namespace App\Http\Middleware;
 
 use App\Http\Resources\CalendarResource;
 use App\Http\Resources\ChatResource;
+use App\Http\Resources\TaskResource;
 use App\Models\RoleMetadata;
 use App\Services\CalendarService;
 use App\Services\ChatService;
+use App\Services\TaskService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -15,6 +17,7 @@ class HandleInertiaRequests extends Middleware
     public function __construct(
         private readonly ChatService $chats,
         private readonly CalendarService $calendar,
+        private readonly TaskService $tasks,
     ) {
     }
 
@@ -79,6 +82,9 @@ class HandleInertiaRequests extends Middleware
                 : [],
             'dueCalendarEvents' => fn () => $authenticatedUser
                 ? CalendarResource::collection($this->calendar->dueTodayForUser($authenticatedUser->id))->resolve()
+                : [],
+            'dueTasksToday' => fn () => $authenticatedUser
+                ? TaskResource::collection($this->tasks->dueTodayForUser($authenticatedUser->id))->resolve()
                 : [],
         ];
     }

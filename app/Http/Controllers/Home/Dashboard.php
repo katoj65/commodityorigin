@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Home;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CalendarResource;
 use App\Http\Resources\ExchangeRateResource;
+use App\Http\Resources\TaskResource;
 use App\Models\CropGradeMetadata;
 use App\Models\RoleMetadata;
+use App\Services\CalendarService;
 use App\Services\ExchangeRateService;
+use App\Services\TaskService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,8 +18,11 @@ use App\Models\LotRequest;
 
 class Dashboard extends Controller
 {
-    public function __construct(private readonly ExchangeRateService $exchangeRates)
-    {
+    public function __construct(
+        private readonly ExchangeRateService $exchangeRates,
+        private readonly CalendarService $calendar,
+        private readonly TaskService $tasks,
+    ) {
     }
 
     /**
@@ -211,6 +218,8 @@ class Dashboard extends Controller
             'cropGrades' => $cropGrades,
             'lotRequests' => $lotRequest,
             'exchangeRates' => ExchangeRateResource::collection($this->exchangeRates->all())->resolve(),
+            'calendarEvents' => CalendarResource::collection($this->calendar->eventsForUser($user->id))->resolve(),
+            'tasks' => TaskResource::collection($this->tasks->tasksForUser($user->id)->take(6))->resolve(),
         ]);
     }
 }

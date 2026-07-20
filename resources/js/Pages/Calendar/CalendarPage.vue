@@ -4,7 +4,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { ElMessage } from 'element-plus';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import { Plus, Delete, Edit, WarnTriangleFilled, Clock } from '@element-plus/icons-vue';
+import { Plus, Delete, Edit, WarnTriangleFilled, Clock, Close, Calendar as CalendarIcon, Files, CircleCheck, Loading, Star, PriceTag, Sunny, TrendCharts } from '@element-plus/icons-vue';
 
 const props = defineProps({
     events: { type: Array, default: () => [] },
@@ -75,6 +75,7 @@ const form = reactive({
     event_date: todayStr(),
     type: '',
     status: 'pending',
+    make_task: false,
 });
 
 function openCreateDialog() {
@@ -84,6 +85,7 @@ function openCreateDialog() {
     form.event_date = selectedDay.value;
     form.type = '';
     form.status = 'pending';
+    form.make_task = false;
     dialogOpen.value = true;
 }
 
@@ -94,6 +96,7 @@ function openEditDialog(event) {
     form.event_date = event.event_date;
     form.type = event.type ?? '';
     form.status = event.status;
+    form.make_task = false;
     dialogOpen.value = true;
 }
 
@@ -142,6 +145,15 @@ const typeLabel = (type) => ({
     harvest: 'Harvest',
     market: 'Market',
 }[type] ?? 'Event');
+
+/* ── Dialog type picker ───────────────────────────────────────────────── */
+const typeOptions = [
+    { value: '', label: 'General', icon: Star, tone: 'muted' },
+    { value: 'task', label: 'Task', icon: CircleCheck, tone: 'green' },
+    { value: 'deadline', label: 'Deadline', icon: PriceTag, tone: 'red' },
+    { value: 'harvest', label: 'Harvest', icon: Sunny, tone: 'amber' },
+    { value: 'market', label: 'Market', icon: TrendCharts, tone: 'blue' },
+];
 </script>
 
 <template>
@@ -275,36 +287,101 @@ const typeLabel = (type) => ({
             </div>
         </div>
 
-        <el-dialog v-model="dialogOpen" :title="editingId ? 'Edit Event' : 'New Event'" width="420px" destroy-on-close align-center>
-            <el-form label-position="top">
-                <el-form-item label="Title">
-                    <el-input v-model="form.title" placeholder="Event title" />
-                </el-form-item>
-                <el-form-item label="Date">
-                    <el-date-picker v-model="form.event_date" type="date" value-format="YYYY-MM-DD" style="width:100%" />
-                </el-form-item>
-                <el-form-item label="Type">
-                    <el-select v-model="form.type" placeholder="Select type" style="width:100%" clearable>
-                        <el-option label="Task" value="task" />
-                        <el-option label="Deadline" value="deadline" />
-                        <el-option label="Harvest" value="harvest" />
-                        <el-option label="Market" value="market" />
+        <el-dialog
+            v-model="dialogOpen"
+            width="480px"
+            destroy-on-close
+            align-center
+            :show-close="false"
+            class="clp-modal"
+        >
+            <template #header>
+                <div class="clp-modal__head">
+                    <div class="clp-modal__head-icon">
+                        <el-icon :size="18"><CalendarIcon /></el-icon>
+                    </div>
+                    <div class="clp-modal__head-text">
+                        <div class="clp-modal__eyebrow">{{ editingId ? 'Edit' : 'Create' }}</div>
+                        <div class="clp-modal__title">{{ editingId ? 'Edit Event' : 'New Event' }}</div>
+                    </div>
+                    <button type="button" class="clp-modal__close" aria-label="Close" @click="dialogOpen = false">
+                        <el-icon :size="14"><Close /></el-icon>
+                    </button>
+                </div>
+            </template>
+
+            <div class="clp-modal__body">
+                <div class="clp-field">
+                    <label class="clp-field__label">Title</label>
+                    <el-input v-model="form.title" placeholder="e.g. Export deadline for Lot #42" class="clp-input" />
+                </div>
+
+                <div class="clp-field">
+                    <label class="clp-field__label"><el-icon :size="12"><Files /></el-icon> Description</label>
+                    <el-input v-model="form.description" type="textarea" :rows="3" placeholder="Optional notes" class="clp-input" />
+                </div>
+
+                <div class="clp-field">
+                    <label class="clp-field__label">Date</label>
+                    <el-date-picker v-model="form.event_date" type="date" value-format="YYYY-MM-DD" style="width:100%" class="clp-input" />
+                </div>
+
+                <div class="clp-field">
+                    <label class="clp-field__label">Type</label>
+                    <div class="clp-type-grid">
+                        <button
+                            v-for="opt in typeOptions"
+                            :key="opt.value || 'general'"
+                            type="button"
+                            class="clp-type-pill"
+                            :class="[`clp-type-pill--${opt.tone}`, { 'clp-type-pill--active': form.type === opt.value }]"
+                            @click="form.type = opt.value"
+                        >
+                            <el-icon :size="15"><component :is="opt.icon" /></el-icon>
+                            <span>{{ opt.label }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="clp-field">
+                    <label class="clp-field__label">Status</label>
+                    <div class="clp-status-toggle">
+                        <button
+                            type="button"
+                            class="clp-status-toggle__btn"
+                            :class="{ 'clp-status-toggle__btn--active': form.status === 'pending' }"
+                            @click="form.status = 'pending'"
+                        >
+                            <el-icon :size="13"><Loading /></el-icon> Pending
+                        </button>
+                        <button
+                            type="button"
+                            class="clp-status-toggle__btn clp-status-toggle__btn--green"
+                            :class="{ 'clp-status-toggle__btn--active': form.status === 'completed' }"
+                            @click="form.status = 'completed'"
+                        >
+                            <el-icon :size="13"><CircleCheck /></el-icon> Completed
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="!editingId" class="clp-field clp-field--task">
+                    <label class="clp-field__label"><el-icon :size="12"><CircleCheck /></el-icon> Task Reminder</label>
+                    <el-select v-model="form.make_task" style="width:100%" class="clp-input">
+                        <el-option label="No — just a calendar event" :value="false" />
+                        <el-option label="Yes — turn this into a task" :value="true" />
                     </el-select>
-                </el-form-item>
-                <el-form-item label="Status">
-                    <el-select v-model="form.status" style="width:100%">
-                        <el-option label="Pending" value="pending" />
-                        <el-option label="Completed" value="completed" />
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="Description">
-                    <el-input v-model="form.description" type="textarea" :rows="3" placeholder="Optional notes" />
-                </el-form-item>
-            </el-form>
+                    <span class="clp-field__hint">Optional. You'll get a decision-support notification when it's due.</span>
+                </div>
+            </div>
+
             <template #footer>
-                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <div class="clp-modal__footer">
                     <button type="button" class="clp-btn-outline" @click="dialogOpen = false">Cancel</button>
-                    <button type="button" class="clp-btn-primary" :disabled="saving" @click="saveEvent">{{ saving ? 'Saving…' : 'Save Event' }}</button>
+                    <button type="button" class="clp-btn-primary" :disabled="saving" @click="saveEvent">
+                        <el-icon v-if="!saving"><Plus /></el-icon>
+                        {{ saving ? 'Saving…' : editingId ? 'Save Changes' : 'Create Event' }}
+                    </button>
                 </div>
             </template>
         </el-dialog>
@@ -743,6 +820,232 @@ const typeLabel = (type) => ({
     margin-left: 2px;
     padding-left: 6px;
     border-left: 1px solid var(--border);
+}
+
+/* ── New/Edit Event modal ────────────────────────────────────────────────
+   NOTE: <el-dialog> teleports its content to <body>, outside .clp-page's DOM
+   subtree, so CSS custom properties (var(--green) etc.) defined on .clp-page
+   do NOT cascade in. All colors below are literal hex values on purpose. */
+:deep(.el-dialog.clp-modal) {
+    border-radius: 18px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
+}
+
+:deep(.el-dialog.clp-modal .el-dialog__header) {
+    padding: 0;
+    margin: 0;
+}
+
+:deep(.el-dialog.clp-modal .el-dialog__body) {
+    padding: 0;
+}
+
+:deep(.el-dialog.clp-modal .el-dialog__footer) {
+    padding: 0;
+}
+
+.clp-modal__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    background: #fff;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.clp-modal__head-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: rgba(0, 69, 50, 0.08);
+    color: #004532;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.clp-modal__head-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.clp-modal__eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #004532;
+    margin-bottom: 1px;
+}
+
+.clp-modal__title {
+    font-size: 1.0625rem;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -0.01em;
+}
+
+.clp-modal__close {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: #f3f4f6;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.12s;
+}
+
+.clp-modal__close:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.clp-modal__body {
+    padding: 22px 24px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+.clp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.clp-field__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9375rem;
+    font-weight: 400;
+    color: #374151;
+}
+
+.clp-field--task {
+    margin-top: 10px;
+}
+
+.clp-field__hint {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.clp-input :deep(.el-input__wrapper),
+.clp-input :deep(.el-textarea__inner) {
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px #e5e7eb inset;
+    background: #f9fafb;
+    transition: box-shadow 0.12s, background 0.12s;
+}
+
+.clp-input :deep(.el-input__wrapper:hover),
+.clp-input :deep(.el-textarea__inner:hover) {
+    background: #fff;
+    box-shadow: 0 0 0 1px #d1d5db inset;
+}
+
+.clp-input :deep(.el-input__wrapper.is-focus),
+.clp-input :deep(.el-textarea__inner:focus) {
+    background: #fff;
+    box-shadow: 0 0 0 1.5px #004532 inset;
+}
+
+.clp-type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.clp-type-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 8px;
+    border-radius: 10px;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+
+.clp-type-pill:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.clp-type-pill--active.clp-type-pill--muted { background: #f3f4f6; border-color: #9ca3af; color: #374151; }
+.clp-type-pill--active.clp-type-pill--green { background: #dcfce7; border-color: #16a34a; color: #166534; }
+.clp-type-pill--active.clp-type-pill--red { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
+.clp-type-pill--active.clp-type-pill--amber { background: #fef3c7; border-color: #d97706; color: #92400e; }
+.clp-type-pill--active.clp-type-pill--blue { background: #dbeafe; border-color: #2563eb; color: #1e40af; }
+
+.clp-status-toggle {
+    display: flex;
+    gap: 8px;
+}
+
+.clp-status-toggle__btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    color: #6b7280;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+
+.clp-status-toggle__btn:hover {
+    background: #f9fafb;
+}
+
+.clp-status-toggle__btn--active {
+    background: #fef3c7;
+    border-color: #d97706;
+    color: #92400e;
+}
+
+.clp-status-toggle__btn--green.clp-status-toggle__btn--active {
+    background: #dcfce7;
+    border-color: #16a34a;
+    color: #166534;
+}
+
+.clp-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    background: #f9fafb;
+    border-top: 1px solid #f3f4f6;
+}
+
+.clp-modal__footer .clp-btn-primary,
+.clp-modal__footer .clp-btn-outline {
+    padding: 9px 18px;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
