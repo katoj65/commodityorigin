@@ -11,14 +11,19 @@ use App\Http\Controllers\Calendar\CalendarController;
 use App\Http\Controllers\Checkout\CheckoutController;
 use App\Http\Controllers\Cooperative\CooperativeController;
 use App\Http\Controllers\Country\CountryController;
+use App\Http\Controllers\Documentation\DocumentationController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Harvest\HarvestController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Farmer\FarmerController;
+use App\Http\Controllers\Escrow\EscrowController;
+use App\Http\Controllers\Inspection\InspectionController;
 use App\Http\Controllers\Lot\LotController;
 use App\Http\Controllers\Market\MarketController;
+use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Origin\OriginController;
 use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\Season\SeasonController;
@@ -205,6 +210,55 @@ Route::middleware([
         Route::get('/order/confirmation', [CheckoutController::class, 'orderConfirmation'])->name('confirmation');
     });
 
+    // Orders — buyers post requests and sellers post offers open; the
+    // other side expresses intent to fulfill them, and the creator
+    // confirms exactly one intent to lock in their counterparty.
+    Route::prefix('orders')->name('orders.')->group(function () {
+        Route::get('/', [OrderController::class, 'index'])->name('index');
+        Route::post('/', [OrderController::class, 'store'])->name('store');
+        Route::get('/{order}', [OrderController::class, 'show'])->name('show');
+        Route::post('/{order}/intents', [OrderController::class, 'storeIntent'])->name('intents.store');
+        Route::post('/{order}/intents/{intent}/confirm', [OrderController::class, 'confirmIntent'])->name('intents.confirm');
+        Route::delete('/{order}/intents/{intent}', [OrderController::class, 'destroyIntent'])->name('intents.destroy');
+        Route::post('/{order}/inspections', [InspectionController::class, 'store'])->name('inspections.store');
+        Route::post('/{order}/inspections/{inspection}/acknowledge', [InspectionController::class, 'acknowledge'])->name('inspections.acknowledge');
+        Route::post('/{order}/inspections/{inspection}/complete', [InspectionController::class, 'complete'])->name('inspections.complete');
+        Route::post('/{order}/withdraw', [OrderController::class, 'withdraw'])->name('withdraw');
+        Route::post('/{order}/repost', [OrderController::class, 'repost'])->name('repost');
+        Route::patch('/{order}', [OrderController::class, 'update'])->name('update');
+        Route::delete('/{order}', [OrderController::class, 'destroy'])->name('destroy');
+    });
+
+    // Inspections — the shared list of coffee-quality inspections tied to
+    // confirmed orders; requested by the seller, approved by the buyer.
+    Route::prefix('inspections')->name('inspections.')->group(function () {
+        Route::get('/', [InspectionController::class, 'index'])->name('index');
+    });
+
+    // Escrow — the ledger of held/released order funds. Accounts are
+    // created and released automatically when an admin activates shipping
+    // on an order — see OrderController::update().
+    Route::prefix('escrow')->name('escrow.')->group(function () {
+        Route::get('/', [EscrowController::class, 'index'])->name('index');
+    });
+
+    // Documentation — the shared knowledge base, visible to every logged-in
+    // user; only the uploader may edit or delete their own document.
+    Route::prefix('documentation')->name('documentation.')->group(function () {
+        Route::get('/', [DocumentationController::class, 'index'])->name('index');
+        Route::post('/', [DocumentationController::class, 'store'])->name('store');
+        Route::patch('/{documentation}', [DocumentationController::class, 'update'])->name('update');
+        Route::delete('/{documentation}', [DocumentationController::class, 'destroy'])->name('destroy');
+    });
+
+    // Notifications — the in-app channel of the notification system.
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::post('/read-all', [NotificationController::class, 'markAllRead'])->name('read-all');
+        Route::patch('/{notification}/read', [NotificationController::class, 'markRead'])->name('read');
+        Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+    });
+
     // Marketplace routes.
     Route::prefix('market')->name('market.')->group(function () {
         Route::get('/', [MarketController::class, 'index'])->name('index');
@@ -241,8 +295,8 @@ Route::middleware([
     // Wallet workspace routes.
     Route::prefix('wallet')->name('wallet.')->group(function () {
         Route::get('/', [WalletController::class, 'index'])->name('index');
-        Route::post('/deposit', [WalletController::class, 'store'])->name('deposit');
-        Route::post('/withdraw', [WalletController::class, 'update'])->name('withdraw');
+        Route::post('/transfer', [WalletController::class, 'transfer'])->name('transfer');
+        Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('withdraw');
     });
 
 });

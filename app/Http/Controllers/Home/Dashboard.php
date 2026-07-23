@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Home;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CalendarResource;
 use App\Http\Resources\ExchangeRateResource;
+use App\Http\Resources\OrderResource;
 use App\Http\Resources\TaskResource;
 use App\Models\CropGradeMetadata;
 use App\Models\RoleMetadata;
 use App\Services\CalendarService;
 use App\Services\ExchangeRateService;
+use App\Services\OrderService;
 use App\Services\TaskService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,6 +24,7 @@ class Dashboard extends Controller
         private readonly ExchangeRateService $exchangeRates,
         private readonly CalendarService $calendar,
         private readonly TaskService $tasks,
+        private readonly OrderService $orders,
     ) {
     }
 
@@ -220,6 +223,7 @@ class Dashboard extends Controller
             'exchangeRates' => ExchangeRateResource::collection($this->exchangeRates->all())->resolve(),
             'calendarEvents' => CalendarResource::collection($this->calendar->eventsForUser($user->id))->resolve(),
             'tasks' => TaskResource::collection($this->tasks->tasksForUser($user->id)->take(6))->resolve(),
+            'orders' => OrderResource::collection($this->orders->ordersForUser($user->id)->take(6))->resolve(),
         ]);
     }
 }

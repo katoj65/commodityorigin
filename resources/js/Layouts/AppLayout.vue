@@ -1,12 +1,10 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Head, Link, router, usePage, useForm } from '@inertiajs/vue3';
-import { ElMessage, ElNotification } from 'element-plus';
-import { User, Crop, ShoppingCart, Van, TrendCharts, Setting } from '@element-plus/icons-vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { ElNotification } from 'element-plus';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import AppAside from '@/Components/Aside/AppAside.vue';
-import InputError from '@/Components/InputError.vue';
 import AiChatWidget from '@/Components/AiChatWidget.vue';
 
 const props = defineProps({
@@ -30,6 +28,7 @@ const mobileMenuOpen = ref(false);
 const showMobileMenuButton = ref(false);
 
 const user = computed(() => page.props.auth.user);
+const unreadNotificationsCount = computed(() => page.props.unreadNotificationsCount ?? 0);
 const userInitials = computed(() => {
     const name = user.value?.name ?? '';
 
@@ -317,31 +316,6 @@ const sideSections = computed(() => [
     },
 ]);
 
-// ── Role dialog ────────────────────────────────────────────────
-const roles        = computed(() => page.props.roles ?? []);
-const roleIconMap  = { user: User, farmer: Crop, buyer: ShoppingCart, exporter: Van, investor: TrendCharts, admin: Setting };
-const showRoleDialog = ref(false);
-const selectedRole   = ref(user.value?.role ?? null);
-const roleForm       = useForm({ role: '' });
-
-watch(showRoleDialog, (open) => { if (open) selectedRole.value = user.value?.role ?? null; });
-
-const submitRoleForm = () => {
-    roleForm.role = selectedRole.value ?? '';
-    roleForm.post(route('profile.role'), {
-        preserveScroll: true,
-        preserveState:  true,
-        onSuccess: () => {
-            ElMessage.success('Role selected successfully.');
-            showRoleDialog.value = false;
-            selectedRole.value   = null;
-        },
-        onError: () => {
-            showRoleDialog.value = true;
-        },
-    });
-};
-
 const logout = () => {
     router.post(route('logout'));
 };
@@ -533,13 +507,15 @@ onBeforeUnmount(() => {
                         </svg>
                     </Link>
 
-                    <button type="button" class="shell-icon-button relative hidden sm:inline-flex">
+                    <Link :href="route('notifications.index')" class="shell-icon-button relative hidden sm:inline-flex" title="Notifications">
                         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
                             <path d="M13.73 21a2 2 0 01-3.46 0" />
                         </svg>
-                        <span class="absolute right-1 top-1 h-2 w-2 rounded-full bg-dn"></span>
-                    </button>
+                        <span v-if="unreadNotificationsCount > 0" class="shell-bell-badge">
+                            {{ unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount }}
+                        </span>
+                    </Link>
 
 
 
@@ -592,10 +568,15 @@ onBeforeUnmount(() => {
                                     </svg>
                                     Home
                                 </Link>
-                                <button type="button" class="account-menu-button" @click="showRoleDialog = true">
-                                    <svg class="account-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                                    Switch Role
-                                </button>
+                                <Link :href="route('documentation.index')" class="account-menu-link">
+                                    <svg class="account-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" />
+                                        <path d="M14 3v5h5" />
+                                        <path d="M8.5 13h7" />
+                                        <path d="M8.5 17h7" />
+                                    </svg>
+                                    Documentation
+                                </Link>
                             </div>
 
                             <div class="mx-3 h-px bg-[#E5E7EB]"></div>
@@ -913,7 +894,7 @@ onBeforeUnmount(() => {
 
 
 
-            <!-- <AppAside /> -->
+            <AppAside />
 
 
 
@@ -930,61 +911,6 @@ onBeforeUnmount(() => {
                 </div>
             </main>
         </div>
-
-        <!-- ── Select Role Dialog ──────────────────────── -->
-        <el-dialog
-            v-model="showRoleDialog"
-            width="min(640px, calc(100vw - 2rem))"
-            class="role-select-dialog"
-            destroy-on-close
-            align-center
-            :close-on-click-modal="false"
-            :show-close="true"
-        >
-            <template #header>
-                <div class="pr-8">
-                    <div class="mt-0.5 text-[17px] font-bold tracking-tight text-[#111827]">Select Your Role</div>
-                    <p class="mt-1 text-[13px] text-[#6B7280]">Choose the role that best describes how you participate on the exchange.</p>
-                    <InputError :message="roleForm.errors.role" class="mt-1" />
-                </div>
-            </template>
-
-            <div class="grid grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-3">
-                <button
-                    v-for="r in roles"
-                    :key="r.slug"
-                    type="button"
-                    class="role-card text-left"
-                    :class="{ selected: selectedRole === r.slug }"
-                    @click="selectedRole = r.slug"
-                >
-                    <div class="mb-2 flex items-center justify-between">
-                        <el-icon :size="22" class="role-card-icon" :class="{ active: selectedRole === r.slug }">
-                            <component :is="roleIconMap[r.slug] ?? User" />
-                        </el-icon>
-                        <span v-if="selectedRole === r.slug" class="role-card-check">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
-                        </span>
-                    </div>
-                    <span class="role-card-name">{{ r.name }}</span>
-                    <p v-if="r.description" class="role-card-desc mt-1">{{ r.description }}</p>
-                </button>
-            </div>
-
-            <template #footer>
-                <div class="flex justify-end gap-2 px-4 pb-1">
-                    <button
-                        type="button"
-                        class="layout-primary-btn min-w-[130px]"
-                        :disabled="roleForm.processing"
-                        @click="submitRoleForm"
-                    >
-                        <svg v-if="roleForm.processing" class="layout-btn-icon animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
-                        {{ roleForm.processing ? 'Saving…' : 'Confirm Role' }}
-                    </button>
-                </div>
-            </template>
-        </el-dialog>
 
         <AiChatWidget />
 
@@ -1092,6 +1018,25 @@ onBeforeUnmount(() => {
     border-color: rgba(200, 134, 42, 0.3);
     background: #fff8f0;
     color: #c8862a;
+}
+
+.shell-bell-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.5625rem;
+    font-weight: 800;
+    line-height: 1;
+    border: 1.5px solid #fff;
 }
 
 .mobile-logout-btn {
@@ -1278,29 +1223,4 @@ onBeforeUnmount(() => {
     }
 }
 
-/* ── Role select dialog ── */
-:deep(.role-select-dialog),
-:deep(.role-select-dialog .el-dialog) { border-radius:16px;overflow:hidden; }
-:deep(.role-select-dialog .el-dialog__header) { margin-right:0;padding:14px 18px 10px; }
-:deep(.role-select-dialog .el-dialog__body)   { padding:0;max-height:500px;overflow-y:auto; }
-:deep(.role-select-dialog .el-dialog__footer) { padding:8px 18px 14px;border-top:1px solid #f3f4f6; }
-
-.role-card {
-    border:1.5px solid #e5e7eb;border-radius:12px;padding:.875rem 1rem;
-    background:#fff;cursor:pointer;width:100%;
-    transition:border-color .15s,background .15s,box-shadow .15s;
-}
-.role-card:hover { border-color:#c8862a;background:#fffaf4; }
-.role-card.selected { border-color:#c8862a;background:#fff8f0;box-shadow:0 0 0 3px rgba(200,134,42,.12); }
-.role-card-name { display:block;font-size:14px;font-weight:600;color:#111827;line-height:1.3; }
-.role-card-desc { font-size:11px;color:#6b7280;line-height:1.5; }
-.role-card-check { flex-shrink:0;color:#c8862a; }
-.role-card-icon { color:#9ca3af;transition:color .15s; }
-.role-card-icon.active { color:#c8862a; }
-.role-card:hover .role-card-icon { color:#c8862a; }
-
-.layout-primary-btn { display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:1px solid #c8862a;background:#c8862a;color:#fff;border-radius:.5rem;padding:.425rem .875rem;font-size:13px;font-weight:500;transition:all .15s; }
-.layout-primary-btn:hover { background:#e09b3a;border-color:#e09b3a; }
-.layout-primary-btn:disabled { opacity:.6;cursor:not-allowed; }
-.layout-btn-icon { width:1rem;height:1rem;flex-shrink:0; }
 </style>

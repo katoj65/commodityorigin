@@ -8,6 +8,7 @@ use App\Http\Resources\TaskResource;
 use App\Models\RoleMetadata;
 use App\Services\CalendarService;
 use App\Services\ChatService;
+use App\Services\NotificationService;
 use App\Services\TaskService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -18,6 +19,7 @@ class HandleInertiaRequests extends Middleware
         private readonly ChatService $chats,
         private readonly CalendarService $calendar,
         private readonly TaskService $tasks,
+        private readonly NotificationService $notifications,
     ) {
     }
 
@@ -86,6 +88,9 @@ class HandleInertiaRequests extends Middleware
             'dueTasksToday' => fn () => $authenticatedUser
                 ? TaskResource::collection($this->tasks->dueTodayForUser($authenticatedUser->id))->resolve()
                 : [],
+            'unreadNotificationsCount' => fn () => $authenticatedUser
+                ? $this->notifications->unreadCountForUser($authenticatedUser->id)
+                : 0,
         ];
     }
 }

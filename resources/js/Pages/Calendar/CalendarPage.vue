@@ -1,7 +1,6 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { ElMessage } from 'element-plus';
+import { computed, ref } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { Plus, Delete, Edit, WarnTriangleFilled, Clock, Close, Calendar as CalendarIcon, Files, CircleCheck, Loading, Star, PriceTag, Sunny, TrendCharts, List, MoreFilled } from '@element-plus/icons-vue';
@@ -92,8 +91,7 @@ function dateBadge(day) {
 /* ── Create / edit dialog ─────────────────────────────────────────────── */
 const dialogOpen = ref(false);
 const editingId = ref(null);
-const saving = ref(false);
-const form = reactive({
+const form = useForm({
     title: '',
     description: '',
     event_date: todayStr(),
@@ -119,18 +117,16 @@ function selectOtherType() {
 
 function openCreateDialog() {
     editingId.value = null;
-    form.title = '';
-    form.description = '';
+    form.reset();
+    form.clearErrors();
     form.event_date = selectedDay.value;
-    form.type = '';
-    form.status = 'pending';
-    form.make_task = false;
     otherTypeMode.value = false;
     dialogOpen.value = true;
 }
 
 function openEditDialog(event) {
     editingId.value = event.id;
+    form.clearErrors();
     form.title = event.title;
     form.description = event.description ?? '';
     form.event_date = event.event_date;
@@ -142,20 +138,18 @@ function openEditDialog(event) {
 }
 
 function saveEvent() {
-    if (!form.title.trim() || !form.event_date) {
-        ElMessage.warning('Title and date are required.');
-        return;
-    }
+    form.clearErrors();
 
-    saving.value = true;
-    const payload = { ...form };
-    const onFinish = () => { saving.value = false; };
+    if (!form.title.trim()) form.setError('title', 'Title is required.');
+    if (!form.event_date) form.setError('event_date', 'Date is required.');
+    if (form.errors.title || form.errors.event_date) return;
+
     const onSuccess = () => { dialogOpen.value = false; };
 
     if (editingId.value) {
-        router.patch(route('calendar.update', editingId.value), payload, { preserveScroll: true, onSuccess, onFinish });
+        form.patch(route('calendar.update', editingId.value), { preserveScroll: true, onSuccess });
     } else {
-        router.post(route('calendar.store'), payload, { preserveScroll: true, onSuccess, onFinish });
+        form.post(route('calendar.store'), { preserveScroll: true, onSuccess });
     }
 }
 
@@ -366,7 +360,8 @@ const typeOptions = [
             <div class="clp-modal__body">
                 <div class="clp-field">
                     <label class="clp-field__label">Title</label>
-                    <el-input v-model="form.title" placeholder="e.g. Export deadline for Lot #42" class="clp-input" />
+                    <el-input v-model="form.title" placeholder="e.g. Export deadline for Lot #42" class="clp-input" :class="{ 'clp-input--error': form.errors.title }" />
+                    <span v-if="form.errors.title" class="clp-field__error">{{ form.errors.title }}</span>
                 </div>
 
                 <div class="clp-field">
@@ -376,7 +371,8 @@ const typeOptions = [
 
                 <div class="clp-field">
                     <label class="clp-field__label">Date</label>
-                    <el-date-picker v-model="form.event_date" type="date" value-format="YYYY-MM-DD" style="width:100%" class="clp-input" />
+                    <el-date-picker v-model="form.event_date" type="date" value-format="YYYY-MM-DD" style="width:100%" class="clp-input" :class="{ 'clp-input--error': form.errors.event_date }" />
+                    <span v-if="form.errors.event_date" class="clp-field__error">{{ form.errors.event_date }}</span>
                 </div>
 
                 <div class="clp-field mt-3">
@@ -449,9 +445,9 @@ const typeOptions = [
             <template #footer>
                 <div class="clp-modal__footer">
                     <button type="button" class="clp-btn-outline" @click="dialogOpen = false">Cancel</button>
-                    <button type="button" class="clp-btn-primary" :disabled="saving" @click="saveEvent">
-                        <el-icon v-if="!saving"><Plus /></el-icon>
-                        {{ saving ? 'Saving…' : editingId ? 'Save Changes' : 'Create Event' }}
+                    <button type="button" class="clp-btn-primary" :disabled="form.processing" @click="saveEvent">
+                        <el-icon v-if="!form.processing"><Plus /></el-icon>
+                        {{ form.processing ? 'Saving…' : editingId ? 'Save Changes' : 'Create Event' }}
                     </button>
                 </div>
             </template>
@@ -1039,6 +1035,7 @@ const typeOptions = [
     padding: 0;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
+    font-family: 'Manrope', system-ui, sans-serif;
 }
 
 :deep(.el-dialog.clp-modal .el-dialog__header) {
@@ -1151,6 +1148,18 @@ const typeOptions = [
     font-weight: 400;
     color: #6b7280;
     line-height: 1.4;
+}
+
+.clp-field__error {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #dc2626;
+    line-height: 1.4;
+}
+
+.clp-input--error :deep(.el-input__wrapper),
+.clp-input--error :deep(.el-textarea__inner) {
+    box-shadow: 0 0 0 1.5px #dc2626 inset !important;
 }
 
 /* ── Task-reminder switch ────────────────────────────────────────────── */

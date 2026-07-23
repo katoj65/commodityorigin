@@ -111,6 +111,11 @@ class User extends Authenticatable
         return $this->hasMany(LotRequest::class);
     }
 
+    public function wallet(): HasOne
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
     /**
      * Determine whether the user has the given role.
      */

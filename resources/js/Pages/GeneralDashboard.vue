@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import ExchangeRates from '@/Components/ExchangeRates.vue';
 import Calendar from '@/Components/Calendar.vue';
 import Task from '@/Components/Task.vue';
+import Orders from '@/Components/Orders.vue';
 import { Line } from 'vue-chartjs';
 import {
     Chart as ChartJS, CategoryScale, LinearScale, PointElement,
@@ -12,7 +13,7 @@ import {
 } from 'chart.js';
 import {
     CoffeeCup, PriceTag, Opportunity, TrendCharts, Refresh,
-    ArrowRight, Flag, MapLocation, Ship, Position, Tickets, Histogram,
+    ArrowRight, Flag, MapLocation, Ship, Position, Histogram,
     MagicStick, Notebook, Sunny, Cloudy, Pouring, UserFilled, Timer,
 } from '@element-plus/icons-vue';
 
@@ -22,6 +23,7 @@ const props = defineProps({
     exchangeRates: { type: Array, default: () => [] },
     calendarEvents: { type: Array, default: () => [] },
     tasks: { type: Array, default: () => [] },
+    orders: { type: Array, default: () => [] },
 });
 
 const chartOptions = {
@@ -217,22 +219,6 @@ const transitTimeStats = [
     { label: 'On-Time Performance', value: '82%' },
 ];
 
-/* ══════════════════════════════════════════════════════════════════════
-   1b. MARKET PULSE — orders & tasks
-   ══════════════════════════════════════════════════════════════════════ */
-const recentOrders = [
-    { id: 'ORD-2291', buyer: 'Nordic Roasters', amount: '$12,400', status: 'Processing' },
-    { id: 'ORD-2288', buyer: 'Berlin Kaffee', amount: '$8,150', status: 'Shipped' },
-    { id: 'ORD-2285', buyer: 'Dubai Specialty Co', amount: '$21,900', status: 'Completed' },
-];
-
-const orderStatusCls = (s) => ({
-    Processing: 'cp-badge--amber',
-    Shipped: 'cp-badge--blue',
-    Completed: 'cp-badge--green',
-}[s] ?? 'cp-badge--muted');
-
-
 </script>
 
 <template>
@@ -267,25 +253,12 @@ const orderStatusCls = (s) => ({
 
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-lg-4">
-                            <div class="cp-card p-0 overflow-hidden h-100">
-                                <div class="cp-card-title px-3 pt-3"><el-icon class="cp-card-icon"><Tickets /></el-icon> Recent Orders</div>
-                                <div class="table-responsive">
-                                    <table class="table cp-table mb-0">
-                                        <thead><tr><th>Order</th><th>Buyer</th><th>Amount</th><th>Status</th></tr></thead>
-                                        <tbody>
-                                            <tr v-for="o in recentOrders" :key="o.id">
-                                                <td class="cp-item-name">{{ o.id }}</td>
-                                                <td>{{ o.buyer }}</td>
-                                                <td class="fw-semibold">{{ o.amount }}</td>
-                                                <td><span class="cp-badge" :class="orderStatusCls(o.status)">{{ o.status }}</span></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+                            <div class="cp-card cp-card--flat h-100">
+                                <Orders :orders="props.orders" title="Orders" />
                             </div>
                         </div>
                         <div class="col-12 col-lg-4">
-                            <div class="cp-card h-100">
+                            <div class="cp-card cp-card--flat h-100">
                                 <Task :tasks="props.tasks" title="Tasks" />
                             </div>
                         </div>
@@ -628,6 +601,7 @@ const orderStatusCls = (s) => ({
 
 /* ── Card ─────────────────────────────────────────────────────────────── */
 .cp-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.cp-card--flat { box-shadow: none; }
 .cp-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; font-weight: 700; color: var(--on-surface); }
 .cp-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 

@@ -25,7 +25,8 @@ class DocumentMetadataSeeder extends Seeder
             'inspection certificate',
             'transport manifest',
             'compliance attachment',
-            'images'
+            'images',
+        
         ];
 
         foreach ($items as $index => $item) {

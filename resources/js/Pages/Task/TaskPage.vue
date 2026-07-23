@@ -1,10 +1,9 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { ElMessage } from 'element-plus';
+import { computed, ref } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import { Plus, Delete, MagicStick, CircleCheck, Warning, Clock, List, Calendar as CalendarIcon, Close, Files } from '@element-plus/icons-vue';
+import { Plus, Delete, CircleCheck, Warning, Clock, Calendar as CalendarIcon, Close, Files } from '@element-plus/icons-vue';
 
 const props = defineProps({
     tasks: { type: Array, default: () => [] },
@@ -26,15 +25,21 @@ const filters = [
 
 const sortedTasks = computed(() => [...props.tasks].sort((a, b) => a.task_date.localeCompare(b.task_date)));
 
-const filteredTasks = computed(() => sortedTasks.value.filter((t) => {
-    switch (activeFilter.value) {
+function matchesFilter(key, t) {
+    switch (key) {
         case 'today': return t.status === 'pending' && t.task_date === todayStr();
         case 'overdue': return t.status === 'pending' && t.task_date < todayStr();
         case 'upcoming': return t.status === 'pending' && t.task_date > todayStr();
         case 'completed': return t.status === 'completed';
         default: return true;
     }
-}));
+}
+
+const filteredTasks = computed(() => sortedTasks.value.filter((t) => matchesFilter(activeFilter.value, t)));
+
+function tabCount(key) {
+    return sortedTasks.value.filter((t) => matchesFilter(key, t)).length;
+}
 
 /* ── KPIs ────────────────────────────────────────────────────────────── */
 const kpis = computed(() => ({
@@ -63,8 +68,7 @@ function toneFor(task) {
 
 /* ── Create dialog ───────────────────────────────────────────────────── */
 const dialogOpen = ref(false);
-const saving = ref(false);
-const form = reactive({
+const form = useForm({
     title: '',
     description: '',
     task_date: todayStr(),
@@ -72,24 +76,22 @@ const form = reactive({
 });
 
 function openCreateDialog() {
-    form.title = '';
-    form.description = '';
+    form.reset();
+    form.clearErrors();
     form.task_date = todayStr();
-    form.add_to_calendar = false;
     dialogOpen.value = true;
 }
 
 function saveTask() {
-    if (!form.title.trim() || !form.task_date) {
-        ElMessage.warning('Title and date are required.');
-        return;
-    }
+    form.clearErrors();
 
-    saving.value = true;
-    router.post(route('task.store'), { ...form }, {
+    if (!form.title.trim()) form.setError('title', 'Title is required.');
+    if (!form.task_date) form.setError('task_date', 'Task date is required.');
+    if (form.errors.title || form.errors.task_date) return;
+
+    form.post(route('task.store'), {
         preserveScroll: true,
         onSuccess: () => { dialogOpen.value = false; },
-        onFinish: () => { saving.value = false; },
     });
 }
 
@@ -174,61 +176,62 @@ function confirmDeleteTask() {
             </div>
 
             <div class="tp-body">
-
-                <!-- ── Filters ──────────────────────────────────────────── -->
-                <div class="tp-filters mb-3">
-                    <button
-                        v-for="f in filters"
-                        :key="f.key"
-                        type="button"
-                        class="tp-filter-tab"
-                        :class="{ 'tp-filter-tab--active': activeFilter === f.key }"
-                        @click="activeFilter = f.key"
-                    >{{ f.label }}</button>
-                </div>
-
-                <!-- ── Task list ────────────────────────────────────────── -->
                 <div class="tp-section">
-                    <div class="tp-section-head">
-                        <div class="tp-section-title"><el-icon><List /></el-icon> {{ filters.find(f => f.key === activeFilter)?.label }}</div>
-                        <span class="tp-count-badge">{{ filteredTasks.length }}</span>
-                    </div>
+                    <el-tabs v-model="activeFilter" class="tp-tabs">
+                        <el-tab-pane v-for="f in filters" :key="f.key" :name="f.key">
+                            <template #label>
+                                <span class="tp-tab-label">
+                                    {{ f.label }}
+                                    <span v-if="tabCount(f.key)" class="tp-tab-count">{{ tabCount(f.key) }}</span>
+                                </span>
+                            </template>
+                        </el-tab-pane>
+                    </el-tabs>
 
-                    <div v-if="!filteredTasks.length" class="text-center py-5">
-                        <el-icon style="font-size:2rem;color:#d1d5db;"><List /></el-icon>
-                        <p class="tp-muted mt-2 mb-0" style="font-size:.875rem;">No tasks in this view.</p>
-                    </div>
-
-                    <div v-else class="tp-list">
-                        <div v-for="task in filteredTasks" :key="task.id" class="tp-row">
-                            <button
-                                v-if="task.status !== 'completed'"
-                                type="button"
-                                class="tp-row__check"
-                                aria-label="Mark complete"
-                                title="Mark complete"
-                                @click="markComplete(task)"
-                            ></button>
-                            <el-icon v-else class="tp-row__done" @click="reopenTask(task)" title="Reopen task"><CircleCheck /></el-icon>
-
-                            <div class="tp-row__body">
-                                <div class="tp-row__title" :class="{ 'tp-row__title--done': task.status === 'completed' }">{{ task.title }}</div>
-                                <div v-if="task.description" class="tp-row__desc">{{ task.description }}</div>
-                            </div>
-
-                            <span class="tp-badge" :class="toneFor(task)">
-                                <el-icon v-if="task.status === 'pending' && task.task_date < todayStr()"><Warning /></el-icon>
-                                <el-icon v-else><Clock /></el-icon>
-                                {{ relativeDateLabel(task.task_date) }}
-                            </span>
-
-                            <button type="button" class="tp-row__delete" aria-label="Delete task" title="Delete task" @click="deleteTask(task)">
-                                <el-icon><Delete /></el-icon>
-                            </button>
-                        </div>
-                    </div>
+                    <el-table
+                        :data="filteredTasks"
+                        class="tp-table"
+                        empty-text="No tasks in this view."
+                    >
+                        <el-table-column label="" width="46">
+                            <template #default="{ row }">
+                                <button
+                                    v-if="row.status !== 'completed'"
+                                    type="button"
+                                    class="tp-row__check"
+                                    aria-label="Mark complete"
+                                    title="Mark complete"
+                                    @click.stop="markComplete(row)"
+                                ></button>
+                                <el-icon v-else class="tp-row__done" title="Reopen task" @click.stop="reopenTask(row)"><CircleCheck /></el-icon>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="Task" min-width="260">
+                            <template #default="{ row }">
+                                <div class="tp-cell-task">
+                                    <span class="tp-cell-task__title" :class="{ 'tp-cell-task__title--done': row.status === 'completed' }">{{ row.title }}</span>
+                                    <span v-if="row.description" class="tp-cell-task__desc">{{ row.description }}</span>
+                                </div>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="Due" width="170">
+                            <template #default="{ row }">
+                                <span class="tp-badge" :class="toneFor(row)">
+                                    <el-icon v-if="row.status === 'pending' && row.task_date < todayStr()"><Warning /></el-icon>
+                                    <el-icon v-else><Clock /></el-icon>
+                                    {{ relativeDateLabel(row.task_date) }}
+                                </span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="" width="60" align="right">
+                            <template #default="{ row }">
+                                <button type="button" class="tp-row__delete" aria-label="Delete task" title="Delete task" @click.stop="deleteTask(row)">
+                                    <el-icon><Delete /></el-icon>
+                                </button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
                 </div>
-
             </div>
         </div>
 
@@ -258,7 +261,8 @@ function confirmDeleteTask() {
             <div class="tp-modal__body">
                 <div class="tp-field">
                     <label class="tp-field__label">Title</label>
-                    <el-input v-model="form.title" placeholder="What needs a decision?" class="tp-input" />
+                    <el-input v-model="form.title" placeholder="What needs a decision?" class="tp-input" :class="{ 'tp-input--error': form.errors.title }" />
+                    <span v-if="form.errors.title" class="tp-field__error">{{ form.errors.title }}</span>
                 </div>
 
                 <div class="tp-field">
@@ -268,7 +272,8 @@ function confirmDeleteTask() {
 
                 <div class="tp-field">
                     <label class="tp-field__label">Task Date</label>
-                    <el-date-picker v-model="form.task_date" type="date" value-format="YYYY-MM-DD" style="width:100%" class="tp-input" />
+                    <el-date-picker v-model="form.task_date" type="date" value-format="YYYY-MM-DD" style="width:100%" class="tp-input" :class="{ 'tp-input--error': form.errors.task_date }" />
+                    <span v-if="form.errors.task_date" class="tp-field__error">{{ form.errors.task_date }}</span>
                 </div>
 
                 <div class="tp-field tp-field--switch">
@@ -285,9 +290,9 @@ function confirmDeleteTask() {
             <template #footer>
                 <div class="tp-modal__footer">
                     <button type="button" class="tp-btn-outline" @click="dialogOpen = false">Cancel</button>
-                    <button type="button" class="tp-btn-primary" :disabled="saving" @click="saveTask">
-                        <el-icon v-if="!saving"><Plus /></el-icon>
-                        {{ saving ? 'Saving…' : 'Create Task' }}
+                    <button type="button" class="tp-btn-primary" :disabled="form.processing" @click="saveTask">
+                        <el-icon v-if="!form.processing"><Plus /></el-icon>
+                        {{ form.processing ? 'Saving…' : 'Create Task' }}
                     </button>
                 </div>
             </template>
@@ -396,52 +401,64 @@ function confirmDeleteTask() {
 .tp-kpi__value--green { color: #166534; }
 
 /* ── Body ────────────────────────────────────────────────────────────── */
-.tp-body { padding: 1.25rem 1.5rem 3rem; }
+.tp-body { padding: 1.5rem 0 3rem; }
+.tp-section { background: transparent; }
 
-/* ── Filters ─────────────────────────────────────────────────────────── */
-.tp-filters { display: flex; gap: 6px; flex-wrap: wrap; }
-.tp-filter-tab { border: 1px solid var(--border); background: #fff; color: var(--on-surface-var); font-size: .75rem; font-weight: 700; padding: 6px 14px; border-radius: 999px; cursor: pointer; transition: all .15s; }
-.tp-filter-tab:hover { border-color: var(--green); color: var(--green); }
-.tp-filter-tab--active { background: var(--green); border-color: var(--green); color: #fff; }
-
-/* ── Section / list ──────────────────────────────────────────────────── */
-.tp-section { background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.tp-section-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: .875rem 1rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface-low);
+/* ── Category tabs ───────────────────────────────────────────────────── */
+.tp-tabs { padding: 0 1.5rem; }
+.tp-tabs :deep(.el-tabs__header) { margin: 0; }
+.tp-tabs :deep(.el-tabs__nav-wrap::after) { background-color: var(--border); }
+.tp-tabs :deep(.el-tabs__item) {
+    font-weight: 700;
+    font-size: 0.8125rem;
+    color: var(--on-surface-var);
+    height: 44px;
 }
-.tp-section-title { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; font-weight: 800; color: var(--on-surface); }
-.tp-count-badge {
+.tp-tabs :deep(.el-tabs__item.is-active) { color: var(--green); }
+.tp-tabs :deep(.el-tabs__active-bar) { background-color: var(--green); }
+
+.tp-tab-label { display: inline-flex; align-items: center; gap: 6px; }
+.tp-tab-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 22px;
-    height: 20px;
-    padding: 0 7px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
     border-radius: 999px;
-    background: rgba(0, 69, 50, .08);
+    background: rgba(0, 69, 50, 0.08);
     color: var(--green);
-    font-size: .6875rem;
+    font-size: 0.625rem;
     font-weight: 800;
 }
-.tp-list { display: flex; flex-direction: column; padding: 4px 16px; }
 
-.tp-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--surface-low); }
-.tp-row:last-child { border-bottom: none; }
+/* ── Table ───────────────────────────────────────────────────────────── */
+.tp-table {
+    --el-table-border-color: var(--border);
+    --el-table-header-bg-color: var(--surface-low);
+    --el-table-header-text-color: var(--on-surface-var);
+    font-family: 'Manrope', system-ui, sans-serif;
+}
+.tp-table :deep(.el-table__header) th {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.tp-table :deep(.el-table__inner-wrapper::before) { display: none; }
+.tp-table :deep(.el-table__header-wrapper th:first-child .cell),
+.tp-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.5rem; }
+.tp-table :deep(.el-table__header-wrapper th:last-child .cell),
+.tp-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1.5rem; }
 
 .tp-row__check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #d1d5db; background: #fff; flex-shrink: 0; cursor: pointer; padding: 0; }
 .tp-row__check:hover { border-color: var(--green); background: rgba(0,69,50,0.08); }
 .tp-row__done { width: 20px; height: 20px; border-radius: 50%; background: #16a34a; color: #fff; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
 
-.tp-row__body { flex: 1; min-width: 0; }
-.tp-row__title { font-size: .875rem; font-weight: 600; color: var(--on-surface); }
-.tp-row__title--done { color: #9ca3af; text-decoration: line-through; }
-.tp-row__desc { font-size: .75rem; color: var(--on-surface-var); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-cell-task { display: flex; flex-direction: column; gap: 3px; }
+.tp-cell-task__title { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
+.tp-cell-task__title--done { color: #9ca3af; text-decoration: line-through; }
+.tp-cell-task__desc { font-size: 0.75rem; color: var(--on-surface-var); }
 
 .tp-row__delete { width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: var(--on-surface-var); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
 .tp-row__delete:hover { background: #fee2e2; color: #991b1b; }
@@ -452,6 +469,17 @@ function confirmDeleteTask() {
 .tp-badge--red { background: #fee2e2; color: #991b1b; }
 .tp-badge--muted { background: #f3f4f6; color: #6b7280; }
 
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 767.98px) {
+    .tp-page-header { padding: 1.25rem 1.25rem 0; }
+    .tp-body { padding: 1.25rem 0 3rem; }
+    .tp-tabs { padding: 0 1.25rem; }
+    .tp-table :deep(.el-table__header-wrapper th:first-child .cell),
+    .tp-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.25rem; }
+    .tp-table :deep(.el-table__header-wrapper th:last-child .cell),
+    .tp-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1.25rem; }
+}
+
 /* ── New Task modal ──────────────────────────────────────────────────────
    NOTE: <el-dialog> teleports its content to <body>, outside .tp-page's DOM
    subtree, so CSS custom properties (var(--green) etc.) defined on .tp-page
@@ -461,6 +489,7 @@ function confirmDeleteTask() {
     padding: 0;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
+    font-family: 'Manrope', system-ui, sans-serif;
 }
 
 :deep(.el-dialog.tp-modal .el-dialog__header) {
@@ -567,6 +596,18 @@ function confirmDeleteTask() {
     font-weight: 400;
     color: #6b7280;
     line-height: 1.4;
+}
+
+.tp-field__error {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #dc2626;
+    line-height: 1.4;
+}
+
+.tp-input--error :deep(.el-input__wrapper),
+.tp-input--error :deep(.el-textarea__inner) {
+    box-shadow: 0 0 0 1.5px #dc2626 inset !important;
 }
 
 .tp-input :deep(.el-input__wrapper),
