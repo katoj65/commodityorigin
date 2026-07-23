@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ExchangeRates from '@/Components/ExchangeRates.vue';
 import Calendar from '@/Components/Calendar.vue';
@@ -24,7 +24,66 @@ const props = defineProps({
     calendarEvents: { type: Array, default: () => [] },
     tasks: { type: Array, default: () => [] },
     orders: { type: Array, default: () => [] },
+    hasProfile: { type: Boolean, default: true },
+    hasRole: { type: Boolean, default: true },
+    roles: { type: Array, default: () => [] },
 });
+
+/* ── Profile completion dialog ───────────────────────────────────────── */
+const profileDialogOpen = ref(!props.hasProfile);
+
+const profileForm = useForm({
+    date_of_birth: '',
+    gender: '',
+    address_line_1: '',
+    address_line_2: '',
+    city: '',
+    state: '',
+    country: '',
+    postal_code: '',
+    bio: '',
+    photo: null,
+});
+
+const photoPreview = ref(null);
+
+function onPhotoChange(event) {
+    const file = event.target.files[0] ?? null;
+    profileForm.photo = file;
+    photoPreview.value = file ? URL.createObjectURL(file) : null;
+}
+
+function saveProfile() {
+    profileForm.post(route('profile.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            profileDialogOpen.value = false;
+            if (!props.hasRole) roleDialogOpen.value = true;
+        },
+    });
+}
+
+/* ── Role selection dialog ─────────────────────────────────────────────
+   Opens once a profile exists but no role has been chosen yet — either
+   right away (profile was already complete) or right after the profile
+   dialog above closes. */
+const roleDialogOpen = ref(props.hasProfile && !props.hasRole);
+const selectingRole = ref(null);
+
+function roleInitial(name) {
+    return name?.charAt(0)?.toUpperCase() ?? '?';
+}
+
+function selectRole(slug) {
+    if (selectingRole.value) return;
+
+    selectingRole.value = slug;
+    router.post(route('profile.role'), { role: slug }, {
+        preserveScroll: true,
+        onSuccess: () => { roleDialogOpen.value = false; },
+        onFinish: () => { selectingRole.value = null; },
+    });
+}
 
 const chartOptions = {
     responsive: true,
@@ -554,6 +613,158 @@ const transitTimeStats = [
             </section>
 
         </div>
+
+        <!-- ── Complete Your Profile modal ─────────────────────────────── -->
+        <el-dialog
+            v-model="profileDialogOpen"
+            width="520px"
+            align-center
+            :show-close="false"
+            :close-on-click-modal="false"
+            :close-on-press-escape="false"
+            class="gd-modal"
+        >
+            <template #header>
+                <div class="gd-modal__head">
+                    <div class="gd-modal__head-icon">
+                        <el-icon :size="18"><UserFilled /></el-icon>
+                    </div>
+                    <div class="gd-modal__head-text">
+                        <div class="gd-modal__eyebrow">One Last Step</div>
+                        <div class="gd-modal__title">Complete Your Profile</div>
+                    </div>
+                </div>
+            </template>
+
+            <div class="gd-modal__body">
+                <p class="gd-modal__intro">We need a few details before you can start trading on Bean Origin.</p>
+
+                <div class="gd-photo-row">
+                    <div class="gd-photo-preview">
+                        <img v-if="photoPreview" :src="photoPreview" alt="Profile photo preview">
+                        <el-icon v-else :size="22"><UserFilled /></el-icon>
+                    </div>
+                    <div class="gd-photo-field">
+                        <label class="gd-field__label">Profile Photo <span class="gd-field__optional">(optional)</span></label>
+                        <label class="gd-photo-upload">
+                            <input type="file" accept="image/*" class="gd-photo-upload__input" @change="onPhotoChange">
+                            {{ profileForm.photo ? 'Change Photo' : 'Upload Photo' }}
+                        </label>
+                        <span v-if="profileForm.errors.photo" class="gd-field__error">{{ profileForm.errors.photo }}</span>
+                    </div>
+                </div>
+
+                <div class="gd-field-row">
+                    <div class="gd-field">
+                        <label class="gd-field__label">Date of Birth</label>
+                        <el-date-picker v-model="profileForm.date_of_birth" type="date" value-format="YYYY-MM-DD" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.date_of_birth }" />
+                        <span v-if="profileForm.errors.date_of_birth" class="gd-field__error mt-3">{{ profileForm.errors.date_of_birth }}</span>
+                    </div>
+                    <div class="gd-field">
+                        <label class="gd-field__label">Gender</label>
+                        <el-select v-model="profileForm.gender" placeholder="Select" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.gender }">
+                            <el-option label="Male" value="male" />
+                            <el-option label="Female" value="female" />
+                            <el-option label="Prefer not to say" value="prefer_not_to_say" />
+                        </el-select>
+                        <span v-if="profileForm.errors.gender" class="gd-field__error">{{ profileForm.errors.gender }}</span>
+                    </div>
+                </div>
+
+                <div class="gd-field">
+                    <label class="gd-field__label">Address Line 1</label>
+                    <el-input v-model="profileForm.address_line_1" placeholder="Street address" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.address_line_1 }" />
+                    <span v-if="profileForm.errors.address_line_1" class="gd-field__error">{{ profileForm.errors.address_line_1 }}</span>
+                </div>
+
+                <div class="gd-field">
+                    <label class="gd-field__label">Address Line 2 <span class="gd-field__optional">(optional)</span></label>
+                    <el-input v-model="profileForm.address_line_2" placeholder="Apartment, suite, etc." class="gd-input" />
+                </div>
+
+                <div class="gd-field-row">
+                    <div class="gd-field">
+                        <label class="gd-field__label">City</label>
+                        <el-input v-model="profileForm.city" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.city }" />
+                        <span v-if="profileForm.errors.city" class="gd-field__error">{{ profileForm.errors.city }}</span>
+                    </div>
+                    <div class="gd-field">
+                        <label class="gd-field__label">State</label>
+                        <el-input v-model="profileForm.state" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.state }" />
+                        <span v-if="profileForm.errors.state" class="gd-field__error">{{ profileForm.errors.state }}</span>
+                    </div>
+                </div>
+
+                <div class="gd-field-row">
+                    <div class="gd-field">
+                        <label class="gd-field__label">Country</label>
+                        <el-input v-model="profileForm.country" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.country }" />
+                        <span v-if="profileForm.errors.country" class="gd-field__error">{{ profileForm.errors.country }}</span>
+                    </div>
+                    <div class="gd-field">
+                        <label class="gd-field__label">Postal Code <span class="gd-field__optional">(optional)</span></label>
+                        <el-input v-model="profileForm.postal_code" class="gd-input" />
+                    </div>
+                </div>
+
+                <div class="gd-field">
+                    <label class="gd-field__label">Bio <span class="gd-field__optional">(optional)</span></label>
+                    <el-input v-model="profileForm.bio" type="textarea" :rows="3" placeholder="A short note about you or your business" class="gd-input" />
+                </div>
+            </div>
+
+            <template #footer>
+                <div class="gd-modal__footer">
+                    <button type="button" class="gd-btn-primary" :disabled="profileForm.processing" @click="saveProfile">
+                        <el-icon v-if="!profileForm.processing"><UserFilled /></el-icon>
+                        {{ profileForm.processing ? 'Saving…' : 'Save Profile' }}
+                    </button>
+                </div>
+            </template>
+        </el-dialog>
+
+        <!-- ── Select Your Role modal ──────────────────────────────────── -->
+        <el-dialog
+            v-model="roleDialogOpen"
+            width="640px"
+            align-center
+            :show-close="false"
+            :close-on-click-modal="false"
+            :close-on-press-escape="false"
+            class="gd-modal"
+        >
+            <template #header>
+                <div class="gd-modal__head">
+                    <div class="gd-modal__head-icon">
+                        <el-icon :size="18"><UserFilled /></el-icon>
+                    </div>
+                    <div class="gd-modal__head-text">
+                        <div class="gd-modal__eyebrow">One Last Step</div>
+                        <div class="gd-modal__title">How do you want to interact with the platform?</div>
+                    </div>
+                </div>
+            </template>
+
+            <div class="gd-modal__body">
+                <p class="gd-modal__intro">Pick the role that fits you best. You can change this later from your profile.</p>
+
+                <div class="gd-role-grid">
+                    <button
+                        v-for="role in roles"
+                        :key="role.slug"
+                        type="button"
+                        class="gd-role-tile"
+                        :disabled="!!selectingRole"
+                        :class="{ 'gd-role-tile--busy': selectingRole === role.slug }"
+                        @click="selectRole(role.slug)"
+                    >
+                        <span class="gd-role-tile__icon">{{ roleInitial(role.name) }}</span>
+                        <span class="gd-role-tile__name">{{ role.name }}</span>
+                        <span class="gd-role-tile__desc">{{ role.description }}</span>
+                    </button>
+                </div>
+            </div>
+        </el-dialog>
     </AppLayout>
 </template>
 
@@ -668,4 +879,280 @@ const transitTimeStats = [
 .cp-hotspot-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
 .cp-hotspot-row:last-child { border-bottom: none; }
 .cp-hotspot-trend { font-size: .8125rem; font-weight: 800; white-space: nowrap; }
+
+/* ── Complete Your Profile modal ──────────────────────────────────────────
+   NOTE: <el-dialog> teleports its content to <body>, outside .cp-page's DOM
+   subtree, so CSS custom properties (var(--green) etc.) defined on .cp-page
+   do NOT cascade in. All colors below are literal hex values on purpose. */
+:deep(.el-dialog.gd-modal) {
+    border-radius: 18px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
+    font-family: 'Manrope', system-ui, sans-serif;
+}
+
+:deep(.el-dialog.gd-modal .el-dialog__header) { padding: 0; margin: 0; }
+:deep(.el-dialog.gd-modal .el-dialog__body) { padding: 0; }
+:deep(.el-dialog.gd-modal .el-dialog__footer) { padding: 0; }
+
+.gd-modal__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    background: #fff;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.gd-modal__head-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: rgba(0, 69, 50, 0.08);
+    color: #004532;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.gd-modal__head-text { flex: 1; min-width: 0; }
+
+.gd-modal__eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #004532;
+    margin-bottom: 1px;
+}
+
+.gd-modal__title {
+    font-size: 1.0625rem;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -0.01em;
+}
+
+.gd-modal__body {
+    padding: 20px 24px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+.gd-modal__intro {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0 0 2px;
+}
+
+.gd-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.gd-photo-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.gd-photo-preview {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+.gd-photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gd-photo-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.gd-photo-upload {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+    color: #374151;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.gd-photo-upload:hover { background: #fff; border-color: #d1d5db; }
+
+.gd-photo-upload__input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.gd-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.gd-field__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.gd-field__optional {
+    font-weight: 400;
+    color: #9ca3af;
+}
+
+.gd-field__error {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #dc2626;
+    margin-top: 4px;
+    display: block;
+}
+
+.gd-input--error :deep(.el-input__wrapper),
+.gd-input--error :deep(.el-textarea__inner) {
+    box-shadow: 0 0 0 1.5px #dc2626 inset !important;
+}
+
+.gd-input :deep(.el-input__wrapper),
+.gd-input :deep(.el-textarea__inner) {
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px #e5e7eb inset;
+    background: #f9fafb;
+    transition: box-shadow 0.12s, background 0.12s;
+}
+
+.gd-input :deep(.el-input__wrapper:hover),
+.gd-input :deep(.el-textarea__inner:hover) {
+    background: #fff;
+    box-shadow: 0 0 0 1px #d1d5db inset;
+}
+
+.gd-input :deep(.el-input__wrapper.is-focus),
+.gd-input :deep(.el-textarea__inner:focus) {
+    background: #fff;
+    box-shadow: 0 0 0 1.5px #004532 inset;
+}
+
+.gd-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px 24px;
+    background: #f9fafb;
+    border-top: 1px solid #f3f4f6;
+}
+
+.gd-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #004532, #065f46);
+    border: 1px solid transparent;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.gd-btn-primary:hover:not(:disabled) { opacity: 0.9; }
+.gd-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Role tiles ────────────────────────────────────────────────────────── */
+.gd-role-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.gd-role-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.12s ease, background 0.12s ease, transform 0.08s ease, opacity 0.12s ease;
+}
+
+.gd-role-tile:hover:not(:disabled) {
+    border-color: #004532;
+    background: #f8fafc;
+}
+
+.gd-role-tile:active:not(:disabled) { transform: scale(0.98); }
+.gd-role-tile:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.gd-role-tile--busy {
+    opacity: 1;
+    border-color: #004532;
+    background: rgba(0, 69, 50, 0.05);
+}
+
+.gd-role-tile__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(0, 69, 50, 0.08);
+    color: #004532;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 800;
+}
+
+.gd-role-tile__name {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.gd-role-tile__desc {
+    font-size: 0.6875rem;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+@media (max-width: 575.98px) {
+    .gd-field-row { grid-template-columns: 1fr; }
+    .gd-role-grid { grid-template-columns: 1fr 1fr; }
+}
 </style>

@@ -12,6 +12,7 @@ use App\Models\RoleMetadata;
 use App\Services\CalendarService;
 use App\Services\ExchangeRateService;
 use App\Services\OrderService;
+use App\Services\ProfileService;
 use App\Services\TaskService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,6 +26,7 @@ class Dashboard extends Controller
         private readonly CalendarService $calendar,
         private readonly TaskService $tasks,
         private readonly OrderService $orders,
+        private readonly ProfileService $profiles,
     ) {
     }
 
@@ -194,8 +196,8 @@ class Dashboard extends Controller
      */
     public function dashboard(Request $request)
     {
-        $user       = $request->user()->loadMissing('profile', 'userRole');
-        $hasProfile = ! is_null($user->profile);
+        $user       = $request->user()->loadMissing('userRole');
+        $hasProfile = ! is_null($this->profiles->forUser($user->id));
         $hasRole    = ! is_null($user->userRole);
 
         $roles = RoleMetadata::query()
@@ -214,10 +216,12 @@ class Dashboard extends Controller
             ->get();
 
 
+
         return Inertia::render('GeneralDashboard', [
             'hasProfile' => $hasProfile,
             'hasRole'    => $hasRole,
             'roles'      => $roles,
+            
             'cropGrades' => $cropGrades,
             'lotRequests' => $lotRequest,
             'exchangeRates' => ExchangeRateResource::collection($this->exchangeRates->all())->resolve(),
@@ -225,5 +229,9 @@ class Dashboard extends Controller
             'tasks' => TaskResource::collection($this->tasks->tasksForUser($user->id)->take(6))->resolve(),
             'orders' => OrderResource::collection($this->orders->ordersForUser($user->id)->take(6))->resolve(),
         ]);
+
+
+
+
     }
 }

@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\Profile;
 
+use App\Helpers\ImageUploadHelper;
 use App\Http\Controllers\Controller;
-use App\Models\UserProfile;
-use App\Models\UserRole;
+use App\Services\ProfileService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
+    public function __construct(
+        private readonly ProfileService $profiles,
+    ) {
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -34,12 +39,17 @@ class ProfileController extends Controller
             'country' => ['required', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:255'],
             'bio' => ['nullable', 'string', 'max:1000'],
+            'photo' => ['nullable', 'image', 'max:5120'],
         ]);
 
-        UserProfile::query()->updateOrCreate(
-            ['user_id' => $request->user()->id],
-            $validated,
-        );
+        $photoPath = ImageUploadHelper::store($request->file('photo'), 'profile-photos');
+        unset($validated['photo']);
+
+        if ($photoPath) {
+            $validated['profile_photo'] = $photoPath;
+        }
+
+        $this->profiles->save($request->user(), $validated);
 
         return back()->with('success', 'Profile saved successfully.');
     }
@@ -47,9 +57,6 @@ class ProfileController extends Controller
     /**
      * Update the authenticated user's selected role.
      */
-
-
-
     public function updateRole(Request $request): RedirectResponse
     {
         $request->validate([
@@ -60,16 +67,7 @@ class ProfileController extends Controller
             ],
         ]);
 
-        abort_unless($request->user()->profile()->exists(), 403, 'Create a profile before selecting a role.');
-
-        $role = $request->string('role')->toString();
-
-        UserRole::firstOrCreate([
-            'user_id' => $request->user()->id,
-            'role'    => $role,
-        ]);
-
-        $request->user()->forceFill(['role' => $role])->save();
+        $this->profiles->selectRole($request->user(), $request->string('role')->toString());
 
         return back()->with('success', 'Role selected successfully.');
     }
