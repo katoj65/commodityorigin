@@ -26,6 +26,7 @@ use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Origin\OriginController;
 use App\Http\Controllers\Profile\ProfileController;
+use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\Season\SeasonController;
 use App\Http\Controllers\Sell\SellController;
 use App\Http\Controllers\Task\TaskController;
@@ -297,6 +298,13 @@ Route::middleware([
         Route::get('/', [WalletController::class, 'index'])->name('index');
         Route::post('/transfer', [WalletController::class, 'transfer'])->name('transfer');
         Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('withdraw');
+    });
+
+    // Search — market items, plus a signed-in user's search history.
+    Route::prefix('search')->name('search.')->group(function () {
+        Route::get('/', [SearchController::class, 'index'])->name('index');
+        Route::delete('/history', [SearchController::class, 'clearHistory'])->name('history.clear');
+        Route::delete('/history/{log}', [SearchController::class, 'destroy'])->name('history.destroy');
     });
 
 });

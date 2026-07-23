@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Http\Controllers\Search;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\SearchLogResource;
+use App\Models\SearchLog;
+use App\Services\SearchService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+
+class SearchController extends Controller
+{
+    public function __construct(
+        private readonly SearchService $search,
+    ) {
+    }
+
+    /**
+     * Search live market items by keyword and optional filters. Logs the
+     * search against the authenticated user, skipping empty queries.
+     */
+    public function index(Request $request): Response
+    {
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+            'type' => ['nullable', 'string', 'max:100'],
+            'origin' => ['nullable', 'string', 'max:100'],
+            'demand' => ['nullable', 'string', 'max:100'],
+            'min_price' => ['nullable', 'numeric', 'min:0'],
+            'max_price' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $keyword = $validated['q'] ?? '';
+        $filters = collect($validated)->except('q')->filter()->all();
+
+        $results = $this->search->search($keyword, $filters);
+
+        $this->search->log($request->user()->id, $keyword, $results->count(), $filters);
+
+        return Inertia::render('Search/SearchPage', [
+            'query' => $keyword,
+            'filters' => $filters,
+            'results' => $results->values()->all(),
+            'recentSearches' => SearchLogResource::collection($this->search->recentForUser($request->user()->id))->resolve(),
+        ]);
+    }
+
+    /**
+     * Delete a single search history entry.
+     */
+    public function destroy(Request $request, SearchLog $log): RedirectResponse
+    {
+        if ($log->user_id !== $request->user()->id) {
+            throw new AccessDeniedHttpException('You do not own this search.');
+        }
+
+        $this->search->destroy($log);
+
+        return back();
+    }
+
+    /**
+     * Clear all search history for the authenticated user.
+     */
+    public function clearHistory(Request $request): RedirectResponse
+    {
+        $this->search->clearForUser($request->user()->id);
+
+        return back();
+    }
+}

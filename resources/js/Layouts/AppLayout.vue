@@ -63,63 +63,39 @@ const topNavLinks = computed(() => [
 
 const railLinks = computed(() => [
     {
-        label: 'Overview',
+        label: 'Home',
         href: route('dashboard'),
         active: route().current('dashboard'),
         inertia: true,
-        icon: 'grid',
+        icon: 'home',
     },
     {
-        label: 'Lots',
-        href: '#',
-        active: false,
-        inertia: false,
-        icon: 'cup',
-    },
-    {
-        label: 'My Bids',
-        href: '#',
-        active: false,
-        inertia: false,
-        icon: 'card',
-    },
-    {
-        label: 'Origins',
-        href: '#',
-        active: false,
-        inertia: false,
-        icon: 'shield',
-        dividerBefore: true,
-    },
-    {
-        label: 'Grading',
-        href: '#',
-        active: false,
-        inertia: false,
-        icon: 'clipboard',
-    },
-    {
-        label: 'Reports',
-        href: '#',
-        active: false,
-        inertia: false,
-        icon: 'chart',
-    },
-    {
-        label: 'Alerts · 3',
-        href: '#',
-        active: false,
-        inertia: false,
-        icon: 'bell',
-        dot: true,
-    },
-    {
-        label: 'Profile',
-        href: route('profile.show'),
-        active: route().current('profile.show'),
+        label: 'Calendar',
+        href: route('calendar.index'),
+        active: route().current('calendar.*'),
         inertia: true,
-        icon: 'user',
-        dividerBefore: true,
+        icon: 'calendar',
+    },
+    {
+        label: 'Tasks',
+        href: route('task.index'),
+        active: route().current('task.*'),
+        inertia: true,
+        icon: 'tasks',
+    },
+    {
+        label: 'Messages',
+        href: route('chat.index'),
+        active: route().current('chat.*'),
+        inertia: true,
+        icon: 'chat',
+    },
+    {
+        label: 'Wallet',
+        href: route('wallet.index'),
+        active: route().current('wallet.*'),
+        inertia: true,
+        icon: 'wallet',
     },
 ]);
 
@@ -483,12 +459,12 @@ onBeforeUnmount(() => {
                         </div>
                     </div>
 
-                    <button type="button" class="shell-icon-button">
+                    <Link :href="route('search.index')" class="shell-icon-button" title="Search">
                         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <circle cx="11" cy="11" r="8" />
                             <path d="M21 21l-4.35-4.35" />
                         </svg>
-                    </button>
+                    </Link>
 
                     <Link :href="route('checkout.index')" class="shell-icon-button">
                         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -831,18 +807,29 @@ onBeforeUnmount(() => {
                         class="rail-item group relative flex h-10 w-10 items-center justify-center rounded-xl transition-colors"
                         :class="link.active ? 'bg-gold text-white' : 'text-white/50 hover:bg-white/10 hover:text-white'"
                     >
-                        <svg v-if="link.icon === 'grid'" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                        <svg v-if="link.icon === 'home'" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M3 10.5L12 3l9 7.5" />
+                            <path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5" />
                         </svg>
-                        <svg v-else-if="link.icon === 'pulse'" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        <svg v-else-if="link.icon === 'calendar'" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="5" width="18" height="16" rx="2" />
+                            <path d="M16 3v4" />
+                            <path d="M8 3v4" />
+                            <path d="M3 10h18" />
                         </svg>
-                        <svg v-else-if="link.icon === 'user'" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <circle cx="12" cy="7" r="4" />
-                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                        <svg v-else-if="link.icon === 'tasks'" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                            <path d="M9 5a2 2 0 002 2h2a2 2 0 002-2" />
+                            <path d="M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            <path d="M9 13l2 2 4-4" />
+                        </svg>
+                        <svg v-else-if="link.icon === 'chat'" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 4h16v13H9l-5 4V4z" />
+                        </svg>
+                        <svg v-else-if="link.icon === 'wallet'" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="7" width="20" height="14" rx="2" />
+                            <path d="M2 12h20" />
+                            <circle cx="16" cy="16" r="1.25" fill="currentColor" stroke="none" />
                         </svg>
                         <div class="tooltip">{{ link.label }}</div>
                     </Link>
