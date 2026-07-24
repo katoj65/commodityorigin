@@ -103,7 +103,6 @@ Route::middleware([
     // Countries directory.
     Route::prefix('country')->name('country.')->group(function () {
         Route::get('/', [CountryController::class, 'index'])->name('index');
-        Route::get('/compare', [CountryController::class, 'compare'])->name('compare');
         Route::post('/', [CountryController::class, 'store'])->name('store');
         Route::patch('/{country}', [CountryController::class, 'update'])->name('update');
         Route::delete('/{country}', [CountryController::class, 'destroy'])->name('destroy');
@@ -266,6 +265,8 @@ Route::middleware([
         Route::get('/active', [MarketController::class, 'activeMarket'])->name('active');
         Route::get('/auction', [MarketController::class, 'auction'])->name('auction');
         Route::get('/analysis', [MarketController::class, 'analyseMarket'])->name('analysis');
+        Route::get('/request', [MarketController::class, 'request'])->name('request');
+        Route::get('/compare', [MarketController::class, 'compareCountries'])->name('compare');
     });
 
     // Buyer workspace routes.

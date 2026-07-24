@@ -194,4 +194,107 @@ class MarketService
             'insights' => array_values($insights),
         ];
     }
+
+    /**
+     * Surface coffee types where buyer demand is outpacing available
+     * supply — a simple, real gap between each type's share of high-demand
+     * listings and its share of total listings.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function marketOpportunities(): array
+    {
+        $listings = $this->liveMarkets();
+        $total = $listings->count();
+
+        if ($total === 0) {
+            return [];
+        }
+
+        return $listings->groupBy(fn (Market $m) => ucfirst($m->type ?? 'Unspecified'))
+            ->map(function (Collection $group, string $type) use ($total): array {
+                $count = $group->count();
+                $share = $count / $total;
+                $highDemandCount = $group->filter(fn (Market $m) => strtolower((string) $m->demand) === 'high')->count();
+                $highDemandShare = $count > 0 ? $highDemandCount / $count : 0;
+
+                return [
+                    'type' => $type,
+                    'listings' => $count,
+                    'share' => round($share * 100, 1),
+                    'high_demand_share' => round($highDemandShare * 100, 1),
+                    'gap_score' => round(($highDemandShare - $share) * 100, 1),
+                    'average_price' => round((float) $group->avg('price_per_kg'), 2),
+                ];
+            })
+            ->filter(fn (array $row) => $row['gap_score'] > 0)
+            ->sortByDesc('gap_score')
+            ->take(4)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Aggregate live listings by origin and destination market — the
+     * clearest real proxy this app has for coffee trade flow volume.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function tradeFlows(): array
+    {
+        return $this->liveMarkets()
+            ->filter(fn (Market $m) => filled($m->origin) && filled($m->target_market))
+            ->groupBy(fn (Market $m) => $m->origin . '|' . $m->target_market)
+            ->map(function (Collection $group): array {
+                $first = $group->first();
+
+                return [
+                    'origin' => $first->origin,
+                    'destination' => $first->target_market,
+                    'listings' => $group->count(),
+                    'volume_kg' => (float) $group->sum('quantity'),
+                    'average_price' => round((float) $group->avg('price_per_kg'), 2),
+                ];
+            })
+            ->sortByDesc('volume_kg')
+            ->take(8)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Rank the sellers currently competing for buyer attention on the live
+     * market — listing count, volume, and average quality/price per seller.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function competitorLandscape(): array
+    {
+        $listings = Market::query()
+            ->where('status', 'live')
+            ->whereNotNull('user_id')
+            ->with('user')
+            ->get();
+
+        if ($listings->isEmpty()) {
+            return [];
+        }
+
+        return $listings->groupBy('user_id')
+            ->map(function (Collection $group): array {
+                $seller = $group->first()->user;
+
+                return [
+                    'name' => $seller?->name ?? 'Seller',
+                    'listings' => $group->count(),
+                    'volume_kg' => (float) $group->sum('quantity'),
+                    'average_quality' => round((float) $group->avg('quality_score'), 1),
+                    'average_price' => round((float) $group->avg('price_per_kg'), 2),
+                ];
+            })
+            ->sortByDesc('volume_kg')
+            ->take(5)
+            ->values()
+            ->all();
+    }
 }

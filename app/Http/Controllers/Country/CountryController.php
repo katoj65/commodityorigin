@@ -63,17 +63,6 @@ class CountryController extends Controller
     }
 
     /**
-     * Display the coffee production comparison page for coffee-growing
-     * countries.
-     */
-    public function compare(): Response
-    {
-        return Inertia::render('Country/ComparePage', [
-            'producers' => CountryResource::collection($this->countries->coffeeProducers())->resolve(),
-        ]);
-    }
-
-    /**
      * Validate the create/update payload.
      *
      * @return array<string, mixed>

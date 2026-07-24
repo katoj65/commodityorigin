@@ -56,6 +56,7 @@ class DatabaseSeeder extends Seeder
             SensoryMetadataSeeder::class,
             ProcessingMetadataSeeder::class,
             MarketMetadataSeeder::class,
+            MarketSeeder::class,
             CropGradeMetadataSeeder::class,
             AgentSeeder::class,
             ExchangeRateSeeder::class,

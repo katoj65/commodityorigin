@@ -199,6 +199,66 @@ class OrderService
     }
 
     /**
+     * Rank buyers by total order value across every order they've placed.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function topBuyers(int $limit = 5): array
+    {
+        $orders = Order::query()->whereNotNull('buyer_id')->with('buyer')->get();
+
+        if ($orders->isEmpty()) {
+            return [];
+        }
+
+        return $orders->groupBy('buyer_id')
+            ->map(function (Collection $group): array {
+                $buyer = $group->first()->buyer;
+
+                return [
+                    'name' => $buyer?->name ?? 'Buyer',
+                    'orders' => $group->count(),
+                    'quantity_kg' => (float) $group->sum('quantity'),
+                    'total_value' => (float) $group->sum('total_amount'),
+                ];
+            })
+            ->sortByDesc('total_value')
+            ->take($limit)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Rank sellers by total order value across every order they've fulfilled.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function topSellers(int $limit = 5): array
+    {
+        $orders = Order::query()->whereNotNull('seller_id')->with('seller')->get();
+
+        if ($orders->isEmpty()) {
+            return [];
+        }
+
+        return $orders->groupBy('seller_id')
+            ->map(function (Collection $group): array {
+                $seller = $group->first()->seller;
+
+                return [
+                    'name' => $seller?->name ?? 'Seller',
+                    'orders' => $group->count(),
+                    'quantity_kg' => (float) $group->sum('quantity'),
+                    'total_value' => (float) $group->sum('total_amount'),
+                ];
+            })
+            ->sortByDesc('total_value')
+            ->take($limit)
+            ->values()
+            ->all();
+    }
+
+    /**
      * Summarize a user's trade history on this marketplace — completed,
      * active, and cancelled order counts, as either buyer or seller — so
      * the other party can review it before confirming them.

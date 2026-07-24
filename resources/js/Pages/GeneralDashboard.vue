@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ExchangeRates from '@/Components/ExchangeRates.vue';
 import Calendar from '@/Components/Calendar.vue';
@@ -28,6 +28,9 @@ const props = defineProps({
     hasRole: { type: Boolean, default: true },
     roles: { type: Array, default: () => [] },
 });
+
+const page = usePage();
+const firstName = computed(() => page.props.auth?.user?.first_name ?? '');
 
 /* ── Profile completion dialog ───────────────────────────────────────── */
 const profileDialogOpen = ref(!props.hasProfile);
@@ -286,19 +289,17 @@ const transitTimeStats = [
 
         <div class="cp-page">
 
+            <!-- ── Page header ───────────────────────────────────────────── -->
+            <div class="cp-page-header">
+                <h1 class="cp-title mb-0">Welcome{{ firstName ? `, ${firstName}` : '' }}</h1>
+                <button class="btn cp-btn-ghost btn-sm"><el-icon><Refresh /></el-icon> Refresh</button>
+            </div>
+
             <!-- ══════════════════════════════════════════════════════════
                  1. MARKET PULSE
                  ══════════════════════════════════════════════════════════ -->
             <section class="cp-section cp-section--tight">
                 <div class="container-fluid px-3 px-lg-4 pt-3">
-                    <div class="cp-section__head">
-                        <div>
-                            <div class="cp-kicker">Live · Updated 2 min ago</div>
-                            <h1 class="cp-title mb-0">Market Pulse</h1>
-                        </div>
-                        <button class="btn cp-btn-ghost btn-sm"><el-icon><Refresh /></el-icon> Refresh</button>
-                    </div>
-
                     <div class="row g-2 mb-3">
                         <div v-for="kpi in marketKpis" :key="kpi.label" class="col-6 col-md-3">
                             <div class="cp-kpi h-100">
@@ -777,6 +778,8 @@ const transitTimeStats = [
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
+    --shadow-md: 0 6px 16px rgba(15, 23, 42, .08);
     font-family: 'Manrope', system-ui, sans-serif;
     background: #ffffff;
     color: var(--on-surface);
@@ -792,29 +795,43 @@ const transitTimeStats = [
 .cp-section--tight { padding-top: 0; }
 .cp-section--last { border-bottom: none; padding-bottom: 3rem; }
 .cp-section__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .875rem; }
+
+.cp-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+.cp-page-header .cp-title { font-size: 1.5rem; }
 .cp-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 .cp-title  { font-size: 1.1875rem; font-weight: 800; letter-spacing: -.02em; }
 .cp-link   { font-size: .8125rem; font-weight: 700; color: var(--green); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
 .cp-link:hover { color: var(--green-dark); }
 
 /* ── Buttons ──────────────────────────────────────────────────────────── */
-.cp-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 6px; font-size: .75rem; font-weight: 600; padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
-.cp-btn-primary:hover { background: var(--green-dark); }
-.cp-btn-ghost { background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.cp-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 8px; font-size: .75rem; font-weight: 600; padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; box-shadow: var(--shadow-sm); transition: background .15s ease, box-shadow .15s ease, transform .1s ease; }
+.cp-btn-primary:hover { background: var(--green-dark); box-shadow: var(--shadow-md); }
+.cp-btn-primary:active { transform: translateY(1px); }
+.cp-btn-ghost { background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); border-radius: 8px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; transition: background .15s ease, border-color .15s ease; }
+.cp-btn-ghost:hover { background: #fff; border-color: #d1d5db; }
 
 /* ── KPI tiles ────────────────────────────────────────────────────────── */
-.cp-kpi { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: .875rem; }
-.cp-kpi__icon { width: 26px; height: 26px; border-radius: 7px; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; margin-bottom: 6px; }
+.cp-kpi { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: .875rem; box-shadow: var(--shadow-sm); transition: box-shadow .15s ease, transform .15s ease, border-color .15s ease; }
+.cp-kpi:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: #d1d5db; }
+.cp-kpi__icon { width: 28px; height: 28px; border-radius: 50%; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; margin-bottom: 8px; }
 .cp-kpi__label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); display: block; }
-.cp-kpi__value { font-size: 1.125rem; font-weight: 800; color: var(--on-surface); line-height: 1.2; margin: 4px 0 2px; }
+.cp-kpi__value { font-size: 1.1875rem; font-weight: 800; color: var(--on-surface); line-height: 1.2; margin: 4px 0 2px; letter-spacing: -.01em; }
 .cp-kpi__value small { font-size: .625rem; font-weight: 600; color: var(--on-surface-var); }
 .cp-kpi__change { font-size: .6875rem; font-weight: 700; }
 
 /* ── Card ─────────────────────────────────────────────────────────────── */
-.cp-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.cp-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: var(--shadow-sm); transition: box-shadow .15s ease; }
 .cp-card--flat { box-shadow: none; }
 .cp-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; font-weight: 700; color: var(--on-surface); }
-.cp-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.cp-card-icon  { width: 26px; height: 26px; border-radius: 8px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
 /* ── Share rows ───────────────────────────────────────────────────────── */
 .cp-share-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
@@ -846,14 +863,15 @@ const transitTimeStats = [
 
 /* ── Categories list ──────────────────────────────────────────────────── */
 .cp-cat-list { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow-y: auto; }
-.cp-cat-row { display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; background: none; border: none; border-radius: 6px; padding: 8px 10px; font-size: .8125rem; font-weight: 600; color: var(--on-surface-var); cursor: pointer; }
+.cp-cat-row { display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; background: none; border: none; border-radius: 8px; padding: 8px 10px; font-size: .8125rem; font-weight: 600; color: var(--on-surface-var); cursor: pointer; transition: background-color .12s ease, color .12s ease; }
 .cp-cat-row:hover { background: var(--surface-low); }
 .cp-cat-row--active { background: rgba(0,69,50,0.08); color: var(--green); }
 .cp-cat-count { font-size: .6875rem; font-weight: 700; color: var(--on-surface-var); background: var(--surface-low); border-radius: 999px; padding: 1px 8px; }
 .cp-cat-row--active .cp-cat-count { background: #fff; color: var(--green); }
 
 /* ── News feed ────────────────────────────────────────────────────────── */
-.cp-news-row { padding: 10px 0; border-bottom: 1px solid var(--surface-low); }
+.cp-news-row { padding: 10px 6px; margin: 0 -6px; border-radius: 8px; border-bottom: 1px solid var(--surface-low); transition: background-color .12s ease; }
+.cp-news-row:hover { background-color: var(--surface-low); }
 .cp-news-row:last-child { border-bottom: none; }
 .cp-news-row__top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .cp-news-time { font-size: .6875rem; color: var(--on-surface-var); }
@@ -865,18 +883,22 @@ const transitTimeStats = [
 .cp-view-more:hover { color: var(--green-dark); }
 
 /* ── Weather ──────────────────────────────────────────────────────────── */
-.cp-weather-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
+.cp-weather-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; margin: 0 -6px; border-radius: 8px; border-bottom: 1px solid var(--surface-low); transition: background-color .12s ease; }
+.cp-weather-row:hover { background-color: var(--surface-low); }
 .cp-weather-row:last-child { border-bottom: none; }
 .cp-weather-icon { width: 30px; height: 30px; border-radius: 8px; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
 .cp-weather-temp { font-size: .875rem; font-weight: 800; color: var(--on-surface); flex-shrink: 0; }
 
 /* ── Table ────────────────────────────────────────────────────────────── */
-.cp-table thead th { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.cp-table tbody td { padding: 9px 12px; font-size: .8125rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.cp-table thead th { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.cp-table tbody td { padding: 10px 12px; font-size: .8125rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .cp-table tbody tr:last-child td { border-bottom: none; }
+.cp-table tbody tr { transition: background-color .12s ease; }
+.cp-table tbody tr:hover td { background-color: var(--surface-low); }
 
 /* ── Hotspot / list rows ──────────────────────────────────────────────── */
-.cp-hotspot-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
+.cp-hotspot-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 6px; margin: 0 -6px; border-radius: 8px; border-bottom: 1px solid var(--surface-low); transition: background-color .12s ease; }
+.cp-hotspot-row:hover { background-color: var(--surface-low); }
 .cp-hotspot-row:last-child { border-bottom: none; }
 .cp-hotspot-trend { font-size: .8125rem; font-weight: 800; white-space: nowrap; }
 
