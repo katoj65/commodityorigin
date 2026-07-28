@@ -66,6 +66,22 @@ class MarketController extends Controller
     }
 
     /**
+     * Display seller coffee offers for the market to browse and respond to.
+     */
+    public function offers(): Response
+    {
+        return Inertia::render('Market/OfferPage', [
+            'orders' => OrderResource::collection(
+                $this->orders->query()
+                    ->with(['buyer', 'seller'])
+                    ->where('type', 'offer')
+                    ->latest()
+                    ->get(),
+            )->resolve(),
+        ]);
+    }
+
+    /**
      * Display the market intelligence briefing.
      */
     public function marketIntelligence(): Response

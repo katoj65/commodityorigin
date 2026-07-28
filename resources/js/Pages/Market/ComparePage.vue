@@ -1,12 +1,12 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { Bar } from 'vue-chartjs';
 import {
     Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend,
 } from 'chart.js';
 import {
-    Search, Tickets, TrendCharts, Coin, Grid, DataAnalysis,
+    Search, Tickets, TrendCharts, Coin, Grid, DataAnalysis, Location, Box,
 } from '@element-plus/icons-vue';
 import MarketPage from './MarketPage.vue';
 
@@ -73,6 +73,17 @@ const chartOptions = {
         y: { grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: '#111827' } },
     },
 };
+
+/* ── Pagination ───────────────────────────────────────────────────────── */
+const currentPage = ref(1);
+const pageSize = ref(25);
+
+const pagedProducers = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value;
+    return selectedProducers.value.slice(start, start + pageSize.value);
+});
+
+watch(selectedProducers, () => { currentPage.value = 1; });
 </script>
 
 <template>
@@ -132,7 +143,7 @@ const chartOptions = {
 
                     <div class="man-analytics-grid">
                         <!-- ── Picker ───────────────────────────────────── -->
-                        <div class="man-panel man-aside-card man-picker-card">
+                        <div class="man-panel man-picker-card">
                             <div class="man-card-title mb-3">Select Countries</div>
                             <div class="cmp-search-wrap mb-2">
                                 <el-icon class="cmp-search-icon"><Search /></el-icon>
@@ -169,33 +180,43 @@ const chartOptions = {
                     </div>
 
                     <div v-if="!selectedProducers.length" class="man-panel man-muted">No countries selected.</div>
-                    <div v-else class="man-panel man-table-card">
-                        <table class="man-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Country</th>
-                                    <th>Region</th>
-                                    <th>Annual Production</th>
-                                    <th>Global Share</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(p, i) in selectedProducers" :key="p.iso2">
-                                    <td class="man-muted">{{ i + 1 }}</td>
-                                    <td>
-                                        <span class="cmp-picker-flag">{{ p.flag_emoji }}</span>
-                                        <span class="man-breakdown-row__label">{{ p.name }}</span>
-                                    </td>
-                                    <td class="man-muted">{{ p.region }}</td>
-                                    <td>{{ fmtBags(p.coffee_production_bags) }}</td>
-                                    <td>
-                                        <span class="man-tone man-tone--green">{{ marketShare(p.coffee_production_bags) }}%</span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <template v-else>
+                        <el-table :data="pagedProducers" class="mkt-el-table" stripe>
+                            <el-table-column width="56">
+                                <template #default="{ row }">
+                                    <div class="mkt-thumb"><span class="mkt-thumb-flag">{{ row.flag_emoji }}</span></div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="Country" min-width="160">
+                                <template #header><el-icon class="mkt-th-icon"><Location /></el-icon>Country</template>
+                                <template #default="{ row }">
+                                    <div class="mkt-item-name">{{ row.name }}</div>
+                                    <div class="mkt-muted" style="font-size:.7rem;">{{ row.region }}</div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="Annual Production" min-width="150" align="right" header-align="left">
+                                <template #header><el-icon class="mkt-th-icon"><Box /></el-icon>Annual Production</template>
+                                <template #default="{ row }"><span class="mkt-num">{{ fmtBags(row.coffee_production_bags) }}</span></template>
+                            </el-table-column>
+                            <el-table-column label="Global Share" min-width="120" align="center">
+                                <template #header><el-icon class="mkt-th-icon"><TrendCharts /></el-icon>Global Share</template>
+                                <template #default="{ row }">
+                                    <span class="man-tone man-tone--green">{{ marketShare(row.coffee_production_bags) }}%</span>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+
+                        <div v-if="selectedProducers.length" class="mkt-pagination">
+                            <el-pagination
+                                v-model:current-page="currentPage"
+                                v-model:page-size="pageSize"
+                                :total="selectedProducers.length"
+                                :page-sizes="[25, 50, 100]"
+                                layout="total, sizes, prev, pager, next"
+                                background
+                            />
+                        </div>
+                    </template>
                 </section>
             </div>
         </div>
@@ -233,12 +254,10 @@ const chartOptions = {
 /* ── Panels / cards ──────────────────────────────────────────────────── */
 .man-panel { padding: 0; }
 .man-card-title { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
-.man-breakdown-row__label { font-size: .875rem; font-weight: 700; color: var(--on-surface); margin-left: 8px; }
 
 /* ── Analytics grid ──────────────────────────────────────────────────── */
 .man-analytics-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 1.5rem; align-items: stretch; }
 .man-chart-wrap { position: relative; height: 340px; }
-.man-aside-card { display: flex; flex-direction: column; border-left: 1px solid var(--border); padding-left: 1.25rem; }
 
 /* ── Country picker ──────────────────────────────────────────────────── */
 .man-picker-card { max-height: 400px; }
@@ -259,21 +278,53 @@ const chartOptions = {
 .man-tone::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .man-tone--green { background: #ecfdf5; color: #059669; }
 
-/* ── Table ───────────────────────────────────────────────────────────── */
-.man-table-card { overflow: hidden; }
-.man-table { width: 100%; border-collapse: collapse; font-size: .8125rem; }
-.man-table thead th { text-align: left; font-size: .6875rem; font-weight: 600; letter-spacing: .04em; color: var(--on-surface-var); background: var(--surface-low); padding: 10px 14px; }
-.man-table tbody td { padding: 9px 14px; border-top: 1px solid var(--surface-low); color: var(--on-surface); font-variant-numeric: tabular-nums; }
-.man-table tbody tr:hover td { background: var(--surface-low); }
+/* ── Element Plus table, reskinned to match the market design system ──── */
+.mkt-muted { color: var(--on-surface-var); }
+.mkt-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }
+.mkt-num { font-variant-numeric: tabular-nums; }
+.mkt-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; border-top: 1px solid var(--border); }
+.mkt-el-table :deep(.el-table__cell) { padding: 11px 0; }
+.mkt-el-table :deep(.cell) { padding: 0 12px; font-size: .8125rem; line-height: 1.45; }
+.mkt-el-table :deep(th.el-table__cell) { font-size: .6875rem; font-weight: 600; letter-spacing: .04em; }
+.mkt-el-table :deep(th.el-table__cell .cell) { display: flex; align-items: center; white-space: nowrap; }
+.mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.5rem; }
+.mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.5rem; }
+.mkt-el-table :deep(.el-table__inner-wrapper::before) { display: none; }
+.mkt-el-table :deep(.el-table__body td.el-table__cell) { transition: background-color .12s ease; }
+.mkt-el-table :deep(.el-table__body tr.el-table__row--striped td.el-table__cell) { background: #fafaf9; }
+.mkt-el-table :deep(.el-table__body tr:hover > td.el-table__cell) { background: var(--el-table-row-hover-bg-color); }
+.mkt-th-icon { width: 14px; height: 14px; margin-right: 5px; color: var(--green); opacity: .8; }
+
+.mkt-thumb { width: 32px; height: 32px; border-radius: 9px; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #f1e6d8; border: 1px solid #e6d5bf; }
+.mkt-thumb-flag { font-size: 1.0625rem; line-height: 1; }
+
+.mkt-pagination { padding: 1rem 1.5rem 0; border-top: 1px solid var(--border); margin-top: .5rem; }
+.mkt-pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; font-family: inherit; }
+.mkt-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: .8125rem; font-weight: 600; color: var(--on-surface-var); }
+.mkt-pagination :deep(.el-pagination__sizes) { margin-right: 4px; }
+.mkt-pagination :deep(.el-select__wrapper) { border-radius: 8px; box-shadow: 0 0 0 1px var(--border) inset; min-height: 32px; font-size: .75rem; }
+.mkt-pagination :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 1px var(--green) inset; }
+.mkt-pagination :deep(.btn-prev),
+.mkt-pagination :deep(.btn-next) { width: 32px; height: 32px; border-radius: 9px; background: #fff; border: 1px solid var(--border); color: var(--on-surface-var); transition: all .15s ease; }
+.mkt-pagination :deep(.btn-prev:hover:not(:disabled)),
+.mkt-pagination :deep(.btn-next:hover:not(:disabled)) { border-color: var(--green); color: var(--green); background: #f0f5f3; }
+.mkt-pagination :deep(.el-pager) { display: flex; align-items: center; gap: 4px; }
+.mkt-pagination :deep(.el-pager li) { min-width: 32px; height: 32px; border-radius: 9px; background: #fff; border: 1px solid var(--border); color: var(--on-surface); font-size: .8125rem; font-weight: 600; transition: all .15s ease; }
+.mkt-pagination :deep(.el-pager li:hover) { border-color: var(--green); color: var(--green); background: #f0f5f3; }
+.mkt-pagination :deep(.el-pager li.is-active) { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 2px 6px rgba(0, 69, 50, .25); }
 
 @media (max-width: 991.98px) {
     .man-analytics-grid { grid-template-columns: 1fr; }
-    .man-aside-card { border-left: none; padding-left: 0; border-top: 1px solid var(--border); padding-top: 1.25rem; }
     .man-picker-card { max-height: none; }
 }
 
 @media (max-width: 767.98px) {
     .mkt-section__head { padding: 0 1.25rem; }
     .man-content { padding: 0 1.25rem; }
+    .mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.25rem; }
+    .mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.25rem; }
+    .mkt-pagination { padding: 1rem 1.25rem 0; }
+    .mkt-pagination :deep(.el-pagination) { justify-content: center; }
+    .mkt-pagination :deep(.el-pagination__total) { margin-right: 0; width: 100%; text-align: center; order: -1; }
 }
 </style>

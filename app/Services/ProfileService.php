@@ -86,4 +86,15 @@ class ProfileService
 
         return $userRole;
     }
+
+    /**
+     * Set the account type ("personal" or "business") a user picked while
+     * completing their profile — written directly onto users.role.
+     */
+    public function setAccountType(User $user, string $type): User
+    {
+        $user->forceFill(['role' => $type])->save();
+
+        return $user;
+    }
 }

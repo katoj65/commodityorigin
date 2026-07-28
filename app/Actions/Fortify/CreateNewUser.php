@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Services\WalletService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -12,6 +13,10 @@ use Laravel\Jetstream\Jetstream;
 class CreateNewUser implements CreatesNewUsers
 {
     use PasswordValidationRules;
+
+    public function __construct(private readonly WalletService $wallets)
+    {
+    }
 
     /**
      * Validate and create a newly registered user.
@@ -29,7 +34,7 @@ class CreateNewUser implements CreatesNewUsers
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
         ])->validate();
 
-        return User::create([
+        $user = User::create([
             'first_name' => $input['first_name'],
             'last_name'  => $input['last_name'],
             'role'       => 'user', // Ensure your middleware allows this role
@@ -38,5 +43,9 @@ class CreateNewUser implements CreatesNewUsers
             'password'   => Hash::make($input['password']),
             'email_verified_at' => now(), // Auto-verify since feature is off in config
         ]);
+
+        $this->wallets->ensureForUser($user->id);
+
+        return $user;
     }
 }

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AuctionResource;
 use App\Http\Resources\CalendarResource;
+use App\Services\AuctionListingService;
 use App\Services\AuctionService;
 use App\Services\CalendarService;
 use Illuminate\Http\Request;
@@ -15,6 +17,7 @@ class AuctionController extends Controller
     public function __construct(
         private readonly AuctionService $auctions,
         private readonly CalendarService $calendar,
+        private readonly AuctionListingService $auctionListings,
     ) {
     }
 
@@ -29,21 +32,8 @@ class AuctionController extends Controller
                 $this->calendar->eventsForUser($request->user()->id),
             )->resolve(),
             'featuredLots' => $this->auctions->featuredLots(),
+            'auctionItems' => AuctionResource::collection($this->auctionListings->all())->resolve(),
             'liveBids' => $this->auctions->liveBidFeed(),
-            'upcomingLots' => $this->auctions->draftLots()->map(fn ($lot) => [
-                'id' => $lot->id,
-                'lot_number' => $lot->lot_number,
-                'origin' => $lot->batch?->warehouse_location,
-                'grower' => $lot->user?->name,
-                'listed_ago' => optional($lot->created_at)?->diffForHumans(),
-            ])->values()->all(),
-            'lotExplorer' => $this->auctions->lotExplorer(),
-            'qualityProfiles' => $this->auctions->qualityProfiles(),
-            'analytics' => $this->auctions->analytics(),
-            'originIntelligence' => $this->auctions->originIntelligence(),
-            'aiIntelligence' => $this->auctions->aiIntelligence(),
-            'leaderboard' => $this->auctions->leaderboard(),
-            'lotDetails' => $this->auctions->lotDetails(),
         ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Agent;
+use App\Models\AgentFunction;
 use App\Models\AgentSubscription;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
@@ -65,6 +66,16 @@ class AgentService
     }
 
     /**
+     * Add a new function to an agent.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createFunction(Agent $agent, array $data): AgentFunction
+    {
+        return $agent->functions()->create($data);
+    }
+
+    /**
      * Get a base query builder for agent subscriptions.
      */
     public function subscriptionQuery(): Builder
@@ -103,6 +114,34 @@ class AgentService
         return AgentSubscription::query()
             ->where('user_id', $userId)
             ->pluck('agent_id')
+            ->all();
+    }
+
+    /**
+     * Get the agents a user is subscribed to, shaped for display (id + name).
+     *
+     * @return array<int, array{id: int, name: string}>
+     */
+    public function subscribedAgentsForUser(int $userId): array
+    {
+        return AgentSubscription::query()
+            ->where('user_id', $userId)
+            ->with(['agent:id,name,icon', 'agent.functions:id,agent_id,name,icon,description'])
+            ->get()
+            ->pluck('agent')
+            ->filter()
+            ->map(fn (Agent $agent): array => [
+                'id' => $agent->id,
+                'name' => $agent->name,
+                'icon' => $agent->icon,
+                'functions' => $agent->functions->map(fn (AgentFunction $function): array => [
+                    'id' => $function->id,
+                    'name' => $function->name,
+                    'icon' => $function->icon,
+                    'description' => $function->description,
+                ])->values()->all(),
+            ])
+            ->values()
             ->all();
     }
 

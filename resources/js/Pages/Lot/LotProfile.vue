@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Link } from '@inertiajs/vue3';
 import {
@@ -33,12 +33,6 @@ const props = defineProps({
     harvests: { type: Array, default: () => [] },
     relatedLots: { type: Array, default: () => [] },
 });
-
-const chatOpen = ref(false);
-const chatInput = ref('');
-const chatMessages = ref([
-    { role: 'assistant', text: 'Hi! I\'m the Bean Origin Lot Advisor. How can I help you evaluate this lot?' },
-]);
 
 const fmt = (v, d = 0) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -132,27 +126,7 @@ const timeline = [
     { label: 'Trade activity',     date: 'Pending',     done: false },
 ];
 
-const suggestedPrompts = [
-    'Is this lot worth buying?',
-    'What price should I bid?',
-    'Is this lot export ready?',
-    'Which market is best?',
-];
 
-const sendChat = () => {
-    const text = chatInput.value.trim();
-    if (!text) return;
-    chatMessages.value.push({ role: 'user', text });
-    chatInput.value = '';
-    setTimeout(() => {
-        chatMessages.value.push({
-            role: 'assistant',
-            text: 'Based on the quality score and market data, this lot looks highly competitive for the UAE specialty market. Would you like a detailed breakdown?',
-        });
-    }, 800);
-};
-
-const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 </script>
 
 <template>
@@ -198,7 +172,8 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                             </button>
                         </div>
                     </div>
-                    <!-- Coffee photo -->
+                    <!-- Coffee photo + trace QR -->
+                    <div class="lp-hero__media">
                     <div class="lp-hero__photo">
                         <img :src="lot.image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVNPRKcnvtgsayf1-HlE1xA92LWW1C56Io3VMreh4aujnZTgd7RVNEZOyEqFGcffC6O3JdFFEczJbLDdWYhY3SPZ_97Ep-mSdEA6EpSHOYxQ4YC-9rWllkkDGEgrkRhX8fdY9yD34FR8UBs42K4RgVHEi6OXDt4QvP-hJgG1uWAZlyFMQ7HCYg9NcS7oQW5HysDvCK3FiXBDRpfkupmdW5tIy7o5GV8ZL8feaXnYtU6ZpDEAJvS_XKRffdezzJJCSUQeF2AHlDDapn'" :alt="lotName" class="lp-hero__photo-img" />
                     </div>
@@ -248,6 +223,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                             </svg>
                             <p class="lp-qr-id">{{ lotNumber }}</p>
                         </div>
+                    </div>
                     </div>
                 </div>
 
@@ -464,7 +440,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                             <text x="180" y="68"  text-anchor="start"  class="lp-radar-lbl">Acidity</text>
                                             <text x="180" y="136" text-anchor="start"  class="lp-radar-lbl">Body</text>
                                             <text x="100" y="194" text-anchor="middle" class="lp-radar-lbl">Aftertaste</text>
-                                            <text x="20"  cy="136" text-anchor="end"   class="lp-radar-lbl">Balance</text>
+                                            <text x="20"  y="136" text-anchor="end"   class="lp-radar-lbl">Balance</text>
                                             <text x="20"  y="68"  text-anchor="end"    class="lp-radar-lbl">Flavor</text>
                                         </svg>
                                     </div>
@@ -744,36 +720,15 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
             </section>
         </div>
 
-        <!-- ── Floating Chatbot ──────────────────────────────────────────── -->
-        <button class="lp-fab" @click="chatOpen = !chatOpen" aria-label="Open Lot Advisor">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-        </button>
-
-        <div v-if="chatOpen" class="lp-chat-panel">
-            <div class="lp-chat-panel__head">
-                <span>Bean Origin Lot Advisor</span>
-                <button class="lp-chat-panel__close" @click="chatOpen = false" aria-label="Close">&#x2715;</button>
+        <!-- ── Sticky mobile buy bar ────────────────────────────────────── -->
+        <div class="lp-mobile-cta">
+            <div class="lp-mobile-cta__price">
+                <span>Price / kg</span>
+                <strong>Shs. {{ pricePerKg }}</strong>
             </div>
-            <div class="lp-chat-panel__msgs">
-                <div v-for="(msg, i) in chatMessages" :key="i"
-                    class="lp-msg"
-                    :class="msg.role === 'user' ? 'lp-msg--user' : 'lp-msg--bot'">
-                    {{ msg.text }}
-                </div>
-            </div>
-            <div class="lp-chat-panel__prompts">
-                <button v-for="p in suggestedPrompts" :key="p" class="lp-prompt-btn" @click="usePrompt(p)">{{ p }}</button>
-            </div>
-            <div class="lp-chat-panel__input">
-                <input v-model="chatInput" class="lp-chat-input" placeholder="Ask about this lot…" @keydown.enter="sendChat"/>
-                <button class="lp-chat-send" @click="sendChat" aria-label="Send">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                    </svg>
-                </button>
-            </div>
+            <Link href="/checkout" class="lp-btn lp-btn--primary lp-mobile-cta__buy">
+                <el-icon><ShoppingCart /></el-icon> Buy Now
+            </Link>
         </div>
 
     </AppLayout>
@@ -822,6 +777,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     gap: 2.5rem;
 }
 .lp-hero__left { flex: 1; min-width: 0; }
+.lp-hero__media { flex-shrink: 0; display: flex; align-items: flex-start; gap: 1rem; }
 .lp-hero__right { flex-shrink: 0; display: flex; flex-direction: column; gap: 1rem; align-items: center; }
 
 /* Hero tags */
@@ -1260,9 +1216,10 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .lp-qi-score { text-align: right; flex-shrink: 0; }
 .lp-qi-score__num {
     display: block;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 1.625rem;
-    font-weight: 900;
-    letter-spacing: -0.03em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     color: var(--primary);
     line-height: 1;
 }
@@ -1306,9 +1263,10 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     gap: 2px;
 }
 .lp-cupping-total__num {
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 2.25rem;
-    font-weight: 900;
-    letter-spacing: -0.03em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     color: var(--primary);
     line-height: 1;
 }
@@ -1404,7 +1362,8 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     color: var(--on-surface-var); text-transform: uppercase; margin-bottom: 0.75rem;
 }
 .lp-trade-card__price {
-    font-size: 1.125rem; font-weight: 800; color: var(--on-surface); letter-spacing: -0.01em;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.125rem; font-weight: 700; color: var(--on-surface); letter-spacing: -0.01em;
 }
 .lp-trade-card__price small { font-size: 0.75rem; font-weight: 500; color: var(--on-surface-var); }
 .lp-trade-card__meta { font-size: 0.75rem; color: var(--on-surface-var); margin-top: 4px; }
@@ -1475,7 +1434,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 /* ── Market ───────────────────────────────────────────────────────────────── */
 .lp-market-hero { margin-bottom: 1rem; }
 .lp-market-hero span   { display: block; font-size: 0.75rem; color: var(--on-surface-var); margin-bottom: 4px; }
-.lp-market-hero strong { display: block; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; color: var(--on-surface); }
+.lp-market-hero strong { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; color: var(--on-surface); }
 .lp-chart-wrap { background: var(--surface-low); border-radius: 0.5rem; padding: 12px 8px 6px; margin-bottom: 1.25rem; }
 .lp-chart-labels {
     display: flex; justify-content: space-between;
@@ -1544,77 +1503,8 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .lp-related-row__data strong { display: block; font-size: 0.8125rem; font-weight: 700; }
 .lp-related-row__data span   { display: block; font-size: 0.6875rem; color: var(--on-surface-var); }
 
-/* ── Floating chatbot ─────────────────────────────────────────────────────── */
-.lp-fab {
-    position: fixed; bottom: 28px; right: 28px; z-index: 300;
-    width: 52px; height: 52px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
-    color: var(--on-primary);
-    border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 8px 24px rgba(0, 69, 50, 0.32);
-    transition: opacity 0.15s ease;
-}
-.lp-fab:hover { opacity: 0.9; }
-
-.lp-chat-panel {
-    position: fixed; bottom: 92px; right: 28px; z-index: 300;
-    width: 320px; border-radius: 0.75rem;
-    background: rgba(247, 249, 251, 0.92);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 20px 40px rgba(25, 28, 30, 0.12);
-    display: flex; flex-direction: column; overflow: hidden;
-    max-height: 480px;
-}
-.lp-chat-panel__head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 18px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
-    color: var(--on-primary);
-    font-size: 0.8125rem; font-weight: 700;
-}
-.lp-chat-panel__close {
-    background: none; border: none; color: var(--on-primary);
-    cursor: pointer; font-size: 14px; padding: 0; line-height: 1;
-}
-.lp-chat-panel__msgs {
-    flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;
-}
-.lp-msg {
-    border-radius: 10px; font-size: 0.8125rem; line-height: 1.55;
-    max-width: 88%; padding: 10px 14px;
-}
-.lp-msg--bot  { background: var(--surface-white); color: var(--on-surface); align-self: flex-start; }
-.lp-msg--user { background: linear-gradient(135deg, var(--primary), var(--primary-grad)); color: var(--on-primary); align-self: flex-end; }
-.lp-chat-panel__prompts {
-    display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px;
-    background: var(--surface-low);
-}
-.lp-prompt-btn {
-    background: var(--surface-white); color: var(--primary);
-    border: none; border-radius: 999px;
-    font-size: 0.6875rem; font-weight: 700; font-family: 'Manrope', sans-serif;
-    padding: 5px 12px; cursor: pointer;
-    transition: background 0.12s ease;
-}
-.lp-prompt-btn:hover { background: var(--primary-fixed); color: var(--on-primary-fixed); }
-.lp-chat-panel__input {
-    display: flex; gap: 8px; padding: 12px 14px; background: var(--surface-white);
-}
-.lp-chat-input {
-    flex: 1; background: var(--surface-low); border: none; border-radius: 6px;
-    color: var(--on-surface); font-size: 0.8125rem; font-family: 'Manrope', sans-serif;
-    padding: 9px 12px; outline: none;
-    transition: background 0.15s ease;
-}
-.lp-chat-input:focus { background: var(--surface-high); }
-.lp-chat-send {
-    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
-    color: var(--on-primary); border: none; border-radius: 6px;
-    width: 36px; height: 36px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
+/* ── Sticky mobile buy bar (hidden above the mobile breakpoint) ──────────── */
+.lp-mobile-cta { display: none; }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
@@ -1658,11 +1548,15 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 @media (max-width: 640px) {
     .lp-root { --inner-pad: 1rem; }
 
-    /* Hero — stack vertically, hide photo/score panels */
+    /* Hero — stack vertically; photo + QR shrink into a compact row instead of disappearing */
     .lp-hero { padding: 1.25rem 0 0; }
     .lp-hero__inner { flex-direction: column; gap: 1rem; padding-bottom: 1.25rem; }
-    .lp-hero__right { display: none; }
-    .lp-hero__photo { display: none; }
+    .lp-hero__media { width: 100%; }
+    .lp-hero__photo { width: 84px; height: 84px; }
+    .lp-hero__right { align-items: flex-start; }
+    .lp-qr-block { flex-direction: row; width: auto; padding: 0.625rem 0.875rem; gap: 10px; }
+    .lp-qr-svg { width: 44px; height: 44px; }
+    .lp-qr-label { display: none; }
     .lp-hero__title { font-size: 1.5rem; margin-bottom: 0.5rem; }
     .lp-hero__sub { font-size: 0.8125rem; gap: 4px; }
     .lp-hero__actions {
@@ -1731,9 +1625,20 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     .lp-related-row { flex-wrap: wrap; gap: 6px; }
     .lp-related-row__data { text-align: left; }
 
-    /* Chat */
-    .lp-chat-panel { right: 0; left: 0; bottom: 0; width: 100%; border-radius: 1rem 1rem 0 0; max-height: 70vh; }
-    .lp-fab { right: 16px; bottom: 20px; }
+    /* Sticky mobile buy bar */
+    .lp-root { padding-bottom: 4.5rem; }
+    .lp-mobile-cta {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 250;
+        background: var(--surface-white);
+        border-top: 1px solid var(--surface-high);
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+        box-shadow: 0 -4px 16px rgba(25, 28, 30, 0.08);
+    }
+    .lp-mobile-cta__price { display: flex; flex-direction: column; line-height: 1.25; }
+    .lp-mobile-cta__price span { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-var); }
+    .lp-mobile-cta__price strong { font-family: 'IBM Plex Mono', monospace; font-size: 1rem; font-weight: 700; color: var(--on-surface); }
+    .lp-mobile-cta__buy { flex-shrink: 0; margin: 0; }
 }
 
 /* Small mobile */

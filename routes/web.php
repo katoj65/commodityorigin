@@ -56,13 +56,14 @@ Route::middleware([
     Route::prefix('apps')->name('apps.')->group(function () {
         Route::get('/', [AgentController::class, 'index'])->name('index');
         Route::post('/', [AgentController::class, 'store'])->name('store');
+    });
+
+    // Agent details, management (admin only), and subscriptions.
+    Route::prefix('agent')->name('agent.')->group(function () {
         Route::get('/{agent}', [AgentController::class, 'show'])->name('show');
         Route::patch('/{agent}', [AgentController::class, 'update'])->name('update');
         Route::delete('/{agent}', [AgentController::class, 'destroy'])->name('destroy');
-    });
-
-    // Agent subscriptions.
-    Route::prefix('agent')->name('agent.')->group(function () {
+        Route::post('/{agent}/functions', [AgentController::class, 'storeFunction'])->name('functions.store');
         Route::post('/{agent}/subscribe', [AgentController::class, 'userSubscription'])->name('subscribe');
         Route::delete('/{agent}/subscribe', [AgentController::class, 'unsubscribe'])->name('unsubscribe');
     });
@@ -267,6 +268,7 @@ Route::middleware([
         Route::get('/analysis', [MarketController::class, 'analyseMarket'])->name('analysis');
         Route::get('/request', [MarketController::class, 'request'])->name('request');
         Route::get('/compare', [MarketController::class, 'compareCountries'])->name('compare');
+        Route::get('/offer', [MarketController::class, 'offers'])->name('offer');
     });
 
     // Buyer workspace routes.
@@ -286,8 +288,7 @@ Route::middleware([
         Route::get('/', [SellController::class, 'index'])->name('index');
     });
 
-    Route::get('/sell-coffee', [SellController::class, 'sellCoffee'])->name('seller.sell-coffee')->middleware('role:farmer,admin');
-    Route::post('/sell-coffee', [SellController::class, 'storeSell'])->name('seller.sell-coffee.store')->middleware('role:farmer,admin');
+    Route::get('/sell-coffee', [SellController::class, 'sellCoffee'])->name('seller.sell-coffee');
 
     // Analysis workspace routes.
     Route::prefix('analysis')->name('analysis.')->middleware('role:investor,admin')->group(function () {

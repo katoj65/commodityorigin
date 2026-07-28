@@ -687,27 +687,38 @@ const currencyChartData = computed(() => ({
                                 <p class="man-section__desc">Origin-to-destination volume, derived from live listings.</p>
                             </div>
                         </div>
-                        <div class="man-panel man-table-card">
-                            <table class="man-table">
-                                <thead>
-                                    <tr><th>Origin</th><th>Destination</th><th>Listings</th><th>Volume</th><th>Avg Price</th></tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(f, i) in intel.tradeFlows" :key="i">
-                                        <td>{{ f.origin }}</td>
-                                        <td>{{ f.destination }}</td>
-                                        <td>{{ f.listings }}</td>
-                                        <td>
-                                            <div class="man-table-bar-wrap">
-                                                <span>{{ fmtNum(f.volume_kg) }} kg</span>
-                                                <div class="man-bar-track man-table-bar"><div class="man-bar-fill" :style="{ width: (f.volume_kg / maxTradeFlowVolume * 100) + '%' }"></div></div>
-                                            </div>
-                                        </td>
-                                        <td>{{ fmtPrice(f.average_price) }}/kg</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        <el-table :data="intel.tradeFlows" class="mkt-el-table" stripe empty-text="No trade flows yet.">
+                            <el-table-column width="56">
+                                <template #default>
+                                    <div class="mkt-thumb"><el-icon><Ship /></el-icon></div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="Origin" min-width="140">
+                                <template #header><el-icon class="mkt-th-icon"><Location /></el-icon>Origin</template>
+                                <template #default="{ row }"><span class="mkt-item-name">{{ row.origin }}</span></template>
+                            </el-table-column>
+                            <el-table-column label="Destination" min-width="140">
+                                <template #header><el-icon class="mkt-th-icon"><Ship /></el-icon>Destination</template>
+                                <template #default="{ row }">{{ row.destination }}</template>
+                            </el-table-column>
+                            <el-table-column label="Listings" min-width="100" align="right" header-align="left">
+                                <template #header><el-icon class="mkt-th-icon"><Tickets /></el-icon>Listings</template>
+                                <template #default="{ row }"><span class="mkt-num">{{ row.listings }}</span></template>
+                            </el-table-column>
+                            <el-table-column label="Volume" min-width="160" align="right" header-align="left">
+                                <template #header><el-icon class="mkt-th-icon"><Box /></el-icon>Volume</template>
+                                <template #default="{ row }">
+                                    <div class="man-table-bar-wrap">
+                                        <span class="mkt-num">{{ fmtNum(row.volume_kg) }} kg</span>
+                                        <div class="man-bar-track man-table-bar"><div class="man-bar-fill" :style="{ width: (row.volume_kg / maxTradeFlowVolume * 100) + '%' }"></div></div>
+                                    </div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="Avg Price" min-width="110" align="right" header-align="left">
+                                <template #header><el-icon class="mkt-th-icon"><Coin /></el-icon>Avg Price</template>
+                                <template #default="{ row }"><span class="mkt-num">{{ fmtPrice(row.average_price) }}/kg</span></template>
+                            </el-table-column>
+                        </el-table>
                     </section>
 
                     <!-- ══ 15. Top Buyers ═══════════════════════════════ -->
@@ -916,13 +927,27 @@ const currencyChartData = computed(() => ({
 .man-rate-card__pair { font-size: .75rem; font-weight: 700; color: var(--on-surface-var); margin-bottom: 6px; }
 .man-rate-card__value { font-family: 'IBM Plex Mono', monospace; font-size: 1.25rem; font-weight: 700; color: var(--on-surface); margin-bottom: 8px; }
 
-/* ── Trade flows table ───────────────────────────────────────────────── */
-.man-table-card { padding: 0; overflow: hidden; }
-.man-table { width: 100%; border-collapse: collapse; font-size: .8125rem; }
-.man-table thead th { text-align: left; font-size: .6875rem; font-weight: 600; letter-spacing: .04em; color: var(--on-surface-var); background: var(--surface-low); padding: 10px 14px; }
-.man-table tbody td { padding: 9px 14px; border-top: 1px solid var(--surface-low); color: var(--on-surface); transition: background-color .12s ease; font-variant-numeric: tabular-nums; }
-.man-table tbody tr:hover td { background: var(--surface-low); }
-.man-table-bar-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 110px; }
+/* ── Element Plus table, reskinned to match the market design system ──── */
+.mkt-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }
+.mkt-num { font-variant-numeric: tabular-nums; }
+.mkt-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; border-top: 1px solid var(--border); }
+.mkt-el-table :deep(.el-table__cell) { padding: 11px 0; }
+.mkt-el-table :deep(.cell) { padding: 0 12px; font-size: .8125rem; line-height: 1.45; }
+.mkt-el-table :deep(th.el-table__cell) { font-size: .6875rem; font-weight: 600; letter-spacing: .04em; }
+.mkt-el-table :deep(th.el-table__cell .cell) { display: flex; align-items: center; white-space: nowrap; }
+.mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.5rem; }
+.mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.5rem; }
+.mkt-el-table :deep(.el-table__inner-wrapper::before) { display: none; }
+.mkt-el-table :deep(.el-table__body td.el-table__cell) { transition: background-color .12s ease; }
+.mkt-el-table :deep(.el-table__body tr.el-table__row--striped td.el-table__cell) { background: #fafaf9; }
+.mkt-el-table :deep(.el-table__body tr:hover > td.el-table__cell) { background: var(--el-table-row-hover-bg-color); }
+.mkt-el-table :deep(.el-table__empty-block) { min-height: 120px; }
+.mkt-el-table :deep(.el-table__empty-text) { color: var(--on-surface-var); font-size: .8125rem; }
+.mkt-th-icon { width: 14px; height: 14px; margin-right: 5px; color: var(--green); opacity: .8; }
+
+.mkt-thumb { width: 32px; height: 32px; border-radius: 9px; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: rgba(0,69,50,0.08); color: var(--green); font-size: 14px; }
+
+.man-table-bar-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 110px; }
 .man-table-bar { width: 100%; }
 
 /* ── News rows ───────────────────────────────────────────────────────── */

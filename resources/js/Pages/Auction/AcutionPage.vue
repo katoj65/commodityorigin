@@ -1,35 +1,21 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { Radar, Bar, Doughnut } from 'vue-chartjs';
+import { computed, ref } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
 import {
-    Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement,
-    RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend,
-} from 'chart.js';
-import {
-    Search, MagicStick, DataAnalysis, TrendCharts, Coin, Box, UserFilled,
-    Filter, Download, Grid, PieChart, Trophy, Medal, CircleCheck, Clock,
-    Close, View, Star, Picture,
-    InfoFilled, Refresh, Aim,
+    Search, MagicStick, TrendCharts, Coin, Box, UserFilled,
+    Grid, Trophy, Medal, CircleCheck, Clock,
+    View, Star,
+    InfoFilled,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Calendar from '@/Components/Calendar.vue';
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
 const props = defineProps({
     overview: { type: Object, default: () => ({}) },
     calendarEvents: { type: Array, default: () => [] },
     featuredLots: { type: Array, default: () => [] },
+    auctionItems: { type: Array, default: () => [] },
     liveBids: { type: Array, default: () => [] },
-    upcomingLots: { type: Array, default: () => [] },
-    lotExplorer: { type: Array, default: () => [] },
-    qualityProfiles: { type: Array, default: () => [] },
-    analytics: { type: Object, default: () => ({ top_origins: [], bids_per_lot: [], status_volume: [] }) },
-    originIntelligence: { type: Array, default: () => [] },
-    aiIntelligence: { type: Object, default: () => ({ has_data: false }) },
-    leaderboard: { type: Object, default: () => ({ top_buyers: [], top_sellers: [], most_active_origins: [] }) },
-    lotDetails: { type: Array, default: () => [] },
 });
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -47,29 +33,12 @@ function scrollTo(id) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function exportReport() {
-    const rows = [
-        ['Lot ID', 'Origin', 'Region', 'Grower', 'Variety', 'Grade', 'Cup Score', 'Quantity (kg)', 'Reserve Price', 'Current Bid', 'Status'],
-        ...props.lotExplorer.map((r) => [r.lot_number, r.origin, r.region, r.grower, r.variety, r.grade, r.cup_score, r.net_weight_kg, r.reserve_price, r.current_bid ?? '', r.status]),
-    ];
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'auction-report.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
 const quickActions = [
-    { label: 'Browse Auctions', icon: Grid, action: () => scrollTo('auc-explorer') },
-    { label: 'Compare Lots', icon: DataAnalysis, action: () => { compareMode.value = !compareMode.value; } },
-    { label: 'Export Report', icon: Download, action: exportReport },
+    { label: 'Browse Auctions', icon: Grid, action: () => scrollTo('auc-items') },
 ];
 
 /* ══════════════════════════════════════════════════════════════════════
-   Watch / compare state (session-only — not persisted to the backend)
+   Watch state (session-only — not persisted to the backend)
    ══════════════════════════════════════════════════════════════════════ */
 const watched = ref(new Set());
 function toggleWatch(id) {
@@ -78,106 +47,13 @@ function toggleWatch(id) {
     watched.value = next;
 }
 
-const compareMode = ref(false);
-const compareSet = ref(new Set());
-function toggleCompare(id) {
-    const next = new Set(compareSet.value);
-    next.has(id) ? next.delete(id) : next.add(id);
-    compareSet.value = next;
-}
-const compareLots = computed(() => props.lotExplorer.filter((r) => compareSet.value.has(r.id)));
-
 /* ══════════════════════════════════════════════════════════════════════
-   Right sidebar filters — applied client-side to the lot explorer
+   Hot lots — the most contested live lots, ranked by bidder count
    ══════════════════════════════════════════════════════════════════════ */
-const filters = reactive({ origin: '', variety: '', process: '', grade: '', status: '', minCupScore: '' });
-
-const filterOptions = computed(() => ({
-    origins: [...new Set(props.lotExplorer.map((r) => r.origin).filter(Boolean))],
-    varieties: [...new Set(props.lotExplorer.map((r) => r.variety).filter(Boolean))],
-    processes: [...new Set(props.lotExplorer.map((r) => r.process).filter(Boolean))],
-    grades: [...new Set(props.lotExplorer.map((r) => r.grade).filter(Boolean))],
-    statuses: [...new Set(props.lotExplorer.map((r) => r.status).filter(Boolean))],
-}));
-
-const explorerSearch = ref('');
-
-const filteredExplorer = computed(() => props.lotExplorer.filter((r) => {
-    if (filters.origin && r.origin !== filters.origin) return false;
-    if (filters.variety && r.variety !== filters.variety) return false;
-    if (filters.process && r.process !== filters.process) return false;
-    if (filters.grade && r.grade !== filters.grade) return false;
-    if (filters.status && r.status !== filters.status) return false;
-    if (filters.minCupScore && r.cup_score < Number(filters.minCupScore)) return false;
-    if (explorerSearch.value) {
-        const term = explorerSearch.value.toLowerCase();
-        const haystack = `${r.lot_number} ${r.origin} ${r.region} ${r.grower} ${r.variety}`.toLowerCase();
-        if (!haystack.includes(term)) return false;
-    }
-    return true;
-}));
-
-function resetFilters() {
-    filters.origin = ''; filters.variety = ''; filters.process = ''; filters.grade = ''; filters.status = ''; filters.minCupScore = '';
-    explorerSearch.value = '';
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   Quality intelligence — radar chart, switchable between live lots
-   ══════════════════════════════════════════════════════════════════════ */
-const selectedQualityLot = ref(props.qualityProfiles[0]?.lot_id ?? null);
-const selectedQualityProfile = computed(() => props.qualityProfiles.find((p) => p.lot_id === selectedQualityLot.value) ?? props.qualityProfiles[0]);
-
-const radarData = computed(() => {
-    const profile = selectedQualityProfile.value;
-    if (!profile) return { labels: [], datasets: [] };
-    return {
-        labels: profile.axes.map((a) => a.label),
-        datasets: [{
-            label: profile.lot_number,
-            data: profile.axes.map((a) => a.value),
-            backgroundColor: 'rgba(0,69,50,0.15)',
-            borderColor: '#004532',
-            pointBackgroundColor: '#004532',
-        }],
-    };
-});
-const radarOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, font: { size: 9 } }, pointLabels: { font: { size: 11, weight: '600' } } } },
-    plugins: { legend: { display: false } },
-};
-
-/* ══════════════════════════════════════════════════════════════════════
-   Analytics charts
-   ══════════════════════════════════════════════════════════════════════ */
-const originChartData = computed(() => ({
-    labels: props.analytics.top_origins.map((o) => o.label),
-    datasets: [{ label: 'Average Price', data: props.analytics.top_origins.map((o) => o.average_price), backgroundColor: '#004532', borderRadius: 6, maxBarThickness: 32 }],
-}));
-const bidsChartData = computed(() => ({
-    labels: props.analytics.bids_per_lot.map((b) => b.label),
-    datasets: [{ label: 'Bids', data: props.analytics.bids_per_lot.map((b) => b.bids), backgroundColor: '#c8862a', borderRadius: 6, maxBarThickness: 32 }],
-}));
-const statusChartData = computed(() => ({
-    labels: props.analytics.status_volume.map((s) => s.label),
-    datasets: [{ data: props.analytics.status_volume.map((s) => s.count), backgroundColor: ['#004532', '#c8862a', '#2563eb', '#dc2626', '#7c3aed'] }],
-}));
-const barOptions = {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: { x: { grid: { display: false }, ticks: { font: { size: 10 } } }, y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } } },
-};
-const doughnutOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 10 } } } } };
-
-/* ══════════════════════════════════════════════════════════════════════
-   Lot details modal
-   ══════════════════════════════════════════════════════════════════════ */
-const activeLotId = ref(null);
-const activeLot = computed(() => props.lotDetails.find((l) => l.id === activeLotId.value));
-function openLot(id) { activeLotId.value = id; }
-function closeLot() { activeLotId.value = null; }
+const hotLots = computed(() => [...props.featuredLots]
+    .filter((l) => l.bidder_count > 0)
+    .sort((a, b) => b.bidder_count - a.bidder_count || b.bid_count - a.bid_count)
+    .slice(0, 4));
 
 /* ══════════════════════════════════════════════════════════════════════
    Display helpers
@@ -185,9 +61,27 @@ function closeLot() { activeLotId.value = null; }
 const fmtMoney = (n) => (n != null ? Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—');
 const fmtNum = (n) => (n != null ? Number(n).toLocaleString() : '—');
 const cap = (s) => (s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : '—');
-const statusCls = (s) => ({
-    ready: 'auc-badge--green', listing_ready: 'auc-badge--green', tokenisation_ready: 'auc-badge--blue', draft: 'auc-badge--muted',
+
+const avatarPalette = ['#004532', '#c8862a', '#2563eb', '#7c3aed', '#0891b2', '#b45309'];
+function initials(name) {
+    if (!name) return '?';
+    const parts = String(name).trim().split(/\s+/);
+    return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?';
+}
+function avatarColor(name) {
+    const str = String(name ?? '');
+    const hash = [...str].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    return avatarPalette[hash % avatarPalette.length];
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Items under auction — element-plus table
+   ══════════════════════════════════════════════════════════════════════ */
+const auctionStatusCls = (s) => ({
+    live: 'auc-badge--green', pending: 'auc-badge--amber', sold: 'auc-badge--muted',
 }[s] ?? 'auc-badge--muted');
+
+const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >= 70 ? 'auc-badge--amber' : 'auc-badge--muted');
 </script>
 
 <template>
@@ -212,7 +106,7 @@ const statusCls = (s) => ({
                                 <Link v-if="qa.href" :href="qa.href" class="auc-qa-btn">
                                     <el-icon><component :is="qa.icon" /></el-icon> {{ qa.label }}
                                 </Link>
-                                <button v-else type="button" class="auc-qa-btn" :class="{ 'auc-qa-btn--active': qa.label === 'Compare Lots' && compareMode }" @click="qa.action">
+                                <button v-else type="button" class="auc-qa-btn" @click="qa.action">
                                     <el-icon><component :is="qa.icon" /></el-icon> {{ qa.label }}
                                 </button>
                             </template>
@@ -261,345 +155,65 @@ const statusCls = (s) => ({
                             </div>
                         </section>
 
-                        <!-- SECTION 2 — Featured auctions -->
-                        <section class="auc-section">
-                            <div class="auc-section-head"><el-icon class="auc-section-icon"><Star /></el-icon><h2 class="auc-title">Featured Auctions</h2></div>
-
-                            <div v-if="!featuredLots.length" class="auc-empty">No lots are currently open for bidding.</div>
-                            <div v-else class="row g-3">
-                                <div v-for="lot in featuredLots" :key="lot.id" class="col-12 col-md-6 col-xl-4">
-                                    <div class="auc-lot-card h-100" @click="openLot(lot.id)">
-                                        <div class="auc-lot-card__image">
-                                            <img v-if="lot.image" :src="lot.image" :alt="lot.lot_name">
-                                            <el-icon v-else><Picture /></el-icon>
-                                            <span class="auc-lot-card__ai">AI {{ lot.ai_score }}</span>
-                                        </div>
-                                        <div class="auc-lot-card__body">
-                                            <div class="d-flex align-items-start justify-content-between mb-1">
-                                                <div>
-                                                    <div class="auc-lot-card__lot">{{ lot.lot_number }}</div>
-                                                    <div class="auc-lot-card__name">{{ lot.lot_name ?? 'Unnamed Lot' }}</div>
-                                                </div>
-                                                <span class="auc-badge" :class="statusCls(lot.status)">{{ cap(lot.status?.replace('_',' ')) }}</span>
-                                            </div>
-                                            <div class="auc-lot-card__meta">{{ lot.origin_country }}<span v-if="lot.region"> · {{ lot.region }}</span></div>
-                                            <div class="auc-lot-card__meta">{{ lot.grower }}</div>
-
-                                            <div class="auc-tags">
-                                                <span v-if="lot.variety" class="auc-tag">{{ cap(lot.variety) }}</span>
-                                                <span v-if="lot.grade" class="auc-tag">Grade {{ lot.grade }}</span>
-                                                <span v-if="lot.process" class="auc-tag">{{ lot.process }}</span>
-                                                <span v-if="lot.harvest_year" class="auc-tag">{{ lot.harvest_year }}</span>
-                                            </div>
-
-                                            <div class="auc-lot-card__price-row">
-                                                <div>
-                                                    <span class="auc-lot-card__price-label">{{ lot.current_bid != null ? 'Current Bid' : 'Starting Price' }}</span>
-                                                    <div class="auc-lot-card__price">{{ fmtMoney(lot.current_bid ?? lot.starting_price) }}</div>
-                                                </div>
-                                                <div class="text-end">
-                                                    <span class="auc-lot-card__price-label">Min. Increment</span>
-                                                    <div class="auc-lot-card__increment">+{{ fmtMoney(lot.min_increment) }}</div>
-                                                </div>
-                                            </div>
-
-                                            <div class="auc-lot-card__stats">
-                                                <span><el-icon><UserFilled /></el-icon> {{ lot.bidder_count }} bidder{{ lot.bidder_count === 1 ? '' : 's' }}</span>
-                                                <span><el-icon><Clock /></el-icon> Listed {{ lot.listed_ago }}</span>
-                                            </div>
-
-                                            <div class="d-flex gap-2 mt-2" @click.stop>
-                                                <button type="button" class="btn auc-btn-outline flex-fill" :class="{ 'auc-btn-outline--active': watched.has(lot.id) }" @click="toggleWatch(lot.id)">
-                                                    <el-icon><View /></el-icon> {{ watched.has(lot.id) ? 'Watching' : 'Watch' }}
-                                                </button>
-                                                <Link :href="route('bid.place', lot.id)" class="btn auc-btn-primary flex-fill">
-                                                    <el-icon><Coin /></el-icon> Place Bid
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- SECTION 3 — Live auction feed -->
-                        <section class="auc-section">
-                            <div class="auc-section-head"><span class="auc-live-dot"></span><h2 class="auc-title">Live Auction Feed</h2></div>
-                            <div class="auc-card">
-                                <div v-if="!liveBids.length" class="auc-empty">No bids have been placed yet.</div>
-                                <div v-else class="auc-feed">
-                                    <div v-for="bid in liveBids" :key="bid.id" class="auc-feed-row">
-                                        <div class="auc-feed-row__avatar"><el-icon><UserFilled /></el-icon></div>
-                                        <div class="flex-grow-1">
-                                            <div class="auc-feed-row__top">
-                                                <strong>{{ bid.bidder }}</strong> bid <strong class="auc-feed-row__amount">{{ fmtMoney(bid.amount) }}</strong> on <strong>{{ bid.lot_number }}</strong>
-                                            </div>
-                                            <div class="auc-muted">{{ bid.placed_ago }} · {{ fmtNum(bid.quantity) }} kg</div>
-                                        </div>
-                                        <span class="auc-badge" :class="bid.status === 'pending' ? 'auc-badge--amber' : 'auc-badge--green'">{{ cap(bid.status) }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- SECTION 4 — Auction calendar / pipeline -->
-                        <section class="auc-section">
-                            <div class="auc-section-head"><el-icon class="auc-section-icon"><Clock /></el-icon><h2 class="auc-title">Auction Calendar</h2></div>
-                            <div class="auc-card">
-                                <p class="auc-muted mb-3" style="font-size:.8125rem;">Lots below are still in preparation and not yet open for bidding.</p>
-                                <div v-if="!upcomingLots.length" class="auc-empty">No lots are currently in the pipeline — every listed lot is already open for bidding.</div>
-                                <div v-else class="table-responsive">
-                                    <table class="table auc-table mb-0">
-                                        <thead><tr><th>Lot</th><th>Origin</th><th>Listed By</th><th>Added</th><th>Status</th></tr></thead>
-                                        <tbody>
-                                            <tr v-for="lot in upcomingLots" :key="lot.id">
-                                                <td class="auc-item-name">{{ lot.lot_number }}</td>
-                                                <td class="auc-muted">{{ lot.origin ?? '—' }}</td>
-                                                <td class="auc-muted">{{ lot.grower ?? '—' }}</td>
-                                                <td class="auc-muted">{{ lot.listed_ago }}</td>
-                                                <td><span class="auc-badge auc-badge--muted">Pending Listing</span></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- SECTION 5 — Coffee lot explorer -->
-                        <section id="auc-explorer" class="auc-section">
-                            <div class="auc-section-head"><el-icon class="auc-section-icon"><Grid /></el-icon><h2 class="auc-title">Coffee Lot Explorer</h2><span class="auc-count">{{ filteredExplorer.length }} of {{ lotExplorer.length }} lots</span></div>
-
-                            <div class="auc-card">
-                                <div class="d-flex flex-wrap gap-2 mb-3">
-                                    <div class="auc-search-wrap auc-search-wrap--table">
-                                        <el-icon class="auc-search-icon"><Search /></el-icon>
-                                        <input v-model="explorerSearch" class="auc-search-input" placeholder="Search lot, origin, grower…">
-                                    </div>
-                                    <button type="button" class="btn auc-btn-outline btn-sm" @click="resetFilters"><el-icon><Refresh /></el-icon> Reset Filters</button>
-                                </div>
-
-                                <div v-if="!filteredExplorer.length" class="auc-empty">No lots match your filters.</div>
-                                <div v-else class="table-responsive">
-                                    <table class="table auc-table mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th v-if="compareMode"></th>
-                                                <th>Lot ID</th><th>Origin</th><th>Region</th><th>Grower</th><th>Variety</th><th>Grade</th>
-                                                <th>Moisture</th><th>Screen</th><th class="text-end">Cup Score</th><th class="text-end">Quantity</th>
-                                                <th class="text-end">Reserve</th><th class="text-end">Current Bid</th><th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-for="row in filteredExplorer" :key="row.id" class="auc-table-row" @click="openLot(row.id)">
-                                                <td v-if="compareMode" @click.stop>
-                                                    <input type="checkbox" :checked="compareSet.has(row.id)" @change="toggleCompare(row.id)">
-                                                </td>
-                                                <td class="auc-item-name">{{ row.lot_number }}</td>
-                                                <td class="auc-muted">{{ cap(row.origin) }}</td>
-                                                <td class="auc-muted">{{ row.region ?? '—' }}</td>
-                                                <td class="auc-muted">{{ row.grower ?? '—' }}</td>
-                                                <td class="auc-muted">{{ cap(row.variety) }}</td>
-                                                <td><span class="auc-grade-pill">{{ row.grade ?? '—' }}</span></td>
-                                                <td class="auc-muted">{{ row.moisture_content != null ? row.moisture_content + '%' : '—' }}</td>
-                                                <td class="auc-muted">{{ row.screen_size ?? '—' }}</td>
-                                                <td class="text-end"><strong>{{ row.cup_score }}</strong></td>
-                                                <td class="text-end auc-muted">{{ fmtNum(row.net_weight_kg) }} kg</td>
-                                                <td class="text-end auc-muted">{{ fmtMoney(row.reserve_price) }}</td>
-                                                <td class="text-end"><strong v-if="row.current_bid">{{ fmtMoney(row.current_bid) }}</strong><span v-else class="auc-muted">—</span></td>
-                                                <td><span class="auc-badge" :class="statusCls(row.status)">{{ cap(row.status?.replace('_',' ')) }}</span></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+                        <!-- SECTION 2 — Items under auction -->
+                        <section id="auc-items" class="auc-section auc-section--last">
+                            <div class="auc-section-head">
+                                <el-icon class="auc-section-icon"><Star /></el-icon>
+                                <h2 class="auc-title">Items Under Auction</h2>
+                                <span class="auc-count">{{ auctionItems.length }} items</span>
                             </div>
 
-                            <!-- Compare bar -->
-                            <div v-if="compareMode && compareLots.length" class="auc-card mt-3">
-                                <div class="auc-card-title mb-2"><el-icon class="auc-card-icon"><DataAnalysis /></el-icon> Comparing {{ compareLots.length }} Lot{{ compareLots.length === 1 ? '' : 's' }}</div>
-                                <div class="table-responsive">
-                                    <table class="table auc-table mb-0">
-                                        <thead><tr><th>Lot</th><th>Origin</th><th>Grade</th><th class="text-end">Cup Score</th><th class="text-end">Reserve</th><th class="text-end">Current Bid</th></tr></thead>
-                                        <tbody>
-                                            <tr v-for="row in compareLots" :key="row.id">
-                                                <td class="auc-item-name">{{ row.lot_number }}</td>
-                                                <td class="auc-muted">{{ cap(row.origin) }}</td>
-                                                <td>{{ row.grade ?? '—' }}</td>
-                                                <td class="text-end">{{ row.cup_score }}</td>
-                                                <td class="text-end">{{ fmtMoney(row.reserve_price) }}</td>
-                                                <td class="text-end">{{ row.current_bid ? fmtMoney(row.current_bid) : '—' }}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- SECTION 6 — Quality intelligence -->
-                        <section class="auc-section">
-                            <div class="auc-section-head"><el-icon class="auc-section-icon"><Aim /></el-icon><h2 class="auc-title">Coffee Quality Intelligence</h2></div>
-                            <div class="auc-card">
-                                <div v-if="!qualityProfiles.length" class="auc-empty">No quality data available yet.</div>
-                                <template v-else>
-                                    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-                                        <span class="auc-muted" style="font-size:.8125rem;">Viewing:</span>
-                                        <select v-model="selectedQualityLot" class="auc-select">
-                                            <option v-for="p in qualityProfiles" :key="p.lot_id" :value="p.lot_id">{{ p.lot_number }}</option>
-                                        </select>
-                                    </div>
-                                    <div class="row g-3 align-items-center">
-                                        <div class="col-12 col-md-7">
-                                            <div class="auc-radar-wrap"><Radar :data="radarData" :options="radarOptions" /></div>
+                            <div class="auc-table-card">
+                            <el-table :data="auctionItems" class="auc-el-table" stripe empty-text="No items are currently under auction.">
+                                <el-table-column width="56">
+                                    <template #default="{ row }">
+                                        <div class="auc-thumb">
+                                            <img v-if="row.image" :src="`/storage/${row.image}`" :alt="row.name">
+                                            <svg v-else class="auc-thumb-icon" viewBox="0 0 24 24">
+                                                <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
+                                                <path d="M9 6 C7 9, 11 15, 9 18" stroke="#c9a27a" stroke-width="1.1" fill="none" transform="rotate(-25 9 12)" />
+                                                <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
+                                                <path d="M16.5 10 C15 12.5, 18 16, 16.5 19" stroke="#d8b48f" stroke-width="1" fill="none" transform="rotate(20 16.5 14.5)" />
+                                            </svg>
                                         </div>
-                                        <div class="col-12 col-md-5">
-                                            <div v-for="axis in selectedQualityProfile?.axes" :key="axis.label" class="auc-quality-row">
-                                                <span>{{ axis.label }}</span>
-                                                <div class="auc-bar-track"><div class="auc-bar-fill" :style="{ width: axis.value + '%' }"></div></div>
-                                                <strong>{{ axis.value }}</strong>
-                                            </div>
-                                            <p v-if="selectedQualityProfile?.cupping_notes" class="auc-muted mt-2 mb-0" style="font-size:.75rem;">{{ selectedQualityProfile.cupping_notes }}</p>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </section>
-
-                        <!-- SECTION 7 — Auction analytics -->
-                        <section class="auc-section">
-                            <div class="auc-section-head"><el-icon class="auc-section-icon"><PieChart /></el-icon><h2 class="auc-title">Auction Analytics</h2></div>
-                            <div class="row g-3">
-                                <div class="col-12 col-lg-4">
-                                    <div class="auc-card h-100">
-                                        <div class="auc-card-title mb-2">Highest-Selling Origins</div>
-                                        <div v-if="analytics.top_origins.length" class="auc-chart-wrap"><Bar :data="originChartData" :options="barOptions" /></div>
-                                        <div v-else class="auc-empty">No data yet.</div>
-                                    </div>
-                                </div>
-                                <div class="col-12 col-lg-4">
-                                    <div class="auc-card h-100">
-                                        <div class="auc-card-title mb-2">Bidding Activity by Lot</div>
-                                        <div v-if="analytics.bids_per_lot.length" class="auc-chart-wrap"><Bar :data="bidsChartData" :options="barOptions" /></div>
-                                        <div v-else class="auc-empty">No data yet.</div>
-                                    </div>
-                                </div>
-                                <div class="col-12 col-lg-4">
-                                    <div class="auc-card h-100">
-                                        <div class="auc-card-title mb-2">Auction Volume by Status</div>
-                                        <div v-if="analytics.status_volume.length" class="auc-chart-wrap"><Doughnut :data="statusChartData" :options="doughnutOptions" /></div>
-                                        <div v-else class="auc-empty">No data yet.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- SECTION 8 — Origin intelligence -->
-                        <section class="auc-section">
-                            <div class="auc-section-head"><el-icon class="auc-section-icon"><Grid /></el-icon><h2 class="auc-title">Origin Intelligence</h2></div>
-                            <div v-if="!originIntelligence.length" class="auc-empty">No origin data available yet.</div>
-                            <div v-else class="row g-3">
-                                <div v-for="o in originIntelligence" :key="o.label" class="col-12 col-md-6 col-xl-4">
-                                    <div class="auc-card h-100">
-                                        <div class="auc-card-title mb-2">{{ cap(o.label) }}</div>
-                                        <div class="auc-spec"><span>Lots Available</span><strong>{{ o.lots }}</strong></div>
-                                        <div class="auc-spec"><span>Average Quality</span><strong>{{ o.average_quality }}</strong></div>
-                                        <div class="auc-spec"><span>Average Price</span><strong>{{ fmtMoney(o.average_price) }}</strong></div>
-                                        <div class="auc-spec"><span>Volume Available</span><strong>{{ fmtNum(o.total_volume_kg) }} kg</strong></div>
-                                        <div class="auc-spec"><span>Bidding Activity</span><strong>{{ o.total_bids }} bids</strong></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- SECTION 9 — AI auction intelligence -->
-                        <section class="auc-section">
-                            <div class="auc-section-head"><el-icon class="auc-section-icon"><MagicStick /></el-icon><h2 class="auc-title">AI Auction Intelligence</h2></div>
-                            <div class="auc-ai-panel">
-                                <div v-if="!aiIntelligence.has_data" class="auc-empty">{{ aiIntelligence.message }}</div>
-                                <template v-else>
-                                    <div class="row g-3">
-                                        <div class="col-12 col-md-6">
-                                            <div class="auc-ai-card">
-                                                <div class="auc-ai-card__label"><el-icon><TrendCharts /></el-icon> Most Undervalued Lot</div>
-                                                <div class="auc-ai-card__value">{{ aiIntelligence.most_undervalued_lot.lot_number }}</div>
-                                                <p class="auc-ai-card__reason">{{ aiIntelligence.most_undervalued_lot.reason }}</p>
-                                                <div class="auc-muted" style="font-size:.75rem;">Quality {{ aiIntelligence.most_undervalued_lot.quality_score }} at {{ fmtMoney(aiIntelligence.most_undervalued_lot.price) }}</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-12 col-md-6">
-                                            <div class="auc-ai-card">
-                                                <div class="auc-ai-card__label"><el-icon><UserFilled /></el-icon> Highest Demand Lot</div>
-                                                <div class="auc-ai-card__value">{{ aiIntelligence.highest_demand_lot.lot_number }}</div>
-                                                <p class="auc-ai-card__reason">{{ aiIntelligence.highest_demand_lot.reason }}</p>
-                                                <div class="auc-muted" style="font-size:.75rem;">{{ aiIntelligence.highest_demand_lot.bidder_count }} bidders · {{ aiIntelligence.highest_demand_lot.bid_count }} bids</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-6 col-md-3">
-                                            <div class="auc-ai-stat"><span>Predicted Winning Bid</span><strong>{{ fmtMoney(aiIntelligence.predicted_winning_bid) }}</strong></div>
-                                        </div>
-                                        <div class="col-6 col-md-3">
-                                            <div class="auc-ai-stat"><span>Suggested Max Bid</span><strong>{{ fmtMoney(aiIntelligence.suggested_maximum_bid) }}</strong></div>
-                                        </div>
-                                        <div class="col-6 col-md-3">
-                                            <div class="auc-ai-stat"><span>Confidence</span><strong>{{ aiIntelligence.confidence }}%</strong></div>
-                                        </div>
-                                        <div class="col-6 col-md-3">
-                                            <div class="auc-ai-stat"><span>Model</span><strong style="font-size:.75rem;">Heuristic</strong></div>
-                                        </div>
-                                    </div>
-                                    <p class="auc-ai-note"><el-icon><InfoFilled /></el-icon> {{ aiIntelligence.note }}</p>
-                                </template>
-                            </div>
-                        </section>
-
-                        <!-- SECTION 10 — Leaderboard -->
-                        <section class="auc-section auc-section--last">
-                            <div class="auc-section-head"><el-icon class="auc-section-icon"><Trophy /></el-icon><h2 class="auc-title">Auction Leaderboard</h2></div>
-                            <div class="row g-3">
-                                <div class="col-12 col-md-6">
-                                    <div class="auc-card h-100">
-                                        <div class="auc-card-title mb-2"><el-icon class="auc-card-icon"><Medal /></el-icon> Top Buyers</div>
-                                        <div v-if="!leaderboard.top_buyers.length" class="auc-empty">No bids placed yet.</div>
-                                        <div v-for="(b, i) in leaderboard.top_buyers" :key="b.name + i" class="auc-leader-row">
-                                            <span class="auc-leader-rank">{{ i + 1 }}</span>
-                                            <div class="flex-grow-1">
-                                                <div class="auc-item-name">{{ b.name }}</div>
-                                                <div class="auc-muted" style="font-size:.6875rem;">{{ cap(b.role) }} · {{ b.bids_placed }} bids</div>
-                                            </div>
-                                            <strong>{{ fmtMoney(b.total_bid_value) }}</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <div class="auc-card h-100">
-                                        <div class="auc-card-title mb-2"><el-icon class="auc-card-icon"><Trophy /></el-icon> Top Sellers</div>
-                                        <div v-if="!leaderboard.top_sellers.length" class="auc-empty">No lots listed yet.</div>
-                                        <div v-for="(s, i) in leaderboard.top_sellers" :key="s.name + i" class="auc-leader-row">
-                                            <span class="auc-leader-rank">{{ i + 1 }}</span>
-                                            <div class="flex-grow-1">
-                                                <div class="auc-item-name">{{ s.name }}</div>
-                                                <div class="auc-muted" style="font-size:.6875rem;">{{ cap(s.role) }} · {{ s.lots_listed }} lots</div>
-                                            </div>
-                                            <strong>{{ fmtMoney(s.total_listed_value) }}</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <div class="auc-card">
-                                        <div class="auc-card-title mb-2"><el-icon class="auc-card-icon"><Coin /></el-icon> Largest Auction</div>
-                                        <template v-if="leaderboard.largest_auction">
-                                            <div class="auc-spec"><span>Lot</span><strong>{{ leaderboard.largest_auction.lot_number }}</strong></div>
-                                            <div class="auc-spec"><span>Total Bid Value</span><strong>{{ fmtMoney(leaderboard.largest_auction.total_bid_value) }}</strong></div>
-                                            <div class="auc-spec"><span>Bids</span><strong>{{ leaderboard.largest_auction.bid_count }}</strong></div>
-                                        </template>
-                                        <div v-else class="auc-empty">No bids placed yet.</div>
-                                    </div>
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <div class="auc-card">
-                                        <div class="auc-card-title mb-2"><el-icon class="auc-card-icon"><Grid /></el-icon> Most Active Origins</div>
-                                        <div v-if="!leaderboard.most_active_origins.length" class="auc-empty">No data yet.</div>
-                                        <div v-for="o in leaderboard.most_active_origins" :key="o.label" class="auc-spec"><span>{{ cap(o.label) }}</span><strong>{{ o.lots }} lots</strong></div>
-                                    </div>
-                                </div>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="Lot" min-width="160">
+                                    <template #header><el-icon class="auc-th-icon"><Medal /></el-icon>Lot</template>
+                                    <template #default="{ row }">
+                                        <div class="auc-item-name">{{ row.lot_code }}</div>
+                                        <div class="auc-muted" style="font-size:.7rem;">{{ row.name }}</div>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="Origin" min-width="130">
+                                    <template #header><el-icon class="auc-th-icon"><Grid /></el-icon>Origin</template>
+                                    <template #default="{ row }">{{ row.origin ?? '—' }}</template>
+                                </el-table-column>
+                                <el-table-column label="Type" min-width="100" align="center">
+                                    <template #header><el-icon class="auc-th-icon"><Star /></el-icon>Type</template>
+                                    <template #default="{ row }">{{ cap(row.type) }}</template>
+                                </el-table-column>
+                                <el-table-column label="Quality" min-width="100" align="center">
+                                    <template #header><el-icon class="auc-th-icon"><Trophy /></el-icon>Quality</template>
+                                    <template #default="{ row }">
+                                        <span class="auc-badge" :class="auctionQualityCls(row.quality_score)">{{ row.quality_score ?? '—' }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="Price / kg" min-width="110" align="right" header-align="left">
+                                    <template #header><el-icon class="auc-th-icon"><Coin /></el-icon>Price / kg</template>
+                                    <template #default="{ row }"><span class="auc-num">{{ fmtMoney(row.price_per_kg) }}</span></template>
+                                </el-table-column>
+                                <el-table-column label="Demand" min-width="100" align="center">
+                                    <template #header><el-icon class="auc-th-icon"><TrendCharts /></el-icon>Demand</template>
+                                    <template #default="{ row }">{{ cap(row.demand) ?? '—' }}</template>
+                                </el-table-column>
+                                <el-table-column label="Status" min-width="100" align="center">
+                                    <template #header><el-icon class="auc-th-icon"><InfoFilled /></el-icon>Status</template>
+                                    <template #default="{ row }">
+                                        <span class="auc-badge" :class="auctionStatusCls(row.status)">{{ cap(row.status) }}</span>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
                             </div>
                         </section>
 
@@ -610,47 +224,75 @@ const statusCls = (s) => ({
                          ══════════════════════════════════════════════════ -->
                     <div class="col-12 col-xl-3 order-1 order-xl-2">
                         <div class="auc-sidebar">
-                            <div class="auc-card">
-                                <div class="auc-card-title mb-3"><el-icon class="auc-card-icon"><Filter /></el-icon> Filters</div>
+                            <div class="auc-feed-card">
+                                <div class="auc-feed-head">
+                                    <div class="auc-feed-head__title">
+                                        <span class="auc-live-dot"></span>
+                                        <div>
+                                            <div class="auc-feed-head__label">Live Auction Feed</div>
+                                            <div class="auc-feed-head__sub">Real-time bidding activity</div>
+                                        </div>
+                                    </div>
+                                    <span class="auc-feed-count">{{ liveBids.length }}</span>
+                                </div>
 
-                                <div class="auc-field">
-                                    <label>Origin</label>
-                                    <select v-model="filters.origin" class="auc-select w-100">
-                                        <option value="">All Origins</option>
-                                        <option v-for="o in filterOptions.origins" :key="o" :value="o">{{ cap(o) }}</option>
-                                    </select>
+                                <div class="auc-feed-stats">
+                                    <div class="auc-feed-stat">
+                                        <div class="auc-feed-stat__icon"><el-icon><UserFilled /></el-icon></div>
+                                        <div>
+                                            <span>Active Buyers</span>
+                                            <strong>{{ fmtNum(overview.active_buyers) }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="auc-feed-stat">
+                                        <div class="auc-feed-stat__icon auc-feed-stat__icon--gold"><el-icon><TrendCharts /></el-icon></div>
+                                        <div>
+                                            <span>Highest Bid Today</span>
+                                            <strong>{{ overview.highest_bid_today != null ? fmtMoney(overview.highest_bid_today) : '—' }}</strong>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="auc-field">
-                                    <label>Variety</label>
-                                    <select v-model="filters.variety" class="auc-select w-100">
-                                        <option value="">All Varieties</option>
-                                        <option v-for="v in filterOptions.varieties" :key="v" :value="v">{{ cap(v) }}</option>
-                                    </select>
+
+                                <div v-if="!liveBids.length" class="auc-feed-empty">
+                                    <div class="auc-feed-empty__icon"><el-icon><Coin /></el-icon></div>
+                                    <p>No bids yet</p>
+                                    <span>Activity will appear here the moment someone bids.</span>
                                 </div>
-                                <div class="auc-field">
-                                    <label>Process</label>
-                                    <select v-model="filters.process" class="auc-select w-100">
-                                        <option value="">All Processes</option>
-                                        <option v-for="p in filterOptions.processes" :key="p" :value="p">{{ p }}</option>
-                                    </select>
+                                <div v-else class="auc-feed">
+                                    <div
+                                        v-for="(bid, i) in liveBids"
+                                        :key="bid.id"
+                                        class="auc-feed-row"
+                                        :class="{ 'auc-feed-row--new': i === 0 }"
+                                    >
+                                        <div class="auc-feed-row__avatar" :style="{ background: avatarColor(bid.bidder) }">{{ initials(bid.bidder) }}</div>
+                                        <div class="auc-feed-row__body">
+                                            <div class="auc-feed-row__top">
+                                                <strong>{{ bid.bidder }}</strong> bid on <strong>{{ bid.lot_number }}</strong>
+                                            </div>
+                                            <div class="auc-muted">{{ bid.placed_ago }} · {{ fmtNum(bid.quantity) }} kg</div>
+                                        </div>
+                                        <div class="auc-feed-row__end">
+                                            <strong class="auc-feed-row__amount">{{ fmtMoney(bid.amount) }}</strong>
+                                            <span class="auc-badge" :class="bid.status === 'pending' ? 'auc-badge--amber' : 'auc-badge--green'">{{ cap(bid.status) }}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="auc-field">
-                                    <label>Grade</label>
-                                    <select v-model="filters.grade" class="auc-select w-100">
-                                        <option value="">All Grades</option>
-                                        <option v-for="g in filterOptions.grades" :key="g" :value="g">{{ g }}</option>
-                                    </select>
-                                </div>
-                                <div class="auc-field">
-                                    <label>Auction Status</label>
-                                    <select v-model="filters.status" class="auc-select w-100">
-                                        <option value="">All Statuses</option>
-                                        <option v-for="s in filterOptions.statuses" :key="s" :value="s">{{ cap(s.replace('_',' ')) }}</option>
-                                    </select>
-                                </div>
-                                <div class="auc-field mb-0">
-                                    <label>Minimum Cup Score</label>
-                                    <input v-model="filters.minCupScore" type="number" class="auc-search-input" style="padding-left:10px;width:100%;" placeholder="e.g. 84">
+                            </div>
+
+                            <div class="auc-card mt-3">
+                                <div class="auc-card-title mb-2"><el-icon class="auc-card-icon"><TrendCharts /></el-icon> Hot Lots</div>
+                                <p v-if="!hotLots.length" class="auc-empty mb-0">No bidding activity yet.</p>
+                                <div v-for="(lot, i) in hotLots" :key="lot.id" class="auc-hot-row">
+                                    <span class="auc-hot-rank">{{ i + 1 }}</span>
+                                    <div class="flex-grow-1" style="min-width:0;">
+                                        <div class="auc-item-name">{{ lot.lot_number }}</div>
+                                        <div class="auc-muted" style="font-size:.6875rem;">{{ cap(lot.origin_country) }}</div>
+                                    </div>
+                                    <div class="auc-hot-row__end">
+                                        <strong>{{ fmtMoney(lot.current_bid ?? lot.starting_price) }}</strong>
+                                        <span>{{ lot.bidder_count }} bidder{{ lot.bidder_count === 1 ? '' : 's' }}</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -671,76 +313,6 @@ const statusCls = (s) => ({
                 </div>
             </div>
         </div>
-
-        <!-- ══════════════════════════════════════════════════════════════
-             Lot details modal
-             ══════════════════════════════════════════════════════════════ -->
-        <Teleport to="body">
-            <div v-if="activeLot" class="auc-modal-overlay" @click.self="closeLot">
-                <div class="auc-modal">
-                    <button type="button" class="auc-modal__close" @click="closeLot"><el-icon><Close /></el-icon></button>
-
-                    <div class="auc-modal__gallery">
-                        <img v-if="activeLot.image" :src="activeLot.image" :alt="activeLot.lot_name">
-                        <el-icon v-else style="font-size:2.5rem;"><Picture /></el-icon>
-                    </div>
-
-                    <div class="auc-modal__body">
-                        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
-                            <div>
-                                <div class="auc-lot-card__lot">{{ activeLot.lot_number }}</div>
-                                <h3 class="auc-modal__title mb-0">{{ activeLot.lot_name ?? 'Unnamed Lot' }}</h3>
-                            </div>
-                            <span class="auc-badge" :class="statusCls(activeLot.status)">{{ cap(activeLot.status?.replace('_',' ')) }}</span>
-                        </div>
-
-                        <p v-if="activeLot.description" class="auc-muted" style="font-size:.8438rem;">{{ activeLot.description }}</p>
-
-                        <div class="row g-2 mb-3">
-                            <div class="col-6 col-md-3"><div class="auc-spec-block"><span>Origin</span><strong>{{ cap(activeLot.origin_country) }}</strong></div></div>
-                            <div class="col-6 col-md-3"><div class="auc-spec-block"><span>Grower</span><strong>{{ activeLot.grower ?? '—' }}</strong></div></div>
-                            <div class="col-6 col-md-3"><div class="auc-spec-block"><span>Process</span><strong>{{ activeLot.process ?? '—' }}</strong></div></div>
-                            <div class="col-6 col-md-3"><div class="auc-spec-block"><span>Grade</span><strong>{{ activeLot.grade ?? '—' }}</strong></div></div>
-                            <div class="col-6 col-md-3"><div class="auc-spec-block"><span>Moisture</span><strong>{{ activeLot.moisture_content != null ? activeLot.moisture_content + '%' : '—' }}</strong></div></div>
-                            <div class="col-6 col-md-3"><div class="auc-spec-block"><span>Defect Count</span><strong>{{ activeLot.defect_count ?? '—' }}</strong></div></div>
-                            <div class="col-6 col-md-3"><div class="auc-spec-block"><span>Drying Method</span><strong>{{ activeLot.drying_method ?? '—' }}</strong></div></div>
-                            <div class="col-6 col-md-3"><div class="auc-spec-block"><span>Packaging</span><strong>{{ activeLot.packaging_type ?? '—' }}</strong></div></div>
-                        </div>
-
-                        <div v-if="activeLot.cupping_notes || activeLot.flavor_notes" class="auc-modal__notes mb-3">
-                            <div v-if="activeLot.flavor_notes"><strong>Flavor:</strong> {{ activeLot.flavor_notes }}</div>
-                            <div v-if="activeLot.cupping_notes"><strong>Cupping Notes:</strong> {{ activeLot.cupping_notes }}</div>
-                        </div>
-
-                        <div class="auc-modal__section-title">Traceability Timeline</div>
-                        <div class="auc-timeline mb-3">
-                            <div v-for="(step, i) in activeLot.timeline" :key="i" class="auc-timeline__step">
-                                <span class="auc-timeline__dot"></span>
-                                <div><strong>{{ step.label }}</strong><span class="auc-muted"> · {{ step.ago }}</span></div>
-                            </div>
-                        </div>
-
-                        <div class="auc-modal__section-title">Bid History</div>
-                        <div v-if="!activeLot.bid_history.length" class="auc-empty mb-3">No bids placed on this lot yet.</div>
-                        <div v-else class="mb-3">
-                            <div v-for="(b, i) in activeLot.bid_history" :key="i" class="auc-my-row">
-                                <div><strong>{{ b.bidder }}</strong><span class="auc-muted"> · {{ b.placed_ago }}</span></div>
-                                <strong>{{ fmtMoney(b.amount) }}</strong>
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn auc-btn-outline flex-fill" :class="{ 'auc-btn-outline--active': watched.has(activeLot.id) }" @click="toggleWatch(activeLot.id)">
-                                <el-icon><View /></el-icon> {{ watched.has(activeLot.id) ? 'Watching' : 'Watch' }}
-                            </button>
-                            <Link :href="route('bid.place', activeLot.id)" class="btn auc-btn-primary flex-fill">
-                                <el-icon><Coin /></el-icon> Place Bid — {{ fmtMoney(activeLot.current_bid ?? activeLot.starting_price) }}
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </Teleport>
     </AppLayout>
 </template>
 
@@ -809,11 +381,6 @@ const statusCls = (s) => ({
 .auc-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .8438rem; font-weight: 700; color: var(--on-surface); }
 .auc-card-icon { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
-.auc-field { margin-bottom: 12px; }
-.auc-field label { display: block; font-size: .6875rem; font-weight: 700; color: var(--on-surface-var); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
-.auc-select { height: 34px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-size: .8125rem; color: var(--on-surface); background: #fff; outline: none; cursor: pointer; }
-.auc-select:focus { border-color: var(--green); }
-
 .auc-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 8px; font-size: .8125rem; font-weight: 700; padding: 9px 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
 .auc-btn-primary:hover { background: var(--green-dark); color: #fff; }
 .auc-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 8px; font-size: .8125rem; font-weight: 700; padding: 9px 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
@@ -822,79 +389,86 @@ const statusCls = (s) => ({
 
 .auc-sidebar { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 0; }
 
-/* ── Featured lot cards ──────────────────────────────────────────────── */
-.auc-lot-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: box-shadow .15s, transform .15s; display: flex; flex-direction: column; }
-.auc-lot-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.08); transform: translateY(-1px); }
-.auc-lot-card__image { position: relative; height: 140px; background: var(--surface-low); display: flex; align-items: center; justify-content: center; color: #cbd5e1; font-size: 2rem; }
-.auc-lot-card__image img { width: 100%; height: 100%; object-fit: cover; }
-.auc-lot-card__ai { position: absolute; top: 8px; right: 8px; background: rgba(0,69,50,.9); color: #fff; font-size: .625rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
-.auc-lot-card__body { padding: .875rem; flex: 1; display: flex; flex-direction: column; }
-.auc-lot-card__lot { font-size: .625rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .04em; }
-.auc-lot-card__name { font-size: .9375rem; font-weight: 800; color: var(--on-surface); }
-.auc-lot-card__meta { font-size: .75rem; color: var(--on-surface-var); }
+/* ── Live auction feed — modern activity-stream card ──────────────────── */
+.auc-feed-card {
+    display: flex; flex-direction: column;
+    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    padding: 1rem 1rem 0.25rem;
+    position: relative; overflow: hidden;
+}
 
-.auc-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
-.auc-tag { font-size: .625rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-low); color: var(--on-surface-var); border: 1px solid var(--border); }
+.auc-feed-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .875rem; }
+.auc-feed-head__title { display: flex; align-items: center; gap: 9px; }
+.auc-feed-head__label { font-size: .8438rem; font-weight: 800; color: var(--on-surface); letter-spacing: -.01em; }
+.auc-feed-head__sub { font-size: .6875rem; color: var(--on-surface-var); margin-top: 1px; }
+.auc-feed-count { font-size: .6875rem; font-weight: 700; color: var(--on-surface-var); background: var(--surface-low); border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; flex-shrink: 0; }
 
-.auc-lot-card__price-row { display: flex; align-items: flex-end; justify-content: space-between; background: var(--surface-low); border-radius: 10px; padding: 8px 10px; margin: 4px 0; }
-.auc-lot-card__price-label { font-size: .625rem; color: var(--on-surface-var); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
-.auc-lot-card__price { font-size: 1.0625rem; font-weight: 800; color: var(--green); }
-.auc-lot-card__increment { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
+.auc-feed-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+.auc-feed-stat { background: var(--surface-low); border-radius: 10px; padding: 9px 10px; display: flex; align-items: center; gap: 8px; }
+.auc-feed-stat__icon { width: 28px; height: 28px; border-radius: 8px; background: rgba(0,69,50,0.1); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.auc-feed-stat__icon--gold { background: rgba(200,134,42,0.14); color: var(--gold); }
+.auc-feed-stat span { display: block; font-size: .5938rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); }
+.auc-feed-stat strong { display: block; font-family: 'IBM Plex Mono', monospace; font-size: .8125rem; font-weight: 700; color: var(--on-surface); margin-top: 1px; }
 
-.auc-lot-card__stats { display: flex; justify-content: space-between; font-size: .6875rem; color: var(--on-surface-var); margin-top: 4px; }
-.auc-lot-card__stats span { display: inline-flex; align-items: center; gap: 4px; }
+.auc-feed-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 1.75rem .5rem 2rem; }
+.auc-feed-empty__icon { width: 40px; height: 40px; border-radius: 50%; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; font-size: 17px; margin-bottom: 10px; }
+.auc-feed-empty p { font-size: .8125rem; font-weight: 700; color: var(--on-surface); margin: 0; }
+.auc-feed-empty span { font-size: .75rem; color: var(--on-surface-var); margin-top: 2px; }
 
-/* ── Feed ────────────────────────────────────────────────────────────── */
-.auc-feed { display: flex; flex-direction: column; gap: 2px; }
-.auc-feed-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--surface-low); }
+.auc-feed { display: flex; flex-direction: column; max-height: 380px; overflow-y: auto; margin: 0 -1rem; padding: 0 1rem 0.5rem; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.auc-feed::-webkit-scrollbar { width: 5px; }
+.auc-feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+
+.auc-feed-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--surface-low); transition: background-color .15s ease; }
 .auc-feed-row:last-child { border-bottom: none; }
-.auc-feed-row__avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
-.auc-feed-row__top { font-size: .8125rem; color: var(--on-surface); }
-.auc-feed-row__amount { color: var(--green); }
+.auc-feed-row:hover { background: var(--surface-low); }
+.auc-feed-row--new { animation: auc-feed-flash 1.8s ease-out; }
+@keyframes auc-feed-flash {
+    0% { background-color: rgba(0,69,50,.1); }
+    100% { background-color: transparent; }
+}
 
-/* ── Table ───────────────────────────────────────────────────────────── */
-.auc-table thead th { background: var(--surface-low); font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.auc-table tbody td { padding: 8px 10px; font-size: .8125rem; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
-.auc-table-row { cursor: pointer; }
-.auc-table-row:hover { background: var(--surface-low); }
-.auc-table tbody tr:last-child td { border-bottom: none; }
+.auc-feed-row__avatar { width: 32px; height: 32px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: .6875rem; font-weight: 700; letter-spacing: .02em; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.auc-feed-row__body { flex: 1; min-width: 0; }
+.auc-feed-row__top { font-size: .8125rem; color: var(--on-surface); line-height: 1.4; }
+.auc-feed-row__top strong { font-weight: 700; }
+.auc-feed-row__end { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+.auc-feed-row__amount { font-family: 'IBM Plex Mono', monospace; font-size: .8125rem; font-weight: 700; color: var(--green); white-space: nowrap; }
 
-.auc-grade-pill { display: inline-flex; border-radius: 4px; font-size: .6875rem; font-weight: 700; padding: 2px 8px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+/* ── Element Plus table, reskinned to match the exchange design system ── */
+.auc-num { font-variant-numeric: tabular-nums; }
+.auc-table-card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.auc-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; }
+.auc-el-table :deep(.el-table__cell) { padding: 11px 0; }
+.auc-el-table :deep(.cell) { padding: 0 12px; font-size: .8125rem; line-height: 1.45; }
+.auc-el-table :deep(th.el-table__cell) { font-size: .6875rem; font-weight: 600; letter-spacing: .04em; }
+.auc-el-table :deep(th.el-table__cell .cell) { display: flex; align-items: center; white-space: nowrap; }
+.auc-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1rem; }
+.auc-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1rem; }
+.auc-el-table :deep(.el-table__inner-wrapper::before) { display: none; }
+.auc-el-table :deep(.el-table__body td.el-table__cell) { transition: background-color .12s ease; }
+.auc-el-table :deep(.el-table__body tr.el-table__row--striped td.el-table__cell) { background: #fafaf9; }
+.auc-el-table :deep(.el-table__body tr:hover > td.el-table__cell) { background: var(--el-table-row-hover-bg-color); }
+.auc-el-table :deep(.el-table__empty-block) { min-height: 140px; }
+.auc-el-table :deep(.el-table__empty-text) { color: var(--on-surface-var); font-size: .8125rem; }
+.auc-th-icon { width: 14px; height: 14px; margin-right: 5px; color: var(--green); opacity: .8; }
 
-.auc-my-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: .8125rem; }
-.auc-my-row:last-child { border-bottom: none; }
-
-/* ── Quality radar ───────────────────────────────────────────────────── */
-.auc-radar-wrap { height: 260px; }
-.auc-quality-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: .8125rem; }
-.auc-quality-row span { width: 90px; flex-shrink: 0; color: var(--on-surface-var); }
-.auc-quality-row strong { width: 32px; text-align: right; flex-shrink: 0; }
-.auc-bar-track { flex: 1; height: 6px; border-radius: 999px; background: var(--surface-low); overflow: hidden; }
-.auc-bar-fill { height: 100%; background: var(--green); border-radius: 999px; }
-
-/* ── Charts ──────────────────────────────────────────────────────────── */
-.auc-chart-wrap { height: 220px; }
+.auc-thumb { width: 32px; height: 32px; border-radius: 9px; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #f1e6d8; border: 1px solid #e6d5bf; }
+.auc-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.auc-thumb-icon { width: 22px; height: 22px; }
 
 /* ── Spec rows ───────────────────────────────────────────────────────── */
 .auc-spec { display: flex; align-items: center; justify-content: space-between; font-size: .75rem; color: var(--on-surface-var); padding: 5px 0; border-bottom: 1px solid var(--surface-low); }
 .auc-spec:last-child { border-bottom: none; }
 .auc-spec strong { color: var(--on-surface); font-weight: 700; }
 
-/* ── AI panel ────────────────────────────────────────────────────────── */
-.auc-ai-panel { background: linear-gradient(135deg, rgba(0,69,50,.04), rgba(200,134,42,.04)); border: 1px solid var(--border); border-radius: 14px; padding: 1.125rem; }
-.auc-ai-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1rem; height: 100%; }
-.auc-ai-card__label { display: inline-flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--gold); }
-.auc-ai-card__value { font-size: 1.125rem; font-weight: 800; color: var(--on-surface); margin: 4px 0; }
-.auc-ai-card__reason { font-size: .75rem; color: var(--on-surface-var); line-height: 1.5; margin-bottom: 4px; }
-.auc-ai-stat { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: .75rem; text-align: center; }
-.auc-ai-stat span { display: block; font-size: .625rem; font-weight: 600; color: var(--on-surface-var); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 4px; }
-.auc-ai-stat strong { font-size: 1rem; color: var(--on-surface); }
-.auc-ai-note { display: flex; align-items: flex-start; gap: 6px; font-size: .75rem; color: var(--on-surface-var); margin: 12px 0 0; }
-
-/* ── Leaderboard ─────────────────────────────────────────────────────── */
-.auc-leader-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
-.auc-leader-row:last-child { border-bottom: none; }
-.auc-leader-rank { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-low); color: var(--on-surface-var); font-size: .6875rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+/* ── Hot lots ────────────────────────────────────────────────────────── */
+.auc-hot-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
+.auc-hot-row:last-child { border-bottom: none; }
+.auc-hot-rank { width: 20px; height: 20px; border-radius: 50%; background: var(--surface-low); color: var(--on-surface-var); font-size: .625rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.auc-hot-row__end { text-align: right; flex-shrink: 0; }
+.auc-hot-row__end strong { display: block; font-family: 'IBM Plex Mono', monospace; font-size: .8125rem; color: var(--green); }
+.auc-hot-row__end span { display: block; font-size: .6875rem; color: var(--on-surface-var); }
 
 /* ── Badges ──────────────────────────────────────────────────────────── */
 .auc-badge { display: inline-flex; border-radius: 999px; font-size: .625rem; font-weight: 700; padding: 3px 9px; white-space: nowrap; }
@@ -902,25 +476,6 @@ const statusCls = (s) => ({
 .auc-badge--amber { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
 .auc-badge--blue { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
 .auc-badge--muted { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
-
-/* ── Modal ───────────────────────────────────────────────────────────── */
-.auc-modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.55); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
-.auc-modal { background: #fff; border-radius: 16px; max-width: 640px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; }
-.auc-modal__close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.9); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; z-index: 2; cursor: pointer; }
-.auc-modal__gallery { height: 200px; background: var(--surface-low); display: flex; align-items: center; justify-content: center; color: #cbd5e1; border-radius: 16px 16px 0 0; overflow: hidden; }
-.auc-modal__gallery img { width: 100%; height: 100%; object-fit: cover; }
-.auc-modal__body { padding: 1.25rem; }
-.auc-modal__title { font-size: 1.125rem; font-weight: 800; }
-.auc-modal__section-title { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); margin: 14px 0 8px; }
-.auc-modal__notes { background: var(--surface-low); border-radius: 10px; padding: .75rem; font-size: .8125rem; display: flex; flex-direction: column; gap: 4px; }
-
-.auc-spec-block { background: var(--surface-low); border-radius: 8px; padding: 8px 10px; }
-.auc-spec-block span { display: block; font-size: .625rem; color: var(--on-surface-var); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
-.auc-spec-block strong { font-size: .8125rem; color: var(--on-surface); }
-
-.auc-timeline { position: relative; padding-left: 16px; border-left: 2px solid var(--surface-low); display: flex; flex-direction: column; gap: 12px; }
-.auc-timeline__step { position: relative; font-size: .8125rem; }
-.auc-timeline__dot { position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
 
 @media (max-width: 1199.98px) {
     .auc-sidebar { position: static; }

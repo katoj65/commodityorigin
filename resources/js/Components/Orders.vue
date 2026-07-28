@@ -59,12 +59,12 @@ function formatAmount(order) {
 <template>
     <div class="orders-widget">
         <div class="orders-widget__head">
-            <Link :href="route('orders.index')" class="orders-widget__title-group">
+            <Link :href="route('market.request')" class="orders-widget__title-group">
                 <span class="orders-widget__icon"><el-icon :size="14"><Tickets /></el-icon></span>
                 <div class="orders-widget__title">{{ title }}</div>
                 <span v-if="activeCount" class="orders-widget__count">{{ activeCount }}</span>
             </Link>
-            <Link :href="route('orders.index')" class="orders-widget__link" aria-label="Open all orders" title="Open all orders">
+            <Link :href="route('market.request')" class="orders-widget__link" aria-label="Open all orders" title="Open all orders">
                 <el-icon :size="13"><FullScreen /></el-icon>
             </Link>
         </div>

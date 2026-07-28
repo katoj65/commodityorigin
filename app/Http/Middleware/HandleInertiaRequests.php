@@ -6,6 +6,7 @@ use App\Http\Resources\CalendarResource;
 use App\Http\Resources\ChatResource;
 use App\Http\Resources\TaskResource;
 use App\Models\RoleMetadata;
+use App\Services\AgentService;
 use App\Services\CalendarService;
 use App\Services\ChatService;
 use App\Services\NotificationService;
@@ -20,6 +21,7 @@ class HandleInertiaRequests extends Middleware
         private readonly CalendarService $calendar,
         private readonly TaskService $tasks,
         private readonly NotificationService $notifications,
+        private readonly AgentService $agents,
     ) {
     }
 
@@ -91,6 +93,9 @@ class HandleInertiaRequests extends Middleware
             'unreadNotificationsCount' => fn () => $authenticatedUser
                 ? $this->notifications->unreadCountForUser($authenticatedUser->id)
                 : 0,
+            'subscribedAgents' => fn () => ($authenticatedUser && ! $authenticatedUser->hasRole('admin'))
+                ? $this->agents->subscribedAgentsForUser($authenticatedUser->id)
+                : [],
         ];
     }
 }

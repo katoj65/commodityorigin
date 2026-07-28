@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ExchangeRates from '@/Components/ExchangeRates.vue';
 import Calendar from '@/Components/Calendar.vue';
@@ -15,6 +15,7 @@ import {
     CoffeeCup, PriceTag, Opportunity, TrendCharts, Refresh,
     ArrowRight, Flag, MapLocation, Ship, Position, Histogram,
     MagicStick, Notebook, Sunny, Cloudy, Pouring, UserFilled, Timer,
+    Coffee, Star, Coin, OfficeBuilding, ArrowLeft,
 } from '@element-plus/icons-vue';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
@@ -24,18 +25,38 @@ const props = defineProps({
     calendarEvents: { type: Array, default: () => [] },
     tasks: { type: Array, default: () => [] },
     orders: { type: Array, default: () => [] },
+    markets: { type: Array, default: () => [] },
     hasProfile: { type: Boolean, default: true },
-    hasRole: { type: Boolean, default: true },
-    roles: { type: Array, default: () => [] },
 });
 
 const page = usePage();
 const firstName = computed(() => page.props.auth?.user?.first_name ?? '');
 
-/* ── Profile completion dialog ───────────────────────────────────────── */
+/* ── Profile completion dialog ───────────────────────────────────────────
+   Two simple steps: (1) pick account type from two big, plain-language
+   cards, (2) fill one short form. No duplicate fields, no jargon — this
+   replaced an earlier two-tab design that made ordinary users fill the
+   same form twice. */
 const profileDialogOpen = ref(!props.hasProfile);
+const profileStep = ref('type');
+
+const accountTypes = [
+    {
+        value: 'personal',
+        icon: UserFilled,
+        title: 'Just me',
+        desc: 'I\'m trading for myself.',
+    },
+    {
+        value: 'business',
+        icon: OfficeBuilding,
+        title: 'A business',
+        desc: 'I\'m trading for a company, farm, or co-op.',
+    },
+];
 
 const profileForm = useForm({
+    profile_type: '',
     date_of_birth: '',
     gender: '',
     address_line_1: '',
@@ -50,6 +71,16 @@ const profileForm = useForm({
 
 const photoPreview = ref(null);
 
+const selectedAccountType = computed(
+    () => accountTypes.find((type) => type.value === profileForm.profile_type) ?? null,
+);
+
+function chooseAccountType(type) {
+    profileForm.profile_type = type;
+    if (type === 'business') profileForm.gender = '';
+    profileStep.value = 'details';
+}
+
 function onPhotoChange(event) {
     const file = event.target.files[0] ?? null;
     profileForm.photo = file;
@@ -59,32 +90,7 @@ function onPhotoChange(event) {
 function saveProfile() {
     profileForm.post(route('profile.store'), {
         preserveScroll: true,
-        onSuccess: () => {
-            profileDialogOpen.value = false;
-            if (!props.hasRole) roleDialogOpen.value = true;
-        },
-    });
-}
-
-/* ── Role selection dialog ─────────────────────────────────────────────
-   Opens once a profile exists but no role has been chosen yet — either
-   right away (profile was already complete) or right after the profile
-   dialog above closes. */
-const roleDialogOpen = ref(props.hasProfile && !props.hasRole);
-const selectingRole = ref(null);
-
-function roleInitial(name) {
-    return name?.charAt(0)?.toUpperCase() ?? '?';
-}
-
-function selectRole(slug) {
-    if (selectingRole.value) return;
-
-    selectingRole.value = slug;
-    router.post(route('profile.role'), { role: slug }, {
-        preserveScroll: true,
-        onSuccess: () => { roleDialogOpen.value = false; },
-        onFinish: () => { selectingRole.value = null; },
+        onSuccess: () => { profileDialogOpen.value = false; },
     });
 }
 
@@ -135,13 +141,13 @@ const marketChartData = {
 /* ══════════════════════════════════════════════════════════════════════
    2. MARKET OPPORTUNITIES
    ══════════════════════════════════════════════════════════════════════ */
-const opportunities = [
-    { title: 'Buyer seeking Grade AA Arabica', score: 94, country: 'Germany', revenue: '$62,000', action: 'Send sample offer' },
-    { title: 'Organic coffee demand increasing', score: 88, country: 'Netherlands', revenue: '$41,500', action: 'List organic lots' },
-    { title: 'Coffee shortage expected — Robusta', score: 81, country: 'Vietnam Corridor', revenue: '$118,000', action: 'Secure forward contract' },
-];
-
 const scoreTone = (score) => (score >= 90 ? 'cp-ring--high' : score >= 75 ? 'cp-ring--mid' : 'cp-ring--low');
+
+const demandCls = (demand) => ({
+    high: 'cp-badge--green', medium: 'cp-badge--amber', low: 'cp-badge--red',
+}[(demand ?? '').toLowerCase()] ?? 'cp-badge--muted');
+
+const fmtPrice = (n) => (n != null ? `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—');
 
 /* ══════════════════════════════════════════════════════════════════════
    7. DECISION CENTER — AI-recommended actions
@@ -355,21 +361,49 @@ const transitTimeStats = [
                             <div class="cp-kicker">AI-Generated</div>
                             <h2 class="cp-title mb-0">Market Opportunities</h2>
                         </div>
-                        <a href="#" class="cp-link" @click.prevent>View all <el-icon><ArrowRight /></el-icon></a>
+                        <Link :href="route('market.index')" class="cp-link">View all <el-icon><ArrowRight /></el-icon></Link>
                     </div>
 
-                    <div class="row g-3">
-                        <div v-for="opp in opportunities" :key="opp.title" class="col-12 col-md-4">
-                            <div class="cp-card h-100 cp-opp-card">
-                                <div class="d-flex align-items-start justify-content-between mb-2">
-                                    <div class="cp-ring" :class="scoreTone(opp.score)">{{ opp.score }}</div>
-                                    <el-icon class="cp-opp-icon"><Opportunity /></el-icon>
-                                </div>
-                                <div class="cp-opp-title">{{ opp.title }}</div>
-                                <div class="cp-opp-meta"><el-icon><Flag /></el-icon> {{ opp.country }}</div>
-                                <div class="cp-opp-revenue">{{ opp.revenue }} <span>est. revenue</span></div>
-                                <button class="btn cp-btn-primary btn-sm w-100 mt-2">{{ opp.action }}</button>
-                            </div>
+                    <div class="cp-card p-0 overflow-hidden">
+                        <div class="table-responsive">
+                            <table class="table cp-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th><el-icon class="cp-th-icon"><PriceTag /></el-icon>Lot</th>
+                                        <th><el-icon class="cp-th-icon"><MapLocation /></el-icon>Origin</th>
+                                        <th><el-icon class="cp-th-icon"><Coffee /></el-icon>Type</th>
+                                        <th><el-icon class="cp-th-icon"><Star /></el-icon>Quality</th>
+                                        <th><el-icon class="cp-th-icon"><Coin /></el-icon>Price / kg</th>
+                                        <th><el-icon class="cp-th-icon"><TrendCharts /></el-icon>Demand</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="m in markets" :key="m.id">
+                                        <td style="width:44px;">
+                                            <div class="cp-thumb">
+                                                <img v-if="m.image" :src="`/storage/${m.image}`" :alt="m.name">
+                                                <svg v-else class="cp-thumb-icon" viewBox="0 0 24 24">
+                                                    <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
+                                                    <path d="M9 6 C7 9, 11 15, 9 18" stroke="#c9a27a" stroke-width="1.1" fill="none" transform="rotate(-25 9 12)" />
+                                                    <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
+                                                    <path d="M16.5 10 C15 12.5, 18 16, 16.5 19" stroke="#d8b48f" stroke-width="1" fill="none" transform="rotate(20 16.5 14.5)" />
+                                                </svg>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="cp-item-name">{{ m.lot_code }}</div>
+                                            <div class="text-muted" style="font-size:.7rem;">{{ m.name }}</div>
+                                        </td>
+                                        <td>{{ m.origin || '—' }}</td>
+                                        <td class="text-capitalize">{{ m.type || '—' }}</td>
+                                        <td>{{ m.quality_score ?? '—' }}</td>
+                                        <td>{{ fmtPrice(m.price_per_kg) }}</td>
+                                        <td><span class="cp-badge" :class="demandCls(m.demand)">{{ m.demand || '—' }}</span></td>
+                                    </tr>
+                                    <tr v-if="!markets.length"><td colspan="7" class="text-center text-muted py-4">No live listings yet.</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -618,7 +652,7 @@ const transitTimeStats = [
         <!-- ── Complete Your Profile modal ─────────────────────────────── -->
         <el-dialog
             v-model="profileDialogOpen"
-            width="520px"
+            width="480px"
             align-center
             :show-close="false"
             :close-on-click-modal="false"
@@ -631,14 +665,55 @@ const transitTimeStats = [
                         <el-icon :size="18"><UserFilled /></el-icon>
                     </div>
                     <div class="gd-modal__head-text">
-                        <div class="gd-modal__eyebrow">One Last Step</div>
-                        <div class="gd-modal__title">Complete Your Profile</div>
+                        <div class="gd-modal__eyebrow">Welcome to Bean Origin</div>
+                        <div class="gd-modal__title">{{ profileStep === 'type' ? "Let's get you set up" : 'A few details about you' }}</div>
                     </div>
+                    <div class="gd-modal__step">Step {{ profileStep === 'type' ? '1' : '2' }} of 2</div>
+                </div>
+                <div class="gd-modal__progress">
+                    <span class="gd-modal__progress-bar gd-modal__progress-bar--done"></span>
+                    <span class="gd-modal__progress-bar" :class="{ 'gd-modal__progress-bar--done': profileStep === 'details' }"></span>
                 </div>
             </template>
 
-            <div class="gd-modal__body">
-                <p class="gd-modal__intro">We need a few details before you can start trading on Bean Origin.</p>
+            <Transition name="gd-step" mode="out-in">
+            <!-- Step 1 — pick an account type, in plain language -->
+            <div v-if="profileStep === 'type'" key="type" class="gd-modal__body">
+                <p class="gd-modal__intro">How will you be using Bean Origin?</p>
+
+                <div class="gd-type-cards">
+                    <button
+                        v-for="type in accountTypes"
+                        :key="type.value"
+                        type="button"
+                        class="gd-type-card"
+                        @click="chooseAccountType(type.value)"
+                    >
+                        <span class="gd-type-card__icon"><el-icon :size="20"><component :is="type.icon" /></el-icon></span>
+                        <span class="gd-type-card__text">
+                            <span class="gd-type-card__title">{{ type.title }}</span>
+                            <span class="gd-type-card__desc">{{ type.desc }}</span>
+                        </span>
+                        <el-icon class="gd-type-card__arrow"><ArrowRight /></el-icon>
+                    </button>
+                </div>
+
+                <p class="gd-modal__hint">You can change this later from your profile.</p>
+            </div>
+
+            <!-- Step 2 — one short form, no duplicate fields -->
+            <form v-else key="details" class="gd-modal__body" @submit.prevent="saveProfile">
+                <div class="gd-selected-type">
+                    <span v-if="selectedAccountType" class="gd-selected-type__chip">
+                        <el-icon :size="13"><component :is="selectedAccountType.icon" /></el-icon>
+                        {{ selectedAccountType.title }}
+                    </span>
+                    <button type="button" class="gd-back-link" @click="profileStep = 'type'">
+                        <el-icon :size="13"><ArrowLeft /></el-icon> Change
+                    </button>
+                </div>
+
+                <p class="gd-modal__intro">Just the basics — you can add more anytime.</p>
 
                 <div class="gd-photo-row">
                     <div class="gd-photo-preview">
@@ -646,7 +721,7 @@ const transitTimeStats = [
                         <el-icon v-else :size="22"><UserFilled /></el-icon>
                     </div>
                     <div class="gd-photo-field">
-                        <label class="gd-field__label">Profile Photo <span class="gd-field__optional">(optional)</span></label>
+                        <label class="gd-field__label">Photo <span class="gd-field__optional">(optional)</span></label>
                         <label class="gd-photo-upload">
                             <input type="file" accept="image/*" class="gd-photo-upload__input" @change="onPhotoChange">
                             {{ profileForm.photo ? 'Change Photo' : 'Upload Photo' }}
@@ -655,10 +730,16 @@ const transitTimeStats = [
                     </div>
                 </div>
 
-                <div class="gd-field-row">
+                <div v-if="profileForm.profile_type === 'business'" class="gd-field">
+                    <label class="gd-field__label">Date of Registration</label>
+                    <el-date-picker v-model="profileForm.date_of_birth" type="date" value-format="YYYY-MM-DD" placeholder="Pick a date" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.date_of_birth }" />
+                    <span v-if="profileForm.errors.date_of_birth" class="gd-field__error mt-3">{{ profileForm.errors.date_of_birth }}</span>
+                </div>
+
+                <div v-else class="gd-field-row">
                     <div class="gd-field">
                         <label class="gd-field__label">Date of Birth</label>
-                        <el-date-picker v-model="profileForm.date_of_birth" type="date" value-format="YYYY-MM-DD" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.date_of_birth }" />
+                        <el-date-picker v-model="profileForm.date_of_birth" type="date" value-format="YYYY-MM-DD" placeholder="Pick a date" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.date_of_birth }" />
                         <span v-if="profileForm.errors.date_of_birth" class="gd-field__error mt-3">{{ profileForm.errors.date_of_birth }}</span>
                     </div>
                     <div class="gd-field">
@@ -673,14 +754,9 @@ const transitTimeStats = [
                 </div>
 
                 <div class="gd-field">
-                    <label class="gd-field__label">Address Line 1</label>
+                    <label class="gd-field__label">Where are you located?</label>
                     <el-input v-model="profileForm.address_line_1" placeholder="Street address" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.address_line_1 }" />
                     <span v-if="profileForm.errors.address_line_1" class="gd-field__error">{{ profileForm.errors.address_line_1 }}</span>
-                </div>
-
-                <div class="gd-field">
-                    <label class="gd-field__label">Address Line 2 <span class="gd-field__optional">(optional)</span></label>
-                    <el-input v-model="profileForm.address_line_2" placeholder="Apartment, suite, etc." class="gd-input" />
                 </div>
 
                 <div class="gd-field-row">
@@ -690,81 +766,43 @@ const transitTimeStats = [
                         <span v-if="profileForm.errors.city" class="gd-field__error">{{ profileForm.errors.city }}</span>
                     </div>
                     <div class="gd-field">
-                        <label class="gd-field__label">State</label>
+                        <label class="gd-field__label">State / Region</label>
                         <el-input v-model="profileForm.state" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.state }" />
                         <span v-if="profileForm.errors.state" class="gd-field__error">{{ profileForm.errors.state }}</span>
                     </div>
                 </div>
 
-                <div class="gd-field-row">
-                    <div class="gd-field">
-                        <label class="gd-field__label">Country</label>
-                        <el-input v-model="profileForm.country" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.country }" />
-                        <span v-if="profileForm.errors.country" class="gd-field__error">{{ profileForm.errors.country }}</span>
-                    </div>
-                    <div class="gd-field">
-                        <label class="gd-field__label">Postal Code <span class="gd-field__optional">(optional)</span></label>
-                        <el-input v-model="profileForm.postal_code" class="gd-input" />
-                    </div>
-                </div>
-
                 <div class="gd-field">
-                    <label class="gd-field__label">Bio <span class="gd-field__optional">(optional)</span></label>
-                    <el-input v-model="profileForm.bio" type="textarea" :rows="3" placeholder="A short note about you or your business" class="gd-input" />
+                    <label class="gd-field__label">Country</label>
+                    <el-input v-model="profileForm.country" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.country }" />
+                    <span v-if="profileForm.errors.country" class="gd-field__error">{{ profileForm.errors.country }}</span>
                 </div>
-            </div>
 
-            <template #footer>
-                <div class="gd-modal__footer">
-                    <button type="button" class="gd-btn-primary" :disabled="profileForm.processing" @click="saveProfile">
+                <el-collapse class="gd-more">
+                    <el-collapse-item title="Add more details (optional)" name="more">
+                        <div class="gd-field">
+                            <label class="gd-field__label">Address Line 2</label>
+                            <el-input v-model="profileForm.address_line_2" placeholder="Apartment, suite, etc." class="gd-input" />
+                        </div>
+                        <div class="gd-field">
+                            <label class="gd-field__label">Postal Code</label>
+                            <el-input v-model="profileForm.postal_code" class="gd-input" />
+                        </div>
+                        <div class="gd-field">
+                            <label class="gd-field__label">Bio</label>
+                            <el-input v-model="profileForm.bio" type="textarea" :rows="2" placeholder="A short note about you" class="gd-input" />
+                        </div>
+                    </el-collapse-item>
+                </el-collapse>
+
+                <div class="gd-modal__footer gd-modal__footer--tab">
+                    <button type="submit" class="gd-btn-primary gd-btn-primary--block" :disabled="profileForm.processing">
                         <el-icon v-if="!profileForm.processing"><UserFilled /></el-icon>
-                        {{ profileForm.processing ? 'Saving…' : 'Save Profile' }}
+                        {{ profileForm.processing ? 'Saving…' : 'Save & Start Trading' }}
                     </button>
                 </div>
-            </template>
-        </el-dialog>
-
-        <!-- ── Select Your Role modal ──────────────────────────────────── -->
-        <el-dialog
-            v-model="roleDialogOpen"
-            width="640px"
-            align-center
-            :show-close="false"
-            :close-on-click-modal="false"
-            :close-on-press-escape="false"
-            class="gd-modal"
-        >
-            <template #header>
-                <div class="gd-modal__head">
-                    <div class="gd-modal__head-icon">
-                        <el-icon :size="18"><UserFilled /></el-icon>
-                    </div>
-                    <div class="gd-modal__head-text">
-                        <div class="gd-modal__eyebrow">One Last Step</div>
-                        <div class="gd-modal__title">How do you want to interact with the platform?</div>
-                    </div>
-                </div>
-            </template>
-
-            <div class="gd-modal__body">
-                <p class="gd-modal__intro">Pick the role that fits you best. You can change this later from your profile.</p>
-
-                <div class="gd-role-grid">
-                    <button
-                        v-for="role in roles"
-                        :key="role.slug"
-                        type="button"
-                        class="gd-role-tile"
-                        :disabled="!!selectingRole"
-                        :class="{ 'gd-role-tile--busy': selectingRole === role.slug }"
-                        @click="selectRole(role.slug)"
-                    >
-                        <span class="gd-role-tile__icon">{{ roleInitial(role.name) }}</span>
-                        <span class="gd-role-tile__name">{{ role.name }}</span>
-                        <span class="gd-role-tile__desc">{{ role.description }}</span>
-                    </button>
-                </div>
-            </div>
+            </form>
+            </Transition>
         </el-dialog>
     </AppLayout>
 </template>
@@ -895,6 +933,10 @@ const transitTimeStats = [
 .cp-table tbody tr:last-child td { border-bottom: none; }
 .cp-table tbody tr { transition: background-color .12s ease; }
 .cp-table tbody tr:hover td { background-color: var(--surface-low); }
+.cp-th-icon { width: 14px; height: 14px; margin-right: 5px; color: var(--green); opacity: .8; vertical-align: -2px; }
+.cp-thumb { width: 32px; height: 32px; border-radius: 9px; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #f1e6d8; border: 1px solid #e6d5bf; }
+.cp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cp-thumb-icon { width: 22px; height: 22px; }
 
 /* ── Hotspot / list rows ──────────────────────────────────────────────── */
 .cp-hotspot-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 6px; margin: 0 -6px; border-radius: 8px; border-bottom: 1px solid var(--surface-low); transition: background-color .12s ease; }
@@ -922,10 +964,34 @@ const transitTimeStats = [
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 20px 24px;
+    padding: 20px 24px 16px;
     background: #fff;
+}
+
+.gd-modal__step {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #9ca3af;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.gd-modal__progress {
+    display: flex;
+    gap: 4px;
+    padding: 0 24px 16px;
     border-bottom: 1px solid #f3f4f6;
 }
+
+.gd-modal__progress-bar {
+    flex: 1;
+    height: 3px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    transition: background 0.2s ease;
+}
+
+.gd-modal__progress-bar--done { background: #004532; }
 
 .gd-modal__head-icon {
     width: 38px;
@@ -971,6 +1037,13 @@ const transitTimeStats = [
     color: #6b7280;
     line-height: 1.5;
     margin: 0 0 2px;
+}
+
+.gd-modal__hint {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-align: center;
+    margin: 4px 0 0;
 }
 
 .gd-field-row {
@@ -1063,12 +1136,14 @@ const transitTimeStats = [
 }
 
 .gd-input--error :deep(.el-input__wrapper),
-.gd-input--error :deep(.el-textarea__inner) {
+.gd-input--error :deep(.el-textarea__inner),
+.gd-input--error :deep(.el-select__wrapper) {
     box-shadow: 0 0 0 1.5px #dc2626 inset !important;
 }
 
 .gd-input :deep(.el-input__wrapper),
-.gd-input :deep(.el-textarea__inner) {
+.gd-input :deep(.el-textarea__inner),
+.gd-input :deep(.el-select__wrapper) {
     border-radius: 10px;
     box-shadow: 0 0 0 1px #e5e7eb inset;
     background: #f9fafb;
@@ -1076,13 +1151,15 @@ const transitTimeStats = [
 }
 
 .gd-input :deep(.el-input__wrapper:hover),
-.gd-input :deep(.el-textarea__inner:hover) {
+.gd-input :deep(.el-textarea__inner:hover),
+.gd-input :deep(.el-select__wrapper:hover) {
     background: #fff;
     box-shadow: 0 0 0 1px #d1d5db inset;
 }
 
 .gd-input :deep(.el-input__wrapper.is-focus),
-.gd-input :deep(.el-textarea__inner:focus) {
+.gd-input :deep(.el-textarea__inner:focus),
+.gd-input :deep(.el-select__wrapper.is-focused) {
     background: #fff;
     box-shadow: 0 0 0 1.5px #004532 inset;
 }
@@ -1092,6 +1169,13 @@ const transitTimeStats = [
     justify-content: flex-end;
     padding: 16px 24px;
     background: #f9fafb;
+    border-top: 1px solid #f3f4f6;
+}
+
+.gd-modal__footer--tab {
+    padding: 14px 0 0;
+    margin-top: 4px;
+    background: transparent;
     border-top: 1px solid #f3f4f6;
 }
 
@@ -1112,69 +1196,114 @@ const transitTimeStats = [
 
 .gd-btn-primary:hover:not(:disabled) { opacity: 0.9; }
 .gd-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.gd-btn-primary--block { width: 100%; justify-content: center; padding: 11px 18px; }
 
-/* ── Role tiles ────────────────────────────────────────────────────────── */
-.gd-role-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+/* ── Step 1: account type cards ──────────────────────────────────────── */
+.gd-type-cards {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
 }
 
-.gd-role-tile {
+.gd-type-card {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    padding: 14px;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    background: #fff;
+    background: #f9fafb;
     cursor: pointer;
     text-align: left;
-    transition: border-color 0.12s ease, background 0.12s ease, transform 0.08s ease, opacity 0.12s ease;
+    transition: border-color 0.12s ease, background 0.12s ease;
 }
 
-.gd-role-tile:hover:not(:disabled) {
-    border-color: #004532;
-    background: #f8fafc;
-}
+.gd-type-card:hover { border-color: #004532; background: rgba(0, 69, 50, 0.05); }
 
-.gd-role-tile:active:not(:disabled) { transform: scale(0.98); }
-.gd-role-tile:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.gd-role-tile--busy {
-    opacity: 1;
-    border-color: #004532;
-    background: rgba(0, 69, 50, 0.05);
-}
-
-.gd-role-tile__icon {
-    width: 34px;
-    height: 34px;
+.gd-type-card__icon {
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
     background: rgba(0, 69, 50, 0.08);
     color: #004532;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.875rem;
-    font-weight: 800;
+    flex-shrink: 0;
 }
 
-.gd-role-tile__name {
-    font-size: 0.8125rem;
+.gd-type-card__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.gd-type-card__title { font-size: 0.875rem; font-weight: 700; color: #111827; }
+.gd-type-card__desc { font-size: 0.75rem; color: #6b7280; }
+.gd-type-card__arrow { color: #9ca3af; flex-shrink: 0; }
+
+/* ── Step 2: short form ──────────────────────────────────────────────── */
+.gd-selected-type {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: -4px;
+}
+
+.gd-selected-type__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
     font-weight: 700;
-    color: #111827;
+    color: #004532;
+    background: rgba(0, 69, 50, 0.08);
+    border-radius: 999px;
+    padding: 5px 12px 5px 10px;
 }
 
-.gd-role-tile__desc {
-    font-size: 0.6875rem;
+.gd-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: none;
+    background: none;
     color: #6b7280;
-    line-height: 1.4;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0;
+    cursor: pointer;
 }
+
+.gd-back-link:hover { color: #004532; }
+
+.gd-more :deep(.el-collapse-item__header) {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #004532;
+    background: transparent;
+    border-bottom: none;
+    height: 34px;
+}
+
+.gd-more :deep(.el-collapse-item__wrap) { background: transparent; border-bottom: none; }
+
+.gd-more :deep(.el-collapse-item__content) {
+    padding-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.gd-more { border-top: none; border-bottom: none; }
+.gd-more :deep(.el-collapse-item) { border-bottom: none; }
+
+/* ── Step transition ──────────────────────────────────────────────────── */
+.gd-step-enter-active, .gd-step-leave-active { transition: opacity 0.16s ease, transform 0.16s ease; }
+.gd-step-enter-from { opacity: 0; transform: translateX(8px); }
+.gd-step-leave-to { opacity: 0; transform: translateX(-8px); }
 
 @media (max-width: 575.98px) {
     .gd-field-row { grid-template-columns: 1fr; }
-    .gd-role-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 480px) {
+    :deep(.el-dialog.gd-modal) { width: 92vw !important; }
 }
 </style>

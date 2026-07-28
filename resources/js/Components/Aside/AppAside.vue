@@ -6,6 +6,8 @@ import WalletNavLink from '@/Components/WalletNavLink.vue';
 const page = usePage();
 
 const user = computed(() => page.props.auth.user);
+const isAdmin = computed(() => user.value?.role === 'admin');
+const subscribedAgents = computed(() => page.props.subscribedAgents ?? []);
 const userInitials = computed(() => {
     const name = user.value?.name ?? '';
     return name
@@ -247,6 +249,34 @@ const sideSections = computed(() => [
                     </div>
                 </div>
 
+                <div v-if="!isAdmin" class="px-4 py-2">
+                    <div class="mb-2 mt-1 px-3 font-mono text-[9px] uppercase tracking-[0.14em] text-ink4">
+                        My Agents
+                    </div>
+
+                    <div v-for="agent in subscribedAgents" :key="agent.id" class="mb-1.5">
+                        <div class="snav" style="cursor: default;">
+                            <el-icon><component :is="agent.icon || 'Setting'" /></el-icon>
+                            <span class="snav-label">{{ agent.name }}</span>
+                        </div>
+
+                        <div v-if="agent.functions?.length" class="agent-fn-list">
+                            <a v-for="fn in agent.functions" :key="fn.id" href="#" class="agent-fn-link" @click.prevent>
+                                <el-icon><component :is="fn.icon || 'Setting'" /></el-icon>
+                                <span class="snav-label">{{ fn.name }}</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div v-if="!subscribedAgents.length" class="px-3 py-2 text-[12px] leading-relaxed text-ink4">
+                        No agents subscribed yet.
+                        <Link :href="route('apps.index')" class="font-medium text-gold hover:underline">
+                            Explore Apps
+                        </Link>
+                    </div>
+                </div>
+
+                <template v-if="isAdmin">
                 <div
                     v-for="section in sideSections"
                     :key="section.title"
@@ -383,6 +413,7 @@ const sideSections = computed(() => [
                         </span>
                     </a>
                 </div>
+                </template>
 
                 <div class="mt-auto border-t border-line p-3">
                     <div class="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-gray-50">
@@ -433,9 +464,48 @@ aside::-webkit-scrollbar {
     flex-shrink: 0;
 }
 
+.snav .el-icon {
+    width: 15px;
+    height: 15px;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
 .snav-label {
     flex: 1 1 auto;
     min-width: 0;
+}
+
+.agent-fn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding-left: 28px;
+    margin-top: 1px;
+}
+
+.agent-fn-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    color: #9ca3af;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.agent-fn-link .el-icon {
+    width: 12px;
+    height: 12px;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.agent-fn-link:hover {
+    background: #fff8f0;
+    color: #c8862a;
 }
 
 .snav-trailing {

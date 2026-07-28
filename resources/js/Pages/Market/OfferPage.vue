@@ -2,21 +2,20 @@
 import { computed, ref, watch } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import {
-    Plus, View, CollectionTag, Box, Coin, Money, Flag, Tickets, User, ShoppingCart, Close, Files,
+    Plus, View, CollectionTag, Box, Coin, Money, Flag, User, ShoppingCart, Close, Files, Tickets,
 } from '@element-plus/icons-vue';
 import MarketPage from './MarketPage.vue';
 
 const props = defineProps({
-    myRequests: { type: Array, default: () => [] },
     orders: { type: Array, default: () => [] },
 });
 
 const searchQuery = ref('');
 const showForm = ref(false);
 
-/* ── New request dialog ──────────────────────────────────────────────── */
+/* ── New offer dialog ────────────────────────────────────────────────── */
 const form = useForm({
-    type: 'request',
+    type: 'offer',
     crop_type: '',
     variety: '',
     grade: '',
@@ -67,22 +66,6 @@ const saveOrder = () => {
     });
 };
 
-const statusLabel = (s) => ({ pending: 'Pending', approved: 'Approved', rejected: 'Rejected', fulfilled: 'Fulfilled' }[s] ?? s ?? '—');
-const statusTone = (s) => ({ pending: 'amber', approved: 'green', rejected: 'red', fulfilled: 'muted' }[s] ?? 'muted');
-const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
-const fmtQty = (q) => (q != null ? `${Number(q).toLocaleString()} kg` : '—');
-const fmtAmt = (a) => (a != null ? `$${Number(a).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—');
-const varietyGrade = (r) => [r.variety, r.grade].filter(Boolean).join(' · ') || '—';
-
-const filterRows = (rows) => {
-    if (!searchQuery.value) return rows;
-    const q = searchQuery.value.toLowerCase();
-    return rows.filter((r) => `${r.crop_type ?? ''} ${r.variety ?? ''} ${r.grade ?? ''} ${r.user?.name ?? ''}`.toLowerCase().includes(q));
-};
-
-const filteredMine = computed(() => filterRows(props.myRequests));
-
-/* ── Orders raised from requests ─────────────────────────────────────── */
 const orderStatusLabel = (s) => ({
     open: 'Open', pending: 'Pending', confirmed: 'Confirmed', inspection: 'Inspection',
     processing: 'Processing', shipped: 'Shipped', delivered: 'Delivered', cancelled: 'Cancelled', withdrawn: 'Withdrawn',
@@ -93,10 +76,14 @@ const orderStatusTone = (s) => ({
     processing: 'amber', shipped: 'green', delivered: 'green', cancelled: 'red', withdrawn: 'muted',
 }[s] ?? 'muted');
 
+const fmtQty = (q) => (q != null ? `${Number(q).toLocaleString()} kg` : '—');
+const fmtAmt = (a) => (a != null ? `$${Number(a).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—');
+const varietyGrade = (r) => [r.variety, r.grade].filter(Boolean).join(' · ') || '—';
+
 const filteredOrders = computed(() => {
     if (!searchQuery.value) return props.orders;
     const q = searchQuery.value.toLowerCase();
-    return props.orders.filter((o) => `${o.order_number ?? ''} ${o.crop_type ?? ''} ${o.variety ?? ''} ${o.grade ?? ''} ${o.buyer_name ?? ''} ${o.seller_name ?? ''}`.toLowerCase().includes(q));
+    return props.orders.filter((o) => `${o.order_number ?? ''} ${o.crop_type ?? ''} ${o.variety ?? ''} ${o.grade ?? ''} ${o.seller_name ?? ''}`.toLowerCase().includes(q));
 });
 
 /* ── Pagination ───────────────────────────────────────────────────────── */
@@ -116,20 +103,18 @@ watch(filteredOrders, () => { currentPage.value = 1; });
         <div class="mkt-body">
             <div class="mkt-section__head">
                 <div>
-                    <div class="mkt-kicker">Buyer Demand</div>
-                    <h2 class="mkt-title">Coffee Requests</h2>
+                    <div class="mkt-kicker">Seller Supply</div>
+                    <h2 class="mkt-title">Coffee Offers</h2>
                 </div>
                 <div class="mkt-section__actions">
-                    <span class="mkt-count">{{ filteredMine.length }} request{{ filteredMine.length !== 1 ? 's' : '' }}</span>
+                    <span class="mkt-count">{{ filteredOrders.length }} offer{{ filteredOrders.length !== 1 ? 's' : '' }}</span>
                     <button type="button" class="mkt-btn-group__item mkt-btn-group__item--solid mkt-new-btn" @click="openCreateDialog">
-                        <el-icon><Plus /></el-icon> New Request
+                        <el-icon><Plus /></el-icon> New Offer
                     </button>
                 </div>
             </div>
 
-          
-
-            <el-table :data="pagedOrders" class="mkt-el-table" stripe empty-text="No request orders match your search.">
+            <el-table :data="pagedOrders" class="mkt-el-table" stripe empty-text="No offers match your search.">
                 <el-table-column width="56">
                     <template #default>
                         <div class="mkt-thumb">
@@ -165,9 +150,9 @@ watch(filteredOrders, () => { currentPage.value = 1; });
                     <template #header><el-icon class="mkt-th-icon"><Money /></el-icon>Total</template>
                     <template #default="{ row }"><span class="mkt-num fw-semibold">{{ fmtAmt(row.total_amount) }}</span></template>
                 </el-table-column>
-                <el-table-column label="Buyer" min-width="130">
-                    <template #header><el-icon class="mkt-th-icon"><User /></el-icon>Buyer</template>
-                    <template #default="{ row }">{{ row.buyer_name || '—' }}</template>
+                <el-table-column label="Seller" min-width="130">
+                    <template #header><el-icon class="mkt-th-icon"><User /></el-icon>Seller</template>
+                    <template #default="{ row }">{{ row.seller_name || '—' }}</template>
                 </el-table-column>
                 <el-table-column label="Status" min-width="110" align="center">
                     <template #header><el-icon class="mkt-th-icon"><Flag /></el-icon>Status</template>
@@ -194,7 +179,7 @@ watch(filteredOrders, () => { currentPage.value = 1; });
             </div>
         </div>
 
-        <!-- ── New Request modal ─────────────────────────────────────────── -->
+        <!-- ── New Offer modal ───────────────────────────────────────────── -->
         <el-dialog
             v-model="showForm"
             width="480px"
@@ -209,8 +194,8 @@ watch(filteredOrders, () => { currentPage.value = 1; });
                         <el-icon :size="18"><ShoppingCart /></el-icon>
                     </div>
                     <div class="ord-modal__head-text">
-                        <div class="ord-modal__eyebrow">Buy</div>
-                        <div class="ord-modal__title">New Request</div>
+                        <div class="ord-modal__eyebrow">Sell</div>
+                        <div class="ord-modal__title">New Offer</div>
                     </div>
                     <button type="button" class="ord-modal__close" aria-label="Close" @click="showForm = false">
                         <el-icon :size="14"><Close /></el-icon>
@@ -274,7 +259,7 @@ watch(filteredOrders, () => { currentPage.value = 1; });
 
                 <div class="ord-field">
                     <label class="ord-field__label"><el-icon :size="12"><Files /></el-icon> Notes</label>
-                    <el-input v-model="form.notes" type="textarea" :rows="2" placeholder="Optional notes for the seller" class="ord-input" />
+                    <el-input v-model="form.notes" type="textarea" :rows="2" placeholder="Optional notes for the buyer" class="ord-input" />
                 </div>
             </div>
 
@@ -283,7 +268,7 @@ watch(filteredOrders, () => { currentPage.value = 1; });
                     <button type="button" class="ord-btn-outline" @click="showForm = false">Cancel</button>
                     <button type="button" class="ord-btn-primary" :disabled="form.processing" @click="saveOrder">
                         <el-icon v-if="!form.processing"><Plus /></el-icon>
-                        {{ form.processing ? 'Posting…' : 'Create Request' }}
+                        {{ form.processing ? 'Posting…' : 'Create Offer' }}
                     </button>
                 </div>
             </template>
@@ -297,7 +282,6 @@ watch(filteredOrders, () => { currentPage.value = 1; });
 
 .mkt-body { padding: 1.25rem 0 3rem; }
 .mkt-section__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .875rem; padding: 0 1.5rem; }
-.mkt-section__head--orders { margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
 .mkt-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 .mkt-title { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
 .mkt-count { font-size: .75rem; color: var(--on-surface-var); }
@@ -357,7 +341,7 @@ watch(filteredOrders, () => { currentPage.value = 1; });
 .mkt-badge--red { background: #fef2f2; color: #dc2626; }
 .mkt-badge--muted { background: #f5f5f4; color: #78716c; }
 
-/* ── New Request modal ──────────────────────────────────────────────────
+/* ── New Offer modal ─────────────────────────────────────────────────────
    NOTE: <el-dialog> teleports its content to <body>, outside .mkt-page's
    DOM subtree, so CSS custom properties defined on .mkt-page do NOT
    cascade in. All colors below are literal hex values on purpose. */

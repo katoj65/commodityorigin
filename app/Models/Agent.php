@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Agent extends Model
@@ -17,6 +18,7 @@ class Agent extends Model
      */
     protected $fillable = [
         'name',
+        'icon',
         'description',
         'agent_type',
         'action',
@@ -46,5 +48,13 @@ class Agent extends Model
     public function subject(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * The callable functions this agent exposes.
+     */
+    public function functions(): HasMany
+    {
+        return $this->hasMany(AgentFunction::class);
     }
 }

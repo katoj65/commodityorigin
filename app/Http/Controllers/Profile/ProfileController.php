@@ -30,8 +30,9 @@ class ProfileController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'date_of_birth' => ['required', 'date', 'before:today'],
-            'gender' => ['required', 'in:male,female,prefer_not_to_say'],
+            'profile_type' => ['required', 'in:personal,business'],
+            'date_of_birth' => ['required', 'date', 'before_or_equal:today'],
+            'gender' => [Rule::requiredIf($request->input('profile_type') === 'personal'), 'nullable', 'in:male,female,prefer_not_to_say'],
             'address_line_1' => ['required', 'string', 'max:255'],
             'address_line_2' => ['nullable', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:255'],
@@ -42,6 +43,9 @@ class ProfileController extends Controller
             'photo' => ['nullable', 'image', 'max:5120'],
         ]);
 
+        $profileType = $validated['profile_type'];
+        unset($validated['profile_type']);
+
         $photoPath = ImageUploadHelper::store($request->file('photo'), 'profile-photos');
         unset($validated['photo']);
 
@@ -50,8 +54,9 @@ class ProfileController extends Controller
         }
 
         $this->profiles->save($request->user(), $validated);
+        $this->profiles->setAccountType($request->user(), $profileType);
 
-        return back()->with('success', 'Profile saved successfully.');
+        return redirect()->route('dashboard')->with('success', 'Profile saved successfully.');
     }
 
     /**

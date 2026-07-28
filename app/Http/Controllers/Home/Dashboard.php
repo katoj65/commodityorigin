@@ -11,6 +11,7 @@ use App\Models\CropGradeMetadata;
 use App\Models\RoleMetadata;
 use App\Services\CalendarService;
 use App\Services\ExchangeRateService;
+use App\Services\MarketService;
 use App\Services\OrderService;
 use App\Services\ProfileService;
 use App\Services\TaskService;
@@ -27,6 +28,7 @@ class Dashboard extends Controller
         private readonly TaskService $tasks,
         private readonly OrderService $orders,
         private readonly ProfileService $profiles,
+        private readonly MarketService $market,
     ) {
     }
 
@@ -191,19 +193,12 @@ class Dashboard extends Controller
 
     /**
      * Default dashboard for all authenticated users.
-     * Passes roles (for the role-selection modal) and crop grades
-     * (for the Quick Buy modal grade dropdown).
+     * Passes crop grades (for the Quick Buy modal grade dropdown).
      */
     public function dashboard(Request $request)
     {
-        $user       = $request->user()->loadMissing('userRole');
+        $user       = $request->user();
         $hasProfile = ! is_null($this->profiles->forUser($user->id));
-        $hasRole    = ! is_null($user->userRole);
-
-        $roles = RoleMetadata::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get(['slug', 'name', 'description']);
 
         $cropGrades = CropGradeMetadata::query()
             ->where('is_active', true)
@@ -219,15 +214,13 @@ class Dashboard extends Controller
 
         return Inertia::render('GeneralDashboard', [
             'hasProfile' => $hasProfile,
-            'hasRole'    => $hasRole,
-            'roles'      => $roles,
-            
             'cropGrades' => $cropGrades,
             'lotRequests' => $lotRequest,
             'exchangeRates' => ExchangeRateResource::collection($this->exchangeRates->all())->resolve(),
             'calendarEvents' => CalendarResource::collection($this->calendar->eventsForUser($user->id))->resolve(),
             'tasks' => TaskResource::collection($this->tasks->tasksForUser($user->id)->take(6))->resolve(),
             'orders' => OrderResource::collection($this->orders->ordersForUser($user->id)->take(6))->resolve(),
+            'markets' => array_slice($this->market->marketPageListing(), 0, 5),
         ]);
 
 
