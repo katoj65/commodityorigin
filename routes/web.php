@@ -64,6 +64,8 @@ Route::middleware([
         Route::patch('/{agent}', [AgentController::class, 'update'])->name('update');
         Route::delete('/{agent}', [AgentController::class, 'destroy'])->name('destroy');
         Route::post('/{agent}/functions', [AgentController::class, 'storeFunction'])->name('functions.store');
+        Route::patch('/{agent}/functions/{function}', [AgentController::class, 'updateFunction'])->name('functions.update');
+        Route::delete('/{agent}/functions/{function}', [AgentController::class, 'destroyFunction'])->name('functions.destroy');
         Route::post('/{agent}/subscribe', [AgentController::class, 'userSubscription'])->name('subscribe');
         Route::delete('/{agent}/subscribe', [AgentController::class, 'unsubscribe'])->name('unsubscribe');
     });
@@ -134,7 +136,7 @@ Route::middleware([
     // Farm workspace routes.
     Route::prefix('farm')->name('farm.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [FarmController::class, 'index'])->name('index');
-        Route::get('/create/{farmer}', [FarmController::class, 'create'])->name('create');
+        Route::get('/create', [FarmController::class, 'create'])->name('create');
         Route::post('/', [FarmController::class, 'store'])->name('store');
         Route::get('/{farm}', [FarmController::class, 'show'])->name('show');
     });

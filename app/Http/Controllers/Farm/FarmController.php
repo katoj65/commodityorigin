@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Farm;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FarmResource;
-use App\Models\CropVarietyMetadata;
 use App\Models\Farm;
 use App\Models\Farmer;
+use App\Services\FarmService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,42 +15,35 @@ use Inertia\Response;
 
 class FarmController extends Controller
 {
+    public function __construct(private readonly FarmService $farms)
+    {
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(): Response
     {
-        $farms = Farm::query()
-            ->with('farmer')
-            ->latest()
-            ->get();
-
         return Inertia::render('Farm/FamsPage', [
-            'farms' => FarmResource::collection($farms)->resolve(),
+            'farms' => FarmResource::collection($this->farms->list())->resolve(),
         ]);
     }
 
     /**
-     * Show the farm creation form.
+     * Show the farm creation form. Accepts an optional ?farmer=ID query
+     * parameter to pre-select and lock the farmer; otherwise the page
+     * shows a farmer picker.
      */
-    public function create(Farmer $farmer): Response
+    public function create(Request $request): Response
     {
+        $farmer = $request->query('farmer')
+            ? Farmer::query()->findOrFail($request->query('farmer'))
+            : null;
+
         return Inertia::render('Farm/Create', [
-            'farmer' => [
-                'id' => $farmer->id,
-                'first_name' => $farmer->first_name,
-                'last_name' => $farmer->last_name,
-                'district' => $farmer->district,
-                'sub_county' => $farmer->sub_county,
-                'coffee_type' => $farmer->coffee_type,
-                'cooperative' => $farmer->cooperative,
-            ],
-            'varietyOptions' => CropVarietyMetadata::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->pluck('name')
-                ->values(),
+            'farmer' => $farmer ? $this->farms->farmerSummary($farmer) : null,
+            'farmerOptions' => $farmer ? [] : $this->farms->farmerOptions(),
+            'varietyOptions' => $this->farms->activeVarietyOptions(),
         ]);
     }
 
@@ -59,10 +52,7 @@ class FarmController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $varietyOptions = CropVarietyMetadata::query()
-            ->where('is_active', true)
-            ->pluck('name')
-            ->all();
+        $varietyOptions = $this->farms->activeVarietyOptions()->all();
 
         $validated = $request->validate([
             'farmer_id' => ['required', 'exists:farmers,id'],
@@ -74,7 +64,7 @@ class FarmController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $farm = Farm::query()->create($validated);
+        $farm = $this->farms->create($validated);
 
         return redirect()
             ->route('farmer.show', $farm->farmer_id)
@@ -86,10 +76,8 @@ class FarmController extends Controller
      */
     public function show(Farm $farm): Response
     {
-        $farm->load('farmer');
-
         return Inertia::render('Farm/FarmProfile', [
-            'farm' => FarmResource::make($farm)->resolve(),
+            'farm' => FarmResource::make($this->farms->show($farm))->resolve(),
         ]);
     }
 

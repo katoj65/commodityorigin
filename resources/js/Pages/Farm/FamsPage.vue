@@ -197,7 +197,7 @@ const badgeClass = (b) => {
                             <p class="fm-subtitle mb-0">Explore verified coffee farms and estates with traceable production data</p>
                         </div>
                         <div class="d-flex flex-wrap gap-2">
-                            <Link :href="route('farmer.index')" class="btn fm-btn-primary btn-sm"><el-icon><Star /></el-icon> Add Farm / Estate</Link>
+                            <Link :href="route('farm.create')" class="btn fm-btn-primary btn-sm"><el-icon><Star /></el-icon> Add Farm / Estate</Link>
                             <button class="btn fm-btn-outline btn-sm"><el-icon><Download /></el-icon> Export Directory</button>
                             <button class="btn fm-btn-ghost btn-sm"><el-icon><ChatDotRound /></el-icon> Ask Advisor</button>
                         </div>

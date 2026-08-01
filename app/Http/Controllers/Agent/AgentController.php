@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Agent;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AgentResource;
 use App\Models\Agent;
+use App\Models\AgentFunction;
 use App\Services\AgentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -122,6 +123,45 @@ class AgentController extends Controller
         $this->agents->createFunction($agent, $validated);
 
         return back()->with('success', 'Function added successfully.');
+    }
+
+    /**
+     * Update a function belonging to the specified agent. Admin only.
+     */
+    public function updateFunction(Request $request, Agent $agent, AgentFunction $function): RedirectResponse
+    {
+        Gate::authorize('update', $agent);
+        abort_unless($function->agent_id === $agent->id, 404);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'icon' => ['nullable', 'string', 'max:255'],
+            'slug' => [
+                'required', 'string', 'max:255',
+                Rule::unique('agent_functions', 'slug')
+                    ->where(fn ($query) => $query->where('agent_id', $agent->id))
+                    ->ignore($function->id),
+            ],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'parameters' => ['nullable', 'array'],
+        ]);
+
+        $this->agents->updateFunction($function, $validated);
+
+        return back()->with('success', 'Function updated successfully.');
+    }
+
+    /**
+     * Delete a function belonging to the specified agent. Admin only.
+     */
+    public function destroyFunction(Agent $agent, AgentFunction $function): RedirectResponse
+    {
+        Gate::authorize('update', $agent);
+        abort_unless($function->agent_id === $agent->id, 404);
+
+        $this->agents->destroyFunction($function);
+
+        return back()->with('success', 'Function deleted successfully.');
     }
 
     /**

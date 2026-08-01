@@ -8,6 +8,18 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 const isAdmin = computed(() => user.value?.role === 'admin');
 const subscribedAgents = computed(() => page.props.subscribedAgents ?? []);
+
+// A function's `slug` holds the URL path it links to (e.g. "farm/create"),
+// entered by the admin when the function was created/edited. Built off
+// Ziggy's own base URL (the global `Ziggy.url`) since the app can be
+// served from a subpath (e.g. http://localhost/commodityorigin).
+const functionIsRoute = (fn) => !!fn.slug;
+const functionHref = (fn) => (fn.slug ? `${Ziggy.url}/${fn.slug.replace(/^\/+/, '')}` : '#');
+const onFunctionClick = (fn, event) => {
+    if (!functionIsRoute(fn)) {
+        event.preventDefault();
+    }
+};
 const userInitials = computed(() => {
     const name = user.value?.name ?? '';
     return name
@@ -261,10 +273,17 @@ const sideSections = computed(() => [
                         </div>
 
                         <div v-if="agent.functions?.length" class="agent-fn-list">
-                            <a v-for="fn in agent.functions" :key="fn.id" href="#" class="agent-fn-link" @click.prevent>
+                            <component
+                                :is="functionIsRoute(fn) ? Link : 'a'"
+                                v-for="fn in agent.functions"
+                                :key="fn.id"
+                                :href="functionHref(fn)"
+                                class="agent-fn-link"
+                                @click="onFunctionClick(fn, $event)"
+                            >
                                 <el-icon><component :is="fn.icon || 'Setting'" /></el-icon>
                                 <span class="snav-label">{{ fn.name }}</span>
-                            </a>
+                            </component>
                         </div>
                     </div>
 
@@ -480,15 +499,14 @@ aside::-webkit-scrollbar {
     display: flex;
     flex-direction: column;
     gap: 1px;
-    padding-left: 28px;
     margin-top: 1px;
 }
 
 .agent-fn-link {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
+    gap: 8px;
+    padding: 4px 12px;
     border-radius: 5px;
     font-size: 11px;
     color: #9ca3af;
@@ -497,9 +515,9 @@ aside::-webkit-scrollbar {
 }
 
 .agent-fn-link .el-icon {
-    width: 12px;
-    height: 12px;
-    font-size: 12px;
+    width: 15px;
+    height: 15px;
+    font-size: 15px;
     flex-shrink: 0;
 }
 

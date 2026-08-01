@@ -7,28 +7,31 @@ import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
 const props = defineProps({
-    farmer: { type: Object, required: true },
+    farmer: { type: Object, default: null },
+    farmerOptions: { type: Array, default: () => [] },
     varietyOptions: { type: Array, default: () => [] },
 });
 
+const hasLockedFarmer = computed(() => !!props.farmer);
+
 const farmerName = computed(() =>
-    [props.farmer.first_name, props.farmer.last_name].filter(Boolean).join(' ') || 'Selected Farmer',
+    props.farmer ? [props.farmer.first_name, props.farmer.last_name].filter(Boolean).join(' ') || 'Selected Farmer' : '',
 );
 
 const farmerLocation = computed(() =>
-    [props.farmer.sub_county, props.farmer.district].filter(Boolean).join(', ') || 'Location pending',
+    props.farmer ? [props.farmer.sub_county, props.farmer.district].filter(Boolean).join(', ') || 'Location pending' : '',
 );
 
-const farmerMeta = computed(() => [
+const farmerMeta = computed(() => props.farmer ? [
     { label: 'Coffee Type', value: props.farmer.coffee_type || 'Not set',              icon: 'crop'   },
     { label: 'Cooperative', value: props.farmer.cooperative || 'Independent producer', icon: 'office' },
     { label: 'Origin',      value: farmerLocation.value,                               icon: 'map'    },
-]);
+] : []);
 
 const form = useForm({
-    farmer_id: props.farmer.id,
+    farmer_id: props.farmer?.id ?? '',
     name:      '',
-    location:  [props.farmer.sub_county, props.farmer.district].filter(Boolean).join(', '),
+    location:  props.farmer ? [props.farmer.sub_county, props.farmer.district].filter(Boolean).join(', ') : '',
     size:      '',
     altitude:  '',
     variety:   '',
@@ -54,8 +57,11 @@ const submit = () => form.post(route('farm.store'));
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <Link :href="route('farm.index')" class="af-action-btn">View Farms</Link>
-                        <Link :href="route('farmer.show', farmer.id)" class="af-action-btn af-action-btn--primary">
+                        <Link v-if="hasLockedFarmer" :href="route('farmer.show', farmer.id)" class="af-action-btn af-action-btn--primary">
                             ← Back to {{ farmerName }}
+                        </Link>
+                        <Link v-else :href="route('farmer.index')" class="af-action-btn af-action-btn--primary">
+                            ← Back to Farmers
                         </Link>
                     </div>
                 </div>
@@ -76,6 +82,13 @@ const submit = () => form.post(route('farm.store'));
                                 </div>
                                 <div class="af-section__body">
                                     <div class="row g-3">
+                                        <div v-if="!hasLockedFarmer" class="col-12">
+                                            <label class="af-label">Farmer <span class="af-req">*</span></label>
+                                            <el-select v-model="form.farmer_id" placeholder="Select the farmer this farm belongs to" filterable class="af-input w-100">
+                                                <el-option v-for="option in farmerOptions" :key="option.id" :label="option.name" :value="option.id" />
+                                            </el-select>
+                                            <InputError class="af-err" :message="form.errors.farmer_id" />
+                                        </div>
                                         <div class="col-12">
                                             <label class="af-label">Farm Name <span class="af-req">*</span></label>
                                             <el-input v-model="form.name" placeholder="e.g. Elgon Heights Farm" class="af-input" />
@@ -149,7 +162,7 @@ const submit = () => form.post(route('farm.store'));
 
                             <!-- Action bar -->
                             <div class="af-action-bar">
-                                <Link :href="route('farmer.show', farmer.id)" class="af-action-btn">Cancel</Link>
+                                <Link :href="hasLockedFarmer ? route('farmer.show', farmer.id) : route('farm.index')" class="af-action-btn">Cancel</Link>
                                 <SubmitButton :loading="form.processing" :full-width="false">
                                     Save Farm
                                 </SubmitButton>
@@ -162,7 +175,7 @@ const submit = () => form.post(route('farm.store'));
                     <aside class="af-sidebar">
 
                         <!-- Linked farmer -->
-                        <div class="af-sidebar-block">
+                        <div v-if="hasLockedFarmer" class="af-sidebar-block">
                             <div class="af-sidebar-block__head">Linked Farmer</div>
                             <div class="af-sidebar-block__body">
                                 <div class="d-flex align-items-center gap-3 mb-3">
@@ -206,6 +219,9 @@ const submit = () => form.post(route('farm.store'));
                             <div class="af-sidebar-block__head">Required Fields</div>
                             <div class="af-sidebar-block__body">
                                 <div class="af-req-list">
+                                    <div v-if="!hasLockedFarmer" class="af-req-row" :class="form.farmer_id ? 'af-req-row--done' : ''">
+                                        <span class="af-req-dot"></span> Farmer
+                                    </div>
                                     <div class="af-req-row" :class="form.name ? 'af-req-row--done' : ''">
                                         <span class="af-req-dot"></span> Farm Name
                                     </div>

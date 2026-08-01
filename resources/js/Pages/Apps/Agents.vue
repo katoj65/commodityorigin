@@ -39,6 +39,18 @@ function submitCreateAgent() {
 // `icon` string stored on agents/agent_functions resolves directly.
 const iconOrFallback = (icon) => icon || 'Setting';
 
+// A function's `slug` holds the URL path it links to (e.g. "farm/create"),
+// entered by the admin when the function was created/edited. Built off
+// Ziggy's own base URL (the global `Ziggy.url`) since the app can be
+// served from a subpath (e.g. http://localhost/commodityorigin).
+const functionIsRoute = (fn) => !!fn.slug;
+const functionHref = (fn) => (fn.slug ? `${Ziggy.url}/${fn.slug.replace(/^\/+/, '')}` : '#');
+const onFunctionClick = (fn, event) => {
+    if (!functionIsRoute(fn)) {
+        event.preventDefault();
+    }
+};
+
 const statusLabel = (s) => ({
     pending: 'Pending',
     active: 'Active',
@@ -122,10 +134,17 @@ function toggleSubscription(agent) {
                             </Link>
 
                             <div v-if="agent.functions?.length" class="ap-tile__functions">
-                                <a v-for="fn in agent.functions" :key="fn.id" href="#" class="ap-fn-link" @click.prevent>
+                                <component
+                                    :is="functionIsRoute(fn) ? Link : 'a'"
+                                    v-for="fn in agent.functions"
+                                    :key="fn.id"
+                                    :href="functionHref(fn)"
+                                    class="ap-fn-link"
+                                    @click="onFunctionClick(fn, $event)"
+                                >
                                     <el-icon><component :is="iconOrFallback(fn.icon)" /></el-icon>
                                     {{ fn.name }}
-                                </a>
+                                </component>
                             </div>
 
                             <p class="ap-tile__desc">{{ agent.description }}</p>

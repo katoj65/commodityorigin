@@ -83,6 +83,45 @@ function submitAddFn() {
         onSuccess: () => { addFnDialogOpen.value = false; },
     });
 }
+
+/* ── Edit / delete function ───────────────────────────────────────────── */
+const editFnDialogOpen = ref(false);
+const editingFn = ref(null);
+
+const editFnForm = useForm({
+    name: '',
+    icon: '',
+    slug: '',
+    description: '',
+});
+
+function openEditFnDialog(fn) {
+    editingFn.value = fn;
+    editFnForm.reset();
+    editFnForm.clearErrors();
+    editFnForm.name = fn.name;
+    editFnForm.icon = fn.icon;
+    editFnForm.slug = fn.slug;
+    editFnForm.description = fn.description;
+    editFnDialogOpen.value = true;
+}
+
+function submitEditFn() {
+    editFnForm.patch(route('agent.functions.update', [props.agent.id, editingFn.value.id]), {
+        preserveScroll: true,
+        onSuccess: () => { editFnDialogOpen.value = false; },
+    });
+}
+
+const deletingFnId = ref(null);
+
+function deleteFunction(fn) {
+    deletingFnId.value = fn.id;
+    router.delete(route('agent.functions.destroy', [props.agent.id, fn.id]), {
+        preserveScroll: true,
+        onFinish: () => { deletingFnId.value = null; },
+    });
+}
 </script>
 
 <template>
@@ -179,6 +218,24 @@ function submitAddFn() {
                                         <div class="agd-fn-row__desc">{{ fn.description || '—' }}</div>
                                     </div>
                                     <div class="agd-fn-row__slug">{{ fn.slug }}</div>
+                                    <div class="agd-fn-row__actions">
+                                        <button type="button" class="agd-fn-icon-btn" title="Edit function" @click="openEditFnDialog(fn)">
+                                            <el-icon><Edit /></el-icon>
+                                        </button>
+                                        <el-popconfirm
+                                            title="Delete this function? This cannot be undone."
+                                            confirm-button-text="Delete"
+                                            cancel-button-text="Cancel"
+                                            confirm-button-type="danger"
+                                            @confirm="deleteFunction(fn)"
+                                        >
+                                            <template #reference>
+                                                <button type="button" class="agd-fn-icon-btn agd-fn-icon-btn--danger" title="Delete function" :disabled="deletingFnId === fn.id">
+                                                    <el-icon><Delete /></el-icon>
+                                                </button>
+                                            </template>
+                                        </el-popconfirm>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -302,6 +359,55 @@ function submitAddFn() {
                 </form>
             </el-dialog>
 
+            <!-- ── Edit Function modal ─────────────────────────────────── -->
+            <el-dialog v-model="editFnDialogOpen" width="50%" align-center class="agd-modal">
+                <template #header>
+                    <div class="agd-modal__head">
+                        <div class="agd-modal__head-icon">
+                            <el-icon :size="18"><Edit /></el-icon>
+                        </div>
+                        <div class="agd-modal__head-text">
+                            <div class="agd-modal__eyebrow">{{ agent.name }}</div>
+                            <div class="agd-modal__title">Edit Function</div>
+                        </div>
+                    </div>
+                </template>
+
+                <form class="agd-modal__body" @submit.prevent="submitEditFn">
+                    <div class="agd-field-row">
+                        <div class="agd-field">
+                            <label class="agd-field__label">Name</label>
+                            <el-input v-model="editFnForm.name" class="agd-input" :class="{ 'agd-input--error': editFnForm.errors.name }" />
+                            <span v-if="editFnForm.errors.name" class="agd-field__error">{{ editFnForm.errors.name }}</span>
+                        </div>
+                        <div class="agd-field">
+                            <label class="agd-field__label">Icon <span class="agd-field__optional">(Element Plus icon name)</span></label>
+                            <el-input v-model="editFnForm.icon" class="agd-input" :class="{ 'agd-input--error': editFnForm.errors.icon }" />
+                            <span v-if="editFnForm.errors.icon" class="agd-field__error">{{ editFnForm.errors.icon }}</span>
+                        </div>
+                    </div>
+
+                    <div class="agd-field">
+                        <label class="agd-field__label">Slug <span class="agd-field__optional">(unique per agent)</span></label>
+                        <el-input v-model="editFnForm.slug" class="agd-input" :class="{ 'agd-input--error': editFnForm.errors.slug }" />
+                        <span v-if="editFnForm.errors.slug" class="agd-field__error">{{ editFnForm.errors.slug }}</span>
+                    </div>
+
+                    <div class="agd-field">
+                        <label class="agd-field__label">Description <span class="agd-field__optional">(optional)</span></label>
+                        <el-input v-model="editFnForm.description" type="textarea" :rows="3" class="agd-input" />
+                        <span v-if="editFnForm.errors.description" class="agd-field__error">{{ editFnForm.errors.description }}</span>
+                    </div>
+
+                    <div class="agd-modal__footer">
+                        <button type="button" class="btn btn-sm agd-btn-outline" @click="editFnDialogOpen = false">Cancel</button>
+                        <button type="submit" class="btn btn-sm agd-btn-primary" :disabled="editFnForm.processing">
+                            {{ editFnForm.processing ? 'Saving…' : 'Save Changes' }}
+                        </button>
+                    </div>
+                </form>
+            </el-dialog>
+
         </div>
     </AppLayout>
 </template>
@@ -346,6 +452,11 @@ function submitAddFn() {
 .agd-fn-row__name { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
 .agd-fn-row__desc { font-size: .75rem; color: var(--on-surface-var); }
 .agd-fn-row__slug { font-family: 'IBM Plex Mono', monospace; font-size: .6875rem; color: var(--on-surface-var); background: var(--surface-low); border-radius: 5px; padding: 3px 8px; flex-shrink: 0; }
+.agd-fn-row__actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.agd-fn-icon-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--on-surface-var); transition: all .12s ease; }
+.agd-fn-icon-btn:hover { background: var(--surface-low); color: var(--on-surface); }
+.agd-fn-icon-btn--danger:hover { background: #fee2e2; color: #991b1b; }
+.agd-fn-icon-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 .agd-badge { display: inline-flex; border-radius: 999px; font-size: .6rem; font-weight: 700; padding: 2px 8px; }
 .agd-badge--green  { background: #dcfce7; color: #166534; border: 1px solid #86efac; }

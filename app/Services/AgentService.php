@@ -76,6 +76,26 @@ class AgentService
     }
 
     /**
+     * Update an existing agent function.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function updateFunction(AgentFunction $function, array $data): AgentFunction
+    {
+        $function->update($data);
+
+        return $function;
+    }
+
+    /**
+     * Delete an agent function.
+     */
+    public function destroyFunction(AgentFunction $function): void
+    {
+        $function->delete();
+    }
+
+    /**
      * Get a base query builder for agent subscriptions.
      */
     public function subscriptionQuery(): Builder
@@ -126,7 +146,7 @@ class AgentService
     {
         return AgentSubscription::query()
             ->where('user_id', $userId)
-            ->with(['agent:id,name,icon', 'agent.functions:id,agent_id,name,icon,description'])
+            ->with(['agent:id,name,icon', 'agent.functions:id,agent_id,name,icon,slug,description'])
             ->get()
             ->pluck('agent')
             ->filter()
@@ -138,6 +158,7 @@ class AgentService
                     'id' => $function->id,
                     'name' => $function->name,
                     'icon' => $function->icon,
+                    'slug' => $function->slug,
                     'description' => $function->description,
                 ])->values()->all(),
             ])

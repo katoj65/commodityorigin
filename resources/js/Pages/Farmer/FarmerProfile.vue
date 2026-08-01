@@ -117,7 +117,7 @@ const alerts = reactive({ harvestUpdates: true, qualityAlerts: true, buyerIntere
 
 /* ── Navigation ────────────────────────────────────────────────── */
 /* eslint-disable-next-line no-undef */
-const goToAddFarm   = () => router.visit(route('farm.create', props.farmer.id));
+const goToAddFarm   = () => router.visit(route('farm.create', { farmer: props.farmer.id }));
 /* eslint-disable-next-line no-undef */
 const goToFarm      = (id) => router.visit(route('farm.show', id));
 
