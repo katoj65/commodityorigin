@@ -133,8 +133,9 @@ Route::middleware([
         Route::get('/{cooperative}', [CooperativeController::class, 'show'])->name('show');
     });
 
-    // Farm workspace routes.
-    Route::prefix('farm')->name('farm.')->middleware('role:farmer,admin')->group(function () {
+    // Farm workspace routes. Access is enforced by FarmPolicy: admins have
+    // full access, everyone else must be subscribed to the Farmer Agent.
+    Route::prefix('farm')->name('farm.')->group(function () {
         Route::get('/', [FarmController::class, 'index'])->name('index');
         Route::get('/create', [FarmController::class, 'create'])->name('create');
         Route::post('/', [FarmController::class, 'store'])->name('store');

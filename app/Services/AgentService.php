@@ -138,6 +138,17 @@ class AgentService
     }
 
     /**
+     * Determine whether a user is subscribed to an agent of the given type.
+     */
+    public function isSubscribedToAgentType(int $userId, string $agentType): bool
+    {
+        return AgentSubscription::query()
+            ->where('user_id', $userId)
+            ->whereHas('agent', fn (Builder $query) => $query->where('agent_type', $agentType))
+            ->exists();
+    }
+
+    /**
      * Get the agents a user is subscribed to, shaped for display (id + name).
      *
      * @return array<int, array{id: int, name: string}>

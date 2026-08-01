@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CropVarietyMetadata;
 use App\Models\Farm;
 use App\Models\Farmer;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -61,22 +62,35 @@ class FarmService
     }
 
     /**
-     * Get every farmer as a lightweight option list, for the farm creation
-     * form's farmer picker when no farmer is pre-selected.
-     *
-     * @return array<int, array{id: int, name: string}>
+     * Get the farmer record linked to a user, creating one from their
+     * account details if they don't have one yet.
      */
-    public function farmerOptions(): array
+    public function farmerForUser(User $user): Farmer
     {
-        return Farmer::query()
-            ->orderBy('first_name')
-            ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name'])
-            ->map(fn (Farmer $farmer): array => [
-                'id' => $farmer->id,
-                'name' => trim("{$farmer->first_name} {$farmer->last_name}") ?: "Farmer #{$farmer->id}",
-            ])
-            ->all();
+        return Farmer::query()->firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'telephone' => $user->telephone,
+                'email' => $user->email,
+                // The users table has no equivalent for these required
+                // farmer columns; the farmer can fill them in later.
+                'district' => 'Not specified',
+                'coffee_type' => 'Not specified',
+            ],
+        );
+    }
+
+    /**
+     * Register a new farmer on behalf of someone else (the person
+     * submitting the farm isn't the farmer).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function registerFarmer(array $data): Farmer
+    {
+        return Farmer::query()->create($data);
     }
 
     /**
