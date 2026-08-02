@@ -18,6 +18,7 @@ class Farm extends Model
      */
     protected $fillable = [
         'farmer_id',
+        'created_by_user_id',
         'name',
         'location',
         'size',

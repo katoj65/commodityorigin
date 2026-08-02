@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'google_maps' => [
+        // Server-side key used for the Geocoding API. Keep this restricted
+        // to your server's IP in Google Cloud Console — never expose it to
+        // the browser. The browser-side key lives in VITE_GOOGLE_MAPS_API_KEY
+        // (see .env / resources/js/services/googleMaps.js) and should be
+        // restricted by HTTP referrer instead.
+        'key' => env('GOOGLE_MAPS_API_KEY'),
+    ],
+
 ];

@@ -31,6 +31,20 @@ class FarmService
     }
 
     /**
+     * Get every farm created by the given user, with its farmer and
+     * harvest count, newest first.
+     */
+    public function listForUser(int $userId): Collection
+    {
+        return $this->query()
+            ->where('created_by_user_id', $userId)
+            ->with('farmer')
+            ->withCount('harvests')
+            ->latest()
+            ->get();
+    }
+
+    /**
      * Get the active crop variety names available for a farm.
      */
     public function activeVarietyOptions(): Collection
@@ -108,8 +122,28 @@ class FarmService
      */
     public function show(Farm $farm): Farm
     {
-        $farm->load('farmer');
+        $farm->load(['farmer', 'harvests' => fn ($query) => $query->latest('harvest_date')]);
 
         return $farm;
+    }
+
+    /**
+     * Update an existing farm.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Farm $farm, array $data): Farm
+    {
+        $farm->update($data);
+
+        return $farm;
+    }
+
+    /**
+     * Delete a farm.
+     */
+    public function destroy(Farm $farm): void
+    {
+        $farm->delete();
     }
 }

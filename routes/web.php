@@ -13,6 +13,7 @@ use App\Http\Controllers\Cooperative\CooperativeController;
 use App\Http\Controllers\Country\CountryController;
 use App\Http\Controllers\Documentation\DocumentationController;
 use App\Http\Controllers\Farm\FarmController;
+use App\Http\Controllers\Farm\GeocodeController;
 use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Harvest\HarvestController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
@@ -138,8 +139,16 @@ Route::middleware([
     Route::prefix('farm')->name('farm.')->group(function () {
         Route::get('/', [FarmController::class, 'index'])->name('index');
         Route::get('/create', [FarmController::class, 'create'])->name('create');
+        Route::get('/farm-list', [FarmController::class, 'myFarms'])->name('mine');
         Route::post('/', [FarmController::class, 'store'])->name('store');
         Route::get('/{farm}', [FarmController::class, 'show'])->name('show');
+        Route::patch('/{farm}', [FarmController::class, 'update'])->name('update');
+        Route::patch('/{farm}/specs', [FarmController::class, 'updateSpecs'])->name('specs.update');
+        Route::patch('/{farm}/location', [FarmController::class, 'updateLocation'])->name('location.update');
+        Route::post('/{farm}/harvests', [FarmController::class, 'storeHarvest'])->name('harvests.store');
+        Route::delete('/{farm}/harvests/{harvest}', [FarmController::class, 'destroyHarvest'])->name('harvests.destroy');
+        Route::post('/geocode', GeocodeController::class)->name('geocode');
+        Route::delete('/{farm}', [FarmController::class, 'destroy'])->name('destroy');
     });
 
     // Lot workspace routes.

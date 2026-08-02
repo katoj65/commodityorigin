@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Plus, Setting } from '@element-plus/icons-vue';
+import { resolveIcon } from '@/utils/icon';
 
 const props = defineProps({
     agents: { type: Array, default: () => [] },
@@ -35,9 +36,9 @@ function submitCreateAgent() {
     });
 }
 
-// Icon components are registered globally by name (see app.js), so the
-// `icon` string stored on agents/agent_functions resolves directly.
-const iconOrFallback = (icon) => icon || 'Setting';
+// Icon components are registered globally by name (see app.js). Falls
+// back to a default icon if the stored name isn't a real registered icon.
+const iconOrFallback = resolveIcon;
 
 // A function's `slug` holds the URL path it links to (e.g. "farm/create"),
 // entered by the admin when the function was created/edited. Built off

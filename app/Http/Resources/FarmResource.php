@@ -27,6 +27,7 @@ class FarmResource extends JsonResource
             'status' => $this->status,
             'notes' => $this->notes,
             'total_bags_produced' => $this->total_bags_produced,
+            'harvests_count'      => $this->when(isset($this->harvests_count), $this->harvests_count),
             'temperature'         => $this->temperature,
             'rainfall'            => $this->rainfall,
             'humidity'            => $this->humidity,

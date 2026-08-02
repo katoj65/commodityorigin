@@ -5,14 +5,9 @@ namespace App\Http\Controllers\Harvest;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\HarvestResource;
 use App\Http\Resources\SeasonResource;
-use App\Models\Farm;
 use App\Models\Harvest;
 use App\Models\Season;
-use App\Models\DocumentMetadata;
-use App\Models\HarvestDocument;
-use App\Models\HarvestSustainability;
-use App\Models\PickMethodMetadata;
-use Carbon\Carbon;
+use App\Services\HarvestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -22,6 +17,10 @@ use Inertia\Response;
 
 class HarvestController extends Controller
 {
+    public function __construct(private readonly HarvestService $harvests)
+    {
+    }
+
     /**
      * Display the harvest directory.
      */
@@ -29,44 +28,7 @@ class HarvestController extends Controller
     {
         $search = trim((string) $request->string('search')->value());
 
-        $paginator = Harvest::query()
-            ->with(['farm', 'season'])
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->whereRaw('CAST(id AS CHAR) LIKE ?', ["%{$search}%"]);
-            })
-            ->latest('harvest_date')
-            ->latest('id')
-            ->paginate(10)
-            ->withQueryString()
-            ->through(fn (Harvest $harvest): array => [
-                'id' => $harvest->id,
-                'code' => self::formatHarvestCode($harvest),
-                'farm_name' => $harvest->farm?->name ?? "Farm #{$harvest->farm_id}",
-                'season_name' => $harvest->season?->name,
-                'date_planted' => $harvest->date_planted?->toDateString(),
-                'harvest_date' => $harvest->harvest_date?->toDateString(),
-                'harvest_season' => $harvest->harvest_season,
-                'status' => $harvest->status,
-                'weight' => (float) $harvest->weight,
-                'price' => $harvest->price !== null ? (float) $harvest->price : null,
-                'pick_method' => $harvest->pick_method,
-                'show_url' => route('harvest.show', $harvest),
-            ]);
-
-        $harvestCollection = Harvest::query()->get(['id', 'weight', 'ripeness_percentage', 'pick_method', 'harvest_date']);
-        $averageQuality = $harvestCollection->count() > 0
-            ? round($harvestCollection->avg(fn (Harvest $harvest): float => self::scoreForRipeness($harvest->ripeness_percentage)), 1)
-            : 0;
-        $processingCount = $harvestCollection
-            ->filter(fn (Harvest $harvest): bool => self::statusToneForHarvest($harvest) === 'processing')
-            ->count();
-        $estateOptions = Harvest::query()
-            ->with('farm')
-            ->get()
-            ->pluck('farm.name')
-            ->filter()
-            ->unique()
-            ->values();
+        $paginator = $this->harvests->paginateForList($search);
 
         return Inertia::render('Harvest/HarvestsPage', [
             'harvests' => [
@@ -80,16 +42,11 @@ class HarvestController extends Controller
                     'to' => $paginator->lastItem(),
                 ],
             ],
-            'stats' => [
-                'total_yield' => (float) Harvest::query()->sum('weight'),
-                'active_harvests' => Harvest::query()->count(),
-                'processing_count' => $processingCount,
-                'avg_quality_score' => $averageQuality,
-            ],
+            'stats' => $this->harvests->indexStats(),
             'filters' => [
                 'search' => $search,
             ],
-            'estateOptions' => $estateOptions,
+            'estateOptions' => $this->harvests->estateOptions(),
         ]);
     }
 
@@ -100,22 +57,10 @@ class HarvestController extends Controller
     {
         Gate::authorize('create', Harvest::class);
 
-        $farms = Farm::query()
-            ->with('farmer')
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Farm $farm): array => [
-                'id' => $farm->id,
-                'name' => $farm->name,
-                'location' => $farm->location,
-                'variety' => $farm->variety,
-            ])
-            ->values();
-
         return Inertia::render('Harvest/Create', [
-            'farmOptions' => $farms,
-            'pickMethodOptions' => self::pickMethodOptions(),
-            'harvestSeasonOptions' => self::harvestSeasonOptions(),
+            'farmOptions' => $this->harvests->farmOptionsForCreate(),
+            'pickMethodOptions' => $this->harvests->pickMethodOptions(),
+            'harvestSeasonOptions' => $this->harvests->harvestSeasonOptions(),
         ]);
     }
 
@@ -147,13 +92,13 @@ class HarvestController extends Controller
         return Inertia::render('Harvest/HarvestProfile', [
             'harvest' => HarvestResource::make($harvest)->resolve(),
             'season' => $seasonPayload,
-            'dateRange' => self::getRangeOfDates(
+            'dateRange' => $this->harvests->getRangeOfDates(
                 $harvest->date_planted?->toDateString() ?? '',
                 $harvest->harvest_date?->toDateString() ?? '',
             ),
-            'pickMethodOptions' => self::pickMethodOptions(),
-            'harvestSeasonOptions' => self::harvestSeasonOptions(),
-            'documentTypeOptions' => self::documentTypeOptions(),
+            'pickMethodOptions' => $this->harvests->pickMethodOptions(),
+            'harvestSeasonOptions' => $this->harvests->harvestSeasonOptions(),
+            'documentTypeOptions' => $this->harvests->documentTypeOptions(),
         ]);
     }
 
@@ -164,8 +109,8 @@ class HarvestController extends Controller
     {
         Gate::authorize('create', Harvest::class);
 
-        $pickMethodOptions = self::pickMethodOptions()->all();
-        $harvestSeasonOptions = self::harvestSeasonOptions();
+        $pickMethodOptions = $this->harvests->pickMethodOptions()->all();
+        $harvestSeasonOptions = $this->harvests->harvestSeasonOptions();
 
         $validated = $request->validate(
             [
@@ -194,12 +139,12 @@ class HarvestController extends Controller
             ],
         );
 
-        if (!empty($validated['season_id'])) {
+        if (! empty($validated['season_id'])) {
             $season = Season::query()->findOrFail($validated['season_id']);
             Gate::authorize('view', $season);
         }
 
-        $harvest = Harvest::query()->create([
+        $harvest = $this->harvests->create([
             ...$validated,
             'user_id' => $request->user()->id,
             'foreign_matter_present' => $request->boolean('foreign_matter_present'),
@@ -226,8 +171,8 @@ class HarvestController extends Controller
     {
         Gate::authorize('update', $harvest);
 
-        $pickMethodOptions = self::pickMethodOptions()->all();
-        $harvestSeasonOptions = self::harvestSeasonOptions();
+        $pickMethodOptions = $this->harvests->pickMethodOptions()->all();
+        $harvestSeasonOptions = $this->harvests->harvestSeasonOptions();
 
         $validated = $request->validate(
             [
@@ -251,7 +196,7 @@ class HarvestController extends Controller
             ],
         );
 
-        $harvest->update([
+        $this->harvests->update($harvest, [
             ...$validated,
             'foreign_matter_present' => $request->boolean('foreign_matter_present'),
             'pest_damage' => $request->boolean('pest_damage'),
@@ -269,7 +214,7 @@ class HarvestController extends Controller
     {
         Gate::authorize('update', $harvest);
 
-        $documentTypeOptions = self::documentTypeOptions()->all();
+        $documentTypeOptions = $this->harvests->documentTypeOptions()->all();
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -277,19 +222,7 @@ class HarvestController extends Controller
             'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:10240'],
         ]);
 
-        $file = $request->file('document');
-        $path = $file->store('harvest-documents', 'public');
-
-        HarvestDocument::query()->create([
-            'harvest_id' => $harvest->id,
-            'user_id' => $request->user()->id,
-            'title' => $validated['title'],
-            'document_type' => $validated['document_type'] ?? null,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getClientMimeType(),
-            'file_size' => $file->getSize(),
-        ]);
+        $this->harvests->storeDocument($harvest, $request->file('document'), $validated, $request->user()->id);
 
         return back();
     }
@@ -312,164 +245,8 @@ class HarvestController extends Controller
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
-        HarvestSustainability::query()->updateOrCreate(
-            ['harvest_id' => $harvest->id],
-            [
-                'user_id' => $request->user()->id,
-                'organic_certified' => $request->boolean('organicCertified'),
-                'climate_smart' => $request->boolean('climateSmart'),
-                'shade_grown' => $request->boolean('shadeGrown'),
-                'water_management' => $request->boolean('waterManagement'),
-                'soil_conservation' => $request->boolean('soilConservation'),
-                'low_carbon' => $request->boolean('lowCarbon'),
-                'fair_wages' => $request->boolean('fairWages'),
-                'notes' => $validated['notes'] ?? null,
-            ],
-        );
+        $this->harvests->storeSustainability($harvest, $validated, $request->user()->id);
 
         return back()->with('success', 'Harvest sustainability details saved successfully.');
     }
-    /**
-     * Return the inclusive monthly range buckets between the planted and harvest dates.
-     *
-     * @return array<int, array{start:string, end:string}>
-     */
-    public static function getRangeOfDates(string $datePlanted, string $harvestDate): array
-    {
-        if ($datePlanted === '' || $harvestDate === '') {
-            return [];
-        }
-
-        $start = Carbon::parse($datePlanted)->startOfMonth();
-        $end = Carbon::parse($harvestDate)->startOfMonth();
-
-        if ($start->greaterThan($end)) {
-            return [];
-        }
-
-        $totalMonths = $start->diffInMonths($end) + 1;
-        $interval = $totalMonths > 12 ? 6 : 1;
-        $ranges = [];
-        $cursor = $start->copy();
-
-        while ($cursor->lessThanOrEqualTo($end)) {
-            $rangeStart = $cursor->copy();
-            $rangeEnd = $interval === 1
-                ? $cursor->copy()
-                : $cursor->copy()->addMonths($interval - 1)->startOfMonth();
-
-            if ($rangeEnd->greaterThan($end)) {
-                $rangeEnd = $end->copy();
-            }
-
-            $ranges[] = [
-                'start' => $rangeStart->format('Y-m'),
-                'end' => $rangeEnd->format('Y-m'),
-            ];
-
-            $cursor->addMonths($interval);
-        }
-
-        return $ranges;
-    }
-
-    protected static function scoreForRipeness(mixed $ripenessPercentage): float
-    {
-        if ($ripenessPercentage === null || $ripenessPercentage === '') {
-            return 82.0;
-        }
-
-        return round(max(0, min(100, (float) $ripenessPercentage)), 1);
-    }
-
-    protected static function processingMethodFromPickMethod(?string $pickMethod): string
-    {
-        return match ($pickMethod) {
-            'Selective Picking' => 'Washed',
-            'Strip Picking' => 'Natural',
-            'Mechanical Picking' => 'Honey',
-            'Hand Sorting' => 'Anaerobic',
-            default => 'Washed',
-        };
-    }
-
-    protected static function pickMethodOptions()
-    {
-        return PickMethodMetadata::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->pluck('name')
-            ->values();
-    }
-
-    protected static function documentTypeOptions()
-    {
-        return DocumentMetadata::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->pluck('name')
-            ->values();
-    }
-
-    protected static function harvestSeasonOptions(): array
-    {
-        return [
-            'Main Crop',
-            'Fly Crop',
-            'Early Harvest',
-            'Late Harvest',
-        ];
-    }
-
-    protected static function statusForHarvest(Harvest $harvest): string
-    {
-        if (!$harvest->harvest_date) {
-            return 'Queued';
-        }
-
-        $daysSinceHarvest = Carbon::parse($harvest->harvest_date)->diffInDays(now());
-
-        if ($daysSinceHarvest <= 7) {
-            return 'In Processing';
-        }
-
-        if ($daysSinceHarvest <= 21) {
-            return 'Drying';
-        }
-
-        return 'Ready for Export';
-    }
-
-    protected static function statusToneForHarvest(Harvest $harvest): string
-    {
-        return match (self::statusForHarvest($harvest)) {
-            'In Processing' => 'processing',
-            'Drying' => 'drying',
-            default => 'ready',
-        };
-    }
-
-    protected static function formatHarvestCode(Harvest $harvest): string
-    {
-        $year = $harvest->harvest_date?->format('Y') ?? now()->format('Y');
-
-        return "#{$year}-EX" . str_pad((string) $harvest->id, 2, '0', STR_PAD_LEFT);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

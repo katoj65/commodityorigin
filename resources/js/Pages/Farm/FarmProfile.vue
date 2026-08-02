@@ -1,18 +1,199 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import InputError from '@/Components/InputError.vue';
+import { isGoogleMapsConfigured, renderMap } from '@/services/googleMaps';
 import {
     Bell, Box, ChatDotRound, Check, Checked, Clock,
-    CollectionTag, DataLine, Download,
-    Location, Medal, Opportunity, Promotion,
+    CollectionTag, DataLine, Delete, Download, Edit,
+    Location, Medal, Opportunity, Plus, Promotion,
     ShoppingCart, Star, TrendCharts, Van, View,
     Warning,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
     farm: { type: Object, required: true },
+    canEdit: { type: Boolean, default: false },
+    varietyOptions: { type: Array, default: () => [] },
+    climaticZoneOptions: { type: Array, default: () => [] },
+    soilTypeOptions: { type: Array, default: () => [] },
+    harvests: { type: Array, default: () => [] },
+    pickMethodOptions: { type: Array, default: () => [] },
+    harvestSeasonOptions: { type: Array, default: () => [] },
 });
+
+/* ── Edit farm dialog (creator only) ──────────────────────────────── */
+const editDialogOpen = ref(false);
+
+const editForm = useForm({
+    name: props.farm.name,
+    location: props.farm.location,
+    size: props.farm.size,
+    altitude: props.farm.altitude,
+    variety: props.farm.variety,
+    notes: props.farm.notes,
+});
+
+function openEditDialog() {
+    editForm.reset();
+    editForm.clearErrors();
+    editDialogOpen.value = true;
+}
+
+function submitEditFarm() {
+    editForm.patch(route('farm.update', props.farm.id), {
+        preserveScroll: true,
+        onSuccess: () => { editDialogOpen.value = false; },
+    });
+}
+
+/* ── Delete farm ───────────────────────────────────────────────────── */
+const deleteDialogOpen = ref(false);
+const deletingFarm = ref(false);
+
+function deleteFarm() {
+    deletingFarm.value = true;
+    router.delete(route('farm.destroy', props.farm.id), {
+        onFinish: () => {
+            deletingFarm.value = false;
+            deleteDialogOpen.value = false;
+        },
+    });
+}
+
+/* ── Edit environmental specs dialog (creator only) ──────────────────── */
+const specsDialogOpen = ref(false);
+
+const specsForm = useForm({
+    rainfall: props.farm.rainfall,
+    temperature: props.farm.temperature,
+    humidity: props.farm.humidity,
+    soil_type: props.farm.soil_type,
+    climatic_zone: props.farm.climatic_zone,
+});
+
+function openSpecsDialog() {
+    specsForm.reset();
+    specsForm.clearErrors();
+    specsDialogOpen.value = true;
+}
+
+function submitSpecsForm() {
+    specsForm.patch(route('farm.specs.update', props.farm.id), {
+        preserveScroll: true,
+        onSuccess: () => { specsDialogOpen.value = false; },
+    });
+}
+
+/* ── Edit farm location dialog (creator only) ─────────────────────────── */
+const locationDialogOpen = ref(false);
+
+const locationForm = useForm({
+    latitude: props.farm.latitude,
+    longitude: props.farm.longitude,
+    altitude: props.farm.altitude,
+});
+
+function openLocationDialog() {
+    locationForm.reset();
+    locationForm.clearErrors();
+    locationDialogOpen.value = true;
+}
+
+function submitLocationForm() {
+    locationForm.patch(route('farm.location.update', props.farm.id), {
+        preserveScroll: true,
+        onSuccess: () => { locationDialogOpen.value = false; },
+    });
+}
+
+const geocoding = ref(false);
+const geocodeError = ref('');
+
+async function locateFromAddress() {
+    geocodeError.value = '';
+
+    if (!props.farm.location) {
+        geocodeError.value = 'This farm has no address on file to look up.';
+        return;
+    }
+
+    geocoding.value = true;
+    try {
+        const { data } = await axios.post(route('farm.geocode'), { address: props.farm.location });
+        locationForm.latitude = data.lat;
+        locationForm.longitude = data.lng;
+    } catch (error) {
+        geocodeError.value = error.response?.data?.message || 'Could not resolve coordinates for that address.';
+    } finally {
+        geocoding.value = false;
+    }
+}
+
+/* ── Add harvest dialog (creator only) ────────────────────────────────── */
+const harvestDialogOpen = ref(false);
+
+const harvestForm = useForm({
+    variety: '',
+    date_planted: '',
+    harvest_date: '',
+    harvest_season: '',
+    pick_method: '',
+    price: '',
+    weight: '',
+    ripeness_percentage: '',
+    foreign_matter_present: false,
+    pest_damage: false,
+    disease_signs: false,
+    visible_defects: false,
+});
+
+function disableFutureDates(date) {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return date.getTime() > today.getTime();
+}
+
+function openHarvestDialog() {
+    harvestForm.reset();
+    harvestForm.clearErrors();
+    harvestForm.variety = props.farm.variety || '';
+    harvestDialogOpen.value = true;
+}
+
+function submitHarvestForm() {
+    harvestForm.post(route('farm.harvests.store', props.farm.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            harvestDialogOpen.value = false;
+            harvestForm.reset();
+        },
+    });
+}
+
+/* ── Delete harvest dialog (creator only) ─────────────────────────────── */
+const deleteHarvestDialogOpen = ref(false);
+const deletingHarvest = ref(false);
+const harvestToDelete = ref(null);
+
+function openDeleteHarvestDialog(harvest) {
+    harvestToDelete.value = harvest;
+    deleteHarvestDialogOpen.value = true;
+}
+
+function deleteHarvest() {
+    if (!harvestToDelete.value) return;
+    deletingHarvest.value = true;
+    router.delete(route('farm.harvests.destroy', [props.farm.id, harvestToDelete.value.id]), {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingHarvest.value = false;
+            deleteHarvestDialogOpen.value = false;
+            harvestToDelete.value = null;
+        },
+    });
+}
 
 /* ── Real computed from prop ───────────────────────────────────── */
 const farmName    = computed(() => props.farm.name || 'Farm Profile');
@@ -26,12 +207,42 @@ const estateBrief = computed(() =>
     props.farm.notes ||
     `${farmName.value} is managed for traceable coffee production with structured harvesting, post-harvest discipline, and field-level quality monitoring.`,
 );
-const altitudeRange = computed(() => props.farm.altitude || '1,950m – 2,100m');
+const altitudeRange = computed(() => props.farm.altitude || '—');
+const latitudeLabel  = computed(() => (props.farm.latitude !== null && props.farm.latitude !== undefined) ? `${props.farm.latitude}°N` : '—');
+const longitudeLabel = computed(() => (props.farm.longitude !== null && props.farm.longitude !== undefined) ? `${props.farm.longitude}°E` : '—');
+
+/* ── Google Map ────────────────────────────────────────────────────── */
+const hasCoordinates = computed(() =>
+    props.farm.latitude !== null && props.farm.latitude !== undefined &&
+    props.farm.longitude !== null && props.farm.longitude !== undefined,
+);
+const mapConfigured = isGoogleMapsConfigured();
+const mapEl = ref(null);
+const mapReady = ref(false);
+const mapFailed = ref(false);
+
+async function mountMap() {
+    if (!hasCoordinates.value || !mapEl.value || !mapConfigured) return;
+    mapFailed.value = false;
+    try {
+        await renderMap(
+            mapEl.value,
+            { lat: Number(props.farm.latitude), lng: Number(props.farm.longitude) },
+            { markerTitle: farmName.value },
+        );
+        mapReady.value = true;
+    } catch {
+        mapFailed.value = true;
+    }
+}
+
+onMounted(mountMap);
+watch(() => [props.farm.latitude, props.farm.longitude], mountMap);
 const farmSize      = computed(() => props.farm.size || '—');
 const variety       = computed(() => props.farm.variety || props.farm.farmer?.coffee_type || 'Arabica');
-const rainfall      = computed(() => props.farm.rainfall    || (props.farm.altitude ? '1,850 mm' : '1,620 mm'));
-const temperature   = computed(() => props.farm.temperature || (props.farm.altitude ? '18.5°C – 24.2°C' : '20.1°C – 26.8°C'));
-const humidityIndex = computed(() => props.farm.humidity    || (props.farm.status?.toLowerCase() === 'active' ? '62%' : '58%'));
+const rainfall      = computed(() => props.farm.rainfall    || '—');
+const temperature   = computed(() => props.farm.temperature || '—');
+const humidityIndex = computed(() => props.farm.humidity    || '—');
 const soilType      = computed(() => props.farm.soil_type     || '—');
 const climaticZone  = computed(() => props.farm.climatic_zone || '—');
 const bagsEstimate  = computed(() => {
@@ -45,11 +256,35 @@ const thumb = computed(() =>
 const isRobusta = computed(() => variety.value.toLowerCase().includes('robusta'));
 const qualityScore = computed(() => isRobusta.value ? 84.3 : 88.5);
 
-const harvestRows = computed(() => [
-    { id: `HV-${String(props.farm.id).padStart(3,'0')}-01`, season: '2024/25', date: 'Mar 20', qty: '2,400 kg', score: isRobusta.value ? 84.3 : 88.5, status: 'Processed',  tone: 'success' },
-    { id: `HV-${String(props.farm.id).padStart(3,'0')}-02`, season: '2024/25', date: 'Feb 15', qty: '1,800 kg', score: isRobusta.value ? 83.8 : 87.9, status: 'In Process', tone: 'warning' },
-    { id: `HV-${String(props.farm.id).padStart(3,'0')}-03`, season: '2024/25', date: 'Jan 22', qty: '1,200 kg', score: isRobusta.value ? 84.0 : 87.8, status: 'Sold',        tone: 'primary' },
-]);
+const harvestStatusTone = { pending: 'warning', processing: 'warning', processed: 'success', ready: 'success', sold: 'primary' };
+function harvestCode(h) {
+    return `#${(h.harvest_date || '').slice(0, 4) || new Date().getFullYear()}-EX${String(h.id).padStart(2, '0')}`;
+}
+const harvestRows = computed(() => props.harvests.map((h) => ({
+    id: h.id,
+    code: harvestCode(h),
+    season: h.harvest_season || '—',
+    date: h.harvest_date || '—',
+    qty: h.weight !== null && h.weight !== undefined ? `${Number(h.weight).toLocaleString()} kg` : '—',
+    score: h.ripeness_percentage !== null && h.ripeness_percentage !== undefined ? Number(h.ripeness_percentage) : null,
+    status: h.status ? h.status.charAt(0).toUpperCase() + h.status.slice(1) : 'Pending',
+    tone: harvestStatusTone[(h.status || 'pending').toLowerCase()] || 'primary',
+})));
+
+/* ── View harvest dialog ───────────────────────────────────────────── */
+const viewHarvestDialogOpen = ref(false);
+const harvestToView = ref(null);
+const harvestToViewCode = computed(() => harvestToView.value ? harvestCode(harvestToView.value) : '');
+const harvestToViewStatus = computed(() => {
+    if (!harvestToView.value?.status) return 'Pending';
+    const s = harvestToView.value.status;
+    return s.charAt(0).toUpperCase() + s.slice(1);
+});
+
+function openViewHarvestDialog(row) {
+    harvestToView.value = props.harvests.find((h) => String(h.id) === String(row.id)) || null;
+    viewHarvestDialogOpen.value = true;
+}
 
 /* ── Static / mock data for new sections ───────────────────────── */
 const productionBars = [52, 64, 68, 78, 74, 82, 88, 84, 90, 86, 92, 88];
@@ -122,21 +357,6 @@ const insights = [
 
 const alerts = reactive({ harvestUpdates: true, qualityAlerts: true, buyerInterest: false, exportUpdates: true });
 
-/* ── Chatbot ───────────────────────────────────────────────────── */
-const chatOpen  = ref(false);
-const chatInput = ref('');
-const chatMsgs  = ref([
-    { role: 'bot', text: `Hi! I'm your Bean Origin Farm Advisor. I can help you understand ${farmName.value}'s production quality, export potential, and available lots. What would you like to know?` },
-]);
-const prompts = ['Is this farm high quality?', "What is this farm's export potential?", 'Which lots come from this farm?', 'How can quality be improved?'];
-const sendChat = () => {
-    const t = chatInput.value.trim();
-    if (!t) return;
-    chatMsgs.value.push({ role: 'user', text: t });
-    chatInput.value = '';
-    setTimeout(() => chatMsgs.value.push({ role: 'bot', text: `${farmName.value} is performing excellently with a quality score of ${qualityScore.value}. It is export-ready with ${lots.length} active lots and strong buyer interest from EU and UAE markets.` }), 700);
-};
-const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 const data=computed(()=>props.farm);
 
 
@@ -156,19 +376,17 @@ const data=computed(()=>props.farm);
                             <h1 class="fp-title mb-0">{{ farmName }}</h1>
                             <p class="fp-subtitle mb-0">Verified coffee farm with traceable production data</p>
                         </div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button class="btn fp-btn-outline btn-sm"><el-icon><Box /></el-icon> View Harvests</button>
-                            <button class="btn fp-btn-outline btn-sm"><el-icon><CollectionTag /></el-icon> View Lots</button>
-                            <button class="btn fp-btn-primary btn-sm"><el-icon><ShoppingCart /></el-icon> Contact Farm</button>
-                            <button class="btn fp-btn-ghost btn-sm"><el-icon><ChatDotRound /></el-icon> Ask Advisor</button>
-                        </div>
+                        <el-button-group v-if="props.canEdit" class="fp-btn-group">
+                            <el-button :icon="Edit" @click="openEditDialog">Edit</el-button>
+                            <el-button :icon="Delete" type="danger" @click="deleteDialogOpen = true">Delete</el-button>
+                        </el-button-group>
                     </div>
-                    <div class="d-flex flex-wrap gap-2 pb-2">
+                    <!-- <div class="d-flex flex-wrap gap-2 pb-2">
                         <span class="fp-hbadge"><el-icon><Checked /></el-icon> Verified Farm</span>
                         <span class="fp-hbadge fp-hbadge--soft"><el-icon><Check /></el-icon> Traceable Production</span>
                         <span class="fp-hbadge fp-hbadge--blue"><el-icon><Van /></el-icon> Export Ready</span>
                         <span class="fp-hbadge fp-hbadge--amber"><el-icon><Star /></el-icon> Sustainable</span>
-                    </div>
+                    </div> -->
                 </div>
             </div>
 
@@ -201,7 +419,12 @@ const data=computed(()=>props.farm);
 
                         <!-- Center: Specs -->
                         <div class="col-12 col-md-4 fp-hero-specs">
-                            <div class="fp-specs-title">Farm Specifications</div>
+                            <div class="fp-specs-head">
+                                <div class="fp-specs-title" style="margin-bottom:0;">Farm Specifications</div>
+                                <button v-if="props.canEdit" type="button" class="fp-specs-edit-btn" title="Edit environmental specifications" @click="openSpecsDialog">
+                                    <el-icon><Edit /></el-icon>
+                                </button>
+                            </div>
                             <div class="row g-2">
                                 <div class="col-6"><div class="fp-spec-cell"><span>Farm Size</span><strong>{{ farmSize }}</strong></div></div>
                                 <div class="col-6"><div class="fp-spec-cell"><span>Altitude</span><strong>{{ altitudeRange }}</strong></div></div>
@@ -259,21 +482,40 @@ const data=computed(()=>props.farm);
 
                             <!-- 3. Farm Location & Map -->
                             <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Location /></el-icon>
-                                    Farm Location &amp; Environment
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="fp-card-title mb-0">
+                                        <el-icon class="fp-card-icon"><Location /></el-icon>
+                                        Farm Location &amp; Environment
+                                    </div>
+                                    <button v-if="props.canEdit" type="button" class="fp-specs-edit-btn" title="Edit farm location" @click="openLocationDialog">
+                                        <el-icon><Edit /></el-icon>
+                                    </button>
                                 </div>
                                 <div class="row g-3">
                                     <div class="col-12 col-md-7">
                                         <div class="fp-map-tile">
-                                            <div class="fp-map-pin"></div>
+                                            <template v-if="hasCoordinates && mapConfigured">
+                                                <div ref="mapEl" class="fp-map-canvas"></div>
+                                                <div v-if="!mapReady && !mapFailed" class="fp-map-empty">
+                                                    <span class="fp-td-muted" style="font-size:.75rem;">Loading map…</span>
+                                                </div>
+                                                <div v-if="mapFailed" class="fp-map-empty">
+                                                    <el-icon style="font-size:20px; color:var(--on-surface-var);"><Warning /></el-icon>
+                                                    <span class="fp-td-muted" style="font-size:.75rem;">Map failed to load.</span>
+                                                </div>
+                                            </template>
+                                            <div v-else class="fp-map-empty">
+                                                <el-icon style="font-size:20px; color:var(--on-surface-var);"><Location /></el-icon>
+                                                <span class="fp-td-muted" style="font-size:.75rem; text-align:center;">
+                                                    {{ hasCoordinates ? 'Map unavailable — Google Maps is not configured.' : 'No coordinates set for this farm.' }}
+                                                </span>
+                                            </div>
                                             <div class="fp-map-coords">
-                                                <div class="fw-semibold" style="font-size:.8125rem;">{{ props.farm.latitude || '0.3476' }}°N, {{ props.farm.longitude || '34.1162' }}°E</div>
+                                                <div class="fw-semibold" style="font-size:.8125rem;">{{ latitudeLabel }}, {{ longitudeLabel }}</div>
                                                 <div class="fp-td-muted" style="font-size:.7rem;">GPS coordinates — {{ locationLabel }}</div>
                                             </div>
                                             <div class="fp-map-badges">
                                                 <span class="fp-map-badge">{{ altitudeRange }}</span>
-                                                <span class="fp-map-badge fp-map-badge--blue">Highland Climate</span>
                                             </div>
                                         </div>
                                     </div>
@@ -289,7 +531,69 @@ const data=computed(()=>props.farm);
                                 </div>
                             </div>
 
-                            <!-- 4. Production Overview -->
+                            <!-- 4. Harvest History -->
+                            <div class="fp-card p-0 overflow-hidden">
+                                <div class="d-flex align-items-center justify-content-between gap-2 px-3 py-2 border-bottom">
+                                    <div class="fp-card-title">
+                                        <el-icon class="fp-card-icon"><Box /></el-icon>
+                                        Harvest History
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" style="font-size:.65rem;">{{ harvestRows.length }} harvests</span>
+                                        <button v-if="props.canEdit" type="button" class="fp-specs-edit-btn" title="Add harvest" @click="openHarvestDialog">
+                                            <el-icon><Plus /></el-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0 fp-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Harvest ID</th>
+                                                <th>Season</th>
+                                                <th>Date</th>
+                                                <th>Quantity</th>
+                                                <th>Quality Score</th>
+                                                <th>Status</th>
+                                                <th class="text-end">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="h in harvestRows" :key="h.id" class="fp-table-row">
+                                                <td class="fp-item-name">{{ h.code }}</td>
+                                                <td class="fp-td-muted">{{ h.season }}</td>
+                                                <td class="fp-td-muted">{{ h.date }}</td>
+                                                <td class="fw-semibold">{{ h.qty }}</td>
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span v-if="h.score !== null" class="fp-score-pill" :class="h.score >= 88 ? 'fp-score-pill--high' : 'fp-score-pill--mid'">{{ h.score }}</span>
+                                                        <span v-else class="fp-td-muted">—</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge rounded-pill" style="font-size:.65rem;"
+                                                        :class="h.tone === 'success' ? 'bg-success-subtle text-success-emphasis border border-success-subtle'
+                                                              : h.tone === 'warning' ? 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                                                              : 'bg-primary-subtle text-primary-emphasis border border-primary-subtle'">
+                                                        {{ h.status }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-end">
+                                                    <div class="d-flex gap-1 justify-content-end">
+                                                        <button type="button" class="btn btn-sm fp-btn-outline fp-act-btn" @click="openViewHarvestDialog(h)"><el-icon><View /></el-icon> View</button>
+                                                        <button v-if="props.canEdit" type="button" class="btn btn-sm fp-btn-danger-ghost fp-act-btn" @click="openDeleteHarvestDialog(h)"><el-icon><Delete /></el-icon> Delete</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="harvestRows.length === 0">
+                                                <td colspan="7" class="text-center fp-td-muted py-4">No harvests recorded yet.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- 5. Production Overview -->
                             <div class="fp-card">
                                 <div class="fp-card-title mb-3">
                                     <el-icon class="fp-card-icon"><TrendCharts /></el-icon>
@@ -324,59 +628,6 @@ const data=computed(()=>props.farm);
                                     <div class="col-6 col-md-3"><div class="fp-spec-cell"><span>Yield / ha</span><strong>2.4 t</strong></div></div>
                                     <div class="col-6 col-md-3"><div class="fp-spec-cell"><span>Active Season</span><strong>2024/25</strong></div></div>
                                     <div class="col-6 col-md-3"><div class="fp-spec-cell"><span>Coffee Type Split</span><strong>{{ variety }} 100%</strong></div></div>
-                                </div>
-                            </div>
-
-                            <!-- 5. Harvest History -->
-                            <div class="fp-card p-0 overflow-hidden">
-                                <div class="d-flex align-items-center justify-content-between gap-2 px-3 py-2 border-bottom">
-                                    <div class="fp-card-title">
-                                        <el-icon class="fp-card-icon"><Box /></el-icon>
-                                        Harvest History
-                                    </div>
-                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" style="font-size:.65rem;">{{ harvestRows.length }} harvests</span>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table align-middle mb-0 fp-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Harvest ID</th>
-                                                <th>Season</th>
-                                                <th>Date</th>
-                                                <th>Quantity</th>
-                                                <th>Quality Score</th>
-                                                <th>Status</th>
-                                                <th class="text-end">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-for="h in harvestRows" :key="h.id" class="fp-table-row">
-                                                <td class="fp-item-name">{{ h.id }}</td>
-                                                <td class="fp-td-muted">{{ h.season }}</td>
-                                                <td class="fp-td-muted">{{ h.date }}</td>
-                                                <td class="fw-semibold">{{ h.qty }}</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="fp-score-pill" :class="h.score >= 88 ? 'fp-score-pill--high' : 'fp-score-pill--mid'">{{ h.score }}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span class="badge rounded-pill" style="font-size:.65rem;"
-                                                        :class="h.tone === 'success' ? 'bg-success-subtle text-success-emphasis border border-success-subtle'
-                                                              : h.tone === 'warning' ? 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-                                                              : 'bg-primary-subtle text-primary-emphasis border border-primary-subtle'">
-                                                        {{ h.status }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-end">
-                                                    <div class="d-flex gap-1 justify-content-end">
-                                                        <button class="btn btn-sm fp-btn-outline fp-act-btn"><el-icon><View /></el-icon> View</button>
-                                                        <button class="btn btn-sm fp-btn-ghost fp-act-btn"><el-icon><CollectionTag /></el-icon> Batch</button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
                                 </div>
                             </div>
 
@@ -641,8 +892,8 @@ const data=computed(()=>props.farm);
                             </div>
 
                             <!-- 15. AI Farm Insights -->
-                            <div>
-                                <div class="fp-card-title mb-2">
+                            <div class="fp-card">
+                                <div class="fp-card-title mb-3">
                                     <el-icon class="fp-card-icon"><Opportunity /></el-icon>
                                     AI Farm Insights
                                 </div>
@@ -675,36 +926,430 @@ const data=computed(()=>props.farm);
                 <div class="pb-5"></div>
             </div>
 
-            <!-- ── 17. Floating Chatbot ───────────────────────────────── -->
-            <div class="fp-fab-wrap">
-                <Transition name="fp-chat">
-                    <div v-if="chatOpen" class="fp-chatbot">
-                        <div class="fp-chatbot__head">
-                            <div class="fp-chatbot__identity">
-                                <div class="fp-chatbot__avatar"><el-icon><ChatDotRound /></el-icon></div>
-                                <div>
-                                    <div class="fp-chatbot__name">Farm Advisor</div>
-                                    <div class="fp-chatbot__status"><i></i> Online</div>
-                                </div>
-                            </div>
-                            <button class="fp-chatbot__close" @click="chatOpen = false">×</button>
+            <!-- ── Edit Farm modal (creator only) ─────────────────────── -->
+            <el-dialog v-model="editDialogOpen" width="50%" align-center class="fp-modal">
+                <template #header>
+                    <div class="fp-modal__head">
+                        <div class="fp-modal__head-icon">
+                            <el-icon :size="18"><Edit /></el-icon>
                         </div>
-                        <div class="fp-chatbot__body">
-                            <div v-for="(msg, i) in chatMsgs" :key="i" class="fp-chat-msg" :class="`fp-chat-msg--${msg.role}`">{{ msg.text }}</div>
-                        </div>
-                        <div class="fp-chatbot__prompts">
-                            <button v-for="p in prompts" :key="p" class="fp-prompt-chip" @click="usePrompt(p)">{{ p }}</button>
-                        </div>
-                        <div class="fp-chatbot__input">
-                            <input v-model="chatInput" placeholder="Ask your advisor…" @keydown.enter="sendChat">
-                            <button @click="sendChat"><el-icon><Promotion /></el-icon></button>
+                        <div class="fp-modal__head-text">
+                            <div class="fp-modal__eyebrow">Farm Profile</div>
+                            <div class="fp-modal__title">Edit Farm</div>
                         </div>
                     </div>
-                </Transition>
-                <button class="fp-fab" @click="chatOpen = !chatOpen">
-                    <el-icon><ChatDotRound /></el-icon>
-                </button>
-            </div>
+                </template>
+
+                <form id="edit-farm-form" class="fp-modal__body" @submit.prevent="submitEditFarm">
+                    <div class="fp-field">
+                        <label class="fp-field__label">Farm Name</label>
+                        <el-input v-model="editForm.name" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.name }" />
+                        <InputError class="fp-field__error" :message="editForm.errors.name" />
+                    </div>
+
+                    <div class="fp-field-row">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Location</label>
+                            <el-input v-model="editForm.location" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.location }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.location" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Altitude</label>
+                            <el-input v-model="editForm.altitude" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.altitude }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.altitude" />
+                        </div>
+                    </div>
+
+                    <div class="fp-field-row">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Farm Size</label>
+                            <el-input v-model="editForm.size" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.size }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.size" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Variety</label>
+                            <el-select v-model="editForm.variety" placeholder="Select crop variety" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': editForm.errors.variety }">
+                                <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
+                            </el-select>
+                            <InputError class="fp-field__error" :message="editForm.errors.variety" />
+                        </div>
+                    </div>
+
+                    <div class="fp-field">
+                        <label class="fp-field__label">Notes <span class="fp-field__optional">(optional)</span></label>
+                        <el-input v-model="editForm.notes" type="textarea" :rows="3" class="fp-field-input" />
+                        <InputError class="fp-field__error" :message="editForm.errors.notes" />
+                    </div>
+                </form>
+
+                <template #footer>
+                    <div class="fp-modal__footer">
+                        <button type="submit" form="edit-farm-form" class="btn fp-btn-primary btn-sm" :disabled="editForm.processing">
+                            {{ editForm.processing ? 'Saving…' : 'Save Changes' }}
+                        </button>
+                    </div>
+                </template>
+            </el-dialog>
+
+            <!-- ── Delete Farm modal (creator only) ────────────────────── -->
+            <el-dialog v-model="deleteDialogOpen" width="420px" align-center class="fp-modal fp-modal--danger">
+                <template #header>
+                    <div class="fp-modal__head">
+                        <div class="fp-modal__head-icon fp-modal__head-icon--danger">
+                            <el-icon :size="18"><Delete /></el-icon>
+                        </div>
+                        <div class="fp-modal__head-text">
+                            <div class="fp-modal__eyebrow">Farm Profile</div>
+                            <div class="fp-modal__title">Delete Farm</div>
+                        </div>
+                    </div>
+                </template>
+
+                <div class="fp-modal__body">
+                    <p class="fp-modal__confirm-text">
+                        Are you sure you want to delete <strong>{{ farmName }}</strong>? This action cannot be undone.
+                    </p>
+                </div>
+
+                <div class="fp-modal__footer">
+                    <button type="button" class="btn fp-btn-outline btn-sm" @click="deleteDialogOpen = false">Cancel</button>
+                    <button type="button" class="btn fp-btn-danger btn-sm" :disabled="deletingFarm" @click="deleteFarm">
+                        {{ deletingFarm ? 'Deleting…' : 'Delete Farm' }}
+                    </button>
+                </div>
+            </el-dialog>
+
+            <!-- ── Edit Environmental Specs modal (creator only) ──────── -->
+            <el-dialog v-model="specsDialogOpen" width="480px" align-center class="fp-modal">
+                <template #header>
+                    <div class="fp-modal__head">
+                        <div class="fp-modal__head-icon">
+                            <el-icon :size="18"><Edit /></el-icon>
+                        </div>
+                        <div class="fp-modal__head-text">
+                            <div class="fp-modal__eyebrow">Farm Profile</div>
+                            <div class="fp-modal__title">Edit Farm Specifications</div>
+                        </div>
+                    </div>
+                </template>
+
+                <form id="specs-form" class="fp-modal__body" @submit.prevent="submitSpecsForm">
+                    <div class="fp-field-row">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Rainfall</label>
+                            <el-input v-model="specsForm.rainfall" placeholder="e.g. 1,850 mm" class="fp-field-input" :class="{ 'fp-field-input--error': specsForm.errors.rainfall }" />
+                            <InputError class="fp-field__error" :message="specsForm.errors.rainfall" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Temperature</label>
+                            <el-input v-model="specsForm.temperature" placeholder="e.g. 18.5°C – 24.2°C" class="fp-field-input" :class="{ 'fp-field-input--error': specsForm.errors.temperature }" />
+                            <InputError class="fp-field__error" :message="specsForm.errors.temperature" />
+                        </div>
+                    </div>
+
+                    <div class="fp-field-row">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Humidity</label>
+                            <el-input v-model="specsForm.humidity" placeholder="e.g. 62%" class="fp-field-input" :class="{ 'fp-field-input--error': specsForm.errors.humidity }" />
+                            <InputError class="fp-field__error" :message="specsForm.errors.humidity" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Soil Type</label>
+                            <el-select v-model="specsForm.soil_type" placeholder="Select soil type" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': specsForm.errors.soil_type }">
+                                <el-option v-for="option in soilTypeOptions" :key="option.id" :label="option.name" :value="option.name" />
+                            </el-select>
+                            <InputError class="fp-field__error" :message="specsForm.errors.soil_type" />
+                        </div>
+                    </div>
+
+                    <div class="fp-field">
+                        <label class="fp-field__label">Climatic Zone</label>
+                        <el-select v-model="specsForm.climatic_zone" placeholder="Select climatic zone" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': specsForm.errors.climatic_zone }">
+                            <el-option v-for="option in climaticZoneOptions" :key="option.id" :label="option.name" :value="option.name" />
+                        </el-select>
+                        <InputError class="fp-field__error" :message="specsForm.errors.climatic_zone" />
+                    </div>
+                </form>
+
+                <template #footer>
+                    <div class="fp-modal__footer">
+                        <button type="button" class="btn fp-btn-outline btn-sm" @click="specsDialogOpen = false">Cancel</button>
+                        <button type="submit" form="specs-form" class="btn fp-btn-primary btn-sm" :disabled="specsForm.processing">
+                            {{ specsForm.processing ? 'Saving…' : 'Save Changes' }}
+                        </button>
+                    </div>
+                </template>
+            </el-dialog>
+
+            <!-- ── Edit Farm Location modal (creator only) ─────────────── -->
+            <el-dialog v-model="locationDialogOpen" width="480px" align-center class="fp-modal">
+                <template #header>
+                    <div class="fp-modal__head">
+                        <div class="fp-modal__head-icon">
+                            <el-icon :size="18"><Location /></el-icon>
+                        </div>
+                        <div class="fp-modal__head-text">
+                            <div class="fp-modal__eyebrow">Farm Profile</div>
+                            <div class="fp-modal__title">Edit Farm Location</div>
+                        </div>
+                    </div>
+                </template>
+
+                <form id="location-form" class="fp-modal__body" @submit.prevent="submitLocationForm">
+                    <div class="fp-locate-row">
+                        <button type="button" class="btn fp-btn-outline btn-sm" :disabled="geocoding" @click="locateFromAddress">
+                            <el-icon><Location /></el-icon>
+                            {{ geocoding ? 'Locating…' : 'Locate from farm address' }}
+                        </button>
+                        <span v-if="geocodeError" class="fp-locate-error">{{ geocodeError }}</span>
+                    </div>
+
+                    <div class="fp-field-row">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Latitude</label>
+                            <el-input v-model="locationForm.latitude" placeholder="e.g. 0.3476" class="fp-field-input" :class="{ 'fp-field-input--error': locationForm.errors.latitude }" />
+                            <InputError class="fp-field__error" :message="locationForm.errors.latitude" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Longitude</label>
+                            <el-input v-model="locationForm.longitude" placeholder="e.g. 34.1162" class="fp-field-input" :class="{ 'fp-field-input--error': locationForm.errors.longitude }" />
+                            <InputError class="fp-field__error" :message="locationForm.errors.longitude" />
+                        </div>
+                    </div>
+
+                    <div class="fp-field">
+                        <label class="fp-field__label">Altitude</label>
+                        <el-input v-model="locationForm.altitude" placeholder="e.g. 1,950m" class="fp-field-input" :class="{ 'fp-field-input--error': locationForm.errors.altitude }" />
+                        <InputError class="fp-field__error" :message="locationForm.errors.altitude" />
+                    </div>
+                </form>
+
+                <template #footer>
+                    <div class="fp-modal__footer">
+                        <button type="submit" form="location-form" class="btn fp-btn-primary btn-sm" :disabled="locationForm.processing">
+                            {{ locationForm.processing ? 'Saving…' : 'Save Changes' }}
+                        </button>
+                    </div>
+                </template>
+            </el-dialog>
+
+            <!-- ── Add Harvest modal (creator only) ──────────────────── -->
+            <el-dialog v-model="harvestDialogOpen" width="560px" align-center class="fp-modal">
+                <template #header>
+                    <div class="fp-modal__head">
+                        <div class="fp-modal__head-icon">
+                            <el-icon :size="18"><Box /></el-icon>
+                        </div>
+                        <div class="fp-modal__head-text">
+                            <div class="fp-modal__eyebrow">Farm Profile</div>
+                            <div class="fp-modal__title">Add Harvest</div>
+                        </div>
+                    </div>
+                </template>
+
+                <form id="harvest-form" novalidate class="fp-modal__body" @submit.prevent="submitHarvestForm">
+                    <div class="fp-field-row">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Variety</label>
+                            <el-select v-model="harvestForm.variety" placeholder="Select crop variety" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.variety }">
+                                <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
+                            </el-select>
+                            <InputError class="fp-field__error" :message="harvestForm.errors.variety" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Harvest Season</label>
+                            <el-select v-model="harvestForm.harvest_season" placeholder="Select season" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.harvest_season }">
+                                <el-option v-for="option in harvestSeasonOptions" :key="option" :label="option" :value="option" />
+                            </el-select>
+                            <InputError class="fp-field__error" :message="harvestForm.errors.harvest_season" />
+                        </div>
+                    </div>
+
+                    <div class="fp-field-row fp-field-row--spaced">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Date Planted</label>
+                            <el-date-picker v-model="harvestForm.date_planted" type="date" value-format="YYYY-MM-DD" placeholder="Select date" :disabled-date="disableFutureDates" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.date_planted }" />
+                            <InputError class="fp-field__error fp-field__error--spaced" :message="harvestForm.errors.date_planted" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Harvest Date</label>
+                            <el-date-picker v-model="harvestForm.harvest_date" type="date" value-format="YYYY-MM-DD" placeholder="Select date" :disabled-date="disableFutureDates" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.harvest_date }" />
+                            <InputError class="fp-field__error fp-field__error--spaced" :message="harvestForm.errors.harvest_date" />
+                        </div>
+                    </div>
+
+                    <div class="fp-field-row">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Pick Method</label>
+                            <el-select v-model="harvestForm.pick_method" placeholder="Select pick method" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.pick_method }">
+                                <el-option v-for="option in pickMethodOptions" :key="option" :label="option" :value="option" />
+                            </el-select>
+                            <InputError class="fp-field__error" :message="harvestForm.errors.pick_method" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Ripeness %</label>
+                            <el-input-number v-model="harvestForm.ripeness_percentage" :min="0" :max="100" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.ripeness_percentage }" />
+                            <InputError class="fp-field__error" :message="harvestForm.errors.ripeness_percentage" />
+                        </div>
+                    </div>
+
+                    <div class="fp-field-row">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Weight (kg)</label>
+                            <el-input-number v-model="harvestForm.weight" :min="0.01" :precision="2" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.weight }" />
+                            <InputError class="fp-field__error" :message="harvestForm.errors.weight" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Price (per kg)</label>
+                            <el-input-number v-model="harvestForm.price" :min="0.01" :precision="2" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.price }" />
+                            <InputError class="fp-field__error" :message="harvestForm.errors.price" />
+                        </div>
+                    </div>
+
+                    <div class="fp-harvest-flags">
+                        <div class="fp-harvest-flag">
+                            <span>Foreign matter present</span>
+                            <el-switch v-model="harvestForm.foreign_matter_present" />
+                        </div>
+                        <div class="fp-harvest-flag">
+                            <span>Pest damage</span>
+                            <el-switch v-model="harvestForm.pest_damage" />
+                        </div>
+                        <div class="fp-harvest-flag">
+                            <span>Disease signs</span>
+                            <el-switch v-model="harvestForm.disease_signs" />
+                        </div>
+                        <div class="fp-harvest-flag">
+                            <span>Visible defects</span>
+                            <el-switch v-model="harvestForm.visible_defects" />
+                        </div>
+                    </div>
+                </form>
+
+                <template #footer>
+                    <div class="fp-modal__footer">
+                        <button type="submit" form="harvest-form" class="btn fp-btn-primary btn-sm" :disabled="harvestForm.processing">
+                            {{ harvestForm.processing ? 'Saving…' : 'Save Harvest' }}
+                        </button>
+                    </div>
+                </template>
+            </el-dialog>
+
+            <!-- ── Delete Harvest modal (creator only) ─────────────────── -->
+            <el-dialog v-model="deleteHarvestDialogOpen" width="440px" align-center class="fp-modal fp-modal--danger">
+                <template #header>
+                    <div class="fp-modal__head">
+                        <div class="fp-modal__head-icon fp-modal__head-icon--danger">
+                            <el-icon :size="18"><Delete /></el-icon>
+                        </div>
+                        <div class="fp-modal__head-text">
+                            <div class="fp-modal__eyebrow">Harvest History</div>
+                            <div class="fp-modal__title">Delete Harvest</div>
+                        </div>
+                    </div>
+                </template>
+
+                <div v-if="harvestToDelete" class="fp-modal__body">
+                    <p class="fp-modal__confirm-text">
+                        Are you sure you want to delete this harvest record? This action cannot be undone.
+                    </p>
+                    <div class="fp-harvest-preview">
+                        <div class="fp-harvest-preview__row"><span>Harvest ID</span><strong>{{ harvestToDelete.code }}</strong></div>
+                        <div class="fp-harvest-preview__row"><span>Season</span><strong>{{ harvestToDelete.season }}</strong></div>
+                        <div class="fp-harvest-preview__row"><span>Date</span><strong>{{ harvestToDelete.date }}</strong></div>
+                        <div class="fp-harvest-preview__row"><span>Quantity</span><strong>{{ harvestToDelete.qty }}</strong></div>
+                    </div>
+                </div>
+
+                <template #footer>
+                    <div class="fp-modal__footer">
+                        <button type="button" class="btn fp-btn-outline btn-sm" @click="deleteHarvestDialogOpen = false">Cancel</button>
+                        <button type="button" class="btn fp-btn-danger btn-sm" :disabled="deletingHarvest" @click="deleteHarvest">
+                            {{ deletingHarvest ? 'Deleting…' : 'Delete Harvest' }}
+                        </button>
+                    </div>
+                </template>
+            </el-dialog>
+
+            <!-- ── View Harvest modal ───────────────────────────────────── -->
+            <el-dialog v-model="viewHarvestDialogOpen" width="560px" align-center class="fp-modal">
+                <template #header>
+                    <div class="fp-modal__head">
+                        <div class="fp-modal__head-icon">
+                            <el-icon :size="18"><Box /></el-icon>
+                        </div>
+                        <div class="fp-modal__head-text">
+                            <div class="fp-modal__eyebrow">Harvest History</div>
+                            <div class="fp-modal__title">Harvest {{ harvestToViewCode }}</div>
+                        </div>
+                    </div>
+                </template>
+
+                <div v-if="harvestToView" class="fp-modal__body">
+                    <div class="fp-view-section">
+                        <div class="fp-view-section__title">Overview</div>
+                        <div class="row g-2">
+                            <div class="col-6"><div class="fp-spec-cell"><span>Variety</span><strong>{{ harvestToView.variety || '—' }}</strong></div></div>
+                            <div class="col-6"><div class="fp-spec-cell"><span>Harvest Season</span><strong>{{ harvestToView.harvest_season || '—' }}</strong></div></div>
+                            <div class="col-6"><div class="fp-spec-cell"><span>Pick Method</span><strong>{{ harvestToView.pick_method || '—' }}</strong></div></div>
+                            <div class="col-6"><div class="fp-spec-cell"><span>Status</span><strong>{{ harvestToViewStatus }}</strong></div></div>
+                        </div>
+                    </div>
+
+                    <div class="fp-view-section">
+                        <div class="fp-view-section__title">Timeline</div>
+                        <div class="row g-2">
+                            <div class="col-6"><div class="fp-spec-cell"><span>Date Planted</span><strong>{{ harvestToView.date_planted || '—' }}</strong></div></div>
+                            <div class="col-6"><div class="fp-spec-cell"><span>Harvest Date</span><strong>{{ harvestToView.harvest_date || '—' }}</strong></div></div>
+                        </div>
+                    </div>
+
+                    <div class="fp-view-section">
+                        <div class="fp-view-section__title">Yield &amp; Pricing</div>
+                        <div class="row g-2">
+                            <div class="col-4"><div class="fp-spec-cell"><span>Weight</span><strong>{{ harvestToView.weight !== null && harvestToView.weight !== undefined ? `${Number(harvestToView.weight).toLocaleString()} kg` : '—' }}</strong></div></div>
+                            <div class="col-4"><div class="fp-spec-cell"><span>Price / kg</span><strong>{{ harvestToView.price !== null && harvestToView.price !== undefined ? `$${Number(harvestToView.price).toFixed(2)}` : '—' }}</strong></div></div>
+                            <div class="col-4"><div class="fp-spec-cell"><span>Ripeness</span><strong>{{ harvestToView.ripeness_percentage !== null && harvestToView.ripeness_percentage !== undefined ? `${harvestToView.ripeness_percentage}%` : '—' }}</strong></div></div>
+                        </div>
+                    </div>
+
+                    <div class="fp-view-section">
+                        <div class="fp-view-section__title">Quality Flags</div>
+                        <div class="fp-harvest-flags">
+                            <div class="fp-harvest-flag">
+                                <span>Foreign Matter</span>
+                                <span class="badge rounded-pill" style="font-size:.65rem;"
+                                    :class="harvestToView.foreign_matter_present ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
+                                    {{ harvestToView.foreign_matter_present ? 'Present' : 'None' }}
+                                </span>
+                            </div>
+                            <div class="fp-harvest-flag">
+                                <span>Pest Damage</span>
+                                <span class="badge rounded-pill" style="font-size:.65rem;"
+                                    :class="harvestToView.pest_damage ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
+                                    {{ harvestToView.pest_damage ? 'Present' : 'None' }}
+                                </span>
+                            </div>
+                            <div class="fp-harvest-flag">
+                                <span>Disease Signs</span>
+                                <span class="badge rounded-pill" style="font-size:.65rem;"
+                                    :class="harvestToView.disease_signs ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
+                                    {{ harvestToView.disease_signs ? 'Present' : 'None' }}
+                                </span>
+                            </div>
+                            <div class="fp-harvest-flag">
+                                <span>Visible Defects</span>
+                                <span class="badge rounded-pill" style="font-size:.65rem;"
+                                    :class="harvestToView.visible_defects ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
+                                    {{ harvestToView.visible_defects ? 'Present' : 'None' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fp-view-meta">Recorded {{ harvestToView.created_at || '—' }}</div>
+                </div>
+            </el-dialog>
 
         </div>
     </AppLayout>
@@ -726,13 +1371,14 @@ const data=computed(()=>props.farm);
     background: var(--surface-white);
     color: var(--on-surface);
     min-height: 100%;
+    line-height: 1.5;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .fp-header      { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
-.fp-header-kicker { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 2px; }
-.fp-title       { font-size: 1.0625rem; font-weight: 800; letter-spacing: -0.02em; }
-.fp-subtitle    { font-size: 0.8125rem; color: var(--on-surface-var); }
+.fp-header-kicker { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 4px; line-height: 1; }
+.fp-title       { font-size: 1.1875rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
+.fp-subtitle    { font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.5; margin-top: 2px; }
 .fp-hbadge      { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
 .fp-hbadge--soft { background: #dcfce7; color: #166534; }
 .fp-hbadge--blue { background: #dbeafe; color: #1e40af; }
@@ -744,47 +1390,58 @@ const data=computed(()=>props.farm);
 .fp-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .fp-btn-outline:hover { background: var(--surface-low); }
 .fp-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.fp-btn-danger  { background: #dc2626; border-color: #dc2626; color: #fff; border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.fp-btn-danger:hover { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+.fp-btn-danger:disabled { opacity: .6; cursor: not-allowed; }
+.fp-btn-danger-ghost { background: #fef2f2; border-color: transparent; color: #dc2626; border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.fp-btn-danger-ghost:hover { background: #fee2e2; }
+.fp-btn-group { border: 1px solid var(--surface-high); border-radius: 6px; overflow: hidden; }
+.fp-btn-group :deep(.el-button) { border: none; border-radius: 0; }
+.fp-btn-group :deep(.el-button + .el-button) { border-left: 1px solid var(--surface-high); }
 
 /* ── Hero card ─────────────────────────────────────────────────────────────── */
 .fp-hero-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .fp-hero-identity { padding: 1.25rem; border-right: 1px solid var(--surface-high); background: linear-gradient(180deg, #f0fdf4, #ffffff); display: flex; flex-direction: column; }
 .fp-hero-specs, .fp-hero-perf { padding: 1.25rem; }
 .fp-hero-specs { border-right: 1px solid var(--surface-high); }
-.fp-farm-avatar-lg { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(145deg, #1f2937, #0f172a); color: #d1fae5; font-weight: 800; font-size: 1.125rem; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
-.fp-hero-name   { font-size: 1.0625rem; font-weight: 800; color: var(--on-surface); margin-bottom: 2px; }
+.fp-farm-avatar-lg { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(145deg, #1f2937, #0f172a); color: #d1fae5; font-weight: 800; font-size: 1.125rem; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.fp-hero-name   { font-size: 1.125rem; font-weight: 800; color: var(--on-surface); line-height: 1.3; margin-bottom: 4px; }
 .fp-hero-farmer { font-size: 0.8125rem; color: var(--on-surface-var); margin-bottom: 6px; }
 .fp-contact-row { font-size: 0.75rem; color: var(--on-surface-var); margin-bottom: 3px; }
-.fp-specs-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); margin-bottom: 10px; }
+.fp-specs-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--on-surface-var); margin-bottom: 12px; }
+.fp-specs-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.fp-specs-edit-btn { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--surface-high); background: var(--surface-white); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; flex-shrink: 0; transition: background 0.15s ease, color 0.15s ease; }
+.fp-specs-edit-btn:hover { background: var(--surface-low); color: var(--green); }
 
 /* ── Quality ring ──────────────────────────────────────────────────────────── */
 .fp-quality-ring-wrap { display: flex; align-items: center; }
 .fp-quality-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fp-quality-ring-inner { position: absolute; text-align: center; }
-.fp-quality-score { font-size: 1.125rem; font-weight: 800; color: var(--green); line-height: 1; }
-.fp-quality-label { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); }
-.fp-perf-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; color: var(--on-surface-var); }
+.fp-quality-score { font-size: 1.1875rem; font-weight: 800; color: var(--green); line-height: 1; }
+.fp-quality-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); margin-top: 2px; }
+.fp-perf-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.4; }
 .fp-perf-row:last-child { border-bottom: none; }
 .fp-perf-row strong { color: var(--on-surface); font-weight: 700; }
 
 /* ── Spec cell ─────────────────────────────────────────────────────────────── */
-.fp-spec-cell { background: var(--surface-low); border-radius: 6px; padding: 6px 8px; }
-.fp-spec-cell span   { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; margin-bottom: 2px; }
-.fp-spec-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; }
+.fp-spec-cell { background: var(--surface-low); border-radius: 6px; padding: 7px 9px; }
+.fp-spec-cell span   { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-surface-var); display: block; margin-bottom: 3px; line-height: 1.3; }
+.fp-spec-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; line-height: 1.35; }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
-.fp-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
-.fp-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
+.fp-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 14px; padding: 1.25rem; box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 1px 8px rgba(0,0,0,.03); transition: box-shadow 0.15s ease, border-color 0.15s ease; }
+.fp-card:hover { border-color: #d1d5db; box-shadow: 0 2px 4px rgba(0,0,0,.03), 0 6px 18px rgba(0,0,0,.05); }
+.fp-card-title { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); letter-spacing: -0.01em; line-height: 1.3; }
 .fp-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
 /* ── Map ───────────────────────────────────────────────────────────────────── */
 .fp-map-tile { position: relative; min-height: 180px; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, rgba(0,0,0,.04) 25%, transparent 25%) -12px 0/24px 24px, linear-gradient(225deg, rgba(0,0,0,.04) 25%, transparent 25%) -12px 0/24px 24px, linear-gradient(315deg, rgba(0,0,0,.04) 25%, transparent 25%) 0 0/24px 24px, linear-gradient(45deg, rgba(0,0,0,.04) 25%, transparent 25%) 0 0/24px 24px, #f6f7f7; border: 1px solid var(--surface-high); }
-.fp-map-pin { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border-radius: 50% 50% 50% 0; transform: translate(-50%, -65%) rotate(-45deg); background: var(--green); }
-.fp-map-pin::after { content: ''; position: absolute; top: 14px; left: 14px; width: 32px; height: 32px; border-radius: 50%; background: #fff; }
+.fp-map-canvas { position: absolute; inset: 0; }
+.fp-map-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 1rem; text-align: center; }
 .fp-map-coords { position: absolute; bottom: 0.75rem; left: 0.75rem; right: 0.75rem; background: rgba(255,255,255,.92); border-radius: 8px; padding: 8px 10px; }
 .fp-map-badges { position: absolute; top: 0.75rem; right: 0.75rem; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
 .fp-map-badge { background: rgba(0,69,50,0.85); color: #fff; border-radius: 999px; font-size: 0.625rem; font-weight: 700; padding: 3px 8px; }
-.fp-map-badge--blue { background: rgba(30,64,175,0.8); }
-.fp-env-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; color: var(--on-surface-var); }
+.fp-env-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.4; }
 .fp-env-row:last-child { border-bottom: none; }
 .fp-env-row strong { color: var(--on-surface); font-weight: 700; }
 
@@ -795,15 +1452,15 @@ const data=computed(()=>props.farm);
 .fp-chart-bar  { width: 100%; border-radius: 2px 2px 0 0; }
 .fp-chart-bar--prod { background: var(--green); }
 .fp-chart-bar--qual { background: #059669; }
-.fp-chart-lbl  { font-size: 0.5rem; color: var(--on-surface-var); font-weight: 600; }
+.fp-chart-lbl  { font-size: 0.5625rem; color: var(--on-surface-var); font-weight: 600; }
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
-.fp-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
-.fp-table tbody td { padding: 9px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
+.fp-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 10px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
+.fp-table tbody td { padding: 11px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
 .fp-table-row { transition: background 0.1s; }
 .fp-table-row:hover { background: var(--surface-low); }
-.fp-item-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
-.fp-td-muted  { color: var(--on-surface-var); font-size: 0.8125rem; }
+.fp-item-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.4; }
+.fp-td-muted  { color: var(--on-surface-var); font-size: 0.8125rem; line-height: 1.4; }
 .fp-act-btn   { font-size: 0.75rem !important; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .fp-score-pill { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 800; padding: 2px 8px; }
 .fp-score-pill--high { background: #dcfce7; color: #166534; }
@@ -813,13 +1470,13 @@ const data=computed(()=>props.farm);
 
 /* ── Traceability ──────────────────────────────────────────────────────────── */
 .fp-trace-flow { display: flex; justify-content: space-between; align-items: flex-start; position: relative; }
-.fp-trace-stage { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; position: relative; z-index: 1; }
+.fp-trace-stage { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; position: relative; z-index: 1; }
 .fp-trace-dot { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
 .fp-trace-dot--done    { background: #dcfce7; color: #166534; }
 .fp-trace-dot--pending { background: var(--surface-high); color: var(--on-surface-var); }
-.fp-trace-label  { font-size: 0.6875rem; font-weight: 700; color: var(--on-surface); text-align: center; }
-.fp-trace-status { font-size: 0.625rem; font-weight: 600; text-align: center; }
-.fp-trace-date   { font-size: 0.5625rem; color: var(--on-surface-var); text-align: center; }
+.fp-trace-label  { font-size: 0.6875rem; font-weight: 700; color: var(--on-surface); text-align: center; margin-top: 2px; }
+.fp-trace-status { font-size: 0.6875rem; font-weight: 600; text-align: center; }
+.fp-trace-date   { font-size: 0.625rem; color: var(--on-surface-var); text-align: center; }
 .fp-trace-line   { position: absolute; top: 19px; left: 50%; width: 100%; height: 2px; background: var(--surface-high); z-index: 0; }
 .fp-trace-line--done { background: #16a34a; }
 
@@ -832,11 +1489,11 @@ const data=computed(()=>props.farm);
 
 /* ── Quality bubble ────────────────────────────────────────────────────────── */
 .fp-quality-bubble { width: 52px; height: 52px; border-radius: 50%; background: var(--green); color: #fff; font-size: 1rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fp-cert-label { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
+.fp-cert-label { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.4; }
 
 /* ── Farmer card ───────────────────────────────────────────────────────────── */
 .fp-farmer-avatar { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fp-farmer-row { display: flex; align-items: center; gap: 7px; font-size: 0.8125rem; color: var(--on-surface-var); padding: 3px 0; }
+.fp-farmer-row { display: flex; align-items: center; gap: 7px; font-size: 0.8125rem; color: var(--on-surface-var); padding: 4px 0; line-height: 1.4; }
 
 /* ── Processing ────────────────────────────────────────────────────────────── */
 .fp-process-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 8px; padding: 0.75rem; }
@@ -845,12 +1502,12 @@ const data=computed(()=>props.farm);
 .fp-sus-badge { display: inline-flex; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
 .fp-sus-badge--amber { background: #fef3c7; color: #92400e; }
 .fp-sus-badge--blue  { background: #dbeafe; color: #1e40af; }
-.fp-sus-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--surface-low); }
+.fp-sus-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
 .fp-sus-row:last-child { border-bottom: none; }
 
 /* ── Timeline ──────────────────────────────────────────────────────────────── */
 .fp-timeline { display: flex; flex-direction: column; }
-.fp-timeline-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
+.fp-timeline-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--surface-low); }
 .fp-timeline-item:last-child { border-bottom: none; }
 .fp-timeline-dot { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
 .fp-timeline-dot--success { background: #dcfce7; color: #166534; }
@@ -863,7 +1520,7 @@ const data=computed(()=>props.farm);
 .fp-timeline-time { font-size: 0.6875rem; color: var(--on-surface-var); margin-top: 2px; }
 
 /* ── Documents ─────────────────────────────────────────────────────────────── */
-.fp-doc-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--surface-low); }
+.fp-doc-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
 .fp-doc-row:last-child { border-bottom: none; }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
@@ -875,7 +1532,7 @@ const data=computed(()=>props.farm);
 .fp-insight-text { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
 
 /* ── Alerts ────────────────────────────────────────────────────────────────── */
-.fp-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; }
+.fp-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 8px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; line-height: 1.4; }
 .fp-alert-row:last-child { border-bottom: none; }
 .fp-toggle { width: 32px; height: 18px; border-radius: 999px; border: none; padding: 2px; background: var(--surface-high); cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
 .fp-toggle i { display: block; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
@@ -883,36 +1540,69 @@ const data=computed(()=>props.farm);
 .fp-toggle--on i { transform: translateX(14px); }
 
 /* ── Right rail ────────────────────────────────────────────────────────────── */
-.fp-rail { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 100px; }
+.fp-rail { display: flex; flex-direction: column; gap: 1.125rem; position: sticky; top: 100px; }
 
-/* ── Chatbot ───────────────────────────────────────────────────────────────── */
-.fp-fab-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 300; display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; }
-.fp-fab { width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--green); color: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,69,50,0.35); cursor: pointer; }
-.fp-fab:hover { background: var(--green-grad); }
-.fp-chatbot { width: 310px; border-radius: 14px; overflow: hidden; background: #fff; border: 1px solid var(--surface-high); box-shadow: 0 8px 30px rgba(0,0,0,0.14); display: flex; flex-direction: column; }
-.fp-chatbot__head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--green); color: #fff; }
-.fp-chatbot__identity { display: flex; align-items: center; gap: 10px; }
-.fp-chatbot__avatar { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; }
-.fp-chatbot__name { font-size: 0.875rem; font-weight: 700; }
-.fp-chatbot__status { display: flex; align-items: center; gap: 5px; font-size: 0.625rem; opacity: 0.8; }
-.fp-chatbot__status i { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
-.fp-chatbot__close { border: none; background: none; color: rgba(255,255,255,0.8); font-size: 20px; line-height: 1; cursor: pointer; }
-.fp-chatbot__body { padding: 10px; background: var(--surface-low); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.fp-chat-msg { font-size: 0.8125rem; padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
-.fp-chat-msg--bot  { background: #fff; color: var(--on-surface); border-radius: 10px 10px 10px 2px; }
-.fp-chat-msg--user { background: var(--green); color: #fff; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
-.fp-chatbot__prompts { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
-.fp-prompt-chip { font-size: 0.6875rem; padding: 3px 9px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--surface-high); color: var(--on-surface); cursor: pointer; white-space: nowrap; }
-.fp-prompt-chip:hover { background: var(--surface-mid); }
-.fp-chatbot__input { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
-.fp-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: 0.8125rem; outline: none; }
-.fp-chatbot__input input:focus { border-color: var(--green); }
-.fp-chatbot__input button { border: none; background: var(--green); color: #fff; border-radius: 7px; width: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
-.fp-chat-enter-active, .fp-chat-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
-.fp-chat-enter-from, .fp-chat-leave-to { opacity: 0; transform: translateY(8px); }
+/* ── Edit modal — same design language as other dialogs in the app ───
+   NOTE: <el-dialog> teleports to <body>, outside .fp-page, so CSS
+   custom properties like var(--green) do not cascade in — literal hex
+   values are used below on purpose. */
+:deep(.el-dialog.fp-modal) {
+    border-radius: 18px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 20, 15, .22);
+    font-family: 'Manrope', system-ui, sans-serif;
+}
+:deep(.el-dialog.fp-modal .el-dialog__header) { padding: 0; margin: 0; }
+:deep(.el-dialog.fp-modal .el-dialog__body) { padding: 0; }
+:deep(.el-dialog.fp-modal .el-dialog__footer) { padding: 0; }
+
+.fp-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #f3f4f6; }
+.fp-modal__head-icon { width: 38px; height: 38px; border-radius: 11px; background: rgba(0,69,50,.08); color: #004532; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fp-modal__head-icon--danger { background: #fee2e2; color: #dc2626; }
+.fp-modal__head-text { flex: 1; min-width: 0; }
+.fp-modal__eyebrow { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #004532; margin-bottom: 1px; }
+.fp-modal__title { font-size: 1.0625rem; font-weight: 800; color: #111827; letter-spacing: -.01em; }
+
+.fp-modal__body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; max-height: 65vh; overflow-y: auto; }
+.fp-modal__confirm-text { font-size: 0.875rem; color: #374151; line-height: 1.5; margin: 0; }
+
+.fp-harvest-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #f3f4f6; border: 1px solid #f3f4f6; border-radius: 10px; overflow: hidden; margin-top: 14px; }
+.fp-harvest-preview__row { background: #fff; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
+.fp-harvest-preview__row span { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; }
+.fp-harvest-preview__row strong { font-size: 0.8125rem; font-weight: 700; color: #111827; }
+
+.fp-view-section { display: flex; flex-direction: column; gap: 8px; }
+.fp-view-section__title { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #9ca3af; }
+.fp-view-meta { font-size: 0.75rem; color: #9ca3af; text-align: center; padding-top: 4px; border-top: 1px solid #f3f4f6; }
+
+.fp-locate-row { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.fp-locate-error { font-size: .75rem; font-weight: 600; color: #dc2626; }
+.fp-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fp-field-row--spaced { margin-bottom: 10px; }
+.fp-field { display: flex; flex-direction: column; gap: 5px; }
+.fp-field__label { font-size: .75rem; font-weight: 600; color: #374151; }
+.fp-field__optional { font-weight: 400; color: #9ca3af; }
+.fp-field__error { font-size: .75rem; font-weight: 600; color: #dc2626; margin-top: 4px; display: block; }
+.fp-field__error--spaced { margin-top: 8px; }
+.fp-field__error--spaced :deep(p) { margin-top: 8px !important; }
+
+.fp-harvest-flags { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding: 12px; background: #f9fafb; border-radius: 10px; border: 1px solid #f3f4f6; }
+.fp-harvest-flag { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .8125rem; font-weight: 600; color: #374151; }
+
+.fp-field-input--error :deep(.el-input__wrapper),
+.fp-field-input--error :deep(.el-textarea__inner),
+.fp-field-input--error :deep(.el-select__wrapper),
+.fp-field-input--error.el-date-editor,
+.fp-field-input--error:deep(.el-date-editor) { box-shadow: 0 0 0 1.5px #dc2626 inset !important; }
+
+.fp-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #f9fafb; border-top: 1px solid #f3f4f6; }
 
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 1399.98px) { .fp-rail { position: static; } }
 @media (max-width: 991.98px)  { .fp-hero-identity, .fp-hero-specs { border-right: none; border-bottom: 1px solid var(--surface-high); } }
-@media (max-width: 767.98px)  { .fp-chatbot { width: calc(100vw - 3rem); max-width: 310px; } }
+@media (max-width: 767.98px)  {
+    .fp-field-row { grid-template-columns: 1fr; }
+    :deep(.el-dialog.fp-modal) { width: 92vw !important; }
+}
 </style>

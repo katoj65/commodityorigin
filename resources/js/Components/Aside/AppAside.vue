@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import WalletNavLink from '@/Components/WalletNavLink.vue';
+import { resolveIcon } from '@/utils/icon';
 
 const page = usePage();
 
@@ -64,7 +65,16 @@ const sideSections = computed(() => [
             {
                 label: 'Coffee Farms',
                 href: route('farm.index'),
-                active: route().current('farm.*'),
+                active: route().current('farm.index'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'farm',
+            },
+            {
+                label: 'My Farms',
+                href: route('farm.mine'),
+                active: route().current('farm.mine'),
                 inertia: true,
                 show: true,
                 badge: null,
@@ -268,7 +278,7 @@ const sideSections = computed(() => [
 
                     <div v-for="agent in subscribedAgents" :key="agent.id" class="mb-1.5">
                         <div class="snav" style="cursor: default;">
-                            <el-icon><component :is="agent.icon || 'Setting'" /></el-icon>
+                            <el-icon><component :is="resolveIcon(agent.icon)" /></el-icon>
                             <span class="snav-label">{{ agent.name }}</span>
                         </div>
 
@@ -281,7 +291,7 @@ const sideSections = computed(() => [
                                 class="agent-fn-link"
                                 @click="onFunctionClick(fn, $event)"
                             >
-                                <el-icon><component :is="fn.icon || 'Setting'" /></el-icon>
+                                <el-icon><component :is="resolveIcon(fn.icon)" /></el-icon>
                                 <span class="snav-label">{{ fn.name }}</span>
                             </component>
                         </div>

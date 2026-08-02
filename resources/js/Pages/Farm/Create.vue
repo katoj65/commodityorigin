@@ -59,12 +59,6 @@ const submit = () => form.post(route('farm.store'));
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <Link :href="route('farm.index')" class="af-action-btn">View Farms</Link>
-                        <Link v-if="hasLockedFarmer" :href="route('farmer.show', farmer.id)" class="af-action-btn af-action-btn--primary">
-                            ← Back to {{ farmerName }}
-                        </Link>
-                        <Link v-else :href="route('farmer.index')" class="af-action-btn af-action-btn--primary">
-                            ← Back to Farmers
-                        </Link>
                     </div>
                 </div>
             </div>
@@ -81,7 +75,7 @@ const submit = () => form.post(route('farm.store'));
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="af-label">Farm Name <span class="af-req">*</span></label>
-                                    <el-input v-model="form.name" placeholder="e.g. Elgon Heights Farm" class="af-input" />
+                                    <el-input v-model="form.name" placeholder="e.g. Elgon Heights Farm" class="af-input" :class="{ 'af-input--error': form.errors.name }" />
                                     <InputError class="af-err" :message="form.errors.name" />
                                 </div>
                             </div>
@@ -92,8 +86,8 @@ const submit = () => form.post(route('farm.store'));
                             <div class="af-group__title">Location &amp; Geography</div>
                             <div class="row g-3">
                                 <div class="col-12 col-sm-6">
-                                    <label class="af-label">Location</label>
-                                    <el-input v-model="form.location" placeholder="Village, parish, district" :prefix-icon="MapLocation" class="af-input" />
+                                    <label class="af-label">Location <span class="af-req">*</span></label>
+                                    <el-input v-model="form.location" placeholder="Village, parish, district" :prefix-icon="MapLocation" class="af-input" :class="{ 'af-input--error': form.errors.location }" />
                                     <InputError class="af-err" :message="form.errors.location" />
                                 </div>
                                 <div class="col-12 col-sm-6">
@@ -109,13 +103,13 @@ const submit = () => form.post(route('farm.store'));
                             <div class="af-group__title">Production Details</div>
                             <div class="row g-3">
                                 <div class="col-12 col-sm-6">
-                                    <label class="af-label">Farm Size</label>
-                                    <el-input v-model="form.size" placeholder="e.g. 12 hectares" class="af-input" />
+                                    <label class="af-label">Farm Size <span class="af-req">*</span></label>
+                                    <el-input v-model="form.size" placeholder="e.g. 12 hectares" class="af-input" :class="{ 'af-input--error': form.errors.size }" />
                                     <InputError class="af-err" :message="form.errors.size" />
                                 </div>
                                 <div class="col-12 col-sm-6">
                                     <label class="af-label">Variety <span class="af-req">*</span></label>
-                                    <el-select v-model="form.variety" placeholder="Select crop variety" clearable class="af-input w-100">
+                                    <el-select v-model="form.variety" placeholder="Select crop variety" clearable class="af-input w-100" :class="{ 'af-input--error': form.errors.variety }">
                                         <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
                                     </el-select>
                                     <InputError class="af-err" :message="form.errors.variety" />
@@ -162,17 +156,17 @@ const submit = () => form.post(route('farm.store'));
                             <div class="row g-3">
                                 <div class="col-12 col-sm-6">
                                     <label class="af-label">First Name <span class="af-req">*</span></label>
-                                    <el-input v-model="form.farmer.first_name" placeholder="e.g. Joshua" class="af-input" />
+                                    <el-input v-model="form.farmer.first_name" placeholder="e.g. Joshua" class="af-input" :class="{ 'af-input--error': form.errors['farmer.first_name'] }" />
                                     <InputError class="af-err" :message="form.errors['farmer.first_name']" />
                                 </div>
                                 <div class="col-12 col-sm-6">
                                     <label class="af-label">Last Name <span class="af-req">*</span></label>
-                                    <el-input v-model="form.farmer.last_name" placeholder="e.g. Kato" class="af-input" />
+                                    <el-input v-model="form.farmer.last_name" placeholder="e.g. Kato" class="af-input" :class="{ 'af-input--error': form.errors['farmer.last_name'] }" />
                                     <InputError class="af-err" :message="form.errors['farmer.last_name']" />
                                 </div>
                                 <div class="col-12 col-sm-6">
                                     <label class="af-label">Telephone <span class="af-req">*</span></label>
-                                    <el-input v-model="form.farmer.telephone" placeholder="+256 752 567 534" class="af-input" />
+                                    <el-input v-model="form.farmer.telephone" placeholder="+256 752 567 534" class="af-input" :class="{ 'af-input--error': form.errors['farmer.telephone'] }" />
                                     <InputError class="af-err" :message="form.errors['farmer.telephone']" />
                                 </div>
                                 <div class="col-12 col-sm-6">
@@ -182,7 +176,7 @@ const submit = () => form.post(route('farm.store'));
                                 </div>
                                 <div class="col-12 col-sm-6">
                                     <label class="af-label">District <span class="af-req">*</span></label>
-                                    <el-input v-model="form.farmer.district" placeholder="e.g. Mbale" class="af-input" />
+                                    <el-input v-model="form.farmer.district" placeholder="e.g. Mbale" class="af-input" :class="{ 'af-input--error': form.errors['farmer.district'] }" />
                                     <InputError class="af-err" :message="form.errors['farmer.district']" />
                                 </div>
                                 <div class="col-12 col-sm-6">
@@ -192,7 +186,7 @@ const submit = () => form.post(route('farm.store'));
                                 </div>
                                 <div class="col-12 col-sm-6">
                                     <label class="af-label">Coffee Type <span class="af-req">*</span></label>
-                                    <el-input v-model="form.farmer.coffee_type" placeholder="e.g. Arabica" class="af-input" />
+                                    <el-input v-model="form.farmer.coffee_type" placeholder="e.g. Arabica" class="af-input" :class="{ 'af-input--error': form.errors['farmer.coffee_type'] }" />
                                     <InputError class="af-err" :message="form.errors['farmer.coffee_type']" />
                                 </div>
                                 <div class="col-12 col-sm-6">
@@ -205,7 +199,6 @@ const submit = () => form.post(route('farm.store'));
 
                         <!-- Action bar -->
                         <div class="af-action-bar">
-                            <Link :href="hasLockedFarmer ? route('farmer.show', farmer.id) : route('farm.index')" class="af-action-btn">Cancel</Link>
                             <SubmitButton :loading="form.processing" :full-width="false">
                                 Save Farm
                             </SubmitButton>
@@ -342,6 +335,15 @@ const submit = () => form.post(route('farm.store'));
 :deep(.af-input--readonly .el-input__inner) {
     color: var(--on-surface-var);
     cursor: default;
+}
+
+/* Same red used by the system-wide .el-form-item.is-error rule in
+   element-overrides.css, applied here since this form doesn't use
+   <el-form-item> wrappers. */
+:deep(.af-input--error .el-input__wrapper),
+:deep(.af-input--error .el-select__wrapper),
+:deep(.af-input--error .el-textarea__inner) {
+    box-shadow: 0 0 0 1px var(--el-color-danger) inset !important;
 }
 
 /* ── Action bar ────────────────────────────────────────────────────────────── */

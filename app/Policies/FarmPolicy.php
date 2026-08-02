@@ -21,19 +21,38 @@ class FarmPolicy
     }
 
     /**
-     * Determine whether the user can view a single farm.
+     * Determine whether the user can view a single farm profile.
+     * Creator and admins only.
      */
     public function view(User $user, Farm $farm): bool
     {
-        return $this->allowed($user);
+        return $user->isAdmin() || $farm->created_by_user_id === $user->id;
     }
 
     /**
-     * Determine whether the user can create a farm.
+     * Determine whether the user can create a farm. Any authenticated
+     * user can self-register a farm (the create form itself decides
+     * whether they're the farmer or are registering one).
      */
     public function create(User $user): bool
     {
-        return $this->allowed($user);
+        return true;
+    }
+
+    /**
+     * Determine whether the user can update the farm. Creator only.
+     */
+    public function update(User $user, Farm $farm): bool
+    {
+        return $farm->created_by_user_id === $user->id;
+    }
+
+    /**
+     * Determine whether the user can delete the farm. Creator only.
+     */
+    public function delete(User $user, Farm $farm): bool
+    {
+        return $farm->created_by_user_id === $user->id;
     }
 
     /**

@@ -55,6 +55,6 @@ class Agent extends Model
      */
     public function functions(): HasMany
     {
-        return $this->hasMany(AgentFunction::class);
+        return $this->hasMany(AgentFunction::class)->orderBy('order');
     }
 }

@@ -844,8 +844,8 @@ const transitTimeStats = [
     border-bottom: 1px solid var(--border);
 }
 .cp-page-header .cp-title { font-size: 1.5rem; }
-.cp-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
-.cp-title  { font-size: 1.1875rem; font-weight: 800; letter-spacing: -.02em; }
+.cp-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; line-height: 1.4; }
+.cp-title  { font-size: 1.1875rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.3; }
 .cp-link   { font-size: .8125rem; font-weight: 700; color: var(--green); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
 .cp-link:hover { color: var(--green-dark); }
 
@@ -866,9 +866,11 @@ const transitTimeStats = [
 .cp-kpi__change { font-size: .6875rem; font-weight: 700; }
 
 /* ── Card ─────────────────────────────────────────────────────────────── */
-.cp-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: var(--shadow-sm); transition: box-shadow .15s ease; }
+.cp-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: var(--shadow-sm); transition: box-shadow .15s ease, border-color .15s ease; }
+.cp-card:hover { box-shadow: var(--shadow-md); border-color: #d1d5db; }
 .cp-card--flat { box-shadow: none; }
-.cp-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; font-weight: 700; color: var(--on-surface); }
+.cp-card--flat:hover { box-shadow: none; border-color: var(--border); }
+.cp-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; font-weight: 700; color: var(--on-surface); line-height: 1.3; }
 .cp-card-icon  { width: 26px; height: 26px; border-radius: 8px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
 /* ── Share rows ───────────────────────────────────────────────────────── */

@@ -3,14 +3,15 @@ import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { ArrowLeft, Delete, Edit, Plus, Setting } from '@element-plus/icons-vue';
+import { resolveIcon } from '@/utils/icon';
 
 const props = defineProps({
     agent: { type: Object, required: true },
 });
 
-// Icon components are registered globally by name (see app.js), so the
-// `icon` string stored on agents/agent_functions resolves directly.
-const iconOrFallback = (icon) => icon || 'Setting';
+// Icon components are registered globally by name (see app.js). Falls
+// back to a default icon if the stored name isn't a real registered icon.
+const iconOrFallback = resolveIcon;
 
 const statusLabel = (s) => ({
     pending: 'Pending',
@@ -67,6 +68,7 @@ const addFnDialogOpen = ref(false);
 const fnForm = useForm({
     name: '',
     icon: '',
+    order: 0,
     slug: '',
     description: '',
 });
@@ -91,6 +93,7 @@ const editingFn = ref(null);
 const editFnForm = useForm({
     name: '',
     icon: '',
+    order: 0,
     slug: '',
     description: '',
 });
@@ -101,6 +104,7 @@ function openEditFnDialog(fn) {
     editFnForm.clearErrors();
     editFnForm.name = fn.name;
     editFnForm.icon = fn.icon;
+    editFnForm.order = fn.order ?? 0;
     editFnForm.slug = fn.slug;
     editFnForm.description = fn.description;
     editFnDialogOpen.value = true;
@@ -210,6 +214,7 @@ function deleteFunction(fn) {
 
                             <div v-else class="agd-fn-list">
                                 <div v-for="fn in agent.functions" :key="fn.id" class="agd-fn-row">
+                                    <div class="agd-fn-row__order" title="Display order">{{ fn.order }}</div>
                                     <div class="agd-fn-row__icon">
                                         <el-icon><component :is="iconOrFallback(fn.icon)" /></el-icon>
                                     </div>
@@ -338,10 +343,17 @@ function deleteFunction(fn) {
                         </div>
                     </div>
 
-                    <div class="agd-field">
-                        <label class="agd-field__label">Slug <span class="agd-field__optional">(unique per agent)</span></label>
-                        <el-input v-model="fnForm.slug" placeholder="e.g. log_harvest" class="agd-input" :class="{ 'agd-input--error': fnForm.errors.slug }" />
-                        <span v-if="fnForm.errors.slug" class="agd-field__error">{{ fnForm.errors.slug }}</span>
+                    <div class="agd-field-row">
+                        <div class="agd-field">
+                            <label class="agd-field__label">Slug <span class="agd-field__optional">(unique per agent)</span></label>
+                            <el-input v-model="fnForm.slug" placeholder="e.g. log_harvest" class="agd-input" :class="{ 'agd-input--error': fnForm.errors.slug }" />
+                            <span v-if="fnForm.errors.slug" class="agd-field__error">{{ fnForm.errors.slug }}</span>
+                        </div>
+                        <div class="agd-field">
+                            <label class="agd-field__label">Order <span class="agd-field__optional">(lower shows first)</span></label>
+                            <el-input-number v-model="fnForm.order" :min="0" class="agd-input w-100" :class="{ 'agd-input--error': fnForm.errors.order }" />
+                            <span v-if="fnForm.errors.order" class="agd-field__error">{{ fnForm.errors.order }}</span>
+                        </div>
                     </div>
 
                     <div class="agd-field">
@@ -387,10 +399,17 @@ function deleteFunction(fn) {
                         </div>
                     </div>
 
-                    <div class="agd-field">
-                        <label class="agd-field__label">Slug <span class="agd-field__optional">(unique per agent)</span></label>
-                        <el-input v-model="editFnForm.slug" class="agd-input" :class="{ 'agd-input--error': editFnForm.errors.slug }" />
-                        <span v-if="editFnForm.errors.slug" class="agd-field__error">{{ editFnForm.errors.slug }}</span>
+                    <div class="agd-field-row">
+                        <div class="agd-field">
+                            <label class="agd-field__label">Slug <span class="agd-field__optional">(unique per agent)</span></label>
+                            <el-input v-model="editFnForm.slug" class="agd-input" :class="{ 'agd-input--error': editFnForm.errors.slug }" />
+                            <span v-if="editFnForm.errors.slug" class="agd-field__error">{{ editFnForm.errors.slug }}</span>
+                        </div>
+                        <div class="agd-field">
+                            <label class="agd-field__label">Order <span class="agd-field__optional">(lower shows first)</span></label>
+                            <el-input-number v-model="editFnForm.order" :min="0" class="agd-input w-100" :class="{ 'agd-input--error': editFnForm.errors.order }" />
+                            <span v-if="editFnForm.errors.order" class="agd-field__error">{{ editFnForm.errors.order }}</span>
+                        </div>
                     </div>
 
                     <div class="agd-field">
@@ -447,6 +466,20 @@ function deleteFunction(fn) {
 .agd-fn-list { display: flex; flex-direction: column; gap: 2px; }
 .agd-fn-row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-bottom: 1px solid var(--surface-low); }
 .agd-fn-row:last-child { border-bottom: none; }
+.agd-fn-row__order {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--surface-low);
+    color: var(--on-surface-var);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: .6875rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
 .agd-fn-row__icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .agd-fn-row__text { flex: 1; min-width: 0; }
 .agd-fn-row__name { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }

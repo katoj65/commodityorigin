@@ -112,6 +112,7 @@ class AgentController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'icon' => ['nullable', 'string', 'max:255'],
+            'order' => ['nullable', 'integer', 'min:0'],
             'slug' => [
                 'required', 'string', 'max:255',
                 Rule::unique('agent_functions', 'slug')->where(fn ($query) => $query->where('agent_id', $agent->id)),
@@ -136,6 +137,7 @@ class AgentController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'icon' => ['nullable', 'string', 'max:255'],
+            'order' => ['nullable', 'integer', 'min:0'],
             'slug' => [
                 'required', 'string', 'max:255',
                 Rule::unique('agent_functions', 'slug')

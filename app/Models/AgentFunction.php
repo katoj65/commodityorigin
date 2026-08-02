@@ -19,6 +19,7 @@ class AgentFunction extends Model
         'agent_id',
         'name',
         'icon',
+        'order',
         'slug',
         'description',
         'parameters',

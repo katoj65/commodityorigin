@@ -20,6 +20,7 @@ class AgentFunctionResource extends JsonResource
             'agent_name' => $this->whenLoaded('agent', fn () => $this->agent->name),
             'name' => $this->name,
             'icon' => $this->icon,
+            'order' => $this->order,
             'slug' => $this->slug,
             'description' => $this->description,
             'parameters' => $this->parameters,
