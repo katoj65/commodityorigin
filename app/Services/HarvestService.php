@@ -66,6 +66,32 @@ class HarvestService
     }
 
     /**
+     * Get harvests recorded by the given user, farm and creator eager
+     * loaded, newest harvest date first.
+     */
+    public function listForUser(int $userId): Collection
+    {
+        return $this->query()
+            ->with(['farm', 'creator'])
+            ->where('user_id', $userId)
+            ->latest('harvest_date')
+            ->latest('id')
+            ->get();
+    }
+
+    /**
+     * Get every harvest across all farms, for admin oversight.
+     */
+    public function listAll(): Collection
+    {
+        return $this->query()
+            ->with(['farm', 'creator'])
+            ->latest('harvest_date')
+            ->latest('id')
+            ->get();
+    }
+
+    /**
      * Aggregate stats for the harvest directory.
      *
      * @return array<string, mixed>

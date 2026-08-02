@@ -81,6 +81,24 @@ const sideSections = computed(() => [
                 icon: 'farm',
             },
             {
+                label: 'My Harvests',
+                href: route('farm.harvest.mine'),
+                active: route().current('farm.harvest.mine'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'harvest',
+            },
+            {
+                label: 'Weather Forecast',
+                href: route('farm.weather'),
+                active: route().current('farm.weather'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'weather',
+            },
+            {
                 label: 'Cooperatives',
                 href: route('cooperative.index'),
                 active: route().current('cooperative.*'),
@@ -343,6 +361,11 @@ const sideSections = computed(() => [
                             <path d="M5 20v-6l4-2 4 2v6" />
                             <path d="M13 20V9l3-2 3 2v11" />
                             <path d="M8 10V6h2v3" />
+                        </svg>
+                        <svg v-else-if="item.icon === 'weather'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="8" cy="8" r="3.5" />
+                            <path d="M8 2.5v1.2M8 11.3v1.2M2.5 8h1.2M12.3 8h1.2M4.6 4.6l.85.85M11.4 4.6l-.85.85" />
+                            <path d="M9 20h8a3.5 3.5 0 0 0 .5-6.96A5 5 0 0 0 8.2 15.5" />
                         </svg>
                         <svg v-else-if="item.icon === 'cooperative'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M4 20h16" />

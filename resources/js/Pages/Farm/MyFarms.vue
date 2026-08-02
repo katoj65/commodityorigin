@@ -380,7 +380,7 @@ function deleteFarm() {
 .mf-table :deep(.el-table__header th.el-table__cell) {
     background: #fafbfc;
     border-bottom: 1px solid var(--surface-high);
-    padding: 13px 0;
+    padding: 10px 0;
 }
 .mf-table :deep(.el-table__header th.el-table__cell > .cell) {
     font-size: .8125rem;
@@ -388,7 +388,7 @@ function deleteFarm() {
     color: #374151;
     line-height: 1.3;
 }
-.mf-table :deep(td.el-table__cell) { font-size: .8125rem; color: var(--on-surface); padding: 12px 0; }
+.mf-table :deep(td.el-table__cell) { font-size: .8125rem; color: var(--on-surface); padding: 7px 0; }
 .mf-table :deep(.el-table__cell:first-child .cell) { padding-left: clamp(1rem, 3vw, 2rem); }
 .mf-table :deep(.el-table__cell:last-child .cell) { padding-right: clamp(1rem, 3vw, 2rem); }
 .mf-table :deep(.el-table__row:hover .el-table__cell) { background: var(--surface-low); }
@@ -399,18 +399,18 @@ function deleteFarm() {
 .mf-th--center { justify-content: center; }
 
 /* ── Table cells ───────────────────────────────────────────────────────── */
-.mf-cell-farm { display: flex; align-items: center; gap: 10px; }
-.mf-cell-farm__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.mf-avatar { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: .6875rem; font-weight: 800; flex-shrink: 0; }
-.mf-cell-name { font-weight: 700; }
-.mf-cell-sub { font-size: .75rem; color: var(--on-surface-var); }
-.mf-cell-specs { display: flex; flex-direction: column; gap: 3px; }
+.mf-cell-farm { display: flex; align-items: center; gap: 8px; }
+.mf-cell-farm__text { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.mf-avatar { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .625rem; font-weight: 800; flex-shrink: 0; }
+.mf-cell-name { font-weight: 700; line-height: 1.3; }
+.mf-cell-sub { font-size: .6875rem; color: var(--on-surface-var); line-height: 1.3; }
+.mf-cell-specs { display: flex; flex-direction: column; gap: 0; }
 .mf-cell-specs--center { align-items: center; }
 .mf-count-pill { display: inline-flex; min-width: 26px; justify-content: center; background: var(--surface-low); border-radius: 999px; padding: 2px 9px; font-weight: 700; font-size: .75rem; }
 
 /* ── Row actions ───────────────────────────────────────────────────────── */
 .mf-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-.mf-act-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; text-decoration: none; border: none; background: transparent; cursor: pointer; transition: background .15s ease; }
+.mf-act-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; text-decoration: none; border: none; background: transparent; cursor: pointer; transition: background .15s ease; }
 .mf-act-btn--view { color: var(--green); }
 .mf-act-btn--view:hover { background: rgba(0, 69, 50, .08); }
 .mf-act-btn--edit { color: var(--on-surface-var); }

@@ -36,6 +36,10 @@ class HarvestResource extends JsonResource
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
             'farm' => $this->whenLoaded('farm', fn (): array => FarmResource::make($this->farm)->resolve()),
+            'creator' => $this->whenLoaded('creator', fn (): array => [
+                'id' => $this->creator?->id,
+                'name' => $this->creator?->name,
+            ]),
             'season' => $this->whenLoaded('season', fn (): ?array => $this->season
                 ? SeasonResource::make($this->season)->resolve()
                 : null),

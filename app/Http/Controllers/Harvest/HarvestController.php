@@ -51,6 +51,28 @@ class HarvestController extends Controller
     }
 
     /**
+     * Display the harvests recorded by the current user, across every
+     * farm they created. Admins see every harvest, from every creator.
+     */
+    public function mine(Request $request): Response
+    {
+        Gate::authorize('viewAny', Harvest::class);
+
+        $user = $request->user();
+
+        $harvests = $user->isAdmin()
+            ? $this->harvests->listAll()
+            : $this->harvests->listForUser($user->id);
+
+        return Inertia::render('Farm/MyHarvests', [
+            'harvests' => HarvestResource::collection($harvests)->resolve(),
+            'pickMethodOptions' => $this->harvests->pickMethodOptions(),
+            'harvestSeasonOptions' => $this->harvests->harvestSeasonOptions(),
+            'isAdmin' => $user->isAdmin(),
+        ]);
+    }
+
+    /**
      * Show the harvest creation form.
      */
     public function create(): Response
@@ -205,6 +227,18 @@ class HarvestController extends Controller
         ]);
 
         return back();
+    }
+
+    /**
+     * Delete the specified harvest record. Creator or admin only.
+     */
+    public function destroy(Harvest $harvest): RedirectResponse
+    {
+        Gate::authorize('delete', $harvest);
+
+        $this->harvests->delete($harvest);
+
+        return back()->with('success', 'Harvest deleted successfully.');
     }
 
     /**

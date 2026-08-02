@@ -32,6 +32,7 @@ use App\Http\Controllers\Season\SeasonController;
 use App\Http\Controllers\Sell\SellController;
 use App\Http\Controllers\Task\TaskController;
 use App\Http\Controllers\Wallet\WalletController;
+use App\Http\Controllers\Weather\WeatherForecastController;
 use Illuminate\Support\Facades\Route;
 
 // Public landing page.
@@ -140,6 +141,10 @@ Route::middleware([
         Route::get('/', [FarmController::class, 'index'])->name('index');
         Route::get('/create', [FarmController::class, 'create'])->name('create');
         Route::get('/farm-list', [FarmController::class, 'myFarms'])->name('mine');
+        Route::get('/harvest', [HarvestController::class, 'mine'])->name('harvest.mine');
+        Route::patch('/harvest/{harvest}', [HarvestController::class, 'update'])->name('harvest.update');
+        Route::delete('/harvest/{harvest}', [HarvestController::class, 'destroy'])->name('harvest.destroy');
+        Route::get('/weather', [WeatherForecastController::class, 'index'])->name('weather');
         Route::post('/', [FarmController::class, 'store'])->name('store');
         Route::get('/{farm}', [FarmController::class, 'show'])->name('show');
         Route::patch('/{farm}', [FarmController::class, 'update'])->name('update');

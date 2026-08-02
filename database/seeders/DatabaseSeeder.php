@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
             CropVarietyMetadataSeeder::class,
             ClimateZoneMetadataSeeder::class,
             SoilMetadataSeeder::class,
+            WeatherForecastSeeder::class,
             RipenessGradeMetadataSeeder::class,
             PickMethodMetadataSeeder::class,
             QualityMetadataSeeder::class,

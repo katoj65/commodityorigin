@@ -16,6 +16,16 @@ class HarvestPolicy
     }
 
     /**
+     * Determine whether the user can view their harvest list. Every
+     * authenticated user may view their own recorded harvests; the
+     * controller scopes the query to "own" — admins see everyone's.
+     */
+    public function viewAny(User $user): bool
+    {
+        return true;
+    }
+
+    /**
      * Determine whether the user can view the harvest profile.
      */
     public function view(User $user, Harvest $harvest): bool
@@ -33,17 +43,19 @@ class HarvestPolicy
 
     /**
      * Determine whether the user can update the harvest record.
+     * Creator or admin only.
      */
     public function update(User $user, Harvest $harvest): bool
     {
-        return (int) $harvest->user_id === (int) $user->id;
+        return $user->isAdmin() || (int) $harvest->user_id === (int) $user->id;
     }
 
     /**
      * Determine whether the user can delete the harvest record.
+     * Creator or admin only.
      */
     public function delete(User $user, Harvest $harvest): bool
     {
-        return (int) $harvest->user_id === (int) $user->id;
+        return $user->isAdmin() || (int) $harvest->user_id === (int) $user->id;
     }
 }
