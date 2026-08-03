@@ -134,13 +134,13 @@ function submitWithdraw() {
                 <div class="wal-page-header__left">
                     <div class="wal-kicker">Payments · Bean Origin</div>
                     <h1 class="wal-title">Wallet</h1>
-                    <p class="wal-subtitle">Your balance, and the ledger of every deposit, transfer, and order payment.</p>
+                    <p class="wal-subtitle">Your balance, plus a complete ledger of every deposit, transfer, and order payment.</p>
                 </div>
                 <div class="wal-page-header__actions">
                     <button type="button" class="wal-btn wal-btn--primary" @click="openTransfer">
                         <el-icon :size="14"><Promotion /></el-icon> Transfer
                     </button>
-                    <button type="button" class="wal-btn" disabled title="Coming soon — no payment gateway connected yet">
+                    <button type="button" class="wal-btn" disabled title="Deposits open once a payment gateway is connected">
                         <el-icon :size="14"><Top /></el-icon> Deposit
                     </button>
                     <button type="button" class="wal-btn" @click="openWithdraw">
@@ -159,7 +159,7 @@ function submitWithdraw() {
                     <strong class="wal-kpi__val wal-kpi__val--lg">{{ formatMoney(wallet.available_balance) }}</strong>
                 </div>
                 <div class="wal-kpi">
-                    <span class="wal-kpi__label">Locked</span>
+                    <span class="wal-kpi__label">Locked Balance</span>
                     <strong class="wal-kpi__val">{{ formatMoney(wallet.locked_balance) }}</strong>
                 </div>
                 <div class="wal-kpi">
@@ -171,7 +171,7 @@ function submitWithdraw() {
                     <strong class="wal-kpi__val wal-text-red">{{ kpis.spent }}</strong>
                 </div>
                 <div class="wal-kpi">
-                    <span class="wal-kpi__label">Transactions</span>
+                    <span class="wal-kpi__label">Total Transactions</span>
                     <strong class="wal-kpi__val">{{ kpis.count }}</strong>
                 </div>
             </div>
@@ -192,7 +192,7 @@ function submitWithdraw() {
                     <el-table
                         :data="filteredTransactions"
                         class="wal-table"
-                        empty-text="No transactions yet."
+                        empty-text="No transactions yet — your ledger will appear here once money moves in or out."
                     >
                         <el-table-column label="" width="46">
                             <template #default="{ row }">
@@ -255,7 +255,7 @@ function submitWithdraw() {
                         <label class="wal-form__label">Amount ({{ wallet.currency }})</label>
                         <input v-model="form.amount" type="number" step="0.01" min="0.01" required placeholder="0.00" class="wal-form__input">
                         <p v-if="form.errors.amount" class="wal-form__error">{{ form.errors.amount }}</p>
-                        <p v-else class="wal-form__hint">Available: {{ formatMoney(wallet.available_balance) }}</p>
+                        <p v-else class="wal-form__hint">Available balance: {{ formatMoney(wallet.available_balance) }}</p>
                     </div>
 
                     <div class="wal-form__field">
@@ -269,7 +269,6 @@ function submitWithdraw() {
 
             <template #footer>
                 <div class="wal-modal-footer">
-                    <button type="button" class="wal-modal-btn wal-modal-btn--outline" @click="transferOpen = false">Cancel</button>
                     <button type="submit" form="wal-transfer-form" :disabled="form.processing" class="wal-modal-btn wal-modal-btn--primary">
                         <el-icon :size="14"><Promotion /></el-icon> {{ form.processing ? 'Sending…' : 'Send Transfer' }}
                     </button>
@@ -295,7 +294,7 @@ function submitWithdraw() {
                         <label class="wal-form__label">Amount ({{ wallet.currency }})</label>
                         <input v-model="withdrawForm.amount" type="number" step="0.01" min="0.01" required placeholder="0.00" class="wal-form__input">
                         <p v-if="withdrawForm.errors.amount" class="wal-form__error">{{ withdrawForm.errors.amount }}</p>
-                        <p v-else class="wal-form__hint">Available: {{ formatMoney(wallet.available_balance) }}</p>
+                        <p v-else class="wal-form__hint">Available balance: {{ formatMoney(wallet.available_balance) }}</p>
                     </div>
 
                     <div class="wal-form__field">
@@ -309,7 +308,6 @@ function submitWithdraw() {
 
             <template #footer>
                 <div class="wal-modal-footer">
-                    <button type="button" class="wal-modal-btn wal-modal-btn--outline" @click="withdrawOpen = false">Cancel</button>
                     <button type="submit" form="wal-withdraw-form" :disabled="withdrawForm.processing" class="wal-modal-btn wal-modal-btn--primary">
                         <el-icon :size="14"><Bottom /></el-icon> {{ withdrawForm.processing ? 'Withdrawing…' : 'Withdraw' }}
                     </button>
@@ -525,6 +523,8 @@ function submitWithdraw() {
 }
 
 .wal-table :deep(.el-table__inner-wrapper::before) { display: none; }
+.wal-table :deep(td.el-table__cell) { padding: 9px 0; }
+.wal-table :deep(.el-table__row:hover .el-table__cell) { background: var(--surface-low); }
 .wal-table :deep(.el-table__header-wrapper th:first-child .cell),
 .wal-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.5rem; }
 .wal-table :deep(.el-table__header-wrapper th:last-child .cell),
@@ -650,13 +650,13 @@ function submitWithdraw() {
 .wal-form {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 }
 
 .wal-form__field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
 }
 
 .wal-form__label {
@@ -671,7 +671,7 @@ function submitWithdraw() {
     width: 100%;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
-    padding: 9px 12px;
+    padding: 10px 12px;
     font-size: 0.8125rem;
     font-family: 'Manrope', system-ui, sans-serif;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -708,14 +708,6 @@ function submitWithdraw() {
     border: 1px solid transparent;
     transition: opacity 0.15s ease, background 0.15s ease;
 }
-
-.wal-modal-btn--outline {
-    background: #fff;
-    border-color: #e5e7eb;
-    color: #111827;
-}
-
-.wal-modal-btn--outline:hover { background: #f9fafb; }
 
 .wal-modal-btn--primary {
     background: linear-gradient(135deg, #004532, #065f46);

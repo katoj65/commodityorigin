@@ -99,39 +99,27 @@ watch(selectedProducers, () => { currentPage.value = 1; });
                 </Link>
             </div>
 
-            <div class="man-content">
-                <!-- ── Stats strip ─────────────────────────────────────── -->
-                <div class="row g-3 mb-4">
-                    <div class="col-6 col-md-3">
-                        <div class="man-stat h-100">
-                            <div class="man-stat__icon"><el-icon><Grid /></el-icon></div>
-                            <div class="man-stat__value">{{ producers.length }}</div>
-                            <div class="man-stat__label">Producing Countries</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="man-stat h-100">
-                            <div class="man-stat__icon"><el-icon><Coin /></el-icon></div>
-                            <div class="man-stat__value">{{ fmtBags(totalGlobalBags) }}</div>
-                            <div class="man-stat__label">Global Output</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="man-stat h-100">
-                            <div class="man-stat__icon"><el-icon><Tickets /></el-icon></div>
-                            <div class="man-stat__value">{{ selectedProducers.length }}</div>
-                            <div class="man-stat__label">Selected</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="man-stat h-100">
-                            <div class="man-stat__icon"><el-icon><TrendCharts /></el-icon></div>
-                            <div class="man-stat__value">{{ marketShare(selectedTotalBags) }}%</div>
-                            <div class="man-stat__label">Selected Share</div>
-                        </div>
-                    </div>
+            <!-- ── KPI strip — tabular, spans edge to edge ─────────────── -->
+            <div class="mkt-kpi-row">
+                <div class="mkt-kpi-col">
+                    <div class="mkt-kpi-col__label"><el-icon><Grid /></el-icon> Producing Countries</div>
+                    <div class="mkt-kpi-col__value">{{ producers.length }}</div>
                 </div>
+                <div class="mkt-kpi-col">
+                    <div class="mkt-kpi-col__label"><el-icon><Coin /></el-icon> Global Output</div>
+                    <div class="mkt-kpi-col__value">{{ fmtBags(totalGlobalBags) }}</div>
+                </div>
+                <div class="mkt-kpi-col">
+                    <div class="mkt-kpi-col__label"><el-icon><Tickets /></el-icon> Selected</div>
+                    <div class="mkt-kpi-col__value">{{ selectedProducers.length }}</div>
+                </div>
+                <div class="mkt-kpi-col">
+                    <div class="mkt-kpi-col__label"><el-icon><TrendCharts /></el-icon> Selected Share</div>
+                    <div class="mkt-kpi-col__value">{{ marketShare(selectedTotalBags) }}%</div>
+                </div>
+            </div>
 
+            <div class="man-content">
                 <section class="man-section">
                     <div class="man-section__head">
                         <div class="man-section__icon"><el-icon><TrendCharts /></el-icon></div>
@@ -227,7 +215,7 @@ watch(selectedProducers, () => { currentPage.value = 1; });
 .man-muted { color: var(--on-surface-var); font-size: .8125rem; }
 
 /* ── Body ─────────────────────────────────────────────────────────────── */
-.mkt-body { padding: 1.25rem 0 3rem; }
+.mkt-body { padding: 1.5rem 0 3rem; }
 .mkt-section__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; padding: 0 1.5rem; }
 .mkt-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 .mkt-title { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
@@ -238,18 +226,32 @@ watch(selectedProducers, () => { currentPage.value = 1; });
 .man-content { padding: 0 1.5rem; }
 
 /* ── Sections ────────────────────────────────────────────────────────── */
-.man-section { padding-top: 1.75rem; margin-top: 1.75rem; border-top: 1px solid var(--border); }
+.man-section { padding-top: 2.25rem; margin-top: 2.25rem; border-top: 1px solid var(--border); }
 .man-section:first-child { padding-top: 0; margin-top: 0; border-top: none; }
-.man-section__head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1rem; }
-.man-section__icon { width: 34px; height: 34px; border-radius: 10px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(0,69,50,.05); }
+.man-section__head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 1.125rem; }
+.man-section__icon { color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; margin-top: 2px; }
 .man-section__title { font-size: 1rem; font-weight: 800; letter-spacing: -.01em; margin: 0 0 2px; color: var(--on-surface); }
 .man-section__desc { font-size: .8125rem; color: var(--on-surface-var); margin: 0; max-width: 640px; }
 
-/* ── Stat cards ──────────────────────────────────────────────────────── */
-.man-stat { border: 1px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; }
-.man-stat__icon { width: 34px; height: 34px; border-radius: 9px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 16px; margin: 0 auto 10px; }
-.man-stat__value { font-family: 'IBM Plex Mono', monospace; font-size: 1.375rem; font-weight: 700; color: var(--on-surface); line-height: 1.1; }
-.man-stat__label { font-size: .75rem; color: var(--on-surface-var); font-weight: 600; margin-top: 4px; }
+/* ── KPI strip — tabular row, flush with the page's true edges ────────── */
+.mkt-kpi-row {
+    display: flex; flex-wrap: nowrap;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.75rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.mkt-kpi-col { flex: 1 1 0; min-width: 160px; padding: .9375rem 1.25rem; border-left: 1px solid var(--border); }
+.mkt-kpi-col:first-child { border-left: none; padding-left: 1.5rem; }
+.mkt-kpi-col:last-child { padding-right: 1.5rem; }
+.mkt-kpi-col__label { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-var); margin-bottom: 8px; white-space: nowrap; }
+.mkt-kpi-col__label :deep(.el-icon) { font-size: 13px; color: var(--green); opacity: .85; }
+.mkt-kpi-col__value { font-family: 'IBM Plex Mono', monospace; font-size: 1.1875rem; font-weight: 700; color: var(--on-surface); letter-spacing: -.01em; }
+@media (max-width: 767.98px) {
+    .mkt-kpi-col:first-child { padding-left: 1.25rem; }
+    .mkt-kpi-col:last-child { padding-right: 1.25rem; }
+}
 
 /* ── Panels / cards ──────────────────────────────────────────────────── */
 .man-panel { padding: 0; }
@@ -282,7 +284,7 @@ watch(selectedProducers, () => { currentPage.value = 1; });
 .mkt-muted { color: var(--on-surface-var); }
 .mkt-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }
 .mkt-num { font-variant-numeric: tabular-nums; }
-.mkt-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; border-top: 1px solid var(--border); }
+.mkt-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; border-top: 1px solid var(--border); margin-left: -1.5rem; margin-right: -1.5rem; }
 .mkt-el-table :deep(.el-table__cell) { padding: 11px 0; }
 .mkt-el-table :deep(.cell) { padding: 0 12px; font-size: .8125rem; line-height: 1.45; }
 .mkt-el-table :deep(th.el-table__cell) { font-size: .6875rem; font-weight: 600; letter-spacing: .04em; }
@@ -298,7 +300,7 @@ watch(selectedProducers, () => { currentPage.value = 1; });
 .mkt-thumb { width: 32px; height: 32px; border-radius: 9px; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #f1e6d8; border: 1px solid #e6d5bf; }
 .mkt-thumb-flag { font-size: 1.0625rem; line-height: 1; }
 
-.mkt-pagination { padding: 1rem 1.5rem 0; border-top: 1px solid var(--border); margin-top: .5rem; }
+.mkt-pagination { padding: 1rem 1.5rem 0; border-top: 1px solid var(--border); margin: .5rem -1.5rem 0; }
 .mkt-pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; font-family: inherit; }
 .mkt-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: .8125rem; font-weight: 600; color: var(--on-surface-var); }
 .mkt-pagination :deep(.el-pagination__sizes) { margin-right: 4px; }
@@ -321,9 +323,10 @@ watch(selectedProducers, () => { currentPage.value = 1; });
 @media (max-width: 767.98px) {
     .mkt-section__head { padding: 0 1.25rem; }
     .man-content { padding: 0 1.25rem; }
+    .mkt-el-table { margin-left: -1.25rem; margin-right: -1.25rem; }
     .mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.25rem; }
     .mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.25rem; }
-    .mkt-pagination { padding: 1rem 1.25rem 0; }
+    .mkt-pagination { padding: 1rem 1.25rem 0; margin: .5rem -1.25rem 0; }
     .mkt-pagination :deep(.el-pagination) { justify-content: center; }
     .mkt-pagination :deep(.el-pagination__total) { margin-right: 0; width: 100%; text-align: center; order: -1; }
 }

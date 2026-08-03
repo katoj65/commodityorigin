@@ -305,26 +305,9 @@ const currencyChartData = computed(() => ({
 <template>
     <MarketPage v-model:search-query="searchQuery">
         <div class="mkt-body">
-            <div class="mkt-section__head man-hero">
-                <div>
-                    <div class="mkt-kicker man-kicker-live"><span class="man-live-dot"></span>Market Insight · Live</div>
-                    <h2 class="mkt-title man-hero-title">What's Happening in the Market</h2>
-                </div>
-                <Link :href="route('market.index')" class="mkt-btn-group__item">
-                    <el-icon><Tickets /></el-icon> Back to Listings
-                </Link>
-            </div>
 
-            <!-- ── In-page navigation ──────────────────────────────────── -->
-            <nav class="man-nav">
-                <a
-                    v-for="s in sections"
-                    :key="s.id"
-                    :href="`#${s.id}`"
-                    class="man-nav__chip"
-                    :class="{ 'is-active': activeSection === s.id }"
-                >{{ s.label }}</a>
-            </nav>
+
+       
 
             <div class="man-content">
                 <!-- ── Empty state ─────────────────────────────────────── -->
@@ -343,34 +326,22 @@ const currencyChartData = computed(() => ({
                                 <p class="man-section__desc">The headline numbers behind every live listing right now.</p>
                             </div>
                         </div>
-                        <div class="row g-3">
-                            <div class="col-6 col-md-3">
-                                <div class="man-stat h-100">
-                                    <div class="man-stat__icon"><el-icon><Tickets /></el-icon></div>
-                                    <div class="man-stat__value">{{ fmtNum(analysis.total_listings) }}</div>
-                                    <div class="man-stat__label">Live Listings</div>
-                                </div>
+                        <div class="man-kpi-row">
+                            <div class="man-kpi-col">
+                                <div class="man-kpi-col__label"><el-icon><Tickets /></el-icon> Live Listings</div>
+                                <div class="man-kpi-col__value">{{ fmtNum(analysis.total_listings) }}</div>
                             </div>
-                            <div class="col-6 col-md-3">
-                                <div class="man-stat h-100">
-                                    <div class="man-stat__icon"><el-icon><Box /></el-icon></div>
-                                    <div class="man-stat__value">{{ fmtNum(analysis.total_volume_kg) }} kg</div>
-                                    <div class="man-stat__label">Total Volume</div>
-                                </div>
+                            <div class="man-kpi-col">
+                                <div class="man-kpi-col__label"><el-icon><Box /></el-icon> Total Volume</div>
+                                <div class="man-kpi-col__value">{{ fmtNum(analysis.total_volume_kg) }} kg</div>
                             </div>
-                            <div class="col-6 col-md-3">
-                                <div class="man-stat h-100">
-                                    <div class="man-stat__icon"><el-icon><Coin /></el-icon></div>
-                                    <div class="man-stat__value">{{ fmtPrice(analysis.average_price_per_kg) }}</div>
-                                    <div class="man-stat__label">Average Price / kg</div>
-                                </div>
+                            <div class="man-kpi-col">
+                                <div class="man-kpi-col__label"><el-icon><Coin /></el-icon> Average Price / kg</div>
+                                <div class="man-kpi-col__value">{{ fmtPrice(analysis.average_price_per_kg) }}</div>
                             </div>
-                            <div class="col-6 col-md-3">
-                                <div class="man-stat h-100">
-                                    <div class="man-stat__icon"><el-icon><Sunny /></el-icon></div>
-                                    <div class="man-stat__value">{{ analysis.average_quality_score ?? '—' }}</div>
-                                    <div class="man-stat__label">Average Quality</div>
-                                </div>
+                            <div class="man-kpi-col">
+                                <div class="man-kpi-col__label"><el-icon><Sunny /></el-icon> Average Quality</div>
+                                <div class="man-kpi-col__value">{{ analysis.average_quality_score ?? '—' }}</div>
                             </div>
                         </div>
                     </section>
@@ -818,13 +789,12 @@ const currencyChartData = computed(() => ({
 .man-muted { color: var(--on-surface-var); font-size: .8125rem; }
 
 /* ── Body ─────────────────────────────────────────────────────────────── */
-.mkt-body { padding: 1.25rem 0 3rem; }
+.mkt-body { padding: 1.5rem 0 3rem; }
 .mkt-section__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; padding: 0 1.5rem; }
 .mkt-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 
 /* ── Hero header ─────────────────────────────────────────────────────── */
-.man-hero { position: relative; padding-bottom: 1.25rem; }
-.man-hero::after { content: ''; position: absolute; left: 1.5rem; right: 1.5rem; bottom: 0; height: 2px; background: linear-gradient(90deg, var(--green), var(--gold)); border-radius: 2px; opacity: .5; }
+.man-hero { padding-bottom: 1.25rem; }
 .man-hero-title { font-family: 'IBM Plex Mono', monospace; }
 .man-kicker-live { display: inline-flex; align-items: center; }
 .man-live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; margin-right: 6px; box-shadow: 0 0 0 0 rgba(16,185,129,.5); animation: man-pulse 2s infinite; }
@@ -838,30 +808,38 @@ const currencyChartData = computed(() => ({
 .mkt-btn-group__item { display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; font-size: .75rem; font-weight: 700; letter-spacing: .01em; text-decoration: none; color: var(--green); background: #fff; border: 1px solid var(--green); border-radius: 8px; cursor: pointer; white-space: nowrap; transition: background .15s ease, color .15s ease; }
 .mkt-btn-group__item:hover { background: #f0f5f3; }
 
-/* ── In-page nav ─────────────────────────────────────────────────────── */
-.man-nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 1.5rem 1.25rem; }
-.man-nav__chip { font-size: .6875rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface-var); text-decoration: none; white-space: nowrap; transition: background .12s ease, color .12s ease, border-color .12s ease; }
-.man-nav__chip:hover { background: #fff; border-color: var(--green); color: var(--green); }
-.man-nav__chip.is-active { background: var(--green); border-color: var(--green); color: #fff; }
+/* ── In-page nav — a slim scrollable tab strip, not a wall of pills ───── */
+.man-nav { display: flex; flex-wrap: nowrap; align-items: center; gap: 1.5rem; padding: 0 1.5rem 0; margin-bottom: 1.75rem; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.man-nav::-webkit-scrollbar { display: none; }
+.man-nav__chip { flex-shrink: 0; font-size: .75rem; font-weight: 600; padding: 10px 1px; background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; color: var(--on-surface-var); text-decoration: none; white-space: nowrap; transition: color .12s ease, border-color .12s ease; }
+.man-nav__chip:hover { color: var(--on-surface); }
+.man-nav__chip.is-active { color: var(--green); border-bottom-color: var(--green); }
 
 .man-content { padding: 0 1.5rem; scroll-behavior: smooth; }
 
 /* ── Sections ────────────────────────────────────────────────────────── */
-.man-section { padding-top: 1.75rem; margin-top: 1.75rem; border-top: 1px solid var(--border); scroll-margin-top: 4.5rem; }
+.man-section { padding-top: 2.25rem; margin-top: 2.25rem; border-top: 1px solid var(--border); scroll-margin-top: 4.5rem; }
 .man-section:first-child { padding-top: 0; margin-top: 0; border-top: none; }
-.man-section__head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1rem; }
-.man-section__icon { width: 34px; height: 34px; border-radius: 10px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(0,69,50,.05); }
-.man-section__icon--ai { background: linear-gradient(135deg, #004532, #065f46); color: #fff; box-shadow: 0 0 0 3px rgba(0,69,50,.08); }
-.man-section__icon--warn { background: #fef2f2; color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,.05); }
-.man-section__icon--gold { background: rgba(200,134,42,.12); color: var(--gold); box-shadow: 0 0 0 3px rgba(200,134,42,.06); }
+.man-section__head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 1.125rem; }
+.man-section__icon { color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+.man-section__icon--ai { color: var(--gold); }
+.man-section__icon--warn { color: #dc2626; }
+.man-section__icon--gold { color: var(--gold); }
 .man-section__title { font-size: 1rem; font-weight: 800; letter-spacing: -.01em; margin: 0 0 2px; color: var(--on-surface); }
 .man-section__desc { font-size: .8125rem; color: var(--on-surface-var); margin: 0; max-width: 640px; }
 
-/* ── Stat cards ──────────────────────────────────────────────────────── */
-.man-stat { border: 1px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; }
-.man-stat__icon { width: 34px; height: 34px; border-radius: 9px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 16px; margin: 0 auto 10px; }
-.man-stat__value { font-family: 'IBM Plex Mono', monospace; font-size: 1.375rem; font-weight: 700; color: var(--on-surface); line-height: 1.1; }
-.man-stat__label { font-size: .75rem; color: var(--on-surface-var); font-weight: 600; margin-top: 4px; }
+/* ── Overview KPI strip — divided row, spans edge to edge ─────────────── */
+.man-kpi-row { display: flex; flex-wrap: wrap; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.man-kpi-col { flex: 1 1 0; min-width: 160px; padding: .9375rem 1.25rem; border-left: 1px solid var(--border); }
+.man-kpi-col:first-child { border-left: none; }
+.man-kpi-col__label { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-var); margin-bottom: 8px; white-space: nowrap; }
+.man-kpi-col__label :deep(.el-icon) { font-size: 13px; color: var(--green); opacity: .85; }
+.man-kpi-col__value { font-family: 'IBM Plex Mono', monospace; font-size: 1.1875rem; font-weight: 700; color: var(--on-surface); letter-spacing: -.01em; }
+@media (max-width: 767.98px) {
+    .man-kpi-row { flex-direction: column; }
+    .man-kpi-col { border-left: none; border-top: 1px solid var(--border); }
+    .man-kpi-col:first-child { border-top: none; }
+}
 
 /* ── Cards (grid items — forecast signals, currency rates) ────────────── */
 .man-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
@@ -961,8 +939,7 @@ const currencyChartData = computed(() => ({
 
 @media (max-width: 767.98px) {
     .mkt-section__head { padding: 0 1.25rem; }
-    .man-hero::after { left: 1.25rem; right: 1.25rem; }
-    .man-nav { padding: 0 1.25rem 1.25rem; }
+    .man-nav { padding: 0 1.25rem; }
     .man-content { padding: 0 1.25rem; }
 }
 </style>

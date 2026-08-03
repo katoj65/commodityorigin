@@ -32,6 +32,16 @@ const qualityTone = (score) => {
     return 'red';
 };
 
+const demandBadgeTone = {
+    primary: 'green-solid',
+    success: 'green',
+    warning: 'amber',
+    danger: 'red',
+    info: 'muted',
+};
+
+const demandBadgeClass = (demandTone) => `mkt-badge--${demandBadgeTone[demandTone] ?? 'muted'}`;
+
 const listings = computed(() => props.markets.map((m) => ({
     id: m.id,
     lot_code: m.lot_code,
@@ -69,11 +79,11 @@ const kpis = computed(() => {
 
     return [
         { label: 'Active Lots', value: total.toLocaleString(), sub: 'Currently listed', tone: 'primary', icon: Box },
-        { label: 'Avg. Price', value: `$${avgPrice.toFixed(2)}`, sub: 'Per kg avg', tone: 'success', icon: Coin },
-        { label: 'Total Volume', value: `${(totalVolume / 1000).toFixed(1)}t`, sub: 'All lots', tone: 'info', icon: TrendCharts },
+        { label: 'Avg. Price', value: `$${avgPrice.toFixed(2)}`, sub: 'Per kg, all lots', tone: 'success', icon: Coin },
+        { label: 'Total Volume', value: `${(totalVolume / 1000).toFixed(1)}t`, sub: 'Combined weight', tone: 'info', icon: TrendCharts },
         { label: 'Avg. Quality', value: avgQuality.toFixed(1), sub: 'Cupping score', tone: 'warning', icon: Star },
         { label: 'Top Origin', value: topOrigin.value, sub: 'Most listed', tone: 'info', icon: Location },
-        { label: 'High Demand', value: highDemand.toLocaleString(), sub: 'Lots trending', tone: 'success', icon: Check },
+        { label: 'High Demand', value: highDemand.toLocaleString(), sub: 'High & very high', tone: 'success', icon: Check },
     ];
 });
 
@@ -133,7 +143,7 @@ watch(filteredListings, () => { currentPage.value = 1; });
                 </div>
             </div>
 
-            <el-table :data="pagedListings" class="mkt-el-table" stripe empty-text="No lots match your filters.">
+            <el-table :data="pagedListings" class="mkt-el-table" stripe empty-text="No lots match your search.">
                 <el-table-column width="72">
                     <template #default="{ row }">
                         <div class="mkt-thumb">
@@ -181,7 +191,7 @@ watch(filteredListings, () => { currentPage.value = 1; });
                 <el-table-column label="Demand" min-width="110" align="center">
                     <template #header><el-icon class="mkt-th-icon"><TrendCharts /></el-icon>Demand</template>
                     <template #default="{ row }">
-                        <span class="mkt-badge" :class="`mkt-badge--${row.demandTone === 'success' ? 'green' : row.demandTone === 'danger' ? 'red' : row.demandTone === 'warning' ? 'amber' : 'muted'}`">{{ row.demand }}</span>
+                        <span class="mkt-badge" :class="demandBadgeClass(row.demandTone)">{{ row.demand }}</span>
                     </template>
                 </el-table-column>
                 <el-table-column width="70" align="right">
@@ -210,14 +220,14 @@ watch(filteredListings, () => { currentPage.value = 1; });
 .mkt-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }
 
 /* ── Body ─────────────────────────────────────────────────────────────── */
-.mkt-body { padding: 1.25rem 0 3rem; }
+.mkt-body { padding: 1.5rem 0 3rem; }
 
 /* ── KPI strip — Tabler-style single row, edge-to-edge column-divided ─── */
 .mkt-kpi-row {
     display: flex; align-items: stretch;
     background: #fff;
     border-bottom: 1px solid var(--border);
-    margin: -1.25rem 0 1.25rem; overflow-x: auto;
+    margin: -1.5rem 0 1.5rem; overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 .mkt-kpi-col { flex: 1 1 0; min-width: 132px; padding: .875rem 1.1rem; border-left: 1px solid var(--border); }
@@ -298,6 +308,7 @@ watch(filteredListings, () => { currentPage.value = 1; });
 .mkt-badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; font-size: .6875rem; font-weight: 600; padding: 3px 10px 3px 8px; line-height: 1.5; white-space: nowrap; }
 .mkt-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .mkt-badge--green { background: #ecfdf5; color: #059669; }
+.mkt-badge--green-solid { background: var(--green); color: #fff; }
 .mkt-badge--amber { background: #fffbeb; color: #d97706; }
 .mkt-badge--red { background: #fef2f2; color: #dc2626; }
 .mkt-badge--muted { background: #f5f5f4; color: #78716c; }

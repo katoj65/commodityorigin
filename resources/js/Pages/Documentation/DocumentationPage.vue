@@ -153,25 +153,7 @@ function confirmDelete() {
             </div>
 
             <!-- ── Overview strip ────────────────────────────────────────── -->
-            <!-- <div class="doc-kpi-strip">
-                <div class="doc-kpi">
-                    <span class="doc-kpi__label">Total Documents</span>
-                    <strong class="doc-kpi__val">{{ kpis.total }}</strong>
-                </div>
-                <div class="doc-kpi">
-                    <span class="doc-kpi__label">My Uploads</span>
-                    <strong class="doc-kpi__val">{{ kpis.mine }}</strong>
-                </div>
-                <div class="doc-kpi">
-                    <span class="doc-kpi__label">Farm Documents</span>
-                    <strong class="doc-kpi__val">{{ kpis.farm }}</strong>
-                </div>
-                <div class="doc-kpi">
-                    <span class="doc-kpi__label">Categories</span>
-                    <strong class="doc-kpi__val">{{ kpis.categories }}</strong>
-                </div>
-            </div> -->
-
+       
             <div class="doc-body">
                 <div class="doc-section">
                     <!-- ── Filter toolbar ───────────────────────────────────── -->
