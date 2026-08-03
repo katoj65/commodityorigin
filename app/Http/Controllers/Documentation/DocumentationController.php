@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Documentation;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DocumentationResource;
 use App\Models\Documentation;
+use App\Models\FarmDocument;
 use App\Services\DocumentationService;
+use App\Services\FarmDocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,20 +18,62 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class DocumentationController extends Controller
 {
-    public function __construct(private readonly DocumentationService $documentation)
-    {
+    public function __construct(
+        private readonly DocumentationService $documentation,
+        private readonly FarmDocumentService $farmDocuments,
+    ) {
     }
 
     /**
-     * Display the documentation page — every document in the shared
-     * knowledge base, visible to every logged-in user.
+     * Display the documentation page — every shared knowledge-base document
+     * plus every document uploaded against a farm, in one combined table.
      */
     public function index(Request $request): Response
     {
+        $authUserId = $request->user()->id;
+        $isAdmin = $request->user()->isAdmin();
+
+        $documents = collect(DocumentationResource::collection($this->documentation->all())->resolve())
+            ->map(fn (array $doc): array => [
+                ...$doc,
+                'source' => 'documentation',
+                'farm_id' => null,
+                'farm_name' => null,
+                'can_delete' => $doc['user_id'] === $authUserId,
+            ])
+            ->all();
+
+        $farmDocuments = $this->farmDocuments->all()
+            ->map(fn (FarmDocument $document): array => [
+                'id' => $document->id,
+                'user_id' => $document->user_id,
+                'uploader_name' => $document->uploader?->name,
+                'title' => $document->title,
+                'description' => null,
+                'category' => $document->document_type ?: 'Farm Document',
+                'original_name' => $document->original_name,
+                'file_url' => Storage::disk('public')->url($document->file_path),
+                'mime_type' => $document->mime_type,
+                'file_size' => $document->file_size,
+                'created_at' => optional($document->created_at)?->toDateTimeString(),
+                'updated_at' => optional($document->updated_at)?->toDateTimeString(),
+                'source' => 'farm',
+                'farm_id' => $document->farm_id,
+                'farm_name' => $document->farm?->name,
+                'can_delete' => $isAdmin || (int) $document->farm?->created_by_user_id === $authUserId,
+            ])
+            ->all();
+
+        $combined = collect($documents)
+            ->concat($farmDocuments)
+            ->sortByDesc('created_at')
+            ->values()
+            ->all();
+
         return Inertia::render('Documentation/DocumentationPage', [
-            'documents' => DocumentationResource::collection($this->documentation->all())->resolve(),
+            'documents' => $combined,
             'categories' => $this->documentation->categories()->pluck('name')->values()->all(),
-            'authUserId' => $request->user()->id,
+            'authUserId' => $authUserId,
         ]);
     }
 

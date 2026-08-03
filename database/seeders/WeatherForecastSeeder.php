@@ -77,5 +77,70 @@ class WeatherForecastSeeder extends Seeder
                 );
             }
         }
+
+        // Monthly planting-season outlook — one first-of-month entry per
+        // region for the six months ahead, reflecting Uganda's bimodal
+        // rainy-season pattern (short rains ~Sep–Nov, drier Dec–Feb).
+        $monthlyOutlook = [
+            'Kampala (Central)' => [
+                ['condition' => 'Rainy', 'temperature_min' => 18.0, 'temperature_max' => 25.0, 'rainfall_mm' => 120.0, 'humidity_percentage' => 75, 'advisory' => 'Short rains begin — ideal window to transplant Robusta seedlings.'],
+                ['condition' => 'Rainy', 'temperature_min' => 18.0, 'temperature_max' => 26.0, 'rainfall_mm' => 140.0, 'humidity_percentage' => 78, 'advisory' => 'Peak of the short rains — hold off on fertiliser application until spacing between showers.'],
+                ['condition' => 'Partly Cloudy', 'temperature_min' => 18.0, 'temperature_max' => 25.0, 'rainfall_mm' => 90.0, 'humidity_percentage' => 72, 'advisory' => 'Rains tapering off — good time for weeding and mulching before the dry spell.'],
+                ['condition' => 'Sunny', 'temperature_min' => 19.0, 'temperature_max' => 27.0, 'rainfall_mm' => 25.0, 'humidity_percentage' => 58, 'advisory' => 'Dry season sets in — prioritise irrigation for newly planted seedlings.'],
+                ['condition' => 'Sunny', 'temperature_min' => 20.0, 'temperature_max' => 29.0, 'rainfall_mm' => 15.0, 'humidity_percentage' => 52, 'advisory' => 'Driest month — mulch heavily to retain soil moisture around young plants.'],
+                ['condition' => 'Partly Cloudy', 'temperature_min' => 20.0, 'temperature_max' => 28.0, 'rainfall_mm' => 35.0, 'humidity_percentage' => 56, 'advisory' => 'Early signs of the long rains approaching — prepare land for the next planting cycle.'],
+            ],
+            'Mbale (Mt. Elgon)' => [
+                ['condition' => 'Rainy', 'temperature_min' => 15.0, 'temperature_max' => 22.0, 'rainfall_mm' => 160.0, 'humidity_percentage' => 82, 'advisory' => 'Heavy short rains on the mountain slopes — reinforce terracing to prevent erosion.'],
+                ['condition' => 'Thunderstorms', 'temperature_min' => 14.0, 'temperature_max' => 21.0, 'rainfall_mm' => 190.0, 'humidity_percentage' => 86, 'advisory' => 'Storm risk peaks — secure drying racks and delay any pruning.'],
+                ['condition' => 'Rainy', 'temperature_min' => 15.0, 'temperature_max' => 21.0, 'rainfall_mm' => 130.0, 'humidity_percentage' => 80, 'advisory' => 'Consistent rain supports Arabica cherry development — monitor for coffee berry disease.'],
+                ['condition' => 'Partly Cloudy', 'temperature_min' => 15.0, 'temperature_max' => 23.0, 'rainfall_mm' => 55.0, 'humidity_percentage' => 68, 'advisory' => 'Rains easing — good window for harvest and drying on raised beds.'],
+                ['condition' => 'Sunny', 'temperature_min' => 16.0, 'temperature_max' => 25.0, 'rainfall_mm' => 20.0, 'humidity_percentage' => 58, 'advisory' => 'Clear skies favour sun-drying parchment coffee to target moisture.'],
+                ['condition' => 'Partly Cloudy', 'temperature_min' => 16.0, 'temperature_max' => 24.0, 'rainfall_mm' => 45.0, 'humidity_percentage' => 64, 'advisory' => 'Scattered showers return — plan drying activity around forecasted breaks.'],
+            ],
+            'Kasese (Rwenzori)' => [
+                ['condition' => 'Partly Cloudy', 'temperature_min' => 18.0, 'temperature_max' => 27.0, 'rainfall_mm' => 60.0, 'humidity_percentage' => 62, 'advisory' => 'Rain-shadow effect keeps rainfall moderate — supplement with irrigation if dry spells extend.'],
+                ['condition' => 'Rainy', 'temperature_min' => 17.0, 'temperature_max' => 25.0, 'rainfall_mm' => 95.0, 'humidity_percentage' => 70, 'advisory' => 'Short rains arrive later here — good time to plant once soil moisture builds.'],
+                ['condition' => 'Rainy', 'temperature_min' => 17.0, 'temperature_max' => 24.0, 'rainfall_mm' => 85.0, 'humidity_percentage' => 72, 'advisory' => 'Steady rainfall supports flowering — avoid heavy machinery on saturated soil.'],
+                ['condition' => 'Sunny', 'temperature_min' => 18.0, 'temperature_max' => 28.0, 'rainfall_mm' => 20.0, 'humidity_percentage' => 55, 'advisory' => 'Dry season returns — irrigate young Robusta stands regularly.'],
+                ['condition' => 'Sunny', 'temperature_min' => 19.0, 'temperature_max' => 29.0, 'rainfall_mm' => 10.0, 'humidity_percentage' => 48, 'advisory' => 'Driest stretch of the year — mulch and shade-check newly planted rows.'],
+                ['condition' => 'Sunny', 'temperature_min' => 19.0, 'temperature_max' => 28.0, 'rainfall_mm' => 25.0, 'humidity_percentage' => 52, 'advisory' => 'Still dry — continue irrigation ahead of the long rains in March.'],
+            ],
+            'Kabale (Kigezi Highlands)' => [
+                ['condition' => 'Cloudy', 'temperature_min' => 11.0, 'temperature_max' => 20.0, 'rainfall_mm' => 100.0, 'humidity_percentage' => 78, 'advisory' => 'Cool highland showers — favourable for terraced planting on the hillsides.'],
+                ['condition' => 'Rainy', 'temperature_min' => 10.0, 'temperature_max' => 19.0, 'rainfall_mm' => 135.0, 'humidity_percentage' => 84, 'advisory' => 'Wettest month on the highlands — check terrace drainage before storms intensify.'],
+                ['condition' => 'Rainy', 'temperature_min' => 11.0, 'temperature_max' => 19.0, 'rainfall_mm' => 110.0, 'humidity_percentage' => 82, 'advisory' => 'Continued rain — good soil moisture for new seedling establishment.'],
+                ['condition' => 'Cloudy', 'temperature_min' => 11.0, 'temperature_max' => 20.0, 'rainfall_mm' => 60.0, 'humidity_percentage' => 74, 'advisory' => 'Rain easing gradually — window opens for mulching and weeding.'],
+                ['condition' => 'Partly Cloudy', 'temperature_min' => 12.0, 'temperature_max' => 21.0, 'rainfall_mm' => 35.0, 'humidity_percentage' => 66, 'advisory' => 'Driest period for the highlands — light irrigation recommended for seedlings.'],
+                ['condition' => 'Cloudy', 'temperature_min' => 12.0, 'temperature_max' => 21.0, 'rainfall_mm' => 55.0, 'humidity_percentage' => 70, 'advisory' => 'Showers picking up again ahead of the long rains — prepare nursery beds.'],
+            ],
+            'Mubende (Central)' => [
+                ['condition' => 'Rainy', 'temperature_min' => 17.0, 'temperature_max' => 25.0, 'rainfall_mm' => 115.0, 'humidity_percentage' => 74, 'advisory' => 'Short rains begin — favourable conditions for Robusta transplanting.'],
+                ['condition' => 'Rainy', 'temperature_min' => 17.0, 'temperature_max' => 26.0, 'rainfall_mm' => 145.0, 'humidity_percentage' => 77, 'advisory' => 'Peak rainfall — delay fertiliser application until drier spells.'],
+                ['condition' => 'Partly Cloudy', 'temperature_min' => 17.0, 'temperature_max' => 25.0, 'rainfall_mm' => 85.0, 'humidity_percentage' => 71, 'advisory' => 'Rains slowing — good time for canopy pruning and weeding.'],
+                ['condition' => 'Sunny', 'temperature_min' => 18.0, 'temperature_max' => 27.0, 'rainfall_mm' => 20.0, 'humidity_percentage' => 56, 'advisory' => 'Dry season begins — irrigate young plants and mulch to retain moisture.'],
+                ['condition' => 'Sunny', 'temperature_min' => 19.0, 'temperature_max' => 29.0, 'rainfall_mm' => 12.0, 'humidity_percentage' => 50, 'advisory' => 'Driest month — monitor seedlings closely for heat stress.'],
+                ['condition' => 'Partly Cloudy', 'temperature_min' => 19.0, 'temperature_max' => 27.0, 'rainfall_mm' => 30.0, 'humidity_percentage' => 55, 'advisory' => 'Early signs of the long rains — begin land preparation for next planting.'],
+            ],
+        ];
+
+        $sortOrderByRegion = collect($regions)->pluck('sort_order', 'region');
+
+        foreach ($monthlyOutlook as $regionName => $months) {
+            foreach ($months as $monthIndex => $month) {
+                WeatherForecast::updateOrCreate(
+                    [
+                        'region' => $regionName,
+                        'forecast_date' => now()->addMonthsNoOverflow($monthIndex + 1)->startOfMonth()->toDateString(),
+                    ],
+                    [
+                        ...$month,
+                        'wind_speed_kmh' => null,
+                        'is_active' => true,
+                        'sort_order' => $sortOrderByRegion[$regionName] ?? 0,
+                    ],
+                );
+            }
+        }
     }
 }

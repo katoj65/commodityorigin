@@ -152,6 +152,8 @@ Route::middleware([
         Route::patch('/{farm}/location', [FarmController::class, 'updateLocation'])->name('location.update');
         Route::post('/{farm}/harvests', [FarmController::class, 'storeHarvest'])->name('harvests.store');
         Route::delete('/{farm}/harvests/{harvest}', [FarmController::class, 'destroyHarvest'])->name('harvests.destroy');
+        Route::post('/{farm}/documents', [FarmController::class, 'storeDocument'])->name('documents.store');
+        Route::delete('/{farm}/documents/{document}', [FarmController::class, 'destroyDocument'])->name('documents.destroy');
         Route::post('/geocode', GeocodeController::class)->name('geocode');
         Route::delete('/{farm}', [FarmController::class, 'destroy'])->name('destroy');
     });

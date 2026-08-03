@@ -122,7 +122,11 @@ class FarmService
      */
     public function show(Farm $farm): Farm
     {
-        $farm->load(['farmer', 'harvests' => fn ($query) => $query->latest('harvest_date')]);
+        $farm->load([
+            'farmer',
+            'harvests' => fn ($query) => $query->latest('harvest_date'),
+            'documents' => fn ($query) => $query->with('uploader')->latest(),
+        ]);
 
         return $farm;
     }

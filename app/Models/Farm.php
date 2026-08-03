@@ -57,4 +57,12 @@ class Farm extends Model
     {
         return $this->hasMany(Harvest::class);
     }
+
+    /**
+     * Get the documents uploaded against this farm.
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(FarmDocument::class);
+    }
 }

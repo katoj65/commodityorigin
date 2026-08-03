@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { isGoogleMapsConfigured, renderMap } from '@/services/googleMaps';
@@ -10,6 +10,8 @@ import {
     Location, Medal, Opportunity, Plus, Promotion,
     ShoppingCart, Star, TrendCharts, Van, View,
     Warning,
+    Sunny, PartlyCloudy, Cloudy, Umbrella, Lightning,
+    Files, Upload, Document,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -21,6 +23,10 @@ const props = defineProps({
     harvests: { type: Array, default: () => [] },
     pickMethodOptions: { type: Array, default: () => [] },
     harvestSeasonOptions: { type: Array, default: () => [] },
+    weatherRegion: { type: String, default: null },
+    weatherOutlook: { type: Array, default: () => [] },
+    documents: { type: Array, default: () => [] },
+    documentTypeOptions: { type: Array, default: () => [] },
 });
 
 /* ── Edit farm dialog (creator only) ──────────────────────────────── */
@@ -195,6 +201,79 @@ function deleteHarvest() {
     });
 }
 
+/* ── Upload document dialog (creator only) ────────────────────────────── */
+const documentDialogOpen = ref(false);
+
+const documentForm = useForm({
+    title: '',
+    document_type: '',
+    document: null,
+});
+
+const documentFileName = ref('');
+
+function openDocumentDialog() {
+    documentForm.reset();
+    documentForm.clearErrors();
+    documentFileName.value = '';
+    documentDialogOpen.value = true;
+}
+
+function onDocumentFileChange(event) {
+    const file = event.target.files?.[0] || null;
+    documentForm.document = file;
+    documentFileName.value = file?.name || '';
+}
+
+function submitDocumentForm() {
+    documentForm.post(route('farm.documents.store', props.farm.id), {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            documentDialogOpen.value = false;
+            documentForm.reset();
+            documentFileName.value = '';
+        },
+    });
+}
+
+/* ── Delete document dialog (creator only) ────────────────────────────── */
+const deleteDocumentDialogOpen = ref(false);
+const deletingDocument = ref(false);
+const documentToDelete = ref(null);
+
+function openDeleteDocumentDialog(doc) {
+    documentToDelete.value = doc;
+    deleteDocumentDialogOpen.value = true;
+}
+
+function deleteDocument() {
+    if (!documentToDelete.value) return;
+    deletingDocument.value = true;
+    router.delete(route('farm.documents.destroy', [props.farm.id, documentToDelete.value.id]), {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingDocument.value = false;
+            deleteDocumentDialogOpen.value = false;
+            documentToDelete.value = null;
+        },
+    });
+}
+
+function formatFileSize(bytes) {
+    if (bytes === null || bytes === undefined) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDocDate(value) {
+    if (!value) return '—';
+    const date = new Date(value.replace(' ', 'T'));
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 /* ── Real computed from prop ───────────────────────────────────── */
 const farmName    = computed(() => props.farm.name || 'Farm Profile');
 const farmerName  = computed(() => [props.farm.farmer?.first_name, props.farm.farmer?.last_name].filter(Boolean).join(' ') || 'Assigned Producer');
@@ -290,14 +369,34 @@ function openViewHarvestDialog(row) {
 const productionBars = [52, 64, 68, 78, 74, 82, 88, 84, 90, 86, 92, 88];
 const qualityBars    = [72, 78, 76, 82, 80, 86, 84, 88, 86, 90, 89, 92];
 
-const qualityProfile = [
-    { attribute: 'Aroma',       score: 88, display: '8.8/10' },
-    { attribute: 'Flavor',      score: 86, display: '8.6/10' },
-    { attribute: 'Acidity',     score: 90, display: '9.0/10' },
-    { attribute: 'Body',        score: 84, display: '8.4/10' },
-    { attribute: 'Aftertaste',  score: 87, display: '8.7/10' },
-    { attribute: 'Balance',     score: 85, display: '8.5/10' },
-];
+/* ── Farm Weather — planting-season outlook ───────────────────────── */
+const weatherConditionMeta = {
+    'Sunny': { icon: Sunny, bg: '#fffbeb', color: '#b45309' },
+    'Partly Cloudy': { icon: PartlyCloudy, bg: '#eff6ff', color: '#1d4ed8' },
+    'Cloudy': { icon: Cloudy, bg: '#f3f4f6', color: '#4b5563' },
+    'Rainy': { icon: Umbrella, bg: '#eef2ff', color: '#4338ca' },
+    'Thunderstorms': { icon: Lightning, bg: '#fef2f2', color: '#b91c1c' },
+};
+
+function weatherIcon(row) {
+    return weatherConditionMeta[row.condition]?.icon || Cloudy;
+}
+
+function weatherIconStyle(row) {
+    const meta = weatherConditionMeta[row.condition];
+    return { background: meta?.bg || '#f3f4f6', color: meta?.color || '#4b5563' };
+}
+
+function weatherMonthLabel(row) {
+    if (!row.forecast_date) return '—';
+    const date = new Date(`${row.forecast_date}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+}
+
+const weatherPreviewCount = 3;
+const weatherPreview = computed(() => props.weatherOutlook.slice(0, weatherPreviewCount));
+const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPreviewCount);
 
 const traceStages = [
     { label: 'Farm',    icon: Location,      status: 'Verified',   date: 'Oct 2024', complete: true  },
@@ -305,11 +404,6 @@ const traceStages = [
     { label: 'Batch',   icon: CollectionTag, status: 'Processing', date: 'Apr 2025', complete: false },
     { label: 'Lot',     icon: Star,          status: 'Pending',    date: '—',        complete: false },
     { label: 'Market',  icon: ShoppingCart,  status: 'Ready',      date: '—',        complete: false },
-];
-
-const processing = [
-    { method: 'Washed',        drying: 'Raised Beds',  storage: 'Grain Pro Bags', capacity: '6,000 kg', badge: 'Export Grade', tone: 'success' },
-    { method: 'Natural',       drying: 'Sun Dried',    storage: 'Warehouse',      capacity: '2,400 kg', badge: 'Traditional',  tone: 'warning' },
 ];
 
 const sustainability = [
@@ -330,14 +424,6 @@ const buyerMarkets = [
     { region: 'UAE',          demand: 'Extreme', price: '$1.80–2.10', pct: 96, tone: 'danger'  },
     { region: 'USA',          demand: 'High',    price: '$4.80–5.20', pct: 78, tone: 'success' },
     { region: 'Japan',        demand: 'Medium',  price: '$5.20–5.80', pct: 62, tone: 'warning' },
-];
-
-const documents = [
-    { name: 'Farm Registration Certificate', status: 'Complete', tone: 'success' },
-    { name: 'Cupping Report Q1 2025',        status: 'Complete', tone: 'success' },
-    { name: 'Organic Certification',         status: 'Complete', tone: 'success' },
-    { name: 'Export Compliance File',        status: 'Pending',  tone: 'warning' },
-    { name: 'Phytosanitary Certificate',     status: 'Pending',  tone: 'warning' },
 ];
 
 const timeline = [
@@ -785,54 +871,85 @@ const data=computed(()=>props.farm);
                                 <button class="btn fp-btn-outline btn-sm w-100"><el-icon><ShoppingCart /></el-icon> Contact Farmer</button>
                             </div>
 
-                            <!-- 7. Quality Profile -->
+                            <!-- 7. Farm Weather -->
                             <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Medal /></el-icon>
-                                    Quality Profile
-                                </div>
-                                <div class="d-flex align-items-center gap-3 mb-3">
-                                    <div class="fp-quality-bubble">{{ qualityScore }}</div>
-                                    <div>
-                                        <div style="font-size:.75rem; font-weight:700; color:var(--on-surface);">Overall SCA Score</div>
-                                        <div class="fp-td-muted" style="font-size:.7rem;">Specialty Grade (85+)</div>
-                                        <div class="fp-td-muted" style="font-size:.7rem; margin-top:2px;">Defect Rate: 0.8%</div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="fp-card-title mb-0">
+                                        <el-icon class="fp-card-icon"><Sunny /></el-icon>
+                                        Farm Weather
                                     </div>
+                                    <span class="fp-weather-region"><el-icon><Location /></el-icon>{{ locationLabel }}</span>
                                 </div>
-                                <div class="d-flex flex-column gap-2">
-                                    <div v-for="q in qualityProfile" :key="q.attribute">
-                                        <div class="d-flex justify-content-between mb-1">
-                                            <span class="fp-cert-label">{{ q.attribute }}</span>
-                                            <span class="fp-up" style="font-size:.8125rem; font-weight:700;">{{ q.display }}</span>
-                                        </div>
-                                        <div class="fp-bar-track">
-                                            <div class="fp-bar-fill" :style="{ width: `${q.score}%`, background: '#004532' }"></div>
+
+                                <template v-if="weatherOutlook.length">
+                                    <p class="fp-weather-intro">
+                                        Planting-season outlook for {{ locationLabel }}.
+                                        <template v-if="weatherRegion && !locationLabel.toLowerCase().includes(weatherRegion.split('(')[0].trim().toLowerCase())">
+                                            Nearest regional data: {{ weatherRegion }}.
+                                        </template>
+                                    </p>
+                                    <div class="fp-weather-list">
+                                        <div v-for="month in weatherPreview" :key="month.id" class="fp-weather-row">
+                                            <div class="fp-weather-row__icon" :style="weatherIconStyle(month)">
+                                                <el-icon :size="16"><component :is="weatherIcon(month)" /></el-icon>
+                                            </div>
+                                            <div class="fp-weather-row__body">
+                                                <div class="fp-weather-row__head">
+                                                    <span class="fp-weather-row__month">{{ weatherMonthLabel(month) }}</span>
+                                                    <span class="fp-weather-row__temp">{{ month.temperature_min }}°–{{ month.temperature_max }}°C</span>
+                                                </div>
+                                                <div class="fp-weather-row__meta">
+                                                    {{ month.condition }}<template v-if="month.rainfall_mm !== null"> · {{ month.rainfall_mm }}mm rain</template><template v-if="month.humidity_percentage !== null"> · {{ month.humidity_percentage }}% humidity</template>
+                                                </div>
+                                                <p v-if="month.advisory" class="fp-weather-row__tip">{{ month.advisory }}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                    <Link :href="route('farm.weather')" class="btn fp-btn-outline btn-sm w-100 mt-3">
+                                        <el-icon><Sunny /></el-icon>
+                                        {{ hasMoreWeather ? `View ${weatherOutlook.length - weatherPreviewCount} More Months` : 'View Full Forecast' }}
+                                    </Link>
+                                </template>
+                                <p v-else class="fp-td-muted" style="font-size:.8125rem;">No seasonal outlook available yet for this farm's region.</p>
                             </div>
 
-                            <!-- 8. Processing Facilities -->
+                            <!-- 8. Documents -->
                             <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Box /></el-icon>
-                                    Processing Facilities
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="fp-card-title mb-0">
+                                        <el-icon class="fp-card-icon"><Files /></el-icon>
+                                        Documents
+                                    </div>
+                                    <button v-if="props.canEdit" type="button" class="fp-doc-upload-btn" @click="openDocumentDialog">
+                                        <el-icon><Upload /></el-icon> Upload
+                                    </button>
                                 </div>
-                                <div class="d-flex flex-column gap-2">
-                                    <div v-for="p in processing" :key="p.method" class="fp-process-card">
-                                        <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="fp-item-name">{{ p.method }}</span>
-                                            <span class="badge rounded-pill" style="font-size:.65rem;"
-                                                :class="p.tone === 'success' ? 'bg-success-subtle text-success-emphasis border border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'">
-                                                {{ p.badge }}
-                                            </span>
+
+                                <div v-if="documents.length" class="fp-doc-list">
+                                    <div v-for="doc in documents" :key="doc.id" class="fp-doc-item">
+                                        <div class="fp-doc-item__icon"><el-icon :size="16"><Document /></el-icon></div>
+                                        <div class="fp-doc-item__body">
+                                            <div class="fp-doc-item__title">{{ doc.title }}</div>
+                                            <div class="fp-doc-item__meta">
+                                                <span v-if="doc.document_type">{{ doc.document_type }} · </span>{{ formatFileSize(doc.file_size) }} · {{ formatDocDate(doc.created_at) }}
+                                            </div>
                                         </div>
-                                        <div class="row g-1">
-                                            <div class="col-6"><div class="fp-spec-cell"><span>Drying</span><strong>{{ p.drying }}</strong></div></div>
-                                            <div class="col-6"><div class="fp-spec-cell"><span>Capacity</span><strong>{{ p.capacity }}</strong></div></div>
-                                            <div class="col-12"><div class="fp-spec-cell"><span>Storage</span><strong>{{ p.storage }}</strong></div></div>
+                                        <div class="fp-doc-item__actions">
+                                            <a :href="doc.file_url" target="_blank" rel="noopener" class="fp-doc-action fp-doc-action--download" title="Download">
+                                                <el-icon><Download /></el-icon>
+                                            </a>
+                                            <button v-if="props.canEdit" type="button" class="fp-doc-action fp-doc-action--delete" title="Delete" @click="openDeleteDocumentDialog(doc)">
+                                                <el-icon><Delete /></el-icon>
+                                            </button>
                                         </div>
                                     </div>
+                                </div>
+                                <div v-else class="fp-doc-empty">
+                                    <el-icon :size="22"><Files /></el-icon>
+                                    <p>No documents uploaded yet.</p>
+                                    <button v-if="props.canEdit" type="button" class="btn fp-btn-outline btn-sm" @click="openDocumentDialog">
+                                        <el-icon><Upload /></el-icon> Upload Document
+                                    </button>
                                 </div>
                             </div>
 
@@ -871,23 +988,6 @@ const data=computed(()=>props.farm);
                                 <div class="d-grid gap-2">
                                     <button class="btn fp-btn-primary btn-sm"><el-icon><ShoppingCart /></el-icon> View Lots</button>
                                     <button class="btn fp-btn-outline btn-sm"><el-icon><DataLine /></el-icon> Sell Coffee</button>
-                                </div>
-                            </div>
-
-                            <!-- 13. Documents & Compliance -->
-                            <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Download /></el-icon>
-                                    Documents &amp; Compliance
-                                </div>
-                                <div class="d-flex flex-column gap-2">
-                                    <div v-for="doc in documents" :key="doc.name" class="fp-doc-row">
-                                        <div class="fp-cert-label flex-fill">{{ doc.name }}</div>
-                                        <span class="badge rounded-pill" style="font-size:.65rem; flex-shrink:0;"
-                                            :class="doc.tone === 'success' ? 'bg-success-subtle text-success-emphasis border border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'">
-                                            {{ doc.status }}
-                                        </span>
-                                    </div>
                                 </div>
                             </div>
 
@@ -1351,6 +1451,86 @@ const data=computed(()=>props.farm);
                 </div>
             </el-dialog>
 
+            <!-- ── Upload Document modal (creator only) ─────────────────── -->
+            <el-dialog v-model="documentDialogOpen" width="480px" align-center class="fp-modal">
+                <template #header>
+                    <div class="fp-modal__head">
+                        <div class="fp-modal__head-icon">
+                            <el-icon :size="18"><Upload /></el-icon>
+                        </div>
+                        <div class="fp-modal__head-text">
+                            <div class="fp-modal__eyebrow">Farm Profile</div>
+                            <div class="fp-modal__title">Upload Document</div>
+                        </div>
+                    </div>
+                </template>
+
+                <form id="document-form" novalidate class="fp-modal__body" @submit.prevent="submitDocumentForm">
+                    <div class="fp-field">
+                        <label class="fp-field__label">Document Title</label>
+                        <el-input v-model="documentForm.title" placeholder="e.g. Organic Certification 2026" class="fp-field-input" :class="{ 'fp-field-input--error': documentForm.errors.title }" />
+                        <InputError class="fp-field__error" :message="documentForm.errors.title" />
+                    </div>
+
+                    <div class="fp-field">
+                        <label class="fp-field__label">Document Type <span class="fp-field__optional">(optional)</span></label>
+                        <el-select v-model="documentForm.document_type" placeholder="Select a type" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': documentForm.errors.document_type }">
+                            <el-option v-for="option in documentTypeOptions" :key="option" :label="option" :value="option" />
+                        </el-select>
+                        <InputError class="fp-field__error" :message="documentForm.errors.document_type" />
+                    </div>
+
+                    <div class="fp-field">
+                        <label class="fp-field__label">File</label>
+                        <label class="fp-doc-dropzone" :class="{ 'fp-doc-dropzone--error': documentForm.errors.document }">
+                            <input type="file" class="fp-doc-dropzone__input" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx" @change="onDocumentFileChange">
+                            <el-icon :size="20"><Upload /></el-icon>
+                            <span v-if="documentFileName" class="fp-doc-dropzone__filename">{{ documentFileName }}</span>
+                            <span v-else class="fp-doc-dropzone__hint">Click to choose a file — image, PDF, or Word document (max 10MB)</span>
+                        </label>
+                        <InputError class="fp-field__error" :message="documentForm.errors.document" />
+                    </div>
+                </form>
+
+                <template #footer>
+                    <div class="fp-modal__footer">
+                        <button type="submit" form="document-form" class="btn fp-btn-primary btn-sm" :disabled="documentForm.processing">
+                            {{ documentForm.processing ? 'Uploading…' : 'Upload Document' }}
+                        </button>
+                    </div>
+                </template>
+            </el-dialog>
+
+            <!-- ── Delete Document modal (creator only) ──────────────────── -->
+            <el-dialog v-model="deleteDocumentDialogOpen" width="420px" align-center class="fp-modal fp-modal--danger">
+                <template #header>
+                    <div class="fp-modal__head">
+                        <div class="fp-modal__head-icon fp-modal__head-icon--danger">
+                            <el-icon :size="18"><Delete /></el-icon>
+                        </div>
+                        <div class="fp-modal__head-text">
+                            <div class="fp-modal__eyebrow">Farm Profile</div>
+                            <div class="fp-modal__title">Delete Document</div>
+                        </div>
+                    </div>
+                </template>
+
+                <div v-if="documentToDelete" class="fp-modal__body">
+                    <p class="fp-modal__confirm-text">
+                        Are you sure you want to delete <strong>{{ documentToDelete.title }}</strong>? This action cannot be undone.
+                    </p>
+                </div>
+
+                <template #footer>
+                    <div class="fp-modal__footer">
+                        <button type="button" class="btn fp-btn-outline btn-sm" @click="deleteDocumentDialogOpen = false">Cancel</button>
+                        <button type="button" class="btn fp-btn-danger btn-sm" :disabled="deletingDocument" @click="deleteDocument">
+                            {{ deletingDocument ? 'Deleting…' : 'Delete Document' }}
+                        </button>
+                    </div>
+                </template>
+            </el-dialog>
+
         </div>
     </AppLayout>
 </template>
@@ -1487,16 +1667,25 @@ const data=computed(()=>props.farm);
 .fp-bar-track { height: 6px; background: var(--surface-high); border-radius: 999px; overflow: hidden; }
 .fp-bar-fill  { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
 
-/* ── Quality bubble ────────────────────────────────────────────────────────── */
-.fp-quality-bubble { width: 52px; height: 52px; border-radius: 50%; background: var(--green); color: #fff; font-size: 1rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fp-cert-label { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.4; }
+
+/* ── Farm Weather card ─────────────────────────────────────────────────────── */
+.fp-weather-region { display: inline-flex; align-items: center; gap: 4px; font-size: .6875rem; font-weight: 700; color: var(--on-surface-var); background: var(--surface-low); border-radius: 999px; padding: 3px 9px; flex-shrink: 0; }
+.fp-weather-intro { font-size: .75rem; color: var(--on-surface-var); margin: 0 0 10px; line-height: 1.4; }
+.fp-weather-list { display: flex; flex-direction: column; gap: 10px; }
+.fp-weather-row { display: flex; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--surface-low); }
+.fp-weather-row:last-child { padding-bottom: 0; border-bottom: none; }
+.fp-weather-row__icon { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fp-weather-row__body { flex: 1; min-width: 0; }
+.fp-weather-row__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.fp-weather-row__month { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
+.fp-weather-row__temp { font-size: .75rem; font-weight: 700; color: var(--on-surface); flex-shrink: 0; }
+.fp-weather-row__meta { font-size: .6875rem; color: var(--on-surface-var); margin-top: 1px; }
+.fp-weather-row__tip { font-size: .75rem; color: #374151; line-height: 1.4; margin: 4px 0 0; }
 
 /* ── Farmer card ───────────────────────────────────────────────────────────── */
 .fp-farmer-avatar { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fp-farmer-row { display: flex; align-items: center; gap: 7px; font-size: 0.8125rem; color: var(--on-surface-var); padding: 4px 0; line-height: 1.4; }
-
-/* ── Processing ────────────────────────────────────────────────────────────── */
-.fp-process-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 8px; padding: 0.75rem; }
 
 /* ── Sustainability ────────────────────────────────────────────────────────── */
 .fp-sus-badge { display: inline-flex; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
@@ -1520,8 +1709,30 @@ const data=computed(()=>props.farm);
 .fp-timeline-time { font-size: 0.6875rem; color: var(--on-surface-var); margin-top: 2px; }
 
 /* ── Documents ─────────────────────────────────────────────────────────────── */
-.fp-doc-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
-.fp-doc-row:last-child { border-bottom: none; }
+.fp-doc-upload-btn { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,69,50,0.08); color: var(--green); border: none; border-radius: 7px; font-size: .75rem; font-weight: 700; padding: 5px 11px; cursor: pointer; transition: background .15s ease; flex-shrink: 0; }
+.fp-doc-upload-btn:hover { background: rgba(0,69,50,0.15); }
+
+.fp-doc-list { display: flex; flex-direction: column; }
+.fp-doc-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--surface-low); }
+.fp-doc-item:last-child { border-bottom: none; }
+.fp-doc-item__icon { width: 32px; height: 32px; border-radius: 9px; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fp-doc-item__body { flex: 1; min-width: 0; }
+.fp-doc-item__title { font-size: .8125rem; font-weight: 700; color: var(--on-surface); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-doc-item__meta { font-size: .6875rem; color: var(--on-surface-var); margin-top: 1px; }
+.fp-doc-item__actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.fp-doc-action { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; border: none; background: transparent; color: var(--on-surface-var); cursor: pointer; text-decoration: none; transition: background .15s ease, color .15s ease; }
+.fp-doc-action--download:hover { background: rgba(0,69,50,0.08); color: var(--green); }
+.fp-doc-action--delete:hover { background: #fef2f2; color: #dc2626; }
+
+.fp-doc-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 1.5rem 0.5rem; color: var(--on-surface-var); }
+.fp-doc-empty p { font-size: .8125rem; margin: 0; }
+
+.fp-doc-dropzone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; border: 1.5px dashed var(--surface-high); border-radius: 10px; padding: 1.25rem 1rem; cursor: pointer; color: var(--on-surface-var); transition: border-color .15s ease, background .15s ease; position: relative; }
+.fp-doc-dropzone:hover { border-color: var(--green); background: rgba(0,69,50,0.03); }
+.fp-doc-dropzone--error { border-color: #dc2626; }
+.fp-doc-dropzone__input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.fp-doc-dropzone__hint { font-size: .75rem; line-height: 1.4; max-width: 260px; }
+.fp-doc-dropzone__filename { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
 .fp-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 10px; border: 1px solid; }

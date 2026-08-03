@@ -4,7 +4,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
-    Plus, Close, UploadFilled, Download, Delete, Document, User, Calendar,
+    Plus, Close, UploadFilled, Download, Delete, Document, User, Calendar, House, Search, FolderOpened,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -14,38 +14,53 @@ const props = defineProps({
 });
 
 /* ── Filters ─────────────────────────────────────────────────────────── */
-const activeFilter = ref('all');
-const filters = computed(() => [
-    { key: 'all', label: 'All' },
-    { key: 'mine', label: 'Mine' },
-    ...props.categories.map((category) => ({ key: category, label: category })),
-]);
+const searchQuery = ref('');
+const categoryFilter = ref('all');
+const sourceFilter = ref('all');
+const mineOnly = ref(false);
 
 const sortedDocuments = computed(() => [...props.documents].sort((a, b) => b.created_at.localeCompare(a.created_at)));
 
-function matchesFilter(key, doc) {
-    if (key === 'mine') return doc.user_id === props.authUserId;
-    if (key === 'all') return true;
-    return doc.category === key;
-}
+const categoryOptions = computed(() => [...new Set(sortedDocuments.value.map((d) => d.category))].filter(Boolean).sort());
 
-const filteredDocuments = computed(() => sortedDocuments.value.filter((d) => matchesFilter(activeFilter.value, d)));
+const filteredDocuments = computed(() => {
+    const needle = searchQuery.value.trim().toLowerCase();
 
-function tabCount(key) {
-    return sortedDocuments.value.filter((d) => matchesFilter(key, d)).length;
+    return sortedDocuments.value.filter((doc) => {
+        if (mineOnly.value && doc.user_id !== props.authUserId) return false;
+        if (sourceFilter.value !== 'all' && doc.source !== sourceFilter.value) return false;
+        if (categoryFilter.value !== 'all' && doc.category !== categoryFilter.value) return false;
+        if (!needle) return true;
+
+        return [doc.title, doc.description, doc.category, doc.uploader_name, doc.farm_name]
+            .filter(Boolean)
+            .some((field) => field.toLowerCase().includes(needle));
+    });
+});
+
+const hasActiveFilters = computed(() => Boolean(searchQuery.value) || categoryFilter.value !== 'all' || sourceFilter.value !== 'all' || mineOnly.value);
+
+function resetFilters() {
+    searchQuery.value = '';
+    categoryFilter.value = 'all';
+    sourceFilter.value = 'all';
+    mineOnly.value = false;
 }
 
 /* ── KPIs ────────────────────────────────────────────────────────────── */
 const kpis = computed(() => ({
     total: sortedDocuments.value.length,
-    mine: tabCount('mine'),
-    categories: new Set(sortedDocuments.value.map((d) => d.category)).size,
+    mine: sortedDocuments.value.filter((d) => d.user_id === props.authUserId).length,
+    farm: sortedDocuments.value.filter((d) => d.source === 'farm').length,
+    categories: categoryOptions.value.length,
 }));
 
 /* ── Display helpers ─────────────────────────────────────────────────── */
-function categoryTone(category) {
+function categoryTone(doc) {
+    if (doc.source === 'farm') return 'doc-badge--farm';
+
     const tones = ['doc-badge--green', 'doc-badge--blue', 'doc-badge--amber', 'doc-badge--violet', 'doc-badge--slate'];
-    const idx = props.categories.indexOf(category);
+    const idx = props.categories.indexOf(doc.category);
 
     return tones[idx % tones.length] ?? 'doc-badge--slate';
 }
@@ -100,16 +115,21 @@ function submitUpload() {
 
 /* ── Delete ──────────────────────────────────────────────────────────── */
 const deleteOpen = ref(false);
-const pendingDeleteId = ref(null);
+const pendingDelete = ref(null);
 
 function requestDelete(doc) {
-    pendingDeleteId.value = doc.id;
+    pendingDelete.value = doc;
     deleteOpen.value = true;
 }
 
 function confirmDelete() {
-    if (!pendingDeleteId.value) return;
-    router.delete(route('documentation.destroy', pendingDeleteId.value), { preserveScroll: true });
+    if (!pendingDelete.value) return;
+
+    const href = pendingDelete.value.source === 'farm'
+        ? route('farm.documents.destroy', [pendingDelete.value.farm_id, pendingDelete.value.id])
+        : route('documentation.destroy', pendingDelete.value.id);
+
+    router.delete(href, { preserveScroll: true });
 }
 </script>
 
@@ -133,7 +153,7 @@ function confirmDelete() {
             </div>
 
             <!-- ── Overview strip ────────────────────────────────────────── -->
-            <div class="doc-kpi-strip">
+            <!-- <div class="doc-kpi-strip">
                 <div class="doc-kpi">
                     <span class="doc-kpi__label">Total Documents</span>
                     <strong class="doc-kpi__val">{{ kpis.total }}</strong>
@@ -143,81 +163,134 @@ function confirmDelete() {
                     <strong class="doc-kpi__val">{{ kpis.mine }}</strong>
                 </div>
                 <div class="doc-kpi">
+                    <span class="doc-kpi__label">Farm Documents</span>
+                    <strong class="doc-kpi__val">{{ kpis.farm }}</strong>
+                </div>
+                <div class="doc-kpi">
                     <span class="doc-kpi__label">Categories</span>
                     <strong class="doc-kpi__val">{{ kpis.categories }}</strong>
                 </div>
-            </div>
+            </div> -->
 
             <div class="doc-body">
                 <div class="doc-section">
-                    <el-tabs v-model="activeFilter" class="doc-tabs">
-                        <el-tab-pane v-for="f in filters" :key="f.key" :name="f.key">
-                            <template #label>
-                                <span class="doc-tab-label">
-                                    {{ f.label }}
-                                    <span v-if="tabCount(f.key)" class="doc-tab-count">{{ tabCount(f.key) }}</span>
-                                </span>
-                            </template>
-                        </el-tab-pane>
-                    </el-tabs>
+                    <!-- ── Filter toolbar ───────────────────────────────────── -->
+                    <div class="doc-toolbar">
+                        <el-input
+                            v-model="searchQuery"
+                            size="small"
+                            placeholder="Search documents…"
+                            class="doc-toolbar__search"
+                            clearable
+                        >
+                            <template #prefix><el-icon><Search /></el-icon></template>
+                        </el-input>
 
-                    <el-table :data="filteredDocuments" class="doc-table" empty-text="No documents in this view.">
-                        <el-table-column label="Document" min-width="260">
+                        <el-select v-model="sourceFilter" size="small" class="doc-toolbar__select" placeholder="Source">
+                            <el-option label="All Sources" value="all" />
+                            <el-option label="Knowledge Base" value="documentation" />
+                            <el-option label="Farm Documents" value="farm" />
+                        </el-select>
+
+                        <el-select v-model="categoryFilter" size="small" class="doc-toolbar__select" placeholder="Category">
+                            <el-option label="All Categories" value="all" />
+                            <el-option v-for="opt in categoryOptions" :key="opt" :label="opt" :value="opt" />
+                        </el-select>
+
+                        <label class="doc-toolbar__switch">
+                            <el-switch v-model="mineOnly" size="small" />
+                            Mine only
+                        </label>
+
+                        <button v-if="hasActiveFilters" type="button" class="doc-toolbar__reset" @click="resetFilters">
+                            <el-icon :size="13"><Close /></el-icon> Clear filters
+                        </button>
+
+                        <span class="doc-toolbar__count">{{ filteredDocuments.length }} of {{ sortedDocuments.length }} documents</span>
+                    </div>
+
+                    <el-table :data="filteredDocuments" class="doc-table" row-key="id">
+                        <el-table-column min-width="260">
+                            <template #header><span class="doc-th"><el-icon><Document /></el-icon> Document</span></template>
                             <template #default="{ row }">
                                 <div class="doc-cell-title">
-                                    <span class="doc-cell-title__icon"><el-icon :size="14"><Document /></el-icon></span>
+                                    <span class="doc-cell-title__icon" :class="{ 'doc-cell-title__icon--farm': row.source === 'farm' }">
+                                        <el-icon :size="14"><Document /></el-icon>
+                                    </span>
                                     <div class="doc-cell-title__text">
                                         <span class="doc-cell-title__name">{{ row.title }}</span>
                                         <span v-if="row.description" class="doc-cell-title__desc">{{ row.description }}</span>
+                                        <span v-else-if="row.farm_name" class="doc-cell-title__farm">
+                                            <el-icon :size="11"><House /></el-icon> {{ row.farm_name }}
+                                        </span>
                                     </div>
                                 </div>
                             </template>
                         </el-table-column>
-                        <el-table-column label="Category" width="130">
+                        <el-table-column width="150">
+                            <template #header><span class="doc-th"><el-icon><FolderOpened /></el-icon> Category</span></template>
                             <template #default="{ row }">
-                                <span class="doc-badge" :class="categoryTone(row.category)">{{ row.category }}</span>
+                                <span class="doc-badge" :class="categoryTone(row)">{{ row.category }}</span>
                             </template>
                         </el-table-column>
-                        <el-table-column label="Uploaded By" width="170">
+                        <el-table-column width="170">
+                            <template #header><span class="doc-th"><el-icon><User /></el-icon> Uploaded By</span></template>
                             <template #default="{ row }">
-                                <span class="doc-uploader"><el-icon :size="12"><User /></el-icon> {{ row.uploader_name }}</span>
+                                <span class="doc-uploader">{{ row.uploader_name }}</span>
                             </template>
                         </el-table-column>
-                        <el-table-column label="Size" width="90">
+                        <el-table-column width="90">
+                            <template #header><span class="doc-th"><el-icon><Document /></el-icon> Size</span></template>
                             <template #default="{ row }">{{ formatBytes(row.file_size) }}</template>
                         </el-table-column>
-                        <el-table-column label="Uploaded" width="120">
+                        <el-table-column width="120">
+                            <template #header><span class="doc-th"><el-icon><Calendar /></el-icon> Uploaded</span></template>
                             <template #default="{ row }">
-                                <span class="doc-uploaded"><el-icon :size="12"><Calendar /></el-icon> {{ formatDate(row.created_at) }}</span>
+                                <span class="doc-uploaded">{{ formatDate(row.created_at) }}</span>
                             </template>
                         </el-table-column>
                         <el-table-column label="" width="90" align="right">
                             <template #default="{ row }">
                                 <div class="doc-row-actions">
-                                    <a
-                                        :href="row.file_url"
-                                        :download="row.original_name"
-                                        target="_blank"
-                                        rel="noopener"
-                                        class="doc-icon-btn"
-                                        aria-label="Download document"
-                                        title="Download"
-                                    >
-                                        <el-icon :size="15"><Download /></el-icon>
-                                    </a>
-                                    <button
-                                        v-if="row.user_id === authUserId"
-                                        type="button"
-                                        class="doc-icon-btn doc-icon-btn--danger"
-                                        aria-label="Delete document"
-                                        title="Delete"
-                                        @click="requestDelete(row)"
-                                    >
-                                        <el-icon :size="15"><Delete /></el-icon>
-                                    </button>
+                                    <el-tooltip content="Download" placement="top">
+                                        <a
+                                            :href="row.file_url"
+                                            :download="row.original_name"
+                                            target="_blank"
+                                            rel="noopener"
+                                            class="doc-icon-btn"
+                                            aria-label="Download document"
+                                        >
+                                            <el-icon :size="15"><Download /></el-icon>
+                                        </a>
+                                    </el-tooltip>
+                                    <el-tooltip v-if="row.can_delete" content="Delete" placement="top">
+                                        <button
+                                            type="button"
+                                            class="doc-icon-btn doc-icon-btn--danger"
+                                            aria-label="Delete document"
+                                            @click="requestDelete(row)"
+                                        >
+                                            <el-icon :size="15"><Delete /></el-icon>
+                                        </button>
+                                    </el-tooltip>
                                 </div>
                             </template>
                         </el-table-column>
+
+                        <template #empty>
+                            <div class="doc-empty">
+                                <div class="doc-empty__icon"><el-icon :size="22"><FolderOpened /></el-icon></div>
+                                <div class="doc-empty__title">{{ hasActiveFilters ? 'No documents match your filters' : 'No documents yet' }}</div>
+                                <p class="doc-empty__text">
+                                    {{ hasActiveFilters ? 'Try a different search term or clear your filters.' : 'Upload the first shared document to get started.' }}
+                                </p>
+                                <button v-if="hasActiveFilters" type="button" class="doc-btn-outline" @click="resetFilters">Clear filters</button>
+                                <button v-else type="button" class="doc-btn-primary" @click="openUploadDialog">
+                                    <el-icon><Plus /></el-icon> Upload Document
+                                </button>
+                            </div>
+                        </template>
                     </el-table>
                 </div>
             </div>
@@ -449,41 +522,66 @@ function confirmDelete() {
 
 .doc-btn-outline:hover { background: #f8fafc; }
 
-/* ── Category tabs ───────────────────────────────────────────────────── */
-.doc-tabs { padding: 0 1.5rem; }
-.doc-tabs :deep(.el-tabs__header) { margin: 0; }
-.doc-tabs :deep(.el-tabs__nav-wrap::after) { background-color: var(--border); }
-.doc-tabs :deep(.el-tabs__item) {
-    font-weight: 700;
-    font-size: 0.8125rem;
-    color: var(--on-surface-var);
-    height: 44px;
+/* ── Filter toolbar ──────────────────────────────────────────────────── */
+.doc-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 1.5rem 1rem;
 }
-.doc-tabs :deep(.el-tabs__item.is-active) { color: var(--green); }
-.doc-tabs :deep(.el-tabs__active-bar) { background-color: var(--green); }
 
-.doc-tab-label {
+.doc-toolbar__search { width: 190px; }
+.doc-toolbar__search :deep(.el-input__wrapper) {
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px var(--border) inset;
+    background: var(--surface-low);
+}
+.doc-toolbar__search :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1.5px var(--green) inset; background: #fff; }
+
+.doc-toolbar__select { width: 128px; }
+.doc-toolbar__select :deep(.el-select__wrapper) {
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px var(--border) inset;
+    background: var(--surface-low);
+    min-height: 28px;
+}
+
+.doc-toolbar__switch {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--on-surface-var);
+    cursor: pointer;
 }
 
-.doc-tab-count {
+.doc-toolbar__reset {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 999px;
-    background: rgba(0, 69, 50, 0.08);
+    gap: 4px;
+    background: none;
+    border: none;
     color: var(--green);
-    font-size: 0.625rem;
-    font-weight: 800;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+}
+
+.doc-toolbar__count {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--on-surface-var);
+    white-space: nowrap;
 }
 
 /* ── Table ───────────────────────────────────────────────────────────── */
 .doc-table {
+    width: 100%;
+    border-top: 1px solid var(--border);
     --el-table-border-color: var(--surface-low);
     --el-table-header-bg-color: var(--surface-low);
     --el-table-header-text-color: var(--on-surface-var);
@@ -493,15 +591,34 @@ function confirmDelete() {
 .doc-table :deep(.el-table__header) th {
     font-size: 0.6875rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
 .doc-table :deep(.el-table__inner-wrapper::before) { display: none; }
+.doc-table :deep(td.el-table__cell) { padding: 8px 0; }
+.doc-table :deep(.el-table__row:hover .el-table__cell) { background: var(--surface-low); }
 .doc-table :deep(.el-table__header-wrapper th:first-child .cell),
 .doc-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.5rem; }
 .doc-table :deep(.el-table__header-wrapper th:last-child .cell),
 .doc-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1.5rem; }
+
+.doc-th { display: inline-flex; align-items: center; gap: 6px; }
+.doc-th :deep(.el-icon) { font-size: 14px; color: #9ca3af; }
+
+/* ── Empty state ─────────────────────────────────────────────────────── */
+.doc-empty { text-align: center; padding: 3rem 1rem; }
+.doc-empty__icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--surface-low);
+    color: var(--on-surface-var);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+}
+.doc-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
+.doc-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0 auto 16px; max-width: 320px; line-height: 1.5; }
 
 .doc-cell-title {
     display: flex;
@@ -544,6 +661,20 @@ function confirmDelete() {
     max-width: 360px;
 }
 
+.doc-cell-title__farm {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #92703c;
+    width: fit-content;
+}
+
+.doc-cell-title__icon--farm {
+    background: rgba(146, 112, 60, 0.12);
+    color: #92703c;
+}
+
 .doc-badge {
     display: inline-flex;
     border-radius: 999px;
@@ -558,6 +689,7 @@ function confirmDelete() {
 .doc-badge--amber { background: #fef3c7; color: #92400e; }
 .doc-badge--violet { background: #ede9fe; color: #6d28d9; }
 .doc-badge--slate { background: #f3f4f6; color: #6b7280; }
+.doc-badge--farm { background: #fdf2e3; color: #92703c; }
 
 .doc-uploader,
 .doc-uploaded {
@@ -780,7 +912,10 @@ function confirmDelete() {
 @media (max-width: 767.98px) {
     .doc-page-header { padding: 1.25rem 1.25rem 0; }
     .doc-body { padding: 1.25rem 0 3rem; }
-    .doc-tabs { padding: 0 1.25rem; }
+    .doc-toolbar { padding: 0 1.25rem 1rem; }
+    .doc-toolbar__search,
+    .doc-toolbar__select { width: 100%; }
+    .doc-toolbar__count { margin-left: 0; width: 100%; }
     .doc-table :deep(.el-table__header-wrapper th:first-child .cell),
     .doc-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.25rem; }
     .doc-table :deep(.el-table__header-wrapper th:last-child .cell),

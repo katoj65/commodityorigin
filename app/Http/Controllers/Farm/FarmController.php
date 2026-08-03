@@ -4,16 +4,21 @@ namespace App\Http\Controllers\Farm;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ClimateZoneMetadataResource;
+use App\Http\Resources\FarmDocumentResource;
 use App\Http\Resources\FarmResource;
 use App\Http\Resources\HarvestResource;
 use App\Http\Resources\SoilMetadataResource;
+use App\Http\Resources\WeatherForecastResource;
 use App\Models\Farm;
+use App\Models\FarmDocument;
 use App\Models\Farmer;
 use App\Models\Harvest;
 use App\Services\ClimateZoneMetadataService;
+use App\Services\FarmDocumentService;
 use App\Services\FarmService;
 use App\Services\HarvestService;
 use App\Services\SoilMetadataService;
+use App\Services\WeatherForecastService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +34,8 @@ class FarmController extends Controller
         private readonly ClimateZoneMetadataService $climateZones,
         private readonly SoilMetadataService $soils,
         private readonly HarvestService $harvests,
+        private readonly WeatherForecastService $weather,
+        private readonly FarmDocumentService $documents,
     ) {
     }
 
@@ -138,6 +145,9 @@ class FarmController extends Controller
 
         $farm = $this->farms->show($farm);
 
+        $weatherRegion = $this->weather->matchRegionFor($farm->location);
+        $weatherOutlook = $weatherRegion ? $this->weather->monthlyOutlookForRegion($weatherRegion) : collect();
+
         return Inertia::render('Farm/FarmProfile', [
             'farm' => FarmResource::make($farm)->resolve(),
             'canEdit' => Gate::allows('update', $farm),
@@ -147,6 +157,10 @@ class FarmController extends Controller
             'harvests' => HarvestResource::collection($farm->harvests)->resolve(),
             'pickMethodOptions' => $this->harvests->pickMethodOptions(),
             'harvestSeasonOptions' => $this->harvests->harvestSeasonOptions(),
+            'weatherRegion' => $weatherRegion,
+            'weatherOutlook' => WeatherForecastResource::collection($weatherOutlook)->resolve(),
+            'documents' => FarmDocumentResource::collection($farm->documents)->resolve(),
+            'documentTypeOptions' => $this->harvests->documentTypeOptions(),
         ]);
     }
 
@@ -275,6 +289,40 @@ class FarmController extends Controller
         $this->harvests->delete($harvest);
 
         return back()->with('success', 'Harvest deleted successfully.');
+    }
+
+    /**
+     * Upload a document against this farm. Creator only.
+     */
+    public function storeDocument(Request $request, Farm $farm): RedirectResponse
+    {
+        Gate::authorize('update', $farm);
+
+        $documentTypeOptions = $this->harvests->documentTypeOptions()->all();
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'document_type' => ['nullable', 'string', 'max:255', Rule::in($documentTypeOptions)],
+            'document' => ['required', 'file', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx', 'max:10240'],
+        ]);
+
+        $this->documents->store($farm, $request->file('document'), $validated, $request->user()->id);
+
+        return back()->with('success', 'Document uploaded successfully.');
+    }
+
+    /**
+     * Delete a document uploaded against this farm. Creator only.
+     */
+    public function destroyDocument(Farm $farm, FarmDocument $document): RedirectResponse
+    {
+        Gate::authorize('update', $farm);
+
+        abort_unless($document->farm_id === $farm->id, 404);
+
+        $this->documents->delete($document);
+
+        return back()->with('success', 'Document deleted successfully.');
     }
 
     /**

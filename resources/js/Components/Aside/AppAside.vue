@@ -228,6 +228,15 @@ const sideSections = computed(() => [
         title: 'Account',
         items: [
             {
+                label: 'Documents',
+                href: route('documentation.index'),
+                active: route().current('documentation.*'),
+                inertia: true,
+                show: true,
+                badge: null,
+                icon: 'document',
+            },
+            {
                 label: 'Wallet',
                 href: route('wallet.index'),
                 active: route().current('wallet.*'),
@@ -403,6 +412,12 @@ const sideSections = computed(() => [
                             <rect x="2" y="7" width="20" height="14" rx="2" />
                             <path d="M2 12h20" />
                             <circle cx="16" cy="16" r="1.25" fill="currentColor" stroke="none" />
+                        </svg>
+                        <svg v-else-if="item.icon === 'document'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V8l-6-5z" />
+                            <path d="M14 3v5h6" />
+                            <path d="M8 13h8" />
+                            <path d="M8 17h5" />
                         </svg>
                         <span class="snav-label">{{ item.label }}</span>
                         <span v-if="item.badge" class="snav-trailing">
