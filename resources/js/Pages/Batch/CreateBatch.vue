@@ -815,7 +815,7 @@ const submit = () => {
 /* ── Base ───────────────────────────────────────────────────────── */
 .cb-page {
     min-height: calc(100vh - 48px);
-    background: #fff;
+    background: var(--surface, #f7f9fb);
     color: #1f2a2a;
     padding-bottom: 60px;
     font-family: 'Manrope', sans-serif;

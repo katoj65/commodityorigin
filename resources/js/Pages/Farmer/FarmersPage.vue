@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, Checked,
     CollectionTag, DataLine, Download,
-    Location, Medal, Opportunity, Promotion,
+    Location, Medal, Money, Opportunity, Promotion,
     ShoppingCart, Star, TrendCharts, UserFilled, Van, View,
     Warning,
 } from '@element-plus/icons-vue';
@@ -154,6 +154,7 @@ const badgeClass = (b) => {
                 <div class="container-fluid px-3 px-lg-4">
                     <div class="d-flex align-items-start justify-content-between gap-3 py-3 flex-wrap">
                         <div>
+                            <div class="fd-kicker">Farmer Workspace</div>
                             <h1 class="fd-title mb-0">Farmers Directory</h1>
                             <p class="fd-subtitle mb-0">Discover verified coffee farmers producing traceable, export-ready coffee</p>
                         </div>
@@ -280,22 +281,23 @@ const badgeClass = (b) => {
                         <table class="table align-middle mb-0 fd-table">
                             <thead>
                                 <tr>
-                                    <th>Farmer</th>
-                                    <th>Region</th>
-                                    <th>Coffee Type</th>
-                                    <th>Farms</th>
-                                    <th>Quality</th>
-                                    <th>Sustainability</th>
-                                    <th>Export</th>
-                                    <th>Lots</th>
+                                    <th><span class="fd-th"><el-icon><UserFilled /></el-icon> Farmer</span></th>
+                                    <th><span class="fd-th"><el-icon><Location /></el-icon> Region</span></th>
+                                    <th><span class="fd-th"><el-icon><CollectionTag /></el-icon> Coffee Type</span></th>
+                                    <th><span class="fd-th"><el-icon><Box /></el-icon> Farms</span></th>
+                                    <th><span class="fd-th"><el-icon><TrendCharts /></el-icon> Quality</span></th>
+                                    <th><span class="fd-th"><el-icon><Checked /></el-icon> Sustainability</span></th>
+                                    <th><span class="fd-th"><el-icon><Van /></el-icon> Export</span></th>
+                                    <th><span class="fd-th"><el-icon><DataLine /></el-icon> Lots</span></th>
                                     <th class="text-end">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="!filteredRows.length">
-                                    <td colspan="9" class="text-center py-5 fd-td-muted">
-                                        <el-icon style="font-size:2rem; display:block; margin-bottom:8px;"><Warning /></el-icon>
-                                        No farmers match your filters.
+                                    <td colspan="9" class="text-center fd-td-muted" style="padding: 2.5rem 1rem;">
+                                        <div class="fd-empty-state__icon" style="margin: 0 auto 10px;"><el-icon :size="20"><Warning /></el-icon></div>
+                                        <div class="fd-empty-state__title" style="margin-bottom: 2px;">No farmers match your filters</div>
+                                        <span style="font-size:.8125rem;">Try adjusting your search or filters.</span>
                                     </td>
                                 </tr>
                                 <tr v-for="farmer in filteredRows" :key="farmer.id" class="fd-table-row">
@@ -360,8 +362,10 @@ const badgeClass = (b) => {
                 <!-- ── 5. Grid View ────────────────────────────────────── -->
                 <div v-if="viewMode === 'grid'" class="mb-3">
                     <div v-if="!filteredRows.length" class="fd-empty-state">
-                        <el-icon><Warning /></el-icon>
-                        <div>No farmers match your filters.</div>
+                        <div class="fd-empty-state__icon"><el-icon :size="22"><Warning /></el-icon></div>
+                        <div class="fd-empty-state__title">No farmers match your filters</div>
+                        <p class="fd-empty-state__text">Try adjusting your search term or filter selections to find the farmers you're looking for.</p>
+                        <button class="btn fd-btn-outline btn-sm" @click="search = ''; districtF = 'All'; coffeeTypeF = 'All'; exportF = 'All'">Reset Filters</button>
                     </div>
                     <div v-else class="row g-3">
                         <div v-for="farmer in filteredRows" :key="farmer.id" class="col-12 col-sm-6 col-lg-4">
@@ -544,12 +548,12 @@ const badgeClass = (b) => {
                                     <table class="table align-middle mb-0 fd-table">
                                         <thead>
                                             <tr>
-                                                <th>Farmer</th>
-                                                <th>Lots</th>
-                                                <th>Coffee Type</th>
-                                                <th>Price Range</th>
-                                                <th>Quality</th>
-                                                <th>Demand</th>
+                                                <th><span class="fd-th"><el-icon><UserFilled /></el-icon> Farmer</span></th>
+                                                <th><span class="fd-th"><el-icon><DataLine /></el-icon> Lots</span></th>
+                                                <th><span class="fd-th"><el-icon><CollectionTag /></el-icon> Coffee Type</span></th>
+                                                <th><span class="fd-th"><el-icon><Money /></el-icon> Price Range</span></th>
+                                                <th><span class="fd-th"><el-icon><TrendCharts /></el-icon> Quality</span></th>
+                                                <th><span class="fd-th"><el-icon><Opportunity /></el-icon> Demand</span></th>
                                                 <th class="text-end">Action</th>
                                             </tr>
                                         </thead>
@@ -727,15 +731,16 @@ const badgeClass = (b) => {
     --surface-mid:    #f1f5f9;
     --surface-high:   #e5e7eb;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface-white);
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .fd-header   { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
-.fd-title    { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; }
-.fd-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); }
+.fd-kicker   { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 4px; line-height: 1.4; }
+.fd-title    { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
+.fd-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); margin-top: 2px; }
 .fd-hbadge   { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
 .fd-hbadge--soft { background: #dcfce7; color: #166534; }
 .fd-hbadge--amber{ background: #fef3c7; color: #92400e; }
@@ -789,6 +794,8 @@ const badgeClass = (b) => {
 .fd-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 .fd-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 .fd-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
+.fd-th { display: inline-flex; align-items: center; gap: 5px; }
+.fd-th :deep(.el-icon) { font-size: 12px; color: #9ca3af; }
 .fd-table tbody td { padding: 9px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
 .fd-table-row { transition: background 0.1s; }
 .fd-table-row:hover { background: var(--surface-low); }
@@ -896,7 +903,10 @@ const badgeClass = (b) => {
 .fd-green-stat__lbl { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,.7); }
 
 /* ── Empty state ───────────────────────────────────────────────────────────── */
-.fd-empty-state { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 20px; color: var(--on-surface-var); font-size: 0.875rem; background: var(--surface-low); border-radius: 12px; border: 1px solid var(--surface-high); }
+.fd-empty-state { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 40px 20px; color: var(--on-surface-var); font-size: 0.875rem; background: var(--surface-low); border-radius: 12px; border: 1px solid var(--surface-high); }
+.fd-empty-state__icon  { width: 48px; height: 48px; border-radius: 50%; background: var(--surface-white); border: 1px solid var(--surface-high); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+.fd-empty-state__title { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
+.fd-empty-state__text  { font-size: 0.8125rem; color: var(--on-surface-var); max-width: 320px; margin: 0 auto 6px; line-height: 1.5; }
 
 /* ── Right rail ────────────────────────────────────────────────────────────── */
 .fd-rail { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 60px; }

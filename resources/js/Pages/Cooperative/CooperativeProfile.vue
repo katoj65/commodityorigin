@@ -4,9 +4,9 @@ import { Head, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, Checked, Clock,
-    CollectionTag, DataLine, Download, Location,
-    Medal, Opportunity, Promotion, ShoppingCart,
-    Star, TrendCharts, Van, View, Warning,
+    Coffee, CollectionTag, DataLine, Download, Location,
+    Medal, Opportunity, PriceTag, Promotion, ShoppingCart,
+    Star, TrendCharts, User, Van, View, Warning,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -275,12 +275,12 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                     <table class="table align-middle mb-0 co-table">
                                         <thead>
                                             <tr>
-                                                <th>Farmer</th>
-                                                <th>Region</th>
-                                                <th>Coffee Type</th>
-                                                <th>Farm Size</th>
-                                                <th>Quality Score</th>
-                                                <th>Production</th>
+                                                <th><span class="co-th"><el-icon><User /></el-icon> Farmer</span></th>
+                                                <th><span class="co-th"><el-icon><Location /></el-icon> Region</span></th>
+                                                <th><span class="co-th"><el-icon><Coffee /></el-icon> Coffee Type</span></th>
+                                                <th><span class="co-th"><el-icon><Box /></el-icon> Farm Size</span></th>
+                                                <th><span class="co-th"><el-icon><Medal /></el-icon> Quality Score</span></th>
+                                                <th><span class="co-th"><el-icon><TrendCharts /></el-icon> Production</span></th>
                                                 <th class="text-end">Action</th>
                                             </tr>
                                         </thead>
@@ -375,14 +375,14 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                     <table class="table align-middle mb-0 co-table">
                                         <thead>
                                             <tr>
-                                                <th>Lot ID</th>
-                                                <th>Coffee Type</th>
-                                                <th>Origin</th>
-                                                <th>Quality</th>
-                                                <th>Quantity</th>
-                                                <th>Price</th>
-                                                <th>Demand</th>
-                                                <th>Status</th>
+                                                <th><span class="co-th"><el-icon><CollectionTag /></el-icon> Lot ID</span></th>
+                                                <th><span class="co-th"><el-icon><Coffee /></el-icon> Coffee Type</span></th>
+                                                <th><span class="co-th"><el-icon><Location /></el-icon> Origin</span></th>
+                                                <th><span class="co-th"><el-icon><Medal /></el-icon> Quality</span></th>
+                                                <th><span class="co-th"><el-icon><Box /></el-icon> Quantity</span></th>
+                                                <th><span class="co-th"><el-icon><PriceTag /></el-icon> Price</span></th>
+                                                <th><span class="co-th"><el-icon><TrendCharts /></el-icon> Demand</span></th>
+                                                <th><span class="co-th"><el-icon><Checked /></el-icon> Status</span></th>
                                                 <th class="text-end">Action</th>
                                             </tr>
                                         </thead>
@@ -427,7 +427,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                             <!-- 9. Export & Market Readiness -->
                             <div class="co-section">
                                 <div class="co-section-head">
-                                    <el-icon class="co-section-icon"><Van /></el-icon>
+                                    <el-icon class="co-section-icon"><DataLine /></el-icon>
                                     Export &amp; Market Readiness
                                 </div>
                                 <div class="co-section-body">
@@ -484,7 +484,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                             <!-- Contact Info -->
                             <div class="co-section">
                                 <div class="co-section-head">
-                                    <el-icon class="co-section-icon"><Star /></el-icon>
+                                    <el-icon class="co-section-icon"><User /></el-icon>
                                     Institutional Contact
                                 </div>
                                 <div class="co-section-body">
@@ -669,7 +669,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     --on-surface-var: #6b7280;
     --surface-low:    #f8fafc;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: #ffffff;
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
@@ -681,7 +681,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-header   { background: #fff; border-bottom: 1px solid var(--border); }
 .co-flash    { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px 12px; color: #166534; font-size: .8125rem; font-weight: 600; margin-top: 8px; }
 .co-kicker   { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
-.co-title    { font-size: 1.125rem; font-weight: 800; letter-spacing: -.02em; margin-top: 6px !important; margin-bottom: 6px !important; }
+.co-title    { font-size: 1.1875rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; margin-top: 6px !important; margin-bottom: 6px !important; }
 .co-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
 .co-badge    { display: inline-flex; align-items: center; border-radius: 999px; font-size: .6875rem; font-weight: 700; padding: 3px 10px; }
 .co-badge--green { background: rgba(0,69,50,.08); color: var(--green); }
@@ -697,7 +697,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-act-btn { font-size: .75rem !important; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 
 /* ── Hero section ──────────────────────────────────────────────────────────── */
-.co-section { background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+.co-section { background: #fff; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,.03), 0 12px 28px -18px rgba(15,23,42,.14); }
 .co-section-head {
     display: flex;
     align-items: center;
@@ -705,14 +705,15 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     padding: 10px 16px;
     background: var(--surface-low);
     border-bottom: 1px solid var(--border);
-    border-radius: 7px 7px 0 0;
+    border-radius: 13px 13px 0 0;
     font-size: .8125rem;
     font-weight: 700;
     color: var(--on-surface);
+    letter-spacing: -.005em;
 }
 .co-section-head--borderless { display: flex; align-items: center; gap: 8px; font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
-.co-section-icon { width: 20px; height: 20px; border-radius: 4px; background: rgba(0,69,50,.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
-.co-section-stat { font-size: .6875rem; font-weight: 700; background: var(--border); color: var(--on-surface-var); border-radius: 999px; padding: 2px 8px; }
+.co-section-icon { width: 22px; height: 22px; border-radius: 6px; background: rgba(0,69,50,.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.co-section-stat { font-size: .6875rem; font-weight: 700; background: var(--border); color: var(--on-surface-var); border-radius: 999px; padding: 2px 8px; font-variant-numeric: tabular-nums; }
 .co-section-stat--green { background: #dcfce7; color: #166534; }
 .co-section-body { padding: 1rem; }
 
@@ -727,7 +728,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-kpi-row  { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: .8125rem; }
 .co-kpi-row:last-child { border-bottom: none; }
 .co-kpi-row span { color: var(--on-surface-var); }
-.co-kpi-row strong { color: var(--on-surface); font-weight: 700; }
+.co-kpi-row strong { color: var(--on-surface); font-weight: 700; font-variant-numeric: tabular-nums; }
 .co-tag { display: inline-flex; background: rgba(0,69,50,.07); color: var(--green); border-radius: 999px; font-size: .6875rem; font-weight: 700; padding: 2px 8px; }
 .co-tag--blue { background: #dbeafe; color: #1e40af; }
 .co-tag--amber{ background: #fef3c7; color: #92400e; }
@@ -744,15 +745,17 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .co-info-cell { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
 .co-info-cell span   { font-size: .5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); display: block; margin-bottom: 2px; }
-.co-info-cell strong { font-size: .8125rem; font-weight: 700; color: var(--on-surface); display: block; }
+.co-info-cell strong { font-size: .8125rem; font-weight: 700; color: var(--on-surface); display: block; font-variant-numeric: tabular-nums; }
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .co-table thead th { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.co-table tbody td { padding: 9px 12px; font-size: .8125rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.co-table tbody td { padding: 9px 12px; font-size: .8125rem; border-bottom: 1px solid var(--border); vertical-align: middle; font-variant-numeric: tabular-nums; }
 .co-table-row:last-child td { border-bottom: none; }
 .co-table-row:hover { background: var(--surface-low); }
+.co-th { display: inline-flex; align-items: center; gap: 5px; }
+.co-th :deep(.el-icon) { font-size: 13px; color: #9ca3af; }
 .co-farmer-dot { width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface-low); color: var(--on-surface-var); font-weight: 700; font-size: .75rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.co-score-pill { display: inline-flex; border-radius: 999px; font-size: .6875rem; font-weight: 800; padding: 2px 8px; }
+.co-score-pill { display: inline-flex; border-radius: 999px; font-size: .6875rem; font-weight: 800; padding: 2px 8px; font-variant-numeric: tabular-nums; }
 .co-score-pill--high { background: #dcfce7; color: #166534; }
 .co-score-pill--mid  { background: #fef3c7; color: #92400e; }
 
@@ -768,7 +771,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-trace-dot { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; background: #fff; }
 .co-trace-dot--done { border-color: #16a34a; background: #f0fdf4; color: #16a34a; }
 .co-trace-dot--todo { color: var(--on-surface-var); }
-.co-trace-val   { font-size: .875rem; font-weight: 800; color: var(--on-surface); }
+.co-trace-val   { font-size: .875rem; font-weight: 800; color: var(--on-surface); font-variant-numeric: tabular-nums; }
 .co-trace-label { font-size: .6875rem; font-weight: 700; color: var(--on-surface); }
 .co-trace-status{ font-size: .625rem; }
 .co-trace-line  { position: absolute; top: 17px; left: 50%; width: 100%; height: 1px; background: var(--border); z-index: 0; }
@@ -779,7 +782,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-bar-fill  { height: 100%; background: var(--green); border-radius: 999px; transition: width .5s ease; }
 
 /* ── Score circle ──────────────────────────────────────────────────────────── */
-.co-score-circle { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #16a34a; background: #f0fdf4; color: #166534; font-size: 1rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.co-score-circle { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #16a34a; background: #f0fdf4; color: #166534; font-size: 1rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
 /* ── Contact ───────────────────────────────────────────────────────────────── */
 .co-contact-row { display: flex; align-items: flex-start; gap: 8px; font-size: .8125rem; color: var(--on-surface-var); padding: 4px 0; }

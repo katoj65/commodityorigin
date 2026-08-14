@@ -219,7 +219,7 @@ onBeforeUnmount(() => {
                     <li><Link :href="route('market.live')" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Live Market</Link></li>
                     <li><Link :href="route('market.news')" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">News</Link></li>
                     <li><a href="#origins" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Origins</a></li>
-                    <li><a href="#quality" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Quality</a></li>
+                    <li><a href="#how" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Quality</a></li>
                     <li><a href="#traceability" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Traceability</a></li>
                     <li><a href="#subscribe" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Subscribe</a></li>
                 </ul>
@@ -680,7 +680,7 @@ onBeforeUnmount(() => {
                     <ul class="list-none flex flex-col gap-2.5">
                         <li><a href="#market" class="foot-link text-[13px] no-underline">Live market</a></li>
                         <li><a href="#origins" class="foot-link text-[13px] no-underline">Origins</a></li>
-                        <li><a href="#quality" class="foot-link text-[13px] no-underline">Grading</a></li>
+                        <li><a href="#how" class="foot-link text-[13px] no-underline">Grading</a></li>
                         <li><a href="#" class="foot-link text-[13px] no-underline">Price history</a></li>
                         <li><a href="#" class="foot-link text-[13px] no-underline">API access</a></li>
                     </ul>

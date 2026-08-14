@@ -1,223 +1,157 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { router } from '@inertiajs/vue3';
-import { Delete, Document, Van } from '@element-plus/icons-vue';
+import { Link, router } from '@inertiajs/vue3';
+import { ElMessage } from 'element-plus';
+import { Delete, Minus, Plus, ShoppingCart, ShoppingTrolley, WarningFilled } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
-const cartItems = ref([
-    {
-        id: 'LOT-ET-001',
-        name: 'Ethiopia Yirgacheffe G1',
-        producer: 'Aramo Washing Station',
-        profile: 'Special Reserve',
-        score: '91.5',
-        variety: 'Heirloom',
-        process: 'Washed',
-        unitWeight: '60kg Bag',
-        quantity: 12,
-        pricePerLb: 4.85,
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVNPRKcnvtgsayf1-HlE1xA92LWW1C56Io3VMreh4aujnZTgd7RVNEZOyEqFGcffC6O3JdFFEczJbLDdWYhY3SPZ_97Ep-mSdEA6EpSHOYxQ4YC-9rWllkkDGEgrkRhX8fdY9yD34FR8UBs42K4RgVHEi6OXDt4QvP-hJgG1uWAZlyFMQ7HCYg9NcS7oQW5HysDvCK3FiXBDRpfkupmdW5tIy7o5GV8ZL8feaXnYtU6ZpDEAJvS_XKRffdezzJJCSUQeF2AHlDDapn',
-    },
-    {
-        id: 'LOT-CO-014',
-        name: 'Colombia Huila Pitalito',
-        producer: 'El Diviso Estate',
-        profile: 'Sidra Variety',
-        score: '89.2',
-        variety: 'Sidra',
-        process: 'Anaerobic',
-        unitWeight: '60kg Bag',
-        quantity: 8,
-        pricePerLb: 5.2,
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDv_vhmIorxO5TXHfY4x3mvxWbuX9RQy83ltILS7_Znxq5fvxI-Af9qAPgN5wgaIFsW3SpILtw5fP4_4RHBnrAN1hoGJ6K_oJPDsrhpRlJPQrHsyJqVXi7bRF1VJONSOLAiG2hff_cRXPZx30imH9z7qDIOPwif1o6pzkCvQVLbJMvIcJO6YoRd1gm0kWJd-m8xEmRAUHSdv-XePrjlP-jNVr3X7AggNZkF5_rFaGloIp9BhynvWLg4uk1mj71GfuBx5Hmi1FzxFK-_',
-    },
-]);
+const props = defineProps({
+    items: { type: Array, default: () => [] },
+});
 
 const formatCurrency = (value) =>
-    new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-    }).format(value);
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(value || 0);
 
-const subtotal = computed(() =>
-    cartItems.value.reduce((sum, item) => sum + item.quantity * item.pricePerLb * 154, 0),
-);
-const logistics = computed(() => (cartItems.value.length ? 642 : 0));
-const complianceFees = computed(() => 112.5);
-const total = computed(() => subtotal.value + logistics.value + complianceFees.value);
-const selectedVolume = computed(() => cartItems.value.reduce((sum, item) => sum + item.quantity * 60, 0));
-const totalBags = computed(() => cartItems.value.reduce((sum, item) => sum + item.quantity, 0));
+const itemCount = computed(() => props.items.length);
+const totalKg = computed(() => props.items.reduce((sum, item) => sum + item.quantity, 0));
+const subtotal = computed(() => props.items.reduce((sum, item) => sum + item.line_total, 0));
 
-const increaseQuantity = (id) => {
-    const item = cartItems.value.find((entry) => entry.id === id);
+function qualityTone(score) {
+    if (score === null || score === undefined) return 'muted';
+    if (score >= 85) return 'green';
+    if (score >= 70) return 'amber';
+    return 'red';
+}
 
-    if (item) {
-        item.quantity += 1;
-    }
-};
+/* ── Row actions — each row tracks its own in-flight state ─────────────── */
+const pendingId = ref(null);
 
-const decreaseQuantity = (id) => {
-    const item = cartItems.value.find((entry) => entry.id === id);
+function updateQuantity(item, quantity) {
+    const next = Math.max(1, Math.min(item.available_quantity || quantity, Math.floor(quantity)));
+    if (next === item.quantity || pendingId.value) return;
 
-    if (item && item.quantity > 1) {
-        item.quantity -= 1;
-    }
-};
+    pendingId.value = item.id;
+    router.patch(route('checkout.items.update', item.id), { quantity: next }, {
+        preserveScroll: true,
+        onFinish: () => { pendingId.value = null; },
+        onError: () => ElMessage.error('Could not update quantity.'),
+    });
+}
 
-const removeItem = (id) => {
-    cartItems.value = cartItems.value.filter((item) => item.id !== id);
-};
+function removeItem(item) {
+    if (pendingId.value) return;
+
+    pendingId.value = item.id;
+    router.delete(route('checkout.items.destroy', item.id), {
+        preserveScroll: true,
+        onSuccess: () => ElMessage.success(`Removed ${item.name || item.lot_code} from your cart.`),
+        onFinish: () => { pendingId.value = null; },
+        onError: () => ElMessage.error('Could not remove this item.'),
+    });
+}
 </script>
 
 <template>
-    <AppLayout title="Acquisition Basket" full-width>
-        <div class="basket-page">
-            <div class="basket-shell">
-                <section class="basket-header">
+    <AppLayout title="Cart" full-width flush :show-banner="false">
+        <div class="cart-page">
+            <div class="cart-body">
+                <div class="cart-header">
                     <div>
-                        <div class="basket-kicker">Exchange Pipeline</div>
-                        <h1 class="basket-title">Acquisition Basket</h1>
-                        <p class="basket-copy">
-                            Review institutional coffee lots currently staged for trade execution. All pricing reflects
-                            direct-trade transparency standards.
+                        <div class="cart-kicker"><el-icon><ShoppingCart /></el-icon> Checkout</div>
+                        <h1 class="cart-title">Your Cart</h1>
+                        <p class="cart-subtitle" v-if="itemCount">
+                            {{ itemCount }} {{ itemCount === 1 ? 'lot' : 'lots' }} · {{ totalKg.toLocaleString() }} kg total
                         </p>
                     </div>
-                </section>
+                    <Link :href="route('market.index')" class="cart-btn cart-btn--outline">Continue Shopping</Link>
+                </div>
 
-                <div class="basket-grid">
-                    <section class="basket-items-column">
-                        <article
-                            v-for="item in cartItems"
-                            :key="item.id"
-                            class="basket-item-card"
-                        >
-                            <div class="basket-item-media">
-                                <img :src="item.image" :alt="item.name" class="basket-item-image" />
+                <!-- ── Empty state ──────────────────────────────────────── -->
+                <div v-if="!itemCount" class="cart-empty">
+                    <div class="cart-empty__icon"><el-icon><ShoppingTrolley /></el-icon></div>
+                    <h2 class="cart-empty__title">Your cart is empty</h2>
+                    <p class="cart-empty__text">Browse the marketplace and add lots you're interested in — they'll show up here.</p>
+                    <Link :href="route('market.index')" class="cart-btn cart-btn--solid">Browse Listings</Link>
+                </div>
+
+                <!-- ── Cart ─────────────────────────────────────────────── -->
+                <div v-else class="cart-grid">
+                    <section class="cart-items">
+                        <article v-for="item in items" :key="item.id" class="cart-item" :class="{ 'cart-item--pending': pendingId === item.id }">
+                            <div class="cart-item__media">
+                                <img v-if="item.image" :src="`/storage/${item.image}`" :alt="item.name">
+                                <svg v-else class="cart-item__media-icon" viewBox="0 0 24 24">
+                                    <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
+                                    <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
+                                </svg>
                             </div>
 
-                            <div class="basket-item-content">
-                                <div class="basket-item-top">
-                                    <div class="basket-item-main">
-                                        <h2 class="basket-item-title">{{ item.name }}</h2>
-                                        <p class="basket-item-subtitle">
-                                            {{ item.producer }} <span>•</span> {{ item.profile }}
-                                        </p>
+                            <div class="cart-item__body">
+                                <div class="cart-item__top">
+                                    <div>
+                                        <Link :href="route('market.show', item.market_id)" class="cart-item__title">{{ item.name || item.lot_code }}</Link>
+                                        <p class="cart-item__subtitle">{{ item.origin || 'Origin unknown' }} <span>·</span> {{ item.process || '—' }}</p>
                                     </div>
-
-                                    <div class="basket-score-card">
-                                        <div class="basket-score-card__label">SCAA Score</div>
-                                        <div class="basket-score-card__value">{{ item.score }}</div>
-                                    </div>
+                                    <span v-if="item.quality_score !== null" class="cart-badge" :class="`cart-badge--${qualityTone(item.quality_score)}`">
+                                        {{ item.quality_score.toFixed(1) }}
+                                    </span>
                                 </div>
 
-                                <div class="basket-spec-grid">
-                                    <div class="basket-spec">
-                                        <div class="basket-spec__label">Variety</div>
-                                        <div class="basket-spec__value">{{ item.variety }}</div>
-                                    </div>
-                                    <div class="basket-spec">
-                                        <div class="basket-spec__label">Process</div>
-                                        <div class="basket-spec__value">{{ item.process }}</div>
-                                    </div>
-                                    <div class="basket-spec">
-                                        <div class="basket-spec__label">Unit weight</div>
-                                        <div class="basket-spec__value">{{ item.unitWeight }}</div>
-                                    </div>
-                                    <div class="basket-spec basket-spec--quantity">
-                                        <div class="basket-spec__label">Quantity</div>
-                                        <div class="basket-quantity-picker">
-                                            <button type="button" @click="decreaseQuantity(item.id)">-</button>
-                                            <span>{{ item.quantity }}</span>
-                                            <button type="button" @click="increaseQuantity(item.id)">+</button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <p v-if="item.current_price !== item.unit_price" class="cart-item__price-note">
+                                    <el-icon><WarningFilled /></el-icon>
+                                    Price is now {{ formatCurrency(item.current_price) }}/kg — you locked in {{ formatCurrency(item.unit_price) }}/kg when added.
+                                </p>
 
-                                <div class="basket-item-footer">
-                                    <div class="basket-item-actions">
-                                        <el-button class="basket-secondary-action" @click="removeItem(item.id)">
-                                            <el-icon><Delete /></el-icon>
-                                            <span>Remove</span>
-                                        </el-button>
-                                        <button type="button" class="basket-link-action">Save For Later</button>
+                                <div class="cart-item__footer">
+                                    <div class="cart-qty" :class="{ 'cart-qty--disabled': pendingId === item.id }">
+                                        <button type="button" class="cart-qty__btn" :disabled="pendingId === item.id || item.quantity <= 1" @click="updateQuantity(item, item.quantity - 1)">
+                                            <el-icon><Minus /></el-icon>
+                                        </button>
+                                        <span class="cart-qty__value">{{ item.quantity }} kg</span>
+                                        <button type="button" class="cart-qty__btn" :disabled="pendingId === item.id || item.quantity >= item.available_quantity" @click="updateQuantity(item, item.quantity + 1)">
+                                            <el-icon><Plus /></el-icon>
+                                        </button>
                                     </div>
 
-                                    <div class="basket-price-block">
-                                        <div class="basket-price-block__label">Price per lb</div>
-                                        <div class="basket-price-block__value">${{ item.pricePerLb.toFixed(2) }}</div>
+                                    <div class="cart-item__price">
+                                        <span class="cart-item__price-unit">{{ formatCurrency(item.unit_price) }} / kg</span>
+                                        <span class="cart-item__price-total">{{ formatCurrency(item.line_total) }}</span>
                                     </div>
                                 </div>
                             </div>
+
+                            <button type="button" class="cart-item__remove" :disabled="pendingId === item.id" title="Remove from cart" @click="removeItem(item)">
+                                <el-icon><Delete /></el-icon>
+                            </button>
                         </article>
-
-                        <div class="basket-return-row">
-                            <button type="button" class="basket-return-link">← Return to Marketplace</button>
-                            <div class="basket-volume-meta">
-                                <span>Selected Volume</span>
-                                <strong>{{ selectedVolume.toLocaleString() }}kg ({{ totalBags }} Bags)</strong>
-                            </div>
-                        </div>
                     </section>
 
-                    <aside class="basket-summary-column">
-                        <section class="basket-summary-card">
-                            <div class="basket-summary-title">
-                                <span>Order Summary</span>
-                                <span class="basket-summary-badge"></span>
+                    <aside class="cart-summary">
+                        <div class="cart-summary__card">
+                            <h2 class="cart-summary__title">Order Summary</h2>
+
+                            <div class="cart-summary__row">
+                                <span>Subtotal ({{ itemCount }} {{ itemCount === 1 ? 'lot' : 'lots' }})</span>
+                                <span>{{ formatCurrency(subtotal) }}</span>
+                            </div>
+                            <div class="cart-summary__row">
+                                <span>Total weight</span>
+                                <span>{{ totalKg.toLocaleString() }} kg</span>
                             </div>
 
-                            <div class="basket-summary-rows">
-                                <div class="basket-summary-row">
-                                    <span>Gross Commodity Total</span>
-                                    <strong>{{ formatCurrency(subtotal) }}</strong>
-                                </div>
-                                <div class="basket-summary-row">
-                                    <span>Logistics &amp; Insurance (Est.)</span>
-                                    <strong>{{ formatCurrency(logistics) }}</strong>
-                                </div>
-                                <div class="basket-summary-row">
-                                    <span>Compliance Fees &amp; Tax</span>
-                                    <strong>{{ formatCurrency(complianceFees) }}</strong>
-                                </div>
+                            <div class="cart-summary__divider" />
+
+                            <div class="cart-summary__total">
+                                <span>Total</span>
+                                <span>{{ formatCurrency(subtotal) }}</span>
                             </div>
 
-                            <div class="basket-total-block">
-                                <div class="basket-total-block__label">Estimated Total</div>
-                                <div class="basket-total-block__value">{{ formatCurrency(total) }}</div>
-                                <div class="basket-total-block__currency">USD</div>
-                            </div>
+                            <Link :href="route('checkout.confirmation')" class="cart-btn cart-btn--solid cart-summary__checkout">
+                                Proceed to Checkout
+                            </Link>
 
-                            <el-button class="basket-finalize-button" @click="router.visit(route('checkout.confirmation'))">
-                                Finalize Order
-                                <span class="basket-finalize-arrow">→</span>
-                            </el-button>
-
-                            <p class="basket-summary-note">
-                                By finalizing, you agree to the institutional trade protocols and standard shipping terms
-                                defined in the Master Service Agreement.
-                            </p>
-                        </section>
-
-                        <section class="basket-side-card">
-                            <div class="basket-side-card__title">
-                                <el-icon><Van /></el-icon>
-                                <span>Shipping Estimate</span>
-                            </div>
-                            <p class="basket-side-card__copy">
-                                Standard ocean freight ex-works. Estimated departure window: 7-10 business days.
-                            </p>
-                        </section>
-
-                        <section class="basket-side-card">
-                            <div class="basket-side-card__title">
-                                <el-icon><Document /></el-icon>
-                                <span>Line of Credit</span>
-                            </div>
-                            <p class="basket-side-card__copy">
-                                Tier 1 credit status active. Net-30 terms applied to this transaction.
-                            </p>
-                        </section>
+                            <p class="cart-summary__note">Shipping and any applicable fees are arranged after checkout.</p>
+                        </div>
                     </aside>
                 </div>
             </div>
@@ -226,469 +160,104 @@ const removeItem = (id) => {
 </template>
 
 <style scoped>
-.basket-page {
-    background: #fff;
+.cart-page {
+    --green: #004532;
+    --green-dark: #002e20;
+    --gold: #c8862a;
+    --border: #e5e7eb;
+    --on-surface: #111827;
+    --on-surface-var: #6b7280;
+    --surface-low: #f8fafc;
+    font-family: 'Manrope', system-ui, sans-serif;
+    background: var(--surface, #f7f9fb);
+    color: var(--on-surface);
+    min-height: 100%;
 }
 
-.basket-shell {
-    margin: 0 auto;
-    max-width: 1320px;
-    padding: 10px 10px 30px;
+.cart-body { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.cart-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.75rem; }
+.cart-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 4px; }
+.cart-title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
+.cart-subtitle { font-size: .8125rem; color: var(--on-surface-var); margin: 4px 0 0; }
+
+.cart-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 20px; font-size: .8125rem; font-weight: 700; letter-spacing: .01em; text-decoration: none; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: background .15s ease, color .15s ease, transform .12s ease; }
+.cart-btn--outline { color: var(--green); background: #fff; border: 1px solid var(--green); }
+.cart-btn--outline:hover { background: #f0f5f3; }
+.cart-btn--solid { color: #fff; background: var(--green); border: 1px solid var(--green); }
+.cart-btn--solid:hover { background: var(--green-dark); transform: translateY(-1px); }
+
+/* ── Empty state ─────────────────────────────────────────────────────── */
+.cart-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 4.5rem 1.5rem; border: 1px dashed var(--border); border-radius: 14px; }
+.cart-empty__icon { width: 52px; height: 52px; border-radius: 50%; background: var(--surface-low); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--on-surface-var); margin-bottom: 1rem; }
+.cart-empty__title { font-size: 1.0625rem; font-weight: 800; margin: 0 0 6px; }
+.cart-empty__text { font-size: .8125rem; color: var(--on-surface-var); margin: 0 0 1.5rem; max-width: 340px; }
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.cart-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 1.5rem; align-items: start; }
+
+/* ── Cart items ──────────────────────────────────────────────────────── */
+.cart-items { display: flex; flex-direction: column; gap: 12px; }
+.cart-item { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 14px; align-items: stretch; border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: #fff; transition: opacity .15s ease; }
+.cart-item--pending { opacity: .6; }
+
+.cart-item__media { width: 96px; height: 96px; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f1e6d8; border: 1px solid #e6d5bf; flex-shrink: 0; }
+.cart-item__media img { width: 100%; height: 100%; object-fit: cover; }
+.cart-item__media-icon { width: 40px; height: 40px; }
+
+.cart-item__body { min-width: 0; display: flex; flex-direction: column; }
+.cart-item__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.cart-item__title { font-size: .9375rem; font-weight: 800; color: var(--on-surface); text-decoration: none; letter-spacing: -.01em; }
+.cart-item__title:hover { color: var(--green); }
+.cart-item__subtitle { font-size: .75rem; color: var(--on-surface-var); margin: 4px 0 0; }
+.cart-item__subtitle span { margin: 0 4px; }
+
+.cart-badge { flex-shrink: 0; display: inline-flex; align-items: center; border-radius: 999px; font-size: .6875rem; font-weight: 700; padding: 3px 9px; }
+.cart-badge--green { background: #ecfdf5; color: #059669; }
+.cart-badge--amber { background: #fffbeb; color: #d97706; }
+.cart-badge--red { background: #fef2f2; color: #dc2626; }
+.cart-badge--muted { background: #f5f5f4; color: #78716c; }
+
+.cart-item__price-note { display: flex; align-items: center; gap: 5px; font-size: .6875rem; color: #b45309; background: #fffbeb; border-radius: 6px; padding: 5px 8px; margin: 8px 0 0; width: fit-content; }
+.cart-item__price-note :deep(.el-icon) { font-size: 12px; flex-shrink: 0; }
+
+.cart-item__footer { margin-top: auto; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+.cart-qty { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: 8px; padding: 4px 6px; }
+.cart-qty--disabled { opacity: .7; }
+.cart-qty__btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; border: none; background: var(--surface-low); color: var(--on-surface); cursor: pointer; transition: background .12s ease; }
+.cart-qty__btn:hover:not(:disabled) { background: #eef2f1; }
+.cart-qty__btn:disabled { opacity: .4; cursor: default; }
+.cart-qty__value { min-width: 52px; text-align: center; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 700; font-size: .8125rem; }
+
+.cart-item__price { text-align: right; display: flex; flex-direction: column; }
+.cart-item__price-unit { font-size: .6875rem; color: var(--on-surface-var); }
+.cart-item__price-total { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 1.0625rem; font-weight: 800; color: var(--green); }
+
+.cart-item__remove { align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; border: none; background: transparent; color: var(--on-surface-var); cursor: pointer; transition: background .12s ease, color .12s ease; }
+.cart-item__remove:hover:not(:disabled) { background: #fef2f2; color: #dc2626; }
+.cart-item__remove:disabled { opacity: .4; cursor: default; }
+
+/* ── Summary ─────────────────────────────────────────────────────────── */
+.cart-summary__card { border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; position: sticky; top: 5.5rem; background: #fff; box-shadow: 0 1px 2px rgba(17, 24, 39, .04), 0 12px 28px -16px rgba(17, 24, 39, .16); }
+.cart-summary__title { font-size: .9375rem; font-weight: 800; margin: 0 0 1rem; }
+.cart-summary__row { display: flex; align-items: center; justify-content: space-between; font-size: .8125rem; color: var(--on-surface-var); padding: 5px 0; font-variant-numeric: tabular-nums; }
+.cart-summary__divider { border-top: 1px solid var(--border); margin: 12px 0; }
+.cart-summary__total { display: flex; align-items: center; justify-content: space-between; font-size: 1.0625rem; font-weight: 800; color: var(--on-surface); }
+.cart-summary__total span:last-child { font-family: 'IBM Plex Mono', ui-monospace, monospace; color: var(--green); font-size: 1.25rem; }
+.cart-summary__checkout { width: 100%; margin-top: 1.25rem; }
+.cart-summary__note { font-size: .6875rem; color: var(--on-surface-var); text-align: center; margin: 10px 0 0; }
+
+@media (max-width: 991.98px) {
+    .cart-grid { grid-template-columns: 1fr; }
+    .cart-summary__card { position: static; }
 }
 
-.basket-header {
-    margin-bottom: 18px;
-}
-
-.basket-kicker {
-    color: #c28a3d;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-}
-
-.basket-title {
-    color: #111827;
-    font-size: clamp(1.6rem, 2vw, 2.35rem);
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1;
-    margin: 0 0 10px;
-}
-
-.basket-copy {
-    color: #6b7280;
-    font-size: 14px;
-    line-height: 1.65;
-    margin: 0;
-    max-width: 640px;
-}
-
-.basket-grid {
-    display: grid;
-    gap: 18px;
-    grid-template-columns: minmax(0, 1fr);
-}
-
-.basket-items-column {
-    min-width: 0;
-}
-
-.basket-item-card {
-    background: #fff;
-    border: 1px solid #e9eef3;
-    border-radius: 16px;
-    display: grid;
-    gap: 16px;
-    grid-template-columns: 120px minmax(0, 1fr);
-    margin-bottom: 16px;
-    padding: 14px;
-}
-
-.basket-item-media {
-    overflow: hidden;
-    border-radius: 12px;
-    background: #f8fafc;
-    border: 1px solid #edf2f7;
-    height: 154px;
-}
-
-.basket-item-image {
-    height: 100%;
-    object-fit: cover;
-    width: 100%;
-}
-
-.basket-item-content {
-    min-width: 0;
-}
-
-.basket-item-top {
-    display: grid;
-    gap: 12px;
-    grid-template-columns: minmax(0, 1fr);
-    margin-bottom: 14px;
-}
-
-.basket-item-title {
-    color: #1f2937;
-    font-size: 1.12rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-    margin: 0 0 8px;
-}
-
-.basket-item-subtitle {
-    color: #6b7280;
-    font-size: 14px;
-    line-height: 1.55;
-    margin: 0;
-}
-
-.basket-item-subtitle span {
-    margin: 0 5px;
-}
-
-.basket-score-card {
-    align-items: center;
-    background: #bdf3d4;
-    border-radius: 10px;
-    display: inline-flex;
-    gap: 10px;
-    justify-self: start;
-    padding: 9px 12px;
-}
-
-.basket-score-card__label {
-    color: #0f6b4c;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.basket-score-card__value {
-    color: #0f6b4c;
-    font-size: 1.15rem;
-    font-weight: 800;
-    line-height: 1;
-}
-
-.basket-spec-grid {
-    display: grid;
-    gap: 14px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-bottom: 16px;
-}
-
-.basket-spec__label {
-    color: #94a3b8;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-}
-
-.basket-spec__value {
-    color: #374151;
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.basket-quantity-picker {
-    align-items: center;
-    display: inline-flex;
-    gap: 10px;
-}
-
-.basket-quantity-picker button {
-    background: transparent;
-    border: 0;
-    color: #64748b;
-    font-size: 18px;
-    height: 24px;
-    line-height: 1;
-    padding: 0;
-    width: 18px;
-}
-
-.basket-quantity-picker span {
-    color: #1f2937;
-    font-size: 14px;
-    font-weight: 800;
-    min-width: 16px;
-    text-align: center;
-}
-
-.basket-item-footer {
-    align-items: end;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    justify-content: space-between;
-}
-
-.basket-item-actions {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-:deep(.basket-secondary-action) {
-    --el-button-bg-color: #fff;
-    --el-button-border-color: transparent;
-    --el-button-text-color: #94a3b8;
-    --el-button-hover-bg-color: #f8fafc;
-    --el-button-hover-border-color: transparent;
-    --el-button-hover-text-color: #64748b;
-    --el-button-active-bg-color: #f8fafc;
-    --el-button-active-border-color: transparent;
-    --el-button-active-text-color: #64748b;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    height: 28px;
-    letter-spacing: 0.08em;
-    padding: 0 2px;
-    text-transform: uppercase;
-}
-
-.basket-link-action {
-    background: transparent;
-    border: 0;
-    color: #94a3b8;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    padding: 0;
-    text-transform: uppercase;
-}
-
-.basket-price-block {
-    text-align: right;
-}
-
-.basket-price-block__label {
-    color: #94a3b8;
-    font-size: 10px;
-    margin-bottom: 4px;
-}
-
-.basket-price-block__value {
-    color: #0f6b4c;
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1;
-}
-
-.basket-summary-column {
-    display: grid;
-    gap: 14px;
-}
-
-.basket-summary-card {
-    background: #f8fafc;
-    border: 1px solid #e9eef3;
-    border-radius: 16px;
-    padding: 18px;
-}
-
-.basket-summary-title {
-    align-items: center;
-    color: #1f2937;
-    display: flex;
-    font-size: 1.35rem;
-    font-weight: 800;
-    justify-content: space-between;
-    letter-spacing: -0.03em;
-    margin-bottom: 18px;
-}
-
-.basket-summary-badge {
-    background: #0f6b4c;
-    border-radius: 999px;
-    display: inline-block;
-    height: 10px;
-    width: 10px;
-}
-
-.basket-summary-rows {
-    display: grid;
-    gap: 14px;
-}
-
-.basket-summary-row {
-    align-items: start;
-    color: #6b7280;
-    display: flex;
-    font-size: 13px;
-    justify-content: space-between;
-    gap: 16px;
-    line-height: 1.5;
-}
-
-.basket-summary-row strong {
-    color: #374151;
-    font-size: 13px;
-    white-space: nowrap;
-}
-
-.basket-total-block {
-    border-top: 1px solid #e5e7eb;
-    margin-top: 16px;
-    padding-top: 16px;
-}
-
-.basket-total-block__label {
-    color: #94a3b8;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-}
-
-.basket-total-block__value {
-    color: #1f2937;
-    font-size: 2.35rem;
-    font-weight: 800;
-    letter-spacing: -0.05em;
-    line-height: 1;
-}
-
-.basket-total-block__currency {
-    color: #94a3b8;
-    font-size: 11px;
-    font-weight: 700;
-    margin-top: 4px;
-    text-transform: uppercase;
-}
-
-:deep(.basket-finalize-button) {
-    --el-button-bg-color: #0f6b4c;
-    --el-button-border-color: #0f6b4c;
-    --el-button-text-color: #ffffff;
-    --el-button-hover-bg-color: #0b5139;
-    --el-button-hover-border-color: #0b5139;
-    --el-button-active-bg-color: #0b5139;
-    --el-button-active-border-color: #0b5139;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 800;
-    height: 46px;
-    margin-top: 18px;
-    text-transform: uppercase;
-    width: 100%;
-}
-
-.basket-finalize-arrow {
-    margin-left: 8px;
-}
-
-.basket-summary-note {
-    color: #9ca3af;
-    font-size: 11px;
-    line-height: 1.6;
-    margin: 14px 0 0;
-}
-
-.basket-side-card {
-    background: #fff;
-    border: 1px solid #e9eef3;
-    border-radius: 14px;
-    padding: 14px 16px;
-}
-
-.basket-side-card__title {
-    align-items: center;
-    color: #374151;
-    display: inline-flex;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    gap: 8px;
-    letter-spacing: 0.1em;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-}
-
-.basket-side-card__copy {
-    color: #6b7280;
-    font-size: 12px;
-    line-height: 1.65;
-    margin: 0;
-}
-
-.basket-return-row {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    justify-content: space-between;
-    padding: 10px 2px 0;
-}
-
-.basket-return-link {
-    background: transparent;
-    border: 0;
-    color: #94a3b8;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 0;
-}
-
-.basket-volume-meta {
-    color: #94a3b8;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-align: right;
-    text-transform: uppercase;
-}
-
-.basket-volume-meta strong {
-    color: #374151;
-    display: block;
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0;
-    margin-top: 4px;
-    text-transform: none;
-}
-
-@media (min-width: 1024px) {
-    .basket-grid {
-        align-items: start;
-        grid-template-columns: minmax(0, 1.55fr) 330px;
-    }
-
-    .basket-summary-column {
-        position: sticky;
-        top: 92px;
-    }
-
-    .basket-item-top {
-        align-items: start;
-        grid-template-columns: minmax(0, 1fr) auto;
-    }
-
-    .basket-spec-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 767px) {
-    .basket-shell {
-        padding: 10px 8px 24px;
-    }
-
-    .basket-item-card {
-        grid-template-columns: 1fr;
-    }
-
-    .basket-item-media {
-        height: 220px;
-    }
-
-    .basket-title {
-        font-size: 1.85rem;
-    }
-
-    .basket-total-block__value {
-        font-size: 2rem;
-    }
+@media (max-width: 640px) {
+    .cart-body { padding: 1.25rem 1.25rem 2.5rem; }
+    .cart-item { grid-template-columns: 72px minmax(0, 1fr); }
+    .cart-item__media { width: 72px; height: 72px; }
+    .cart-item__remove { position: absolute; top: 10px; right: 10px; }
 }
 </style>

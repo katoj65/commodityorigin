@@ -404,7 +404,7 @@ const footerStats = [
     --info-bg:          #dbeafe;
     --inner-pad:        2rem;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface-white);
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { ChatDotRound, Promotion, FullScreen, Edit, Delete, Check, Close } from '@element-plus/icons-vue';
@@ -78,10 +78,20 @@ function confirmDeleteMessage() {
     pendingDelete.value = null;
 }
 
+function handleOpenRequest() {
+    aiChatOpen.value = true;
+    scrollAiChatToBottom();
+}
+
 onMounted(() => {
     if (aiChatOpen.value) {
         scrollAiChatToBottom();
     }
+    window.addEventListener('open-ai-chat', handleOpenRequest);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('open-ai-chat', handleOpenRequest);
 });
 </script>
 
@@ -194,15 +204,15 @@ onMounted(() => {
     width: 52px;
     height: 52px;
     flex-shrink: 0;
-    background: #004532;
-    border-color: #004532;
-    box-shadow: 0 8px 24px rgba(0, 69, 50, 0.35);
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    box-shadow: 0 8px 24px rgba(13, 99, 27, 0.3);
 }
 
 .ai-chat-fab:hover,
 .ai-chat-fab:focus {
-    background: #002e20;
-    border-color: #002e20;
+    background: var(--el-color-primary-dark-2);
+    border-color: var(--el-color-primary-dark-2);
 }
 
 .ai-chat-window {
@@ -214,12 +224,17 @@ onMounted(() => {
     height: min(547px, calc((100vh - 4rem) * 0.855));
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-radius: 18px 18px 0 0;
     overflow: hidden;
-    border: 1px solid #e5e7eb;
+    border: 1px solid transparent;
     border-bottom: none;
-    box-shadow: 0 20px 50px rgba(17, 24, 39, 0.18);
+    background-image: linear-gradient(var(--glass-bg), var(--glass-bg)), linear-gradient(135deg, var(--brand-primary), var(--brand-tertiary));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.14);
 }
 
 .ai-chat-window__head {
@@ -227,7 +242,7 @@ onMounted(() => {
     align-items: center;
     justify-content: space-between;
     padding: 12px 14px;
-    background: #004532;
+    background: var(--brand-primary);
     color: #fff;
     flex-shrink: 0;
 }
@@ -297,7 +312,7 @@ onMounted(() => {
 
 .ai-chat-panel__intro {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin: 0;
 }
 
@@ -344,13 +359,13 @@ onMounted(() => {
 
 .ai-chat-msg--assistant {
     background: none;
-    color: #111827;
+    color: var(--text-main);
     padding: 0;
 }
 
 .ai-chat-msg--user {
-    background: #f4f4f5;
-    color: #111827;
+    background: var(--data-surface);
+    color: var(--text-main);
     padding: 9px 14px;
     border-radius: 18px;
 }
@@ -373,7 +388,7 @@ onMounted(() => {
     border-radius: 5px;
     border: none;
     background: none;
-    color: #9ca3af;
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -381,8 +396,8 @@ onMounted(() => {
 }
 
 .ai-chat-msg-action:hover {
-    background: #f4f4f5;
-    color: #111827;
+    background: var(--data-surface);
+    color: var(--text-main);
 }
 
 .ai-chat-edit-box {
@@ -400,9 +415,9 @@ onMounted(() => {
     width: 22px;
     height: 22px;
     border-radius: 6px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border-subtle);
     background: #fff;
-    color: #6b7280;
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -410,17 +425,17 @@ onMounted(() => {
 }
 
 .ai-chat-mini-btn:hover {
-    background: #f8fafc;
+    background: var(--el-color-primary-light-9);
 }
 
 .ai-chat-mini-btn--primary {
-    background: #004532;
-    border-color: #004532;
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
     color: #fff;
 }
 
 .ai-chat-mini-btn--primary:hover {
-    background: #002e20;
+    background: var(--el-color-primary-dark-2);
 }
 
 .ai-chat-panel__input {
@@ -428,7 +443,7 @@ onMounted(() => {
     gap: 8px;
     align-items: center;
     padding: 10px 14px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border-subtle);
     flex-shrink: 0;
 }
 

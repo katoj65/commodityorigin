@@ -3,8 +3,8 @@ import { computed, ref } from 'vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import {
     ChatDotRound, Check, CircleCheck, Collection,
-    DataLine, Location, OfficeBuilding,
-    Promotion, User,
+    DataLine, InfoFilled, Location, Message, OfficeBuilding,
+    Phone, Promotion, User,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
@@ -78,7 +78,6 @@ const submit = () => {
                     <Link :href="route('cooperative.index')" class="cr-btn cr-btn--outline">
                         <el-icon><Collection /></el-icon> View Cooperatives
                     </Link>
-                  
                 </div>
             </div>
 
@@ -97,7 +96,7 @@ const submit = () => {
                     <div class="cr-card">
                         <div class="cr-card-head">
                             <div class="cr-card-title"><el-icon><OfficeBuilding /></el-icon> Cooperative Information</div>
-                            <span class="cr-badge cr-badge--blue" style="font-size:9px;">Section A</span>
+                            <span class="cr-badge cr-badge--blue">Section A</span>
                         </div>
                         <div class="cr-card-body">
                             <div class="cr-grid">
@@ -129,13 +128,13 @@ const submit = () => {
                     <div class="cr-card">
                         <div class="cr-card-head">
                             <div class="cr-card-title"><el-icon><Location /></el-icon> Location Information</div>
-                            <span class="cr-badge cr-badge--green" style="font-size:9px;">Section B</span>
+                            <span class="cr-badge cr-badge--green">Section B</span>
                         </div>
                         <div class="cr-card-body">
                             <div class="cr-grid">
                                 <div class="cr-field">
                                     <label>District <span class="cr-req">*</span></label>
-                                    <el-input v-model="form.district" placeholder="e.g. Mbale" class="cr-input" />
+                                    <el-input v-model="form.district" placeholder="e.g. Mbale" :prefix-icon="Location" class="cr-input" />
                                     <InputError :message="form.errors.district" class="cr-error" />
                                 </div>
                                 <div class="cr-field">
@@ -156,23 +155,23 @@ const submit = () => {
                     <div class="cr-card">
                         <div class="cr-card-head">
                             <div class="cr-card-title"><el-icon><User /></el-icon> Contact Information</div>
-                            <span class="cr-badge cr-badge--amber" style="font-size:9px;">Section C</span>
+                            <span class="cr-badge cr-badge--amber">Section C</span>
                         </div>
                         <div class="cr-card-body">
                             <div class="cr-grid">
                                 <div class="cr-field cr-field--full">
                                     <label>Contact Person <span class="cr-req">*</span></label>
-                                    <el-input v-model="form.contact_person" placeholder="e.g. Jane Auma" class="cr-input" />
+                                    <el-input v-model="form.contact_person" placeholder="e.g. Jane Auma" :prefix-icon="User" class="cr-input" />
                                     <InputError :message="form.errors.contact_person" class="cr-error" />
                                 </div>
                                 <div class="cr-field">
                                     <label>Phone Number</label>
-                                    <el-input v-model="form.telephone" type="tel" placeholder="+256 700 000 000" class="cr-input" />
+                                    <el-input v-model="form.telephone" type="tel" placeholder="+256 700 000 000" :prefix-icon="Phone" class="cr-input" />
                                     <InputError :message="form.errors.telephone" class="cr-error" />
                                 </div>
                                 <div class="cr-field">
                                     <label>Email Address</label>
-                                    <el-input v-model="form.email" type="email" placeholder="info@cooperative.ug" class="cr-input" />
+                                    <el-input v-model="form.email" type="email" placeholder="info@cooperative.ug" :prefix-icon="Message" class="cr-input" />
                                     <InputError :message="form.errors.email" class="cr-error" />
                                 </div>
                             </div>
@@ -181,10 +180,9 @@ const submit = () => {
 
                     <!-- Actions ────────────────────────────────────────── -->
                     <div class="cr-form-actions">
-                        <SubmitButton native-type="submit" :loading="form.processing" :disabled="form.processing" style="width:180px;">
-                             Register
+                        <SubmitButton native-type="submit" :loading="form.processing" :disabled="form.processing" :full-width="false" style="min-width:180px;">
+                            Register
                         </SubmitButton>
-
                     </div>
 
                 </div><!-- /cr-main -->
@@ -269,10 +267,24 @@ const submit = () => {
                         </div>
                     </div>
 
+                    <!-- Registration guide -->
+                    <div class="cr-card">
+                        <div class="cr-card-head">
+                            <div class="cr-card-title"><el-icon><InfoFilled /></el-icon> Registration Guide</div>
+                        </div>
+                        <div class="cr-card-body">
+                            <ul class="cr-guide-list">
+                                <li>Use the cooperative's registered legal or common name for accurate matching.</li>
+                                <li>Assign a short, memorable code — it's used across lot batches and reporting.</li>
+                                <li>A registration number and email speed up export-readiness verification.</li>
+                                <li>Name a single contact person so buyers and inspectors know who to reach.</li>
+                            </ul>
+                        </div>
+                    </div>
+
                 </aside>
 
             </form><!-- /cr-body -->
-
 
         </div><!-- /cr-page -->
 
@@ -306,7 +318,7 @@ const submit = () => {
 /* ── Base ───────────────────────────────────────────────────────── */
 .cr-page {
     min-height: calc(100vh - 48px);
-    background: #fff;
+    background: var(--surface, #f7f9fb);
     color: #1f2a2a;
     padding-bottom: 60px;
     font-family: 'Manrope', sans-serif;
@@ -471,6 +483,9 @@ const submit = () => {
     flex-shrink: 0; font-size: 10px; color: #fff; background: #fff;
 }
 .cr-check-dot--done { border-color: #004532; background: #004532; }
+
+.cr-guide-list { margin: 0; padding: 0 0 0 1rem; display: flex; flex-direction: column; gap: 8px; }
+.cr-guide-list li { font-size: 11px; color: #657386; line-height: 1.55; }
 
 /* ── Members table ───────────────────────────────────────────────── */
 .cr-table-wrap { overflow-x: auto; }

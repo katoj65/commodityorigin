@@ -373,7 +373,7 @@ const fabOpen = ref(false);
     --secondary-fixed:  #fedcbe;
     --on-secondary-fixed:#291806;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: #ffffff;
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }

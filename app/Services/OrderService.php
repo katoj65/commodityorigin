@@ -33,6 +33,27 @@ class OrderService
     }
 
     /**
+     * Get specific orders belonging to a buyer, by ID — used to render the
+     * post-checkout confirmation page for exactly the orders just placed.
+     *
+     * @param  array<int, int>  $ids
+     * @return Collection<int, Order>
+     */
+    public function forBuyerAndIds(int $buyerId, array $ids): Collection
+    {
+        if (empty($ids)) {
+            return new Collection();
+        }
+
+        return Order::query()
+            ->with('seller')
+            ->where('buyer_id', $buyerId)
+            ->whereIn('id', $ids)
+            ->latest()
+            ->get();
+    }
+
+    /**
      * Get every order posted by other users — requests and offers, at any
      * status — visible to the whole marketplace, not just their parties.
      *
@@ -284,7 +305,7 @@ class OrderService
     /**
      * Generate a unique, human-readable order number.
      */
-    private function generateOrderNumber(): string
+    public function generateOrderNumber(): string
     {
         do {
             $candidate = 'ORD-'.now()->format('Y').'-'.strtoupper(Str::random(6));

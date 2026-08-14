@@ -25,38 +25,6 @@ function goToFarm(farm) {
     router.visit(route('farm.show', farm.id));
 }
 
-/* ── Row presentation helpers ─────────────────────────────────────── */
-const avatarPalette = [
-    { bg: '#eef2ff', color: '#4338ca' },
-    { bg: '#ecfdf5', color: '#047857' },
-    { bg: '#fff7ed', color: '#c2410c' },
-    { bg: '#fdf4ff', color: '#a21caf' },
-    { bg: '#eff6ff', color: '#1d4ed8' },
-    { bg: '#f0fdfa', color: '#0f766e' },
-];
-
-function initials(name) {
-    const parts = (name || '').trim().split(/\s+/).filter(Boolean);
-    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || 'F';
-}
-
-function avatarStyle(farm) {
-    const swatch = avatarPalette[farm.id % avatarPalette.length];
-    return { background: swatch.bg, color: swatch.color };
-}
-
-function farmerName(farm) {
-    const name = [farm.farmer?.first_name, farm.farmer?.last_name].filter(Boolean).join(' ');
-    return name || 'Unassigned';
-}
-
-function formatDate(value) {
-    if (!value) return '—';
-    const date = new Date(value.replace(' ', 'T'));
-    if (Number.isNaN(date.getTime())) return '—';
-    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
 /* ── Edit farm ─────────────────────────────────────────────────────── */
 const editDialogOpen = ref(false);
 const editingFarmId = ref(null);
@@ -119,6 +87,7 @@ function deleteFarm() {
 
         <div class="mf-page">
 
+            
             <!-- ── Header ────────────────────────────────────────────────── -->
             <div class="mf-header">
                 <div class="mf-header__inner">
@@ -139,33 +108,23 @@ function deleteFarm() {
                 <span class="mf-toolbar__count">{{ farms.length }} total</span>
             </div>
 
-            <!-- ── Table (edge-to-edge) ─────────────────────────────────── -->
+            <!-- ── Table (boxed card) ───────────────────────────────────── -->
+            <div class="mf-card">
             <el-table
                 :data="farms"
                 class="mf-table"
                 row-key="id"
                 @row-click="goToFarm"
             >
-                <el-table-column prop="name" min-width="240">
+                <el-table-column prop="name" min-width="200">
                     <template #header><span class="mf-th"><el-icon><House /></el-icon> Farm</span></template>
                     <template #default="{ row }">
-                        <div class="mf-cell-farm">
-                            <div class="mf-avatar" :style="avatarStyle(row)">{{ initials(row.name) }}</div>
-                            <div class="mf-cell-farm__text">
-                                <span class="mf-cell-name">{{ row.name }}</span>
-                                <!-- <span class="mf-cell-sub">{{ farmerName(row) }}</span> -->
-                            </div>
-                        </div>
+                        <span class="mf-cell-name">{{ row.name }}</span>
                     </template>
                 </el-table-column>
                 <el-table-column prop="location" min-width="170">
                     <template #header><span class="mf-th"><el-icon><Location /></el-icon> Location</span></template>
-                    <template #default="{ row }">
-                        <div class="mf-cell-specs">
-                            <span>{{ row.location || '—' }}</span>
-                            <span class="mf-cell-sub">{{ row.climatic_zone || 'Zone not set' }}</span>
-                        </div>
-                    </template>
+                    <template #default="{ row }">{{ row.location || '—' }}</template>
                 </el-table-column>
                 <el-table-column prop="size" min-width="110">
                     <template #header><span class="mf-th"><el-icon><Box /></el-icon> Size</span></template>
@@ -177,29 +136,18 @@ function deleteFarm() {
                 </el-table-column>
                 <el-table-column prop="variety" min-width="150">
                     <template #header><span class="mf-th"><el-icon><Collection /></el-icon> Variety</span></template>
-                    <template #default="{ row }">
-                        <el-tag v-if="row.variety" type="success" effect="plain" size="small" round>{{ row.variety }}</el-tag>
-                        <span v-else class="mf-cell-sub">—</span>
-                    </template>
+                    <template #default="{ row }">{{ row.variety || '—' }}</template>
                 </el-table-column>
-                <el-table-column prop="harvests_count" min-width="130" align="center">
+                <el-table-column prop="harvests_count" min-width="100" align="center">
                     <template #header><span class="mf-th mf-th--center"><el-icon><DataLine /></el-icon> Harvests</span></template>
-                    <template #default="{ row }">
-                        <div class="mf-cell-specs mf-cell-specs--center">
-                            <span class="mf-count-pill">{{ row.harvests_count ?? 0 }}</span>
-                            <span class="mf-cell-sub">{{ (row.total_bags_produced ?? 0).toLocaleString() }} bags</span>
-                        </div>
-                    </template>
+                    <template #default="{ row }">{{ row.harvests_count ?? 0 }}</template>
                 </el-table-column>
-                <el-table-column min-width="130">
+                <el-table-column min-width="110">
                     <template #header><span class="mf-th"><el-icon><Checked /></el-icon> Status</span></template>
                     <template #default="{ row }">
-                        <div class="mf-cell-specs">
-                            <el-tag :type="statusTagType(row)" size="small" effect="light" round>
-                                {{ row.status || 'Active' }}
-                            </el-tag>
-                            <span class="mf-cell-sub">Since {{ formatDate(row.created_at) }}</span>
-                        </div>
+                        <el-tag :type="statusTagType(row)" size="small" effect="light" round>
+                            {{ row.status || 'Active' }}
+                        </el-tag>
                     </template>
                 </el-table-column>
                 <el-table-column label="" min-width="120" align="right">
@@ -235,6 +183,7 @@ function deleteFarm() {
                     </div>
                 </template>
             </el-table>
+            </div>
 
             <!-- ── Edit Farm modal — borrows the fp-modal design language ── -->
             <el-dialog v-model="editDialogOpen" width="560px" align-center class="fp-modal">
@@ -343,7 +292,7 @@ function deleteFarm() {
     --surface-high: #e5e7eb;
     --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface-white);
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
     line-height: 1.5;
@@ -372,45 +321,35 @@ function deleteFarm() {
 .mf-btn-danger:hover { background: #b91c1c; }
 .mf-btn-danger:disabled { opacity: .6; cursor: not-allowed; }
 
-/* ── Table (edge-to-edge) ──────────────────────────────────────────────── */
-.mf-table { width: 100%; border-top: 1px solid var(--surface-high); }
+/* ── Card — boxes the table exactly like .mkt-card on the market listing
+   page: floating, elevated, rounded, instead of an edge-to-edge table
+   sitting flat on the page background. ───────────────────────────────── */
+.mf-card {
+    margin: 0 clamp(1rem, 3vw, 2rem);
+    border: 1px solid var(--surface-high);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14);
+}
+
+/* ── Table (boxed) ─────────────────────────────────────────────────────── */
+.mf-table { width: 100%; }
 .mf-table :deep(.el-table__inner-wrapper::before) { display: none; }
 .mf-table :deep(.el-table__row) { cursor: pointer; }
-.mf-table :deep(.el-table__header) { width: 100% !important; }
-.mf-table :deep(.el-table__header th.el-table__cell) {
-    background: #fafbfc;
-    border-bottom: 1px solid var(--surface-high);
-    padding: 10px 0;
-}
-.mf-table :deep(.el-table__header th.el-table__cell > .cell) {
-    font-size: .8125rem;
-    font-weight: 600;
-    color: #374151;
-    line-height: 1.3;
-}
-.mf-table :deep(td.el-table__cell) { font-size: .8125rem; color: var(--on-surface); padding: 7px 0; }
-.mf-table :deep(.el-table__cell:first-child .cell) { padding-left: clamp(1rem, 3vw, 2rem); }
-.mf-table :deep(.el-table__cell:last-child .cell) { padding-right: clamp(1rem, 3vw, 2rem); }
-.mf-table :deep(.el-table__row:hover .el-table__cell) { background: var(--surface-low); }
+.mf-table :deep(th.el-table__cell) { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-var); padding: 12px 0; }
+.mf-table :deep(td.el-table__cell) { font-size: .8125rem; color: var(--on-surface); padding: 12px 0; }
+.mf-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.25rem; }
+.mf-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.25rem; }
+.mf-cell-name { font-weight: 700; }
 
 /* ── Table header icons ───────────────────────────────────────────────── */
-.mf-th { display: inline-flex; align-items: center; gap: 6px; }
-.mf-th :deep(.el-icon) { font-size: 14px; color: #9ca3af; }
+.mf-th { display: inline-flex; align-items: center; gap: 5px; }
 .mf-th--center { justify-content: center; }
-
-/* ── Table cells ───────────────────────────────────────────────────────── */
-.mf-cell-farm { display: flex; align-items: center; gap: 8px; }
-.mf-cell-farm__text { display: flex; flex-direction: column; gap: 0; min-width: 0; }
-.mf-avatar { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .625rem; font-weight: 800; flex-shrink: 0; }
-.mf-cell-name { font-weight: 700; line-height: 1.3; }
-.mf-cell-sub { font-size: .6875rem; color: var(--on-surface-var); line-height: 1.3; }
-.mf-cell-specs { display: flex; flex-direction: column; gap: 0; }
-.mf-cell-specs--center { align-items: center; }
-.mf-count-pill { display: inline-flex; min-width: 26px; justify-content: center; background: var(--surface-low); border-radius: 999px; padding: 2px 9px; font-weight: 700; font-size: .75rem; }
 
 /* ── Row actions ───────────────────────────────────────────────────────── */
 .mf-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-.mf-act-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; text-decoration: none; border: none; background: transparent; cursor: pointer; transition: background .15s ease; }
+.mf-act-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; text-decoration: none; border: none; background: transparent; cursor: pointer; transition: background .15s ease; }
 .mf-act-btn--view { color: var(--green); }
 .mf-act-btn--view:hover { background: rgba(0, 69, 50, .08); }
 .mf-act-btn--edit { color: var(--on-surface-var); }

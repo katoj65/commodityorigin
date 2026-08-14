@@ -614,7 +614,7 @@ const submit = (intent = 'create') => {
 
 <style scoped>
 .create-lot-page {
-    background: #ffffff;
+    background: var(--surface, #f7f9fb);
     min-height: 100%;
     padding: 18px 24px 32px;
 }

@@ -219,15 +219,22 @@ Route::middleware([
         Route::get('/{lot}', [BidController::class, 'placeBid'])->name('place');
     });
 
-    // Auction workspace routes.
-    Route::prefix('auction')->name('auction.')->middleware('role:buyer,admin')->group(function () {
+    // Auction workspace routes. Any authenticated user may browse and
+    // watch the exchange; bidding itself is still gated separately by
+    // the bid.* routes above (role:buyer,admin).
+    Route::prefix('auction')->name('auction.')->group(function () {
         Route::get('/', [AuctionController::class, 'index'])->name('index');
     });
 
-    // Checkout workspace routes.
-    Route::prefix('checkout')->name('checkout.')->middleware('role:buyer,admin')->group(function () {
+    // Checkout workspace routes. Any authenticated user may buy.
+    Route::prefix('checkout')->name('checkout.')->group(function () {
         Route::get('/', [CheckoutController::class, 'index'])->name('index');
-        Route::get('/order/confirmation', [CheckoutController::class, 'orderConfirmation'])->name('confirmation');
+        Route::post('/items', [CheckoutController::class, 'store'])->name('items.store');
+        Route::patch('/items/{cartItem}', [CheckoutController::class, 'update'])->name('items.update');
+        Route::delete('/items/{cartItem}', [CheckoutController::class, 'destroy'])->name('items.destroy');
+        Route::get('/confirmation', [CheckoutController::class, 'confirmation'])->name('confirmation');
+        Route::post('/confirmation', [CheckoutController::class, 'placeOrder'])->name('placeOrder');
+        Route::get('/order-confirmed', [CheckoutController::class, 'orderConfirmed'])->name('orderConfirmed');
     });
 
     // Orders — buyers post requests and sellers post offers open; the
@@ -288,6 +295,7 @@ Route::middleware([
         Route::get('/request', [MarketController::class, 'request'])->name('request');
         Route::get('/compare', [MarketController::class, 'compareCountries'])->name('compare');
         Route::get('/offer', [MarketController::class, 'offers'])->name('offer');
+        Route::get('/{market}', [MarketController::class, 'show'])->name('show');
     });
 
     // Buyer workspace routes.
@@ -317,6 +325,7 @@ Route::middleware([
     // Wallet workspace routes.
     Route::prefix('wallet')->name('wallet.')->group(function () {
         Route::get('/', [WalletController::class, 'index'])->name('index');
+        Route::post('/deposit', [WalletController::class, 'deposit'])->name('deposit');
         Route::post('/transfer', [WalletController::class, 'transfer'])->name('transfer');
         Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('withdraw');
     });
@@ -324,6 +333,7 @@ Route::middleware([
     // Search — market items, plus a signed-in user's search history.
     Route::prefix('search')->name('search.')->group(function () {
         Route::get('/', [SearchController::class, 'index'])->name('index');
+        Route::get('/suggest', [SearchController::class, 'suggest'])->name('suggest');
         Route::delete('/history', [SearchController::class, 'clearHistory'])->name('history.clear');
         Route::delete('/history/{log}', [SearchController::class, 'destroy'])->name('history.destroy');
     });

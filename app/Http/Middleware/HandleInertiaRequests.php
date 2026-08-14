@@ -4,14 +4,17 @@ namespace App\Http\Middleware;
 
 use App\Http\Resources\CalendarResource;
 use App\Http\Resources\ChatResource;
+use App\Http\Resources\NotificationResource;
 use App\Http\Resources\TaskResource;
 use App\Models\RoleMetadata;
 use App\Services\AgentService;
 use App\Services\CalendarService;
+use App\Services\CartService;
 use App\Services\ChatService;
 use App\Services\NotificationService;
 use App\Services\TaskService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -22,6 +25,7 @@ class HandleInertiaRequests extends Middleware
         private readonly TaskService $tasks,
         private readonly NotificationService $notifications,
         private readonly AgentService $agents,
+        private readonly CartService $cart,
     ) {
     }
 
@@ -60,9 +64,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $authenticatedUser ? [
                     'id' => $authenticatedUser->id,
-                    'first_name' => $authenticatedUser->first_name,
-                    'last_name' => $authenticatedUser->last_name,
-                    'name' => $authenticatedUser->name,
+                    'first_name' => Str::ucfirst($authenticatedUser->first_name),
+                    'last_name' => Str::ucfirst($authenticatedUser->last_name),
+                    'name' => Str::ucfirst($authenticatedUser->name),
                     'email' => $authenticatedUser->email,
                     'role' => $authenticatedUser->role,
                     'telephone' => $authenticatedUser->telephone,
@@ -92,6 +96,12 @@ class HandleInertiaRequests extends Middleware
                 : [],
             'unreadNotificationsCount' => fn () => $authenticatedUser
                 ? $this->notifications->unreadCountForUser($authenticatedUser->id)
+                : 0,
+            'recentNotifications' => fn () => $authenticatedUser
+                ? NotificationResource::collection($this->notifications->recentForUser($authenticatedUser->id))->resolve()
+                : [],
+            'cartActiveCount' => fn () => $authenticatedUser
+                ? $this->cart->activeCountForUser($authenticatedUser->id)
                 : 0,
             'subscribedAgents' => fn () => ($authenticatedUser && ! $authenticatedUser->hasRole('admin'))
                 ? $this->agents->subscribedAgentsForUser($authenticatedUser->id)

@@ -659,7 +659,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .new-harvest-page {
-    background: #ffffff;
+    background: var(--surface, #f7f9fb);
     min-height: calc(100vh - 72px);
 }
 

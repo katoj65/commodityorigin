@@ -47,6 +47,17 @@ class SearchService
     }
 
     /**
+     * Lightweight lookup for the search-bar typeahead — same matching rules
+     * as search(), capped to a handful of results.
+     *
+     * @return Collection<int, Market>
+     */
+    public function suggest(string $keyword, int $limit = 6): Collection
+    {
+        return $this->search($keyword)->take($limit);
+    }
+
+    /**
      * Record a search — skips empty-keyword, filter-only browsing so the
      * history only reflects actual searches.
      *

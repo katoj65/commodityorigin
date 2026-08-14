@@ -143,6 +143,7 @@ v-model="form.first_name"
 type="text"
 class="auth-input mt-2"
 autofocus
+required
 autocomplete="given-name"
 placeholder="Joshua"
 />
@@ -156,6 +157,7 @@ id="last_name"
 v-model="form.last_name"
 type="text"
 class="auth-input mt-2"
+required
 autocomplete="family-name"
 placeholder="Kato"
 />
@@ -171,6 +173,7 @@ placeholder="Kato"
 v-model="form.telephone"
 type="tel"
 class="auth-input mt-2"
+required
 autocomplete="tel"
 placeholder="+256752567534"
 />
@@ -185,6 +188,7 @@ id="email"
 v-model="form.email"
 type="email"
 class="auth-input mt-2"
+required
 autocomplete="username"
 placeholder="joshua@example.com"
 />
@@ -199,6 +203,7 @@ id="password"
 v-model="form.password"
 type="password"
 class="auth-input mt-2"
+required
 autocomplete="new-password"
 placeholder="Create a password"
 />
@@ -212,6 +217,7 @@ id="password_confirmation"
 v-model="form.password_confirmation"
 type="password"
 class="auth-input mt-2"
+required
 autocomplete="new-password"
 placeholder="Repeat your password"
 />
@@ -228,6 +234,7 @@ id="terms"
 v-model="form.terms"
 type="checkbox"
 name="terms"
+required
 class="auth-check mt-0.5"
 />
 <span class="text-[13px] leading-relaxed text-cream/68">

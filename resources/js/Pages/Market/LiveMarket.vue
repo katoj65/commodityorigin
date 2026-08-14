@@ -663,7 +663,7 @@ const badgeClass = (b) => {
     --buy:       #16a34a;
     --sell:      #dc2626;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface);
+    background: #f7f9fb;
     color: var(--text);
     min-height: 100vh;
 }

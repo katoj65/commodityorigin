@@ -22,12 +22,6 @@ const props = defineProps({
    Top bar — AI search + quick actions
    ══════════════════════════════════════════════════════════════════════ */
 const searchQuery = ref('');
-const searchPrompts = [
-    'Show auctions ending today',
-    'Find Grade AA coffee',
-    'Find lots above 86 cup score',
-    'Which lot has the highest ROI',
-];
 
 function scrollTo(id) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -129,28 +123,52 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
 
                             <div class="row g-2 pt-0">
                                 <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100"><el-icon class="auc-kpi__icon"><Grid /></el-icon><div class="auc-kpi__value">{{ fmtNum(overview.live_auctions) }}</div><div class="auc-kpi__label">Live Auctions</div></div>
+                                    <div class="auc-kpi h-100">
+                                        <div class="auc-kpi__icon"><el-icon :size="16"><Grid /></el-icon></div>
+                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.live_auctions) }}</strong><span class="auc-kpi__label">Live Auctions</span></div>
+                                    </div>
                                 </div>
                                 <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100"><el-icon class="auc-kpi__icon"><Clock /></el-icon><div class="auc-kpi__value">{{ fmtNum(overview.upcoming_lots) }}</div><div class="auc-kpi__label">Upcoming Lots</div></div>
+                                    <div class="auc-kpi h-100">
+                                        <div class="auc-kpi__icon"><el-icon :size="16"><Clock /></el-icon></div>
+                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.upcoming_lots) }}</strong><span class="auc-kpi__label">Upcoming Lots</span></div>
+                                    </div>
                                 </div>
                                 <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100"><el-icon class="auc-kpi__icon"><CircleCheck /></el-icon><div class="auc-kpi__value">{{ fmtNum(overview.completed_auctions) }}</div><div class="auc-kpi__label">Completed</div></div>
+                                    <div class="auc-kpi h-100">
+                                        <div class="auc-kpi__icon auc-kpi__icon--green"><el-icon :size="16"><CircleCheck /></el-icon></div>
+                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.completed_auctions) }}</strong><span class="auc-kpi__label">Completed</span></div>
+                                    </div>
                                 </div>
                                 <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100"><el-icon class="auc-kpi__icon"><UserFilled /></el-icon><div class="auc-kpi__value">{{ fmtNum(overview.active_buyers) }}</div><div class="auc-kpi__label">Active Buyers</div></div>
+                                    <div class="auc-kpi h-100">
+                                        <div class="auc-kpi__icon"><el-icon :size="16"><UserFilled /></el-icon></div>
+                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.active_buyers) }}</strong><span class="auc-kpi__label">Active Buyers</span></div>
+                                    </div>
                                 </div>
                                 <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100"><el-icon class="auc-kpi__icon"><Box /></el-icon><div class="auc-kpi__value">{{ fmtNum(overview.lots_available) }}</div><div class="auc-kpi__label">Lots Available</div></div>
+                                    <div class="auc-kpi h-100">
+                                        <div class="auc-kpi__icon"><el-icon :size="16"><Box /></el-icon></div>
+                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.lots_available) }}</strong><span class="auc-kpi__label">Lots Available</span></div>
+                                    </div>
                                 </div>
                                 <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100"><el-icon class="auc-kpi__icon"><Coin /></el-icon><div class="auc-kpi__value">{{ fmtNum(overview.total_auction_value) }}</div><div class="auc-kpi__label">Total Auction Value</div></div>
+                                    <div class="auc-kpi h-100">
+                                        <div class="auc-kpi__icon auc-kpi__icon--gold"><el-icon :size="16"><Coin /></el-icon></div>
+                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.total_auction_value) }}</strong><span class="auc-kpi__label">Total Auction Value</span></div>
+                                    </div>
                                 </div>
                                 <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100"><el-icon class="auc-kpi__icon"><TrendCharts /></el-icon><div class="auc-kpi__value">{{ overview.highest_bid_today != null ? fmtNum(overview.highest_bid_today) : '—' }}</div><div class="auc-kpi__label">Highest Bid Today</div></div>
+                                    <div class="auc-kpi h-100">
+                                        <div class="auc-kpi__icon auc-kpi__icon--gold"><el-icon :size="16"><TrendCharts /></el-icon></div>
+                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ overview.highest_bid_today != null ? fmtNum(overview.highest_bid_today) : '—' }}</strong><span class="auc-kpi__label">Highest Bid Today</span></div>
+                                    </div>
                                 </div>
                                 <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100"><el-icon class="auc-kpi__icon"><Trophy /></el-icon><div class="auc-kpi__value">{{ overview.average_winning_price != null ? fmtNum(overview.average_winning_price) : '—' }}</div><div class="auc-kpi__label">Avg. Winning Price</div></div>
+                                    <div class="auc-kpi h-100">
+                                        <div class="auc-kpi__icon auc-kpi__icon--green"><el-icon :size="16"><Trophy /></el-icon></div>
+                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ overview.average_winning_price != null ? fmtNum(overview.average_winning_price) : '—' }}</strong><span class="auc-kpi__label">Avg. Winning Price</span></div>
+                                    </div>
                                 </div>
                             </div>
                         </section>
@@ -326,7 +344,7 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: #fff;
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
@@ -341,17 +359,9 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
 .auc-search-ai { position: absolute; right: 12px; color: var(--gold); font-size: 14px; }
 .auc-search-input { width: 100%; height: 38px; border: 1px solid var(--border); border-radius: 10px; padding: 0 36px; font-size: .8125rem; outline: none; background: var(--surface-low); }
 .auc-search-input:focus { border-color: var(--green); background: #fff; }
-.auc-search-wrap--table { flex: 1; min-width: 220px; }
-.auc-search-wrap--table .auc-search-input { height: 34px; background: #fff; }
-
-.auc-search-prompts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.auc-prompt-chip { font-size: .6875rem; padding: 3px 10px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface-var); cursor: pointer; white-space: nowrap; }
-.auc-prompt-chip:hover { border-color: var(--green); color: var(--green); }
-
 .auc-quick-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .auc-qa-btn { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 600; padding: 7px 12px; border-radius: 8px; background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); cursor: pointer; white-space: nowrap; text-decoration: none; }
 .auc-qa-btn:hover { background: #eef2f1; border-color: var(--green); }
-.auc-qa-btn--active { background: var(--green); border-color: var(--green); color: #fff; }
 
 /* ── Sections ────────────────────────────────────────────────────────── */
 .auc-section { padding: 1.25rem 0; border-bottom: 1px solid var(--border); }
@@ -364,35 +374,39 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
 .auc-live-dot { width: 10px; height: 10px; border-radius: 50%; background: #dc2626; box-shadow: 0 0 0 rgba(220,38,38,.5); animation: auc-pulse 1.6s infinite; }
 @keyframes auc-pulse { 0% { box-shadow: 0 0 0 0 rgba(220,38,38,.5); } 70% { box-shadow: 0 0 0 8px rgba(220,38,38,0); } 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); } }
 
-/* ── Hero banner ─────────────────────────────────────────────────────── */
-.auc-hero-banner { display: flex; align-items: flex-start; gap: 12px; background: linear-gradient(135deg, rgba(0,69,50,.06), rgba(200,134,42,.06)); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
-.auc-hero-banner__icon { width: 34px; height: 34px; border-radius: 9px; background: var(--green); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-.auc-hero-banner__kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--green); margin-bottom: 3px; }
-.auc-hero-banner__text { font-size: .8438rem; color: var(--on-surface); line-height: 1.5; }
-
-/* ── KPI ─────────────────────────────────────────────────────────────── */
-.auc-kpi { border: 1px solid var(--border); border-radius: 10px; padding: .875rem; background: #fff; text-align: center; }
-.auc-kpi__icon { color: var(--green); font-size: 16px; margin-bottom: 4px; }
-.auc-kpi__value { font-size: 1.125rem; font-weight: 800; color: var(--on-surface); line-height: 1.1; }
-.auc-kpi__label { font-size: .625rem; font-weight: 600; color: var(--on-surface-var); margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
+/* ── KPI tiles — icon badge + value/label, elevated card, matching the
+   pattern used across Orders/Market rather than a flat centered box. ─── */
+.auc-kpi {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: .875rem 1rem;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .03);
+    transition: box-shadow .15s ease, transform .15s ease;
+}
+.auc-kpi:hover { box-shadow: 0 12px 28px -18px rgba(15, 23, 42, .18); transform: translateY(-1px); }
+.auc-kpi__icon { width: 34px; height: 34px; border-radius: 10px; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.auc-kpi__icon--green { background: rgba(0, 69, 50, .08); color: var(--green); }
+.auc-kpi__icon--gold { background: rgba(200, 134, 42, .14); color: var(--gold); }
+.auc-kpi__body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.auc-kpi__value { font-size: 1.125rem; font-weight: 800; color: var(--on-surface); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.auc-kpi__label { font-size: .625rem; font-weight: 700; color: var(--on-surface-var); margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
 
 /* ── Cards ───────────────────────────────────────────────────────────── */
-.auc-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
+.auc-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14); }
 .auc-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .8438rem; font-weight: 700; color: var(--on-surface); }
 .auc-card-icon { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
-
-.auc-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 8px; font-size: .8125rem; font-weight: 700; padding: 9px 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
-.auc-btn-primary:hover { background: var(--green-dark); color: #fff; }
-.auc-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 8px; font-size: .8125rem; font-weight: 700; padding: 9px 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.auc-btn-outline:hover { background: var(--surface-low); }
-.auc-btn-outline--active { background: var(--green); border-color: var(--green); color: #fff; }
 
 .auc-sidebar { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 0; }
 
 /* ── Live auction feed — modern activity-stream card ──────────────────── */
 .auc-feed-card {
     display: flex; flex-direction: column;
-    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    background: #fff; border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14);
     padding: 1rem 1rem 0.25rem;
     position: relative; overflow: hidden;
 }
@@ -437,7 +451,7 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
 
 /* ── Element Plus table, reskinned to match the exchange design system ── */
 .auc-num { font-variant-numeric: tabular-nums; }
-.auc-table-card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.auc-table-card { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14); }
 .auc-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; }
 .auc-el-table :deep(.el-table__cell) { padding: 11px 0; }
 .auc-el-table :deep(.cell) { padding: 0 12px; font-size: .8125rem; line-height: 1.45; }
@@ -451,7 +465,7 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
 .auc-el-table :deep(.el-table__body tr:hover > td.el-table__cell) { background: var(--el-table-row-hover-bg-color); }
 .auc-el-table :deep(.el-table__empty-block) { min-height: 140px; }
 .auc-el-table :deep(.el-table__empty-text) { color: var(--on-surface-var); font-size: .8125rem; }
-.auc-th-icon { width: 14px; height: 14px; margin-right: 5px; color: var(--green); opacity: .8; }
+.auc-th-icon { width: 14px; height: 14px; margin-right: 5px; color: #9ca3af; }
 
 .auc-thumb { width: 32px; height: 32px; border-radius: 9px; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #f1e6d8; border: 1px solid #e6d5bf; }
 .auc-thumb img { width: 100%; height: 100%; object-fit: cover; }

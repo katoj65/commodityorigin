@@ -1,9 +1,8 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import {
-    Search, MagicStick, TrendCharts, DataAnalysis,
-    Filter, Download, Grid, UserFilled,
+    Search, List, ShoppingCart, Sell, DataAnalysis, TrendCharts,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -13,30 +12,36 @@ const props = defineProps({
 
 const emit = defineEmits(['update:searchQuery']);
 
-/* ══════════════════════════════════════════════════════════════════════
-   Top bar — AI search + quick actions
-   ══════════════════════════════════════════════════════════════════════ */
 const search = computed({
     get: () => props.searchQuery,
     set: (value) => emit('update:searchQuery', value),
 });
 
-const searchPrompts = [
-    'Find buyers in UAE',
-    'Predict Arabica prices',
-    'Compare Uganda and Brazil',
-    'Best export market this month',
+/* ══════════════════════════════════════════════════════════════════════
+   Top bar — section tabs + a single search icon that expands on click
+   ══════════════════════════════════════════════════════════════════════ */
+const marketTabs = [
+    { label: 'Listings', icon: List, name: 'market.index' },
+    { label: 'Requests', icon: ShoppingCart, name: 'market.request' },
+    { label: 'Offers', icon: Sell, name: 'market.offer' },
+    { label: 'Analysis', icon: DataAnalysis, name: 'market.analysis' },
+    { label: 'Compare', icon: TrendCharts, name: 'market.compare' },
 ];
 
-const quickActions = [
-    { label: 'Find Buyers', icon: UserFilled, href: route('buy.index') },
-    { label: 'Analyze Market', icon: DataAnalysis, href: route('market.analysis') },
-    { label: 'Compare Countries', icon: Grid, href: route('market.compare') },
-    { label: 'Export Report', icon: Download },
-    { label: 'View Forecast', icon: TrendCharts, href: route('forecast.index') },
-];
+const searchOpen = ref(false);
+const searchInputRef = ref(null);
 
-const filtersOpen = ref(true);
+function toggleSearch() {
+    searchOpen.value = !searchOpen.value;
+
+    if (searchOpen.value) {
+        nextTick(() => searchInputRef.value?.focus());
+    }
+}
+
+function closeSearch() {
+    searchOpen.value = false;
+}
 </script>
 
 <template>
@@ -46,28 +51,39 @@ const filtersOpen = ref(true);
         <div class="mkt-page">
 
             <!-- ══════════════════════════════════════════════════════════
-                 Sticky top bar — AI search + quick actions
+                 Sticky top bar — section tabs + a search icon, expands on click
                  ══════════════════════════════════════════════════════════ -->
-            <div class="mkt-topbar pt-2 pb-2">
-                <div class="container-fluid px-3 px-lg-4 py-2">
-                    <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-2">
-                        <div class="mkt-search-wrap flex-grow-1">
-                            <el-icon class="mkt-search-icon"><Search /></el-icon>
-                            <input v-model="search" class="mkt-search-input" placeholder="Ask Coffee Pulse AI…">
-                            <el-icon class="mkt-search-ai"><MagicStick /></el-icon>
-                        </div>
-                        <div class="mkt-quick-actions">
-                            <template v-for="qa in quickActions" :key="qa.label">
-                                <Link v-if="qa.href" :href="qa.href" class="mkt-qa-btn">
-                                    <el-icon><component :is="qa.icon" /></el-icon> {{ qa.label }}
-                                </Link>
-                                <button v-else type="button" class="mkt-qa-btn">
-                                    <el-icon><component :is="qa.icon" /></el-icon> {{ qa.label }}
-                                </button>
-                            </template>
-                        </div>
-                        <button type="button" class="mkt-filter-toggle d-lg-none" @click="filtersOpen = !filtersOpen">
-                            <el-icon><Filter /></el-icon>
+            <div class="mkt-topbar">
+                <div class="mkt-topbar__inner">
+                    <nav class="mkt-tabs">
+                        <Link
+                            v-for="tab in marketTabs"
+                            :key="tab.name"
+                            :href="route(tab.name)"
+                            class="mkt-tab"
+                            :class="{ 'mkt-tab--active': route().current(tab.name) }"
+                        >
+                            <el-icon><component :is="tab.icon" /></el-icon> {{ tab.label }}
+                        </Link>
+                    </nav>
+
+                    <div class="mkt-search-wrap" :class="{ 'mkt-search-wrap--open': searchOpen }">
+                        <input
+                            v-if="searchOpen"
+                            ref="searchInputRef"
+                            v-model="search"
+                            type="text"
+                            class="mkt-search-input"
+                            placeholder="Search…"
+                            @keyup.esc="closeSearch"
+                        >
+                        <button
+                            type="button"
+                            class="mkt-search-toggle"
+                            :title="searchOpen ? 'Close search' : 'Search'"
+                            @click="toggleSearch"
+                        >
+                            <el-icon><Search /></el-icon>
                         </button>
                     </div>
                 </div>
@@ -89,25 +105,50 @@ const filtersOpen = ref(true);
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: #ffffff;
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
 
 /* ── Top bar ──────────────────────────────────────────────────────────── */
 .mkt-topbar { position: sticky; top: 3.5rem; z-index: 20; background: #fff; border-bottom: 1px solid var(--border); }
-.mkt-search-wrap { position: relative; display: flex; align-items: center; max-width: 480px; }
-.mkt-search-icon { position: absolute; left: 12px; color: var(--on-surface-var); font-size: 14px; }
-.mkt-search-ai { position: absolute; right: 12px; color: var(--gold); font-size: 14px; }
-.mkt-search-input { width: 100%; height: 38px; border: 1px solid var(--border); border-radius: 10px; padding: 0 36px; font-size: .8125rem; outline: none; background: var(--surface-low); }
+.mkt-topbar__inner { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .5rem 1.5rem; }
+
+/* ── Section tabs ─────────────────────────────────────────────────────── */
+.mkt-tabs { display: flex; align-items: center; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+.mkt-tabs::-webkit-scrollbar { display: none; }
+
+.mkt-tab {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    padding: 8px 14px; border-radius: 8px;
+    font-size: .8125rem; font-weight: 600; color: var(--on-surface-var);
+    text-decoration: none; white-space: nowrap;
+    transition: background .15s ease, color .15s ease;
+}
+.mkt-tab :deep(.el-icon) { font-size: 14px; }
+.mkt-tab:hover { background: var(--surface-low); color: var(--on-surface); }
+.mkt-tab--active { background: rgba(0, 69, 50, .08); color: var(--green); }
+
+.mkt-search-wrap { position: relative; display: flex; align-items: center; flex-shrink: 0; }
+
+.mkt-search-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+    border: 1px solid var(--border); background: #fff; color: var(--on-surface-var);
+    cursor: pointer; transition: all .15s ease;
+}
+.mkt-search-toggle:hover { border-color: var(--green); color: var(--green); background: #f0f5f3; }
+.mkt-search-wrap--open .mkt-search-toggle { border-color: var(--green); color: var(--green); background: #f0f5f3; }
+
+.mkt-search-input {
+    width: 220px; height: 36px; margin-right: 8px; border: 1px solid var(--border); border-radius: 9px;
+    padding: 0 12px; font-size: .8125rem; font-family: inherit; outline: none;
+    background: var(--surface-low); color: var(--on-surface);
+    transition: border-color .15s ease, background .15s ease;
+}
 .mkt-search-input:focus { border-color: var(--green); background: #fff; }
-.mkt-search-prompts { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 0 8px; }
-.mkt-prompt-chip { font-size: .6875rem; padding: 3px 10px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface-var); cursor: pointer; white-space: nowrap; }
-.mkt-prompt-chip:hover { background: #eef2f1; }
 
-.mkt-quick-actions { display: flex; flex-wrap: wrap; gap: 6px; }
-.mkt-qa-btn { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 600; padding: 7px 12px; border-radius: 8px; background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); cursor: pointer; white-space: nowrap; text-decoration: none; }
-.mkt-qa-btn:hover { background: #eef2f1; border-color: var(--green); }
-
-.mkt-filter-toggle { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: #fff; color: var(--on-surface-var); display: inline-flex; align-items: center; justify-content: center; }
+@media (max-width: 480px) {
+    .mkt-search-input { width: 160px; }
+}
 </style>

@@ -635,12 +635,12 @@ const data=computed(()=>props.farm);
                                     <table class="table align-middle mb-0 fp-table">
                                         <thead>
                                             <tr>
-                                                <th>Harvest ID</th>
-                                                <th>Season</th>
-                                                <th>Date</th>
-                                                <th>Quantity</th>
-                                                <th>Quality Score</th>
-                                                <th>Status</th>
+                                                <th><span class="fp-table-th"><el-icon><Box /></el-icon> Harvest ID</span></th>
+                                                <th><span class="fp-table-th"><el-icon><CollectionTag /></el-icon> Season</span></th>
+                                                <th><span class="fp-table-th"><el-icon><Clock /></el-icon> Date</span></th>
+                                                <th><span class="fp-table-th"><el-icon><DataLine /></el-icon> Quantity</span></th>
+                                                <th><span class="fp-table-th"><el-icon><Star /></el-icon> Quality Score</span></th>
+                                                <th><span class="fp-table-th"><el-icon><Checked /></el-icon> Status</span></th>
                                                 <th class="text-end">Action</th>
                                             </tr>
                                         </thead>
@@ -672,7 +672,13 @@ const data=computed(()=>props.farm);
                                                 </td>
                                             </tr>
                                             <tr v-if="harvestRows.length === 0">
-                                                <td colspan="7" class="text-center fp-td-muted py-4">No harvests recorded yet.</td>
+                                                <td colspan="7">
+                                                    <div class="fp-table-empty">
+                                                        <div class="fp-table-empty__icon"><el-icon :size="18"><Box /></el-icon></div>
+                                                        <div class="fp-table-empty__title">No harvests recorded yet</div>
+                                                        <p class="fp-table-empty__text">Add a harvest to start tracking yield, quality, and season history for this farm.</p>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -945,7 +951,7 @@ const data=computed(()=>props.farm);
                                     </div>
                                 </div>
                                 <div v-else class="fp-doc-empty">
-                                    <el-icon :size="22"><Files /></el-icon>
+                                    <div class="fp-doc-empty__icon"><el-icon :size="20"><Files /></el-icon></div>
                                     <p>No documents uploaded yet.</p>
                                     <button v-if="props.canEdit" type="button" class="btn fp-btn-outline btn-sm" @click="openDocumentDialog">
                                         <el-icon><Upload /></el-icon> Upload Document
@@ -1548,7 +1554,7 @@ const data=computed(()=>props.farm);
     --surface-mid:    #f1f5f9;
     --surface-high:   #e5e7eb;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface-white);
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
     line-height: 1.5;
@@ -1565,17 +1571,17 @@ const data=computed(()=>props.farm);
 .fp-hbadge--amber{ background: #fef3c7; color: #92400e; }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.fp-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+.fp-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
 .fp-btn-primary:hover { background: var(--green-grad); border-color: var(--green-grad); color: #fff; }
-.fp-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.fp-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .fp-btn-outline:hover { background: var(--surface-low); }
-.fp-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
-.fp-btn-danger  { background: #dc2626; border-color: #dc2626; color: #fff; border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.fp-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.fp-btn-danger  { background: #dc2626; border-color: #dc2626; color: #fff; border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .fp-btn-danger:hover { background: #b91c1c; border-color: #b91c1c; color: #fff; }
 .fp-btn-danger:disabled { opacity: .6; cursor: not-allowed; }
-.fp-btn-danger-ghost { background: #fef2f2; border-color: transparent; color: #dc2626; border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.fp-btn-danger-ghost { background: #fef2f2; border-color: transparent; color: #dc2626; border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .fp-btn-danger-ghost:hover { background: #fee2e2; }
-.fp-btn-group { border: 1px solid var(--surface-high); border-radius: 6px; overflow: hidden; }
+.fp-btn-group { border: 1px solid var(--surface-high); border-radius: 8px; overflow: hidden; }
 .fp-btn-group :deep(.el-button) { border: none; border-radius: 0; }
 .fp-btn-group :deep(.el-button + .el-button) { border-left: 1px solid var(--surface-high); }
 
@@ -1597,16 +1603,16 @@ const data=computed(()=>props.farm);
 .fp-quality-ring-wrap { display: flex; align-items: center; }
 .fp-quality-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fp-quality-ring-inner { position: absolute; text-align: center; }
-.fp-quality-score { font-size: 1.1875rem; font-weight: 800; color: var(--green); line-height: 1; }
+.fp-quality-score { font-size: 1.1875rem; font-weight: 800; color: var(--green); line-height: 1; font-variant-numeric: tabular-nums; }
 .fp-quality-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); margin-top: 2px; }
 .fp-perf-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.4; }
 .fp-perf-row:last-child { border-bottom: none; }
-.fp-perf-row strong { color: var(--on-surface); font-weight: 700; }
+.fp-perf-row strong { color: var(--on-surface); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ── Spec cell ─────────────────────────────────────────────────────────────── */
 .fp-spec-cell { background: var(--surface-low); border-radius: 6px; padding: 7px 9px; }
 .fp-spec-cell span   { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-surface-var); display: block; margin-bottom: 3px; line-height: 1.3; }
-.fp-spec-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; line-height: 1.35; }
+.fp-spec-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; line-height: 1.35; font-variant-numeric: tabular-nums; }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
 .fp-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 14px; padding: 1.25rem; box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 1px 8px rgba(0,0,0,.03); transition: box-shadow 0.15s ease, border-color 0.15s ease; }
@@ -1623,7 +1629,7 @@ const data=computed(()=>props.farm);
 .fp-map-badge { background: rgba(0,69,50,0.85); color: #fff; border-radius: 999px; font-size: 0.625rem; font-weight: 700; padding: 3px 8px; }
 .fp-env-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.4; }
 .fp-env-row:last-child { border-bottom: none; }
-.fp-env-row strong { color: var(--on-surface); font-weight: 700; }
+.fp-env-row strong { color: var(--on-surface); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ── Production chart ──────────────────────────────────────────────────────── */
 .fp-chart { height: 100px; display: flex; align-items: flex-end; background: var(--surface-low); border-radius: 8px; padding: 6px; }
@@ -1636,17 +1642,27 @@ const data=computed(()=>props.farm);
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .fp-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 10px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
-.fp-table tbody td { padding: 11px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
+.fp-table tbody td { padding: 11px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; font-variant-numeric: tabular-nums; }
 .fp-table-row { transition: background 0.1s; }
 .fp-table-row:hover { background: var(--surface-low); }
 .fp-item-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.4; }
 .fp-td-muted  { color: var(--on-surface-var); font-size: 0.8125rem; line-height: 1.4; }
 .fp-act-btn   { font-size: 0.75rem !important; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.fp-score-pill { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 800; padding: 2px 8px; }
+.fp-score-pill { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 800; padding: 2px 8px; font-variant-numeric: tabular-nums; }
 .fp-score-pill--high { background: #dcfce7; color: #166534; }
 .fp-score-pill--mid  { background: #fef3c7; color: #92400e; }
 .fp-up   { color: #166534; font-weight: 700; }
 .fp-warn { color: #92400e; font-weight: 700; }
+
+/* ── Table header icons (matches sibling el-table pattern) ───────────────── */
+.fp-table-th { display: inline-flex; align-items: center; gap: 6px; }
+.fp-table-th :deep(.el-icon) { font-size: 12px; color: #9ca3af; }
+
+/* ── In-table empty state ─────────────────────────────────────────────────── */
+.fp-table-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 2rem 1rem; }
+.fp-table-empty__icon { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; }
+.fp-table-empty__title { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
+.fp-table-empty__text { font-size: 0.75rem; color: var(--on-surface-var); margin: 0; max-width: 320px; line-height: 1.5; }
 
 /* ── Traceability ──────────────────────────────────────────────────────────── */
 .fp-trace-flow { display: flex; justify-content: space-between; align-items: flex-start; position: relative; }
@@ -1679,7 +1695,7 @@ const data=computed(()=>props.farm);
 .fp-weather-row__body { flex: 1; min-width: 0; }
 .fp-weather-row__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .fp-weather-row__month { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
-.fp-weather-row__temp { font-size: .75rem; font-weight: 700; color: var(--on-surface); flex-shrink: 0; }
+.fp-weather-row__temp { font-size: .75rem; font-weight: 700; color: var(--on-surface); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .fp-weather-row__meta { font-size: .6875rem; color: var(--on-surface-var); margin-top: 1px; }
 .fp-weather-row__tip { font-size: .75rem; color: #374151; line-height: 1.4; margin: 4px 0 0; }
 
@@ -1725,6 +1741,7 @@ const data=computed(()=>props.farm);
 .fp-doc-action--delete:hover { background: #fef2f2; color: #dc2626; }
 
 .fp-doc-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 1.5rem 0.5rem; color: var(--on-surface-var); }
+.fp-doc-empty__icon { width: 44px; height: 44px; border-radius: 12px; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; margin-bottom: 2px; }
 .fp-doc-empty p { font-size: .8125rem; margin: 0; }
 
 .fp-doc-dropzone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; border: 1.5px dashed var(--surface-high); border-radius: 10px; padding: 1.25rem 1rem; cursor: pointer; color: var(--on-surface-var); transition: border-color .15s ease, background .15s ease; position: relative; }
@@ -1781,7 +1798,7 @@ const data=computed(()=>props.farm);
 .fp-harvest-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #f3f4f6; border: 1px solid #f3f4f6; border-radius: 10px; overflow: hidden; margin-top: 14px; }
 .fp-harvest-preview__row { background: #fff; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
 .fp-harvest-preview__row span { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; }
-.fp-harvest-preview__row strong { font-size: 0.8125rem; font-weight: 700; color: #111827; }
+.fp-harvest-preview__row strong { font-size: 0.8125rem; font-weight: 700; color: #111827; font-variant-numeric: tabular-nums; }
 
 .fp-view-section { display: flex; flex-direction: column; gap: 8px; }
 .fp-view-section__title { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #9ca3af; }

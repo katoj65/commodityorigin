@@ -153,7 +153,7 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
     display: flex;
     flex-direction: column;
     height: calc(100vh - 3.5rem);
-    background: #fff;
+    background: var(--surface, #f7f9fb);
     font-family: 'Manrope', system-ui, sans-serif;
 }
 

@@ -4,9 +4,9 @@ import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, Checked, Clock,
-    CollectionTag, DataLine, Download, Location,
-    Medal, Opportunity, Promotion,
-    ShoppingCart, Star, TrendCharts, Van, View,
+    CollectionTag, DataLine, Download, House, Location,
+    Medal, Money, Opportunity, Promotion,
+    ShoppingCart, Star, TrendCharts, User, Van, View,
     Warning,
 } from '@element-plus/icons-vue';
 
@@ -155,6 +155,7 @@ const badgeClass = (b) => {
                 <div class="container-fluid px-3 px-lg-4">
                     <div class="d-flex align-items-start justify-content-between gap-3 py-3 flex-wrap">
                         <div>
+                            <div class="cp-kicker">Cooperative Network</div>
                             <h1 class="cp-title mb-0">Cooperative Directory</h1>
                             <p class="cp-subtitle mb-0">Discover verified coffee cooperatives across producing regions</p>
                         </div>
@@ -275,8 +276,9 @@ const badgeClass = (b) => {
                 <!-- ── 4. Grid View ────────────────────────────────────── -->
                 <div v-if="viewMode === 'grid'" class="mb-3">
                     <div v-if="!filteredRows.length" class="cp-empty">
-                        <el-icon><Warning /></el-icon>
-                        <div>No cooperatives match your filters.</div>
+                        <div class="cp-empty__icon"><el-icon :size="22"><Warning /></el-icon></div>
+                        <div class="cp-empty__title">No cooperatives match your filters</div>
+                        <p class="cp-empty__text">Try adjusting your search term or filter selections.</p>
                     </div>
                     <div v-else class="row g-3">
                         <div v-for="coop in filteredRows" :key="coop.id" class="col-12 col-sm-6 col-lg-4">
@@ -322,24 +324,27 @@ const badgeClass = (b) => {
                 </div>
 
                 <!-- ── 5. Table View ───────────────────────────────────── -->
-                <div v-if="viewMode === 'table'" class="cp-card p-0 overflow-hidden mb-3">
+                <div v-if="viewMode === 'table'" class="cp-card cp-table-card p-0 overflow-hidden mb-3">
                     <div class="table-responsive">
                         <table class="table align-middle mb-0 cp-table">
                             <thead>
                                 <tr>
-                                    <th>Cooperative</th>
-                                    <th>Location</th>
-                                    <th>Members</th>
-                                    <th>Production</th>
-                                    <th>Quality</th>
-                                    <th>Certifications</th>
-                                    <th>Export</th>
+                                    <th><span class="cp-th"><el-icon><House /></el-icon> Cooperative</span></th>
+                                    <th><span class="cp-th"><el-icon><Location /></el-icon> Location</span></th>
+                                    <th><span class="cp-th"><el-icon><User /></el-icon> Members</span></th>
+                                    <th><span class="cp-th"><el-icon><Box /></el-icon> Production</span></th>
+                                    <th><span class="cp-th"><el-icon><Medal /></el-icon> Quality</span></th>
+                                    <th><span class="cp-th"><el-icon><Checked /></el-icon> Certifications</span></th>
+                                    <th><span class="cp-th"><el-icon><Van /></el-icon> Export</span></th>
                                     <th class="text-end">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="!filteredRows.length">
-                                    <td colspan="8" class="text-center py-4 cp-td-muted">No cooperatives match your filters.</td>
+                                    <td colspan="8" class="text-center py-4 cp-td-muted">
+                                        <el-icon style="vertical-align:-2px; margin-right:5px;"><Warning /></el-icon>
+                                        No cooperatives match your filters.
+                                    </td>
                                 </tr>
                                 <tr v-for="coop in filteredRows" :key="coop.id" class="cp-table-row">
                                     <td>
@@ -369,9 +374,17 @@ const badgeClass = (b) => {
                                         </span>
                                     </td>
                                     <td class="text-end">
-                                        <div class="d-flex gap-1 justify-content-end">
-                                            <Link :href="route('cooperative.show', coop.id)" class="btn btn-sm cp-btn-primary px-2"><el-icon><View /></el-icon></Link>
-                                            <button class="btn btn-sm cp-btn-outline px-2"><el-icon><ShoppingCart /></el-icon></button>
+                                        <div class="cp-row-actions">
+                                            <el-tooltip content="View Profile" placement="top">
+                                                <Link :href="route('cooperative.show', coop.id)" class="cp-act-btn cp-act-btn--view">
+                                                    <el-icon><View /></el-icon>
+                                                </Link>
+                                            </el-tooltip>
+                                            <el-tooltip content="View Lots" placement="top">
+                                                <button type="button" class="cp-act-btn cp-act-btn--outline">
+                                                    <el-icon><ShoppingCart /></el-icon>
+                                                </button>
+                                            </el-tooltip>
                                         </div>
                                     </td>
                                 </tr>
@@ -457,7 +470,7 @@ const badgeClass = (b) => {
                             </div>
 
                             <!-- 9. Available Coffee from Cooperatives -->
-                            <div class="cp-card p-0 overflow-hidden">
+                            <div class="cp-card cp-table-card p-0 overflow-hidden">
                                 <div class="d-flex align-items-center justify-content-between gap-2 px-3 py-2 border-bottom">
                                     <div class="cp-card-title">
                                         <el-icon class="cp-card-icon"><ShoppingCart /></el-icon>
@@ -469,11 +482,11 @@ const badgeClass = (b) => {
                                     <table class="table align-middle mb-0 cp-table">
                                         <thead>
                                             <tr>
-                                                <th>Cooperative</th>
-                                                <th>Lots Available</th>
-                                                <th>Price Range</th>
-                                                <th>Quality Score</th>
-                                                <th>Demand</th>
+                                                <th><span class="cp-th"><el-icon><House /></el-icon> Cooperative</span></th>
+                                                <th><span class="cp-th"><el-icon><Box /></el-icon> Lots Available</span></th>
+                                                <th><span class="cp-th"><el-icon><Money /></el-icon> Price Range</span></th>
+                                                <th><span class="cp-th"><el-icon><Medal /></el-icon> Quality Score</span></th>
+                                                <th><span class="cp-th"><el-icon><TrendCharts /></el-icon> Demand</span></th>
                                                 <th class="text-end">Action</th>
                                             </tr>
                                         </thead>
@@ -509,7 +522,7 @@ const badgeClass = (b) => {
                             </div>
 
                             <!-- 11. Sourcing Requests -->
-                            <div class="cp-card p-0 overflow-hidden">
+                            <div class="cp-card cp-table-card p-0 overflow-hidden">
                                 <div class="d-flex align-items-center justify-content-between gap-2 px-3 py-2 border-bottom">
                                     <div class="cp-card-title">
                                         <el-icon class="cp-card-icon"><CollectionTag /></el-icon>
@@ -521,11 +534,11 @@ const badgeClass = (b) => {
                                     <table class="table align-middle mb-0 cp-table">
                                         <thead>
                                             <tr>
-                                                <th>Buyer</th>
-                                                <th>Region</th>
-                                                <th>Coffee Type</th>
-                                                <th>Quantity</th>
-                                                <th>Status</th>
+                                                <th><span class="cp-th"><el-icon><User /></el-icon> Buyer</span></th>
+                                                <th><span class="cp-th"><el-icon><Location /></el-icon> Region</span></th>
+                                                <th><span class="cp-th"><el-icon><CollectionTag /></el-icon> Coffee Type</span></th>
+                                                <th><span class="cp-th"><el-icon><Box /></el-icon> Quantity</span></th>
+                                                <th><span class="cp-th"><el-icon><Checked /></el-icon> Status</span></th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -687,15 +700,16 @@ const badgeClass = (b) => {
     --surface-mid:    #f1f5f9;
     --surface-high:   #e5e7eb;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface-white);
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .cp-header   { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
-.cp-title    { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; }
-.cp-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); }
+.cp-kicker   { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 4px; line-height: 1.4; }
+.cp-title    { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
+.cp-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); margin-top: 2px; }
 
 /* ── Filter bar ────────────────────────────────────────────────────────────── */
 .cp-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -737,7 +751,10 @@ const badgeClass = (b) => {
 .cp-view-btn--active { background: var(--surface-white); color: var(--green); box-shadow: 0 1px 3px rgba(0,0,0,.08); font-weight: 700; }
 
 /* ── Empty state ───────────────────────────────────────────────────────────── */
-.cp-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 20px; color: var(--on-surface-var); font-size: 0.875rem; background: var(--surface-low); border-radius: 12px; border: 1px solid var(--surface-high); }
+.cp-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 20px; background: var(--surface-low); border-radius: 12px; border: 1px solid var(--surface-high); }
+.cp-empty__icon { width: 52px; height: 52px; border-radius: 50%; background: var(--surface-white); border: 1px solid var(--surface-high); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.cp-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
+.cp-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0; max-width: 320px; line-height: 1.5; }
 
 /* ── Cooperative card (grid) ───────────────────────────────────────────────── */
 .cp-coop-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; flex-direction: column; transition: box-shadow 0.15s; }
@@ -757,6 +774,9 @@ const badgeClass = (b) => {
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
 .cp-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .cp-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
+
+/* ── Table cards (Directory / Available Coffee / Sourcing Requests) ──────── */
+.cp-table-card { border-radius: 14px; box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14); }
 .cp-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
 /* ── Featured ──────────────────────────────────────────────────────────────── */
@@ -786,6 +806,18 @@ const badgeClass = (b) => {
 .cp-warn { color: #92400e; font-weight: 700; }
 .cp-down { color: #b91c1c; font-weight: 700; }
 .fw-700 { font-weight: 700; }
+
+/* ── Table header icons ────────────────────────────────────────────────────── */
+.cp-th { display: inline-flex; align-items: center; gap: 5px; }
+.cp-th :deep(.el-icon) { font-size: 12px; color: #9ca3af; }
+
+/* ── Row actions (directory table) ───────────────────────────────────────── */
+.cp-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.cp-act-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; text-decoration: none; border: none; background: transparent; cursor: pointer; transition: background .15s ease; }
+.cp-act-btn--view { color: var(--green); }
+.cp-act-btn--view:hover { background: rgba(0, 69, 50, .08); }
+.cp-act-btn--outline { color: var(--on-surface-var); }
+.cp-act-btn--outline:hover { background: var(--surface-mid); color: var(--on-surface); }
 
 /* ── Performance / mini charts ─────────────────────────────────────────────── */
 .cp-metric-cell { background: var(--surface-low); border-radius: 8px; padding: 8px 10px; }

@@ -10,6 +10,7 @@ import {
 const props = defineProps({
     tasks: { type: Array, default: () => [] },
     title: { type: String, default: 'Tasks' },
+    showHeader: { type: Boolean, default: true },
 });
 
 function todayStr() {
@@ -81,7 +82,7 @@ function confirmDelete() {
 
 <template>
     <div class="task-widget">
-        <div class="task-widget__head">
+        <div v-if="showHeader" class="task-widget__head">
             <div class="task-widget__title-group">
                 <span class="task-widget__icon"><el-icon :size="14"><List /></el-icon></span>
                 <div class="task-widget__title">{{ title }}</div>

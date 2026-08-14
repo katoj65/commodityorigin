@@ -536,7 +536,7 @@ const badgeClass = (b) => {
     --surface-mid:    #f1f5f9;
     --surface-high:   #e5e7eb;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface-white);
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100vh;
 }

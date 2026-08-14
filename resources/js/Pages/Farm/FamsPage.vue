@@ -193,6 +193,7 @@ const badgeClass = (b) => {
                 <div class="container-fluid px-3 px-lg-4">
                     <div class="d-flex align-items-start justify-content-between gap-3 py-3 flex-wrap">
                         <div>
+                            <div class="fm-kicker">Farm Workspace</div>
                             <h1 class="fm-title mb-0">Farm &amp; Estate Directory</h1>
                             <p class="fm-subtitle mb-0">Explore verified coffee farms and estates with traceable production data</p>
                         </div>
@@ -381,7 +382,7 @@ const badgeClass = (b) => {
                                             <div class="fm-bar-track" style="width:56px;">
                                                 <div class="fm-bar-fill" :style="{ width: `${farm.sustainability}%`, background: '#004532' }"></div>
                                             </div>
-                                            <span class="fm-up" style="font-size:.75rem; font-weight:700;">{{ farm.sustainability }}%</span>
+                                            <span class="fm-up" style="font-size:.75rem; font-weight:700; font-variant-numeric:tabular-nums;">{{ farm.sustainability }}%</span>
                                         </div>
                                     </td>
                                     <td>
@@ -411,8 +412,9 @@ const badgeClass = (b) => {
                 <!-- ── 4. Grid View ────────────────────────────────────── -->
                 <div v-if="viewMode === 'grid'" class="mb-3">
                     <div v-if="!filteredRows.length" class="fm-empty">
-                        <el-icon><Warning /></el-icon>
-                        <div>No farms match your filters.</div>
+                        <div class="fm-empty__icon"><el-icon :size="20"><Warning /></el-icon></div>
+                        <div class="fm-empty__title">No farms match your filters</div>
+                        <p class="fm-empty__text">Try adjusting your search or filter criteria to see more results.</p>
                     </div>
                     <div v-else class="row g-3">
                         <div v-for="farm in filteredRows" :key="farm.id" class="col-12 col-sm-6 col-lg-4">
@@ -565,7 +567,7 @@ const badgeClass = (b) => {
                                                     <span class="fm-td-muted ms-1" style="font-size:.75rem;">lots</span>
                                                 </td>
                                                 <td><span class="fm-coffee-chip">{{ lot.type }}</span></td>
-                                                <td class="fw-semibold">{{ lot.price }}</td>
+                                                <td class="fw-semibold" style="font-variant-numeric:tabular-nums;">{{ lot.price }}</td>
                                                 <td>
                                                     <span class="fm-score-pill" :class="lot.score >= 88 ? 'fm-score-pill--high' : 'fm-score-pill--mid'">{{ lot.score }}</span>
                                                 </td>
@@ -670,7 +672,7 @@ const badgeClass = (b) => {
                                     <div v-for="cert in certifications" :key="cert.label">
                                         <div class="d-flex justify-content-between mb-1">
                                             <span class="fm-cert-label">{{ cert.label }}</span>
-                                            <span class="fw-semibold" :class="cert.pct >= 80 ? 'fm-up' : cert.pct >= 40 ? 'fm-warn' : 'fm-down'" style="font-size:.8125rem;">{{ cert.pct }}%</span>
+                                            <span class="fw-semibold" :class="cert.pct >= 80 ? 'fm-up' : cert.pct >= 40 ? 'fm-warn' : 'fm-down'" style="font-size:.8125rem; font-variant-numeric:tabular-nums;">{{ cert.pct }}%</span>
                                         </div>
                                         <div class="fm-bar-track">
                                             <div class="fm-bar-fill"
@@ -766,15 +768,16 @@ const badgeClass = (b) => {
     --surface-mid:    #f1f5f9;
     --surface-high:   #e5e7eb;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface-white);
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .fm-header   { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
+.fm-kicker   { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 4px; line-height: 1.4; }
 .fm-title    { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; }
-.fm-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); }
+.fm-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); margin-top: 2px; }
 
 /* ── Filters ───────────────────────────────────────────────────────────────── */
 .fm-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -803,7 +806,7 @@ const badgeClass = (b) => {
 /* ── KPI Cards ─────────────────────────────────────────────────────────────── */
 .fm-kpi { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; }
 .fm-kpi__label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; }
-.fm-kpi__value { font-size: 1.25rem; font-weight: 800; color: var(--on-surface); line-height: 1; margin: 4px 0 2px; }
+.fm-kpi__value { font-size: 1.25rem; font-weight: 800; color: var(--on-surface); line-height: 1; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
 .fm-kpi__value--success { color: var(--green); }
 .fm-kpi__value--primary { color: #0369a1; }
 .fm-kpi__value--warning { color: #92400e; }
@@ -823,12 +826,15 @@ const badgeClass = (b) => {
 .fm-farm-location{ font-size: 0.75rem; color: var(--on-surface-var); }
 
 /* ── Empty state ───────────────────────────────────────────────────────────── */
-.fm-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 20px; color: var(--on-surface-var); font-size: 0.875rem; background: var(--surface-low); border-radius: 12px; border: 1px solid var(--surface-high); }
+.fm-empty { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 40px 20px; text-align: center; background: var(--surface-low); border-radius: 12px; border: 1px solid var(--surface-high); }
+.fm-empty__icon { width: 44px; height: 44px; border-radius: 50%; background: var(--surface-white); border: 1px solid var(--surface-high); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+.fm-empty__title { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
+.fm-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); max-width: 320px; margin: 0; line-height: 1.5; }
 
 /* ── Stat cell ─────────────────────────────────────────────────────────────── */
 .fm-stat-cell { background: var(--surface-low); border-radius: 6px; padding: 5px 8px; }
 .fm-stat-cell span   { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; }
-.fm-stat-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; }
+.fm-stat-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; font-variant-numeric: tabular-nums; }
 
 /* ── Type / coffee chips ───────────────────────────────────────────────────── */
 .fm-type-badge { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
@@ -836,7 +842,7 @@ const badgeClass = (b) => {
 .fm-type-badge--amber { background: #fef3c7; color: #92400e; }
 .fm-type-badge--blue  { background: #dbeafe; color: #1e40af; }
 .fm-coffee-chip { display: inline-flex; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
-.fm-altitude-badge { display: inline-flex; background: #f0f9ff; color: #0369a1; border-radius: 6px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
+.fm-altitude-badge { display: inline-flex; background: #f0f9ff; color: #0369a1; border-radius: 6px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; font-variant-numeric: tabular-nums; }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
 .fm-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
@@ -847,7 +853,7 @@ const badgeClass = (b) => {
 .fm-featured-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; display: flex; flex-direction: column; }
 .fm-featured-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green); margin-bottom: 4px; }
 .fm-featured-name  { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
-.fm-featured-score { font-size: 1.25rem; font-weight: 800; color: var(--green); }
+.fm-featured-score { font-size: 1.25rem; font-weight: 800; color: var(--green); font-variant-numeric: tabular-nums; }
 
 /* ── Regional ──────────────────────────────────────────────────────────────── */
 .fm-region-card  { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; }
@@ -874,13 +880,13 @@ const badgeClass = (b) => {
 .fm-td-muted  { color: var(--on-surface-var); font-size: 0.8125rem; }
 .fm-table-footer { display: flex; align-items: center; padding: 10px 16px; border-top: 1px solid var(--surface-low); background: var(--surface-low); }
 .fm-act-btn   { font-size: 0.75rem !important; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.fm-score-bubble { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6875rem; font-weight: 800; flex-shrink: 0; }
+.fm-score-bubble { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6875rem; font-weight: 800; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .fm-score-bubble--high { background: #dcfce7; color: #166534; }
 .fm-score-bubble--mid  { background: #fef3c7; color: #92400e; }
-.fm-score-pill { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 800; padding: 2px 8px; }
+.fm-score-pill { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 800; padding: 2px 8px; font-variant-numeric: tabular-nums; }
 .fm-score-pill--high { background: #dcfce7; color: #166534; }
 .fm-score-pill--mid  { background: #fef3c7; color: #92400e; }
-.fm-lots-count { font-size: 1rem; font-weight: 800; color: var(--green); }
+.fm-lots-count { font-size: 1rem; font-weight: 800; color: var(--green); font-variant-numeric: tabular-nums; }
 .fm-up   { color: #166534; font-weight: 700; }
 .fm-warn { color: #92400e; font-weight: 700; }
 .fm-down { color: #b91c1c; font-weight: 700; }
@@ -892,7 +898,7 @@ const badgeClass = (b) => {
 /* ── Metrics / mini charts ─────────────────────────────────────────────────── */
 .fm-metric-cell { background: var(--surface-low); border-radius: 8px; padding: 8px 10px; }
 .fm-metric-cell span   { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; margin-bottom: 2px; }
-.fm-metric-cell strong { font-size: 0.9375rem; font-weight: 800; color: var(--on-surface); }
+.fm-metric-cell strong { font-size: 0.9375rem; font-weight: 800; color: var(--on-surface); font-variant-numeric: tabular-nums; }
 .fm-mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 44px; background: var(--surface-low); border-radius: 8px; padding: 5px; }
 .fm-mini-chart--quality .fm-mini-bar { background: #059669; }
 .fm-mini-bar   { flex: 1; background: var(--green); border-radius: 2px 2px 0 0; opacity: 0.75; }

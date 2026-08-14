@@ -292,7 +292,7 @@ async function bulkDelete() {
     --surface-low: #f7f7f8;
     --surface-selected: rgba(0, 69, 50, 0.06);
     font-family: 'Manrope', system-ui, sans-serif;
-    background: #ffffff;
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }

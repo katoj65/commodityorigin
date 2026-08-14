@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import {
     Box, House, Collection, Calendar, TrendCharts, Clock,
-    View, Edit, Delete,
+    View, Edit, Delete, CircleCheck, WarningFilled,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -60,6 +60,12 @@ function qualityFlagCount(row) {
 function qualitySummary(row) {
     const count = qualityFlagCount(row);
     return count === 0 ? 'Clean' : `${count} flag${count > 1 ? 's' : ''}`;
+}
+function qualityTagType(row) {
+    return qualityFlagCount(row) === 0 ? 'success' : 'warning';
+}
+function qualityTagIcon(row) {
+    return qualityFlagCount(row) === 0 ? CircleCheck : WarningFilled;
 }
 
 function disableFutureDates(date) {
@@ -176,7 +182,8 @@ function openViewHarvestDialog(row) {
                 <span class="mh-toolbar__count">{{ harvests.length }} total</span>
             </div>
 
-            <!-- ── Table (edge-to-edge) ─────────────────────────────────── -->
+            <!-- ── Table ─────────────────────────────────────────────────── -->
+            <div class="mh-card">
             <el-table
                 :data="harvests"
                 class="mh-table"
@@ -215,8 +222,8 @@ function openViewHarvestDialog(row) {
                     <template #header><span class="mh-th"><el-icon><Box /></el-icon> Yield</span></template>
                     <template #default="{ row }">
                         <div class="mh-cell-specs">
-                            <span>{{ row.weight !== null ? `${Number(row.weight).toLocaleString()} kg` : '—' }}</span>
-                            <span class="mh-cell-sub">{{ row.price !== null ? `$${Number(row.price).toFixed(2)}/kg` : 'Price not set' }}</span>
+                            <span class="mh-num">{{ row.weight !== null ? `${Number(row.weight).toLocaleString()} kg` : '—' }}</span>
+                            <span class="mh-cell-sub mh-num">{{ row.price !== null ? `$${Number(row.price).toFixed(2)}/kg` : 'Price not set' }}</span>
                         </div>
                     </template>
                 </el-table-column>
@@ -224,8 +231,11 @@ function openViewHarvestDialog(row) {
                     <template #header><span class="mh-th mh-th--center"><el-icon><TrendCharts /></el-icon> Quality</span></template>
                     <template #default="{ row }">
                         <div class="mh-cell-specs mh-cell-specs--center">
-                            <span class="mh-count-pill">{{ row.ripeness_percentage !== null ? `${row.ripeness_percentage}%` : '—' }}</span>
-                            <span class="mh-cell-sub">{{ qualitySummary(row) }}</span>
+                            <span class="mh-count-pill mh-num">{{ row.ripeness_percentage !== null ? `${row.ripeness_percentage}%` : '—' }}</span>
+                            <el-tag :type="qualityTagType(row)" effect="plain" size="small" round class="mh-quality-tag">
+                                <el-icon><component :is="qualityTagIcon(row)" /></el-icon>
+                                {{ qualitySummary(row) }}
+                            </el-tag>
                         </div>
                     </template>
                 </el-table-column>
@@ -268,6 +278,7 @@ function openViewHarvestDialog(row) {
                     </div>
                 </template>
             </el-table>
+            </div>
 
             <!-- ── Edit Harvest modal — borrows the fp-modal design language ── -->
             <el-dialog v-model="editDialogOpen" width="600px" align-center class="fp-modal">
@@ -478,7 +489,7 @@ function openViewHarvestDialog(row) {
     --surface-low: #f8fafc;
     --surface-high: #e5e7eb;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface-white);
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
     line-height: 1.5;
@@ -507,8 +518,20 @@ function openViewHarvestDialog(row) {
 .mh-btn-danger:hover { background: #b91c1c; }
 .mh-btn-danger:disabled { opacity: .6; cursor: not-allowed; }
 
-/* ── Table (edge-to-edge) ──────────────────────────────────────────────── */
-.mh-table { width: 100%; border-top: 1px solid var(--surface-high); }
+/* ── Card — boxes the table exactly like .mkt-card on the market listing
+   page: floating, elevated, rounded, instead of an edge-to-edge table
+   sitting flat on the page background. ───────────────────────────────── */
+.mh-card {
+    margin: 0 clamp(1rem, 3vw, 2rem);
+    border: 1px solid var(--surface-high);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14);
+}
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+.mh-table { width: 100%; }
 .mh-table :deep(.el-table__inner-wrapper::before) { display: none; }
 .mh-table :deep(.el-table__row) { cursor: pointer; }
 .mh-table :deep(.el-table__header th.el-table__cell) {
@@ -523,8 +546,8 @@ function openViewHarvestDialog(row) {
     line-height: 1.3;
 }
 .mh-table :deep(td.el-table__cell) { font-size: .8125rem; color: var(--on-surface); padding: 7px 0; }
-.mh-table :deep(.el-table__cell:first-child .cell) { padding-left: clamp(1rem, 3vw, 2rem); }
-.mh-table :deep(.el-table__cell:last-child .cell) { padding-right: clamp(1rem, 3vw, 2rem); }
+.mh-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.25rem; }
+.mh-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.25rem; }
 .mh-table :deep(.el-table__row:hover .el-table__cell) { background: var(--surface-low); }
 
 /* ── Table header icons ───────────────────────────────────────────────── */
@@ -541,6 +564,9 @@ function openViewHarvestDialog(row) {
 .mh-cell-specs { display: flex; flex-direction: column; gap: 0; }
 .mh-cell-specs--center { align-items: center; }
 .mh-count-pill { display: inline-flex; min-width: 26px; justify-content: center; background: var(--surface-low); border-radius: 999px; padding: 2px 9px; font-weight: 700; font-size: .75rem; }
+.mh-num { font-variant-numeric: tabular-nums; }
+.mh-quality-tag { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
+.mh-quality-tag :deep(.el-icon) { font-size: 12px; }
 
 /* ── Row actions ───────────────────────────────────────────────────────── */
 .mh-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }

@@ -33,6 +33,7 @@ class OrderResource extends JsonResource
             'unit_price' => (float) $this->unit_price,
             'total_amount' => (float) $this->total_amount,
             'currency' => $this->currency,
+            'payment_method' => $this->payment_method,
             'notes' => $this->notes,
             'status' => $this->status,
             'created_at' => optional($this->created_at)?->toDateTimeString(),

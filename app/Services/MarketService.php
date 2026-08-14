@@ -57,6 +57,99 @@ class MarketService
     }
 
     /**
+     * Shape a single market listing for its product profile page — pulls in
+     * the underlying lot's batch/sensory/storage records when the listing
+     * was posted from a tracked lot, for a fuller spec sheet.
+     *
+     * @return array<string, mixed>
+     */
+    public function show(Market $market): array
+    {
+        $market->loadMissing(['user', 'lot.batch', 'lot.sensoryProfile', 'lot.storageProfile']);
+
+        $lot = $market->lot;
+        $batch = $lot?->batch;
+        $sensory = $lot?->sensoryProfile;
+        $storage = $lot?->storageProfile;
+
+        $specs = array_filter([
+            'grade' => $lot?->grade,
+            'variety' => $batch?->variety,
+            'screen_size' => $lot?->screen_size,
+            'altitude' => $lot?->altitude,
+            'moisture_content' => $this->toFloatOrNull($batch?->moisture_content),
+            'defect_count' => $batch?->defect_count,
+            'drying_method' => $batch?->drying_method,
+            'processing_date' => optional($batch?->processing_date)?->toDateString(),
+            'packaging_type' => $lot?->packaging_type ?? $storage?->packaging_type,
+            'net_weight_kg' => $this->toFloatOrNull($lot?->net_weight_kg ?? $storage?->net_weight_kg),
+            'quantity_bags' => $lot?->quantity_bags ?? $storage?->quantity_bags,
+            'bag_weight_kg' => $this->toFloatOrNull($lot?->bag_weight_kg ?? $storage?->bag_weight_kg),
+            'warehouse' => $lot?->warehouse ?? $storage?->warehouse,
+        ], fn ($value) => $value !== null && $value !== '');
+
+        $cupping = array_filter([
+            'aroma_score' => $this->toFloatOrNull($sensory?->aroma_score ?? $lot?->aroma_score),
+            'acidity_score' => $this->toFloatOrNull($sensory?->acidity_score ?? $lot?->acidity_score),
+            'body_score' => $this->toFloatOrNull($sensory?->body_score ?? $lot?->body_score),
+            'aftertaste_score' => $this->toFloatOrNull($sensory?->aftertaste_score),
+            'flavor_notes' => $sensory?->flavor_notes,
+            'fragrance_notes' => $sensory?->fragrance_notes,
+            'cupping_notes' => $sensory?->cupping_notes,
+        ], fn ($value) => $value !== null && $value !== '');
+
+        $marketAvgPrice = Market::query()
+            ->where('status', 'live')
+            ->where('type', $market->type)
+            ->where('id', '!=', $market->id)
+            ->avg('price_per_kg');
+
+        $priceDeltaPct = $marketAvgPrice
+            ? round((((float) $market->price_per_kg - $marketAvgPrice) / $marketAvgPrice) * 100, 1)
+            : null;
+
+        $sellerActiveListings = $market->user_id
+            ? Market::where('user_id', $market->user_id)->where('status', 'live')->count()
+            : null;
+
+        return [
+            'id' => $market->id,
+            'lot_id' => $market->lot_id,
+            'lot_code' => $market->lot_code,
+            'name' => $market->name,
+            'origin' => $market->origin,
+            'type' => $market->type,
+            'process' => $market->process ?? $batch?->processing_method,
+            'quality_score' => (float) ($market->quality_score ?? 0),
+            'quantity' => (float) ($market->quantity ?? 0),
+            'price_per_kg' => (float) ($market->price_per_kg ?? 0),
+            'demand' => $market->demand,
+            'badges' => $market->badges ?? [],
+            'target_market' => $market->target_market,
+            'status' => $market->status,
+            'notes' => $market->notes ?: $lot?->description,
+            'image' => $market->image,
+            'seller_name' => $market->user?->name,
+            'created_at' => optional($market->created_at)?->toDateTimeString(),
+            'specs' => $specs,
+            'cupping' => $cupping ?: null,
+            'market_avg_price_per_kg' => $marketAvgPrice ? round($marketAvgPrice, 2) : null,
+            'price_delta_pct' => $priceDeltaPct,
+            'seller_active_listings' => $sellerActiveListings,
+            'is_traceable' => $market->lot_id !== null,
+        ];
+    }
+
+    /**
+     * Null-safe cast — decimal-cast attributes surface as strings, and
+     * absent relations surface as null; this keeps both sane as floats.
+     */
+    private function toFloatOrNull(mixed $value): ?float
+    {
+        return $value === null ? null : (float) $value;
+    }
+
+    /**
      * Shape live markets for the live market terminal.
      *
      * @return array<int, array<string, mixed>>

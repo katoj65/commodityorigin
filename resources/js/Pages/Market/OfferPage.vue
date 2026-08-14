@@ -114,68 +114,70 @@ watch(filteredOrders, () => { currentPage.value = 1; });
                 </div>
             </div>
 
-            <el-table :data="pagedOrders" class="mkt-el-table" stripe empty-text="No offers match your search.">
-                <el-table-column width="56">
-                    <template #default>
-                        <div class="mkt-thumb">
-                            <svg class="mkt-thumb-icon" viewBox="0 0 24 24">
-                                <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
-                                <path d="M9 6 C7 9, 11 15, 9 18" stroke="#c9a27a" stroke-width="1.1" fill="none" transform="rotate(-25 9 12)" />
-                                <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
-                                <path d="M16.5 10 C15 12.5, 18 16, 16.5 19" stroke="#d8b48f" stroke-width="1" fill="none" transform="rotate(20 16.5 14.5)" />
-                            </svg>
-                        </div>
-                    </template>
-                </el-table-column>
-                <el-table-column label="Order #" min-width="150">
-                    <template #header><el-icon class="mkt-th-icon"><Tickets /></el-icon>Order #</template>
-                    <template #default="{ row }">
-                        <div class="mkt-item-name">{{ row.order_number }}</div>
-                        <div class="mkt-muted" style="font-size:.7rem;">{{ row.crop_type }}</div>
-                    </template>
-                </el-table-column>
-                <el-table-column label="Variety / Grade" min-width="140">
-                    <template #header><el-icon class="mkt-th-icon"><CollectionTag /></el-icon>Variety / Grade</template>
-                    <template #default="{ row }">{{ varietyGrade(row) }}</template>
-                </el-table-column>
-                <el-table-column label="Quantity" min-width="110" align="right" header-align="left">
-                    <template #header><el-icon class="mkt-th-icon"><Box /></el-icon>Quantity</template>
-                    <template #default="{ row }"><span class="mkt-num">{{ fmtQty(row.quantity) }}</span></template>
-                </el-table-column>
-                <el-table-column label="Unit Price" min-width="110" align="right" header-align="left">
-                    <template #header><el-icon class="mkt-th-icon"><Coin /></el-icon>Unit Price</template>
-                    <template #default="{ row }"><span class="mkt-num">{{ fmtAmt(row.unit_price) }}</span></template>
-                </el-table-column>
-                <el-table-column label="Total" min-width="110" align="right" header-align="left">
-                    <template #header><el-icon class="mkt-th-icon"><Money /></el-icon>Total</template>
-                    <template #default="{ row }"><span class="mkt-num fw-semibold">{{ fmtAmt(row.total_amount) }}</span></template>
-                </el-table-column>
-                <el-table-column label="Seller" min-width="130">
-                    <template #header><el-icon class="mkt-th-icon"><User /></el-icon>Seller</template>
-                    <template #default="{ row }">{{ row.seller_name || '—' }}</template>
-                </el-table-column>
-                <el-table-column label="Status" min-width="110" align="center">
-                    <template #header><el-icon class="mkt-th-icon"><Flag /></el-icon>Status</template>
-                    <template #default="{ row }">
-                        <span class="mkt-badge" :class="`mkt-badge--${orderStatusTone(row.status)}`">{{ orderStatusLabel(row.status) }}</span>
-                    </template>
-                </el-table-column>
-                <el-table-column width="70" align="right">
-                    <template #default="{ row }">
-                        <Link :href="route('orders.show', row.id)" class="mkt-icon-link" title="View order"><el-icon><View /></el-icon></Link>
-                    </template>
-                </el-table-column>
-            </el-table>
+            <div class="mkt-card">
+                <el-table :data="pagedOrders" class="mkt-el-table" stripe empty-text="No offers match your search.">
+                    <el-table-column width="56">
+                        <template #default>
+                            <div class="mkt-thumb">
+                                <svg class="mkt-thumb-icon" viewBox="0 0 24 24">
+                                    <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
+                                    <path d="M9 6 C7 9, 11 15, 9 18" stroke="#c9a27a" stroke-width="1.1" fill="none" transform="rotate(-25 9 12)" />
+                                    <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
+                                    <path d="M16.5 10 C15 12.5, 18 16, 16.5 19" stroke="#d8b48f" stroke-width="1" fill="none" transform="rotate(20 16.5 14.5)" />
+                                </svg>
+                            </div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="Order #" min-width="150">
+                        <template #header><el-icon class="mkt-th-icon"><Tickets /></el-icon>Order #</template>
+                        <template #default="{ row }">
+                            <div class="mkt-item-name">{{ row.order_number }}</div>
+                            <div class="mkt-muted" style="font-size:.7rem;">{{ row.crop_type }}</div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="Variety / Grade" min-width="140">
+                        <template #header><el-icon class="mkt-th-icon"><CollectionTag /></el-icon>Variety / Grade</template>
+                        <template #default="{ row }">{{ varietyGrade(row) }}</template>
+                    </el-table-column>
+                    <el-table-column label="Quantity" min-width="110" align="right" header-align="left">
+                        <template #header><el-icon class="mkt-th-icon"><Box /></el-icon>Quantity</template>
+                        <template #default="{ row }"><span class="mkt-num">{{ fmtQty(row.quantity) }}</span></template>
+                    </el-table-column>
+                    <el-table-column label="Unit Price" min-width="110" align="right" header-align="left">
+                        <template #header><el-icon class="mkt-th-icon"><Coin /></el-icon>Unit Price</template>
+                        <template #default="{ row }"><span class="mkt-num">{{ fmtAmt(row.unit_price) }}</span></template>
+                    </el-table-column>
+                    <el-table-column label="Total" min-width="110" align="right" header-align="left">
+                        <template #header><el-icon class="mkt-th-icon"><Money /></el-icon>Total</template>
+                        <template #default="{ row }"><span class="mkt-num fw-semibold">{{ fmtAmt(row.total_amount) }}</span></template>
+                    </el-table-column>
+                    <el-table-column label="Seller" min-width="130">
+                        <template #header><el-icon class="mkt-th-icon"><User /></el-icon>Seller</template>
+                        <template #default="{ row }">{{ row.seller_name || '—' }}</template>
+                    </el-table-column>
+                    <el-table-column label="Status" min-width="110" align="center">
+                        <template #header><el-icon class="mkt-th-icon"><Flag /></el-icon>Status</template>
+                        <template #default="{ row }">
+                            <span class="mkt-badge" :class="`mkt-badge--${orderStatusTone(row.status)}`">{{ orderStatusLabel(row.status) }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column width="70" align="right">
+                        <template #default="{ row }">
+                            <Link :href="route('orders.show', row.id)" class="mkt-icon-link" title="View order"><el-icon><View /></el-icon></Link>
+                        </template>
+                    </el-table-column>
+                </el-table>
 
-            <div v-if="filteredOrders.length" class="mkt-pagination">
-                <el-pagination
-                    v-model:current-page="currentPage"
-                    v-model:page-size="pageSize"
-                    :total="filteredOrders.length"
-                    :page-sizes="[25, 50, 100]"
-                    layout="total, sizes, prev, pager, next"
-                    background
-                />
+                <div v-if="filteredOrders.length" class="mkt-pagination">
+                    <el-pagination
+                        v-model:current-page="currentPage"
+                        v-model:page-size="pageSize"
+                        :total="filteredOrders.length"
+                        :page-sizes="[25, 50, 100]"
+                        layout="total, sizes, prev, pager, next"
+                        background
+                    />
+                </div>
             </div>
         </div>
 
@@ -294,14 +296,24 @@ watch(filteredOrders, () => { currentPage.value = 1; });
 .mkt-btn-group__item:disabled { opacity: .6; cursor: not-allowed; }
 .mkt-new-btn :deep(svg) { width: 14px; height: 14px; }
 
+/* ── Table card — boxed, elevated container ─────────────────────────────── */
+.mkt-card {
+    margin: 0 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
+}
+
 /* ── Element Plus table, reskinned to match the market design system ──── */
-.mkt-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; border-top: 1px solid var(--border); }
+.mkt-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; }
 .mkt-el-table :deep(.el-table__cell) { padding: 11px 0; }
 .mkt-el-table :deep(.cell) { padding: 0 12px; font-size: .8125rem; line-height: 1.45; }
 .mkt-el-table :deep(th.el-table__cell) { font-size: .6875rem; font-weight: 600; letter-spacing: .04em; }
 .mkt-el-table :deep(th.el-table__cell .cell) { display: flex; align-items: center; white-space: nowrap; }
-.mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.5rem; }
-.mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.5rem; }
+.mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.25rem; }
+.mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.25rem; }
 .mkt-el-table :deep(.el-table__inner-wrapper::before) { display: none; }
 .mkt-el-table :deep(.el-table__body td.el-table__cell) { transition: background-color .12s ease; }
 .mkt-el-table :deep(.el-table__body tr.el-table__row--striped td.el-table__cell) { background: #fafaf9; }
@@ -317,7 +329,7 @@ watch(filteredOrders, () => { currentPage.value = 1; });
 .mkt-icon-link { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border); background: #fff; color: var(--on-surface-var); cursor: pointer; text-decoration: none; transition: all .15s ease; }
 .mkt-icon-link:hover { background: var(--surface-low); color: var(--green); border-color: var(--green); box-shadow: 0 1px 3px rgba(0, 69, 50, .12); }
 
-.mkt-pagination { padding: 1rem 1.5rem 0; border-top: 1px solid var(--border); margin-top: .5rem; }
+.mkt-pagination { padding: 1rem 1.25rem 1.25rem; border-top: 1px solid var(--border); }
 .mkt-pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; font-family: inherit; }
 .mkt-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: .8125rem; font-weight: 600; color: var(--on-surface-var); }
 .mkt-pagination :deep(.el-pagination__sizes) { margin-right: 4px; }
@@ -564,9 +576,10 @@ watch(filteredOrders, () => { currentPage.value = 1; });
 
 @media (max-width: 767.98px) {
     .mkt-section__head { padding: 0 1.25rem; }
-    .mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.25rem; }
-    .mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.25rem; }
-    .mkt-pagination { padding: 1rem 1.25rem 0; }
+    .mkt-card { margin: 0 1.25rem; border-radius: 12px; }
+    .mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1rem; }
+    .mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1rem; }
+    .mkt-pagination { padding: 1rem 1rem 1.25rem; }
     .mkt-pagination :deep(.el-pagination) { justify-content: center; }
     .mkt-pagination :deep(.el-pagination__total) { margin-right: 0; width: 100%; text-align: center; order: -1; }
     .ord-field-row { grid-template-columns: 1fr; }

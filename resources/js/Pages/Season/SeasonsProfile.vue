@@ -693,7 +693,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 /* ── Base ───────────────────────────────────────────────────────── */
 .sp-page {
     min-height: calc(100vh - 48px);
-    background: #fff;
+    background: var(--surface, #f7f9fb);
     color: #1f2a2a;
     padding: 0 0 48px;
     font-family: 'Manrope', sans-serif;

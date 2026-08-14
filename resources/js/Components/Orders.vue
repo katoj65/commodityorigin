@@ -6,6 +6,7 @@ import { Tickets, FullScreen, ShoppingCart } from '@element-plus/icons-vue';
 const props = defineProps({
     orders: { type: Array, default: () => [] },
     title: { type: String, default: 'Orders' },
+    showHeader: { type: Boolean, default: true },
 });
 
 const page = usePage();
@@ -58,7 +59,7 @@ function formatAmount(order) {
 
 <template>
     <div class="orders-widget">
-        <div class="orders-widget__head">
+        <div v-if="showHeader" class="orders-widget__head">
             <Link :href="route('market.request')" class="orders-widget__title-group">
                 <span class="orders-widget__icon"><el-icon :size="14"><Tickets /></el-icon></span>
                 <div class="orders-widget__title">{{ title }}</div>

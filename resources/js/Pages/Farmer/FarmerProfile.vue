@@ -290,8 +290,10 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                 </div>
 
                                 <div v-if="!estates.length" class="fpr-empty">
-                                    <el-icon><Warning /></el-icon>
-                                    <div>No farms registered yet. <button class="fpr-link" @click="goToAddFarm">Add the first farm.</button></div>
+                                    <div class="fpr-empty-icon"><el-icon><Warning /></el-icon></div>
+                                    <div class="fpr-empty-title">No farms registered yet</div>
+                                    <p class="fpr-empty-text">Link this farmer's first farm to start tracking harvests, quality, and traceability.</p>
+                                    <button class="btn fpr-btn-primary btn-sm" @click="goToAddFarm"><el-icon><Location /></el-icon> Add First Farm</button>
                                 </div>
 
                                 <div v-else class="row g-3">
@@ -675,16 +677,16 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     --surface-mid:    #f1f5f9;
     --surface-high:   #e5e7eb;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface-white);
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .fpr-header  { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
-.fpr-kicker  { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 2px; }
-.fpr-title   { font-size: 1.0625rem; font-weight: 800; letter-spacing: -0.02em; }
-.fpr-subtitle{ font-size: 0.8125rem; color: var(--on-surface-var); }
+.fpr-kicker  { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 3px; line-height: 1.4; }
+.fpr-title   { font-size: 1.1875rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
+.fpr-subtitle{ font-size: 0.8125rem; color: var(--on-surface-var); margin-top: 2px; line-height: 1.5; }
 .fpr-flash   { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px 12px; color: #166534; font-size: 0.8125rem; font-weight: 600; margin: 8px 0 0; }
 .fpr-hbadge  { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
 .fpr-hbadge--soft { background: #dcfce7; color: #166534; }
@@ -692,11 +694,11 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .fpr-hbadge--amber{ background: #fef3c7; color: #92400e; }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.fpr-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.fpr-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 7px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .fpr-btn-primary:hover { background: var(--green-grad); border-color: var(--green-grad); color: #fff; }
-.fpr-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.fpr-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 7px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .fpr-btn-outline:hover { background: var(--surface-low); }
-.fpr-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.fpr-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 7px 14px; display: inline-flex; align-items: center; gap: 5px; }
 
 /* ── Hero card ─────────────────────────────────────────────────────────────── */
 .fpr-hero-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
@@ -715,11 +717,11 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .fpr-quality-wrap { display: flex; align-items: center; }
 .fpr-quality-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fpr-ring-inner { position: absolute; text-align: center; }
-.fpr-ring-score { font-size: 1rem; font-weight: 800; color: var(--green); line-height: 1; }
+.fpr-ring-score { font-size: 1rem; font-weight: 800; color: var(--green); line-height: 1; font-variant-numeric: tabular-nums; }
 .fpr-ring-label { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); }
 .fpr-perf-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; color: var(--on-surface-var); }
 .fpr-perf-row:last-child { border-bottom: none; }
-.fpr-perf-row strong { color: var(--on-surface); font-weight: 700; }
+.fpr-perf-row strong { color: var(--on-surface); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ── Brief bar ─────────────────────────────────────────────────────────────── */
 .fpr-brief { display: flex; align-items: flex-start; gap: 8px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 10px 14px; font-size: 0.8125rem; color: var(--on-surface); }
@@ -727,7 +729,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 /* ── Spec cell ─────────────────────────────────────────────────────────────── */
 .fpr-spec-cell { background: var(--surface-low); border-radius: 6px; padding: 6px 8px; }
 .fpr-spec-cell span   { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; margin-bottom: 2px; }
-.fpr-spec-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; }
+.fpr-spec-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; font-variant-numeric: tabular-nums; }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
 .fpr-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
@@ -735,7 +737,10 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .fpr-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
 /* ── Empty state ───────────────────────────────────────────────────────────── */
-.fpr-empty { display: flex; align-items: center; gap: 8px; padding: 20px; color: var(--on-surface-var); font-size: 0.875rem; background: var(--surface-low); border-radius: 10px; border: 1px dashed var(--surface-high); }
+.fpr-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; padding: 2.25rem 1.25rem; color: var(--on-surface-var); background: var(--surface-low); border-radius: 10px; border: 1px dashed var(--surface-high); }
+.fpr-empty-icon { width: 44px; height: 44px; border-radius: 50%; background: #fff; border: 1px solid var(--surface-high); color: var(--on-surface-var); font-size: 18px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+.fpr-empty-title { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
+.fpr-empty-text { font-size: 0.8125rem; color: var(--on-surface-var); max-width: 320px; margin: 2px 0 14px; line-height: 1.5; }
 .fpr-link  { background: none; border: none; color: var(--green); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; font-size: inherit; }
 
 /* ── Farm card ─────────────────────────────────────────────────────────────── */
@@ -754,13 +759,13 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .fpr-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
-.fpr-table tbody td { padding: 9px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
+.fpr-table tbody td { padding: 9px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; font-variant-numeric: tabular-nums; }
 .fpr-table-row { transition: background 0.1s; }
 .fpr-table-row:hover { background: var(--surface-low); }
 .fpr-item-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
 .fpr-td-muted  { color: var(--on-surface-var); font-size: 0.8125rem; }
 .fpr-act-btn   { font-size: 0.75rem !important; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.fpr-score-pill { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 800; padding: 2px 8px; }
+.fpr-score-pill { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 800; padding: 2px 8px; font-variant-numeric: tabular-nums; }
 .fpr-score-pill--high { background: #dcfce7; color: #166534; }
 .fpr-score-pill--mid  { background: #fef3c7; color: #92400e; }
 .fpr-up   { color: #166534; font-weight: 700; }
@@ -777,7 +782,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .fpr-flow-line  { position: absolute; top: 18px; left: 50%; width: 100%; height: 2px; background: var(--surface-high); z-index: 0; }
 
 /* ── Quality / bars ────────────────────────────────────────────────────────── */
-.fpr-quality-bubble { width: 52px; height: 52px; border-radius: 50%; background: var(--green); color: #fff; font-size: 1rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fpr-quality-bubble { width: 52px; height: 52px; border-radius: 50%; background: var(--green); color: #fff; font-size: 1rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .fpr-cert-label { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
 .fpr-bar-track  { height: 6px; background: var(--surface-high); border-radius: 999px; overflow: hidden; }
 .fpr-bar-fill   { height: 100%; border-radius: 999px; transition: width 0.6s ease; }

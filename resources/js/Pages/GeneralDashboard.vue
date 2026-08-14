@@ -1,6 +1,6 @@
 <script setup>
-import { computed, ref } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ExchangeRates from '@/Components/ExchangeRates.vue';
 import Calendar from '@/Components/Calendar.vue';
@@ -12,10 +12,11 @@ import {
     LineElement, Filler, Tooltip, Legend,
 } from 'chart.js';
 import {
-    CoffeeCup, PriceTag, Opportunity, TrendCharts, Refresh,
-    ArrowRight, Flag, MapLocation, Ship, Position, Histogram,
+    CoffeeCup, PriceTag, Opportunity, TrendCharts,
+    ArrowRight, Flag, MapLocation, Ship, Position,
     MagicStick, Notebook, Sunny, Cloudy, Pouring, UserFilled, Timer,
     Coffee, Star, Coin, OfficeBuilding, ArrowLeft,
+    Calendar as CalendarIcon, List, FullScreen, Tickets,
 } from '@element-plus/icons-vue';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
@@ -29,8 +30,21 @@ const props = defineProps({
     hasProfile: { type: Boolean, default: true },
 });
 
-const page = usePage();
-const firstName = computed(() => page.props.auth?.user?.first_name ?? '');
+const scheduleTab = ref('calendar');
+const pendingTaskCount = computed(() => props.tasks.filter((t) => t.status === 'pending').length);
+
+const ordersTab = ref('requests');
+const activeOrderCount = computed(() => props.orders.filter((o) => !['delivered', 'cancelled'].includes(o.status)).length);
+
+/* Drives the Latest Updates / Weather Forecast pane layout directly via an
+   inline style binding rather than a CSS media query — this exact card
+   inexplicably kept computing flex-direction: column even with no matching
+   rule anywhere in the page (confirmed via exhaustive devtools inspection),
+   so the reactive-ref + inline-style approach sidesteps it entirely. */
+const isNarrowViewport = ref(false);
+function syncNarrowViewport() {
+    isNarrowViewport.value = window.innerWidth < 992;
+}
 
 /* ── Profile completion dialog ───────────────────────────────────────────
    Two simple steps: (1) pick account type from two big, plain-language
@@ -138,9 +152,6 @@ const marketChartData = {
     ],
 };
 
-/* ══════════════════════════════════════════════════════════════════════
-   2. MARKET OPPORTUNITIES
-   ══════════════════════════════════════════════════════════════════════ */
 const scoreTone = (score) => (score >= 90 ? 'cp-ring--high' : score >= 75 ? 'cp-ring--mid' : 'cp-ring--low');
 
 const demandCls = (demand) => ({
@@ -235,6 +246,9 @@ const historicalChartData = {
     ],
 };
 
+const priceRange = ref('7d');
+const priceRangeData = computed(() => (priceRange.value === '7d' ? marketChartData : historicalChartData));
+
 const priceComparison = [
     { country: 'Uganda', farmgate: '$4.10/kg', export: '$5.35/kg', delta: '+30.5%' },
     { country: 'Ethiopia', farmgate: '$4.62/kg', export: '$5.88/kg', delta: '+27.3%' },
@@ -287,6 +301,15 @@ const transitTimeStats = [
     { label: 'On-Time Performance', value: '82%' },
 ];
 
+onMounted(() => {
+    syncNarrowViewport();
+    window.addEventListener('resize', syncNarrowViewport);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('resize', syncNarrowViewport);
+});
+
 </script>
 
 <template>
@@ -294,179 +317,211 @@ const transitTimeStats = [
         <Head title="Coffee Intelligence Center" />
 
         <div class="cp-page">
-
-            <!-- ── Page header ───────────────────────────────────────────── -->
-            <div class="cp-page-header">
-                <h1 class="cp-title mb-0">Welcome{{ firstName ? `, ${firstName}` : '' }}</h1>
-                <button class="btn cp-btn-ghost btn-sm"><el-icon><Refresh /></el-icon> Refresh</button>
-            </div>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 1. MARKET PULSE
-                 ══════════════════════════════════════════════════════════ -->
-            <section class="cp-section cp-section--tight">
-                <div class="container-fluid px-3 px-lg-4 pt-3">
-                    <div class="row g-2 mb-3">
-                        <div v-for="kpi in marketKpis" :key="kpi.label" class="col-6 col-md-3">
-                            <div class="cp-kpi h-100">
-                                <div class="cp-kpi__icon"><el-icon><component :is="kpi.icon" /></el-icon></div>
-                                <span class="cp-kpi__label">{{ kpi.label }}</span>
-                                <div class="cp-kpi__value">{{ kpi.value }}<small v-if="kpi.unit">{{ ' ' + kpi.unit }}</small></div>
-                                <div class="cp-kpi__change" :class="kpi.up ? 'cp-up' : 'cp-down'">{{ kpi.change }}</div>
-                            </div>
+            <div class="container-fluid px-3 px-lg-4 py-3">
+                <div class="row g-3">
+                    <div v-for="kpi in marketKpis" :key="kpi.label" class="col-6 col-md-3">
+                        <div class="cp-kpi h-100">
+                            <div class="cp-kpi__icon"><el-icon><component :is="kpi.icon" /></el-icon></div>
+                            <span class="cp-kpi__label">{{ kpi.label }}</span>
+                            <div class="cp-kpi__value">{{ kpi.value }}<small v-if="kpi.unit">{{ ' ' + kpi.unit }}</small></div>
+                            <div class="cp-kpi__change" :class="kpi.up ? 'cp-up' : 'cp-down'">{{ kpi.change }}</div>
                         </div>
                     </div>
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-12 col-lg-4">
-                            <div class="cp-card cp-card--flat h-100">
-                                <Orders :orders="props.orders" title="Orders" />
+                    <div class="col-12 cp-col-70">
+                        <div class="cp-card">
+                            <div class="cp-schedule__head mb-2">
+                                <div class="cp-card-title mb-0"><el-icon class="cp-card-icon"><TrendCharts /></el-icon> Price Trend</div>
+                                <div class="cp-schedule__tabs">
+                                    <button
+                                        type="button"
+                                        class="cp-schedule__tab"
+                                        :class="{ 'cp-schedule__tab--active': priceRange === '7d' }"
+                                        @click="priceRange = '7d'"
+                                    >7D</button>
+                                    <button
+                                        type="button"
+                                        class="cp-schedule__tab"
+                                        :class="{ 'cp-schedule__tab--active': priceRange === '7y' }"
+                                        @click="priceRange = '7y'"
+                                    >7Y</button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-12 col-lg-4">
-                            <div class="cp-card cp-card--flat h-100">
-                                <Task :tasks="props.tasks" title="Tasks" />
-                            </div>
-                        </div>
-                        <div class="col-12 col-lg-4">
-                            <div class="cp-card h-100">
-                                <Calendar :events="props.calendarEvents" title="My Calendar" />
-                            </div>
+                            <div style="height:220px;"><Line :data="priceRangeData" :options="chartOptions" /></div>
                         </div>
                     </div>
+                    <div class="col-12 cp-col-30">
+                        <div class="cp-card h-100 cp-schedule">
+                            <div class="cp-schedule__head">
+                                <div class="cp-card-title mb-0"><el-icon class="cp-card-icon"><Tickets /></el-icon> Orders</div>
 
-                    <div class="row g-3">
-                        <div class="col-12 col-lg-7">
-                            <div class="cp-card h-100">
-                                <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><TrendCharts /></el-icon> 7-Day Price Trend</div>
-                                <div style="height:200px;"><Line :data="marketChartData" :options="chartOptions" /></div>
+                                <div class="cp-schedule__tabs">
+                                    <button
+                                        type="button"
+                                        class="cp-schedule__tab"
+                                        :class="{ 'cp-schedule__tab--active': ordersTab === 'orders' }"
+                                        @click="ordersTab = 'orders'"
+                                    >
+                                        Orders
+                                        <span v-if="activeOrderCount" class="cp-schedule__tab-count">{{ activeOrderCount }}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="cp-schedule__tab"
+                                        :class="{ 'cp-schedule__tab--active': ordersTab === 'requests' }"
+                                        @click="ordersTab = 'requests'"
+                                    >
+                                        Requests
+                                        <span v-if="buyerRequests.length" class="cp-schedule__tab-count">{{ buyerRequests.length }}</span>
+                                    </button>
+                                </div>
+
+                                <Link
+                                    :href="route('market.request')"
+                                    class="cp-schedule__link"
+                                    aria-label="Open all orders"
+                                    title="Open all orders"
+                                >
+                                    <el-icon :size="14"><FullScreen /></el-icon>
+                                </Link>
                             </div>
-                        </div>
-                        <div class="col-12 col-lg-5">
-                            <div class="cp-card h-100">
-                                <ExchangeRates :rates="props.exchangeRates" title="Currency Exchange" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 2. MARKET OPPORTUNITIES
-                 ══════════════════════════════════════════════════════════ -->
-            <section class="cp-section">
-                <div class="container-fluid px-3 px-lg-4">
-                    <div class="cp-section__head">
-                        <div>
-                            <div class="cp-kicker">AI-Generated</div>
-                            <h2 class="cp-title mb-0">Market Opportunities</h2>
-                        </div>
-                        <Link :href="route('market.index')" class="cp-link">View all <el-icon><ArrowRight /></el-icon></Link>
-                    </div>
+                            <div class="cp-schedule__body">
+                                <Orders v-show="ordersTab === 'orders'" :orders="props.orders" :show-header="false" />
 
-                    <div class="cp-card p-0 overflow-hidden">
-                        <div class="table-responsive">
-                            <table class="table cp-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th><el-icon class="cp-th-icon"><PriceTag /></el-icon>Lot</th>
-                                        <th><el-icon class="cp-th-icon"><MapLocation /></el-icon>Origin</th>
-                                        <th><el-icon class="cp-th-icon"><Coffee /></el-icon>Type</th>
-                                        <th><el-icon class="cp-th-icon"><Star /></el-icon>Quality</th>
-                                        <th><el-icon class="cp-th-icon"><Coin /></el-icon>Price / kg</th>
-                                        <th><el-icon class="cp-th-icon"><TrendCharts /></el-icon>Demand</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="m in markets" :key="m.id">
-                                        <td style="width:44px;">
-                                            <div class="cp-thumb">
-                                                <img v-if="m.image" :src="`/storage/${m.image}`" :alt="m.name">
-                                                <svg v-else class="cp-thumb-icon" viewBox="0 0 24 24">
-                                                    <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
-                                                    <path d="M9 6 C7 9, 11 15, 9 18" stroke="#c9a27a" stroke-width="1.1" fill="none" transform="rotate(-25 9 12)" />
-                                                    <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
-                                                    <path d="M16.5 10 C15 12.5, 18 16, 16.5 19" stroke="#d8b48f" stroke-width="1" fill="none" transform="rotate(20 16.5 14.5)" />
-                                                </svg>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="cp-item-name">{{ m.lot_code }}</div>
-                                            <div class="text-muted" style="font-size:.7rem;">{{ m.name }}</div>
-                                        </td>
-                                        <td>{{ m.origin || '—' }}</td>
-                                        <td class="text-capitalize">{{ m.type || '—' }}</td>
-                                        <td>{{ m.quality_score ?? '—' }}</td>
-                                        <td>{{ fmtPrice(m.price_per_kg) }}</td>
-                                        <td><span class="cp-badge" :class="demandCls(m.demand)">{{ m.demand || '—' }}</span></td>
-                                    </tr>
-                                    <tr v-if="!markets.length"><td colspan="7" class="text-center text-muted py-4">No live listings yet.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 3. COFFEE PRICES
-                 ══════════════════════════════════════════════════════════ -->
-            <section class="cp-section">
-                <div class="container-fluid px-3 px-lg-4">
-                    <div class="cp-section__head">
-                        <div>
-                            <div class="cp-kicker">Analytics</div>
-                            <h2 class="cp-title mb-0">Coffee Prices</h2>
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-12 col-lg-6">
-                            <div class="cp-card h-100">
-                                <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><Histogram /></el-icon> Historical Prices (7-Year)</div>
-                                <div style="height:220px;"><Line :data="historicalChartData" :options="chartOptions" /></div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-lg-6">
-                            <div class="cp-card p-0 overflow-hidden h-100">
-                                <div class="cp-card-title px-3 pt-3"><el-icon class="cp-card-icon"><PriceTag /></el-icon> Farmgate vs Export</div>
-                                <div class="table-responsive">
-                                    <table class="table cp-table mb-0">
-                                        <thead>
-                                            <tr><th>Country</th><th>Farmgate</th><th>Export</th><th>Margin</th></tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-for="c in priceComparison" :key="c.country">
-                                                <td class="cp-item-name">{{ c.country }}</td>
-                                                <td>{{ c.farmgate }}</td>
-                                                <td>{{ c.export }}</td>
-                                                <td class="cp-up">{{ c.delta }}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                <div v-show="ordersTab === 'requests'" class="cp-requests-list">
+                                    <div v-if="!buyerRequests.length" class="orders-widget__empty">
+                                        <span class="orders-widget__empty-icon"><el-icon :size="18"><UserFilled /></el-icon></span>
+                                        <p>No buyer requests yet.</p>
+                                    </div>
+                                    <div v-for="b in buyerRequests" :key="b.buyer" class="cp-hotspot-row">
+                                        <div>
+                                            <div class="cp-item-name">{{ b.buyer }}</div>
+                                            <div class="cp-muted" style="font-size:.7rem;">{{ b.request }}</div>
+                                        </div>
+                                        <span class="cp-up cp-hotspot-trend">{{ b.budget }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 4. SUPPLY & DEMAND
-                 ══════════════════════════════════════════════════════════ -->
-            <section class="cp-section">
-                <div class="container-fluid px-3 px-lg-4">
-                    <div class="cp-section__head">
-                        <div>
-                            <div class="cp-kicker">Global Intelligence</div>
-                            <h2 class="cp-title mb-0">Supply &amp; Demand</h2>
+                    <div class="col-12">
+                        <div class="cp-card p-0 overflow-hidden">
+                            <div class="d-flex align-items-center justify-content-between px-3 pt-3">
+                                <div class="cp-card-title mb-0"><el-icon class="cp-card-icon"><Opportunity /></el-icon> Market Opportunities</div>
+                                <Link :href="route('market.index')" class="cp-link">View all <el-icon><ArrowRight /></el-icon></Link>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table cp-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th><el-icon class="cp-th-icon"><PriceTag /></el-icon>Lot</th>
+                                            <th><el-icon class="cp-th-icon"><MapLocation /></el-icon>Origin</th>
+                                            <th><el-icon class="cp-th-icon"><Coffee /></el-icon>Type</th>
+                                            <th><el-icon class="cp-th-icon"><Star /></el-icon>Quality</th>
+                                            <th><el-icon class="cp-th-icon"><Coin /></el-icon>Price / kg</th>
+                                            <th><el-icon class="cp-th-icon"><TrendCharts /></el-icon>Demand</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="m in markets" :key="m.id">
+                                            <td style="width:44px;">
+                                                <div class="cp-thumb">
+                                                    <img v-if="m.image" :src="`/storage/${m.image}`" :alt="m.name">
+                                                    <svg v-else class="cp-thumb-icon" viewBox="0 0 24 24">
+                                                        <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
+                                                        <path d="M9 6 C7 9, 11 15, 9 18" stroke="#c9a27a" stroke-width="1.1" fill="none" transform="rotate(-25 9 12)" />
+                                                        <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
+                                                        <path d="M16.5 10 C15 12.5, 18 16, 16.5 19" stroke="#d8b48f" stroke-width="1" fill="none" transform="rotate(20 16.5 14.5)" />
+                                                    </svg>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="cp-item-name">{{ m.lot_code }}</div>
+                                                <div class="text-muted" style="font-size:.7rem;">{{ m.name }}</div>
+                                            </td>
+                                            <td>{{ m.origin || '—' }}</td>
+                                            <td class="text-capitalize">{{ m.type || '—' }}</td>
+                                            <td>{{ m.quality_score ?? '—' }}</td>
+                                            <td>{{ fmtPrice(m.price_per_kg) }}</td>
+                                            <td><span class="cp-badge" :class="demandCls(m.demand)">{{ m.demand || '—' }}</span></td>
+                                        </tr>
+                                        <tr v-if="!markets.length"><td colspan="7" class="text-center text-muted py-4">No live listings yet.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="row g-3">
-                        <div class="col-12 col-lg-4">
-                            <div class="cp-card h-100">
+                    <div class="col-12 cp-col-60">
+                        <div class="cp-card p-0 overflow-hidden h-100">
+                            <div class="cp-card-title px-3 pt-3"><el-icon class="cp-card-icon"><PriceTag /></el-icon> Farmgate vs Export</div>
+                            <div class="table-responsive">
+                                <table class="table cp-table mb-0">
+                                    <thead>
+                                        <tr><th>Country</th><th>Farmgate</th><th>Export</th><th>Margin</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="c in priceComparison" :key="c.country">
+                                            <td class="cp-item-name">{{ c.country }}</td>
+                                            <td>{{ c.farmgate }}</td>
+                                            <td>{{ c.export }}</td>
+                                            <td class="cp-up">{{ c.delta }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 cp-col-40">
+                        <div class="cp-card h-100 cp-schedule">
+                            <div class="cp-schedule__head">
+                                <div class="cp-card-title mb-0"><el-icon class="cp-card-icon"><CalendarIcon /></el-icon> Schedule</div>
+
+                                <div class="cp-schedule__tabs">
+                                    <button
+                                        type="button"
+                                        class="cp-schedule__tab"
+                                        :class="{ 'cp-schedule__tab--active': scheduleTab === 'calendar' }"
+                                        @click="scheduleTab = 'calendar'"
+                                    >
+                                        <el-icon :size="13"><CalendarIcon /></el-icon> Calendar
+                                    </button>
+                                    <button
+
+                                    type="button"
+                                        class="cp-schedule__tab"
+                                        :class="{ 'cp-schedule__tab--active': scheduleTab === 'tasks' }"
+                                        @click="scheduleTab = 'tasks'"
+                                    >
+                                        <el-icon :size="13"><List /></el-icon> Tasks
+                                        <span v-if="pendingTaskCount" class="cp-schedule__tab-count">{{ pendingTaskCount }}</span>
+                                    </button>
+                                </div>
+
+                                <Link
+                                    :href="scheduleTab === 'calendar' ? route('calendar.index') : route('task.index')"
+                                    class="cp-schedule__link"
+                                    :aria-label="scheduleTab === 'calendar' ? 'Open full calendar' : 'Open all tasks'"
+                                    :title="scheduleTab === 'calendar' ? 'Open full calendar' : 'Open all tasks'"
+                                >
+                                    <el-icon :size="14"><FullScreen /></el-icon>
+                                </Link>
+                            </div>
+
+                            <div class="cp-schedule__body">
+                                <Calendar v-show="scheduleTab === 'calendar'" :events="props.calendarEvents" :show-header="false" />
+                                <Task v-show="scheduleTab === 'tasks'" :tasks="props.tasks" :show-header="false" />
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-8">
+                        <div class="cp-card cp-tri-panel h-100" :style="{ flexDirection: isNarrowViewport ? 'column' : 'row' }">
+                            <div class="cp-tri-panel__col">
                                 <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><MapLocation /></el-icon> Producing Countries</div>
                                 <div v-for="p in producingCountries" :key="p.country" class="cp-share-row">
                                     <span class="cp-share-label">{{ p.country }}</span>
@@ -474,9 +529,10 @@ const transitTimeStats = [
                                     <span class="cp-share-pct">{{ p.volume }}</span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-12 col-lg-4">
-                            <div class="cp-card h-100">
+
+                            <div class="cp-tri-panel__divider" :style="isNarrowViewport ? { width: '100%', height: '1px' } : { width: '1px', height: 'auto' }"></div>
+
+                            <div class="cp-tri-panel__col">
                                 <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><Opportunity /></el-icon> Demand Hotspots</div>
                                 <div v-for="d in demandHotspots" :key="d.region" class="cp-hotspot-row">
                                     <div>
@@ -487,37 +543,16 @@ const transitTimeStats = [
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-4">
-                            <div class="cp-card h-100">
-                                <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><UserFilled /></el-icon> Buyer Requests</div>
-                                <div v-for="b in buyerRequests" :key="b.buyer" class="cp-hotspot-row">
-                                    <div>
-                                        <div class="cp-item-name">{{ b.buyer }}</div>
-                                        <div class="cp-muted" style="font-size:.7rem;">{{ b.request }}</div>
-                                    </div>
-                                    <span class="cp-up cp-hotspot-trend">{{ b.budget }}</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
-                </div>
-            </section>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 5. SHIPPING & PORTS
-                 ══════════════════════════════════════════════════════════ -->
-            <section class="cp-section">
-                <div class="container-fluid px-3 px-lg-4">
-                    <div class="cp-section__head">
-                        <div>
-                            <div class="cp-kicker">Global Logistics</div>
-                            <h2 class="cp-title mb-0">Shipping &amp; Ports</h2>
+                    <div class="col-12 col-lg-4">
+                        <div class="cp-card h-100">
+                            <ExchangeRates :rates="props.exchangeRates" title="Currency Exchange" />
                         </div>
                     </div>
 
-                    <div class="row g-3">
-                        <div class="col-12 col-lg-4">
-                            <div class="cp-card h-100">
+                    <div class="col-12">
+                        <div class="cp-card cp-tri-panel" :style="{ flexDirection: isNarrowViewport ? 'column' : 'row' }">
+                            <div class="cp-tri-panel__col">
                                 <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><Ship /></el-icon> Shipping Routes</div>
                                 <div v-for="r in shippingRoutes" :key="r.route" class="cp-hotspot-row">
                                     <div>
@@ -527,9 +562,10 @@ const transitTimeStats = [
                                     <span class="cp-badge" :class="r.status === 'On time' ? 'cp-badge--green' : 'cp-badge--amber'">{{ r.status }}</span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-12 col-lg-4">
-                            <div class="cp-card h-100">
+
+                            <div class="cp-tri-panel__divider" :style="isNarrowViewport ? { width: '100%', height: '1px' } : { width: '1px', height: 'auto' }"></div>
+
+                            <div class="cp-tri-panel__col">
                                 <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><Position /></el-icon> Port Congestion</div>
                                 <div v-for="p in portCongestion" :key="p.port" class="cp-share-row">
                                     <span class="cp-share-label">{{ p.port }}</span>
@@ -537,9 +573,10 @@ const transitTimeStats = [
                                     <span class="cp-share-pct">{{ p.congestion }}%</span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-12 col-lg-4">
-                            <div class="cp-card h-100">
+
+                            <div class="cp-tri-panel__divider" :style="isNarrowViewport ? { width: '100%', height: '1px' } : { width: '1px', height: 'auto' }"></div>
+
+                            <div class="cp-tri-panel__col">
                                 <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><Timer /></el-icon> Transit Time</div>
                                 <div v-for="s in transitTimeStats" :key="s.label" class="cp-hotspot-row">
                                     <span class="cp-item-name" style="font-weight:600;">{{ s.label }}</span>
@@ -548,41 +585,30 @@ const transitTimeStats = [
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 6. INTELLIGENCE & NEWS
-                 ══════════════════════════════════════════════════════════ -->
-            <section class="cp-section">
-                <div class="container-fluid px-3 px-lg-4">
-                    <div class="cp-section__head">
-                        <div>
-                            <div class="cp-kicker">AI-Curated</div>
-                            <h2 class="cp-title mb-0">Intelligence &amp; News</h2>
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-12 col-lg-3">
-                            <div class="cp-card h-100">
-                                <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><Notebook /></el-icon> Categories</div>
-                                <div class="cp-cat-list">
-                                    <button
-                                        v-for="c in newsCategories"
-                                        :key="c"
-                                        class="cp-cat-row"
-                                        :class="{ 'cp-cat-row--active': activeCategory === c }"
-                                        @click="selectCategory(c)"
-                                    >
-                                        <span>{{ c }}</span>
-                                        <span class="cp-cat-count">{{ c === 'All' ? newsItems.length : newsItems.filter((n) => n.category === c).length }}</span>
-                                    </button>
-                                </div>
+                    <div class="col-12 col-lg-3">
+                        <div class="cp-card h-100">
+                            <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><Notebook /></el-icon> Categories</div>
+                            <div class="cp-cat-list">
+                                <button
+                                    v-for="c in newsCategories"
+                                    :key="c"
+                                    class="cp-cat-row"
+                                    :class="{ 'cp-cat-row--active': activeCategory === c }"
+                                    @click="selectCategory(c)"
+                                >
+                                    <span>{{ c }}</span>
+                                    <span class="cp-cat-count">{{ c === 'All' ? newsItems.length : newsItems.filter((n) => n.category === c).length }}</span>
+                                </button>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-5">
-                            <div class="cp-card h-100">
+                    </div>
+                    <div class="col-12 col-lg-9">
+                        <div
+                            class="cp-card h-100 cp-updates-weather"
+                            :style="{ flexDirection: isNarrowViewport ? 'column' : 'row' }"
+                        >
+                            <div class="cp-updates-weather__col cp-updates-weather__col--news">
                                 <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><MagicStick /></el-icon> Latest Updates</div>
                                 <div v-for="n in filteredNews" :key="n.title" class="cp-news-row">
                                     <div class="cp-news-row__top">
@@ -601,9 +627,16 @@ const transitTimeStats = [
                                     @click="showAllNews = !showAllNews"
                                 >{{ showAllNews ? 'View Less' : 'View More' }}</button>
                             </div>
-                        </div>
-                        <div class="col-12 col-lg-4">
-                            <div class="cp-card h-100">
+
+                            <div
+                                class="cp-updates-weather__divider"
+                                :style="isNarrowViewport ? { width: '100%', height: '1px' } : { width: '1px', height: 'auto' }"
+                            ></div>
+
+                            <div
+                                class="cp-updates-weather__col cp-updates-weather__col--weather"
+                                :style="isNarrowViewport ? { flex: '0 0 auto' } : { flex: '0 0 260px' }"
+                            >
                                 <div class="cp-card-title mb-2"><el-icon class="cp-card-icon"><Sunny /></el-icon> Weather Forecast</div>
                                 <div v-for="w in weatherForecast" :key="w.region" class="cp-weather-row">
                                     <div class="cp-weather-icon"><el-icon><component :is="w.icon" /></el-icon></div>
@@ -617,36 +650,7 @@ const transitTimeStats = [
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 7. DECISION CENTER
-                 ══════════════════════════════════════════════════════════ -->
-            <section class="cp-section cp-section--last">
-                <div class="container-fluid px-3 px-lg-4">
-                    <div class="cp-section__head">
-                        <div>
-                            <div class="cp-kicker">Powered by AI</div>
-                            <h2 class="cp-title mb-0">Decision Center</h2>
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div v-for="d in decisions" :key="d.title" class="col-12 col-md-4">
-                            <div class="cp-card h-100 cp-opp-card">
-                                <div class="d-flex align-items-start justify-content-between mb-2">
-                                    <div class="cp-ring" :class="scoreTone(d.confidence)">{{ d.confidence }}</div>
-                                    <span class="cp-badge" :class="impactCls(d.impact)">{{ d.impact }} Impact</span>
-                                </div>
-                                <div class="cp-opp-title">{{ d.title }}</div>
-                                <p class="cp-news-summary">{{ d.rationale }}</p>
-                                <button class="btn cp-btn-primary btn-sm w-100 mt-2">{{ d.action }}</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
+            </div>
         </div>
 
         <!-- ── Complete Your Profile modal ─────────────────────────────── -->
@@ -819,7 +823,7 @@ const transitTimeStats = [
     --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
     --shadow-md: 0 6px 16px rgba(15, 23, 42, .08);
     font-family: 'Manrope', system-ui, sans-serif;
-    background: #ffffff;
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
@@ -827,34 +831,13 @@ const transitTimeStats = [
 .cp-up   { color: #166534; font-weight: 700; }
 .cp-down { color: #991b1b; font-weight: 700; }
 .cp-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }
-
-/* ── Sections ─────────────────────────────────────────────────────────── */
-.cp-section { padding: 1.5rem 0; border-bottom: 1px solid var(--border); }
-.cp-section--tight { padding-top: 0; }
-.cp-section--last { border-bottom: none; padding-bottom: 3rem; }
-.cp-section__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .875rem; }
-
-.cp-page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-}
-.cp-page-header .cp-title { font-size: 1.5rem; }
-.cp-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; line-height: 1.4; }
-.cp-title  { font-size: 1.1875rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.3; }
-.cp-link   { font-size: .8125rem; font-weight: 700; color: var(--green); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
+.cp-link { font-size: .8125rem; font-weight: 700; color: var(--green); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
 .cp-link:hover { color: var(--green-dark); }
 
 /* ── Buttons ──────────────────────────────────────────────────────────── */
 .cp-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 8px; font-size: .75rem; font-weight: 600; padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; box-shadow: var(--shadow-sm); transition: background .15s ease, box-shadow .15s ease, transform .1s ease; }
 .cp-btn-primary:hover { background: var(--green-dark); box-shadow: var(--shadow-md); }
 .cp-btn-primary:active { transform: translateY(1px); }
-.cp-btn-ghost { background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); border-radius: 8px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; transition: background .15s ease, border-color .15s ease; }
-.cp-btn-ghost:hover { background: #fff; border-color: #d1d5db; }
 
 /* ── KPI tiles ────────────────────────────────────────────────────────── */
 .cp-kpi { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: .875rem; box-shadow: var(--shadow-sm); transition: box-shadow .15s ease, transform .15s ease, border-color .15s ease; }
@@ -872,6 +855,46 @@ const transitTimeStats = [
 .cp-card--flat:hover { box-shadow: none; border-color: var(--border); }
 .cp-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; font-weight: 700; color: var(--on-surface); line-height: 1.3; }
 .cp-card-icon  { width: 26px; height: 26px; border-radius: 8px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+
+/* ── Schedule (combined Calendar + Tasks) card ───────────────────────────
+   Single card, two views. A tab switcher replaces the two separate widget
+   headers Calendar.vue/Task.vue normally render (suppressed here via their
+   show-header prop) so only one title row exists for the whole card. */
+.cp-schedule { display: flex; flex-direction: column; }
+.cp-schedule__head { display: flex; align-items: center; gap: .75rem; margin-bottom: .875rem; flex-wrap: wrap; }
+.cp-schedule__tabs { display: inline-flex; align-items: center; gap: 2px; padding: 3px; background: var(--surface-low); border-radius: 9px; margin-left: auto; }
+.cp-schedule__tab {
+    display: inline-flex; align-items: center; gap: 5px;
+    border: none; background: none; border-radius: 7px;
+    padding: 5px 11px; font-size: .75rem; font-weight: 600; color: var(--on-surface-var);
+    cursor: pointer; transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+    white-space: nowrap;
+}
+.cp-schedule__tab:hover { color: var(--on-surface); }
+.cp-schedule__tab--active { background: #fff; color: var(--green); box-shadow: 0 1px 2px rgba(15,23,42,.08); }
+.cp-schedule__tab-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+    background: #fef3c7; color: #92400e; font-size: .625rem; font-weight: 800;
+}
+.cp-schedule__link {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+    color: var(--on-surface-var); text-decoration: none; transition: background-color .12s ease, color .12s ease;
+}
+.cp-schedule__link:hover { background: var(--surface-low); color: var(--green); }
+.cp-schedule__body { flex: 1; min-height: 0; }
+
+/* Exact-ratio row splits — Bootstrap's integer grid can't express these
+   (closest to 70/30 is 8/4, i.e. 66.7/33.3), so these set explicit
+   flex-basis at the lg breakpoint instead.
+   70/30 → Price Trend + Orders. 60/40 → Farmgate vs Export + Schedule. */
+@media (min-width: 992px) {
+    .cp-col-70 { flex: 0 0 70%; max-width: 70%; }
+    .cp-col-30 { flex: 0 0 30%; max-width: 30%; }
+    .cp-col-60 { flex: 0 0 60%; max-width: 60%; }
+    .cp-col-40 { flex: 0 0 40%; max-width: 40%; }
+}
 
 /* ── Share rows ───────────────────────────────────────────────────────── */
 .cp-share-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
@@ -928,6 +951,28 @@ const transitTimeStats = [
 .cp-weather-row:last-child { border-bottom: none; }
 .cp-weather-icon { width: 30px; height: 30px; border-radius: 8px; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
 .cp-weather-temp { font-size: .875rem; font-weight: 800; color: var(--on-surface); flex-shrink: 0; }
+
+/* ── Combined Latest Updates + Weather Forecast card ──────────────────────
+   Two independent panes side by side rather than tabs — unlike Schedule
+   (Calendar/Tasks) or Orders (Orders/Requests), these aren't alternate
+   views of the same thing, so both should stay visible at once.
+   flex-direction/flex-basis for the narrow-viewport case are bound inline
+   in the template (isNarrowViewport) rather than via @media here — this
+   exact rule set kept computing flex-direction: column at all viewport
+   widths for reasons that didn't trace back to any matching CSS rule. */
+.cp-updates-weather { display: flex; gap: 1.25rem; align-items: stretch; }
+.cp-updates-weather__col { min-width: 0; }
+.cp-updates-weather__col--news { flex: 1 1 auto; }
+.cp-updates-weather__col--weather { flex: 0 0 260px; }
+.cp-updates-weather__divider { width: 1px; flex-shrink: 0; background: var(--border); }
+
+/* ── Combined Shipping Routes + Port Congestion + Transit Time card ──────
+   Three equal panes, same responsive inline-style-driven approach as
+   .cp-updates-weather above. */
+.cp-tri-panel { display: flex; gap: 1.25rem; align-items: stretch; }
+.cp-tri-panel__col { flex: 1 1 0; min-width: 0; }
+.cp-tri-panel__divider { flex-shrink: 0; background: var(--border); }
+
 
 /* ── Table ────────────────────────────────────────────────────────────── */
 .cp-table thead th { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }

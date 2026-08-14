@@ -42,6 +42,21 @@ class NotificationService
     }
 
     /**
+     * Get a user's most recent notifications — powers the bell icon's
+     * preview dropdown in the app shell.
+     *
+     * @return Collection<int, Notification>
+     */
+    public function recentForUser(int $userId, int $limit = 6): Collection
+    {
+        return Notification::query()
+            ->where('user_id', $userId)
+            ->latest()
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
      * Create and dispatch a notification for a major activity. This is the
      * single entry point every other feature (orders, bids, tasks, ...)
      * should call to notify a user — the in-app channel today, additional

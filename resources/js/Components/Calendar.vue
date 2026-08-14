@@ -6,6 +6,7 @@ import { Calendar as CalendarIcon, FullScreen } from '@element-plus/icons-vue';
 const props = defineProps({
     events: { type: Array, default: () => [] },
     title: { type: String, default: 'Calendar' },
+    showHeader: { type: Boolean, default: true },
 });
 
 const activeDate = ref(new Date());
@@ -30,7 +31,7 @@ const eventTitles = (day) => (eventsByDay.value[day] ?? []).map((e) => e.title).
 
 <template>
     <div class="cal-widget">
-        <div class="cal-widget__head">
+        <div v-if="showHeader" class="cal-widget__head">
             <div class="cal-widget__title"><el-icon><CalendarIcon /></el-icon> {{ title }}</div>
             <Link :href="route('calendar.index')" class="cal-widget__link" aria-label="Open full calendar" title="Open full calendar">
                 <el-icon :size="13"><FullScreen /></el-icon>

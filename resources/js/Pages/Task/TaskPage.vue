@@ -317,7 +317,7 @@ function confirmDeleteTask() {
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: #fff;
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }

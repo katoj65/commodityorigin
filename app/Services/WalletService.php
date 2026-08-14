@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use Illuminate\Database\Eloquent\Builder;
@@ -136,49 +135,25 @@ class WalletService
     }
 
     /**
-     * Transfer funds between two users' wallets, atomically, with a
-     * matching ledger entry on both sides.
-     *
-     * @return array{from: Wallet, to: Wallet}
+     * Deposit funds into a user's wallet, logging the ledger entry. There's
+     * no payment gateway wired up yet, so this credits the wallet directly.
      */
-    public function transfer(int $fromUserId, int $toUserId, string $amount, ?string $description = null): array
+    public function deposit(int $userId, string $amount, ?string $description = null): Wallet
     {
-        if ($fromUserId === $toUserId) {
-            throw ValidationException::withMessages(['recipient' => 'You cannot transfer to yourself.']);
-        }
-
         if (bccomp($amount, '0', 2) <= 0) {
             throw ValidationException::withMessages(['amount' => 'Enter a valid amount.']);
         }
 
-        return DB::transaction(function () use ($fromUserId, $toUserId, $amount, $description) {
-            $fromWallet = Wallet::where('user_id', $fromUserId)->lockForUpdate()->first();
+        return DB::transaction(function () use ($userId, $amount, $description) {
+            $wallet = $this->ensureForUser($userId);
+            $wallet = Wallet::where('id', $wallet->id)->lockForUpdate()->first();
 
-            if (! $fromWallet) {
-                throw ValidationException::withMessages(['wallet' => "You don't have a wallet yet."]);
-            }
+            $reference = 'DEP-'.now()->format('YmdHis').'-'.$wallet->id;
 
-            $toWallet = Wallet::where('user_id', $toUserId)->lockForUpdate()->first();
+            $this->credit($wallet, $amount, 'deposit', $description, $reference);
 
-            if (! $toWallet) {
-                throw ValidationException::withMessages(['recipient' => "That user doesn't have a wallet yet."]);
-            }
-
-            $reference = 'TRF-'.now()->format('YmdHis').'-'.$fromWallet->id;
-
-            $this->debit($fromWallet, $amount, 'transfer_out', $description, $reference, $toWallet->id);
-            $this->credit($toWallet, $amount, 'transfer_in', $description, $reference, $fromWallet->id);
-
-            return ['from' => $fromWallet->fresh(), 'to' => $toWallet->fresh()];
+            return $wallet->fresh();
         });
-    }
-
-    /**
-     * Find the user a transfer should go to, by email.
-     */
-    public function findRecipient(string $email): ?User
-    {
-        return User::where('email', $email)->first();
     }
 
     /**

@@ -432,7 +432,7 @@ const goToLedger = () => {
 <style scoped>
 .profile-page {
     min-height: 100%;
-    background: #ffffff;
+    background: var(--surface, #f7f9fb);
 }
 
 .profile-shell {

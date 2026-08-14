@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Search;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SearchLogResource;
+use App\Models\Market;
 use App\Models\SearchLog;
 use App\Services\SearchService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,7 +39,7 @@ class SearchController extends Controller
         $keyword = $validated['q'] ?? '';
         $filters = collect($validated)->except('q')->filter()->all();
 
-        $results = $this->search->search($keyword, $filters);
+        $results = $keyword === '' ? collect() : $this->search->search($keyword, $filters);
 
         $this->search->log($request->user()->id, $keyword, $results->count(), $filters);
 
@@ -47,6 +49,31 @@ class SearchController extends Controller
             'results' => $results->values()->all(),
             'recentSearches' => SearchLogResource::collection($this->search->recentForUser($request->user()->id))->resolve(),
         ]);
+    }
+
+    /**
+     * Typeahead suggestions for the search bar — a small JSON payload of
+     * matching live market items as the user types.
+     */
+    public function suggest(Request $request): JsonResponse
+    {
+        $keyword = trim((string) $request->query('q', ''));
+
+        if ($keyword === '') {
+            return response()->json(['results' => []]);
+        }
+
+        $results = $this->search->suggest($keyword)->map(fn (Market $market) => [
+            'id' => $market->id,
+            'name' => $market->name,
+            'lot_code' => $market->lot_code,
+            'origin' => $market->origin,
+            'type' => $market->type,
+            'price_per_kg' => (float) $market->price_per_kg,
+            'demand' => $market->demand,
+        ])->values();
+
+        return response()->json(['results' => $results]);
     }
 
     /**

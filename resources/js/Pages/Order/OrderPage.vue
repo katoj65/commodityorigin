@@ -4,6 +4,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
     Plus, Close, Files, Box, ShoppingCart,
+    Tickets, User, Coffee, Coin, Checked, Search, FolderOpened, List,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -95,10 +96,32 @@ function matchesFilter(key, order) {
     }
 }
 
-const filteredOrders = computed(() => allOrders.value.filter((o) => matchesFilter(activeFilter.value, o)));
+const search = ref('');
+
+const filteredOrders = computed(() => {
+    const term = search.value.trim().toLowerCase();
+
+    return allOrders.value.filter((order) => {
+        if (!matchesFilter(activeFilter.value, order)) return false;
+        if (!term) return true;
+
+        const haystack = [
+            order.order_number, order.crop_type, order.variety,
+            order.buyer_name, order.seller_name,
+        ].filter(Boolean).join(' ').toLowerCase();
+        return haystack.includes(term);
+    });
+});
+
+const isSearching = computed(() => !!search.value.trim());
 
 function tabCount(key) {
     return allOrders.value.filter((o) => matchesFilter(key, o)).length;
+}
+
+function resetFilters() {
+    search.value = '';
+    activeFilter.value = 'all';
 }
 
 /* ── KPIs ────────────────────────────────────────────────────────────── */
@@ -138,6 +161,38 @@ function statusTone(status) {
 
 function formatMoney(amount, currency) {
     return `${currency} ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatDate(dateTime) {
+    if (!dateTime) return '—';
+    const date = new Date(dateTime.replace(' ', 'T'));
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/* ── Identity — deterministic initials + palette colour per counterparty
+   name, so the Party column reads as distinct people instead of plain
+   text. ─────────────────────────────────────────────────────────────── */
+const avatarPalette = [
+    { bg: '#eef2ff', color: '#4338ca' },
+    { bg: '#ecfdf5', color: '#047857' },
+    { bg: '#fff7ed', color: '#c2410c' },
+    { bg: '#fdf4ff', color: '#a21caf' },
+    { bg: '#eff6ff', color: '#1d4ed8' },
+    { bg: '#f0fdfa', color: '#0f766e' },
+];
+
+function initials(name) {
+    const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
+}
+
+function avatarStyle(name) {
+    const str = name || '';
+    let hash = 0;
+    for (let i = 0; i < str.length; i += 1) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+    const swatch = avatarPalette[hash % avatarPalette.length];
+    return { background: swatch.bg, color: swatch.color };
 }
 
 /* ── Create-order dialog ─────────────────────────────────────────────── */
@@ -228,50 +283,75 @@ function openOrder(order) {
                 </div>
             </div>
 
-            <!-- ── Overview strip ────────────────────────────────────────── -->
-            <div class="ord-kpi-strip">
+            <!-- ── Overview tiles ───────────────────────────────────────────
+                 Individual elevated cards, not a flat bordered strip — the
+                 same floating-card language as the market listing page. -->
+            <div class="ord-kpi-grid">
                 <div class="ord-kpi">
-                    <span class="ord-kpi__label">Total Orders</span>
-                    <strong class="ord-kpi__val">{{ kpis.total }}</strong>
+                    <div class="ord-kpi__icon"><el-icon :size="16"><List /></el-icon></div>
+                    <div class="ord-kpi__body">
+                        <strong class="ord-kpi__val">{{ kpis.total }}</strong>
+                        <span class="ord-kpi__label">Total Orders</span>
+                    </div>
                 </div>
                 <div class="ord-kpi">
-                    <span class="ord-kpi__label">Placed by Me</span>
-                    <strong class="ord-kpi__val">{{ kpis.placed }}</strong>
+                    <div class="ord-kpi__icon"><el-icon :size="16"><ShoppingCart /></el-icon></div>
+                    <div class="ord-kpi__body">
+                        <strong class="ord-kpi__val">{{ kpis.placed }}</strong>
+                        <span class="ord-kpi__label">Placed by Me</span>
+                    </div>
                 </div>
                 <div class="ord-kpi">
-                    <span class="ord-kpi__label">Received</span>
-                    <strong class="ord-kpi__val">{{ kpis.received }}</strong>
+                    <div class="ord-kpi__icon"><el-icon :size="16"><Box /></el-icon></div>
+                    <div class="ord-kpi__body">
+                        <strong class="ord-kpi__val">{{ kpis.received }}</strong>
+                        <span class="ord-kpi__label">Received</span>
+                    </div>
                 </div>
                 <div class="ord-kpi">
-                    <span class="ord-kpi__label">Marketplace</span>
-                    <strong class="ord-kpi__val" :class="kpis.marketplace ? 'ord-text-amber' : ''">{{ kpis.marketplace }}</strong>
+                    <div class="ord-kpi__icon"><el-icon :size="16"><Tickets /></el-icon></div>
+                    <div class="ord-kpi__body">
+                        <strong class="ord-kpi__val">{{ kpis.marketplace }}</strong>
+                        <span class="ord-kpi__label">Marketplace</span>
+                    </div>
                 </div>
                 <div class="ord-kpi">
-                    <span class="ord-kpi__label">Delivered</span>
-                    <strong class="ord-kpi__val ord-text-green">{{ kpis.delivered }}</strong>
+                    <div class="ord-kpi__icon ord-kpi__icon--green"><el-icon :size="16"><Checked /></el-icon></div>
+                    <div class="ord-kpi__body">
+                        <strong class="ord-kpi__val ord-text-green">{{ kpis.delivered }}</strong>
+                        <span class="ord-kpi__label">Delivered</span>
+                    </div>
                 </div>
             </div>
 
             <div class="ord-body">
                 <div class="ord-section">
-                    <el-tabs v-model="activeFilter" class="ord-tabs">
-                        <el-tab-pane v-for="f in filters" :key="f.key" :name="f.key">
-                            <template #label>
-                                <span class="ord-tab-label">
-                                    {{ f.label }}
-                                    <span v-if="tabCount(f.key)" class="ord-tab-count">{{ tabCount(f.key) }}</span>
-                                </span>
-                            </template>
-                        </el-tab-pane>
-                    </el-tabs>
+                    <div class="ord-toolbar">
+                        <el-tabs v-model="activeFilter" class="ord-tabs">
+                            <el-tab-pane v-for="f in filters" :key="f.key" :name="f.key">
+                                <template #label>
+                                    <span class="ord-tab-label">
+                                        {{ f.label }}
+                                        <span v-if="tabCount(f.key)" class="ord-tab-count">{{ tabCount(f.key) }}</span>
+                                    </span>
+                                </template>
+                            </el-tab-pane>
+                        </el-tabs>
 
+                        <div class="ord-search-wrap">
+                            <el-icon class="ord-search-icon"><Search /></el-icon>
+                            <input v-model="search" class="ord-search-input" placeholder="Search order #, crop, counterparty…">
+                        </div>
+                    </div>
+
+                    <div class="ord-card">
                     <el-table
                         :data="filteredOrders"
                         class="ord-table"
-                        empty-text="No orders in this view."
                         @row-click="openOrder"
                     >
-                        <el-table-column label="Order" width="170">
+                        <el-table-column width="170">
+                            <template #header><span class="ord-th"><el-icon><Tickets /></el-icon> Order</span></template>
                             <template #default="{ row }">
                                 <div class="ord-cell-order">
                                     <span class="ord-cell-order__num">{{ row.order_number }}</span>
@@ -279,33 +359,65 @@ function openOrder(order) {
                                 </div>
                             </template>
                         </el-table-column>
-                        <el-table-column label="Type" width="100">
+                        <el-table-column width="100">
+                            <template #header><span class="ord-th">Type</span></template>
                             <template #default="{ row }">
                                 <span class="ord-badge" :class="typeTone(row.type)">{{ typeLabel(row.type) }}</span>
                             </template>
                         </el-table-column>
-                        <el-table-column label="Party" min-width="180">
+                        <el-table-column min-width="190">
+                            <template #header><span class="ord-th"><el-icon><User /></el-icon> Party</span></template>
                             <template #default="{ row }">
-                                <span :class="row.status === 'open' && isCreator(row) ? 'ord-muted-cell' : ''">{{ partyLabel(row) }}</span>
+                                <div class="ord-cell-party">
+                                    <span
+                                        v-if="counterpartName(row) || (!isParty(row) && (row.buyer_name || row.seller_name))"
+                                        class="ord-avatar"
+                                        :style="avatarStyle(counterpartName(row) || row.seller_name || row.buyer_name)"
+                                    >{{ initials(counterpartName(row) || row.seller_name || row.buyer_name) }}</span>
+                                    <span :class="row.status === 'open' && isCreator(row) ? 'ord-muted-cell' : ''">{{ partyLabel(row) }}</span>
+                                </div>
                             </template>
                         </el-table-column>
-                        <el-table-column label="Coffee" min-width="160">
+                        <el-table-column min-width="160">
+                            <template #header><span class="ord-th"><el-icon><Coffee /></el-icon> Coffee</span></template>
                             <template #default="{ row }">
                                 {{ row.crop_type }}<template v-if="row.variety"> — {{ row.variety }}</template>
                             </template>
                         </el-table-column>
-                        <el-table-column label="Quantity" width="110">
-                            <template #default="{ row }">{{ row.quantity.toLocaleString() }} kg</template>
+                        <el-table-column width="110" align="right">
+                            <template #header><span class="ord-th ord-th--right"><el-icon><Box /></el-icon> Quantity</span></template>
+                            <template #default="{ row }"><span class="ord-num">{{ row.quantity.toLocaleString() }} kg</span></template>
                         </el-table-column>
-                        <el-table-column label="Amount" width="140">
-                            <template #default="{ row }"><span class="ord-amount">{{ formatMoney(row.total_amount, row.currency) }}</span></template>
+                        <el-table-column width="150" align="right">
+                            <template #header><span class="ord-th ord-th--right"><el-icon><Coin /></el-icon> Amount</span></template>
+                            <template #default="{ row }"><span class="ord-num ord-amount">{{ formatMoney(row.total_amount, row.currency) }}</span></template>
                         </el-table-column>
-                        <el-table-column label="Status" width="110" align="right">
+                        <el-table-column width="130" align="right">
+                            <template #header><span class="ord-th ord-th--right"><el-icon><Checked /></el-icon> Status</span></template>
                             <template #default="{ row }">
-                                <span class="ord-badge" :class="statusTone(row.status)">{{ statusLabel(row.status) }}</span>
+                                <div class="ord-cell-status">
+                                    <span class="ord-badge" :class="statusTone(row.status)">{{ statusLabel(row.status) }}</span>
+                                    <span class="ord-status-date">{{ formatDate(row.updated_at) }}</span>
+                                </div>
                             </template>
                         </el-table-column>
+
+                        <template #empty>
+                            <div class="ord-empty">
+                                <div class="ord-empty__icon"><el-icon :size="22"><FolderOpened /></el-icon></div>
+                                <template v-if="isSearching || activeFilter !== 'all'">
+                                    <div class="ord-empty__title">No orders match this view</div>
+                                    <p class="ord-empty__text">Try a different tab or search term.</p>
+                                    <button type="button" class="ord-btn-outline" @click="resetFilters">Reset Filters</button>
+                                </template>
+                                <template v-else>
+                                    <div class="ord-empty__title">No orders yet</div>
+                                    <p class="ord-empty__text">Post a request or an offer to start trading on Bean Origin.</p>
+                                </template>
+                            </div>
+                        </template>
                     </el-table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -416,7 +528,7 @@ function openOrder(order) {
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: #ffffff;
+    background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
@@ -465,34 +577,48 @@ function openOrder(order) {
     padding-top: 4px;
 }
 
-/* ── Overview strip ──────────────────────────────────────────────────── */
-.ord-kpi-strip {
-    display: flex;
-    gap: 0;
-    overflow-x: auto;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    margin-top: 1.5rem;
-    scrollbar-width: none;
-}
-
-.ord-kpi-strip::-webkit-scrollbar {
-    display: none;
+/* ── Overview tiles — individual elevated cards, matching the market
+   listing page's floating-card language instead of a flat bordered
+   strip. ─────────────────────────────────────────────────────────────── */
+.ord-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 1.25rem 1.5rem 0;
 }
 
 .ord-kpi {
-    flex: 1;
-    min-width: 130px;
-    padding: 1rem 1.5rem;
     display: flex;
-    flex-direction: column;
-    gap: 3px;
-    border-right: 1px solid var(--border);
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .03);
+    transition: box-shadow .15s ease, transform .15s ease;
 }
 
-.ord-kpi:last-child {
-    border-right: none;
+.ord-kpi:hover {
+    box-shadow: 0 12px 28px -18px rgba(15, 23, 42, .18);
+    transform: translateY(-1px);
 }
+
+.ord-kpi__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--surface-low);
+    color: var(--on-surface-var);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ord-kpi__icon--green { background: rgba(0, 69, 50, .08); color: var(--green); }
+
+.ord-kpi__body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 
 .ord-kpi__label {
     font-size: 0.6875rem;
@@ -500,6 +626,7 @@ function openOrder(order) {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--on-surface-var);
+    white-space: nowrap;
 }
 
 .ord-kpi__val {
@@ -507,11 +634,10 @@ function openOrder(order) {
     font-weight: 800;
     color: var(--on-surface);
     letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
 }
 
 .ord-text-green { color: #166534; }
-.ord-text-amber { color: #92400e; }
-.ord-text-red { color: #b91c1c; }
 
 /* ── Body ────────────────────────────────────────────────────────────── */
 .ord-body {
@@ -555,9 +681,26 @@ function openOrder(order) {
     color: #fff !important;
 }
 
+/* ── Toolbar: tabs + search ───────────────────────────────────────────── */
+.ord-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0 1.5rem;
+}
+
+.ord-search-wrap { position: relative; display: flex; align-items: center; flex-shrink: 0; margin: 10px 0; }
+.ord-search-icon { position: absolute; left: 10px; font-size: 13px; color: #9ca3af; pointer-events: none; }
+.ord-search-input { height: 34px; width: 240px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px 0 30px; font-size: 0.8125rem; font-family: inherit; outline: none; color: var(--on-surface); background: #fff; transition: border-color .15s ease; }
+.ord-search-input:focus { border-color: var(--green); }
+
 /* ── Category tabs ───────────────────────────────────────────────────── */
 .ord-tabs {
-    padding: 0 1.5rem;
+    padding: 0;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .ord-tabs :deep(.el-tabs__header) {
@@ -603,6 +746,18 @@ function openOrder(order) {
     font-weight: 800;
 }
 
+/* ── Card — boxes the table exactly like .mkt-card on the market listing
+   page: floating, elevated, rounded, instead of an edge-to-edge table
+   sitting flat on the page background. ───────────────────────────────── */
+.ord-card {
+    margin: 0 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
+}
+
 /* ── Order table ─────────────────────────────────────────────────────── */
 .ord-table {
     --el-table-border-color: var(--border);
@@ -627,9 +782,14 @@ function openOrder(order) {
 }
 
 .ord-table :deep(.el-table__header-wrapper th:first-child .cell),
-.ord-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.5rem; }
+.ord-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.25rem; }
 .ord-table :deep(.el-table__header-wrapper th:last-child .cell),
-.ord-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1.5rem; }
+.ord-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1.25rem; }
+
+/* ── Table header icons ───────────────────────────────────────────────── */
+.ord-th { display: inline-flex; align-items: center; gap: 6px; }
+.ord-th :deep(.el-icon) { font-size: 13px; color: #9ca3af; }
+.ord-th--right { justify-content: flex-end; }
 
 .ord-cell-order {
     display: flex;
@@ -650,10 +810,36 @@ function openOrder(order) {
     font-style: italic;
 }
 
+/* ── Party identity ────────────────────────────────────────────────────── */
+.ord-cell-party { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ord-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.625rem;
+    font-weight: 800;
+}
+
+/* ── Numeric columns — right-aligned, tabular figures ─────────────────── */
+.ord-num { font-variant-numeric: tabular-nums; }
 .ord-amount {
     font-weight: 600;
     color: var(--on-surface);
 }
+
+/* ── Status cell ───────────────────────────────────────────────────────── */
+.ord-cell-status { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.ord-status-date { font-size: 0.6875rem; color: var(--on-surface-var); }
+
+/* ── Empty state ───────────────────────────────────────────────────────── */
+.ord-empty { text-align: center; padding: 3rem 1rem; }
+.ord-empty__icon { width: 52px; height: 52px; border-radius: 50%; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+.ord-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
+.ord-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin-bottom: 16px; max-width: 340px; margin-left: auto; margin-right: auto; line-height: 1.5; }
 
 .ord-row__perspective {
     font-family: 'Manrope', system-ui, sans-serif;
@@ -918,12 +1104,16 @@ function openOrder(order) {
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 767.98px) {
     .ord-page-header { padding: 1.25rem 1.25rem 0; }
+    .ord-kpi-grid { margin: 1.25rem 1.25rem 0; }
     .ord-body { padding: 1.25rem 0 3rem; }
-    .ord-tabs { padding: 0 1.25rem; }
+    .ord-toolbar { padding: 0 1.25rem; align-items: stretch; }
+    .ord-search-wrap { width: 100%; }
+    .ord-search-input { width: 100%; }
+    .ord-card { margin: 0 1.25rem; border-radius: 12px; }
     .ord-table :deep(.el-table__header-wrapper th:first-child .cell),
-    .ord-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.25rem; }
+    .ord-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1rem; }
     .ord-table :deep(.el-table__header-wrapper th:last-child .cell),
-    .ord-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1.25rem; }
+    .ord-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1rem; }
     .ord-field-row { grid-template-columns: 1fr; }
 }
 </style>

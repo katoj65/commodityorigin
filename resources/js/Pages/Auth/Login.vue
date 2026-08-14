@@ -140,6 +140,7 @@ const submit = () => {
                                 type="email"
                                 class="auth-input mt-2"
                                 autofocus
+                                required
                                 autocomplete="username"
                                 placeholder="joshua@example.com"
                             />
@@ -162,6 +163,7 @@ const submit = () => {
                                 v-model="form.password"
                                 type="password"
                                 class="auth-input mt-2"
+                                required
                                 autocomplete="current-password"
                                 placeholder="Enter your password"
                             />

@@ -1,6 +1,7 @@
 import './bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'element-plus/dist/index.css';
+import '../css/design-system.css';
 import '../css/element-overrides.css';
 
 import { createApp, h } from 'vue';

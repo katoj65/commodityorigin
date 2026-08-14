@@ -8,8 +8,10 @@ use App\Http\Resources\ExchangeRateResource;
 use App\Http\Resources\ForecastResource;
 use App\Http\Resources\CountryResource;
 use App\Http\Resources\OrderResource;
+use App\Models\Market;
 use App\Services\BuyService;
 use App\Services\CalendarService;
+use App\Services\CartService;
 use App\Services\CountryService;
 use App\Services\ExchangeRateService;
 use App\Services\ForecastService;
@@ -29,6 +31,7 @@ class MarketController extends Controller
         private readonly OrderService $orders,
         private readonly ForecastService $forecasts,
         private readonly CountryService $countries,
+        private readonly CartService $cart,
     ) {
     }
 
@@ -116,11 +119,14 @@ class MarketController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display a market listing's product profile.
      */
-    public function show(string $id)
+    public function show(Request $request, Market $market): Response
     {
-        //
+        return Inertia::render('Market/ProductProfile', [
+            'item' => $this->market->show($market),
+            'cartQuantity' => $this->cart->quantityFor($request->user()->id, $market->id),
+        ]);
     }
 
     /**

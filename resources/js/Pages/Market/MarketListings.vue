@@ -1,8 +1,8 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import {
-    PriceTag, Location, Coffee, SetUp, Star, Box, Coin, TrendCharts, View, Check,
+    PriceTag, Location, Coffee, SetUp, Star, Box, Coin, TrendCharts, View, ShoppingCart, Sell,
 } from '@element-plus/icons-vue';
 import MarketPage from './MarketPage.vue';
 
@@ -11,6 +11,10 @@ const props = defineProps({
     calendarEvents: { type: Array, default: () => [] },
     exchangeRates: { type: Array, default: () => [] },
 });
+
+function goToListing(row) {
+    router.visit(route('market.show', row.id));
+}
 
 const searchQuery = ref('');
 
@@ -61,32 +65,6 @@ const listings = computed(() => props.markets.map((m) => ({
 const uniqueOrigins = computed(() => [...new Set(listings.value.map((l) => l.origin).filter(Boolean))]);
 const uniqueTypes = computed(() => [...new Set(listings.value.map((l) => l.type).filter(Boolean))]);
 
-/* ── KPIs ─────────────────────────────────────────────────────────────── */
-const topOrigin = computed(() => {
-    const counts = {};
-    listings.value.forEach((l) => { counts[l.origin] = (counts[l.origin] || 0) + 1; });
-    const entries = Object.entries(counts);
-    if (!entries.length) return '—';
-    return entries.sort((a, b) => b[1] - a[1])[0][0];
-});
-
-const kpis = computed(() => {
-    const total = listings.value.length;
-    const avgPrice = total ? listings.value.reduce((s, l) => s + l.pricePerKg, 0) / total : 0;
-    const totalVolume = listings.value.reduce((s, l) => s + l.quantity, 0);
-    const avgQuality = total ? listings.value.reduce((s, l) => s + l.qualityScore, 0) / total : 0;
-    const highDemand = listings.value.filter((l) => ['high', 'very high'].includes((l.demand || '').toLowerCase())).length;
-
-    return [
-        { label: 'Active Lots', value: total.toLocaleString(), sub: 'Currently listed', tone: 'primary', icon: Box },
-        { label: 'Avg. Price', value: `$${avgPrice.toFixed(2)}`, sub: 'Per kg, all lots', tone: 'success', icon: Coin },
-        { label: 'Total Volume', value: `${(totalVolume / 1000).toFixed(1)}t`, sub: 'Combined weight', tone: 'info', icon: TrendCharts },
-        { label: 'Avg. Quality', value: avgQuality.toFixed(1), sub: 'Cupping score', tone: 'warning', icon: Star },
-        { label: 'Top Origin', value: topOrigin.value, sub: 'Most listed', tone: 'info', icon: Location },
-        { label: 'High Demand', value: highDemand.toLocaleString(), sub: 'High & very high', tone: 'success', icon: Check },
-    ];
-});
-
 const filters = reactive({ origin: '', type: '', grade: '', certification: '', market: '', maxPrice: '', availability: '', buyerRegion: '', exportRegion: '' });
 
 const filteredListings = computed(() => listings.value.filter((l) => {
@@ -118,17 +96,6 @@ watch(filteredListings, () => { currentPage.value = 1; });
 <template>
     <MarketPage v-model:search-query="searchQuery">
         <div class="mkt-body">
-            <div class="mkt-kpi-row">
-                <div v-for="kpi in kpis" :key="kpi.label" class="mkt-kpi-col">
-                    <div class="mkt-kpi-col__label">
-                        <el-icon class="mkt-kpi-col__icon"><component :is="kpi.icon" /></el-icon>
-                        {{ kpi.label }}
-                    </div>
-                    <div class="mkt-kpi-col__value">{{ kpi.value }}</div>
-                    <div class="mkt-kpi-col__sub">{{ kpi.sub }}</div>
-                </div>
-            </div>
-
             <div class="mkt-section__head">
                 <div>
                     <div class="mkt-kicker">Live Data</div>
@@ -137,79 +104,81 @@ watch(filteredListings, () => { currentPage.value = 1; });
                 <div class="mkt-section__actions">
                     <span class="mkt-count">{{ filteredListings.length }} lot{{ filteredListings.length !== 1 ? 's' : '' }}</span>
                     <div class="mkt-btn-group">
-                        <Link :href="route('market.request')" class="mkt-btn-group__item">Request</Link>
-                        <Link :href="route('market.offer')" class="mkt-btn-group__item mkt-btn-group__item--solid">Offer</Link>
+                        <Link :href="route('market.request')" class="mkt-btn-group__item"><el-icon><ShoppingCart /></el-icon> Request</Link>
+                        <Link :href="route('market.offer')" class="mkt-btn-group__item mkt-btn-group__item--solid"><el-icon><Sell /></el-icon> Offer</Link>
                     </div>
                 </div>
             </div>
 
-            <el-table :data="pagedListings" class="mkt-el-table" stripe empty-text="No lots match your search.">
-                <el-table-column width="72">
-                    <template #default="{ row }">
-                        <div class="mkt-thumb">
-                            <img v-if="row.image" :src="`/storage/${row.image}`" :alt="row.name">
-                            <svg v-else class="mkt-thumb-icon" viewBox="0 0 24 24">
-                                <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
-                                <path d="M9 6 C7 9, 11 15, 9 18" stroke="#c9a27a" stroke-width="1.1" fill="none" transform="rotate(-25 9 12)" />
-                                <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
-                                <path d="M16.5 10 C15 12.5, 18 16, 16.5 19" stroke="#d8b48f" stroke-width="1" fill="none" transform="rotate(20 16.5 14.5)" />
-                            </svg>
-                        </div>
-                    </template>
-                </el-table-column>
-                <el-table-column label="Lot" min-width="160">
-                    <template #header><el-icon class="mkt-th-icon"><PriceTag /></el-icon>Lot</template>
-                    <template #default="{ row }">
-                        <div class="mkt-item-name">{{ row.lot_code }}</div>
-                        <div class="mkt-muted" style="font-size:.7rem;">{{ row.name }}</div>
-                    </template>
-                </el-table-column>
-                <el-table-column label="Origin" min-width="120">
-                    <template #header><el-icon class="mkt-th-icon"><Location /></el-icon>Origin</template>
-                    <template #default="{ row }">{{ row.origin }}</template>
-                </el-table-column>
-                <el-table-column label="Type" min-width="100" align="center">
-                    <template #header><el-icon class="mkt-th-icon"><Coffee /></el-icon>Type</template>
-                    <template #default="{ row }"><span class="mkt-badge mkt-badge--muted">{{ row.type }}</span></template>
-                </el-table-column>
-                <el-table-column label="Process" min-width="110">
-                    <template #header><el-icon class="mkt-th-icon"><SetUp /></el-icon>Process</template>
-                    <template #default="{ row }">{{ row.process }}</template>
-                </el-table-column>
-                <el-table-column label="Quality" min-width="100" align="center">
-                    <template #header><el-icon class="mkt-th-icon"><Star /></el-icon>Quality</template>
-                    <template #default="{ row }"><span class="mkt-badge" :class="`mkt-badge--${qualityTone(row.qualityScore)}`">{{ row.qualityScore.toFixed(1) }}</span></template>
-                </el-table-column>
-                <el-table-column label="Quantity" min-width="110" align="right" header-align="left">
-                    <template #header><el-icon class="mkt-th-icon"><Box /></el-icon>Quantity</template>
-                    <template #default="{ row }"><span class="mkt-num">{{ row.quantity.toLocaleString() }} kg</span></template>
-                </el-table-column>
-                <el-table-column label="Price" min-width="110" align="right" header-align="left">
-                    <template #header><el-icon class="mkt-th-icon"><Coin /></el-icon>Price</template>
-                    <template #default="{ row }"><span class="mkt-num fw-semibold">${{ row.pricePerKg.toFixed(2) }}/kg</span></template>
-                </el-table-column>
-                <el-table-column label="Demand" min-width="110" align="center">
-                    <template #header><el-icon class="mkt-th-icon"><TrendCharts /></el-icon>Demand</template>
-                    <template #default="{ row }">
-                        <span class="mkt-badge" :class="demandBadgeClass(row.demandTone)">{{ row.demand }}</span>
-                    </template>
-                </el-table-column>
-                <el-table-column width="70" align="right">
-                    <template #default="{ row }">
-                        <Link :href="route('lot.show', row.id)" class="mkt-icon-link" title="View lot"><el-icon><View /></el-icon></Link>
-                    </template>
-                </el-table-column>
-            </el-table>
+            <div class="mkt-card">
+                <el-table :data="pagedListings" class="mkt-el-table" stripe row-key="id" empty-text="No lots match your search." @row-click="goToListing">
+                    <el-table-column width="72">
+                        <template #default="{ row }">
+                            <div class="mkt-thumb">
+                                <img v-if="row.image" :src="`/storage/${row.image}`" :alt="row.name">
+                                <svg v-else class="mkt-thumb-icon" viewBox="0 0 24 24">
+                                    <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
+                                    <path d="M9 6 C7 9, 11 15, 9 18" stroke="#c9a27a" stroke-width="1.1" fill="none" transform="rotate(-25 9 12)" />
+                                    <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
+                                    <path d="M16.5 10 C15 12.5, 18 16, 16.5 19" stroke="#d8b48f" stroke-width="1" fill="none" transform="rotate(20 16.5 14.5)" />
+                                </svg>
+                            </div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="Lot" min-width="160">
+                        <template #header><el-icon class="mkt-th-icon"><PriceTag /></el-icon>Lot</template>
+                        <template #default="{ row }">
+                            <div class="mkt-item-name">{{ row.lot_code }}</div>
+                            <div class="mkt-muted" style="font-size:.7rem;">{{ row.name }}</div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="Origin" min-width="120">
+                        <template #header><el-icon class="mkt-th-icon"><Location /></el-icon>Origin</template>
+                        <template #default="{ row }">{{ row.origin }}</template>
+                    </el-table-column>
+                    <el-table-column label="Type" min-width="100" align="center">
+                        <template #header><el-icon class="mkt-th-icon"><Coffee /></el-icon>Type</template>
+                        <template #default="{ row }"><span class="mkt-badge mkt-badge--muted">{{ row.type }}</span></template>
+                    </el-table-column>
+                    <el-table-column label="Process" min-width="110">
+                        <template #header><el-icon class="mkt-th-icon"><SetUp /></el-icon>Process</template>
+                        <template #default="{ row }">{{ row.process }}</template>
+                    </el-table-column>
+                    <el-table-column label="Quality" min-width="100" align="center">
+                        <template #header><el-icon class="mkt-th-icon"><Star /></el-icon>Quality</template>
+                        <template #default="{ row }"><span class="mkt-badge" :class="`mkt-badge--${qualityTone(row.qualityScore)}`">{{ row.qualityScore.toFixed(1) }}</span></template>
+                    </el-table-column>
+                    <el-table-column label="Quantity" min-width="110" align="right" header-align="left">
+                        <template #header><el-icon class="mkt-th-icon"><Box /></el-icon>Quantity</template>
+                        <template #default="{ row }"><span class="mkt-num">{{ row.quantity.toLocaleString() }} kg</span></template>
+                    </el-table-column>
+                    <el-table-column label="Price" min-width="110" align="right" header-align="left">
+                        <template #header><el-icon class="mkt-th-icon"><Coin /></el-icon>Price</template>
+                        <template #default="{ row }"><span class="mkt-num fw-semibold">${{ row.pricePerKg.toFixed(2) }}/kg</span></template>
+                    </el-table-column>
+                    <el-table-column label="Demand" min-width="110" align="center">
+                        <template #header><el-icon class="mkt-th-icon"><TrendCharts /></el-icon>Demand</template>
+                        <template #default="{ row }">
+                            <span class="mkt-badge" :class="demandBadgeClass(row.demandTone)">{{ row.demand }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column width="70" align="right">
+                        <template #default="{ row }">
+                            <Link :href="route('market.show', row.id)" class="mkt-icon-link" title="View listing" @click.stop><el-icon><View /></el-icon></Link>
+                        </template>
+                    </el-table-column>
+                </el-table>
 
-            <div v-if="filteredListings.length" class="mkt-pagination">
-                <el-pagination
-                    v-model:current-page="currentPage"
-                    v-model:page-size="pageSize"
-                    :total="filteredListings.length"
-                    :page-sizes="[25, 50, 100]"
-                    layout="total, sizes, prev, pager, next"
-                    background
-                />
+                <div v-if="filteredListings.length" class="mkt-pagination">
+                    <el-pagination
+                        v-model:current-page="currentPage"
+                        v-model:page-size="pageSize"
+                        :total="filteredListings.length"
+                        :page-sizes="[25, 50, 100]"
+                        layout="total, sizes, prev, pager, next"
+                        background
+                    />
+                </div>
             </div>
         </div>
     </MarketPage>
@@ -222,56 +191,39 @@ watch(filteredListings, () => { currentPage.value = 1; });
 /* ── Body ─────────────────────────────────────────────────────────────── */
 .mkt-body { padding: 1.5rem 0 3rem; }
 
-/* ── KPI strip — Tabler-style single row, edge-to-edge column-divided ─── */
-.mkt-kpi-row {
-    display: flex; align-items: stretch;
-    background: #fff;
-    border-bottom: 1px solid var(--border);
-    margin: -1.5rem 0 1.5rem; overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-.mkt-kpi-col { flex: 1 1 0; min-width: 132px; padding: .875rem 1.1rem; border-left: 1px solid var(--border); }
-.mkt-kpi-col:first-child { border-left: none; padding-left: 1.5rem; }
-.mkt-kpi-col:last-child { padding-right: 1.5rem; }
-.mkt-kpi-col__label { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); margin-bottom: 6px; white-space: nowrap; }
-.mkt-kpi-col__icon { font-size: 13px; color: var(--green); opacity: .85; flex-shrink: 0; }
-.mkt-kpi-col__value { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 1.125rem; font-weight: 600; color: var(--on-surface); line-height: 1.2; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mkt-kpi-col__sub { font-size: .6875rem; font-weight: 400; color: var(--on-surface-var); white-space: nowrap; }
-
-/* Mobile — horizontally swipeable strip, partial next card peeks in to signal
-   there's more, snaps cleanly so a swipe never leaves a card half-visible. */
-@media (max-width: 767.98px) {
-    .mkt-kpi-row { scroll-snap-type: x proximity; scrollbar-width: none; }
-    .mkt-kpi-row::-webkit-scrollbar { display: none; }
-    .mkt-kpi-col { flex: 0 0 auto; min-width: 40%; scroll-snap-align: start; padding: .75rem .875rem; }
-    .mkt-kpi-col:first-child { padding-left: 1.25rem; }
-    .mkt-kpi-col:last-child { padding-right: 1.25rem; }
-    .mkt-kpi-col__label { font-size: .625rem; }
-    .mkt-kpi-col__value { font-size: 1rem; }
-    .mkt-kpi-col__sub { font-size: .625rem; }
-}
-
-.mkt-section__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .875rem; padding: 0 1.5rem; }
+.mkt-section__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .875rem; padding: 0 1.5rem; }
 .mkt-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 .mkt-title { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
 .mkt-count { font-size: .75rem; color: var(--on-surface-var); }
 .mkt-section__actions { display: flex; align-items: center; gap: 14px; }
 
 .mkt-btn-group { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--green); }
-.mkt-btn-group__item { padding: 7px 18px; font-size: .75rem; font-weight: 700; letter-spacing: .01em; text-decoration: none; color: var(--green); background: #fff; transition: background .15s ease, color .15s ease; white-space: nowrap; }
+.mkt-btn-group__item { display: inline-flex; align-items: center; gap: 5px; padding: 7px 18px; font-size: .75rem; font-weight: 700; letter-spacing: .01em; text-decoration: none; color: var(--green); background: #fff; transition: background .15s ease, color .15s ease; white-space: nowrap; }
+.mkt-btn-group__item :deep(.el-icon) { font-size: 13px; }
 .mkt-btn-group__item + .mkt-btn-group__item { border-left: 1px solid var(--green); }
 .mkt-btn-group__item:hover { background: #f0f5f3; }
 .mkt-btn-group__item--solid { background: var(--green); color: #fff; }
 .mkt-btn-group__item--solid:hover { background: var(--green-dark); }
 
+/* ── Table card — boxed, elevated container ─────────────────────────────── */
+.mkt-card {
+    margin: 0 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
+}
+
 /* ── Element Plus table, reskinned to match the market design system ──── */
-.mkt-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; border-top: 1px solid var(--border); }
+.mkt-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; }
+.mkt-el-table :deep(.el-table__row) { cursor: pointer; }
 .mkt-el-table :deep(.el-table__cell) { padding: 11px 0; }
 .mkt-el-table :deep(.cell) { padding: 0 12px; font-size: .8125rem; line-height: 1.45; }
 .mkt-el-table :deep(th.el-table__cell) { font-size: .6875rem; font-weight: 600; letter-spacing: .04em; }
 .mkt-el-table :deep(th.el-table__cell .cell) { display: flex; align-items: center; white-space: nowrap; }
-.mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.5rem; }
-.mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.5rem; }
+.mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.25rem; }
+.mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.25rem; }
 .mkt-el-table :deep(.el-table__inner-wrapper::before) { display: none; }
 .mkt-el-table :deep(.el-table__body td.el-table__cell) { transition: background-color .12s ease; }
 .mkt-el-table :deep(.el-table__body tr.el-table__row--striped td.el-table__cell) { background: #fafaf9; }
@@ -287,7 +239,7 @@ watch(filteredListings, () => { currentPage.value = 1; });
 .mkt-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .mkt-thumb-icon { width: 28px; height: 28px; }
 
-.mkt-pagination { padding: 1rem 1.5rem 1.25rem; border-top: 1px solid var(--border); margin-top: .5rem; }
+.mkt-pagination { padding: 1rem 1.25rem 1.25rem; border-top: 1px solid var(--border); }
 .mkt-pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; font-family: inherit; }
 .mkt-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: .8125rem; font-weight: 600; color: var(--on-surface-var); }
 .mkt-pagination :deep(.el-pagination__sizes) { margin-right: 4px; }
@@ -316,9 +268,10 @@ watch(filteredListings, () => { currentPage.value = 1; });
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 767.98px) {
     .mkt-section__head { padding: 0 1.25rem; }
-    .mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.25rem; }
-    .mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.25rem; }
-    .mkt-pagination { padding: 1rem 1.25rem 1.25rem; }
+    .mkt-card { margin: 0 1.25rem; border-radius: 12px; }
+    .mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1rem; }
+    .mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1rem; }
+    .mkt-pagination { padding: 1rem 1rem 1.25rem; }
     .mkt-pagination :deep(.el-pagination) { justify-content: center; }
     .mkt-pagination :deep(.el-pagination__total) { margin-right: 0; width: 100%; text-align: center; order: -1; }
 }

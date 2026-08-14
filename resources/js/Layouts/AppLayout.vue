@@ -1,12 +1,24 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import ApplicationMark from '@/Components/ApplicationMark.vue';
-import Dropdown from '@/Components/Dropdown.vue';
+import {
+    Bell,
+    Box,
+    Close,
+    Document,
+    Expand,
+    HomeFilled,
+    MagicStick,
+    Message,
+    Odometer,
+    Search,
+    ShoppingCart,
+    SwitchButton,
+    User,
+} from '@element-plus/icons-vue';
 import AppAside from '@/Components/Aside/AppAside.vue';
 import AiChatWidget from '@/Components/AiChatWidget.vue';
-import DashboardRail from '@/Components/DashboardRail.vue';
 
 const props = defineProps({
     title: String,
@@ -26,10 +38,11 @@ const props = defineProps({
 
 const page = usePage();
 const mobileMenuOpen = ref(false);
-const showMobileMenuButton = ref(false);
 
 const user = computed(() => page.props.auth.user);
 const unreadNotificationsCount = computed(() => page.props.unreadNotificationsCount ?? 0);
+const recentNotifications = computed(() => page.props.recentNotifications ?? []);
+const cartActiveCount = computed(() => page.props.cartActiveCount ?? 0);
 const userInitials = computed(() => {
     const name = user.value?.name ?? '';
 
@@ -41,239 +54,214 @@ const userInitials = computed(() => {
         .join('') || 'CO';
 });
 
-const topNavLinks = computed(() => [
+const mobileNavSections = computed(() => [
     {
-        label: 'Home',
-        href: route('home'),
-        active: route().current('home'),
-        inertia: true,
-    },
-    {
-        label: 'Market',
-        href: route('market.index'),
-        active: route().current('market.*'),
-        inertia: true,
-    },
-    {
-        label: 'Auction',
-        href: route('auction.index'),
-        active: route().current('auction.index'),
-        inertia: true,
-    },
-]);
-
-const sideSections = computed(() => [
-    {
-        title: 'Workspace',
+        title: 'Main',
         items: [
-            {
-                label: 'Trader Overview',
-                href: route('dashboard'),
-                active: route().current('dashboard'),
-                inertia: true,
-                show: true,
-                badge: null,
-                icon: 'grid',
-            },
-            {
-                label: 'Farmers',
-                href: route('farmer.index'),
-                active: route().current('farmer.index'),
-                inertia: true,
-                show: true,
-                badge: null,
-                icon: 'farmer',
-            },
-            {
-                label: 'Coffee Farms',
-                href: route('farm.index'),
-                active: route().current('farm.*'),
-                inertia: true,
-                show: true,
-                badge: null,
-                icon: 'farm',
-            },
-            {
-                label: 'Cooperatives',
-                href: route('cooperative.index'),
-                active: route().current('cooperative.*'),
-                inertia: true,
-                show: true,
-                badge: null,
-                icon: 'cooperative',
-            },
+            { label: 'Dashboard', href: route('dashboard'), active: route().current('dashboard') },
         ],
     },
     {
-        title: 'Coffee Lots',
+        title: 'Marketplace',
         items: [
-            {
-                label: 'Season',
-                href: route('season.index'),
-                active: route().current('season.*'),
-                inertia: true,
-                show: true,
-                badge: null,
-                icon: 'season',
-            },
-            {
-                label: 'All Lots',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: '312',
-                icon: 'cup',
-            },
-            {
-                label: 'Arabica',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: null,
-                icon: 'arabica',
-                chevron: true,
-            },
-            {
-                label: 'Robusta',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: null,
-                icon: 'robusta',
-                chevron: true,
-            },
-            {
-                label: 'My Bids',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: '14',
-                icon: 'card',
-            },
-            {
-                label: 'Harvests',
-                href: route('harvest.index'),
-                active: route().current('harvest.*'),
-                inertia: true,
-                show: true,
-                badge: null,
-                icon: 'harvest',
-            },
-            {
-                label: 'Batches',
-                href: route('batch.index'),
-                active: route().current('batch.*'),
-                inertia: true,
-                show: true,
-                badge: null,
-                icon: 'batch',
-            },
-            {
-                label: 'Grade Guide',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: null,
-                icon: 'clipboard',
-                chevron: true,
-            },
+            { label: 'Browse Coffee', href: route('market.index'), active: route().current('market.index') },
+            { label: 'Live Market', href: route('market.active'), active: route().current('market.active') },
+            { label: 'Auctions', href: route('auction.index'), active: route().current('auction.*') },
         ],
     },
     {
-        title: 'Regions',
+        title: 'Operations',
         items: [
-            {
-                label: 'Bugisu · Mt Elgon',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: null,
-                icon: 'shield',
-                chevron: true,
-            },
-            {
-                label: 'Rwenzori Mts.',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: null,
-                icon: 'shield',
-                chevron: true,
-            },
-            {
-                label: 'West Nile',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: null,
-                icon: 'shield',
-                chevron: true,
-            },
+            { label: 'My Orders', href: route('orders.index'), active: route().current('orders.*') },
+            { label: 'Farmers', href: route('farmer.index'), active: route().current('farmer.index') },
+            { label: 'Coffee Farms', href: route('farm.index'), active: route().current('farm.*') },
+            { label: 'Cooperatives', href: route('cooperative.index'), active: route().current('cooperative.*') },
+            { label: 'Season', href: route('season.index'), active: route().current('season.*') },
+            { label: 'Harvests', href: route('harvest.index'), active: route().current('harvest.*') },
+            { label: 'Batches', href: route('batch.index'), active: route().current('batch.*') },
         ],
     },
     {
-        title: 'Account',
+        title: 'Financials',
         items: [
-            {
-                label: 'Alerts',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: '3',
-                icon: 'bell',
-            },
-            {
-                label: 'Reports',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: null,
-                icon: 'chart',
-                chevron: true,
-            },
-            {
-                label: 'Settings',
-                href: '#',
-                active: false,
-                inertia: false,
-                show: true,
-                badge: null,
-                icon: 'settings',
-            },
+            { label: 'Wallet', href: route('wallet.index'), active: route().current('wallet.*') },
+        ],
+    },
+    {
+        title: 'Analysis',
+        items: [
+            { label: 'Documentation', href: route('documentation.index'), active: route().current('documentation.*') },
+            { label: 'AI Assistant', href: route('chat.index'), active: route().current('chat.*') },
         ],
     },
 ]);
 
-const logout = () => {
+const searchQuery = ref('');
+const suggestions = ref([]);
+const suggestOpen = ref(false);
+const suggestLoading = ref(false);
+const activeSuggestIndex = ref(-1);
+let suggestTimer = null;
+let suggestRequestId = 0;
+
+function fetchSuggestions(q) {
+    const requestId = ++suggestRequestId;
+    suggestLoading.value = true;
+
+    window.axios.get(route('search.suggest'), { params: { q } })
+        .then(({ data }) => {
+            if (requestId !== suggestRequestId) return;
+            suggestions.value = data.results ?? [];
+            suggestOpen.value = true;
+        })
+        .catch(() => {
+            if (requestId !== suggestRequestId) return;
+            suggestions.value = [];
+        })
+        .finally(() => {
+            if (requestId === suggestRequestId) suggestLoading.value = false;
+        });
+}
+
+watch(searchQuery, (value) => {
+    clearTimeout(suggestTimer);
+    activeSuggestIndex.value = -1;
+
+    const q = value.trim();
+    if (!q) {
+        suggestions.value = [];
+        suggestOpen.value = false;
+        return;
+    }
+
+    suggestTimer = setTimeout(() => fetchSuggestions(q), 200);
+});
+
+function closeSuggestions() {
+    suggestOpen.value = false;
+    activeSuggestIndex.value = -1;
+}
+
+function onSearchFocus() {
+    if (searchQuery.value.trim() && suggestions.value.length) {
+        suggestOpen.value = true;
+    }
+}
+
+function onSearchBlur() {
+    setTimeout(closeSuggestions, 120);
+}
+
+function goToSuggestion(item) {
+    closeSuggestions();
+    searchQuery.value = '';
+    router.visit(route('market.show', item.id));
+}
+
+function submitSearch() {
+    closeSuggestions();
+    const q = searchQuery.value.trim();
+    router.visit(route('search.index'), q ? { data: { q }, method: 'get' } : undefined);
+}
+
+function handleSearchKeydown(e) {
+    if (!suggestOpen.value || !suggestions.value.length) {
+        if (e.key === 'Enter') submitSearch();
+        return;
+    }
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeSuggestIndex.value = (activeSuggestIndex.value + 1) % suggestions.value.length;
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeSuggestIndex.value = activeSuggestIndex.value <= 0
+            ? suggestions.value.length - 1
+            : activeSuggestIndex.value - 1;
+    } else if (e.key === 'Enter') {
+        if (activeSuggestIndex.value >= 0) {
+            goToSuggestion(suggestions.value[activeSuggestIndex.value]);
+        } else {
+            submitSearch();
+        }
+    } else if (e.key === 'Escape') {
+        closeSuggestions();
+    }
+}
+
+function openAiAssistant() {
+    window.dispatchEvent(new Event('open-ai-chat'));
+}
+
+const accountMenuItems = [
+    { label: 'Profile settings', href: () => route('profile.show'), icon: User },
+    { label: 'Dashboard', href: () => route('dashboard'), icon: Odometer },
+    { label: 'Home', href: () => route('home'), icon: HomeFilled },
+    { label: 'Documentation', href: () => route('documentation.index'), icon: Document },
+];
+
+function logout() {
     router.post(route('logout'));
-};
+}
 
-const toggleMobileMenu = () => {
-    mobileMenuOpen.value = !mobileMenuOpen.value;
-};
+function handleAccountCommand(command) {
+    if (command === 'logout') {
+        logout();
+        return;
+    }
 
-const closeMobileMenu = () => {
+    router.visit(command);
+}
+
+function notificationTimeAgo(dateTime) {
+    if (!dateTime) return '';
+
+    const diffMs = Date.now() - new Date(dateTime.replace(' ', 'T')).getTime();
+    const diffMin = Math.round(diffMs / 60000);
+
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+
+    const diffHr = Math.round(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+
+    const diffDay = Math.round(diffHr / 24);
+    if (diffDay < 7) return `${diffDay}d ago`;
+
+    return new Date(dateTime.replace(' ', 'T')).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function openNotification(notification) {
+    if (!notification.is_read) {
+        router.patch(route('notifications.read', notification.id), {}, {
+            preserveScroll: true,
+            preserveState: true,
+            onFinish: () => {
+                if (notification.action_url) router.visit(notification.action_url);
+            },
+        });
+
+        return;
+    }
+
+    if (notification.action_url) {
+        router.visit(notification.action_url);
+    }
+}
+
+function markAllNotificationsRead() {
+    router.post(route('notifications.read-all'), {}, { preserveScroll: true, preserveState: true });
+}
+
+function closeMobileMenu() {
     mobileMenuOpen.value = false;
-};
+}
 
-
-const syncMobileNavState = () => {
-    showMobileMenuButton.value = window.innerWidth < 1024;
-
-    if (!showMobileMenuButton.value) {
+function syncMobileNavState() {
+    if (window.innerWidth >= 1024) {
         closeMobileMenu();
     }
-};
+}
 
 const CALENDAR_NOTIFIED_STORAGE_KEY = 'calendarDueNotifiedDate';
 
@@ -319,7 +307,6 @@ function notifyDueTasks() {
 onMounted(() => {
     document.documentElement.classList.add('app-layout-scrollless');
     document.body.classList.add('app-layout-scrollless');
-    syncMobileNavState();
     window.addEventListener('resize', syncMobileNavState);
     notifyDueCalendarEvents();
     notifyDueTasks();
@@ -333,451 +320,219 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="dashboard-shell flex min-h-screen flex-col overflow-x-hidden bg-page text-ink">
-        <Head :title="title">
-            <link rel="preconnect" href="https://fonts.googleapis.com" />
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-            <link
-                href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap"
-                rel="stylesheet"
-            />
-        </Head>
+    <div class="dashboard-shell">
+        <Head :title="title" />
 
+        <el-header class="shell-header" height="64px">
+            <el-button
+                text
+                circle
+                class="shell-icon-button shell-icon-button--mobile"
+                @click="mobileMenuOpen = true"
+            >
+                <el-icon :size="16"><Expand /></el-icon>
+            </el-button>
 
+            <div class="shell-search">
+                <el-input
+                    v-model="searchQuery"
+                    placeholder="Search origin, variety, or supplier…"
+                    :prefix-icon="Search"
+                    class="shell-search__input"
+                    @focus="onSearchFocus"
+                    @blur="onSearchBlur"
+                    @keydown="handleSearchKeydown"
+                />
 
-        <header class="fixed inset-x-0 top-0 z-30 flex h-14 flex-shrink-0 items-stretch bg-white">
-            <div class="hidden h-full w-16 flex-shrink-0 items-center justify-center bg-[#212529] lg:flex">
-                <div class="flex h-9 w-9 items-center justify-center">
-                    <ApplicationMark class="h-8 w-8" />
-                </div>
-            </div>
-
-            <div class="flex min-w-0 flex-1 items-center border-b border-line bg-white">
-                <button
-                    v-if="showMobileMenuButton"
-                    type="button"
-                    class="shell-icon-button ml-3 lg:hidden"
-                    @click="toggleMobileMenu"
-                >
-                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M4 7h16" />
-                        <path d="M4 12h16" />
-                        <path d="M4 17h16" />
-                    </svg>
-                </button>
-
-                <Link
-                    :href="route('dashboard')"
-                    class="flex h-full min-w-0 items-center gap-2 px-3 no-underline text-[#111827] sm:min-w-[170px] sm:px-4"
-                    @click="closeMobileMenu"
-                >
-                    <div>
-                        <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#111827]">Commodity</div>
-                        <div class="font-display text-[13px] font-bold leading-tight text-[#111827]">Origin</div>
-                    </div>
-                </Link>
-
-                <nav class="hidden h-full items-center gap-1 px-4 md:flex">
-                    <template v-for="link in topNavLinks" :key="link.label">
-                        <Link
-                            v-if="link.inertia"
-                            :href="link.href"
-                            class="shell-top-link"
-                            :class="{ active: link.active }"
-                        >
-                            {{ link.label }}
-                        </Link>
-                        <a
-                            v-else
-                            :href="link.href"
-                            class="shell-top-link"
-                            :class="{ active: link.active }"
-                            @click.prevent
-                        >
-                            <span>{{ link.label }}</span>
-                            <svg
-                                v-if="link.hasChevron"
-                                class="ml-1 size-3"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                            >
-                                <path d="M6 9l6 6 6-6" />
-                            </svg>
-                        </a>
-                    </template>
-                </nav>
-
-                <div class="ml-auto flex items-center gap-1 px-3 sm:gap-2 sm:px-4">
-                    <div class="hidden items-center gap-3 rounded-md border border-line bg-white px-3 py-1.5 lg:flex">
-                        <span class="font-mono text-[9px] tracking-[0.1em] text-ink3">UGA-ARA-AA</span>
-                        <span class="font-mono text-[11px] font-medium text-ink">$5.10</span>
-                        <span class="font-mono text-[9px] text-up">▲ 1.2%</span>
-                        <div class="h-3 w-px bg-line2"></div>
-                        <div class="flex items-center gap-1">
-                            <div class="h-1.5 w-1.5 rounded-full bg-up pulse-green"></div>
-                            <span class="font-mono text-[8px] tracking-[0.08em] text-up">LIVE</span>
-                        </div>
-                    </div>
-
-                    <Link :href="route('search.index')" class="shell-icon-button" title="Search">
-                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <circle cx="11" cy="11" r="8" />
-                            <path d="M21 21l-4.35-4.35" />
-                        </svg>
-                    </Link>
-
-                    <Link :href="route('checkout.index')" class="shell-icon-button">
-                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <circle cx="9" cy="20" r="1.5" />
-                            <circle cx="17" cy="20" r="1.5" />
-                            <path d="M3 4h2l2.2 10.2a1 1 0 00.98.8h8.72a1 1 0 00.97-.76L21 8H7" />
-                        </svg>
-                    </Link>
-
-                    <Link :href="route('apps.index')" class="shell-icon-button hidden sm:inline-flex" title="Apps">
-                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                        </svg>
-                    </Link>
-
-                    <Link :href="route('notifications.index')" class="shell-icon-button relative hidden sm:inline-flex" title="Notifications">
-                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 01-3.46 0" />
-                        </svg>
-                        <span v-if="unreadNotificationsCount > 0" class="shell-bell-badge">
-                            {{ unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount }}
-                        </span>
-                    </Link>
-
-
-
-                    <Dropdown
-                        align="right"
-                        width="48"
-                        :content-classes="['border border-[#E5E7EB] bg-white py-2 shadow-[0_20px_60px_rgba(17,24,39,0.12)]']"
-                    >
-                        <template #trigger>
+                <transition name="shell-search-fade">
+                    <div v-if="suggestOpen" class="shell-search__panel">
+                        <div v-if="suggestLoading" class="shell-search__loading">Searching…</div>
+                        <template v-else-if="suggestions.length">
                             <button
+                                v-for="(item, idx) in suggestions"
+                                :key="item.id"
                                 type="button"
-                                class="flex h-8 w-8 items-center justify-center rounded-full bg-gold font-display text-[11px] font-bold text-white transition-transform hover:scale-[1.03]"
-                                :title="user?.name"
+                                class="shell-search__item"
+                                :class="{ 'shell-search__item--active': idx === activeSuggestIndex }"
+                                @mousedown.prevent="goToSuggestion(item)"
+                                @mouseenter="activeSuggestIndex = idx"
                             >
-                                {{ userInitials }}
+                                <span class="shell-search__item-icon"><el-icon :size="14"><Box /></el-icon></span>
+                                <span class="shell-search__item-body">
+                                    <span class="shell-search__item-name">{{ item.name }}</span>
+                                    <span class="shell-search__item-meta">
+                                        {{ item.origin }}<template v-if="item.type"> · {{ item.type }}</template><template v-if="item.lot_code"> · {{ item.lot_code }}</template>
+                                    </span>
+                                </span>
+                                <span class="shell-search__item-price">${{ Number(item.price_per_kg).toFixed(2) }}<small>/kg</small></span>
+                            </button>
+                            <button type="button" class="shell-search__footer" @mousedown.prevent="submitSearch">
+                                See all results for "{{ searchQuery }}"
                             </button>
                         </template>
-
-                        <template #content>
-                            <div class="px-4 pb-3 pt-2">
-                                <div class="truncate text-[12px] font-semibold text-[#111827]">{{ user?.name }}</div>
-                                <div class="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#9CA3AF]">
-                                    {{ user?.role || 'Account' }}
-                                </div>
-                            </div>
-
-                            <div class="mx-3 h-px bg-[#E5E7EB]"></div>
-
-                            <div class="px-2 py-2">
-                                <Link :href="route('profile.show')" class="account-menu-link">
-                                    <svg class="account-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                        <circle cx="12" cy="8" r="3.5" />
-                                        <path d="M5 19a7 7 0 0114 0" />
-                                    </svg>
-                                    Profile settings
-                                </Link>
-                                <Link :href="route('dashboard')" class="account-menu-link">
-                                    <svg class="account-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                        <rect x="3" y="3" width="7" height="7" rx="1.25" />
-                                        <rect x="14" y="3" width="7" height="7" rx="1.25" />
-                                        <rect x="3" y="14" width="7" height="7" rx="1.25" />
-                                        <rect x="14" y="14" width="7" height="7" rx="1.25" />
-                                    </svg>
-                                    Dashboard
-                                </Link>
-                                <Link :href="route('home')" class="account-menu-link">
-                                    <svg class="account-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                        <path d="M3 10.5L12 3l9 7.5" />
-                                        <path d="M5 9.5V21h14V9.5" />
-                                    </svg>
-                                    Home
-                                </Link>
-                                <Link :href="route('documentation.index')" class="account-menu-link">
-                                    <svg class="account-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                        <path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" />
-                                        <path d="M14 3v5h5" />
-                                        <path d="M8.5 13h7" />
-                                        <path d="M8.5 17h7" />
-                                    </svg>
-                                    Documentation
-                                </Link>
-                            </div>
-
-                            <div class="mx-3 h-px bg-[#E5E7EB]"></div>
-
-                            <div class="px-2 pb-2 pt-2">
-                                <button type="button" class="account-menu-button" @click="logout">
-                                    <svg class="account-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                        <path d="M15 3h3a2 2 0 012 2v14a2 2 0 01-2 2h-3" />
-                                        <path d="M10 17l5-5-5-5" />
-                                        <path d="M15 12H3" />
-                                    </svg>
-                                    Log out
-                                </button>
-                            </div>
-                        </template>
-                    </Dropdown>
-                </div>
-            </div>
-        </header>
-
-        <div
-            v-if="mobileMenuOpen"
-            class="fixed inset-0 z-40 bg-[#111827]/45 backdrop-blur-[1px] lg:hidden"
-            @click="closeMobileMenu"
-        ></div>
-
-
-        <aside
-            class="fixed inset-y-0 left-0 z-50 flex w-[88vw] max-w-[320px] flex-col overflow-y-auto border-r border-line bg-sidebar shadow-2xl transition-transform duration-200 lg:hidden"
-            :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'"
-        >
-            <div class="flex items-center justify-between border-b border-line px-4 py-4">
-                <div class="flex items-center gap-2">
-                    <div class="flex h-9 w-9 items-center justify-center">
-                        <ApplicationMark class="h-8 w-8" />
-                    </div>
-                    <div>
-                        <div class="font-mono text-[9px] uppercase tracking-[0.12em] text-ink3">Commodity</div>
-                        <div class="font-display text-[14px] font-bold leading-tight text-ink">Origin</div>
-                    </div>
-                </div>
-
-                <button type="button" class="shell-icon-button" @click="closeMobileMenu">
-                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M6 6l12 12" />
-                        <path d="M18 6L6 18" />
-                    </svg>
-                </button>
-            </div>
-
-            <div class="border-b border-line px-4 py-3">
-                <div class="mb-2 font-mono text-[9px] uppercase tracking-[0.14em] text-ink4">Overview</div>
-                <div class="flex flex-col gap-1">
-                    <template v-for="link in topNavLinks" :key="`mobile-top-${link.label}`">
-                        <Link
-                            v-if="link.inertia"
-                            :href="link.href"
-                            class="snav"
-                            :class="{ active: link.active }"
-                            @click="closeMobileMenu"
-                        >
-                            <span class="snav-label">{{ link.label }}</span>
-                        </Link>
-                        <a
-                            v-else
-                            :href="link.href"
-                            class="snav"
-                            :class="{ active: link.active }"
-                            @click.prevent="closeMobileMenu"
-                        >
-                            <span class="snav-label">{{ link.label }}</span>
-                            <svg
-                                v-if="link.hasChevron"
-                                class="snav-chevron"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                            >
-                                <path d="M6 9l6 6 6-6" />
-                            </svg>
-                        </a>
-                    </template>
-                </div>
-            </div>
-
-            <div
-                v-for="section in sideSections"
-                :key="`mobile-${section.title}`"
-                class="px-4 py-3"
-            >
-                <div class="mb-2 px-3 font-mono text-[9px] uppercase tracking-[0.14em] text-ink4">
-                    {{ section.title }}
-                </div>
-
-                <div class="flex flex-col gap-1">
-                    <Link
-                        v-for="item in section.items.filter((item) => item.show && item.inertia)"
-                        :key="`mobile-${section.title}-${item.label}`"
-                        :href="item.href"
-                        class="snav"
-                        :class="{ active: item.active }"
-                        @click="closeMobileMenu"
-                    >
-                        <svg v-if="item.icon === 'grid'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="3" width="7" height="7" rx="1" />
-                            <rect x="14" y="3" width="7" height="7" rx="1" />
-                            <rect x="3" y="14" width="7" height="7" rx="1" />
-                            <rect x="14" y="14" width="7" height="7" rx="1" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'pulse'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'farmer'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <circle cx="9" cy="8" r="3" />
-                            <path d="M4 19a5 5 0 0110 0" />
-                            <path d="M16 7h4" />
-                            <path d="M16 11h4" />
-                            <path d="M16 15h4" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'farm'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M3 20h18" />
-                            <path d="M5 20v-6l4-2 4 2v6" />
-                            <path d="M13 20V9l3-2 3 2v11" />
-                            <path d="M8 10V6h2v3" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'cooperative'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M4 20h16" />
-                            <path d="M6 20v-7" />
-                            <path d="M12 20V9" />
-                            <path d="M18 20v-5" />
-                            <path d="M3 9l9-5 9 5" />
-                            <path d="M8.5 12h1" />
-                            <path d="M14.5 12h1" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'harvest'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M18.5 3C13 3 8.8 4.8 6.4 7.3A8.8 8.8 0 004 13.7c0 2.2.7 4.3 2.1 6.1" />
-                            <path d="M7.1 19.8c1.3-1.9 3.2-3.1 5.3-3.1 4 0 7.3-3.3 7.3-7.3V3.9" />
-                            <path d="M8 20h8" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'season'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="5" width="18" height="16" rx="2" />
-                            <path d="M16 3v4" />
-                            <path d="M8 3v4" />
-                            <path d="M3 10h18" />
-                            <path d="M8 14h3" />
-                            <path d="M13 14h3" />
-                            <path d="M8 18h3" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'batch'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M4 7.5l8-4 8 4-8 4-8-4z" />
-                            <path d="M4 12l8 4 8-4" />
-                            <path d="M4 16.5l8 4 8-4" />
-                        </svg>
-                        <span class="snav-label">{{ item.label }}</span>
-                        <span v-if="item.badge" class="snav-trailing">
-                            <span class="snav-badge">{{ item.badge }}</span>
-                        </span>
-                    </Link>
-
-                    <a
-                        v-for="item in section.items.filter((item) => item.show && !item.inertia)"
-                        :key="`mobile-${section.title}-${item.label}`"
-                        :href="item.href"
-                        class="snav"
-                        :class="{ active: item.active }"
-                        @click.prevent="closeMobileMenu"
-                    >
-                        <svg v-if="item.icon === 'cup'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M17 8h1a4 4 0 010 8h-1" />
-                            <path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z" />
-                        </svg>
-                        <div v-else-if="item.icon === 'arabica'" class="h-2 w-2 flex-shrink-0 rounded-full bg-ara"></div>
-                        <div v-else-if="item.icon === 'robusta'" class="h-2 w-2 flex-shrink-0 rounded-full bg-rob"></div>
-                        <svg v-else-if="item.icon === 'card'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
-                            <circle cx="9" cy="12" r="2" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'clipboard'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-                            <path d="M9 5a2 2 0 002 2h2a2 2 0 002-2" />
-                            <path d="M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'shield'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'bell'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 01-3.46 0" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'chart'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z" />
-                            <path d="M9 19V9a2 2 0 012-2h2a2 2 0 012 2v10" />
-                            <path d="M15 19a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2a2 2 0 00-2 2z" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'settings'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.07 4.93A10 10 0 115 19.07" />
-                        </svg>
-                        <span class="snav-label">{{ item.label }}</span>
-                        <span v-if="item.badge || item.chevron" class="snav-trailing">
-                            <span v-if="item.badge" class="snav-badge">{{ item.badge }}</span>
-                            <svg
-                                v-if="item.chevron"
-                                class="snav-chevron"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                            >
-                                <path d="M9 18l6-6-6-6" />
-                            </svg>
-                        </span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="mt-auto border-t border-line p-4">
-                <div class="mb-3 flex items-center gap-2.5 rounded-lg px-2 py-1.5">
-                    <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gold font-display text-[11px] font-bold text-white">
-                        {{ userInitials }}
-                    </div>
-                    <div class="min-w-0">
-                        <div class="truncate text-[12px] font-medium text-ink">{{ user?.name }}</div>
-                        <div class="flex items-center gap-1 truncate font-mono text-[8px] text-up">
-                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-up"></span>
-                            Verified trader
+                        <div v-else class="shell-search__empty">
+                            No market items match "{{ searchQuery }}"
                         </div>
                     </div>
+                </transition>
+            </div>
+
+            <div class="shell-header__actions">
+                <el-button class="shell-ai-btn" round @click="openAiAssistant">
+                    <el-icon :size="16"><MagicStick /></el-icon>
+                    <span class="shell-ai-btn__label">AI Assistant</span>
+                </el-button>
+
+                <div class="shell-header__icons">
+                    <el-popover placement="bottom-end" :width="320" trigger="click" popper-class="shell-notif-popover">
+                        <template #reference>
+                            <el-badge :value="unreadNotificationsCount" :hidden="unreadNotificationsCount === 0" :max="99">
+                                <el-button text circle class="shell-icon-button">
+                                    <el-icon :size="18"><Bell /></el-icon>
+                                </el-button>
+                            </el-badge>
+                        </template>
+
+                        <div class="notif-menu-head">
+                            <span>Notifications</span>
+                            <el-button
+                                v-if="unreadNotificationsCount > 0"
+                                text
+                                size="small"
+                                type="primary"
+                                @click="markAllNotificationsRead"
+                            >
+                                Mark all read
+                            </el-button>
+                        </div>
+
+                        <el-scrollbar max-height="352px" class="notif-menu-list">
+                            <button
+                                v-for="notification in recentNotifications"
+                                :key="notification.id"
+                                type="button"
+                                class="notif-menu-item"
+                                :class="{ 'notif-menu-item--unread': !notification.is_read }"
+                                @click="openNotification(notification)"
+                            >
+                                <span class="notif-menu-item__dot" :class="{ 'notif-menu-item__dot--on': !notification.is_read }" />
+                                <span class="notif-menu-item__body">
+                                    <span class="notif-menu-item__title">{{ notification.title }}</span>
+                                    <span v-if="notification.body" class="notif-menu-item__text">{{ notification.body }}</span>
+                                    <span class="notif-menu-item__time">{{ notificationTimeAgo(notification.created_at) }}</span>
+                                </span>
+                            </button>
+
+                            <el-empty
+                                v-if="recentNotifications.length === 0"
+                                description="You're all caught up"
+                                :image-size="44"
+                            />
+                        </el-scrollbar>
+
+                        <Link :href="route('notifications.index')" class="notif-menu-footer">
+                            View all notifications
+                        </Link>
+                    </el-popover>
+
+                    <el-tooltip content="Messages" placement="bottom" :show-after="200">
+                        <el-button text circle class="shell-icon-button" @click="router.visit(route('chat.index'))">
+                            <el-icon :size="18"><Message /></el-icon>
+                        </el-button>
+                    </el-tooltip>
+
+                    <el-tooltip content="Cart" placement="bottom" :show-after="200">
+                        <el-badge :value="cartActiveCount" :hidden="cartActiveCount === 0" :max="99">
+                            <el-button text circle class="shell-icon-button" @click="router.visit(route('checkout.index'))">
+                                <el-icon :size="18"><ShoppingCart /></el-icon>
+                            </el-button>
+                        </el-badge>
+                    </el-tooltip>
                 </div>
 
-                <Link :href="route('profile.show')" class="snav mb-2" @click="closeMobileMenu">
-                    <span class="snav-label">Profile</span>
-                </Link>
-                <button type="button" class="mobile-logout-btn" @click="logout">
-                    Sign out
-                </button>
+                <div class="shell-header__divider" />
+
+                <el-dropdown trigger="click" placement="bottom-end" @command="handleAccountCommand">
+                    <div class="shell-header__account">
+                        <el-avatar :size="32" class="shell-header__avatar">{{ userInitials }}</el-avatar>
+                        <div class="shell-header__account-text">
+                            <div class="shell-header__account-name">{{ user?.name }}</div>
+                            <div class="shell-header__account-role">{{ user?.role || 'Account' }}</div>
+                        </div>
+                    </div>
+
+                    <template #dropdown>
+                        <div class="account-menu-head">
+                            <div class="account-menu-name">{{ user?.name }}</div>
+                            <div class="account-menu-role">{{ user?.role || 'Account' }}</div>
+                        </div>
+
+                        <el-dropdown-menu>
+                            <el-dropdown-item
+                                v-for="item in accountMenuItems"
+                                :key="item.label"
+                                :command="item.href()"
+                                :icon="item.icon"
+                            >
+                                {{ item.label }}
+                            </el-dropdown-item>
+                            <el-dropdown-item divided command="logout" :icon="SwitchButton">
+                                Log out
+                            </el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
             </div>
-        </aside>
+        </el-header>
 
+        <el-drawer
+            v-model="mobileMenuOpen"
+            direction="ltr"
+            size="85%"
+            :with-header="false"
+            class="shell-drawer"
+        >
+            <div class="shell-drawer__head">
+                <span class="shell-drawer__brand-title">Bean Origin</span>
+                <el-button text circle @click="closeMobileMenu">
+                    <el-icon :size="16"><Close /></el-icon>
+                </el-button>
+            </div>
 
+            <div v-for="section in mobileNavSections" :key="section.title" class="shell-drawer__section">
+                <div class="shell-drawer__label">{{ section.title }}</div>
+                <Link
+                    v-for="item in section.items"
+                    :key="`mobile-${section.title}-${item.label}`"
+                    :href="item.href"
+                    class="shell-drawer__link"
+                    :class="{ active: item.active }"
+                    @click="closeMobileMenu"
+                >
+                    {{ item.label }}
+                </Link>
+            </div>
 
+            <div class="shell-drawer__footer">
+                <div class="shell-drawer__user">
+                    <el-avatar :size="32" class="shell-header__avatar">{{ userInitials }}</el-avatar>
+                    <div class="shell-drawer__user-name">{{ user?.name }}</div>
+                </div>
+                <el-button class="shell-drawer__logout" @click="logout">Sign out</el-button>
+            </div>
+        </el-drawer>
 
-
-        <div class="flex flex-1 overflow-visible pt-14">
-            <DashboardRail />
-            
+        <div class="shell-body">
             <AppAside />
 
-
-
-            <main class="min-w-0 flex-1 overflow-visible lg:ml-72">
-                <div
-                    class="min-w-0"
-                    :class="props.flush ? 'w-full max-w-none' : (props.fullWidth ? 'w-full max-w-none p-3 sm:p-5 lg:p-6' : 'p-3 sm:p-5 lg:p-6')"
-                >
+            <main class="shell-main" :class="{ 'shell-main--flush': props.flush }">
+                <div class="shell-main__inner" :class="{ 'shell-main__inner--full': props.fullWidth && !props.flush }">
                     <slot />
                 </div>
             </main>
         </div>
 
         <AiChatWidget />
-
     </div>
 </template>
 
@@ -794,265 +549,546 @@ onBeforeUnmount(() => {
 }
 
 .dashboard-shell {
-    font-family: 'Source Sans 3', sans-serif;
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+    overflow-x: hidden;
+    background: var(--surface);
+    font-family: var(--font-sans);
 }
 
-.dashboard-shell :deep(.font-display) {
-    font-family: 'IBM Plex Sans', sans-serif;
-}
-
-.dashboard-shell :deep(.font-mono) {
-    font-family: 'IBM Plex Mono', monospace;
-}
-
-.dashboard-shell :deep(::-webkit-scrollbar) {
-    width: 3px;
-    height: 3px;
-}
-
-.dashboard-shell :deep(::-webkit-scrollbar-track) {
-    background: #f0f2f5;
-}
-
-.dashboard-shell :deep(::-webkit-scrollbar-thumb) {
-    background: #d1d5db;
-    border-radius: 2px;
-}
-
-.dashboard-shell :deep(.shell-scrollless) {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.dashboard-shell :deep(.shell-scrollless::-webkit-scrollbar) {
-    display: none;
-    width: 0;
-    height: 0;
-}
-
-.pulse-gold {
-    animation: pulseGold 2.5s ease-in-out infinite;
-}
-
-.pulse-green {
-    animation: pulseGreen 2s ease-in-out infinite;
-}
-
-.shell-top-link {
+.shell-header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 30;
     display: flex;
     align-items: center;
-    height: 100%;
-    border-bottom: 2px solid transparent;
-    padding: 0.375rem 0.75rem;
-    font-size: 13px;
-    font-weight: 500;
-    color: #6b7280;
-    text-decoration: none;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    height: 64px !important;
+    padding: 0 24px;
+    gap: 16px;
+    background: #fff;
+    border-bottom: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.08));
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
 }
 
-.shell-top-link:hover {
-    color: #111827;
-    border-color: #d1d5db;
+@media (min-width: 1024px) {
+    .shell-header {
+        left: 288px;
+    }
 }
 
-.shell-top-link.active {
-    color: #c8862a;
-    border-color: #c8862a;
-}
-
-.shell-icon-button {
+.shell-icon-button--mobile {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    background: #f0f2f5;
-    color: #6b7280;
-    transition: all 0.15s ease;
-}
-
-.shell-icon-button:hover {
-    border-color: rgba(200, 134, 42, 0.3);
-    background: #fff8f0;
-    color: #c8862a;
-}
-
-.shell-bell-badge {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 16px;
-    height: 16px;
-    padding: 0 3px;
-    border-radius: 999px;
-    background: #dc2626;
-    color: #fff;
-    font-size: 0.5625rem;
-    font-weight: 800;
-    line-height: 1;
-    border: 1.5px solid #fff;
-}
-
-.mobile-logout-btn {
-    width: 100%;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    background: #ffffff;
-    padding: 0.75rem 0.875rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #111827;
-    text-align: left;
-    transition: all 0.15s ease;
-}
-
-.mobile-logout-btn:hover {
-    border-color: rgba(200, 134, 42, 0.35);
-    background: #fff8f0;
-    color: #c8862a;
-}
-
-.account-menu-link,
-.account-menu-button {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    width: 100%;
-    border-radius: 0.5rem;
-    padding: 0.625rem 0.75rem;
-    text-align: left;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    text-decoration: none;
-    transition: all 0.15s ease;
-}
-
-.account-menu-link:hover,
-.account-menu-button:hover {
-    background: #fff8f0;
-    color: #c8862a;
-}
-
-.account-menu-button {
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-}
-
-.account-menu-icon {
-    width: 1rem;
-    height: 1rem;
     flex-shrink: 0;
 }
 
-
-.snav {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: 6px;
-    padding: 7px 12px;
-    font-size: 13px;
-    color: #374151;
-    text-decoration: none;
-    transition: all 0.15s ease;
+@media (min-width: 1024px) {
+    .shell-icon-button--mobile {
+        display: none;
+    }
 }
 
-.snav svg {
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
-}
-
-.snav-label {
+.shell-search {
+    position: relative;
     flex: 1 1 auto;
+    max-width: 520px;
     min-width: 0;
 }
 
-.snav-trailing {
-    margin-left: auto;
+.shell-search__panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
+    padding: 6px;
+    z-index: 40;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.shell-search__loading,
+.shell-search__empty {
+    padding: 16px 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.shell-search__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    border: none;
+    background: none;
+    padding: 9px 10px;
+    border-radius: 9px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.shell-search__item--active,
+.shell-search__item:hover {
+    background: var(--el-color-primary-light-9);
+}
+
+.shell-search__item-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--surface-container-low);
+    color: var(--text-muted);
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
+    justify-content: center;
     flex-shrink: 0;
 }
 
-.snav-badge {
-    border-radius: 0.25rem;
-    background: #fff8f0;
-    padding: 0.125rem 0.375rem;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 8px;
-    line-height: 1;
-    color: #c8862a;
+.shell-search__item-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
 }
 
-.snav-chevron {
-    width: 14px;
-    height: 14px;
-    color: #9ca3af;
+.shell-search__item-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.snav:hover {
-    background: #fff8f0;
-    color: #c8862a;
+.shell-search__item-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.snav.active {
-    background: #fff8f0;
-    color: #c8862a;
+.shell-search__item-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brand-primary);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.shell-search__item-price small {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.shell-search__footer {
+    display: block;
+    width: 100%;
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    background: none;
+    margin-top: 4px;
+    padding: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--brand-primary);
+    text-align: center;
+    cursor: pointer;
+    border-radius: 0 0 9px 9px;
+}
+
+.shell-search__footer:hover {
+    background: var(--surface-container-low);
+}
+
+.shell-search-fade-enter-active,
+.shell-search-fade-leave-active {
+    transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.shell-search-fade-enter-from,
+.shell-search-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+
+.shell-search__input :deep(.el-input__wrapper) {
+    border-radius: var(--radius-pill);
+    background: var(--surface-container-low);
+    border: 1px solid var(--border-subtle);
+    box-shadow: none;
+    padding: 0 16px;
+}
+
+.shell-search__input :deep(.el-input__wrapper.is-focus) {
+    border-color: var(--el-color-primary);
+    box-shadow: 0 0 0 3px var(--el-color-primary-light-9);
+}
+
+.shell-header__actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.shell-ai-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 18px;
+    border: none;
+    background: var(--brand-primary-container);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.shell-ai-btn:hover,
+.shell-ai-btn:focus {
+    background: var(--brand-primary);
+    color: #fff;
+}
+
+.shell-ai-btn__label {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .shell-ai-btn__label {
+        display: inline;
+    }
+}
+
+.shell-header__icons {
+    display: none;
+    align-items: center;
+    gap: 2px;
+}
+
+@media (min-width: 640px) {
+    .shell-header__icons {
+        display: flex;
+    }
+}
+
+.shell-icon-button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: var(--on-surface-variant);
+}
+
+.shell-icon-button:hover {
+    background: var(--surface-container);
+    color: var(--text-main);
+}
+
+.shell-header__divider {
+    display: none;
+    height: 28px;
+    width: 1px;
+    background: var(--border-subtle);
+}
+
+@media (min-width: 640px) {
+    .shell-header__divider {
+        display: block;
+    }
+}
+
+.shell-header__account {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px;
+    padding-right: 12px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.shell-header__account:hover {
+    background: var(--surface-container);
+}
+
+.shell-header__avatar {
+    flex-shrink: 0;
+    background: var(--brand-primary);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.shell-header__account-text {
+    display: none;
+    line-height: 1.3;
+}
+
+@media (min-width: 1024px) {
+    .shell-header__account-text {
+        display: block;
+    }
+}
+
+.shell-header__account-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.shell-header__account-role {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.notif-menu-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-bottom: 8px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--el-text-color-primary);
+}
+
+.notif-menu-list {
+    border-top: 1px solid var(--el-border-color-extra-light);
+}
+
+.notif-menu-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid var(--el-border-color-extra-light);
+    background: transparent;
+    padding: 0.625rem 0;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.notif-menu-item:hover {
+    background: var(--el-fill-color-light);
+}
+
+.notif-menu-item--unread {
+    background: var(--el-color-primary-light-9);
+}
+
+.notif-menu-item--unread:hover {
+    background: var(--el-color-primary-light-8);
+}
+
+.notif-menu-item__dot {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    margin-top: 6px;
+    border-radius: 999px;
+    background: transparent;
+}
+
+.notif-menu-item__dot--on {
+    background: var(--el-color-primary);
+}
+
+.notif-menu-item__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.notif-menu-item__title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    line-height: 1.4;
+}
+
+.notif-menu-item__text {
+    font-size: 0.75rem;
+    color: var(--el-text-color-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.notif-menu-item__time {
+    font-size: 0.6875rem;
+    color: var(--el-text-color-placeholder);
+    margin-top: 1px;
+}
+
+.notif-menu-footer {
+    display: block;
+    margin-top: 4px;
+    padding-top: 0.625rem;
+    border-top: 1px solid var(--el-border-color-extra-light);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--el-color-primary);
+    text-align: center;
+    text-decoration: none;
+}
+
+.notif-menu-footer:hover {
+    text-decoration: underline;
+}
+
+.account-menu-head {
+    padding: 4px 12px 8px;
+}
+
+.account-menu-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-menu-role {
+    margin-top: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+.shell-drawer :deep(.el-drawer__body) {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+.shell-drawer__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    padding: 16px;
+}
+
+.shell-drawer__brand-title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--brand-primary);
+}
+
+.shell-drawer__section {
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    padding: 12px 16px;
+}
+
+.shell-drawer__label {
+    margin-bottom: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+}
+
+.shell-drawer__link {
+    display: block;
+    border-radius: var(--radius-control);
+    padding: 9px 12px;
+    font-size: 14px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.shell-drawer__link:hover {
+    background: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
+}
+
+.shell-drawer__link.active {
+    background: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
     font-weight: 500;
 }
 
-.page-header-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 1rem;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(250, 250, 250, 0.95));
-    padding: 1.25rem 1.5rem;
-    box-shadow: 0 12px 32px rgba(17, 24, 39, 0.04);
+.shell-drawer__footer {
+    margin-top: auto;
+    padding: 16px;
 }
 
-.page-header-card :deep(h2) {
-    margin: 0;
-    font-family: 'Syne', sans-serif;
-    font-size: 1.5rem;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    color: #111827;
+.shell-drawer__user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
 }
 
-.page-header-card :deep(p) {
-    margin-top: 0.35rem;
-    color: #6b7280;
+.shell-drawer__user-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--el-text-color-primary);
 }
 
-@keyframes pulseGold {
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.5;
-    }
+.shell-drawer__logout {
+    width: 100%;
 }
 
-@keyframes pulseGreen {
-    0%,
-    100% {
-        opacity: 1;
-    }
+.shell-body {
+    display: flex;
+    flex: 1 1 auto;
+    padding-top: 64px;
+}
 
-    50% {
-        opacity: 0.4;
+.shell-main {
+    min-width: 0;
+    flex: 1 1 auto;
+    padding: 0.75rem;
+}
+
+@media (min-width: 640px) {
+    .shell-main {
+        padding: 1.25rem;
     }
 }
 
+@media (min-width: 1024px) {
+    .shell-main {
+        margin-left: 288px;
+        padding: 1.5rem;
+    }
+}
+
+.shell-main--flush {
+    padding: 0 !important;
+}
+
+.shell-main__inner {
+    min-width: 0;
+}
+
+.shell-main__inner--full {
+    width: 100%;
+    max-width: none;
+}
 </style>

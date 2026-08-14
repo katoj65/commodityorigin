@@ -3,8 +3,8 @@ import { computed, ref } from 'vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import {
     ChatDotRound, Check, CircleCheck, Collection,
-    DataLine, Document, Location,
-    Promotion, Star, User,
+    DataLine, Location, Message, OfficeBuilding,
+    Phone, Promotion, Star, User,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
@@ -139,7 +139,7 @@ const submit = () => {
                                 <div class="fr-grid">
                                     <div class="fr-field">
                                         <label>District <span class="fr-req">*</span></label>
-                                        <el-input v-model="form.district" placeholder="e.g. Mbale" class="fr-input" />
+                                        <el-input v-model="form.district" placeholder="e.g. Mbale" :prefix-icon="Location" class="fr-input" />
                                         <InputError :message="form.errors.district" class="fr-error" />
                                     </div>
                                     <div class="fr-field">
@@ -161,12 +161,12 @@ const submit = () => {
                                 <div class="fr-grid">
                                     <div class="fr-field">
                                         <label>Phone Number <span class="fr-req">*</span></label>
-                                        <el-input v-model="form.telephone" type="tel" placeholder="+256 752 567 534" class="fr-input" />
+                                        <el-input v-model="form.telephone" type="tel" placeholder="+256 752 567 534" :prefix-icon="Phone" class="fr-input" />
                                         <InputError :message="form.errors.telephone" class="fr-error" />
                                     </div>
                                     <div class="fr-field">
                                         <label>Email Address</label>
-                                        <el-input v-model="form.email" type="email" placeholder="farmer@example.com" class="fr-input" />
+                                        <el-input v-model="form.email" type="email" placeholder="farmer@example.com" :prefix-icon="Message" class="fr-input" />
                                         <InputError :message="form.errors.email" class="fr-error" />
                                     </div>
                                 </div>
@@ -183,7 +183,7 @@ const submit = () => {
                                 <div class="fr-grid">
                                     <div class="fr-field">
                                         <label>Coffee Type <span class="fr-req">*</span></label>
-                                        <el-select v-model="form.coffee_type" clearable placeholder="Select type" class="fr-input !w-full">
+                                        <el-select v-model="form.coffee_type" clearable placeholder="Select type" class="fr-input w-100">
                                             <el-option label="Arabica" value="arabica" />
                                             <el-option label="Robusta" value="robusta" />
                                             <el-option label="Mixed"   value="mixed"   />
@@ -197,7 +197,7 @@ const submit = () => {
                                     </div>
                                     <div class="fr-field fr-field--full">
                                         <label>Cooperative</label>
-                                        <el-input v-model="form.cooperative" placeholder="e.g. Sipi Farmers Cooperative" class="fr-input" />
+                                        <el-input v-model="form.cooperative" placeholder="e.g. Sipi Farmers Cooperative" :prefix-icon="OfficeBuilding" class="fr-input" />
                                         <InputError :message="form.errors.cooperative" class="fr-error" />
                                     </div>
                                 </div>
@@ -209,7 +209,7 @@ const submit = () => {
                         <!-- Actions ────────────────────────────────────── -->
                         <div class="fr-form-actions">
                             <SubmitButton native-type="submit" :loading="form.processing" :disabled="form.processing" style="width:170px;">
-                                 Farmer
+                                Register Farmer
                             </SubmitButton>
 
 
@@ -337,7 +337,7 @@ const submit = () => {
 /* ── Base ───────────────────────────────────────────────────────── */
 .fr-page {
     min-height: calc(100vh - 48px);
-    background: #fff;
+    background: var(--surface, #f7f9fb);
     color: #1f2a2a;
     padding-bottom: 60px;
     font-family: 'Manrope', sans-serif;
