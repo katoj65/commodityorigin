@@ -15,6 +15,7 @@ use App\Http\Controllers\Documentation\DocumentationController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Farm\GeocodeController;
 use App\Http\Controllers\Forecast\ForecastController;
+use App\Http\Controllers\Gallery\GalleryController;
 use App\Http\Controllers\Harvest\HarvestController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
@@ -276,6 +277,15 @@ Route::middleware([
         Route::post('/', [DocumentationController::class, 'store'])->name('store');
         Route::patch('/{documentation}', [DocumentationController::class, 'update'])->name('update');
         Route::delete('/{documentation}', [DocumentationController::class, 'destroy'])->name('destroy');
+    });
+
+    // Gallery — shared photo gallery visible to every logged-in user; only
+    // admins may upload, edit, or delete images.
+    Route::prefix('gallery')->name('gallery.')->group(function () {
+        Route::get('/', [GalleryController::class, 'index'])->name('index');
+        Route::post('/', [GalleryController::class, 'store'])->name('store');
+        Route::patch('/{galleryImage}', [GalleryController::class, 'update'])->name('update');
+        Route::delete('/{galleryImage}', [GalleryController::class, 'destroy'])->name('destroy');
     });
 
     // Notifications — the in-app channel of the notification system.

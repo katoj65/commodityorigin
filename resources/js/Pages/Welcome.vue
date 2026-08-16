@@ -1,1043 +1,846 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
-import ApplicationMark from '@/Components/ApplicationMark.vue';
+import { Link } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import OuterLayout from '@/Layouts/OuterLayout.vue';
 
-const pageRef = ref(null);
-const pageTitle =
-    "Commodity Origin — Uganda's coffee exchange · From Farm to Cup, Transparently";
+const pageTitle = 'Bean Origin: The Digital Exchange for Coffee';
 
-let revealObserver;
-let revealTimeout;
-let priceInterval;
-const resetTimeouts = [];
-const cleanupCallbacks = [];
+// Deterministic ascending price curve for the hero visual — ties the flagship
+// image to the exchange/pricing narrative instead of decorative bean clip art.
+function seededHeroCurve(points) {
+    const coords = [];
+    let seed = 11;
+    let level = 92;
+    const rand = () => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+    };
 
-function applyMarketFilter(type, activeButton) {
-    if (!pageRef.value) {
-        return;
-    }
-
-    pageRef.value.querySelectorAll('.mf-btn').forEach((button) => {
-        button.classList.remove('bg-gold/12', 'border-gold/30', 'text-gold');
-        button.classList.add(
-            'border-white/[0.08]',
-            'bg-transparent',
-            'text-cream/45',
-        );
-    });
-
-    activeButton.classList.add('bg-gold/12', 'border-gold/30', 'text-gold');
-    activeButton.classList.remove(
-        'border-white/[0.08]',
-        'bg-transparent',
-        'text-cream/45',
-    );
-
-    pageRef.value.querySelectorAll('#mktTable tbody tr').forEach((row) => {
-        const rowType = row.dataset.type;
-        const score = Number.parseFloat(row.dataset.score || '0');
-
-        if (type === 'all') {
-            row.style.display = '';
-            return;
-        }
-
-        if (type === 'arabica' || type === 'robusta') {
-            row.style.display = rowType === type ? '' : 'none';
-            return;
-        }
-
-        row.style.display = score >= 80 ? '' : 'none';
-    });
-}
-
-function setMarketFilter(type, event) {
-    if (!event?.currentTarget) {
-        return;
-    }
-
-    applyMarketFilter(type, event.currentTarget);
-}
-
-function initializeRevealAnimation() {
-    if (!pageRef.value) {
-        return;
-    }
-
-    revealTimeout = window.setTimeout(() => {
-        const elements = pageRef.value?.querySelectorAll('.reveal') || [];
-
-        elements.forEach((element) => element.classList.add('anim'));
-
-        revealObserver = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('visible');
-                        revealObserver?.unobserve(entry.target);
-                    }
-                });
-            },
-            { threshold: 0.06 },
-        );
-
-        elements.forEach((element) => revealObserver?.observe(element));
-    }, 80);
-}
-
-function initializeBidButtons() {
-    if (!pageRef.value) {
-        return;
-    }
-
-    pageRef.value.querySelectorAll('.bid-btn').forEach((button) => {
-        const listener = () => {
-            const originalText = button.textContent;
-
-            button.textContent = 'Bidding...';
-            button.style.background = '#C8862A';
-            button.style.borderColor = '#C8862A';
-            button.style.color = '#0E0B07';
-
-            const successTimeout = window.setTimeout(() => {
-                button.textContent = 'Bid placed ✓';
-
-                const resetTimeout = window.setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.background = '';
-                    button.style.borderColor = '';
-                    button.style.color = '';
-                }, 2000);
-
-                resetTimeouts.push(resetTimeout);
-            }, 800);
-
-            resetTimeouts.push(successTimeout);
-        };
-
-        button.addEventListener('click', listener);
-        cleanupCallbacks.push(() => button.removeEventListener('click', listener));
-    });
-}
-
-function initializePriceNudges() {
-    if (!pageRef.value) {
-        return;
-    }
-
-    priceInterval = window.setInterval(() => {
-        pageRef.value?.querySelectorAll('.lot-price-cell').forEach((element) => {
-            const basePrice = Number.parseFloat(
-                element.textContent?.replace('$', '') || '',
-            );
-
-            if (Number.isNaN(basePrice)) {
-                return;
-            }
-
-            const delta = (Math.random() - 0.49) * 0.02;
-            element.textContent = `$${(basePrice + delta).toFixed(2)}`;
+    for (let i = 0; i < points; i += 1) {
+        level -= 6.5 + rand() * 3.5;
+        const noise = (rand() - 0.5) * 6;
+        coords.push({
+            x: (400 / (points - 1)) * i,
+            y: Math.min(96, Math.max(6, level + noise)),
         });
-    }, 4000);
+    }
+
+    return coords;
 }
 
-onMounted(async () => {
-    await nextTick();
+const heroCurvePoints = seededHeroCurve(9);
+const heroCurvePath = heroCurvePoints
+    .map((point, i) => `${i === 0 ? 'M' : 'L'}${point.x.toFixed(1)},${(point.y * 5.5).toFixed(1)}`)
+    .join(' ');
+const heroCurveFillPath = `${heroCurvePath} L400,550 L0,550 Z`;
 
-    initializeRevealAnimation();
-    initializeBidButtons();
-    initializePriceNudges();
+const tickerItems = [
+    { label: 'Arabica (NY)', value: '184.25', change: '1.32%', tone: 'up' },
+    { label: 'Robusta (LON)', value: '3245.00', change: '0.45%', tone: 'down' },
+    { label: 'Uganda Bugisu', value: '192.50', change: '0.80%', tone: 'up' },
+    { label: 'Ethiopia Yirgacheffe', value: '215.10', change: '2.10%', tone: 'up' },
+    { label: 'Brazil Santos', value: '178.90', change: '0.15%', tone: 'down' },
+];
+
+const originRegions = [
+    { name: 'Bugisu · Mt Elgon', altitude: '1,500-2,200m', variety: 'Arabica', notes: 'SL14, SL28', lots: 18 },
+    { name: 'Rwenzori', altitude: '1,400-2,000m', variety: 'Arabica', notes: 'SL14', lots: 9 },
+    { name: 'Kisoro', altitude: '1,900-2,300m', variety: 'Arabica', notes: 'Bourbon', lots: 6 },
+    { name: 'Mubende', altitude: '1,200-1,500m', variety: 'Robusta', notes: 'Nganda', lots: 12 },
+    { name: 'West Nile', altitude: '1,100-1,400m', variety: 'Robusta', notes: 'Erecta', lots: 7 },
+    { name: 'Masaka', altitude: '1,100-1,300m', variety: 'Robusta', notes: 'Nganda', lots: 10 },
+];
+
+const matchmakerPoints = [
+    { icon: 'route', title: 'Predictive Logistics Routing', copy: 'Calculates fastest and cheapest maritime routes automatically.' },
+    { icon: 'tune', title: 'Quality Profile Matching', copy: 'Aligns SCA scores and flavor notes with specific buyer demands.' },
+];
+
+const esgMetrics = [
+    {
+        icon: 'co2',
+        color: '#0d631b',
+        title: 'Carbon Footprint',
+        sub: 'Avg. per kg',
+        value: '-1.2',
+        unit: 'kg CO2e',
+        bar: 85,
+        copy: '85% of featured lots are carbon negative or neutral at the farm gate.',
+    },
+    {
+        icon: 'monetization_on',
+        color: '#b7791f',
+        title: 'Farmer Value',
+        sub: 'FOB Price Share',
+        value: '72',
+        unit: '%',
+        bar: 72,
+        copy: 'Average percentage of final FOB price returned directly to the producing cooperative.',
+    },
+    {
+        icon: 'water_drop',
+        color: '#79573f',
+        title: 'Water Efficiency',
+        sub: 'Processing Usage',
+        value: '4.5',
+        unit: 'L/kg',
+        bar: 90,
+        copy: 'One of the most water-efficient washing processes among the lots we verify.',
+    },
+];
+
+const auctionFilters = [
+    { key: 'all', label: 'All' },
+    { key: 'east-africa', label: 'East Africa' },
+    { key: 'south-america', label: 'South America' },
+    { key: 'central-america', label: 'Central America' },
+    { key: 'asia-pacific', label: 'Asia Pacific' },
+];
+
+const auctionFilter = ref('all');
+
+const auctionRows = [
+    { id: 'UG-BUGI-021', origin: 'Uganda Bugisu AA', region: 'east-africa', variety: 'SL14/SL28, Washed', price: '7.35', delta: '1.8%', deltaTone: 'up', volume: '30 Bags', time: '01:05:30', timeTone: 'amber', status: 'Active Auction', statusTone: 'green', action: 'PLACE BID', style: 'solid', iconColor: '#0d631b' },
+    { id: 'ET-YIRG-042', origin: 'Ethiopia Yirgacheffe G1', region: 'east-africa', variety: 'Arabica SL28, AA', price: '6.45', delta: '0.9%', deltaTone: 'up', volume: '45 Bags', time: '02:14:45', timeTone: 'amber', status: 'Active Auction', statusTone: 'green', action: 'PLACE BID', style: 'solid', iconColor: '#0d631b' },
+    { id: 'CO-HUIL-088', origin: 'Colombia Huila Supremo', region: 'south-america', variety: 'Caturra, Screen 18', price: '5.12', delta: '0.4%', deltaTone: 'down', volume: '12.5 MT', time: null, status: 'Spot Available', statusTone: 'primary', action: 'BUY NOW', style: 'outline', iconColor: '#79573f' },
+    { id: 'KE-NYER-015', origin: 'Kenya Nyeri AA Plus', region: 'east-africa', variety: 'SL34, Washed', price: '8.20', delta: '2.3%', deltaTone: 'up', volume: '20 Bags', time: '00:12:05', timeTone: 'rose', status: 'Closing Soon', statusTone: 'rose', action: 'PLACE BID', style: 'solid', iconColor: '#735c00' },
+];
+
+const filteredAuctions = computed(() => {
+    if (auctionFilter.value === 'all') {
+        return auctionRows;
+    }
+
+    return auctionRows.filter((row) => row.region === auctionFilter.value);
 });
 
-onBeforeUnmount(() => {
-    if (revealTimeout) {
-        window.clearTimeout(revealTimeout);
+const askLadder = [
+    { price: '184.50', size: '12,400', depth: 85 },
+    { price: '184.45', size: '4,200', depth: 40 },
+    { price: '184.40', size: '8,100', depth: 65 },
+    { price: '184.35', size: '1,500', depth: 20 },
+];
+
+const bidLadder = [
+    { price: '184.20', size: '6,100', depth: 55 },
+    { price: '184.15', size: '2,500', depth: 30 },
+    { price: '184.10', size: '9,200', depth: 75 },
+    { price: '184.05', size: '4,800', depth: 45 },
+];
+
+// Deterministic OHLC series so the "Candles" tab actually renders candlesticks.
+function seededCandles(count) {
+    const candles = [];
+    let seed = 7;
+    const rand = () => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+    };
+
+    let level = 84;
+    for (let i = 0; i < count; i += 1) {
+        const drift = 4.5 + rand() * 2.5;
+        level -= drift;
+        const noise = (rand() - 0.5) * 5;
+        const open = Math.min(94, Math.max(8, level + noise + drift * 0.35));
+        const close = Math.min(94, Math.max(8, level + noise - drift * 0.35));
+        const bodyTop = Math.min(open, close);
+        const bodyBottom = Math.max(open, close);
+
+        candles.push({
+            open,
+            close,
+            high: Math.max(4, bodyTop - (1.5 + rand() * 3)),
+            low: Math.min(97, bodyBottom + (1.5 + rand() * 3)),
+            volume: 25 + rand() * 75,
+            bullish: close < open,
+        });
     }
 
-    if (priceInterval) {
-        window.clearInterval(priceInterval);
-    }
+    return candles;
+}
 
-    if (revealObserver) {
-        revealObserver.disconnect();
-    }
+const candleSlotWidth = 100 / 14;
+const candleBodyWidth = candleSlotWidth * 0.5;
 
-    resetTimeouts.forEach((timeoutId) => window.clearTimeout(timeoutId));
-    cleanupCallbacks.forEach((cleanup) => cleanup());
-});
+const chartCandles = seededCandles(14).map((candle, i) => ({
+    ...candle,
+    cx: candleSlotWidth * (i + 0.5),
+}));
+
+const chartPriceLabels = [
+    { y: 20, price: '184.55' },
+    { y: 40, price: '184.35' },
+    { y: 60, price: '184.15' },
+    { y: 80, price: '183.95' },
+];
 </script>
 
 <template>
-    <Head :title="pageTitle">
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
-            rel="stylesheet"
-        />
-    </Head>
-
-    <div
-        ref="pageRef"
-        class="welcome-page min-h-screen bg-bg text-cream overflow-x-hidden scroll-smooth"
-    >
-        <!-- TICKER -->
-        <div class="bg-surface border-b border-white/[0.06] h-9 flex items-center overflow-hidden">
-            <div class="flex-shrink-0 bg-gold text-bg font-mono text-[9px] tracking-[0.14em] uppercase px-4 h-full flex items-center font-medium">Live Prices</div>
-            <div class="overflow-hidden flex-1 flex">
-                <div class="ticker-wrap">
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">UGA-ARA-AA</span><span class="font-mono text-[10px] font-medium">$4.82/kg</span><span class="font-mono text-[9px] text-up">▲ +2.3%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">UGA-ROB-G1</span><span class="font-mono text-[10px] font-medium">$2.14/kg</span><span class="font-mono text-[9px] text-up">▲ +0.8%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">BUGISU-AA</span><span class="font-mono text-[10px] font-medium">$5.10/kg</span><span class="font-mono text-[9px] text-red">▼ -0.4%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">RWENZORI-AB</span><span class="font-mono text-[10px] font-medium">$4.65/kg</span><span class="font-mono text-[9px] text-up">▲ +1.1%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">W-NILE-FAQ</span><span class="font-mono text-[10px] font-medium">$1.98/kg</span><span class="font-mono text-[9px] text-up">▲ +0.3%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">KIBALE-FIN</span><span class="font-mono text-[10px] font-medium">$2.40/kg</span><span class="font-mono text-[9px] text-up">▲ +3.1%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">ICE-COFFEE</span><span class="font-mono text-[10px] font-medium">$192.40/lb</span><span class="font-mono text-[9px] text-red">▼ -0.7%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">KISORO-AA</span><span class="font-mono text-[10px] font-medium">$5.34/kg</span><span class="font-mono text-[9px] text-up">▲ +1.8%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">UGA-ARA-AA</span><span class="font-mono text-[10px] font-medium">$4.82/kg</span><span class="font-mono text-[9px] text-up">▲ +2.3%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">UGA-ROB-G1</span><span class="font-mono text-[10px] font-medium">$2.14/kg</span><span class="font-mono text-[9px] text-up">▲ +0.8%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">BUGISU-AA</span><span class="font-mono text-[10px] font-medium">$5.10/kg</span><span class="font-mono text-[9px] text-red">▼ -0.4%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">RWENZORI-AB</span><span class="font-mono text-[10px] font-medium">$4.65/kg</span><span class="font-mono text-[9px] text-up">▲ +1.1%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">W-NILE-FAQ</span><span class="font-mono text-[10px] font-medium">$1.98/kg</span><span class="font-mono text-[9px] text-up">▲ +0.3%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">KIBALE-FIN</span><span class="font-mono text-[10px] font-medium">$2.40/kg</span><span class="font-mono text-[9px] text-up">▲ +3.1%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">ICE-COFFEE</span><span class="font-mono text-[10px] font-medium">$192.40/lb</span><span class="font-mono text-[9px] text-red">▼ -0.7%</span></div>
-                    <div class="inline-flex items-center gap-2 px-7 border-r border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80 tracking-[0.1em]">KISORO-AA</span><span class="font-mono text-[10px] font-medium">$5.34/kg</span><span class="font-mono text-[9px] text-up">▲ +1.8%</span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- NAV -->
-        <nav class="sticky top-0 z-50 bg-bg/92 backdrop-blur-xl border-b border-white/[0.06] flex flex-col items-start justify-between gap-4 px-4 py-3 sm:px-6 md:h-[60px] md:flex-row md:items-center md:gap-6 md:px-10 md:py-0">
-            <div class="flex w-full flex-col items-start gap-4 md:w-auto md:flex-row md:items-center md:gap-10">
-                <a href="#" class="flex items-center gap-3 font-display font-bold text-base text-cream no-underline tracking-tight">
-                    <ApplicationMark class="h-8 w-8 flex-shrink-0" />
-                    Commodity <span class="text-gold">Origin</span>
-                </a>
-                <ul class="flex flex-wrap gap-1 list-none">
-                    <li><a href="#market" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Market</a></li>
-                    <li><Link :href="route('market.live')" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Live Market</Link></li>
-                    <li><Link :href="route('market.news')" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">News</Link></li>
-                    <li><a href="#origins" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Origins</a></li>
-                    <li><a href="#how" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Quality</a></li>
-                    <li><a href="#traceability" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Traceability</a></li>
-                    <li><a href="#subscribe" class="font-mono text-[10px] tracking-[0.12em] uppercase text-cream/40 px-3 py-1.5 rounded hover:text-cream hover:bg-surface3 transition-all no-underline">Subscribe</a></li>
-                </ul>
-            </div>
-            <div class="flex w-full flex-wrap items-center gap-3 md:w-auto md:justify-end">
-                <div class="flex items-center gap-1.5">
-                    <div class="w-1.5 h-1.5 rounded-full bg-up pulse-green"></div>
-                    <span class="font-mono text-[9px] text-up tracking-[0.1em]">Market open</span>
-                </div>
-                <Link :href="route('login')" class="font-mono text-[9px] tracking-[0.12em] uppercase px-3.5 py-1.5 border border-white/[0.14] text-cream/70 rounded-sm hover:border-gold hover:text-gold transition-all no-underline">Sign in</Link>
-                <Link :href="route('register')" class="font-mono text-[9px] tracking-[0.12em] uppercase px-3.5 py-1.5 bg-gold border border-gold text-bg font-medium rounded-sm hover:bg-gold2 transition-all no-underline">Open account</Link>
-            </div>
-        </nav>
-
+    <OuterLayout :title="pageTitle">
         <!-- HERO -->
-        <section class="grid grid-cols-1 bg-bg relative overflow-hidden md:grid-cols-2">
-            <div class="hero-dots absolute inset-0 pointer-events-none"></div>
+        <section class="relative w-full overflow-hidden bg-[#121611] pt-12 pb-24 md:pt-24 md:pb-32 px-4 md:px-8 text-[#eef2e8]">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div class="lg:col-span-5 flex flex-col gap-8 relative z-10 wp-fade-1">
+                    <!-- <div class="inline-flex items-center gap-3 px-4 py-1.5 bg-[#1a2018] rounded-full w-fit shadow-inner border border-[#0d631b]/30">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#a3f69c] wp-pulse"></span>
+                        <span class="text-xs text-[#a3f69c] uppercase tracking-[0.2em]">Global Markets Live</span>
+                    </div> -->
 
-            <div class="relative z-10 flex flex-col justify-center px-4 py-10 sm:px-6 md:px-10 md:py-14 md:pr-14">
-                <div class="inline-flex items-center gap-2 bg-gold/15 border border-gold/25 px-3.5 py-1.5 rounded-sm mb-7 w-fit animate-fade-up-1">
-                    <span class="font-mono text-[9px] tracking-[0.16em] uppercase text-gold">Commodity Origin · Uganda's coffee exchange · Est. 2024</span>
-                </div>
+                    <h1 class="text-[44px] md:text-[64px] leading-[1.05] text-white tracking-[-0.03em] font-semibold">
+                        The Digital Exchange <br class="hidden sm:block" />
+                        for <span class="text-[#a3f69c]">Coffee.</span>
+                    </h1>
 
-                <h1 class="font-display font-extrabold leading-[0.95] tracking-tight text-cream mb-2 animate-fade-up-2" style="font-size:clamp(46px,5.5vw,84px)">
-                    <span class="hero-prefix block">Uganda's</span>
-                    <span class="hero-focus block text-gold">Finest Coffee</span>
-                    <span class="hero-wordmark block text-cream/65" style="font-size:0.72em;">Origin</span>
-                </h1>
+                    <p class="text-lg leading-relaxed text-[#bfcaba] max-w-lg">
+                        Buy and sell coffee directly with producers and buyers around the world. Live pricing, verified origins, and settlement that doesn't take weeks.
+                    </p>
 
-                <div class="flex items-center gap-3 my-5 animate-fade-up-3">
-                    <div class="flex-1 max-w-[36px] h-px bg-gold/30"></div>
-                    <span class="text-center font-mono text-[10px] tracking-[0.16em] sm:tracking-[0.22em] uppercase text-gold/80">From farm to cup, transparently</span>
-                    <div class="flex-1 max-w-[36px] h-px bg-gold/30"></div>
-                </div>
+                    <div class="flex flex-col sm:flex-row gap-4 mt-2">
+                        <Link
+                            :href="route('login')"
+                            class="bg-[#a3f69c] text-[#002204] px-8 py-4 rounded text-xs font-bold tracking-widest uppercase hover:bg-[#88d982] hover:shadow-[0_0_20px_rgba(163,246,156,0.2)] hover:-translate-y-0.5 transition-all text-center no-underline"
+                        >Enter the Exchange</Link>
+                        <a
+                            href="#auctions"
+                            class="bg-[#1a2018] text-white px-8 py-4 rounded text-xs font-bold tracking-widest uppercase hover:bg-[#20281e] transition-all border border-[#707a6c]/30 text-center no-underline"
+                        >Explore Marketplace</a>
+                    </div>
 
-                <p class="text-[15px] leading-relaxed text-cream/78 max-w-[430px] mb-7 animate-fade-up-3">
-                    Commodity Origin is the first regulated digital marketplace for Ugandan single-origin coffee — connecting smallholder farmers directly to global roasters. Every lot is UCDA-graded, blockchain-verified, and fully traceable from GPS-tagged farm to roastery door.
-                </p>
-
-                <div class="flex flex-col gap-3 mb-8 animate-fade-up-4 sm:flex-row">
-                    <a href="#market" class="inline-flex items-center gap-2 bg-gold border border-gold text-bg font-mono text-[10px] tracking-[0.12em] uppercase font-medium px-7 py-3.5 hover:bg-gold2 transition-all no-underline">
-                        View live lots
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </a>
-                    <a href="#origins" class="inline-flex items-center gap-2 bg-transparent border border-white/[0.14] text-cream/70 font-mono text-[10px] tracking-[0.12em] uppercase px-7 py-3.5 hover:border-cream/40 hover:text-cream transition-all no-underline">Explore origins</a>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4 border-t border-white/[0.06] pt-6 animate-fade-up-5 sm:grid-cols-3 sm:gap-0">
-                    <div class="sm:pr-7">
-                        <div class="font-display font-bold text-3xl text-cream leading-none mb-1">47<span class="text-lg text-gold">K</span></div>
-                        <div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/45">Tonnes traded YTD</div>
-                    </div>
-                    <div class="sm:border-l sm:border-white/[0.06] sm:px-7">
-                        <div class="font-display font-bold text-3xl text-cream leading-none mb-1">312</div>
-                        <div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/45">Active farm lots</div>
-                    </div>
-                    <div class="sm:border-l sm:border-white/[0.06] sm:pl-7">
-                        <div class="font-display font-bold text-3xl text-cream leading-none mb-1">6</div>
-                        <div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/45">Growing regions</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="relative z-10 flex flex-col gap-3 justify-center px-4 py-8 sm:px-6 md:px-5 md:py-10 animate-fade-in">
-                <div class="bg-surface border border-white/[0.06] rounded-sm overflow-hidden">
-                    <div class="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
-                        <span class="font-mono text-[9px] tracking-[0.16em] uppercase text-cream/45">Top lots · today</span>
-                        <div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full bg-up pulse-green"></div><span class="font-mono text-[9px] text-up">Live</span></div>
-                    </div>
-                    <div class="px-4 py-3 grid grid-cols-1 gap-3 items-start border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors sm:grid-cols-[1fr_auto_auto_auto] sm:items-center sm:gap-4">
-                        <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0441</div><div class="text-[13px] font-medium text-cream">Sipi Falls AA</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Bugisu · Mt Elgon · 1,900m</div></div>
-                        <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span>
-                        <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,20 10,18 20,14 30,16 40,10 50,8 60,6" fill="none" stroke="#52B788" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$5.10<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-up">▲ 1.2%</div></div>
-                    </div>
-                    <div class="px-4 py-3 grid grid-cols-1 gap-3 items-start border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors sm:grid-cols-[1fr_auto_auto_auto] sm:items-center sm:gap-4">
-                        <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0438</div><div class="text-[13px] font-medium text-cream">Kasese Natural</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Rwenzori · 2,100m</div></div>
-                        <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span>
-                        <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,14 10,16 20,12 30,10 40,13 50,9 60,7" fill="none" stroke="#52B788" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$4.65<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-up">▲ 0.8%</div></div>
-                    </div>
-                    <div class="px-4 py-3 grid grid-cols-1 gap-3 items-start border-b border-white/[0.06] hover:bg-surface3 cursor-pointer transition-colors sm:grid-cols-[1fr_auto_auto_auto] sm:items-center sm:gap-4">
-                        <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0429</div><div class="text-[13px] font-medium text-cream">Kibale Fine Robusta</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Mubende · Forest edge · 1,300m</div></div>
-                        <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span>
-                        <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,22 10,20 20,22 30,18 40,16 50,14 60,11" fill="none" stroke="#E09B3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$2.40<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-up">▲ 3.1%</div></div>
-                    </div>
-                    <div class="px-4 py-3 grid grid-cols-1 gap-3 items-start hover:bg-surface3 cursor-pointer transition-colors sm:grid-cols-[1fr_auto_auto_auto] sm:items-center sm:gap-4">
-                        <div><div class="font-mono text-[9px] text-gold tracking-[0.1em] mb-0.5">BOE-2024-0421</div><div class="text-[13px] font-medium text-cream">West Nile FAQ</div><div class="font-mono text-[9px] text-cream/50 mt-0.5">Arua · Savanna · 1,000m</div></div>
-                        <span class="font-mono text-[8px] tracking-[0.1em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span>
-                        <svg class="sparkline" viewBox="0 0 60 28"><polyline points="0,18 10,20 20,17 30,18 40,16 50,17 60,15" fill="none" stroke="#E09B3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <div class="text-right"><div class="font-mono text-[13px] font-medium text-cream">$1.98<span class="text-[9px] text-cream/45">/kg</span></div><div class="font-mono text-[9px] text-red">▼ 0.3%</div></div>
-                    </div>
-                </div>
-                <div class="bg-surface border border-white/[0.06] rounded-sm px-4 py-3 flex items-center gap-3">
-                    <div class="w-8 h-8 flex-shrink-0 bg-gold/15 border border-gold/20 rounded flex items-center justify-center text-gold">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-                    </div>
-                    <div><div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/55 mb-0.5">Latest verified block</div><div class="font-mono text-[11px] text-gold font-medium">0x4f3a...c82e · LOT #0441 · 2m ago</div></div>
-                </div>
-                <div class="bg-surface border border-white/[0.06] rounded-sm px-4 py-3 flex items-center gap-3">
-                    <div class="w-8 h-8 flex-shrink-0 bg-gold/15 border border-gold/20 rounded flex items-center justify-center text-gold">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    </div>
-                    <div><div class="font-mono text-[9px] tracking-[0.12em] uppercase text-cream/55 mb-0.5">UCDA certified lots active</div><div class="font-mono text-[11px] text-gold font-medium">312 lots · 94.2% verified · Updated hourly</div></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SLOGAN BAND -->
-        <div class="bg-surface border-y border-white/[0.06] px-4 py-[18px] sm:px-6 md:px-10 flex flex-col items-center justify-center gap-4 md:flex-row md:gap-8">
-            <span class="font-mono text-[10px] tracking-[0.18em] uppercase text-cream/45">Uganda · East Africa</span>
-            <div class="hidden h-8 w-px bg-white/[0.14] md:block"></div>
-            <div class="font-display font-bold text-lg sm:text-xl tracking-tight text-cream text-center">"From <span class="text-gold">Farm</span> to Cup, <span class="text-gold">Transparently</span>"</div>
-            <div class="hidden h-8 w-px bg-white/[0.14] md:block"></div>
-            <span class="font-mono text-[10px] tracking-[0.18em] uppercase text-cream/45">Commodity Origin</span>
-        </div>
-
-        <!-- HOW IT WORKS -->
-        <section class="px-4 pb-14 sm:px-6 md:px-10" id="how">
-            <div class="pt-10 mb-9">
-                <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-3">How the exchange works</span>
-                <h2 class="reveal delay-1 font-display font-bold text-cream mb-4" style="font-size:clamp(30px,3.5vw,48px);letter-spacing:-0.02em;line-height:1.05">Coffee trading, <span class="text-gold">reimagined</span></h2>
-                <p class="reveal delay-2 text-[15px] leading-relaxed text-cream/75 max-w-xl">Every step from harvest to your roastery is tracked, verified, and recorded — eliminating opacity from one of the world's most complex supply chains.</p>
-            </div>
-            <div class="grid grid-cols-1 gap-8 relative pipeline-line md:grid-cols-5 md:gap-0">
-                <div class="reveal px-2 text-center">
-                    <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all" style="box-shadow:0 0 0 0 transparent">
-                        <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">01</span>🌱
-                    </div>
-                    <div class="font-display font-semibold text-[13px] text-cream mb-2">Farm registration</div>
-                    <p class="text-[12px] leading-relaxed text-cream/72">Smallholder farmers register GPS-tagged plots. Identity verified via UCDA. Farm profile published on-chain.</p>
-                </div>
-                <div class="reveal delay-1 px-2 text-center">
-                    <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">
-                        <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">02</span>⚖️
-                    </div>
-                    <div class="font-display font-semibold text-[13px] text-cream mb-2">Lot submission</div>
-                    <p class="text-[12px] leading-relaxed text-cream/72">Harvested lots submitted with moisture readings, processing method, and harvest date. Each lot receives a unique BOE ID.</p>
-                </div>
-                <div class="reveal delay-2 px-2 text-center">
-                    <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">
-                        <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">03</span>🧪
-                    </div>
-                    <div class="font-display font-semibold text-[13px] text-cream mb-2">UCDA grading</div>
-                    <p class="text-[12px] leading-relaxed text-cream/72">Physical analysis: screen size, moisture, defect count. Cup score via SCAA protocol. Grade and score recorded immutably.</p>
-                </div>
-                <div class="reveal delay-3 px-2 text-center">
-                    <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">
-                        <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">04</span>📊
-                    </div>
-                    <div class="font-display font-semibold text-[13px] text-cream mb-2">Live trading</div>
-                    <p class="text-[12px] leading-relaxed text-cream/72">Verified lots listed with real-time bids and asks. Buyers from 40+ countries. Price discovery in public.</p>
-                </div>
-                <div class="reveal delay-4 px-2 text-center">
-                    <div class="w-16 h-16 rounded-full bg-surface2 border border-white/[0.06] flex items-center justify-center mx-auto mb-4 text-xl relative z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">
-                        <span class="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-bg border border-white/[0.14] flex items-center justify-center font-mono text-[8px] text-gold">05</span>🚢
-                    </div>
-                    <div class="font-display font-semibold text-[13px] text-cream mb-2">Delivery &amp; trace</div>
-                    <p class="text-[12px] leading-relaxed text-cream/72">Logistics tracked from Kampala to port to roastery. QR code on every bag links to the complete farm-to-cup record.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- MARKET TABLE -->
-        <section class="bg-surface border-y border-white/[0.06] px-4 py-10 sm:px-6 md:px-10" id="market">
-            <div class="flex flex-col items-start justify-between gap-4 mb-4 md:flex-row md:items-end">
-                <div>
-                    <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-2">Live market</span>
-                    <h2 class="reveal delay-1 font-display font-bold text-cream" style="font-size:clamp(28px,3vw,44px);letter-spacing:-0.02em">Active <span class="text-gold">lots</span></h2>
-                </div>
-                <div class="reveal flex flex-wrap gap-1">
-                    <button @click.prevent="setMarketFilter('all', $event)" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-gold/30 bg-gold/12 text-gold rounded-sm transition-all">All</button>
-                    <button @click.prevent="setMarketFilter('arabica', $event)" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-white/[0.08] bg-transparent text-cream/45 rounded-sm hover:border-gold/30 hover:text-gold hover:bg-gold/12 transition-all">Arabica</button>
-                    <button @click.prevent="setMarketFilter('robusta', $event)" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-white/[0.08] bg-transparent text-cream/45 rounded-sm hover:border-gold/30 hover:text-gold hover:bg-gold/12 transition-all">Robusta</button>
-                    <button @click.prevent="setMarketFilter('specialty', $event)" class="mf-btn font-mono text-[9px] tracking-[0.1em] uppercase px-3.5 py-1.5 border border-white/[0.08] bg-transparent text-cream/45 rounded-sm hover:border-gold/30 hover:text-gold hover:bg-gold/12 transition-all">Specialty 80+</button>
-                </div>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full border-collapse mkt-table" id="mktTable">
-                    <thead>
-                        <tr>
-                            <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Lot ID</th>
-                            <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Coffee</th>
-                            <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Region</th>
-                            <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Type</th>
-                            <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Score</th>
-                            <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Volume</th>
-                            <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Price</th>
-                            <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">24h</th>
-                            <th class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/40 py-2.5 px-4 text-left border-b border-white/[0.06] font-normal">Avail.</th>
-                            <th class="border-b border-white/[0.06]"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr data-type="arabica" data-score="87">
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[10px] text-gold font-medium">BOE-0441</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="text-[13px] text-cream font-medium mb-0.5">Sipi Falls AA</div><div class="font-mono text-[9px] text-cream/55">Mt. Elgon · Washed · 1,900m</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80">Bugisu</span></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[12px] font-medium text-up">87.2</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] text-cream">2,400 <span class="text-[9px] text-cream/45">kg</span></div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$5.10</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] font-medium text-up">▲ 1.2%</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="avail-bar"><div class="avail-fill" style="width:42%"></div></div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
-                        </tr>
-                        <tr data-type="arabica" data-score="85">
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[10px] text-gold font-medium">BOE-0438</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="text-[13px] text-cream font-medium mb-0.5">Kasese Natural</div><div class="font-mono text-[9px] text-cream/55">Rwenzori · Natural · 2,100m</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80">Rwenzori</span></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[12px] font-medium text-up">85.8</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] text-cream">800 <span class="text-[9px] text-cream/45">kg</span></div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$4.65</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] font-medium text-up">▲ 0.8%</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="avail-bar"><div class="avail-fill low" style="width:18%"></div></div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
-                        </tr>
-                        <tr data-type="arabica" data-score="86">
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[10px] text-gold font-medium">BOE-0435</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="text-[13px] text-cream font-medium mb-0.5">Kisoro Highlands AB</div><div class="font-mono text-[9px] text-cream/55">Virunga · Honey · 2,000m</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80">Kisoro</span></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[12px] font-medium text-up">86.4</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] text-cream">1,600 <span class="text-[9px] text-cream/45">kg</span></div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$4.82</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] font-medium text-red">▼ 0.4%</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="avail-bar"><div class="avail-fill" style="width:65%"></div></div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
-                        </tr>
-                        <tr data-type="robusta" data-score="82">
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[10px] text-gold font-medium">BOE-0429</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="text-[13px] text-cream font-medium mb-0.5">Kibale Fine Robusta</div><div class="font-mono text-[9px] text-cream/55">Mubende · Natural · 1,300m</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80">Mubende</span></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[12px] font-medium text-gold2">82.0</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] text-cream">3,200 <span class="text-[9px] text-cream/45">kg</span></div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$2.40</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] font-medium text-up">▲ 3.1%</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="avail-bar"><div class="avail-fill" style="width:78%"></div></div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
-                        </tr>
-                        <tr data-type="robusta" data-score="79">
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[10px] text-gold font-medium">BOE-0421</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="text-[13px] text-cream font-medium mb-0.5">West Nile FAQ Grade 1</div><div class="font-mono text-[9px] text-cream/55">Arua · Natural · 1,000m</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[10px] text-cream/80">West Nile</span></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[12px] font-medium text-gold2">79.4</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] text-cream">6,000 <span class="text-[9px] text-cream/45">kg</span></div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$1.98</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="font-mono text-[11px] font-medium text-up">▲ 0.3%</div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><div class="avail-bar"><div class="avail-fill" style="width:90%"></div></div></td>
-                            <td class="py-3.5 px-4 border-b border-white/[0.06]"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
-                        </tr>
-                        <tr data-type="robusta" data-score="80">
-                            <td class="py-3.5 px-4"><div class="font-mono text-[10px] text-gold font-medium">BOE-0418</div></td>
-                            <td class="py-3.5 px-4"><div class="text-[13px] text-cream font-medium mb-0.5">Masaka Lake Robusta</div><div class="font-mono text-[9px] text-cream/55">Masaka · Washed · 1,150m</div></td>
-                            <td class="py-3.5 px-4"><span class="font-mono text-[10px] text-cream/80">Central</span></td>
-                            <td class="py-3.5 px-4"><span class="font-mono text-[8px] tracking-[0.08em] px-2 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span></td>
-                            <td class="py-3.5 px-4"><div class="font-mono text-[12px] font-medium text-gold2">80.1</div></td>
-                            <td class="py-3.5 px-4"><div class="font-mono text-[11px] text-cream">5,500 <span class="text-[9px] text-cream/45">kg</span></div></td>
-                            <td class="py-3.5 px-4"><div class="font-mono text-[14px] font-medium text-cream lot-price-cell">$2.14</div><div class="font-mono text-[9px] text-cream/45">per kg</div></td>
-                            <td class="py-3.5 px-4"><div class="font-mono text-[11px] font-medium text-up">▲ 0.8%</div></td>
-                            <td class="py-3.5 px-4"><div class="avail-bar"><div class="avail-fill" style="width:55%"></div></div></td>
-                            <td class="py-3.5 px-4"><button class="bid-btn font-mono text-[9px] tracking-[0.1em] uppercase px-4 py-1.5 border border-white/[0.14] bg-transparent text-cream/70 rounded-sm transition-all">Bid now</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- ORIGINS -->
-        <section class="px-4 py-10 sm:px-6 md:px-10" id="origins">
-            <div class="mb-7">
-                <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-2">Uganda's growing regions</span>
-                <h2 class="reveal delay-1 font-display font-bold text-cream" style="font-size:clamp(28px,3.5vw,48px);letter-spacing:-0.02em;line-height:1.05">Two species. <span class="text-gold">Six terroirs.</span></h2>
-            </div>
-            <div class="grid grid-cols-1 gap-3 xl:grid-cols-2 xl:gap-0.5">
-                <div class="origin-block reveal bg-surface border border-white/[0.06] p-5 sm:p-6 md:p-8 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 font-display font-extrabold text-[140px] text-white/[0.02] leading-none pointer-events-none select-none">ROB</div>
-                    <div class="flex items-center gap-2 mb-6">
-                        <span class="font-mono text-[9px] tracking-[0.12em] uppercase px-2.5 py-1 bg-gold/20 text-gold2 border border-gold/30 rounded-sm">Robusta</span>
-                        <span class="font-mono text-[9px] text-cream/55">900 – 1,350m · Coffea canephora · Native species</span>
-                    </div>
-                    <div class="font-display font-bold text-[28px] sm:text-[34px] text-cream leading-tight mb-1 tracking-tight">Ugandan Robusta</div>
-                    <div class="font-mono text-[10px] tracking-[0.12em] uppercase text-gold mb-5">Central · West Nile · Mubende · Masaka</div>
-                    <p class="text-[14px] leading-relaxed text-cream/80 mb-6">Uganda is the birthplace of Coffea canephora — wild Robusta still grows in Kibale and Bwindi forests. Ugandan Robusta commands a premium over all other origins: fuller body, lower bitterness, earthy complexity. Grown in lowland lake-basin zones, it forms the backbone of premium espresso blends worldwide and is now achieving specialty grades (Fine Robusta Grade 1, 80+ cup score) reshaping the market.</p>
-                    <div class="grid grid-cols-2 gap-3 py-4 border-y border-white/[0.06] mb-4 md:grid-cols-3">
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Caffeine</div><div class="text-[13px] text-cream/85">2.2 – 2.7%</div></div>
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Top grade</div><div class="text-[13px] text-cream/85">Fine Robusta G1</div></div>
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">% of crop</div><div class="text-[13px] text-cream/85">~80%</div></div>
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Processing</div><div class="text-[13px] text-cream/85">Natural, Washed</div></div>
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Peak price</div><div class="text-[13px] text-cream/85">$2.40/kg</div></div>
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">UCDA code</div><div class="text-[13px] text-cream/85">UGA-ROB</div></div>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5 mb-4">
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Dark chocolate</span>
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Earth</span>
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Raw cacao</span>
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Tobacco</span>
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Cedar</span>
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Molasses</span>
-                    </div>
-                    <div class="flex items-center gap-3 mt-3"><span class="font-mono text-[9px] text-cream/50 w-20">Specialty</span><div class="score-track flex-1"><div class="score-fill-gold" style="width:28%"></div></div><span class="font-mono text-[10px] text-cream font-medium w-8 text-right">28%</span></div>
-                    <div class="flex items-center gap-3 mt-2"><span class="font-mono text-[9px] text-cream/50 w-20">Export share</span><div class="score-track flex-1"><div class="score-fill-gold" style="width:80%"></div></div><span class="font-mono text-[10px] text-cream font-medium w-8 text-right">80%</span></div>
-                </div>
-                <div class="origin-block reveal delay-2 bg-surface border border-white/[0.06] p-5 sm:p-6 md:p-8 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 font-display font-extrabold text-[140px] text-white/[0.02] leading-none pointer-events-none select-none">ARA</div>
-                    <div class="flex items-center gap-2 mb-6">
-                        <span class="font-mono text-[9px] tracking-[0.12em] uppercase px-2.5 py-1 bg-green/20 text-green border border-green/25 rounded-sm">Arabica</span>
-                        <span class="font-mono text-[9px] text-cream/55">1,500 – 2,300m · Coffea arabica · Highland grown</span>
-                    </div>
-                    <div class="font-display font-bold text-[28px] sm:text-[34px] text-cream leading-tight mb-1 tracking-tight">Ugandan Arabica</div>
-                    <div class="font-mono text-[10px] tracking-[0.12em] uppercase text-gold mb-5">Bugisu · Rwenzori · Kisoro · Kabale</div>
-                    <p class="text-[14px] leading-relaxed text-cream/80 mb-6">Uganda's Arabica is among the most underrated on the specialty circuit. The Bugisu variety — grown on Mt. Elgon's volcanic slopes and marketed as "Sipi" after the iconic waterfalls — exhibits a wine-like acidity and dark-fruit profile rivalling Kenya AA. Rwenzori Arabica from the cloud-forests near the DRC border is more floral and delicate. The Kisoro highlands near Rwanda produce prized honey-process with stone-fruit sweetness.</p>
-                    <div class="grid grid-cols-2 gap-3 py-4 border-y border-white/[0.06] mb-4 md:grid-cols-3">
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Caffeine</div><div class="text-[13px] text-cream/85">1.1 – 1.4%</div></div>
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Top grade</div><div class="text-[13px] text-cream/85">Bugisu AA</div></div>
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">% of crop</div><div class="text-[13px] text-cream/85">~20%</div></div>
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Processing</div><div class="text-[13px] text-cream/85">Washed, Natural</div></div>
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">Peak price</div><div class="text-[13px] text-cream/85">$5.34/kg</div></div>
-                        <div><div class="font-mono text-[8px] tracking-[0.14em] uppercase text-cream/45 mb-1">UCDA code</div><div class="text-[13px] text-cream/85">UGA-ARA-AA</div></div>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5 mb-4">
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Blackcurrant</span>
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Red wine</span>
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Jasmine</span>
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Peach</span>
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Bergamot</span>
-                        <span class="ob-note font-mono text-[9px] px-3 py-1 border border-white/[0.14] text-cream/75 rounded-sm cursor-default">Citrus</span>
-                    </div>
-                    <div class="flex items-center gap-3 mt-3"><span class="font-mono text-[9px] text-cream/50 w-20">Specialty</span><div class="score-track flex-1"><div class="score-fill-green" style="width:72%"></div></div><span class="font-mono text-[10px] text-cream font-medium w-8 text-right">72%</span></div>
-                    <div class="flex items-center gap-3 mt-2"><span class="font-mono text-[9px] text-cream/50 w-20">Export share</span><div class="score-track flex-1"><div class="score-fill-green" style="width:20%"></div></div><span class="font-mono text-[10px] text-cream font-medium w-8 text-right">20%</span></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- TRACEABILITY -->
-        <section class="bg-surface border-t border-white/[0.06] px-4 py-10 sm:px-6 md:px-10" id="traceability">
-            <div class="grid grid-cols-1 gap-8 items-start md:grid-cols-2 md:gap-12">
-                <div>
-                    <span class="reveal font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-3">Full traceability</span>
-                    <h2 class="reveal delay-1 font-display font-bold text-cream mb-4" style="font-size:clamp(28px,3.5vw,48px);letter-spacing:-0.02em;line-height:1.05">Every step, <span class="text-gold">on record</span></h2>
-                    <p class="reveal delay-2 text-[14px] leading-relaxed text-cream/78 mb-7">Our blockchain-anchored supply chain creates an immutable audit trail from the moment cherry is picked to the moment the bag lands in your roastery. No intermediary can alter the record.</p>
-                    <div class="flex flex-col">
-                        <div class="reveal flex gap-5 pb-5">
-                            <div class="flex flex-col items-center flex-shrink-0">
-                                <div class="w-9 h-9 rounded-full border border-white/[0.14] bg-surface2 flex items-center justify-center text-base z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">🌿</div>
-                                <div class="cs-line"></div>
-                            </div>
-                            <div class="pt-1.5"><div class="font-mono text-[8px] tracking-[0.16em] uppercase text-gold mb-1 opacity-80">Step 01 · Farm</div><div class="font-display font-semibold text-[15px] text-cream mb-1">Cherry harvest recorded</div><p class="text-[12px] leading-relaxed text-cream/72">GPS-tagged plot. Farmer ID. Harvest date. Cherry weight. Processing method selected.</p><div class="font-mono text-[9px] text-cream/40 mt-1.5">Block: 0x8f2c...4a1e · 2024-10-14 07:22 UTC</div></div>
+                    <div class="mt-8 grid grid-cols-3 gap-3 sm:flex sm:gap-10 border-t border-[#707a6c]/20 pt-8 bg-[#1a2018]/50 p-4 sm:p-6 rounded-lg backdrop-blur-md border border-[#707a6c]/10">
+                        <div class="min-w-0">
+                            <div class="wp-display text-lg sm:text-3xl font-bold tracking-tight text-white tabular-nums">$2.4B+</div>
+                            <div class="text-[9px] sm:text-[10px] text-[#bfcaba] uppercase mt-2 tracking-[0.05em] sm:tracking-[0.15em] leading-tight">Traded Volume</div>
                         </div>
-                        <div class="reveal delay-1 flex gap-5 pb-5">
-                            <div class="flex flex-col items-center flex-shrink-0">
-                                <div class="w-9 h-9 rounded-full border border-white/[0.14] bg-surface2 flex items-center justify-center text-base z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">⚗️</div>
-                                <div class="cs-line"></div>
-                            </div>
-                            <div class="pt-1.5"><div class="font-mono text-[8px] tracking-[0.16em] uppercase text-gold mb-1 opacity-80">Step 02 · Processing</div><div class="font-display font-semibold text-[15px] text-cream mb-1">Wet/dry mill certification</div><p class="text-[12px] leading-relaxed text-cream/72">Mill registration number. Processing duration. Water usage. Drying method and days.</p><div class="font-mono text-[9px] text-cream/40 mt-1.5">Block: 0x3d9a...71fb · 2024-10-22 14:55 UTC</div></div>
+                        <div class="min-w-0">
+                            <div class="wp-display text-lg sm:text-3xl font-bold tracking-tight text-white tabular-nums">45+</div>
+                            <div class="text-[9px] sm:text-[10px] text-[#bfcaba] uppercase mt-2 tracking-[0.05em] sm:tracking-[0.15em] leading-tight">Origin Countries</div>
                         </div>
-                        <div class="reveal delay-2 flex gap-5 pb-5">
-                            <div class="flex flex-col items-center flex-shrink-0">
-                                <div class="w-9 h-9 rounded-full border border-white/[0.14] bg-surface2 flex items-center justify-center text-base z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">🏛️</div>
-                                <div class="cs-line"></div>
+                        <div class="min-w-0">
+                            <div class="wp-display text-lg sm:text-3xl font-bold tracking-tight text-[#a3f69c] tabular-nums flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[16px] sm:text-[24px]">trending_up</span>99.9%
                             </div>
-                            <div class="pt-1.5"><div class="font-mono text-[8px] tracking-[0.16em] uppercase text-gold mb-1 opacity-80">Step 03 · UCDA grading</div><div class="font-display font-semibold text-[15px] text-cream mb-1">Official grade &amp; cup score</div><p class="text-[12px] leading-relaxed text-cream/72">Moisture: 12.1%. Screen: 18. Defects: 0. Cup score: 87.2. Grade: Bugisu AA.</p><div class="font-mono text-[9px] text-cream/40 mt-1.5">Block: 0xc14b...88dc · 2024-11-02 09:10 UTC</div></div>
-                        </div>
-                        <div class="reveal delay-3 flex gap-5 pb-5">
-                            <div class="flex flex-col items-center flex-shrink-0">
-                                <div class="w-9 h-9 rounded-full border border-white/[0.14] bg-surface2 flex items-center justify-center text-base z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">📦</div>
-                                <div class="cs-line"></div>
-                            </div>
-                            <div class="pt-1.5"><div class="font-mono text-[8px] tracking-[0.16em] uppercase text-gold mb-1 opacity-80">Step 04 · Export</div><div class="font-display font-semibold text-[15px] text-cream mb-1">Container seal &amp; port departure</div><p class="text-[12px] leading-relaxed text-cream/72">BOE lot sealed, weighed, and loaded. Container number. Vessel. Port of Mombasa departure.</p><div class="font-mono text-[9px] text-cream/40 mt-1.5">Block: 0x5e2f...c30a · 2024-11-18 16:40 UTC</div></div>
-                        </div>
-                        <div class="reveal delay-4 flex gap-5">
-                            <div class="flex flex-col items-center flex-shrink-0">
-                                <div class="w-9 h-9 rounded-full border border-white/[0.14] bg-surface2 flex items-center justify-center text-base z-10 hover:bg-gold/15 hover:border-gold/40 transition-all">☕</div>
-                            </div>
-                            <div class="pt-1.5"><div class="font-mono text-[8px] tracking-[0.16em] uppercase text-gold mb-1 opacity-80">Step 05 · Roastery</div><div class="font-display font-semibold text-[15px] text-cream mb-1">Delivery confirmed · QR activated</div><p class="text-[12px] leading-relaxed text-cream/72">Lot received by buyer. QR code activated. Full record publicly accessible. Farmer payment confirmed.</p><div class="font-mono text-[9px] text-cream/40 mt-1.5">Block: 0xa78c...2d14 · 2024-12-04 11:30 UTC</div></div>
+                            <div class="text-[9px] sm:text-[10px] text-[#bfcaba] uppercase mt-2 tracking-[0.05em] sm:tracking-[0.15em] leading-tight">Platform Uptime</div>
                         </div>
                     </div>
                 </div>
-                    <div class="reveal delay-2 bg-surface2 border border-white/[0.06] rounded-sm p-5 sm:p-6">
-                    <div class="font-mono text-[9px] tracking-[0.14em] uppercase text-cream/55 mb-4 text-center">Scan · Lot BOE-2024-0441 · Sipi Falls AA</div>
-                    <div class="qr-box w-28 h-28 sm:w-36 sm:h-36 mx-auto mb-4">
-                        <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="120" height="120" fill="white"/>
-                            <rect x="4" y="4" width="32" height="32" fill="black" rx="2"/><rect x="8" y="8" width="24" height="24" fill="white" rx="1"/><rect x="12" y="12" width="16" height="16" fill="black" rx="1"/>
-                            <rect x="84" y="4" width="32" height="32" fill="black" rx="2"/><rect x="88" y="8" width="24" height="24" fill="white" rx="1"/><rect x="92" y="12" width="16" height="16" fill="black" rx="1"/>
-                            <rect x="4" y="84" width="32" height="32" fill="black" rx="2"/><rect x="8" y="88" width="24" height="24" fill="white" rx="1"/><rect x="12" y="92" width="16" height="16" fill="black" rx="1"/>
-                            <rect x="40" y="4" width="4" height="4" fill="black"/><rect x="48" y="4" width="4" height="4" fill="black"/><rect x="56" y="4" width="8" height="4" fill="black"/><rect x="68" y="4" width="4" height="4" fill="black"/><rect x="76" y="4" width="4" height="4" fill="black"/>
-                            <rect x="40" y="12" width="8" height="4" fill="black"/><rect x="52" y="12" width="4" height="4" fill="black"/><rect x="60" y="12" width="8" height="4" fill="black"/><rect x="72" y="12" width="8" height="4" fill="black"/>
-                            <rect x="4" y="40" width="4" height="4" fill="black"/><rect x="12" y="40" width="4" height="4" fill="black"/><rect x="20" y="40" width="8" height="4" fill="black"/><rect x="44" y="40" width="8" height="4" fill="black"/><rect x="56" y="40" width="4" height="4" fill="black"/><rect x="64" y="40" width="8" height="4" fill="black"/><rect x="84" y="40" width="8" height="4" fill="black"/>
-                            <rect x="4" y="48" width="8" height="4" fill="black"/><rect x="16" y="48" width="4" height="4" fill="black"/><rect x="24" y="48" width="8" height="4" fill="black"/><rect x="40" y="48" width="4" height="4" fill="black"/><rect x="56" y="48" width="8" height="4" fill="black"/><rect x="80" y="48" width="8" height="4" fill="black"/>
-                            <rect x="50" y="50" width="20" height="20" fill="white"/><rect x="54" y="54" width="12" height="12" fill="#C8862A" rx="2"/>
+
+                <div class="lg:col-span-7 relative wp-fade-2">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-[#a3f69c]/20 via-[#0d631b]/5 to-transparent rounded-2xl blur-3xl -z-10 transform scale-110"></div>
+                    <div class="relative rounded-xl overflow-hidden shadow-2xl bg-[#121611] p-1 group">
+                        <svg
+                            class="w-full h-[380px] md:h-[600px] rounded-lg transition-transform duration-1000 group-hover:scale-105"
+                            viewBox="0 0 400 550"
+                            preserveAspectRatio="xMidYMid slice"
+                            role="img"
+                            aria-label="Ascending price chart representing coffee market growth"
+                        >
+                            <defs>
+                                <linearGradient id="heroBg" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stop-color="#1c2a18" />
+                                    <stop offset="55%" stop-color="#141d11" />
+                                    <stop offset="100%" stop-color="#0d1309" />
+                                </linearGradient>
+                                <linearGradient id="heroCurveFill" x1="0" x2="0" y1="0" y2="1">
+                                    <stop offset="0%" stop-color="#a3f69c" stop-opacity="0.35" />
+                                    <stop offset="100%" stop-color="#a3f69c" stop-opacity="0" />
+                                </linearGradient>
+                                <radialGradient id="heroVignette" cx="50%" cy="35%" r="75%">
+                                    <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+                                    <stop offset="100%" stop-color="#000000" stop-opacity="0.55" />
+                                </radialGradient>
+                            </defs>
+                            <rect width="400" height="550" fill="url(#heroBg)" />
+                            <line v-for="row in 5" :key="row" x1="0" :y1="row * 90" x2="400" :y2="row * 90" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                            <path :d="heroCurveFillPath" fill="url(#heroCurveFill)" />
+                            <path :d="heroCurvePath" fill="none" stroke="#a3f69c" stroke-width="2.5" stroke-linejoin="round" opacity="0.85" />
+                            <circle
+                                v-for="(point, i) in heroCurvePoints" :key="i"
+                                :cx="point.x" :cy="point.y * 5.5" r="3"
+                                fill="#a3f69c" :opacity="i === heroCurvePoints.length - 1 ? 1 : 0.35"
+                            />
+                            <rect width="400" height="550" fill="url(#heroVignette)" />
                         </svg>
-                    </div>
-                    <div class="flex flex-col gap-0">
-                        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Lot ID</span><span class="font-mono text-[9px] text-cream font-medium">BOE-2024-0441</span></div>
-                        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Farm</span><span class="font-mono text-[9px] text-cream font-medium">Sebei Cooperative</span></div>
-                        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Farmer</span><span class="font-mono text-[9px] text-cream font-medium">Worku Tariku</span></div>
-                        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Region</span><span class="font-mono text-[9px] text-cream font-medium">Bugisu · Mt Elgon</span></div>
-                        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Altitude</span><span class="font-mono text-[9px] text-cream font-medium">1,900m asl</span></div>
-                        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Harvest</span><span class="font-mono text-[9px] text-cream font-medium">Oct 14, 2024</span></div>
-                        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Process</span><span class="font-mono text-[9px] text-cream font-medium">Fully washed</span></div>
-                        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Grade</span><span class="font-mono text-[9px] text-cream font-medium">Bugisu AA · 87.2pts</span></div>
-                        <div class="flex justify-between gap-6 py-2 border-b border-white/[0.06]"><span class="font-mono text-[9px] text-cream/55">Verified</span><span class="font-mono text-[9px] text-[#52B788] font-medium">✓ UCDA Certified</span></div>
-                        <div class="flex justify-between gap-6 py-2"><span class="font-mono text-[9px] text-cream/55">Block hash</span><span class="font-mono text-[9px] text-cream/60">0x4f3a...c82e</span></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#121611] via-transparent to-[#121611]/50 rounded-lg pointer-events-none"></div>
+
+                        <!-- Floating price card -->
+                        <div class="absolute top-8 right-8 bg-[#1a2018]/80 backdrop-blur-xl p-5 rounded-lg shadow-2xl w-64 hover:bg-[#1a2018]/95 transition-all">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="text-xs text-[#bfcaba] uppercase tracking-wider">Arabica (KC)</div>
+                                <span class="material-symbols-outlined text-[18px] text-[#bfcaba]">show_chart</span>
+                            </div>
+                            <div class="wp-display text-3xl font-bold tracking-tight text-white tabular-nums">184.25</div>
+                            <div class="text-xs text-[#a3f69c] flex items-center gap-1 mt-2 bg-[#a3f69c]/10 w-fit px-2 py-1 rounded">
+                                <span class="material-symbols-outlined text-[14px]">arrow_upward</span> +2.40 (1.32%)
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-[#707a6c]/20">
+                                <div class="text-[10px] text-[#bfcaba] mb-2 uppercase tracking-[0.2em]">24h Volume</div>
+                                <div class="h-8 w-full flex items-end gap-1 opacity-80">
+                                    <div class="w-full bg-[#0d631b]/30 rounded-t-sm h-[30%]"></div>
+                                    <div class="w-full bg-[#0d631b]/40 rounded-t-sm h-[60%]"></div>
+                                    <div class="w-full bg-[#0d631b]/50 rounded-t-sm h-[40%]"></div>
+                                    <div class="w-full bg-[#0d631b]/70 rounded-t-sm h-[90%]"></div>
+                                    <div class="w-full bg-[#a3f69c] rounded-t-sm h-full shadow-[0_0_10px_rgba(163,246,156,0.5)]"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Floating live match card -->
+                        <div class="absolute bottom-8 left-8 bg-[#1a2018]/90 backdrop-blur-xl p-5 rounded-lg shadow-2xl w-72 hover:-translate-y-1 transition-transform">
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-[#a3f69c] wp-pulse"></div>
+                                    <span class="text-xs text-white uppercase tracking-wider">Live Match</span>
+                                </div>
+                                <span class="text-[10px] text-[#a3f69c] border border-[#a3f69c]/30 px-2 py-0.5 rounded bg-[#a3f69c]/10 tracking-wider">FILLED</span>
+                            </div>
+                            <div class="flex justify-between items-end border-b border-[#707a6c]/20 pb-4 mb-4">
+                                <div>
+                                    <div class="text-[10px] text-[#bfcaba] mb-1 uppercase tracking-wider">Asset</div>
+                                    <div class="text-sm font-semibold text-white">Bugisu AA (UG)</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-[10px] text-[#bfcaba] mb-1 uppercase tracking-wider">Size</div>
+                                    <div class="text-sm text-white tabular-nums">500 MT</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 text-[10px] text-[#bfcaba] uppercase tracking-wider">
+                                <span class="material-symbols-outlined text-[16px] text-[#a3f69c]">verified_user</span> Smart Contract Settled
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- TRUST -->
-        <div class="border-t border-white/[0.06] px-4 py-9 sm:px-6 md:px-10 flex flex-col items-center gap-5">
-            <span class="font-mono text-[9px] tracking-[0.2em] uppercase text-cream/45">Trusted &amp; certified by</span>
-            <div class="flex items-center gap-12 flex-wrap justify-center">
-                <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">UCDA</span>
-                <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">SCA</span>
-                <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">UTZ</span>
-                <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">Rainforest Alliance</span>
-                <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">Fair Trade</span>
-                <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">ICO</span>
-                <span class="font-display font-bold text-sm text-cream/45 tracking-wide hover:text-cream/80 transition-colors cursor-default">Uganda Export Promotions Board</span>
+        <!-- ORIGIN STRIP (real growing regions, not fabricated partners) -->
+        <section class="w-full bg-[#ebefe5] py-16 md:py-20 border-t border-[#bfcaba]/20 wp-reveal">
+            <div class="max-w-7xl mx-auto px-4 md:px-8">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                    <div class="max-w-2xl">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#0d631b]/10 text-[#0d631b] rounded-full w-fit mb-4">
+                            <span class="material-symbols-outlined text-[16px]">location_on</span>
+                            <span class="text-[11px] font-bold tracking-widest uppercase">Origin Network</span>
+                        </div>
+                        <h2 class="text-[28px] md:text-[32px] font-semibold text-[#181d17] leading-tight">Sourced from Uganda's growing regions.</h2>
+                        <p class="text-base leading-6 text-[#40493d] mt-4">
+                            Six verified growing regions, each with its own altitude, variety, and processing profile. Browse lots by origin instead of guessing at a label.
+                        </p>
+                    </div>
+                    <Link :href="route('origin.index')" class="text-[#0d631b] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all uppercase tracking-widest w-fit no-underline flex-shrink-0">
+                        View Origin Directory <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </Link>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                    <Link
+                        v-for="region in originRegions" :key="region.name"
+                        :href="route('origin.index')"
+                        class="group bg-[#f7fbf0] rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all no-underline flex flex-col"
+                    >
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-[#0d631b]/10 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-[#0d631b] text-[16px]">terrain</span>
+                            </div>
+                            <span
+                                class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex-shrink-0"
+                                :class="region.variety === 'Arabica' ? 'bg-[#0d631b]/10 text-[#0d631b]' : 'bg-[#79573f]/10 text-[#79573f]'"
+                            >{{ region.variety }}</span>
+                        </div>
+                        <h3 class="text-sm font-semibold text-[#181d17] group-hover:text-[#0d631b] transition-colors mb-1 leading-snug">{{ region.name }}</h3>
+                        <p class="text-xs text-[#40493d] leading-snug">{{ region.altitude }} · {{ region.notes }}</p>
+                        <div class="mt-3 pt-3 border-t border-[#bfcaba]/20 flex items-center justify-between">
+                            <span class="text-[10px] text-[#8b978a]">{{ region.lots }} Lots</span>
+                            <span class="material-symbols-outlined text-[14px] text-[#0d631b] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </div>
+                    </Link>
+                </div>
             </div>
+        </section>
+
+        <!-- MARKET STRIP -->
+        <div class="relative w-full bg-[#121611] border-y border-[#707a6c]/20 py-4 overflow-hidden flex items-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] wp-reveal">
+            <div class="px-4 md:px-8 flex items-center gap-3 border-r border-[#707a6c]/20 pr-6 flex-shrink-0 bg-[#121611] z-20 relative">
+                <span class="w-2 h-2 rounded-full bg-[#a3f69c] wp-pulse"></span>
+                <span class="text-[10px] text-white uppercase tracking-[0.2em] font-semibold">Market Open</span>
+            </div>
+            <div class="overflow-hidden flex-1 relative">
+                <div class="wp-ticker flex items-center pl-12">
+                    <template v-for="(item, i) in [...tickerItems, ...tickerItems]" :key="i">
+                        <span class="flex items-center gap-2.5 flex-shrink-0 px-7">
+                            <span class="text-[11px] text-[#8b978a] uppercase tracking-wider">{{ item.label }}</span>
+                            <span class="text-sm text-white font-semibold tabular-nums">{{ item.value }}</span>
+                            <span
+                                class="text-[11px] font-semibold tabular-nums flex items-center gap-0.5"
+                                :class="item.tone === 'up' ? 'text-[#a3f69c]' : 'text-[#F43F5E]'"
+                            >
+                                <span class="material-symbols-outlined text-[15px]">{{ item.tone === 'up' ? 'arrow_drop_up' : 'arrow_drop_down' }}</span>{{ item.change }}
+                            </span>
+                        </span>
+                        <span class="w-px h-3 bg-[#707a6c]/20 flex-shrink-0"></span>
+                    </template>
+                </div>
+            </div>
+            <div class="pointer-events-none absolute inset-y-0 right-0 w-16 md:w-28 bg-gradient-to-l from-[#121611] to-transparent z-10"></div>
         </div>
 
-        <!-- CTA -->
-        <section class="bg-surface border-t border-white/[0.06] px-4 py-14 sm:px-6 md:px-10 text-center relative overflow-hidden" id="subscribe">
-            <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse 60% 60% at 50% 50%, rgba(200,134,42,0.07) 0%, transparent 70%)"></div>
-            <div class="relative z-10">
-                <span class="font-mono text-[10px] tracking-[0.2em] uppercase text-gold block mb-5">Join Uganda's coffee market</span>
-                <h2 class="font-display font-extrabold text-cream mb-5 tracking-tight" style="font-size:clamp(34px,4vw,60px);line-height:1">Trade <span class="text-gold">Ugandan</span><br>coffee, directly</h2>
-                <p class="text-[15px] leading-relaxed text-cream/75 max-w-lg mx-auto mb-8">Join 2,400+ roasters, importers, and traders sourcing Ugandan Arabica and Fine Robusta with full provenance on Commodity Origin. Open a verified account in 5 minutes.</p>
-                <div class="flex flex-col gap-3 justify-center mb-4 sm:flex-row">
-                    <Link :href="route('register')" class="inline-flex items-center gap-2 bg-gold border border-gold text-bg font-mono text-[10px] tracking-[0.12em] uppercase font-medium px-7 py-3.5 hover:bg-gold2 transition-all no-underline">
-                        Open trading account
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <!-- AI MATCHMAKER -->
+        <section id="matchmaker" class="py-28 md:py-32 px-4 md:px-8 bg-[#121611] text-white relative overflow-hidden wp-reveal">
+            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#0d631b]/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+                <div class="relative z-10">
+                    <h2 class="text-4xl md:text-5xl text-white max-w-xl mb-6 font-semibold tracking-tight leading-[1.1]">
+                        The right buyer, matched to every <span class="text-[#a3f69c]">lot.</span>
+                    </h2>
+                    <p class="text-lg leading-relaxed text-[#bfcaba] max-w-xl mb-10">
+                        We match sellers with buyers by comparing available inventory, shipping costs, and what each buyer is actually looking for. Both sides get a better deal, faster.
+                    </p>
+                    <ul class="mb-10 border-t border-[#707a6c]/15">
+                        <li v-for="point in matchmakerPoints" :key="point.title" class="flex items-start gap-4 py-5 border-b border-[#707a6c]/15">
+                            <div class="w-9 h-9 rounded-lg bg-[#1a2018] border border-[#707a6c]/20 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-[#a3f69c] text-[18px]">{{ point.icon }}</span>
+                            </div>
+                            <div>
+                                <div class="text-sm text-white font-semibold mb-1">{{ point.title }}</div>
+                                <div class="text-sm text-[#8b978a] leading-relaxed">{{ point.copy }}</div>
+                            </div>
+                        </li>
+                    </ul>
+                    <Link :href="route('market.news')" class="text-[#a3f69c] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all uppercase tracking-widest w-fit no-underline">
+                        Explore the Algorithm <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </Link>
-                    <a href="#market" class="inline-flex items-center gap-2 bg-transparent border border-white/[0.14] text-cream/70 font-mono text-[10px] tracking-[0.12em] uppercase px-7 py-3.5 hover:border-cream/40 hover:text-cream transition-all no-underline">Browse live lots</a>
                 </div>
-                <p class="font-mono text-[9px] tracking-[0.1em] text-cream/35">No minimum order · Free verification · UCDA compliance included</p>
+
+                <div class="relative z-10">
+                    <div class="bg-[#181a17] rounded-2xl shadow-2xl p-7 md:p-8">
+                        <div class="flex items-center justify-between mb-7">
+                            <span class="text-[10px] text-[#8b978a] uppercase tracking-[0.2em] font-semibold">Live Match Preview</span>
+                            <span class="inline-flex items-center gap-1.5 bg-[#a3f69c]/10 text-[#a3f69c] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#a3f69c] wp-pulse"></span>98% Match
+                            </span>
+                        </div>
+
+                        <div class="flex items-start gap-4 pb-6 border-b border-[#707a6c]/10">
+                            <div class="w-11 h-11 rounded-lg bg-[#1a2018] border border-[#707a6c]/20 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-[#bfcaba] text-[20px]">sell</span>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-[10px] text-[#8b978a] uppercase tracking-[0.15em] mb-1">Selling Order</div>
+                                <div class="text-base text-white font-medium">Kisoro Highlands Co-op</div>
+                                <div class="text-[13px] text-[#8b978a] mt-0.5">Uganda · Kisoro · 18 MT · Fully Washed</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center py-5">
+                            <div class="w-2 h-2 rounded-full bg-[#a3f69c] flex-shrink-0"></div>
+                            <div class="flex-1 border-t border-dashed border-[#a3f69c]/30 mx-3 relative">
+                                <span class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#181a17] px-3 flex items-center gap-1.5 whitespace-nowrap">
+                                    <span class="material-symbols-outlined text-[#a3f69c] wp-spin text-[14px]">sync</span>
+                                    <span class="text-[#a3f69c] text-[10px] tracking-[0.1em] uppercase font-semibold">Matching</span>
+                                </span>
+                            </div>
+                            <div class="w-2 h-2 rounded-full bg-[#a3f69c] flex-shrink-0"></div>
+                        </div>
+
+                        <div class="flex items-start gap-4 pt-6 border-t border-[#707a6c]/10">
+                            <div class="w-11 h-11 rounded-lg bg-[#1a2018] border border-[#707a6c]/20 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-[#bfcaba] text-[20px]">shopping_cart</span>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-[10px] text-[#8b978a] uppercase tracking-[0.15em] mb-1">Buying Intent</div>
+                                <div class="text-base text-white font-medium">Nordic Roasters Ltd.</div>
+                                <div class="text-[13px] text-[#8b978a] mt-0.5">Norway · Requires 15-20 MT · Ugandan Washed Arabica</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 grid grid-cols-2 divide-x divide-[#707a6c]/15 border-t border-[#707a6c]/10 pt-6">
+                            <div class="pr-4">
+                                <div class="text-[10px] text-[#8b978a] uppercase tracking-[0.15em] mb-1.5">Est. Shipping</div>
+                                <div class="text-sm text-white font-semibold tabular-nums">$1,240 · 14 Days</div>
+                            </div>
+                            <div class="pl-4">
+                                <div class="text-[10px] text-[#a3f69c]/70 uppercase tracking-[0.15em] mb-1.5">Margin Boost</div>
+                                <div class="text-sm text-[#a3f69c] font-semibold tabular-nums">+4.2% vs Spot</div>
+                            </div>
+                        </div>
+
+                        <Link :href="route('login')" class="block text-center w-full mt-7 bg-[#a3f69c] text-[#002204] py-3.5 rounded-lg text-sm font-bold hover:bg-[#88d982] transition-colors uppercase tracking-widest no-underline">Initiate Smart Contract</Link>
+                    </div>
+                    <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-[#0d631b]/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+                </div>
             </div>
         </section>
 
-        <!-- FOOTER -->
-        <footer class="bg-[#0D0804] border-t border-white/[0.06] px-4 pt-10 sm:px-6 md:px-10">
-            <div class="grid grid-cols-1 gap-8 mb-8 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] lg:gap-10">
-                <div>
-                    <a href="#" class="flex items-center gap-2 mb-3 no-underline">
-                        <div class="w-2 h-2 rounded-full bg-gold"></div>
-                        <span class="font-display font-bold text-[15px] text-cream">Commodity <span class="text-gold">Origin</span></span>
-                    </a>
-                    <p class="text-[13px] text-cream/65 leading-relaxed max-w-[220px]">Uganda's blockchain-verified coffee commodity exchange. From farm to cup, transparently.</p>
+        <!-- EXCHANGE TERMINAL PREVIEW -->
+        <section class="py-24 px-4 md:px-8 bg-[#ebefe5] relative overflow-hidden wp-reveal">
+            <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-[#a3f69c]/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+            <div class="max-w-7xl mx-auto relative z-10 flex flex-col gap-12">
+                <div class="max-w-2xl">
+                    <h2 class="wp-display text-[32px] md:text-[48px] leading-[1.15] font-semibold text-[#181d17] mb-6">Coffee, traded with <span class="text-[#0d631b]">intelligence.</span></h2>
+                    <p class="text-base leading-6 text-[#40493d] max-w-lg mb-8">
+                        The same matching engine and trading interface our traders use every day. Fast, reliable, and deep enough for serious volume.
+                    </p>
+                    <Link
+                        :href="route('login')"
+                        class="inline-block bg-[#a3f69c] text-[#002204] px-8 py-4 rounded-lg text-xs font-semibold tracking-[0.02em] uppercase hover:bg-[#88d982] hover:shadow-[0_0_15px_rgba(163,246,156,0.3)] transition-all no-underline"
+                    >Launch Terminal Preview</Link>
                 </div>
-                <div>
-                    <div class="font-mono text-[9px] tracking-[0.18em] uppercase text-cream/40 mb-4">Exchange</div>
-                    <ul class="list-none flex flex-col gap-2.5">
-                        <li><a href="#market" class="foot-link text-[13px] no-underline">Live market</a></li>
-                        <li><a href="#origins" class="foot-link text-[13px] no-underline">Origins</a></li>
-                        <li><a href="#how" class="foot-link text-[13px] no-underline">Grading</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Price history</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">API access</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <div class="font-mono text-[9px] tracking-[0.18em] uppercase text-cream/40 mb-4">Coffee</div>
-                    <ul class="list-none flex flex-col gap-2.5">
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Arabica lots</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Robusta lots</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Fine Robusta</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Seasonal lots</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Brew guides</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <div class="font-mono text-[9px] tracking-[0.18em] uppercase text-cream/40 mb-4">Company</div>
-                    <ul class="list-none flex flex-col gap-2.5">
-                        <li><a href="#" class="foot-link text-[13px] no-underline">About us</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">UCDA partnership</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Farmer partners</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Sustainability</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Careers</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <div class="font-mono text-[9px] tracking-[0.18em] uppercase text-cream/40 mb-4">Legal</div>
-                    <ul class="list-none flex flex-col gap-2.5">
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Terms of trade</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Privacy policy</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Cookie policy</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Compliance</a></li>
-                        <li><a href="#" class="foot-link text-[13px] no-underline">Contact</a></li>
-                    </ul>
+
+                <div class="w-full bg-[#1a1d19] rounded-xl shadow-2xl overflow-hidden flex flex-col">
+                    <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-[#20241f] border-b border-[#707a6c]/20">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[#a3f69c] text-[18px]">candlestick_chart</span>
+                                <span class="text-sm font-medium text-[#eef2e8]">KCH4 <span class="text-[#bfcaba] font-normal">(Arabica Mar '24)</span></span>
+                            </div>
+                            <div class="hidden sm:block h-4 w-px bg-[#707a6c]/30"></div>
+                            <div class="hidden sm:flex items-baseline gap-2">
+                                <span class="text-lg text-[#eef2e8] font-semibold tabular-nums">184.25</span>
+                                <span class="text-sm text-[#10B981] flex items-center tabular-nums"><span class="material-symbols-outlined text-[16px]">arrow_upward</span>1.32%</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 bg-[#121611]/60 px-2.5 py-1 rounded-full border border-[#707a6c]/20 flex-shrink-0">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#10B981] wp-pulse"></span>
+                            <span class="text-[10px] text-[#8b978a] uppercase tracking-wider font-semibold">Live</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col lg:flex-row">
+                        <!-- Chart area -->
+                        <div class="flex-1 lg:border-r border-[#707a6c]/20 flex flex-col relative bg-[#181a17]">
+                            <div class="h-12 border-b border-[#707a6c]/10 flex items-center justify-between px-4 gap-4 overflow-x-auto">
+                                <div class="flex items-center gap-1 bg-[#121611] rounded-full p-1 flex-shrink-0">
+                                    <button type="button" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-[#a3f69c] text-[#002204]">1H</button>
+                                    <button type="button" class="px-3 py-1 rounded-full text-[11px] font-medium text-[#8b978a] hover:text-white transition-colors">4H</button>
+                                    <button type="button" class="px-3 py-1 rounded-full text-[11px] font-medium text-[#8b978a] hover:text-white transition-colors">1D</button>
+                                    <button type="button" class="px-3 py-1 rounded-full text-[11px] font-medium text-[#8b978a] hover:text-white transition-colors">1W</button>
+                                </div>
+                                <span class="hidden sm:flex items-center gap-1.5 text-[11px] text-[#8b978a] flex-shrink-0">
+                                    <span class="material-symbols-outlined text-[14px]">candlestick_chart</span>Candles
+                                </span>
+                            </div>
+                            <div class="flex-1 p-4 relative h-72 lg:h-96">
+                                <svg class="absolute inset-4 w-[calc(100%-2rem)] h-[calc(100%-2rem)]" preserveAspectRatio="none" viewBox="0 0 100 100">
+                                    <line v-for="row in 4" :key="row" x1="0" :y1="row * 20" x2="100" :y2="row * 20" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" />
+                                    <g v-for="(candle, i) in chartCandles" :key="i">
+                                        <line
+                                            :x1="candle.cx" :x2="candle.cx" :y1="candle.high" :y2="candle.low"
+                                            :stroke="candle.bullish ? '#10B981' : '#F43F5E'" stroke-width="0.6"
+                                        />
+                                        <rect
+                                            :x="candle.cx - candleBodyWidth / 2"
+                                            :y="Math.min(candle.open, candle.close)"
+                                            :width="candleBodyWidth"
+                                            :height="Math.max(Math.abs(candle.open - candle.close), 1.4)"
+                                            :fill="candle.bullish ? '#10B981' : '#F43F5E'"
+                                        />
+                                    </g>
+                                </svg>
+                                <div class="absolute inset-4 pointer-events-none">
+                                    <span
+                                        v-for="label in chartPriceLabels"
+                                        :key="label.price"
+                                        class="absolute right-0 text-[9px] text-[#8b978a] tabular-nums -translate-y-1/2 bg-[#181a17] pl-1.5"
+                                        :style="{ top: label.y + '%' }"
+                                    >{{ label.price }}</span>
+                                </div>
+                                <div class="absolute bottom-4 left-4 right-4 h-14 flex items-end gap-1">
+                                    <div
+                                        v-for="(candle, i) in chartCandles" :key="i"
+                                        class="flex-1 rounded-t-sm opacity-30"
+                                        :class="candle.bullish ? 'bg-[#10B981]' : 'bg-[#F43F5E]'"
+                                        :style="{ height: candle.volume + '%' }"
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order book -->
+                        <div class="w-full lg:w-80 bg-[#1e221d] flex flex-col">
+                            <div class="p-4 border-b border-[#707a6c]/20">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[11px] font-bold tracking-widest text-[#bfcaba] uppercase">Market Sentiment</span>
+                                    <span class="text-[10px] text-[#10B981] font-bold">BULLISH</span>
+                                </div>
+                                <div class="h-2 w-full bg-[#181a17] rounded-full overflow-hidden flex">
+                                    <div class="h-full bg-[#10B981]/80 w-[68%]"></div>
+                                    <div class="h-full bg-[#F43F5E]/80 w-[32%]"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-[#bfcaba] tabular-nums mt-1">
+                                    <span>68% Buy</span>
+                                    <span>32% Sell</span>
+                                </div>
+                            </div>
+
+                            <div class="p-4 flex-1 flex flex-col gap-1">
+                                <div class="flex justify-between text-[10px] text-[#bfcaba] uppercase mb-1">
+                                    <span>Price (USD)</span>
+                                    <span>Size (MT)</span>
+                                </div>
+                                <div v-for="ask in askLadder" :key="ask.price" class="flex justify-between text-xs text-[#F43F5E] relative py-0.5 tabular-nums">
+                                    <div class="absolute right-0 top-0 h-full bg-[#F43F5E]/15 rounded-l-sm" :style="{ width: ask.depth + '%' }"></div>
+                                    <span class="relative z-10 pl-1">{{ ask.price }}</span><span class="relative z-10 pr-1">{{ ask.size }}</span>
+                                </div>
+                                <div class="py-2 flex items-center justify-between border-y border-[#707a6c]/10 my-1 bg-[#20241f] px-2 rounded">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[#eef2e8] text-base font-bold tabular-nums">184.25</span>
+                                        <span class="material-symbols-outlined text-[16px] text-[#10B981]">arrow_upward</span>
+                                    </div>
+                                    <span class="text-[10px] text-[#bfcaba]">Spread 0.05</span>
+                                </div>
+                                <div v-for="bid in bidLadder" :key="bid.price" class="flex justify-between text-xs text-[#10B981] relative py-0.5 tabular-nums">
+                                    <div class="absolute left-0 top-0 h-full bg-[#10B981]/15 rounded-r-sm" :style="{ width: bid.depth + '%' }"></div>
+                                    <span class="relative z-10 pl-1">{{ bid.price }}</span><span class="relative z-10 pr-1">{{ bid.size }}</span>
+                                </div>
+                            </div>
+
+                            <div class="p-4 border-t border-[#707a6c]/20 bg-[#181a17]">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <button type="button" class="bg-[#10B981] text-[#0f1f18] py-3 rounded text-xs font-bold hover:bg-[#10B981]/90 transition-colors">BUY</button>
+                                    <button type="button" class="bg-[#F43F5E] text-[#2a0e14] py-3 rounded text-xs font-bold hover:bg-[#F43F5E]/90 transition-colors">SELL</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="border-t border-white/[0.06] py-5 flex flex-col gap-3 justify-between items-start md:flex-row md:items-center">
-                <span class="font-mono text-[9px] tracking-[0.08em] text-cream/35">© 2024 Commodity Origin Ltd · Kampala, Uganda · hello@commodityorigin.ug</span>
-                <div class="flex items-center gap-2">
-                    <span class="font-mono text-[9px] tracking-[0.08em] text-cream/35">Pearl of Africa</span>
+        </section>
+
+        <!-- ESG SCORECARDS -->
+        <section class="py-24 px-4 md:px-8 bg-[#f1f5eb] border-b border-[#bfcaba]/30 wp-reveal">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+                    <div class="max-w-2xl">
+                        <h2 class="text-[28px] md:text-[32px] font-semibold text-[#181d17] leading-tight">Transparent ESG metrics, verified per lot.</h2>
+                        <p class="text-base leading-6 text-[#40493d] mt-4">
+                            Every lot traded on Bean Origin comes with verified impact data tracked on-chain, so buyers can price in sustainability instead of guessing at it.
+                        </p>
+                    </div>
+                    <Link :href="route('market.news')" class="text-[#0d631b] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all uppercase tracking-widest w-fit no-underline flex-shrink-0">
+                        View Methodology <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </Link>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div v-for="metric in esgMetrics" :key="metric.title" class="wp-esg-card bg-[#f7fbf0] rounded-xl p-6 shadow-sm transition-shadow">
+                        <div class="flex items-start justify-between mb-6">
+                            <div>
+                                <h3 class="text-base font-semibold text-[#181d17]">{{ metric.title }}</h3>
+                                <p class="text-[10px] font-bold tracking-wider text-[#8b978a] uppercase mt-1">{{ metric.sub }}</p>
+                            </div>
+                            <span class="material-symbols-outlined text-[20px]" :style="{ color: metric.color }" title="Blockchain-verified">verified</span>
+                        </div>
+
+                        <div class="flex items-center gap-5 mb-5">
+                            <div class="relative w-20 h-20 flex-shrink-0">
+                                <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
+                                    <circle cx="50" cy="50" r="42" fill="none" stroke="#e5eadf" stroke-width="9" />
+                                    <circle
+                                        cx="50" cy="50" r="42" fill="none" :stroke="metric.color" stroke-width="9" stroke-linecap="round"
+                                        stroke-dasharray="264"
+                                        :stroke-dashoffset="264 - (264 * metric.bar) / 100"
+                                    />
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[22px]" :style="{ color: metric.color }">{{ metric.icon }}</span>
+                                </div>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-3xl font-bold tabular-nums leading-none" :style="{ color: metric.color }">{{ metric.value }}</div>
+                                <div class="text-sm text-[#8b978a] mt-1.5">{{ metric.unit }}</div>
+                            </div>
+                        </div>
+
+                        <p class="text-sm text-[#40493d] leading-relaxed">{{ metric.copy }}</p>
+                    </div>
                 </div>
             </div>
-        </footer>
-    </div>
+        </section>
+
+        <!-- LIVE AUCTIONS -->
+        <section id="auctions" class="py-24 px-4 md:px-8 bg-[#f1f5eb] wp-reveal">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                    <div class="flex flex-col gap-4">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#F43F5E]/10 rounded-full w-fit">
+                            <span class="w-2 h-2 rounded-full bg-[#F43F5E] wp-pulse"></span>
+                            <span class="text-[11px] font-bold tracking-widest text-[#F43F5E] uppercase">Live Auctions</span>
+                        </div>
+                        <h2 class="text-[28px] md:text-[32px] font-semibold text-[#181d17]">Live Auctions &amp; Spot Pricing</h2>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-[11px] font-bold tracking-widest text-[#40493d] uppercase mb-2 w-full">Filter by Origin</span>
+                        <button
+                            v-for="filter in auctionFilters"
+                            :key="filter.key"
+                            type="button"
+                            class="px-4 py-2 rounded-full text-xs font-semibold transition-colors"
+                            :class="auctionFilter === filter.key ? 'bg-[#0d631b] text-white' : 'bg-[#e5eadf] text-[#40493d] hover:bg-[#bfcaba]/30'"
+                            @click="auctionFilter = filter.key"
+                        >{{ filter.label }}</button>
+                    </div>
+
+                </div>
+
+                <div class="w-full overflow-x-auto rounded-xl bg-[#f7fbf0] shadow-sm">
+                    <table class="w-full text-left border-collapse min-w-[880px]">
+                        <thead>
+                            <tr class="bg-[#e5eadf] border-b border-[#bfcaba]/30">
+                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Lot ID &amp; Origin</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Variety &amp; Grade</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Current Bid / Price</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Volume</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Time Remaining</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#bfcaba]/20">
+                            <tr v-if="filteredAuctions.length === 0">
+                                <td colspan="7" class="px-6 py-16 text-center">
+                                    <p class="text-sm text-[#40493d]">No live lots in this region right now.</p>
+                                    <Link :href="route('market.live')" class="inline-block mt-2 text-sm font-semibold text-[#0d631b] hover:text-[#2e7d32] no-underline">Browse all listings</Link>
+                                </td>
+                            </tr>
+                            <tr v-for="row in filteredAuctions" :key="row.id" class="hover:bg-[#f1f5eb] transition-colors group">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded bg-[#e0e4da] flex items-center justify-center flex-shrink-0" :style="{ color: row.iconColor }">
+                                            <span class="material-symbols-outlined text-[20px]">public</span>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-semibold text-[#181d17] group-hover:text-[#0d631b] transition-colors">{{ row.id }}</div>
+                                            <div class="text-sm text-[#40493d]">{{ row.origin }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-[#40493d]">{{ row.variety }}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm text-[#181d17] tabular-nums font-medium">${{ row.price }} <span class="text-[10px] font-normal text-[#40493d]">/kg</span></span>
+                                        <span
+                                            class="inline-flex items-center text-[11px] font-semibold tabular-nums"
+                                            :class="row.deltaTone === 'up' ? 'text-[#10B981]' : 'text-[#F43F5E]'"
+                                        >
+                                            <span class="material-symbols-outlined text-[14px]">{{ row.deltaTone === 'up' ? 'arrow_drop_up' : 'arrow_drop_down' }}</span>{{ row.delta }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-[#181d17] tabular-nums">{{ row.volume }}</td>
+                                <td class="px-6 py-4">
+                                    <div v-if="row.time" class="flex items-center gap-2 text-sm tabular-nums" :class="row.timeTone === 'rose' ? 'text-[#F43F5E]' : 'text-[#F59E0B]'">
+                                        <span v-if="row.timeTone === 'rose'" class="w-1.5 h-1.5 rounded-full bg-[#F43F5E] wp-pulse flex-shrink-0"></span>
+                                        <span v-else class="material-symbols-outlined text-[16px]">schedule</span>{{ row.time }}
+                                    </div>
+                                    <span v-else class="text-sm text-[#40493d]">N/A</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="px-2 py-1 rounded-sm text-[10px] font-semibold uppercase"
+                                        :class="{
+                                            'bg-[#10B981]/10 text-[#10B981]': row.statusTone === 'green',
+                                            'bg-[#0d631b]/10 text-[#0d631b]': row.statusTone === 'primary',
+                                            'bg-[#F43F5E]/10 text-[#F43F5E]': row.statusTone === 'rose',
+                                        }"
+                                    >{{ row.status }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <Link
+                                        :href="route('login')"
+                                        class="inline-block px-4 py-2 rounded text-xs font-semibold transition-all no-underline"
+                                        :class="row.style === 'solid' ? 'bg-[#0d631b] text-white hover:bg-[#2e7d32]' : 'border border-[#0d631b] text-[#0d631b] hover:bg-[#0d631b] hover:text-white'"
+                                    >{{ row.action }}</Link>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-8 flex justify-center">
+                    <Link :href="route('market.live')" class="text-sm font-semibold text-[#0d631b] hover:text-[#2e7d32] flex items-center gap-2 transition-colors uppercase tracking-wider no-underline">
+                        View All Market Listings <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </Link>
+                </div>
+            </div>
+        </section>
+    </OuterLayout>
 </template>
 
 <style>
-.welcome-page {
-    font-family: 'Manrope', sans-serif;
-    position: relative;
-}
-
-.welcome-page .font-display {
-    font-family: 'Bricolage Grotesque', sans-serif;
-}
-
-.welcome-page .font-mono {
-    font-family: 'IBM Plex Mono', monospace;
-}
-
-.welcome-page [class*='border-white/'] {
-    border-color: transparent !important;
-}
-
-.welcome-page .hero-prefix {
-    font-weight: 700;
-    letter-spacing: -0.03em;
-}
-
-.welcome-page .hero-focus {
-    font-weight: 800;
-    letter-spacing: -0.045em;
-    text-shadow: 0 0 24px rgba(200, 134, 42, 0.18);
-}
-
-.welcome-page .hero-wordmark {
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    font-weight: 600;
-    letter-spacing: 0.015em;
-    line-height: 0.92;
-}
-
-.welcome-page::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 999;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-        0deg,
-        rgba(0, 0, 0, 0.025) 0,
-        rgba(0, 0, 0, 0.025) 1px,
-        transparent 1px,
-        transparent 2px
-    );
-}
-
-::-webkit-scrollbar {
-    width: 4px;
-}
-
-::-webkit-scrollbar-track {
-    background: #0e0b07;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #c8862a;
-    border-radius: 2px;
-}
-
-.welcome-page .ticker-wrap {
-    display: flex;
-    animation: ticker 30s linear infinite;
-    white-space: nowrap;
-}
-
-@keyframes ticker {
-    0% {
-        transform: translateX(0);
+@keyframes wpPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
     }
-
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-.welcome-page .hero-dots {
-    background-image: radial-gradient(circle, rgba(200, 134, 42, 0.14) 1px, transparent 1px);
-    background-size: 40px 40px;
-    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 60% 50%, black 30%, transparent 100%);
-    mask-image: radial-gradient(ellipse 80% 80% at 60% 50%, black 30%, transparent 100%);
-}
-
-@keyframes pulse-green {
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(82, 183, 136, 0.4);
-    }
-
     50% {
-        box-shadow: 0 0 0 5px rgba(82, 183, 136, 0);
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
     }
 }
 
-.welcome-page .pulse-green {
-    animation: pulse-green 2s ease-in-out infinite;
+.wp-page .wp-pulse {
+    animation: wpPulse 2s ease-in-out infinite;
 }
 
-@keyframes fade-up {
+@keyframes wpFadeInUp {
     from {
         opacity: 0;
-        transform: translateY(16px);
+        transform: translateY(1rem);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-@keyframes fade-in {
+.wp-page .wp-fade-1 {
+    animation: wpFadeInUp 0.8s ease-out both;
+}
+
+.wp-page .wp-fade-2 {
+    animation: wpFadeInUp 1s ease-out 0.15s both;
+}
+
+.wp-page .wp-esg-card:hover {
+    
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+@keyframes wpTicker {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.wp-page .wp-ticker {
+    width: max-content;
+    animation: wpTicker 40s linear infinite;
+}
+
+.wp-page .wp-ticker:hover {
+    animation-play-state: paused;
+}
+
+@keyframes wpSpin {
     from {
-        opacity: 0;
+        transform: rotate(0deg);
     }
-
     to {
-        opacity: 1;
+        transform: rotate(360deg);
     }
 }
 
-.welcome-page .animate-fade-up-1 {
-    animation: fade-up 0.7s ease both 0.2s;
+.wp-page .wp-spin {
+    display: inline-block;
+    animation: wpSpin 3s linear infinite;
 }
 
-.welcome-page .animate-fade-up-2 {
-    animation: fade-up 0.7s ease both 0.4s;
-}
-
-.welcome-page .animate-fade-up-3 {
-    animation: fade-up 0.7s ease both 0.55s;
-}
-
-.welcome-page .animate-fade-up-4 {
-    animation: fade-up 0.7s ease both 0.7s;
-}
-
-.welcome-page .animate-fade-up-5 {
-    animation: fade-up 0.7s ease both 0.85s;
-}
-
-.welcome-page .animate-fade-up-6 {
-    animation: fade-up 0.7s ease both 1s;
-}
-
-.welcome-page .animate-fade-in {
-    animation: fade-in 0.9s ease both 0.6s;
-}
-
-.welcome-page .reveal {
-    opacity: 1;
-}
-
-.welcome-page .reveal.anim {
-    opacity: 0;
-    transform: translateY(14px);
-    transition: opacity 0.55s ease, transform 0.55s ease;
-}
-
-.welcome-page .reveal.anim.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.welcome-page .delay-1 {
-    transition-delay: 0.08s;
-}
-
-.welcome-page .delay-2 {
-    transition-delay: 0.16s;
-}
-
-.welcome-page .delay-3 {
-    transition-delay: 0.24s;
-}
-
-.welcome-page .delay-4 {
-    transition-delay: 0.32s;
-}
-
-.welcome-page .pipeline-line::before {
-    content: '';
-    position: absolute;
-    top: 32px;
-    left: calc(10% + 32px);
-    right: calc(10% + 32px);
-    height: 1px;
-    background: rgba(200, 134, 42, 0.15);
-}
-
-.welcome-page .avail-bar {
-    width: 72px;
-    height: 3px;
-    background: #221b11;
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.welcome-page .avail-fill {
-    height: 100%;
-    background: #c8862a;
-    border-radius: 2px;
-}
-
-.welcome-page .avail-fill.low {
-    background: #e07070;
-}
-
-.welcome-page .sparkline {
-    width: 56px;
-    height: 26px;
-}
-
-.welcome-page #mktTable tbody tr:hover td {
-    background: rgba(255, 255, 255, 0.02);
-}
-
-.welcome-page .score-track {
-    height: 3px;
-    background: #221b11;
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.welcome-page .score-fill-green {
-    height: 100%;
-    background: linear-gradient(to right, #40916c, #52b788);
-    border-radius: 2px;
-}
-
-.welcome-page .score-fill-gold {
-    height: 100%;
-    background: linear-gradient(to right, #c8862a, #e09b3a);
-    border-radius: 2px;
-}
-
-.welcome-page .origin-block {
-    transition: border-color 0.3s;
-}
-
-.welcome-page .origin-block:hover {
-    border-color: rgba(255, 255, 255, 0.14);
-}
-
-.welcome-page .ob-note {
-    transition: all 0.2s;
-}
-
-.welcome-page .ob-note:hover {
-    border-color: #c8862a;
-    color: #c8862a;
-    background: rgba(200, 134, 42, 0.08);
-}
-
-.welcome-page .bid-btn:hover {
-    background: #c8862a;
-    border-color: #c8862a;
-    color: #0e0b07;
-}
-
-.welcome-page .qr-box {
-    background: white;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.welcome-page .cs-line {
-    width: 1px;
-    flex: 1;
-    background: rgba(255, 255, 255, 0.06);
-    margin: 6px 0;
-    min-height: 20px;
-}
-
-.welcome-page .text-ghost {
-    color: rgba(242, 237, 228, 0.42);
-}
-
-.welcome-page .mkt-table th {
-    white-space: nowrap;
-}
-
-.welcome-page .foot-link {
-    color: rgba(242, 237, 228, 0.65);
-    transition: color 0.2s;
-}
-
-.welcome-page .foot-link:hover {
-    color: #f2ede4;
-}
-
-@media (max-width: 767px) {
-    .welcome-page .pipeline-line::before {
-        display: none;
-    }
-
-    .welcome-page .ticker-wrap {
-        animation-duration: 42s;
-    }
-
-    .welcome-page .origin-block {
-        min-width: 0;
-    }
-
-    .welcome-page #mktTable {
-        min-width: 760px;
+@media (prefers-reduced-motion: reduce) {
+    .wp-page .wp-ticker,
+    .wp-page .wp-spin,
+    .wp-page .wp-pulse {
+        animation: none;
     }
 }
 </style>

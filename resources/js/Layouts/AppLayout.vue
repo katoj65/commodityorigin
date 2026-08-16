@@ -91,6 +91,7 @@ const mobileNavSections = computed(() => [
         title: 'Analysis',
         items: [
             { label: 'Documentation', href: route('documentation.index'), active: route().current('documentation.*') },
+            { label: 'Gallery', href: route('gallery.index'), active: route().current('gallery.*') },
             { label: 'AI Assistant', href: route('chat.index'), active: route().current('chat.*') },
         ],
     },

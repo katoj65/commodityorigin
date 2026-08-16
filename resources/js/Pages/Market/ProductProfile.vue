@@ -113,6 +113,7 @@ const qualityMetricDefs = [
     { key: 'processing_date', label: 'Processing Date', format: formatDateOnly },
 ];
 
+
 function buildRows(defs) {
     const rows = [];
     for (const def of defs) {
@@ -912,6 +913,8 @@ function focusQuantity() {
 }
 
 @media (max-width: 767.98px) {
+
+
 
 
     .man-content { padding: 0 1.25rem; }
