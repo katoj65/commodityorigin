@@ -11,6 +11,7 @@ import {
     Grid,
     House,
     MagicStick,
+    Picture,
     School,
     ShoppingBag,
     Sunny,
@@ -81,6 +82,7 @@ const sideSections = computed(() => [
         title: 'Analysis',
         items: [
             { label: 'Documentation', href: route('documentation.index'), active: route().current('documentation.*'), icon: Document },
+            { label: 'Gallery', href: route('gallery.index'), active: route().current('gallery.*'), icon: Picture },
             { label: 'AI Assistant', href: route('chat.index'), active: route().current('chat.*'), icon: MagicStick, tertiary: true },
         ],
     },

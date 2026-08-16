@@ -165,27 +165,35 @@ function confirmDelete() {
             <!-- ── Grid ──────────────────────────────────────────────────── -->
             <div class="gal-body">
                 <div v-if="sortedImages.length" class="gal-grid">
-                    <button
+                    <div
                         v-for="(image, index) in sortedImages"
                         :key="image.id"
-                        type="button"
                         class="gal-card"
+                        role="button"
+                        tabindex="0"
+                        :aria-label="`View ${image.title}`"
                         @click="openLightbox(index)"
+                        @keydown.enter.prevent="openLightbox(index)"
+                        @keydown.space.prevent="openLightbox(index)"
                     >
-                        <img :src="image.image_url" :alt="image.title" class="gal-card__img" loading="lazy">
-                        <div class="gal-card__overlay">
-                            <span class="gal-card__title">{{ image.title }}</span>
-                            <span class="gal-card__meta">{{ formatDate(image.created_at) }}</span>
+                        <div class="gal-card__media">
+                            <img :src="image.image_url" :alt="image.title" class="gal-card__img" loading="lazy">
                         </div>
-                        <div v-if="canManage" class="gal-card__actions" @click.stop>
-                            <button type="button" class="gal-card__icon-btn" aria-label="Edit image" @click="openEditDialog(image)">
-                                <el-icon :size="14"><Edit /></el-icon>
-                            </button>
-                            <button type="button" class="gal-card__icon-btn gal-card__icon-btn--danger" aria-label="Delete image" @click="requestDelete(image)">
-                                <el-icon :size="14"><Delete /></el-icon>
-                            </button>
+                        <div class="gal-card__content">
+                            <div class="gal-card__text">
+                                <span class="gal-card__title">{{ image.title }}</span>
+                                <span class="gal-card__meta">{{ formatDate(image.created_at) }}</span>
+                            </div>
+                            <div v-if="canManage" class="gal-card__actions" @click.stop>
+                                <button type="button" class="gal-card__icon-btn" aria-label="Edit image" @click="openEditDialog(image)">
+                                    <el-icon :size="14"><Edit /></el-icon>
+                                </button>
+                                <button type="button" class="gal-card__icon-btn gal-card__icon-btn--danger" aria-label="Delete image" @click="requestDelete(image)">
+                                    <el-icon :size="14"><Delete /></el-icon>
+                                </button>
+                            </div>
                         </div>
-                    </button>
+                    </div>
                 </div>
 
                 <div v-else class="gal-empty">
@@ -489,48 +497,70 @@ function confirmDelete() {
 .gal-body { padding: 1.5rem 1.5rem 3rem; }
 
 .gal-grid {
-    column-count: 4;
-    column-gap: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
 }
 
 .gal-card {
-    display: block;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     position: relative;
-    margin: 0 0 16px;
     padding: 0;
     border: none;
     border-radius: 14px;
     overflow: hidden;
-    background: var(--surface-low);
+    background: #fff;
     cursor: pointer;
-    break-inside: avoid;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.gal-card:hover,
+.gal-card:focus-visible {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.gal-card:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+.gal-card__media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--surface-low);
 }
 
 .gal-card__img {
     display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
     transition: transform 0.35s ease;
 }
 
-.gal-card:hover .gal-card__img { transform: scale(1.04); }
+.gal-card:hover .gal-card__img { transform: scale(1.06); }
 
-.gal-card__overlay {
-    position: absolute;
-    inset: auto 0 0 0;
-    padding: 28px 12px 10px;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.72), transparent);
+.gal-card__content {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+}
+
+.gal-card__text {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
     gap: 2px;
+    min-width: 0;
     text-align: left;
 }
 
 .gal-card__title {
-    color: #fff;
+    color: var(--on-surface);
     font-size: 0.8125rem;
     font-weight: 700;
     line-height: 1.3;
@@ -541,40 +571,32 @@ function confirmDelete() {
 }
 
 .gal-card__meta {
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--on-surface-var);
     font-size: 0.6875rem;
 }
 
 .gal-card__actions {
-    position: absolute;
-    top: 8px;
-    right: 8px;
     display: flex;
-    gap: 6px;
-    opacity: 0;
-    transition: opacity 0.15s ease;
+    gap: 4px;
+    flex-shrink: 0;
 }
 
-.gal-card:hover .gal-card__actions,
-.gal-card:focus-within .gal-card__actions { opacity: 1; }
-
 .gal-card__icon-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
     border: none;
-    background: rgba(17, 24, 39, 0.55);
-    backdrop-filter: blur(4px);
-    color: #fff;
+    background: var(--surface-low);
+    color: #6b7280;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background 0.12s;
+    transition: background 0.12s, color 0.12s;
 }
 
-.gal-card__icon-btn:hover { background: rgba(17, 24, 39, 0.8); }
-.gal-card__icon-btn--danger:hover { background: #dc2626; }
+.gal-card__icon-btn:hover { background: #e5e7eb; color: var(--on-surface); }
+.gal-card__icon-btn--danger:hover { background: #fee2e2; color: #dc2626; }
 
 /* ── Empty state ─────────────────────────────────────────────────────── */
 .gal-empty { text-align: center; padding: 4rem 1rem; }
@@ -901,19 +923,10 @@ function confirmDelete() {
 .gal-fade-leave-to { opacity: 0; }
 
 /* ── Responsive ──────────────────────────────────────────────────────── */
-@media (max-width: 1023.98px) {
-    .gal-grid { column-count: 3; }
-}
-
 @media (max-width: 767.98px) {
     .gal-page-header { padding: 1.25rem 1.25rem 0; }
     .gal-body { padding: 1.25rem 1.25rem 3rem; }
-    .gal-grid { column-count: 2; column-gap: 10px; }
-    .gal-card { margin-bottom: 10px; }
+    .gal-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
     .gal-lightbox__nav { width: 36px; height: 36px; }
-}
-
-@media (max-width: 479.98px) {
-    .gal-grid { column-count: 1; }
 }
 </style>
