@@ -1,16 +1,18 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import {
     Tickets, Star, ShoppingCart, Check, Minus, Plus, Lock, CircleCheck, Medal,
-    ArrowRight, Document, Shop, MapLocation, CaretTop, CaretBottom, Coin, List, ChatLineSquare,
+    Document, Shop, MapLocation, CaretTop, CaretBottom, Coin, List, ChatLineSquare,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import MarketPage from './MarketPage.vue';
 
 const props = defineProps({
     item: { type: Object, required: true },
     cartQuantity: { type: Number, default: 0 },
 });
+
+const searchQuery = ref('');
 
 /* ── Identity — same deterministic initials + palette used on the order
    page, so a seller avatar reads consistently across the app. ─────────── */
@@ -222,26 +224,11 @@ function focusQuantity() {
 </script>
 
 <template>
-    <AppLayout :title="item.name" full-width flush :show-banner="false">
+    <MarketPage v-model:search-query="searchQuery">
         <Head :title="item.name" />
 
         <div class="pp-page">
             <div class="mkt-body">
-                <!-- ── Breadcrumb ───────────────────────────────────────── -->
-                <nav class="pp-breadcrumb">
-                    <Link :href="route('market.index')">Marketplace</Link>
-                    <el-icon class="pp-breadcrumb__sep"><ArrowRight /></el-icon>
-                    <template v-if="item.origin">
-                        <span>{{ item.origin }}</span>
-                        <el-icon class="pp-breadcrumb__sep"><ArrowRight /></el-icon>
-                    </template>
-                    <template v-if="item.type">
-                        <span>{{ item.type }}</span>
-                        <el-icon class="pp-breadcrumb__sep"><ArrowRight /></el-icon>
-                    </template>
-                    <span class="pp-breadcrumb__current">{{ item.name }}</span>
-                </nav>
-
                 <div class="man-content">
                     <el-row :gutter="24">
                         <!-- ── Product details — one single card, 70% width ── -->
@@ -569,7 +556,7 @@ function focusQuantity() {
                 </button>
             </div>
         </div>
-    </AppLayout>
+    </MarketPage>
 </template>
 
 <style scoped>
@@ -595,25 +582,6 @@ function focusQuantity() {
 
 /* ── Body ─────────────────────────────────────────────────────────────── */
 .mkt-body { padding: 1.25rem 0 3rem; }
-
-.pp-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #fff;
-    margin: -1.25rem 0 14px;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    font-size: .6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--on-surface-var);
-}
-.pp-breadcrumb a { color: var(--on-surface-var); text-decoration: none; }
-.pp-breadcrumb a:hover { color: var(--on-surface); }
-.pp-breadcrumb__sep { font-size: 10px; color: #d4d4d8; }
-.pp-breadcrumb__current { color: var(--on-surface); }
 
 .mkt-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 6px; }
 
@@ -918,6 +886,5 @@ function focusQuantity() {
 
 
     .man-content { padding: 0 1.25rem; }
-    .pp-breadcrumb { padding: 0 1.25rem; }
 }
 </style>

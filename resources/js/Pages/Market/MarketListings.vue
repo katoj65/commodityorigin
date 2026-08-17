@@ -96,19 +96,7 @@ watch(filteredListings, () => { currentPage.value = 1; });
 <template>
     <MarketPage v-model:search-query="searchQuery">
         <div class="mkt-body">
-            <div class="mkt-section__head">
-                <div>
-                    <div class="mkt-kicker">Live Data</div>
-                    <h2 class="mkt-title">Live Market Listings</h2>
-                </div>
-                <div class="mkt-section__actions">
-                    <span class="mkt-count">{{ filteredListings.length }} lot{{ filteredListings.length !== 1 ? 's' : '' }}</span>
-                    <div class="mkt-btn-group">
-                        <Link :href="route('market.request')" class="mkt-btn-group__item"><el-icon><ShoppingCart /></el-icon> Request</Link>
-                        <Link :href="route('market.offer')" class="mkt-btn-group__item mkt-btn-group__item--solid"><el-icon><Sell /></el-icon> Offer</Link>
-                    </div>
-                </div>
-            </div>
+          
 
             <div class="mkt-card">
                 <el-table :data="pagedListings" class="mkt-el-table" stripe row-key="id" empty-text="No lots match your search." @row-click="goToListing">
@@ -189,7 +177,7 @@ watch(filteredListings, () => { currentPage.value = 1; });
 .mkt-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }
 
 /* ── Body ─────────────────────────────────────────────────────────────── */
-.mkt-body { padding: 1.5rem 0 3rem; }
+.mkt-body { padding: .75rem 0 3rem; }
 
 .mkt-section__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .875rem; padding: 0 1.5rem; }
 .mkt-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }

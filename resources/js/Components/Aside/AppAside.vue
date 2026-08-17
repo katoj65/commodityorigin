@@ -134,6 +134,16 @@ function go(item) {
                     <span class="app-nav-item__label">Dashboard</span>
                 </div>
 
+                <div class="app-aside__label">Marketplace</div>
+                <div
+                    class="app-nav-item"
+                    :class="{ 'app-nav-item--active': route().current('market.*') }"
+                    @click="router.visit(route('market.index'))"
+                >
+                    <el-icon :size="18"><Compass /></el-icon>
+                    <span class="app-nav-item__label">Market</span>
+                </div>
+
                 <div class="app-aside__label">My Agents</div>
 
                 <div v-for="agent in subscribedAgents" :key="agent.id" class="app-aside__agent">

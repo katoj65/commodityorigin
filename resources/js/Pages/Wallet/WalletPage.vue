@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import DepositModal from '@/Components/DepositModal.vue';
 import WithdrawModal from '@/Components/WithdrawModal.vue';
@@ -113,55 +114,29 @@ function openWithdraw() {
     <AppLayout title="Wallet" full-width flush :show-banner="false">
 
         <div class="wal-page">
-            <!-- ── Page header ───────────────────────────────────────────── -->
-            <div class="wal-page-header">
-                <div class="wal-page-header__left">
-                    <div class="wal-kicker">Payments · Bean Origin</div>
-                    <h1 class="wal-title">Wallet</h1>
-                    <p class="wal-subtitle">Your balance, plus a complete ledger of every deposit, transfer, and order payment.</p>
-                </div>
-                <div class="wal-page-header__actions">
-                    <button type="button" class="wal-btn wal-btn--primary" @click="openDeposit">
-                        <el-icon :size="14"><Top /></el-icon> Deposit
-                    </button>
-                    <button type="button" class="wal-btn" @click="openTransfer">
-                        <el-icon :size="14"><Promotion /></el-icon> Transfer
-                    </button>
-                    <button type="button" class="wal-btn" @click="openWithdraw">
-                        <el-icon :size="14"><Bottom /></el-icon> Withdraw
-                    </button>
-                </div>
-            </div>
+            <!-- ── Two-column layout: 70% transactions / 30% balance card ── -->
+            <div class="wal-columns">
+                <!-- 70% -->
+                <div class="wal-col-main">
+                    <div class="wal-section-head">
+                        <div>
+                            <h1 class="wal-section-title pt-3">Wallet</h1>
+                            <p class="wal-section-sub mt-2">Transaction details</p>
+                        </div>
+                        <div class="wal-segmented">
+                            <button
+                                v-for="filter in filters"
+                                :key="filter.key"
+                                type="button"
+                                class="wal-segmented__option"
+                                :class="{ 'wal-segmented__option--active': activeFilter === filter.key }"
+                                @click="activeFilter = filter.key"
+                            >
+                                {{ filter.label }} <span class="wal-segmented__count">{{ tabCount(filter.key) }}</span>
+                            </button>
+                        </div>
+                    </div>
 
-            <!-- ── Balance + overview strip ─────────────────────────────── -->
-            <div class="wal-kpi-strip">
-                <div class="wal-kpi wal-kpi--primary">
-                    <span class="wal-kpi__label">
-                        <el-icon :size="12"><WalletIcon /></el-icon> Available Balance
-                        <span class="wal-status" :class="wallet.status === 'active' ? 'wal-status--on' : 'wal-status--off'">{{ wallet.status }}</span>
-                    </span>
-                    <strong class="wal-kpi__val wal-kpi__val--lg">{{ formatMoney(wallet.available_balance) }}</strong>
-                </div>
-                <div class="wal-kpi">
-                    <span class="wal-kpi__label"><el-icon :size="12"><Lock /></el-icon> In Escrow</span>
-                    <strong class="wal-kpi__val">{{ formatMoney(escrowWallet.balance, escrowWallet.currency) }}</strong>
-                </div>
-                <div class="wal-kpi">
-                    <span class="wal-kpi__label"><el-icon :size="12"><Top /></el-icon> Total Received</span>
-                    <strong class="wal-kpi__val wal-text-green">{{ kpis.received }}</strong>
-                </div>
-                <div class="wal-kpi">
-                    <span class="wal-kpi__label"><el-icon :size="12"><Bottom /></el-icon> Total Spent</span>
-                    <strong class="wal-kpi__val wal-text-red">{{ kpis.spent }}</strong>
-                </div>
-                <div class="wal-kpi">
-                    <span class="wal-kpi__label"><el-icon :size="12"><List /></el-icon> Total Transactions</span>
-                    <strong class="wal-kpi__val">{{ kpis.count }}</strong>
-                </div>
-            </div>
-
-            <div class="wal-body">
-                <div class="wal-section">
                     <el-table :data="filteredTransactions" class="wal-table">
                         <template #empty>
                             <div class="wal-empty">
@@ -220,6 +195,64 @@ function openWithdraw() {
                         </el-table-column>
                     </el-table>
                 </div>
+
+                <!-- 30% -->
+                <div class="wal-col-side pt-4">
+                    <div class="wal-side-card">
+                        <div class="wal-side-balance">
+                            <span class="wal-side-balance__label">
+                                <el-icon :size="13"><WalletIcon /></el-icon> Available Balance
+                                <span class="wal-status" :class="wallet.status === 'active' ? 'wal-status--on' : 'wal-status--off'">{{ wallet.status }}</span>
+                            </span>
+                            <strong class="wal-side-balance__val">{{ formatMoney(wallet.available_balance) }}</strong>
+                        </div>
+
+                        <div class="wal-side-actions">
+                            <button type="button" class="wal-btn wal-btn--primary wal-btn--block" @click="openDeposit">
+                                <el-icon :size="14"><Top /></el-icon> Deposit
+                            </button>
+                            <button type="button" class="wal-btn wal-btn--block" @click="openTransfer">
+                                <el-icon :size="14"><Promotion /></el-icon> Transfer
+                            </button>
+                            <button type="button" class="wal-btn wal-btn--block" @click="openWithdraw">
+                                <el-icon :size="14"><Bottom /></el-icon> Withdraw
+                            </button>
+                        </div>
+
+                        <div class="wal-side-divider" />
+
+                        <div class="wal-side-metrics">
+                            <Link :href="route('escrow.index')" class="wal-side-metric wal-side-metric--link">
+                                <span class="wal-side-metric__icon wal-side-metric__icon--amber"><el-icon :size="14"><Lock /></el-icon></span>
+                                <span class="wal-side-metric__body">
+                                    <span class="wal-side-metric__label">In Escrow</span>
+                                    <strong class="wal-side-metric__val">{{ formatMoney(escrowWallet.balance, escrowWallet.currency) }}</strong>
+                                </span>
+                            </Link>
+                            <div class="wal-side-metric">
+                                <span class="wal-side-metric__icon wal-side-metric__icon--green"><el-icon :size="14"><Top /></el-icon></span>
+                                <span class="wal-side-metric__body">
+                                    <span class="wal-side-metric__label">Total Received</span>
+                                    <strong class="wal-side-metric__val wal-text-green">{{ kpis.received }}</strong>
+                                </span>
+                            </div>
+                            <div class="wal-side-metric">
+                                <span class="wal-side-metric__icon wal-side-metric__icon--red"><el-icon :size="14"><Bottom /></el-icon></span>
+                                <span class="wal-side-metric__body">
+                                    <span class="wal-side-metric__label">Total Spent</span>
+                                    <strong class="wal-side-metric__val wal-text-red">{{ kpis.spent }}</strong>
+                                </span>
+                            </div>
+                            <div class="wal-side-metric">
+                                <span class="wal-side-metric__icon"><el-icon :size="14"><List /></el-icon></span>
+                                <span class="wal-side-metric__body">
+                                    <span class="wal-side-metric__label">Total Transactions</span>
+                                    <strong class="wal-side-metric__val">{{ kpis.count }}</strong>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -248,50 +281,6 @@ function openWithdraw() {
     min-height: 100%;
 }
 
-/* ── Page header ─────────────────────────────────────────────────────── */
-.wal-page-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-    padding: 2rem 1.5rem 0;
-}
-
-.wal-page-header__left {
-    max-width: 560px;
-}
-
-.wal-page-header__actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.wal-kicker {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--green);
-    margin-bottom: 6px;
-}
-
-.wal-title {
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: -0.025em;
-    line-height: 1.2;
-    margin: 0 0 0.375rem;
-}
-
-.wal-subtitle {
-    font-size: 0.875rem;
-    color: var(--on-surface-var);
-    margin: 0;
-    line-height: 1.55;
-}
 
 /* ── Header buttons ──────────────────────────────────────────────────── */
 .wal-btn {
@@ -321,56 +310,7 @@ function openWithdraw() {
 
 .wal-btn--primary:hover:not(:disabled) { opacity: 0.9; background: linear-gradient(135deg, #004532, #065f46); }
 
-/* ── Overview strip ──────────────────────────────────────────────────── */
-.wal-kpi-strip {
-    display: flex;
-    overflow-x: auto;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    margin-top: 1.75rem;
-    scrollbar-width: none;
-}
-
-.wal-kpi-strip::-webkit-scrollbar { display: none; }
-
-.wal-kpi {
-    flex: 1;
-    min-width: 130px;
-    padding: 1rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    border-right: 1px solid var(--border);
-}
-
-.wal-kpi--primary { min-width: 220px; flex: 1.4; }
-
-.wal-kpi:last-child { border-right: none; }
-
-.wal-kpi__label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--on-surface-var);
-}
-
-.wal-kpi__val {
-    font-size: 1.0625rem;
-    font-weight: 700;
-    color: var(--on-surface);
-    letter-spacing: -0.01em;
-    font-variant-numeric: tabular-nums;
-}
-
-.wal-kpi__val--lg {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-}
+.wal-btn--block { width: 100%; justify-content: center; }
 
 .wal-status {
     display: inline-flex;
@@ -389,13 +329,129 @@ function openWithdraw() {
 .wal-text-green { color: #166534; }
 .wal-text-red { color: #991b1b; }
 
-/* ── Body ────────────────────────────────────────────────────────────── */
-.wal-body {
-    padding: 0 0 3rem;
+/* ── Two-column layout ───────────────────────────────────────────────── */
+.wal-columns {
+    display: grid;
+    grid-template-columns: 7fr 3fr;
+    align-items: start;
 }
 
-.wal-section {
-    background: transparent;
+.wal-col-main {
+    padding: 0 0 3rem;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    min-width: 0;
+}
+
+.wal-col-side {
+    padding: 0 1.5rem 3rem;
+    min-width: 0;
+}
+
+/* ── Side card: balance, actions, metrics ─────────────────────────────── */
+.wal-side-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: sticky;
+    top: 88px;
+}
+
+.wal-side-balance {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+}
+
+.wal-side-balance__label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--on-surface-var);
+}
+
+.wal-side-balance__val {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--on-surface);
+    font-variant-numeric: tabular-nums;
+}
+
+.wal-side-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.wal-side-divider {
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 1.25rem;
+}
+
+.wal-side-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.wal-side-metric {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    margin: 0 -8px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s ease;
+}
+
+.wal-side-metric--link:hover { background: var(--surface-low); }
+
+.wal-side-metric__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    flex-shrink: 0;
+    background: var(--surface-low);
+    color: var(--on-surface-var);
+}
+
+.wal-side-metric__icon--green { background: #dcfce7; color: #166534; }
+.wal-side-metric__icon--red { background: #fee2e2; color: #991b1b; }
+.wal-side-metric__icon--amber { background: #fef3c7; color: #92400e; }
+
+.wal-side-metric__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.wal-side-metric__label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--on-surface-var);
+}
+
+.wal-side-metric__val {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ── Section head + filter ─────────────────────────────────────────────── */
@@ -405,21 +461,23 @@ function openWithdraw() {
     justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
+    margin: 0 0 0.75rem;
     padding: 0 1.5rem;
-    margin-bottom: 1rem;
 }
 
 .wal-section-title {
     font-size: 1rem;
     font-weight: 800;
     letter-spacing: -0.01em;
+    line-height: 1.2;
     color: var(--on-surface);
-    margin: 0 0 2px;
+    margin: 0;
 }
 
 .wal-section-sub {
     font-size: 0.75rem;
     color: var(--on-surface-var);
+    line-height: 1.3;
     margin: 0;
 }
 
@@ -491,10 +549,6 @@ function openWithdraw() {
 .wal-table :deep(.el-table__inner-wrapper::before) { display: none; }
 .wal-table :deep(td.el-table__cell) { padding: 12px 0; }
 .wal-table :deep(.el-table__row:hover .el-table__cell) { background: var(--surface-low); }
-.wal-table :deep(.el-table__header-wrapper th:first-child .cell),
-.wal-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.5rem; }
-.wal-table :deep(.el-table__header-wrapper th:last-child .cell),
-.wal-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1.5rem; }
 
 .wal-th {
     display: inline-flex;
@@ -583,14 +637,20 @@ function openWithdraw() {
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1023.98px) {
+    .wal-columns { grid-template-columns: 1fr; }
+    .wal-col-main { border-right: none; }
+    .wal-col-side {
+        order: -1;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 1.75rem;
+    }
+    .wal-side-card { position: static; }
+}
+
 @media (max-width: 767.98px) {
-    .wal-page-header { padding: 1.5rem 1.25rem 0; }
-    .wal-body { padding: 0 0 3rem; }
-    .wal-section-head { padding: 0 1.25rem; }
-    .wal-table :deep(.el-table__header-wrapper th:first-child .cell),
-    .wal-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.25rem; }
-    .wal-table :deep(.el-table__header-wrapper th:last-child .cell),
-    .wal-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1.25rem; }
+    .wal-col-main { padding: 0 1.25rem 3rem; }
+    .wal-col-side { padding: 1.25rem 1.25rem 1.75rem; }
 }
 
 </style>

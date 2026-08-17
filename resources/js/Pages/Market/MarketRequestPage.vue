@@ -114,18 +114,6 @@ watch(filteredOrders, () => { currentPage.value = 1; });
 <template>
     <MarketPage v-model:search-query="searchQuery">
         <div class="mkt-body">
-            <div class="mkt-section__head">
-                <div>
-                    <div class="mkt-kicker">Buyer Demand</div>
-                    <h2 class="mkt-title">Coffee Requests</h2>
-                </div>
-                <div class="mkt-section__actions">
-                    <span class="mkt-count">{{ filteredMine.length }} request{{ filteredMine.length !== 1 ? 's' : '' }}</span>
-                    <button type="button" class="mkt-btn-group__item mkt-btn-group__item--solid mkt-new-btn" @click="openCreateDialog">
-                        <el-icon><Plus /></el-icon> New Request
-                    </button>
-                </div>
-            </div>
 
             <div class="mkt-card">
                 <el-table :data="pagedOrders" class="mkt-el-table" stripe empty-text="No request orders match your search.">
