@@ -135,17 +135,15 @@ class CheckoutController extends Controller
             'card.expiry' => ['required_if:payment_method,card', 'nullable', 'string', 'max:5'],
         ]);
 
-        $orders = $this->checkout->placeOrder(
+        $purchase = $this->checkout->placeOrder(
             $request->user(),
             $validated['payment_method'],
             $validated['delivery'],
             $validated['card'] ?? null,
         );
 
-        return redirect()->route('checkout.orderConfirmed', ['orders' => $orders->pluck('id')->all()])
-            ->with('success', $orders->count() > 1
-                ? "{$orders->count()} orders placed successfully."
-                : 'Order placed successfully.');
+        return redirect()->route('purchases.show', $purchase)
+            ->with('success', 'Order placed successfully.');
     }
 
     /**

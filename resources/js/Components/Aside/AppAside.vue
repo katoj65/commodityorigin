@@ -16,6 +16,7 @@ import {
     School,
     ShoppingBag,
     Sunny,
+    Tickets,
     TrendCharts,
     Trophy,
     User,
@@ -77,6 +78,7 @@ const sideSections = computed(() => [
         title: 'Financials',
         items: [
             { label: 'Wallet', href: route('wallet.index'), active: route().current('wallet.*'), icon: Wallet },
+            { label: 'Purchases', href: route('purchases.index'), active: route().current('purchases.*'), icon: Tickets },
             { label: 'Currencies', href: route('currencies.index'), active: route().current('currencies.*'), icon: Coin },
         ],
     },
@@ -179,6 +181,14 @@ function go(item) {
                 >
                     <el-icon :size="18"><Wallet /></el-icon>
                     <span class="app-nav-item__label">Wallet</span>
+                </div>
+                <div
+                    class="app-nav-item"
+                    :class="{ 'app-nav-item--active': route().current('purchases.*') }"
+                    @click="router.visit(route('purchases.index'))"
+                >
+                    <el-icon :size="18"><Tickets /></el-icon>
+                    <span class="app-nav-item__label">Purchases</span>
                 </div>
 
                 <div class="app-aside__label">Analysis</div>

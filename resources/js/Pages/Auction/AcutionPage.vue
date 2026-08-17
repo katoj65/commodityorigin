@@ -7,7 +7,7 @@ import {
     View, Star,
     InfoFilled,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import MarketPage from '@/Pages/Market/MarketPage.vue';
 import Calendar from '@/Components/Calendar.vue';
 
 const props = defineProps({
@@ -79,36 +79,11 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
 </script>
 
 <template>
-    <AppLayout title="Coffee Auction Exchange" full-width flush :show-banner="false">
+    <MarketPage v-model:search-query="searchQuery">
         <Head title="Coffee Auction Exchange" />
 
         <div class="auc-page">
 
-            <!-- ══════════════════════════════════════════════════════════
-                 Sticky top bar — AI search + quick actions
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="auc-topbar pt-2 pb-2">
-                <div class="container-fluid px-3 px-lg-4 py-2">
-                    <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-2">
-                        <div class="auc-search-wrap flex-grow-1">
-                            <el-icon class="auc-search-icon"><Search /></el-icon>
-                            <input v-model="searchQuery" class="auc-search-input" placeholder="Ask Coffee Pulse AI…">
-                            <el-icon class="auc-search-ai"><MagicStick /></el-icon>
-                        </div>
-                        <div class="auc-quick-actions">
-                            <template v-for="qa in quickActions" :key="qa.label">
-                                <Link v-if="qa.href" :href="qa.href" class="auc-qa-btn">
-                                    <el-icon><component :is="qa.icon" /></el-icon> {{ qa.label }}
-                                </Link>
-                                <button v-else type="button" class="auc-qa-btn" @click="qa.action">
-                                    <el-icon><component :is="qa.icon" /></el-icon> {{ qa.label }}
-                                </button>
-                            </template>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
 
             <div class="container-fluid px-3 px-lg-4 py-3">
                 <div class="row g-3">
@@ -118,60 +93,7 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
                          ══════════════════════════════════════════════════ -->
                     <div class="col-12 col-xl-9 order-2 order-xl-1">
 
-                        <!-- SECTION 1 — Overview hero -->
-                        <section class="auc-section">
-
-                            <div class="row g-2 pt-0">
-                                <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100">
-                                        <div class="auc-kpi__icon"><el-icon :size="16"><Grid /></el-icon></div>
-                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.live_auctions) }}</strong><span class="auc-kpi__label">Live Auctions</span></div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100">
-                                        <div class="auc-kpi__icon"><el-icon :size="16"><Clock /></el-icon></div>
-                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.upcoming_lots) }}</strong><span class="auc-kpi__label">Upcoming Lots</span></div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100">
-                                        <div class="auc-kpi__icon auc-kpi__icon--green"><el-icon :size="16"><CircleCheck /></el-icon></div>
-                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.completed_auctions) }}</strong><span class="auc-kpi__label">Completed</span></div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100">
-                                        <div class="auc-kpi__icon"><el-icon :size="16"><UserFilled /></el-icon></div>
-                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.active_buyers) }}</strong><span class="auc-kpi__label">Active Buyers</span></div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100">
-                                        <div class="auc-kpi__icon"><el-icon :size="16"><Box /></el-icon></div>
-                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.lots_available) }}</strong><span class="auc-kpi__label">Lots Available</span></div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100">
-                                        <div class="auc-kpi__icon auc-kpi__icon--gold"><el-icon :size="16"><Coin /></el-icon></div>
-                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ fmtNum(overview.total_auction_value) }}</strong><span class="auc-kpi__label">Total Auction Value</span></div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100">
-                                        <div class="auc-kpi__icon auc-kpi__icon--gold"><el-icon :size="16"><TrendCharts /></el-icon></div>
-                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ overview.highest_bid_today != null ? fmtNum(overview.highest_bid_today) : '—' }}</strong><span class="auc-kpi__label">Highest Bid Today</span></div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="auc-kpi h-100">
-                                        <div class="auc-kpi__icon auc-kpi__icon--green"><el-icon :size="16"><Trophy /></el-icon></div>
-                                        <div class="auc-kpi__body"><strong class="auc-kpi__value">{{ overview.average_winning_price != null ? fmtNum(overview.average_winning_price) : '—' }}</strong><span class="auc-kpi__label">Avg. Winning Price</span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+                   
 
                         <!-- SECTION 2 — Items under auction -->
                         <section id="auc-items" class="auc-section auc-section--last">
@@ -331,7 +253,7 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
                 </div>
             </div>
         </div>
-    </AppLayout>
+    </MarketPage>
 </template>
 
 <style scoped>

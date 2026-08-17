@@ -120,7 +120,7 @@ function openWithdraw() {
                 <div class="wal-col-main">
                     <div class="wal-section-head">
                         <div>
-                            <h1 class="wal-section-title pt-3">Wallet</h1>
+                            <h1 class="wal-section-title">Wallet</h1>
                             <p class="wal-section-sub mt-2">Transaction details</p>
                         </div>
                         <div class="wal-segmented">
@@ -462,11 +462,13 @@ function openWithdraw() {
     gap: 1rem;
     flex-wrap: wrap;
     margin: 0 0 0.75rem;
-    padding: 0 1.5rem;
+    padding: 1.5rem 1.5rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
 }
 
 .wal-section-title {
-    font-size: 1rem;
+    font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.01em;
     line-height: 1.2;
@@ -649,6 +651,7 @@ function openWithdraw() {
 }
 
 @media (max-width: 767.98px) {
+    .wal-section-head { padding: 1.25rem 1.25rem 1rem; }
     .wal-col-main { padding: 0 1.25rem 3rem; }
     .wal-col-side { padding: 1.25rem 1.25rem 1.75rem; }
 }

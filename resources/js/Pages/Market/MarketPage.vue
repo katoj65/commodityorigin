@@ -2,7 +2,7 @@
 import { computed, nextTick, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import {
-    Search, List, ShoppingCart, Sell, DataAnalysis, TrendCharts,
+    Search, List, ShoppingCart, Sell, DataAnalysis, TrendCharts, Trophy,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -24,6 +24,7 @@ const marketTabs = [
     { label: 'Listings', icon: List, name: 'market.index' },
     { label: 'Requests', icon: ShoppingCart, name: 'market.request' },
     { label: 'Offers', icon: Sell, name: 'market.offer' },
+    { label: 'Auctions', icon: Trophy, name: 'auction.index' },
     { label: 'Analysis', icon: DataAnalysis, name: 'market.analysis' },
     { label: 'Compare', icon: TrendCharts, name: 'market.compare' },
 ];

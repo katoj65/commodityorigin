@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
+use App\Models\UserOrder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -16,6 +16,7 @@ class CheckoutService
         private readonly OrderService $orders,
         private readonly WalletService $wallets,
         private readonly EscrowService $escrow,
+        private readonly UserOrderService $userOrders,
     ) {
     }
 
@@ -28,9 +29,8 @@ class CheckoutService
      *
      * @param  array<string, mixed>  $delivery
      * @param  array<string, mixed>|null  $card
-     * @return Collection<int, Order>
      */
-    public function placeOrder(User $buyer, string $paymentMethod, array $delivery, ?array $card = null): Collection
+    public function placeOrder(User $buyer, string $paymentMethod, array $delivery, ?array $card = null): UserOrder
     {
         $items = $this->cart->forUser($buyer->id);
 
@@ -39,13 +39,11 @@ class CheckoutService
         }
 
         return DB::transaction(function () use ($buyer, $paymentMethod, $delivery, $card, $items) {
-            $orders = new Collection();
-
             foreach ($items as $item) {
-                $orders->push($this->placeItemOrder($buyer, $item, $paymentMethod, $delivery, $card));
+                $this->placeItemOrder($buyer, $item, $paymentMethod, $delivery, $card);
             }
 
-            return $orders;
+            return $this->userOrders->createFromCheckout($buyer, $items, $paymentMethod);
         });
     }
 

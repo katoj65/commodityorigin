@@ -29,6 +29,7 @@ use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Origin\OriginController;
 use App\Http\Controllers\Profile\ProfileController;
+use App\Http\Controllers\Purchase\PurchaseController;
 use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\Season\SeasonController;
 use App\Http\Controllers\Sell\SellController;
@@ -257,6 +258,14 @@ Route::middleware([
         Route::post('/{order}/repost', [OrderController::class, 'repost'])->name('repost');
         Route::patch('/{order}', [OrderController::class, 'update'])->name('update');
         Route::delete('/{order}', [OrderController::class, 'destroy'])->name('destroy');
+    });
+
+    // Purchases — a simple, read-only receipt per checkout for the buyer's
+    // own history. Separate from the request/offer Order workflow above.
+    Route::prefix('purchases')->name('purchases.')->group(function () {
+        Route::get('/', [PurchaseController::class, 'index'])->name('index');
+        Route::get('/{userOrder}', [PurchaseController::class, 'show'])->name('show');
+        Route::patch('/{userOrder}/cancel', [PurchaseController::class, 'cancel'])->name('cancel');
     });
 
     // Inspections — the shared list of coffee-quality inspections tied to
