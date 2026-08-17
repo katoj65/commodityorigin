@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Calendar;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CalendarResource;
+use App\Http\Resources\TaskResource;
 use App\Models\Calendar;
 use App\Services\CalendarService;
 use App\Services\TaskService;
@@ -27,10 +28,12 @@ class CalendarController extends Controller
      */
     public function index(Request $request): Response
     {
-        $events = $this->calendar->eventsForUser($request->user()->id);
+        $userId = $request->user()->id;
+        $events = $this->calendar->eventsForUser($userId);
 
         return Inertia::render('Calendar/CalendarPage', [
             'events' => CalendarResource::collection($events)->resolve(),
+            'tasks' => TaskResource::collection($this->tasks->tasksForUser($userId))->resolve(),
         ]);
     }
 

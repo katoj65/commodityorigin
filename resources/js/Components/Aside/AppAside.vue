@@ -48,6 +48,7 @@ const sideSections = computed(() => [
         title: 'Main',
         items: [
             { label: 'Dashboard', href: route('dashboard'), active: route().current('dashboard'), icon: Grid },
+            { label: 'Calendar', href: route('calendar.index'), active: route().current('calendar.*'), icon: Calendar },
         ],
     },
     {
@@ -136,6 +137,14 @@ function go(item) {
                 >
                     <el-icon :size="18"><Grid /></el-icon>
                     <span class="app-nav-item__label">Dashboard</span>
+                </div>
+                <div
+                    class="app-nav-item"
+                    :class="{ 'app-nav-item--active': route().current('calendar.*') }"
+                    @click="router.visit(route('calendar.index'))"
+                >
+                    <el-icon :size="18"><Calendar /></el-icon>
+                    <span class="app-nav-item__label">Calendar</span>
                 </div>
 
                 <div class="app-aside__label">Marketplace</div>

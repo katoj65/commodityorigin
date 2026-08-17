@@ -3,10 +3,11 @@ import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import { Plus, Delete, Edit, WarnTriangleFilled, Clock, Close, Calendar as CalendarIcon, Files, CircleCheck, Loading, Star, PriceTag, Sunny, TrendCharts, List, MoreFilled } from '@element-plus/icons-vue';
+import { Plus, Delete, Edit, WarnTriangleFilled, Clock, Close, Calendar as CalendarIcon, Files, CircleCheck, Loading, Star, PriceTag, Sunny, TrendCharts, List, MoreFilled, Odometer } from '@element-plus/icons-vue';
 
 const props = defineProps({
     events: { type: Array, default: () => [] },
+    tasks: { type: Array, default: () => [] },
 });
 
 function todayStr() {
@@ -52,25 +53,22 @@ function jumpToDay(day) {
 
 const sortedEvents = computed(() => [...props.events].sort((a, b) => a.event_date.localeCompare(b.event_date)));
 
-const upcomingEvents = computed(() => sortedEvents.value.filter((e) => e.event_date >= todayStr()));
+/* ── Tasks (sidebar widget) ──────────────────────────────────────────── */
+const sortedTasks = computed(() => [...props.tasks].sort((a, b) => a.task_date.localeCompare(b.task_date)));
 
-const previousEvents = computed(() => [...sortedEvents.value]
-    .filter((e) => e.event_date < todayStr())
-    .reverse());
+function taskTone(task) {
+    if (task.status === 'completed') return 'green';
+    return task.task_date < todayStr() ? 'red' : 'amber';
+}
 
-/* ── Past events tabs ────────────────────────────────────────────────── */
-const pastFilter = ref('all');
-const pastTabs = [
-    { name: 'all', label: 'All' },
-    { name: 'task', label: 'Task' },
-    { name: 'deadline', label: 'Deadline' },
-    { name: 'harvest', label: 'Harvest' },
-    { name: 'market', label: 'Market' },
-];
+function taskStatusLabel(task) {
+    if (task.status === 'completed') return 'Done';
+    return task.task_date < todayStr() ? 'Overdue' : 'Pending';
+}
 
-const filteredPastEvents = computed(() => (pastFilter.value === 'all'
-    ? previousEvents.value
-    : previousEvents.value.filter((e) => e.type === pastFilter.value)));
+function formatShortDate(day) {
+    return new Date(`${day}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 function relativeDayLabel(day) {
     const diff = Math.round((new Date(`${day}T00:00:00`) - new Date(`${todayStr()}T00:00:00`)) / 86400000);
@@ -213,52 +211,7 @@ const typeOptions = [
                 </div>
             </div>
 
-            <!-- ── Overview Strip ────────────────────────────────────────── -->
-            <div class="clp-kpi-strip">
-                <div class="clp-kpi">
-                    <span class="clp-kpi__label">Total Events</span>
-                    <strong class="clp-kpi__val">{{ sortedEvents.length }}</strong>
-                </div>
-                <div class="clp-kpi">
-                    <span class="clp-kpi__label">Due Today</span>
-                    <strong class="clp-kpi__val" :class="dueToday.length ? 'clp-text-amber' : ''">{{ dueToday.length }}</strong>
-                </div>
-                <div class="clp-kpi">
-                    <span class="clp-kpi__label">This Week</span>
-                    <strong class="clp-kpi__val">{{ thisWeekCount }}</strong>
-                </div>
-                <div class="clp-kpi">
-                    <span class="clp-kpi__label">Overdue</span>
-                    <strong class="clp-kpi__val" :class="overdueCount ? 'clp-text-red' : ''">{{ overdueCount }}</strong>
-                </div>
-                <div class="clp-kpi">
-                    <span class="clp-kpi__label">Completed</span>
-                    <strong class="clp-kpi__val clp-text-green">{{ completedCount }}</strong>
-                </div>
-            </div>
-
-            <div class="clp-calendar-card">
-                <el-calendar v-model="activeDate">
-                    <template #date-cell="{ data }">
-                        <div
-                            class="clp-cell"
-                            :class="{ 'clp-cell--selected': data.day === selectedDay, 'clp-cell--other': data.type !== 'current-month' }"
-                            @click="selectDay(data.day)"
-                        >
-                            <span class="clp-cell__num">{{ data.date.getDate() }}</span>
-                            <div v-if="eventsByDay[data.day]?.length" class="clp-cell__dots">
-                                <span
-                                    v-for="ev in eventsByDay[data.day].slice(0, 3)"
-                                    :key="ev.id"
-                                    class="clp-dot"
-                                    :class="typeTone(ev.type)"
-                                ></span>
-                            </div>
-                        </div>
-                    </template>
-                </el-calendar>
-            </div>
-
+            <!-- ── Body: 70% calendar+events / 30% overview+tasks ─────────── -->
             <div class="clp-body">
 
                 <div v-if="dueToday.length" class="clp-due-banner">
@@ -266,69 +219,136 @@ const typeOptions = [
                     <span>{{ dueToday.length }} event{{ dueToday.length > 1 ? 's' : '' }} due today: {{ dueToday.map((e) => e.title).join(', ') }}</span>
                 </div>
 
-                <div class="clp-columns">
-                    <div class="clp-panel clp-panel--upcoming">
-                        <div class="clp-panel-head">
-                            <div class="clp-panel-title"><el-icon><Clock /></el-icon> Current &amp; Upcoming Events</div>
-                            <span class="clp-count-badge">{{ upcomingEvents.length }}</span>
-                        </div>
-
-                        <div v-if="!upcomingEvents.length" class="clp-empty">No current or upcoming events.</div>
-
-                        <div v-else class="clp-list">
-                            <div v-for="ev in upcomingEvents" :key="ev.id" class="clp-row">
-                                <button type="button" class="clp-row__date" @click="jumpToDay(ev.event_date)">
-                                    <span class="clp-row__date-month">{{ dateBadge(ev.event_date).month }}</span>
-                                    <span class="clp-row__date-day">{{ dateBadge(ev.event_date).day }}</span>
-                                </button>
-                                <div class="clp-row__body">
-                                    <div class="clp-row__title">{{ ev.title }}</div>
-                                    <div class="clp-row__meta">
-                                        <span class="clp-dot" :class="typeTone(ev.type)"></span>
-                                        <span>{{ typeLabel(ev.type) }}</span>
-                                        <span class="clp-row__relative">{{ relativeDayLabel(ev.event_date) }}</span>
+                <div class="clp-grid">
+                    <!-- 70% -->
+                    <div class="clp-col-main">
+                        <div class="clp-main-card">
+                            <el-calendar v-model="activeDate">
+                                <template #date-cell="{ data }">
+                                    <div
+                                        class="clp-cell"
+                                        :class="{ 'clp-cell--selected': data.day === selectedDay, 'clp-cell--other': data.type !== 'current-month' }"
+                                        @click="selectDay(data.day)"
+                                    >
+                                        <span class="clp-cell__num">{{ data.date.getDate() }}</span>
+                                        <div v-if="eventsByDay[data.day]?.length" class="clp-cell__dots">
+                                            <span
+                                                v-for="ev in eventsByDay[data.day].slice(0, 3)"
+                                                :key="ev.id"
+                                                class="clp-dot"
+                                                :class="typeTone(ev.type)"
+                                            ></span>
+                                        </div>
                                     </div>
-                                </div>
-                                <span class="clp-badge" :class="ev.status === 'completed' ? 'clp-badge--green' : 'clp-badge--amber'">{{ ev.status }}</span>
-                                <div class="clp-row__actions">
-                                    <button type="button" class="clp-icon-btn" aria-label="Edit event" @click="openEditDialog(ev)">
-                                        <el-icon><Edit /></el-icon>
-                                    </button>
-                                    <button type="button" class="clp-icon-btn clp-icon-btn--danger" aria-label="Delete event" @click="deleteEvent(ev)">
-                                        <el-icon><Delete /></el-icon>
-                                    </button>
-                                </div>
+                                </template>
+                            </el-calendar>
+
+                            <div class="clp-divider"></div>
+
+                            <div class="clp-events-head">
+                                <div class="clp-panel-title"><el-icon><Clock /></el-icon> Events</div>
+                                <span class="clp-count-badge">{{ sortedEvents.length }}</span>
                             </div>
+
+                            <el-table :data="sortedEvents" class="clp-events-table" @row-click="(row) => jumpToDay(row.event_date)">
+                                <el-table-column width="120">
+                                    <template #header><span class="clp-th"><el-icon><CalendarIcon /></el-icon> Date</span></template>
+                                    <template #default="{ row }">
+                                        <div class="clp-cell-date">
+                                            <span class="clp-cell-date__badge">{{ dateBadge(row.event_date).month }} {{ dateBadge(row.event_date).day }}</span>
+                                            <span class="clp-cell-date__relative">{{ relativeDayLabel(row.event_date) }}</span>
+                                        </div>
+                                    </template>
+                                </el-table-column>
+
+                                <el-table-column min-width="200">
+                                    <template #header><span class="clp-th">Event</span></template>
+                                    <template #default="{ row }">
+                                        <div class="clp-cell-event">
+                                            <span class="clp-dot" :class="typeTone(row.type)"></span>
+                                            <div class="clp-cell-event__body">
+                                                <div class="clp-cell-event__title">{{ row.title }}</div>
+                                                <div class="clp-cell-event__type">{{ typeLabel(row.type) }}</div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </el-table-column>
+
+                                <el-table-column width="120" align="right">
+                                    <template #header><span class="clp-th clp-th--right">Status</span></template>
+                                    <template #default="{ row }">
+                                        <span class="clp-badge" :class="row.status === 'completed' ? 'clp-badge--green' : 'clp-badge--amber'">{{ row.status }}</span>
+                                    </template>
+                                </el-table-column>
+
+                                <el-table-column width="90" align="right">
+                                    <template #header><span class="clp-th clp-th--right">Actions</span></template>
+                                    <template #default="{ row }">
+                                        <div class="clp-row__actions" @click.stop>
+                                            <button type="button" class="clp-icon-btn" aria-label="Edit event" @click="openEditDialog(row)">
+                                                <el-icon><Edit /></el-icon>
+                                            </button>
+                                            <button type="button" class="clp-icon-btn clp-icon-btn--danger" aria-label="Delete event" @click="deleteEvent(row)">
+                                                <el-icon><Delete /></el-icon>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </el-table-column>
+
+                                <template #empty>
+                                    <div class="clp-empty">No events yet — create one to get started.</div>
+                                </template>
+                            </el-table>
                         </div>
                     </div>
 
-                    <div class="clp-panel clp-panel--past">
-                        <div class="clp-panel-head">
-                            <div class="clp-panel-title"><el-icon><Clock /></el-icon> Past Events</div>
-                            <span class="clp-count-badge">{{ previousEvents.length }}</span>
+                    <!-- 30% -->
+                    <div class="clp-col-side">
+                        <div class="clp-side-card">
+                            <div class="clp-side-card__title"><el-icon :size="15"><Odometer /></el-icon> Overview</div>
+                            <div class="clp-kpi-list">
+                                <div class="clp-kpi-row">
+                                    <span class="clp-kpi-row__label">Total Events</span>
+                                    <strong class="clp-kpi-row__val">{{ sortedEvents.length }}</strong>
+                                </div>
+                                <div class="clp-kpi-row">
+                                    <span class="clp-kpi-row__label">Due Today</span>
+                                    <strong class="clp-kpi-row__val" :class="dueToday.length ? 'clp-text-amber' : ''">{{ dueToday.length }}</strong>
+                                </div>
+                                <div class="clp-kpi-row">
+                                    <span class="clp-kpi-row__label">This Week</span>
+                                    <strong class="clp-kpi-row__val">{{ thisWeekCount }}</strong>
+                                </div>
+                                <div class="clp-kpi-row">
+                                    <span class="clp-kpi-row__label">Overdue</span>
+                                    <strong class="clp-kpi-row__val" :class="overdueCount ? 'clp-text-red' : ''">{{ overdueCount }}</strong>
+                                </div>
+                                <div class="clp-kpi-row">
+                                    <span class="clp-kpi-row__label">Completed</span>
+                                    <strong class="clp-kpi-row__val clp-text-green">{{ completedCount }}</strong>
+                                </div>
+                            </div>
                         </div>
 
-                        <el-tabs v-model="pastFilter" class="clp-past-tabs">
-                            <el-tab-pane v-for="tab in pastTabs" :key="tab.name" :label="tab.label" :name="tab.name">
-                                <div v-if="!filteredPastEvents.length" class="clp-empty">No past events.</div>
+                        <div class="clp-side-card">
+                            <div class="clp-side-card__title-row">
+                                <div class="clp-side-card__title"><el-icon :size="15"><List /></el-icon> Tasks</div>
+                                <Link :href="route('task.index')" class="clp-side-card__link">View All</Link>
+                            </div>
 
-                                <div v-else class="clp-list clp-list--compact">
-                                    <button
-                                        v-for="ev in filteredPastEvents"
-                                        :key="ev.id"
-                                        type="button"
-                                        class="clp-row clp-row--compact"
-                                        @click="openEditDialog(ev)"
-                                    >
-                                        <span class="clp-dot" :class="typeTone(ev.type)"></span>
-                                        <div class="clp-row__body">
-                                            <div class="clp-row__title">{{ ev.title }}</div>
-                                            <div class="clp-row__relative">{{ relativeDayLabel(ev.event_date) }}</div>
-                                        </div>
-                                    </button>
+                            <div v-if="!sortedTasks.length" class="clp-empty">No tasks yet.</div>
+
+                            <div v-else class="clp-tasks-list">
+                                <div v-for="t in sortedTasks.slice(0, 6)" :key="t.id" class="clp-task-row">
+                                    <span class="clp-dot" :class="`clp-dot--${taskTone(t)}`"></span>
+                                    <div class="clp-task-row__body">
+                                        <div class="clp-task-row__title">{{ t.title }}</div>
+                                        <div class="clp-task-row__date">{{ formatShortDate(t.task_date) }}</div>
+                                    </div>
+                                    <span class="clp-badge" :class="`clp-badge--${taskTone(t)}`">{{ taskStatusLabel(t) }}</span>
                                 </div>
-                            </el-tab-pane>
-                        </el-tabs>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -484,7 +504,9 @@ const typeOptions = [
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 1rem;
-    padding: 1.75rem 1.5rem 0;
+    padding: 1.75rem 1.5rem;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
 }
 
 .clp-page-header__left {
@@ -521,50 +543,6 @@ const typeOptions = [
     padding-top: 4px;
 }
 
-/* ── Overview strip ──────────────────────────────────────────────────── */
-.clp-kpi-strip {
-    display: flex;
-    gap: 0;
-    overflow-x: auto;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    margin-top: 1.5rem;
-    scrollbar-width: none;
-}
-
-.clp-kpi-strip::-webkit-scrollbar {
-    display: none;
-}
-
-.clp-kpi {
-    flex: 1;
-    min-width: 130px;
-    padding: 1rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    border-right: 1px solid var(--border);
-}
-
-.clp-kpi:last-child {
-    border-right: none;
-}
-
-.clp-kpi__label {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--on-surface-var);
-}
-
-.clp-kpi__val {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: var(--on-surface);
-    letter-spacing: -0.01em;
-}
-
 .clp-text-green { color: #166534; }
 .clp-text-amber { color: #92400e; }
 .clp-text-red   { color: #b91c1c; }
@@ -586,16 +564,7 @@ const typeOptions = [
     padding: 10px 14px;
     font-size: 0.8125rem;
     font-weight: 600;
-    margin-bottom: 1rem;
-}
-
-.clp-calendar-card {
-    background: #fff;
-    border: none;
-    border-radius: 0;
-    overflow: hidden;
-    width: 100%;
-    margin-top: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 .clp-empty {
@@ -605,47 +574,34 @@ const typeOptions = [
     text-align: center;
 }
 
-/* ── Columns below calendar (80 / 20) ───────────────────────────────────── */
-.clp-columns {
+/* ── Two-column layout: 70% calendar+events / 30% overview+tasks ───────── */
+.clp-grid {
     display: grid;
-    grid-template-columns: 4fr 1fr;
+    grid-template-columns: 7fr 3fr;
     gap: 1.25rem;
     align-items: start;
-    margin-top: 1.25rem;
 }
 
-.clp-panel {
+.clp-main-card {
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 14px;
     overflow: hidden;
 }
 
-.clp-panel-head {
+.clp-divider {
+    height: 1px;
+    background: var(--border);
+}
+
+.clp-events-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 0.875rem 1rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.25rem;
     background: var(--surface-low);
-}
-
-.clp-panel--past .clp-panel-head {
-    background: #fff;
-    border-bottom: none;
-}
-
-.clp-panel--upcoming .clp-list {
-    padding: 0.25rem 1rem 0.5rem;
-}
-
-.clp-panel--past .clp-past-tabs {
-    padding: 0.5rem 1rem 1rem;
-}
-
-.clp-panel--upcoming .clp-empty {
-    padding: 1rem;
+    border-bottom: 1px solid var(--border);
 }
 
 .clp-panel-title {
@@ -655,6 +611,115 @@ const typeOptions = [
     font-size: 0.875rem;
     font-weight: 800;
     color: var(--on-surface);
+}
+
+/* ── Side column: Overview + Tasks cards ─────────────────────────────── */
+.clp-col-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.clp-side-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+}
+
+.clp-side-card__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.875rem;
+    font-weight: 800;
+    color: var(--on-surface);
+}
+
+.clp-side-card__title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.clp-side-card__title :deep(.el-icon) { color: var(--green); }
+
+.clp-side-card__link {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--green);
+    text-decoration: none;
+}
+
+.clp-side-card__link:hover { color: var(--green-dark); }
+
+.clp-kpi-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.75rem;
+}
+
+.clp-kpi-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0;
+    border-bottom: 1px solid var(--surface-low);
+}
+
+.clp-kpi-row:last-child { border-bottom: none; }
+
+.clp-kpi-row__label {
+    font-size: 0.8125rem;
+    color: var(--on-surface-var);
+    font-weight: 600;
+}
+
+.clp-kpi-row__val {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--on-surface);
+    letter-spacing: -0.01em;
+}
+
+.clp-tasks-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.75rem;
+}
+
+.clp-task-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.625rem 0;
+    border-bottom: 1px solid var(--surface-low);
+}
+
+.clp-task-row:last-child { border-bottom: none; }
+
+.clp-task-row .clp-dot { margin-top: 0; }
+
+.clp-task-row__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.clp-task-row__title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.clp-task-row__date {
+    font-size: 0.6875rem;
+    color: var(--on-surface-var);
+    margin-top: 1px;
 }
 
 .clp-count-badge {
@@ -671,64 +736,60 @@ const typeOptions = [
     font-weight: 800;
 }
 
-.clp-list {
+.clp-row__actions {
     display: flex;
-    flex-direction: column;
-    max-height: 520px;
-    overflow-y: auto;
-}
-
-.clp-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    border-bottom: 1px solid var(--surface-low);
-    padding: 10px 4px;
-}
-
-.clp-row:last-of-type {
-    border-bottom: none;
-}
-
-.clp-row__date {
-    width: 44px;
-    height: 44px;
+    gap: 4px;
     flex-shrink: 0;
-    border-radius: 10px;
-    background: rgba(0, 69, 50, 0.08);
-    border: none;
+}
+
+/* ── Events table — Element Plus, reskinned ─────────────────────────────── */
+.clp-events-table {
+    --el-table-border-color: var(--border);
+    --el-table-header-bg-color: var(--surface-low);
+    --el-table-header-text-color: var(--on-surface-var);
+    font-family: 'Manrope', system-ui, sans-serif;
+}
+
+.clp-events-table :deep(.el-table__row) { cursor: pointer; }
+.clp-events-table :deep(.el-table__cell) { padding: 12px 0; }
+.clp-events-table :deep(.el-table__inner-wrapper::before) { display: none; }
+.clp-events-table :deep(.el-table__header-wrapper th:first-child .cell),
+.clp-events-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.25rem; }
+.clp-events-table :deep(.el-table__header-wrapper th:last-child .cell),
+.clp-events-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1.25rem; }
+
+.clp-th { display: inline-flex; align-items: center; gap: 6px; }
+.clp-th :deep(.el-icon) { font-size: 13px; color: #9ca3af; }
+.clp-th--right { justify-content: flex-end; }
+
+.clp-cell-date {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    line-height: 1.1;
-    cursor: pointer;
+    gap: 2px;
 }
 
-.clp-row__date-month {
-    font-size: 0.5625rem;
+.clp-cell-date__badge {
+    font-size: 0.8125rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--green);
-}
-
-.clp-row__date-day {
-    font-size: 1rem;
-    font-weight: 800;
     color: var(--on-surface);
 }
 
-.clp-row__body {
-    flex: 1;
-    min-width: 0;
+.clp-cell-date__relative {
+    font-size: 0.6875rem;
+    color: var(--on-surface-var);
 }
 
-.clp-row__title {
+.clp-cell-event {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.clp-cell-event .clp-dot { margin-top: 0; flex-shrink: 0; }
+
+.clp-cell-event__body { min-width: 0; }
+
+.clp-cell-event__title {
     font-size: 0.8125rem;
     font-weight: 700;
     color: var(--on-surface);
@@ -737,83 +798,10 @@ const typeOptions = [
     text-overflow: ellipsis;
 }
 
-.clp-row__meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.clp-cell-event__type {
     font-size: 0.6875rem;
     color: var(--on-surface-var);
-    margin-top: 2px;
-}
-
-.clp-row__meta .clp-dot {
-    margin-top: 0;
-}
-
-.clp-row__relative {
-    margin-left: 2px;
-    padding-left: 6px;
-    border-left: 1px solid var(--border);
-}
-
-.clp-row__actions {
-    display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-}
-
-/* ── Past events panel (compact rows inside tabs) ───────────────────────── */
-.clp-list--compact {
-    max-height: 440px;
-}
-
-.clp-row--compact {
-    gap: 8px;
-    padding: 8px 4px;
-    cursor: pointer;
-    border-radius: 8px;
-}
-
-.clp-row--compact:hover {
-    background: var(--surface-low);
-}
-
-.clp-row--compact .clp-dot {
-    margin-top: 5px;
-}
-
-.clp-row--compact .clp-row__relative {
-    margin-left: 0;
-    padding-left: 0;
-    border-left: none;
-    display: block;
     margin-top: 1px;
-    font-size: 0.6875rem;
-    color: var(--on-surface-var);
-}
-
-.clp-past-tabs :deep(.el-tabs__header) {
-    margin-bottom: 8px;
-}
-
-.clp-past-tabs :deep(.el-tabs__nav-wrap::after) {
-    background-color: var(--border);
-}
-
-.clp-past-tabs :deep(.el-tabs__item) {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--on-surface-var);
-    padding: 0 10px;
-    height: 34px;
-}
-
-.clp-past-tabs :deep(.el-tabs__item.is-active) {
-    color: var(--green);
-}
-
-.clp-past-tabs :deep(.el-tabs__active-bar) {
-    background-color: var(--green);
 }
 
 .clp-icon-btn {
@@ -876,6 +864,12 @@ const typeOptions = [
     background: #fef3c7;
     color: #92400e;
     border-color: #fcd34d;
+}
+
+.clp-badge--red {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fca5a5;
 }
 
 .clp-btn-primary {
@@ -970,42 +964,42 @@ const typeOptions = [
    Native Element Plus grid: bordered day cells, like a spreadsheet. The
    calendar's own border shorthand must be a full `width style color`
    value — a bare color silently drops the border. */
-.clp-calendar-card :deep(.el-calendar) {
+.clp-main-card :deep(.el-calendar) {
     --el-calendar-border: 1px solid var(--border);
 }
 
-.clp-calendar-card :deep(.el-calendar__header) {
+.clp-main-card :deep(.el-calendar__header) {
     padding: 14px 16px;
     border-bottom: 1px solid var(--border);
 }
 
-.clp-calendar-card :deep(.el-calendar__title) {
+.clp-main-card :deep(.el-calendar__title) {
     font-weight: 700;
     color: var(--on-surface);
 }
 
-.clp-calendar-card :deep(.el-calendar__body) {
+.clp-main-card :deep(.el-calendar__body) {
     padding: 0;
 }
 
-.clp-calendar-card :deep(.el-calendar-table) {
+.clp-main-card :deep(.el-calendar-table) {
     border-collapse: collapse;
 }
 
-.clp-calendar-card :deep(.el-calendar-table .el-calendar-day) {
+.clp-main-card :deep(.el-calendar-table .el-calendar-day) {
     height: auto;
     padding: 0;
 }
 
-.clp-calendar-card :deep(.el-calendar-table td) {
+.clp-main-card :deep(.el-calendar-table td) {
     border-color: var(--border);
 }
 
-.clp-calendar-card :deep(.el-calendar-table thead tr) {
+.clp-main-card :deep(.el-calendar-table thead tr) {
     background: var(--surface-low);
 }
 
-.clp-calendar-card :deep(.el-calendar-table th) {
+.clp-main-card :deep(.el-calendar-table th) {
     padding: 13px 12px;
     font-size: 0.6875rem;
     font-weight: 800;
@@ -1017,12 +1011,12 @@ const typeOptions = [
     border-right: 1px solid var(--border);
 }
 
-.clp-calendar-card :deep(.el-calendar-table th:last-child) {
+.clp-main-card :deep(.el-calendar-table th:last-child) {
     border-right: none;
 }
 
-.clp-calendar-card :deep(.el-calendar-table th:first-child),
-.clp-calendar-card :deep(.el-calendar-table th:last-child) {
+.clp-main-card :deep(.el-calendar-table th:first-child),
+.clp-main-card :deep(.el-calendar-table th:last-child) {
     color: var(--green);
 }
 
@@ -1298,14 +1292,14 @@ const typeOptions = [
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 991.98px) {
-    .clp-columns {
+    .clp-grid {
         grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 767.98px) {
     .clp-page-header {
-        padding: 1.25rem 1.25rem 0;
+        padding: 1.25rem;
     }
 
     .clp-body {
