@@ -131,11 +131,12 @@ defineExpose({
 <style scoped>
 .pm-card {
     --green: #004532;
-    --border: #e5e7eb;
+    --border: #eef2f0;
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
     font-family: 'Manrope', system-ui, sans-serif;
+    background: #fff;
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 1.5rem;
@@ -148,7 +149,7 @@ defineExpose({
     font-size: .9375rem;
     font-weight: 800;
     color: var(--on-surface);
-    margin: 0 0 1.75rem;
+    margin: 0 0 1.25rem;
 }
 
 .pm-card__title :deep(.el-icon) { color: var(--green); font-size: 16px; }

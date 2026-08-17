@@ -59,12 +59,14 @@ function placeOrder() {
 <template>
     <AppLayout title="Checkout" full-width flush :show-banner="false">
         <div class="chk-page">
-            <div class="chk-body">
-                <div class="chk-header">
+            <section class="chk-header">
+                <div class="chk-header__inner">
                     <div class="chk-kicker"><el-icon><Lock /></el-icon> Secure Checkout</div>
                     <h1 class="chk-title">Checkout</h1>
                 </div>
+            </section>
 
+            <div class="chk-body">
                 <form class="chk-grid" @submit.prevent="placeOrder">
                     <div class="chk-main">
                         <!-- ── Delivery details ─────────────────────────── -->
@@ -174,16 +176,20 @@ function placeOrder() {
     min-height: 100%;
 }
 
-.chk-body { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+.chk-body { max-width: 1400px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
 
-.chk-header { margin-bottom: 1.5rem; }
+/* ── Header — edge-to-edge: flush with the top, left, and right of the
+   page, white background, content aligned to the same max-width as the
+   body below via .chk-header__inner. ──────────────────────────────── */
+.chk-header { background: #fff; border-bottom: 1px solid var(--border); }
+.chk-header__inner { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
 .chk-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 4px; }
 .chk-title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
 
 .chk-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 1.5rem; align-items: start; }
 .chk-main { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
 
-.chk-card { border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; }
+.chk-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; }
 .chk-card__title { display: flex; align-items: center; gap: 8px; font-size: .9375rem; font-weight: 800; margin: 0 0 1.25rem; }
 .chk-card__title :deep(.el-icon) { color: var(--green); font-size: 16px; }
 
@@ -226,6 +232,7 @@ function placeOrder() {
 }
 
 @media (max-width: 640px) {
+    .chk-header__inner { padding: 1.25rem; }
     .chk-body { padding: 1.25rem 1.25rem 2.5rem; }
     .chk-field-grid { grid-template-columns: 1fr; }
 }

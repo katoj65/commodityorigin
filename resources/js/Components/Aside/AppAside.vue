@@ -146,39 +146,30 @@ function go(item) {
                     <span class="app-nav-item__label">Market</span>
                 </div>
 
-                <div class="app-aside__label">My Agents</div>
+                <template v-if="subscribedAgents.length">
+                    <div class="app-aside__label">My Agents</div>
 
-                <div v-for="agent in subscribedAgents" :key="agent.id" class="app-aside__agent">
-                    <div class="app-nav-item app-nav-item--static">
-                        <el-icon :size="18"><component :is="resolveIcon(agent.icon)" /></el-icon>
-                        <span class="app-nav-item__label">{{ agent.name }}</span>
+                    <div v-for="agent in subscribedAgents" :key="agent.id" class="app-aside__agent">
+                        <div class="app-nav-item app-nav-item--static">
+                            <el-icon :size="18"><component :is="resolveIcon(agent.icon)" /></el-icon>
+                            <span class="app-nav-item__label">{{ agent.name }}</span>
+                        </div>
+
+                        <div v-if="agent.functions?.length" class="app-aside__fn-list">
+                            <component
+                                :is="functionIsRoute(fn) ? Link : 'a'"
+                                v-for="fn in agent.functions"
+                                :key="fn.id"
+                                :href="functionHref(fn)"
+                                class="app-fn-item"
+                                @click="onFunctionClick(fn, $event)"
+                            >
+                                <el-icon :size="15"><component :is="resolveIcon(fn.icon)" /></el-icon>
+                                <span class="app-nav-item__label">{{ fn.name }}</span>
+                            </component>
+                        </div>
                     </div>
-
-                    <div v-if="agent.functions?.length" class="app-aside__fn-list">
-                        <component
-                            :is="functionIsRoute(fn) ? Link : 'a'"
-                            v-for="fn in agent.functions"
-                            :key="fn.id"
-                            :href="functionHref(fn)"
-                            class="app-fn-item"
-                            @click="onFunctionClick(fn, $event)"
-                        >
-                            <el-icon :size="15"><component :is="resolveIcon(fn.icon)" /></el-icon>
-                            <span class="app-nav-item__label">{{ fn.name }}</span>
-                        </component>
-                    </div>
-                </div>
-
-                <el-empty
-                    v-if="!subscribedAgents.length"
-                    description="No agents subscribed yet"
-                    :image-size="40"
-                    class="app-aside__empty"
-                >
-                    <el-button size="small" type="primary" text @click="router.visit(route('apps.index'))">
-                        Explore Apps
-                    </el-button>
-                </el-empty>
+                </template>
 
                 <div class="app-aside__label">Financials</div>
                 <div
@@ -328,15 +319,6 @@ function go(item) {
 
 .app-aside__agent {
     margin-bottom: 4px;
-}
-
-.app-aside__empty {
-    padding: 4px 0 8px;
-}
-
-.app-aside__empty :deep(.el-empty__description) {
-    margin-top: 4px;
-    font-size: 12px;
 }
 
 .app-aside__fn-list {

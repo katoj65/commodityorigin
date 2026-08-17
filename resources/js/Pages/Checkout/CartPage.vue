@@ -4,6 +4,7 @@ import { Link, router } from '@inertiajs/vue3';
 import { ElMessage } from 'element-plus';
 import { Delete, Minus, Plus, ShoppingCart, ShoppingTrolley, WarningFilled } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     items: { type: Array, default: () => [] },
@@ -38,8 +39,20 @@ function updateQuantity(item, quantity) {
     });
 }
 
-function removeItem(item) {
+/* ── Remove — requires confirmation before the item leaves the cart ───── */
+const removeOpen = ref(false);
+const pendingRemove = ref(null);
+
+function requestRemove(item) {
     if (pendingId.value) return;
+
+    pendingRemove.value = item;
+    removeOpen.value = true;
+}
+
+function confirmRemove() {
+    const item = pendingRemove.value;
+    if (!item) return;
 
     pendingId.value = item.id;
     router.delete(route('checkout.items.destroy', item.id), {
@@ -54,8 +67,8 @@ function removeItem(item) {
 <template>
     <AppLayout title="Cart" full-width flush :show-banner="false">
         <div class="cart-page">
-            <div class="cart-body">
-                <div class="cart-header">
+            <section class="cart-header">
+                <div class="cart-header__inner">
                     <div>
                         <div class="cart-kicker"><el-icon><ShoppingCart /></el-icon> Checkout</div>
                         <h1 class="cart-title">Your Cart</h1>
@@ -65,6 +78,9 @@ function removeItem(item) {
                     </div>
                     <Link :href="route('market.index')" class="cart-btn cart-btn--outline">Continue Shopping</Link>
                 </div>
+            </section>
+
+            <div class="cart-body">
 
                 <!-- ── Empty state ──────────────────────────────────────── -->
                 <div v-if="!itemCount" class="cart-empty">
@@ -120,7 +136,7 @@ function removeItem(item) {
                                 </div>
                             </div>
 
-                            <button type="button" class="cart-item__remove" :disabled="pendingId === item.id" title="Remove from cart" @click="removeItem(item)">
+                            <button type="button" class="cart-item__remove" :disabled="pendingId === item.id" title="Remove from cart" @click="requestRemove(item)">
                                 <el-icon><Delete /></el-icon>
                             </button>
                         </article>
@@ -156,6 +172,14 @@ function removeItem(item) {
                 </div>
             </div>
         </div>
+
+        <ConfirmDialog
+            v-model="removeOpen"
+            title="Remove Item"
+            :message="`${pendingRemove?.name || pendingRemove?.lot_code || 'This item'} will be removed from your cart.`"
+            confirm-text="Remove"
+            @confirm="confirmRemove"
+        />
     </AppLayout>
 </template>
 
@@ -176,8 +200,11 @@ function removeItem(item) {
 
 .cart-body { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
 
-/* ── Header ──────────────────────────────────────────────────────────── */
-.cart-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.75rem; }
+/* ── Header — edge-to-edge: flush with the top, left, and right of the
+   page, white background, content aligned to the same max-width as the
+   body below via .cart-header__inner. ──────────────────────────────── */
+.cart-header { background: #fff; border-bottom: 1px solid var(--border); }
+.cart-header__inner { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
 .cart-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 4px; }
 .cart-title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
 .cart-subtitle { font-size: .8125rem; color: var(--on-surface-var); margin: 4px 0 0; }
@@ -255,6 +282,7 @@ function removeItem(item) {
 }
 
 @media (max-width: 640px) {
+    .cart-header__inner { padding: 1.25rem; }
     .cart-body { padding: 1.25rem 1.25rem 2.5rem; }
     .cart-item { grid-template-columns: 72px minmax(0, 1fr); }
     .cart-item__media { width: 72px; height: 72px; }

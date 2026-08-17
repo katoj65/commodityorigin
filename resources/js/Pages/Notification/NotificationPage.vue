@@ -292,14 +292,16 @@ async function bulkDelete() {
     --surface-low: #f7f7f8;
     --surface-selected: rgba(0, 69, 50, 0.06);
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
+    background: #ffffff;
     color: var(--on-surface);
     min-height: 100%;
 }
 
 /* ── Header ──────────────────────────────────────────────────────────── */
 .ntf-header {
-    padding: 1.75rem 1.5rem 0;
+    background: #ffffff;
+    padding: 1.75rem 1.5rem 1.25rem;
+    border-bottom: 1px solid var(--border);
 }
 
 .ntf-title {
