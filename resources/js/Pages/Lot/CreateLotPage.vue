@@ -784,7 +784,7 @@ const submit = (intent = 'create') => {
 .lot-sidebar-card,
 .lot-bottom-card {
     background: #ffffff;
-    border: 1px solid #e6eaee;
+    border: 1px solid #eef2f0;
     border-radius: 18px;
     box-shadow: 0 10px 22px rgba(18, 34, 49, 0.03);
 }
@@ -1027,7 +1027,7 @@ const submit = (intent = 'create') => {
 }
 
 .lot-allocation-card__summary {
-    border-left: 1px solid #e6eaee;
+    border-left: 1px solid #eef2f0;
     display: grid;
     gap: 14px;
     padding-left: 28px;
@@ -1188,7 +1188,7 @@ const submit = (intent = 'create') => {
 
 .lot-choice-chip {
     background: #ffffff;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #eef2f0;
     border-radius: 999px;
     color: #475569;
     cursor: pointer;
@@ -1519,7 +1519,7 @@ const submit = (intent = 'create') => {
 
     .lot-allocation-card__summary {
         border-left: 0;
-        border-top: 1px solid #e6eaee;
+        border-top: 1px solid #eef2f0;
         padding-left: 0;
         padding-top: 18px;
     }

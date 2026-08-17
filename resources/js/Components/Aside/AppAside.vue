@@ -6,6 +6,7 @@ import {
     Calendar,
     Coffee,
     CoffeeCup,
+    Coin,
     Compass,
     Document,
     Grid,
@@ -76,6 +77,7 @@ const sideSections = computed(() => [
         title: 'Financials',
         items: [
             { label: 'Wallet', href: route('wallet.index'), active: route().current('wallet.*'), icon: Wallet },
+            { label: 'Currencies', href: route('currencies.index'), active: route().current('currencies.*'), icon: Coin },
         ],
     },
     {

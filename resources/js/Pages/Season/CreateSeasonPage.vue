@@ -365,7 +365,7 @@ const submit = () => form.post(route('season.store'));
 .sc-section { padding: 0 24px 12px; }
 
 /* ── Cards ───────────────────────────────────────────────────────── */
-.sc-card { border: 1px solid #e4e7e8; border-radius: 8px; background: #fff; overflow: hidden; }
+.sc-card { border: 1px solid #eef2f0; border-radius: 8px; background: #fff; overflow: hidden; }
 .sc-card--sticky { position: sticky; top: 12px; }
 .sc-card-head {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -426,7 +426,7 @@ const submit = () => form.post(route('season.store'));
 .sc-timeline {
     display: flex; align-items: center;
     margin-top: 16px; padding: 12px 16px;
-    border: 1px solid #e4e7e8; border-radius: 7px;
+    border: 1px solid #eef2f0; border-radius: 7px;
     background: #fafbfb; gap: 0;
 }
 .sc-tl-item {
@@ -434,7 +434,7 @@ const submit = () => form.post(route('season.store'));
     flex-shrink: 0; min-width: 90px;
 }
 .sc-tl-seg {
-    flex: 1; height: 2px; background: #e4e7e8;
+    flex: 1; height: 2px; background: #eef2f0;
     transition: background .3s;
 }
 .sc-tl-seg--on { background: #004532; }
@@ -472,7 +472,7 @@ const submit = () => form.post(route('season.store'));
 .sc-detail-row strong { font-weight: 700; color: #1f2a2a; font-size: 11px; }
 
 .sc-progress-label { font-size: 10px; color: #94a1b2; margin-bottom: 4px; }
-.sc-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.sc-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
 .sc-progress-fill { height: 100%; background: #004532; border-radius: 3px; transition: width .4s; }
 .sc-progress-fill--amber { background: #d97706; }
 
@@ -499,7 +499,7 @@ const submit = () => form.post(route('season.store'));
 .sc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .sc-table thead th {
     padding: 7px 10px; background: #f6f8f8;
-    border-bottom: 1px solid #e4e7e8;
+    border-bottom: 1px solid #eef2f0;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px; font-weight: 800;
     letter-spacing: .12em; text-transform: uppercase;
@@ -515,7 +515,7 @@ const submit = () => form.post(route('season.store'));
 }
 .sc-remove-btn {
     width: 22px; height: 22px; border-radius: 4px;
-    border: 1px solid #e4e7e8; background: #fafbfb;
+    border: 1px solid #eef2f0; background: #fafbfb;
     color: #94a1b2; cursor: pointer; font-size: 11px;
     display: flex; align-items: center; justify-content: center;
     transition: background .12s, color .12s;
@@ -533,7 +533,7 @@ const submit = () => form.post(route('season.store'));
 .sc-pipe-item__top { text-align: center; padding-bottom: 8px; min-height: 24px; display: flex; align-items: flex-end; justify-content: center; }
 .sc-pipe-item__sub { font-size: 9px; color: #94a1b2; font-family: 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
 .sc-pipe-item__mid { display: flex; align-items: center; width: 100%; }
-.sc-pipe-item__seg { flex: 1; height: 2px; background: #e4e7e8; }
+.sc-pipe-item__seg { flex: 1; height: 2px; background: #eef2f0; }
 .sc-pipe-item__seg--done   { background: #004532; }
 .sc-pipe-item__seg--hidden { background: transparent; }
 .sc-pipe-item__dot {
@@ -569,11 +569,11 @@ const submit = () => form.post(route('season.store'));
 .sc-float { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .sc-float-btn { width: 44px; height: 44px; border-radius: 50%; background: #003f2c; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: background .14s; }
 .sc-float-btn:hover { background: #004532; }
-.sc-chat-panel { width: 290px; border: 1px solid #e4e7e8; border-radius: 10px; background: #fff; overflow: hidden; }
+.sc-chat-panel { width: 290px; border: 1px solid #eef2f0; border-radius: 10px; background: #fff; overflow: hidden; }
 .sc-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid #e8ecec; background: #f8f9f9; }
 .sc-chat-close { font-size: 18px; line-height: 1; background: none; border: none; color: #94a1b2; cursor: pointer; padding: 0; }
 .sc-chat-prompts { padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f0f2f2; }
-.sc-chat-prompt { text-align: left; background: #f8f9f9; border: 1px solid #e4e7e8; border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer; font-family: 'Manrope', sans-serif; transition: background .14s; }
+.sc-chat-prompt { text-align: left; background: #f8f9f9; border: 1px solid #eef2f0; border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer; font-family: 'Manrope', sans-serif; transition: background .14s; }
 .sc-chat-prompt:hover { background: #eef5f1; border-color: #c3ddd2; color: #004532; }
 .sc-chat-input-row { display: flex; align-items: center; padding: 8px 12px; gap: 6px; }
 .sc-chat-input { flex: 1; height: 30px; padding: 0 9px; border: 1px solid #d4d8d8; border-radius: 5px; font-size: 11px; outline: none; font-family: 'Manrope', sans-serif; }

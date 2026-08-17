@@ -38,6 +38,13 @@
     --text-main: #0f172a;
     --text-muted: #64748b;
 
+    /* Uniform border for white "card" containers (stat tiles, list cards,
+       panels, dashboard widgets) across every internal page. Distinct from
+       --border-subtle, which belongs to the app shell/aside and must not
+       change with the card theme. */
+    --card-border: #eef2f0;
+    --card-shadow: 0 8px 20px rgba(18, 40, 31, 0.03);
+
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
     --radius-card: 16px;

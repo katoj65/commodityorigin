@@ -671,7 +671,7 @@ onBeforeUnmount(() => {
 
 .app-card {
     background: #ffffff;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #eef2f0;
     border-radius: 16px;
     box-shadow: none;
 }
@@ -920,7 +920,7 @@ onBeforeUnmount(() => {
 
 .divider,
 .activities-divider {
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid #eef2f0;
     margin: 16px 0;
 }
 
@@ -937,7 +937,7 @@ onBeforeUnmount(() => {
 
 .info-field {
     background: #f9fafb;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #eef2f0;
     border-radius: 12px;
     padding: 12px 14px;
 }
@@ -952,7 +952,7 @@ onBeforeUnmount(() => {
 .quality-item {
     align-items: flex-start;
     background: #fcfdfd;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #eef2f0;
     border-radius: 12px;
     display: flex;
     gap: 16px;
@@ -1196,7 +1196,7 @@ onBeforeUnmount(() => {
     background: #ffffff;
     border: none;
     border-radius: 12px;
-    box-shadow: 0 0 0 1px #e5e7eb inset;
+    box-shadow: 0 0 0 1px #eef2f0 inset;
     min-height: 42px;
     padding-left: 12px;
     padding-right: 12px;

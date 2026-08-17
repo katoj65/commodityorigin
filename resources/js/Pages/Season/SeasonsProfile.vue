@@ -802,7 +802,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-status--pending::before  { background: #d97706; }
 
 /* ── Progress ────────────────────────────────────────────────────── */
-.sp-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.sp-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
 .sp-progress-fill  { height: 100%; background: #004532; border-radius: 3px; transition: width .4s; }
 
 /* ── Body layout ─────────────────────────────────────────────────── */
@@ -817,7 +817,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-rail { display: flex; flex-direction: column; gap: 12px; }
 
 /* ── Card ────────────────────────────────────────────────────────── */
-.sp-card { border: 1px solid #e4e7e8; border-radius: 8px; background: #fff; overflow: hidden; }
+.sp-card { border: 1px solid #eef2f0; border-radius: 8px; background: #fff; overflow: hidden; }
 .sp-card-head {
     display: flex; align-items: center; justify-content: space-between;
     gap: 10px; padding: 8px 14px;
@@ -855,7 +855,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     letter-spacing: .06em; text-transform: uppercase;
 }
 .sp-pipe-item__mid { display: flex; align-items: center; width: 100%; }
-.sp-pipe-item__seg { flex: 1; height: 2px; background: #e4e7e8; transition: background .2s; }
+.sp-pipe-item__seg { flex: 1; height: 2px; background: #eef2f0; transition: background .2s; }
 .sp-pipe-item__seg--done   { background: #004532; }
 .sp-pipe-item__seg--hidden { background: transparent; }
 .sp-pipe-item__dot {
@@ -887,7 +887,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .sp-table thead th {
     padding: 7px 12px; background: #f6f8f8;
-    border-bottom: 1px solid #e4e7e8;
+    border-bottom: 1px solid #eef2f0;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px; font-weight: 800; letter-spacing: .12em;
     text-transform: uppercase; color: #7b8796; white-space: nowrap;
@@ -926,20 +926,20 @@ const fillPrompt = (p) => { chatInput.value = p; };
 /* ── Regional grid ───────────────────────────────────────────────── */
 .sp-region-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 @media (max-width: 600px) { .sp-region-grid { grid-template-columns: 1fr; } }
-.sp-region-card { border: 1px solid #e4e7e8; border-radius: 6px; padding: 10px 12px; background: #fafbfb; }
+.sp-region-card { border: 1px solid #eef2f0; border-radius: 6px; padding: 10px 12px; background: #fafbfb; }
 .sp-region-name { font-size: 12px; font-weight: 700; color: #1f2a2a; margin-bottom: 2px; }
 .sp-region-vol  { font-size: 16px; font-weight: 800; color: #004532; margin-bottom: 4px; }
 .sp-region-meta { display: flex; justify-content: space-between; gap: 8px; }
 
 /* ── Quality / bar panels ────────────────────────────────────────── */
-.sp-score-tile { border: 1px solid #e4e7e8; border-radius: 6px; padding: 10px 12px; background: #fafbfb; text-align: center; margin-bottom: 12px; }
+.sp-score-tile { border: 1px solid #eef2f0; border-radius: 6px; padding: 10px 12px; background: #fafbfb; text-align: center; margin-bottom: 12px; }
 .sp-score-big  { font-size: 32px; font-weight: 800; color: #004532; line-height: 1; }
 .sp-score-stars { margin-top: 6px; font-size: 12px; letter-spacing: .14em; color: #d97706; }
 .sp-quality-bars   { display: flex; flex-direction: column; gap: 7px; }
 .sp-sustain-bars   { display: flex; flex-direction: column; gap: 7px; }
 .sp-quality-row    { display: flex; flex-direction: column; gap: 3px; }
 .sp-quality-label  { display: flex; justify-content: space-between; gap: 8px; }
-.sp-bar-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.sp-bar-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
 .sp-bar-fill  { height: 100%; background: #004532; border-radius: 3px; }
 .sp-bar-fill--amber { background: #d97706; }
 
@@ -961,11 +961,11 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-float { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .sp-float-btn { width: 44px; height: 44px; border-radius: 50%; background: #003f2c; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: background .14s; }
 .sp-float-btn:hover { background: #004532; }
-.sp-chat-panel { width: 290px; border: 1px solid #e4e7e8; border-radius: 10px; background: #fff; overflow: hidden; }
+.sp-chat-panel { width: 290px; border: 1px solid #eef2f0; border-radius: 10px; background: #fff; overflow: hidden; }
 .sp-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid #e8ecec; background: #f8f9f9; }
 .sp-chat-close { font-size: 18px; line-height: 1; background: none; border: none; color: #94a1b2; cursor: pointer; padding: 0; }
 .sp-chat-prompts { padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f0f2f2; }
-.sp-chat-prompt { text-align: left; background: #f8f9f9; border: 1px solid #e4e7e8; border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer; transition: background .14s; }
+.sp-chat-prompt { text-align: left; background: #f8f9f9; border: 1px solid #eef2f0; border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer; transition: background .14s; }
 .sp-chat-prompt:hover { background: #eef5f1; border-color: #c3ddd2; color: #004532; }
 .sp-chat-input-row { display: flex; align-items: center; padding: 8px 12px; gap: 6px; }
 .sp-chat-input { flex: 1; height: 30px; padding: 0 9px; border: 1px solid #d4d8d8; border-radius: 5px; font-size: 11px; outline: none; }

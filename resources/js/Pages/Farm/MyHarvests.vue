@@ -487,7 +487,7 @@ function openViewHarvestDialog(row) {
     --on-surface-var: #6b7280;
     --surface-white: #ffffff;
     --surface-low: #f8fafc;
-    --surface-high: #e5e7eb;
+    --surface-high: #eef2f0;
     font-family: 'Manrope', system-ui, sans-serif;
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);

@@ -539,7 +539,7 @@ const userInitials = computed(() => {
     --on-surface-var:     #74777a;
     --surface:            #f7f9fb;
     --surface-low:        #f2f4f6;
-    --surface-high:       #e6e8ea;
+    --surface-high:       #eef2f0;
     --surface-highest:    #e0e3e5;
     --surface-white:      #ffffff;
     --primary-fixed:      #a6f2d1;

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Http\Resources\CalendarResource;
 use App\Http\Resources\ChatResource;
+use App\Http\Resources\CurrencyResource;
 use App\Http\Resources\NotificationResource;
 use App\Http\Resources\TaskResource;
 use App\Models\RoleMetadata;
@@ -11,6 +12,7 @@ use App\Services\AgentService;
 use App\Services\CalendarService;
 use App\Services\CartService;
 use App\Services\ChatService;
+use App\Services\CurrencyService;
 use App\Services\NotificationService;
 use App\Services\TaskService;
 use Illuminate\Http\Request;
@@ -26,6 +28,7 @@ class HandleInertiaRequests extends Middleware
         private readonly NotificationService $notifications,
         private readonly AgentService $agents,
         private readonly CartService $cart,
+        private readonly CurrencyService $currencies,
     ) {
     }
 
@@ -75,6 +78,7 @@ class HandleInertiaRequests extends Middleware
                     'email_verified_at' => $authenticatedUser->email_verified_at,
                     'two_factor_enabled' => ! is_null($authenticatedUser->two_factor_secret),
                     'profile' => $authenticatedUser->profile,
+                    'currency_code' => $authenticatedUser->currency_code,
                 ] : null,
             ],
             'flash' => [
@@ -85,6 +89,7 @@ class HandleInertiaRequests extends Middleware
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->get(['slug', 'name', 'description']),
+            'currencies' => fn () => CurrencyResource::collection($this->currencies->active())->resolve(),
             'chatMessages' => fn () => $authenticatedUser
                 ? ChatResource::collection($this->chats->messagesForUser($authenticatedUser->id))->resolve()
                 : [],

@@ -926,7 +926,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 
 /* ── Card ────────────────────────────────────────────────────────── */
 .bt-card {
-    border: 1px solid #e4e7e8;
+    border: 1px solid #eef2f0;
     border-radius: 8px;
     background: #fff;
     margin: 12px 24px 0;
@@ -967,7 +967,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-table thead th {
     padding: 7px 12px;
     background: #f6f8f8;
-    border-bottom: 1px solid #e4e7e8;
+    border-bottom: 1px solid #eef2f0;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
     font-weight: 800;
@@ -1093,7 +1093,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 
 /* ── Grid View ───────────────────────────────────────────────────── */
 .bt-grid-section {
-    border: 1px solid #e4e7e8;
+    border: 1px solid #eef2f0;
     border-radius: 8px;
     background: #fff;
     margin: 12px 24px 0;
@@ -1106,7 +1106,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     padding: 16px;
 }
 .bt-grid-card {
-    border: 1px solid #e4e7e8;
+    border: 1px solid #eef2f0;
     border-radius: 7px;
     background: #fff;
     display: flex;
@@ -1150,7 +1150,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-comp-rows { display: flex; flex-direction: column; gap: 8px; }
 .bt-comp-row { display: grid; grid-template-columns: 1fr 72px 32px; align-items: center; gap: 7px; }
 .bt-comp-label { display: flex; flex-direction: column; }
-.bt-comp-bar-wrap { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.bt-comp-bar-wrap { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
 .bt-comp-bar { height: 100%; background: #004532; border-radius: 3px; }
 .bt-comp-pct { font-size: 11px; font-weight: 700; color: #657386; text-align: right; }
 .bt-comp-totals {
@@ -1168,13 +1168,13 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-quality-bars { display: flex; flex-direction: column; gap: 8px; }
 .bt-quality-row { display: flex; flex-direction: column; gap: 3px; }
 .bt-quality-label { display: flex; justify-content: space-between; }
-.bt-quality-bar-wrap { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.bt-quality-bar-wrap { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
 .bt-quality-bar { height: 100%; background: #004532; border-radius: 3px; }
 .bt-quality-bar--amber { background: #d97706; }
 .bt-quality-score-card {
     margin-top: 12px;
     padding: 10px 12px;
-    border: 1px solid #e4e7e8;
+    border: 1px solid #eef2f0;
     border-radius: 6px;
     background: #f8f9f9;
 }
@@ -1200,7 +1200,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-step-label { font-size: 12px; color: #657386; }
 .bt-step-label--done { color: #1f2a2a; font-weight: 600; }
 .bt-progress-wrap { margin-top: 10px; }
-.bt-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.bt-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
 .bt-progress-fill { height: 100%; background: #004532; border-radius: 3px; transition: width .4s; }
 .bt-completion-ring {
     font-family: 'IBM Plex Mono', monospace;
@@ -1251,7 +1251,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-pipe-conn {
     flex: 1;
     height: 2px;
-    background: #e4e7e8;
+    background: #eef2f0;
     min-width: 24px;
     align-self: center;
     margin-bottom: 32px;
@@ -1330,7 +1330,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     gap: 9px;
     padding: 8px 10px;
     border-radius: 5px;
-    border: 1px solid #e4e7e8;
+    border: 1px solid #eef2f0;
 }
 .bt-alert--info    { background: #eff6ff; border-color: #bfdbfe; }
 .bt-alert--warning { background: #fffbeb; border-color: #fde68a; }
@@ -1375,7 +1375,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-float-btn:hover { background: #004532; }
 .bt-chat-panel {
     width: 300px;
-    border: 1px solid #e4e7e8;
+    border: 1px solid #eef2f0;
     border-radius: 10px;
     background: #fff;
     overflow: hidden;
@@ -1407,7 +1407,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-chat-prompt {
     text-align: left;
     background: #f8f9f9;
-    border: 1px solid #e4e7e8;
+    border: 1px solid #eef2f0;
     border-radius: 5px;
     padding: 7px 10px;
     font-size: 11px;

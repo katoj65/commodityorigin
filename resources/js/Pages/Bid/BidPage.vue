@@ -393,7 +393,7 @@ const footerStats = [
     --surface-white:    #ffffff;
     --surface-low:      #f8fafc;
     --surface-mid:      #f1f5f9;
-    --surface-high:     #e5e7eb;
+    --surface-high:     #eef2f0;
     --success:          #166534;
     --success-bg:       #dcfce7;
     --danger:           #b91c1c;

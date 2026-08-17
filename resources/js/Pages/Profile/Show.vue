@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import {
     Check,
     DataAnalysis,
@@ -26,6 +26,19 @@ const page = usePage();
 
 const user = computed(() => page.props.auth.user ?? {});
 const profile = computed(() => user.value.profile ?? {});
+
+/* ── Settlement currency ─────────────────────────────────────────────── */
+const currencyOptions = computed(() => page.props.currencies ?? []);
+const currentCurrency = computed(() => currencyOptions.value.find((c) => c.code === user.value.currency_code) ?? null);
+
+const currencyForm = useForm({ currency_code: user.value.currency_code || '' });
+
+function submitCurrency(code) {
+    if (!code || code === user.value.currency_code) return;
+
+    currencyForm.currency_code = code;
+    currencyForm.post(route('profile.currency'), { preserveScroll: true });
+}
 
 const fullName = computed(() => user.value.name || 'Profile Owner');
 const roleLabel = computed(() =>
@@ -165,11 +178,11 @@ const configCards = computed(() => [
     },
     {
         label: 'Base Settlement Currency',
-        value: 'UGX',
-        note: 'USD and EUR available',
-        kind: 'options',
-        options: ['USD', 'UGX', 'EUR'],
-        selected: 'UGX',
+        value: currentCurrency.value ? currentCurrency.value.code : 'Not set',
+        note: currentCurrency.value
+            ? `${currentCurrency.value.symbol} · ${currentCurrency.value.name}`
+            : `Choose from ${currencyOptions.value.length} available currencies`,
+        kind: 'currency',
     },
     {
         label: 'Market Reports',
@@ -242,10 +255,9 @@ const goToLedger = () => {
         <Head title="Profile" />
 
         <div class="profile-page">
-            <div class="profile-shell">
-                <section class="profile-topbar">
+            <section class="profile-topbar">
+                <div class="profile-topbar__inner">
                     <div class="profile-topbar__copy">
-
                         <h1 class="profile-page__title">User Profile</h1>
                         <p class="profile-page__subtitle"> Member Since {{ memberSince }}</p>
                     </div>
@@ -262,8 +274,10 @@ const goToLedger = () => {
                             </el-button>
                         </el-button-group>
                     </div>
-                </section>
+                </div>
+            </section>
 
+            <div class="profile-shell">
                 <section class="profile-main-grid">
                     <div class="profile-column">
                         <section id="profile-identity" class="profile-card profile-card--identity">
@@ -333,7 +347,6 @@ const goToLedger = () => {
                                 v-for="item in statCards"
                                 :key="item.label"
                                 class="profile-card profile-stat-card"
-                                :class="{ 'is-accent': item.accent }"
                             >
                                 <div class="profile-stat-card__eyebrow">
                                     <el-icon><component :is="item.icon" /></el-icon>
@@ -365,15 +378,28 @@ const goToLedger = () => {
                                         <span class="profile-toggle" :class="{ 'is-on': item.enabled }"></span>
                                     </div>
 
-                                    <div v-else-if="item.kind === 'options'" class="profile-config-card__options">
-                                        <span
-                                            v-for="option in item.options"
-                                            :key="option"
-                                            class="profile-option-pill"
-                                            :class="{ 'is-active': option === item.selected }"
+                                    <div v-else-if="item.kind === 'currency'" class="profile-config-card__currency">
+                                        <el-select
+                                            v-model="currencyForm.currency_code"
+                                            filterable
+                                            placeholder="Select currency"
+                                            :disabled="currencyForm.processing"
+                                            class="profile-currency-select"
+                                            @change="submitCurrency"
                                         >
-                                            {{ option }}
-                                        </span>
+                                            <el-option
+                                                v-for="option in currencyOptions"
+                                                :key="option.code"
+                                                :label="`${option.code} — ${option.name}`"
+                                                :value="option.code"
+                                            >
+                                                <span class="profile-currency-option">
+                                                    <span class="profile-currency-option__code">{{ option.code }}</span>
+                                                    <span class="profile-currency-option__name">{{ option.name }}</span>
+                                                    <span class="profile-currency-option__symbol">{{ option.symbol }}</span>
+                                                </span>
+                                            </el-option>
+                                        </el-select>
                                     </div>
 
                                     <div v-else class="profile-config-card__status">
@@ -441,12 +467,22 @@ const goToLedger = () => {
     padding: 24px 18px 28px;
 }
 
+/* Edge-to-edge: flush with the top, left, and right of the page — no
+   shell padding, no border-radius, just a bottom border like a bar. */
 .profile-topbar {
+    border-bottom: 1px solid var(--card-border);
+    background: #ffffff;
+    box-shadow: var(--card-shadow);
+}
+
+.profile-topbar__inner {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 18px;
-    margin-bottom: 20px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 18px;
 }
 
 .profile-kicker {
@@ -543,10 +579,10 @@ const goToLedger = () => {
 }
 
 .profile-card {
-    border: 1px solid #eef2f0;
+    border: 1px solid var(--card-border);
     border-radius: 8px;
     background: #ffffff;
-    box-shadow: 0 8px 20px rgba(18, 40, 31, 0.03);
+    box-shadow: var(--card-shadow);
 }
 
 .profile-card--identity,
@@ -818,10 +854,6 @@ const goToLedger = () => {
     line-height: 1.5;
 }
 
-.profile-stat-card.is-accent {
-    border-color: #e2ebe6;
-}
-
 .profile-config-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -832,6 +864,7 @@ const goToLedger = () => {
 .profile-config-card {
     min-height: 120px;
     padding: 16px;
+    border: 1px solid var(--card-border);
     border-radius: 8px;
     background: #fafcfb;
 }
@@ -885,32 +918,52 @@ const goToLedger = () => {
     transform: translateX(18px);
 }
 
-.profile-config-card__options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+.profile-config-card__currency {
     margin-top: 16px;
 }
 
-.profile-option-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 52px;
-    min-height: 32px;
-    padding: 0 12px;
-    border: 1px solid #d8e2dc;
-    border-radius: 4px;
-    background: #ffffff;
-    color: #60746b;
-    font-size: 12px;
-    font-weight: 700;
+.profile-currency-select {
+    width: 100%;
 }
 
-.profile-option-pill.is-active {
-    border-color: #145c42;
-    background: #145c42;
-    color: #ffffff;
+.profile-currency-select :deep(.el-select__wrapper) {
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px #d8e2dc inset;
+    background: #ffffff;
+    min-height: 36px;
+}
+
+.profile-currency-select :deep(.el-select__wrapper.is-focused) {
+    box-shadow: 0 0 0 1.5px #145c42 inset;
+}
+
+.profile-currency-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.profile-currency-option__code {
+    font-weight: 700;
+    color: #20362e;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    flex-shrink: 0;
+}
+
+.profile-currency-option__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #586c63;
+}
+
+.profile-currency-option__symbol {
+    flex-shrink: 0;
+    color: #9ca8a2;
+    font-size: 11px;
 }
 
 .profile-config-card__note {
@@ -1029,8 +1082,9 @@ const goToLedger = () => {
         padding: 16px 12px 24px;
     }
 
-    .profile-topbar {
+    .profile-topbar__inner {
         flex-direction: column;
+        padding: 14px 12px;
     }
 
     .profile-topbar__actions {

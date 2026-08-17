@@ -564,7 +564,7 @@ const stageColor = (c) => ({
     --secondary-fixed:  #fedcbe;
     --surface:          #f7f9fb;
     --surface-low:      #f2f4f6;
-    --surface-high:     #e6e8ea;
+    --surface-high:     #eef2f0;
     --on-surface:       #111827;
     --on-surface-var:   #6b7280;
     font-family: 'Manrope', system-ui, sans-serif;

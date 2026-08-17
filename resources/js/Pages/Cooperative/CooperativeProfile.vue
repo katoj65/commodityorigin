@@ -663,7 +663,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 /* ── Tokens ────────────────────────────────────────────────────────────────── */
 .co-page {
     --green:   #004532;
-    --border:  #e5e7eb;
+    --border:  #eef2f0;
     --border-m:#d1d5db;
     --on-surface:     #111827;
     --on-surface-var: #6b7280;

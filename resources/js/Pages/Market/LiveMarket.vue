@@ -656,7 +656,7 @@ const badgeClass = (b) => {
     --surface:   #ffffff;
     --surface-l: #f8fafc;
     --surface-m: #f1f5f9;
-    --border:    #e5e7eb;
+    --border:    #eef2f0;
     --border-m:  #d1d5db;
     --text:      #111827;
     --muted:     #6b7280;

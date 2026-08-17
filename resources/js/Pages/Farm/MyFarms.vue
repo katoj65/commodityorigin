@@ -289,7 +289,7 @@ function deleteFarm() {
     --on-surface-var: #6b7280;
     --surface-white: #ffffff;
     --surface-low: #f8fafc;
-    --surface-high: #e5e7eb;
+    --surface-high: #eef2f0;
     --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
     font-family: 'Manrope', system-ui, sans-serif;
     background: var(--surface, #f7f9fb);

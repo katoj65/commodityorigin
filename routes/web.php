@@ -11,6 +11,7 @@ use App\Http\Controllers\Calendar\CalendarController;
 use App\Http\Controllers\Checkout\CheckoutController;
 use App\Http\Controllers\Cooperative\CooperativeController;
 use App\Http\Controllers\Country\CountryController;
+use App\Http\Controllers\Currency\CurrencyController;
 use App\Http\Controllers\Documentation\DocumentationController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Farm\GeocodeController;
@@ -117,6 +118,7 @@ Route::middleware([
     // User profile routes.
     Route::post('/profile', [ProfileController::class, 'store'])->name('profile.store');
     Route::post('/profile/role', [ProfileController::class, 'updateRole'])->name('profile.role');
+    Route::post('/profile/currency', [ProfileController::class, 'updateCurrency'])->name('profile.currency');
 
 
 
@@ -286,6 +288,15 @@ Route::middleware([
         Route::post('/', [GalleryController::class, 'store'])->name('store');
         Route::patch('/{galleryImage}', [GalleryController::class, 'update'])->name('update');
         Route::delete('/{galleryImage}', [GalleryController::class, 'destroy'])->name('destroy');
+    });
+
+    // Currencies — every logged-in user may browse them to set their own
+    // settlement currency; only admins may create, edit, or delete them.
+    Route::prefix('currencies')->name('currencies.')->group(function () {
+        Route::get('/', [CurrencyController::class, 'index'])->name('index');
+        Route::post('/', [CurrencyController::class, 'store'])->name('store');
+        Route::patch('/{currency}', [CurrencyController::class, 'update'])->name('update');
+        Route::delete('/{currency}', [CurrencyController::class, 'destroy'])->name('destroy');
     });
 
     // Notifications — the in-app channel of the notification system.

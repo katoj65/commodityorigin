@@ -277,7 +277,7 @@ const filteredLots = computed(() => {
     <AppLayout title="Dashboard">
         <div class="flex flex-col gap-3 xl:flex-row xl:gap-4">
             <div class="flex min-w-0 flex-1 flex-col gap-3">
-                <div class="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex flex-col gap-3 rounded-xl border border-[#EEF2F0] bg-white px-4 py-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
                     <div class="min-w-0">
                         <h1 class="font-display text-[20px] font-bold leading-none tracking-tight text-[#111827]">
                             Trader Dashboard
@@ -317,7 +317,7 @@ const filteredLots = computed(() => {
                     <div
                         v-for="stat in stats"
                         :key="stat.label"
-                        class="stat-card rounded-xl border border-[#E5E7EB] bg-white p-3.5"
+                        class="stat-card rounded-xl border border-[#EEF2F0] bg-white p-3.5"
                     >
                         <div class="mb-2 flex items-start justify-between">
                             <span class="font-mono text-[9px] uppercase tracking-[0.12em] text-[#6B7280]">
@@ -353,7 +353,7 @@ const filteredLots = computed(() => {
                     </div>
                 </div>
 
-                <div class="rounded-xl border border-[#E5E7EB] bg-white p-3.5 sm:p-4">
+                <div class="rounded-xl border border-[#EEF2F0] bg-white p-3.5 sm:p-4">
                     <div class="mb-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div class="min-w-0">
                             <h2 class="font-display text-[16px] font-bold tracking-tight text-[#111827]">
@@ -409,7 +409,7 @@ const filteredLots = computed(() => {
                         <div
                             v-for="summary in summaryCards"
                             :key="summary.title"
-                            class="flex flex-col items-start gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3.5 sm:flex-row sm:items-center sm:justify-between"
+                            class="flex flex-col items-start gap-3 rounded-xl border border-[#EEF2F0] bg-white p-3.5 sm:flex-row sm:items-center sm:justify-between"
                         >
                             <div>
                                 <div class="font-display text-[22px] font-bold leading-none tracking-tight" :class="summary.accentClass">
@@ -422,7 +422,7 @@ const filteredLots = computed(() => {
                                     {{ summary.title }}
                                 </div>
                             </div>
-                            <div class="flex h-12 w-12 items-center justify-center rounded-xl border border-[#E5E7EB]" :class="summary.iconBg">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-xl border border-[#EEF2F0]" :class="summary.iconBg">
                                 <svg class="h-6 w-6" :class="summary.accentClass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                     <path d="M17 8h1a4 4 0 010 8h-1" />
                                     <path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z" />
@@ -432,8 +432,8 @@ const filteredLots = computed(() => {
                     </div>
                 </div>
 
-                <div class="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
-                    <div class="flex flex-col gap-3 border-b border-[#E5E7EB] px-3.5 py-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="overflow-hidden rounded-xl border border-[#EEF2F0] bg-white">
+                    <div class="flex flex-col gap-3 border-b border-[#EEF2F0] px-3.5 py-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between">
                         <div class="min-w-0">
                             <h3 class="font-display text-[14px] font-bold tracking-tight text-[#111827]">
                                 Active Market Lots
@@ -466,7 +466,7 @@ const filteredLots = computed(() => {
                                     <th class="dashboard-th">Trend</th>
                                     <th class="dashboard-th">Price</th>
                                     <th class="dashboard-th">Avail.</th>
-                                    <th class="border-b border-[#E5E7EB]"></th>
+                                    <th class="border-b border-[#EEF2F0]"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -482,8 +482,8 @@ const filteredLots = computed(() => {
                                         <span
                                             class="rounded-md border px-2 py-0.5 font-mono text-[8px] uppercase tracking-[0.08em]"
                                             :class="lot.type === 'arabica'
-                                                ? 'border-[#E5E7EB] bg-[#F0FBF5] text-[#1B6E4B]'
-                                                : 'border-[#E5E7EB] bg-[#FFF5EB] text-[#7A4F1A]'"
+                                                ? 'border-[#EEF2F0] bg-[#F0FBF5] text-[#1B6E4B]'
+                                                : 'border-[#EEF2F0] bg-[#FFF5EB] text-[#7A4F1A]'"
                                         >
                                             {{ lot.type }}
                                         </span>
@@ -525,8 +525,8 @@ const filteredLots = computed(() => {
             </div>
 
             <div class="flex w-full flex-shrink-0 flex-col gap-3 xl:w-72">
-                <div class="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
-                    <div class="flex items-center justify-between border-b border-[#E5E7EB] px-3.5 py-3">
+                <div class="overflow-hidden rounded-xl border border-[#EEF2F0] bg-white">
+                    <div class="flex items-center justify-between border-b border-[#EEF2F0] px-3.5 py-3">
                         <h3 class="font-display text-[14px] font-bold tracking-tight text-[#111827]">
                             Action Center
                         </h3>
@@ -535,10 +535,10 @@ const filteredLots = computed(() => {
                         v-for="item in actionItems"
                         :key="item.title"
                         href="#"
-                        class="action-row flex items-start gap-3 border-b border-[#E5E7EB]/60 px-3.5 py-3 no-underline last:border-b-0"
+                        class="action-row flex items-start gap-3 border-b border-[#EEF2F0]/60 px-3.5 py-3 no-underline last:border-b-0"
                         @click.prevent
                     >
-                        <div class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-[#E5E7EB]" :class="item.bg">
+                        <div class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-[#EEF2F0]" :class="item.bg">
                             <svg v-if="item.icon === 'wallet'" class="h-4 w-4" :class="item.accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
                                 <circle cx="9" cy="12" r="2" />
@@ -568,7 +568,7 @@ const filteredLots = computed(() => {
                     </a>
                 </div>
 
-                <div class="rounded-xl border border-[#E5E7EB] bg-white p-3.5">
+                <div class="rounded-xl border border-[#EEF2F0] bg-white p-3.5">
                     <div class="mb-3">
                         <h3 class="font-display text-[13px] font-bold tracking-tight text-[#111827]">
                             Volume by Region
@@ -585,7 +585,7 @@ const filteredLots = computed(() => {
                         <div
                             v-for="region in regionVolumes"
                             :key="region.label"
-                            class="flex items-center gap-2 border-b border-[#E5E7EB]/50 py-1 last:border-b-0"
+                            class="flex items-center gap-2 border-b border-[#EEF2F0]/50 py-1 last:border-b-0"
                         >
                             <div class="h-2.5 w-2.5 flex-shrink-0 rounded-sm" :style="{ backgroundColor: region.color }"></div>
                             <span class="flex-1 text-[11px] text-[#111827]">{{ region.label }}</span>
@@ -597,7 +597,7 @@ const filteredLots = computed(() => {
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3.5">
+                <div class="flex items-center gap-3 rounded-xl border border-[#EEF2F0] bg-white p-3.5">
                     <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#C8862A] text-white">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M9 12l2 2 4-4" />

@@ -560,7 +560,7 @@ const statusTone = (s) => {
     --on-surface:       #191c1e;
     --on-surface-var:   #74777a;
     --surface-low:      #f2f4f6;
-    --surface-high:     #e6e8ea;
+    --surface-high:     #eef2f0;
     --primary-fixed:    #a6f2d1;
     --on-primary-fixed: #002116;
     --secondary-fixed:  #fedcbe;

@@ -100,7 +100,7 @@ function closeSearch() {
     --green: #004532;
     --green-dark: #002e20;
     --gold: #c8862a;
-    --border: #e5e7eb;
+    --border: #eef2f0;
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;

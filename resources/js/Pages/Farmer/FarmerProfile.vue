@@ -675,7 +675,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     --surface-white:  #ffffff;
     --surface-low:    #f8fafc;
     --surface-mid:    #f1f5f9;
-    --surface-high:   #e5e7eb;
+    --surface-high:   #eef2f0;
     font-family: 'Manrope', system-ui, sans-serif;
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);

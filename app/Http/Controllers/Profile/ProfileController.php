@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Profile;
 
 use App\Helpers\ImageUploadHelper;
 use App\Http\Controllers\Controller;
+use App\Services\CurrencyService;
 use App\Services\ProfileService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ class ProfileController extends Controller
 {
     public function __construct(
         private readonly ProfileService $profiles,
+        private readonly CurrencyService $currencies,
     ) {
     }
 
@@ -75,6 +77,24 @@ class ProfileController extends Controller
         $this->profiles->selectRole($request->user(), $request->string('role')->toString());
 
         return back()->with('success', 'Role selected successfully.');
+    }
+
+    /**
+     * Update the authenticated user's preferred settlement currency.
+     */
+    public function updateCurrency(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'currency_code' => [
+                'required',
+                'string',
+                Rule::exists('currencies', 'code')->where(fn ($query) => $query->where('is_active', true)),
+            ],
+        ]);
+
+        $this->currencies->setUserCurrency($request->user(), $request->string('currency_code')->toString());
+
+        return back()->with('success', 'Currency updated successfully.');
     }
 
     /**

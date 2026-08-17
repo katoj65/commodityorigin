@@ -568,7 +568,7 @@ function focusQuantity() {
     --green-dark: #002e20;
     --accent-soft: rgba(0, 69, 50, .08);
     --gold: #c8862a;
-    --border: #e9e9ec;
+    --border: #eef2f0;
     --on-surface: #16181d;
     --on-surface-var: #71717a;
     --surface-low: #f6f6f7;

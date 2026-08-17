@@ -372,7 +372,7 @@ const submit = () => {
 .fr-success-wrap { display: flex; justify-content: center; padding: 48px 24px; }
 .fr-success-card {
     max-width: 480px; width: 100%; text-align: center;
-    border: 1px solid #e4e7e8; border-radius: 12px;
+    border: 1px solid #eef2f0; border-radius: 12px;
     background: #fff; padding: 40px 32px;
 }
 .fr-success-circle {
@@ -429,7 +429,7 @@ const submit = () => {
 .fr-section { padding: 0 24px 12px; }
 
 /* ── Cards ───────────────────────────────────────────────────────── */
-.fr-card { border: 1px solid #e4e7e8; border-radius: 8px; background: #fff; overflow: hidden; }
+.fr-card { border: 1px solid #eef2f0; border-radius: 8px; background: #fff; overflow: hidden; }
 .fr-card--sticky { position: sticky; top: 12px; }
 .fr-card-head {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -501,7 +501,7 @@ const submit = () => {
 .fr-detail-row strong { font-weight: 700; color: #1f2a2a; font-size: 11px; }
 
 .fr-progress-label { font-size: 10px; color: #94a1b2; margin-bottom: 4px; }
-.fr-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #e4e7e8; }
+.fr-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
 .fr-progress-fill  { height: 100%; background: #004532; border-radius: 3px; transition: width .4s; }
 .fr-progress-fill--amber { background: #d97706; }
 
@@ -520,7 +520,7 @@ const submit = () => {
 .fr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .fr-table thead th {
     padding: 7px 10px; background: #f6f8f8;
-    border-bottom: 1px solid #e4e7e8;
+    border-bottom: 1px solid #eef2f0;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px; font-weight: 800;
     letter-spacing: .12em; text-transform: uppercase;
@@ -536,7 +536,7 @@ const submit = () => {
 }
 .fr-remove-btn {
     width: 22px; height: 22px; border-radius: 4px;
-    border: 1px solid #e4e7e8; background: #fafbfb;
+    border: 1px solid #eef2f0; background: #fafbfb;
     color: #94a1b2; cursor: pointer; font-size: 11px;
     display: flex; align-items: center; justify-content: center;
     transition: background .12s, color .12s;
@@ -554,7 +554,7 @@ const submit = () => {
 .fr-pipe-item__top { text-align: center; padding-bottom: 8px; min-height: 24px; display: flex; align-items: flex-end; justify-content: center; }
 .fr-pipe-item__sub { font-size: 9px; color: #94a1b2; font-family: 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
 .fr-pipe-item__mid { display: flex; align-items: center; width: 100%; }
-.fr-pipe-item__seg { flex: 1; height: 2px; background: #e4e7e8; }
+.fr-pipe-item__seg { flex: 1; height: 2px; background: #eef2f0; }
 .fr-pipe-item__seg--done   { background: #004532; }
 .fr-pipe-item__seg--hidden { background: transparent; }
 .fr-pipe-item__dot {
@@ -590,11 +590,11 @@ const submit = () => {
 .fr-float { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .fr-float-btn { width: 44px; height: 44px; border-radius: 50%; background: #003f2c; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: background .14s; }
 .fr-float-btn:hover { background: #004532; }
-.fr-chat-panel { width: 290px; border: 1px solid #e4e7e8; border-radius: 10px; background: #fff; overflow: hidden; }
+.fr-chat-panel { width: 290px; border: 1px solid #eef2f0; border-radius: 10px; background: #fff; overflow: hidden; }
 .fr-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid #e8ecec; background: #f8f9f9; }
 .fr-chat-close { font-size: 18px; line-height: 1; background: none; border: none; color: #94a1b2; cursor: pointer; padding: 0; }
 .fr-chat-prompts { padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f0f2f2; }
-.fr-chat-prompt { text-align: left; background: #f8f9f9; border: 1px solid #e4e7e8; border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer; font-family: 'Manrope', sans-serif; transition: background .14s; }
+.fr-chat-prompt { text-align: left; background: #f8f9f9; border: 1px solid #eef2f0; border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer; font-family: 'Manrope', sans-serif; transition: background .14s; }
 .fr-chat-prompt:hover { background: #eef5f1; border-color: #c3ddd2; color: #004532; }
 .fr-chat-input-row { display: flex; align-items: center; padding: 8px 12px; gap: 6px; }
 .fr-chat-input { flex: 1; height: 30px; padding: 0 9px; border: 1px solid #d4d8d8; border-radius: 5px; font-size: 11px; outline: none; font-family: 'Manrope', sans-serif; }

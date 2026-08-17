@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\LotRequest;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -36,6 +37,7 @@ class User extends Authenticatable
         'first_name',
         'last_name',
         'role',
+        'currency_code',
         'telephone',
         'email',
         'password',
@@ -114,6 +116,14 @@ class User extends Authenticatable
     public function wallet(): HasOne
     {
         return $this->hasOne(Wallet::class);
+    }
+
+    /**
+     * The user's preferred settlement currency.
+     */
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'currency_code', 'code');
     }
 
     /**

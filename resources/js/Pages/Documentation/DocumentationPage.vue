@@ -366,7 +366,7 @@ function confirmDelete() {
 <style scoped>
 .doc-page {
     --green: #004532;
-    --border: #e5e7eb;
+    --border: #eef2f0;
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
@@ -383,7 +383,12 @@ function confirmDelete() {
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 1rem;
-    padding: 1.75rem 1.5rem 0;
+    margin: 1.75rem 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
 }
 
 .doc-page-header__left {
@@ -892,7 +897,7 @@ function confirmDelete() {
 
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 767.98px) {
-    .doc-page-header { padding: 1.25rem 1.25rem 0; }
+    .doc-page-header { margin: 1.25rem 1.25rem 0; padding: 1.25rem; border-radius: 12px; }
     .doc-body { padding: 1.25rem 0 3rem; }
     .doc-toolbar { padding: 0 1.25rem 1rem; }
     .doc-toolbar__search,

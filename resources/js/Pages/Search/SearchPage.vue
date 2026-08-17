@@ -242,7 +242,7 @@ const demandTone = {
 /* ── Hero header ─────────────────────────────────────────────────────── */
 .sch-hero {
     background: linear-gradient(180deg, var(--surface-container-lowest) 0%, var(--surface) 100%);
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--card-border);
 }
 
 .sch-hero__inner { max-width: 920px; padding: 2rem 1.5rem 1.5rem; }
@@ -255,7 +255,7 @@ const demandTone = {
     display: flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-pill);
     padding: 5px 6px 5px 16px;
     background: var(--surface-container-lowest);
@@ -280,7 +280,7 @@ const demandTone = {
 .sch-pill--active { background: var(--surface-container-lowest); color: var(--brand-primary); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); }
 
 .sch-input {
-    border: 1px solid var(--border-subtle);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-control);
     background: var(--surface-container-lowest);
     font-size: 0.8125rem;
@@ -306,7 +306,7 @@ const demandTone = {
 .sch-recent__title { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
 .sch-recent__clear { border: none; background: none; color: var(--brand-primary); font-size: 0.75rem; font-weight: 700; cursor: pointer; }
 .sch-recent__chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.sch-chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border-subtle); border-radius: 999px; padding: 4px 6px 4px 12px; background: var(--surface-container-lowest); }
+.sch-chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--card-border); border-radius: 999px; padding: 4px 6px 4px 12px; background: var(--surface-container-lowest); }
 .sch-chip__text { border: none; background: none; font-size: 0.75rem; font-weight: 600; color: var(--text-main); cursor: pointer; }
 .sch-chip__remove { border: none; background: none; color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; }
 .sch-chip__remove:hover { background: var(--surface-container-low); color: var(--text-main); }
@@ -325,7 +325,7 @@ const demandTone = {
 
 .sch-card {
     display: block;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-card);
     overflow: hidden;
     background: var(--surface-container-lowest);
@@ -352,11 +352,11 @@ const demandTone = {
 
 .sch-card__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 0.75rem; color: var(--text-muted); }
 .sch-card__meta-item { display: inline-flex; align-items: center; gap: 3px; }
-.sch-card__meta > * + *::before { content: '·'; margin-right: 8px; color: var(--border-subtle); }
+.sch-card__meta > * + *::before { content: '·'; margin-right: 8px; color: var(--card-border); }
 
 .sch-card__quality { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--warning-amber); }
 
-.sch-card__divider { height: 1px; background: var(--border-subtle); margin: 4px 0; }
+.sch-card__divider { height: 1px; background: var(--card-border); margin: 4px 0; }
 
 .sch-card__row { display: flex; align-items: baseline; justify-content: space-between; }
 .sch-card__price { font-size: 1.0625rem; font-weight: 800; color: var(--brand-primary); }
@@ -364,7 +364,7 @@ const demandTone = {
 .sch-card__qty { font-size: 0.75rem; color: var(--text-muted); }
 .sch-card__badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 
-.sch-card__view { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; font-weight: 700; color: var(--brand-primary); }
+.sch-card__view { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--card-border); font-size: 0.75rem; font-weight: 700; color: var(--brand-primary); }
 
 .sch-badge { display: inline-flex; border-radius: 999px; font-size: 0.625rem; font-weight: 700; padding: 3px 8px; white-space: nowrap; }
 .sch-badge--red { background: #fee2e2; color: #991b1b; }

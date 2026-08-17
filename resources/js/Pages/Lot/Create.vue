@@ -66,7 +66,7 @@ const submit = () => {
         <Head title="Add Lot" />
 
         <div class="space-y-4">
-            <section class="rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 sm:px-5">
+            <section class="rounded-xl border border-[#EEF2F0] bg-white px-4 py-3 sm:px-5">
                 <div class="flex flex-col gap-1.5">
                     <h1 class="font-display text-[20px] font-bold leading-tight text-[#111827]">Add Lot</h1>
                     <p class="max-w-2xl text-[13px] leading-relaxed text-[#6B7280]">
@@ -76,7 +76,7 @@ const submit = () => {
             </section>
 
             <section class="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_320px]">
-                <div class="rounded-xl border border-[#E5E7EB] bg-white px-4 py-4 sm:px-5 sm:py-5">
+                <div class="rounded-xl border border-[#EEF2F0] bg-white px-4 py-4 sm:px-5 sm:py-5">
                     <form class="space-y-5" @submit.prevent="submit">
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="md:col-span-2">
@@ -161,7 +161,7 @@ const submit = () => {
                     </form>
                 </div>
 
-                <aside class="rounded-xl border border-[#E5E7EB] bg-white px-4 py-4 sm:px-5">
+                <aside class="rounded-xl border border-[#EEF2F0] bg-white px-4 py-4 sm:px-5">
                     <div class="space-y-4">
                         <div class="rounded-xl border border-[#E8F0EB] bg-[#F8FBF9] p-4">
                             <div class="flex items-start justify-between gap-3">
@@ -194,7 +194,7 @@ const submit = () => {
                             <div
                                 v-for="item in batchMeta"
                                 :key="item.label"
-                                class="rounded-lg border border-[#E5E7EB] px-3.5 py-3"
+                                class="rounded-lg border border-[#EEF2F0] px-3.5 py-3"
                             >
                                 <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
                                     <el-icon class="text-[#0F5D3B]">
