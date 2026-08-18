@@ -14,7 +14,6 @@ const formatCurrency = (value) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(value || 0);
 
 const itemCount = computed(() => props.items.length);
-const totalKg = computed(() => props.items.reduce((sum, item) => sum + item.quantity, 0));
 const subtotal = computed(() => props.items.reduce((sum, item) => sum + item.line_total, 0));
 
 function qualityTone(score) {
@@ -73,7 +72,7 @@ function confirmRemove() {
                         <div class="cart-kicker"><el-icon><ShoppingCart /></el-icon> Checkout</div>
                         <h1 class="cart-title">Your Cart</h1>
                         <p class="cart-subtitle" v-if="itemCount">
-                            {{ itemCount }} {{ itemCount === 1 ? 'lot' : 'lots' }} · {{ totalKg.toLocaleString() }} kg total
+                            {{ itemCount }} {{ itemCount === 1 ? 'item' : 'items' }} in your cart
                         </p>
                     </div>
                     <Link :href="route('market.index')" class="cart-btn cart-btn--outline">Continue Shopping</Link>
@@ -86,7 +85,7 @@ function confirmRemove() {
                 <div v-if="!itemCount" class="cart-empty">
                     <div class="cart-empty__icon"><el-icon><ShoppingTrolley /></el-icon></div>
                     <h2 class="cart-empty__title">Your cart is empty</h2>
-                    <p class="cart-empty__text">Browse the marketplace and add lots you're interested in — they'll show up here.</p>
+                    <p class="cart-empty__text">Browse the marketplace or the input store and add items you're interested in — they'll show up here.</p>
                     <Link :href="route('market.index')" class="cart-btn cart-btn--solid">Browse Listings</Link>
                 </div>
 
@@ -95,7 +94,7 @@ function confirmRemove() {
                     <section class="cart-items">
                         <article v-for="item in items" :key="item.id" class="cart-item" :class="{ 'cart-item--pending': pendingId === item.id }">
                             <div class="cart-item__media">
-                                <img v-if="item.image" :src="`/storage/${item.image}`" :alt="item.name">
+                                <img v-if="item.image_url" :src="item.image_url" :alt="item.name">
                                 <svg v-else class="cart-item__media-icon" viewBox="0 0 24 24">
                                     <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
                                     <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
@@ -105,17 +104,18 @@ function confirmRemove() {
                             <div class="cart-item__body">
                                 <div class="cart-item__top">
                                     <div>
-                                        <Link :href="route('market.show', item.market_id)" class="cart-item__title">{{ item.name || item.lot_code }}</Link>
-                                        <p class="cart-item__subtitle">{{ item.origin || 'Origin unknown' }} <span>·</span> {{ item.process || '—' }}</p>
+                                        <Link v-if="item.detail_route" :href="route(item.detail_route.name, item.detail_route.params)" class="cart-item__title">{{ item.name || item.lot_code }}</Link>
+                                        <span v-else class="cart-item__title cart-item__title--static">{{ item.name || item.lot_code }}</span>
+                                        <p class="cart-item__subtitle">{{ item.subtitle }}</p>
                                     </div>
                                     <span v-if="item.quality_score !== null" class="cart-badge" :class="`cart-badge--${qualityTone(item.quality_score)}`">
                                         {{ item.quality_score.toFixed(1) }}
                                     </span>
                                 </div>
 
-                                <p v-if="item.current_price !== item.unit_price" class="cart-item__price-note">
+                                <p v-if="item.current_price !== null && item.current_price !== item.unit_price" class="cart-item__price-note">
                                     <el-icon><WarningFilled /></el-icon>
-                                    Price is now {{ formatCurrency(item.current_price) }}/kg — you locked in {{ formatCurrency(item.unit_price) }}/kg when added.
+                                    Price is now {{ formatCurrency(item.current_price) }}/{{ item.unit }} — you locked in {{ formatCurrency(item.unit_price) }}/{{ item.unit }} when added.
                                 </p>
 
                                 <div class="cart-item__footer">
@@ -123,14 +123,14 @@ function confirmRemove() {
                                         <button type="button" class="cart-qty__btn" :disabled="pendingId === item.id || item.quantity <= 1" @click="updateQuantity(item, item.quantity - 1)">
                                             <el-icon><Minus /></el-icon>
                                         </button>
-                                        <span class="cart-qty__value">{{ item.quantity }} kg</span>
+                                        <span class="cart-qty__value">{{ item.quantity }} {{ item.unit }}</span>
                                         <button type="button" class="cart-qty__btn" :disabled="pendingId === item.id || item.quantity >= item.available_quantity" @click="updateQuantity(item, item.quantity + 1)">
                                             <el-icon><Plus /></el-icon>
                                         </button>
                                     </div>
 
                                     <div class="cart-item__price">
-                                        <span class="cart-item__price-unit">{{ formatCurrency(item.unit_price) }} / kg</span>
+                                        <span class="cart-item__price-unit">{{ formatCurrency(item.unit_price) }} / {{ item.unit }}</span>
                                         <span class="cart-item__price-total">{{ formatCurrency(item.line_total) }}</span>
                                     </div>
                                 </div>
@@ -147,12 +147,8 @@ function confirmRemove() {
                             <h2 class="cart-summary__title">Order Summary</h2>
 
                             <div class="cart-summary__row">
-                                <span>Subtotal ({{ itemCount }} {{ itemCount === 1 ? 'lot' : 'lots' }})</span>
+                                <span>Subtotal ({{ itemCount }} {{ itemCount === 1 ? 'item' : 'items' }})</span>
                                 <span>{{ formatCurrency(subtotal) }}</span>
-                            </div>
-                            <div class="cart-summary__row">
-                                <span>Total weight</span>
-                                <span>{{ totalKg.toLocaleString() }} kg</span>
                             </div>
 
                             <div class="cart-summary__divider" />
@@ -237,6 +233,8 @@ function confirmRemove() {
 .cart-item__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .cart-item__title { font-size: .9375rem; font-weight: 800; color: var(--on-surface); text-decoration: none; letter-spacing: -.01em; }
 .cart-item__title:hover { color: var(--green); }
+.cart-item__title--static { display: inline-block; cursor: default; }
+.cart-item__title--static:hover { color: var(--on-surface); }
 .cart-item__subtitle { font-size: .75rem; color: var(--on-surface-var); margin: 4px 0 0; }
 .cart-item__subtitle span { margin: 0 4px; }
 

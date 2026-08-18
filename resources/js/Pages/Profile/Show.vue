@@ -1,12 +1,14 @@
 <script setup>
-import { computed } from 'vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import {
     Check,
+    Close,
     DataAnalysis,
     Edit,
     Location,
     Lock,
+    MagicStick,
     Message,
     Monitor,
     Phone,
@@ -14,6 +16,8 @@ import {
     User,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import EditProfileDialog from '@/Components/Modals/EditProfileDialog.vue';
+import { resolveIcon } from '@/utils/icon';
 
 const props = defineProps({
     sessions: {
@@ -245,9 +249,40 @@ const ledgerRows = computed(() => [
     },
 ]);
 
-const goToLedger = () => {
-    document.getElementById('profile-ledger')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-};
+/* ── Edit profile ─────────────────────────────────────────────────────── */
+const editProfileOpen = ref(false);
+
+/* ── Subscribed agents ────────────────────────────────────────────────
+   `subscribedAgents` is shared on every Inertia request (see
+   HandleInertiaRequests) as [{id, name, icon, functions:[{id,name,icon,slug,description}]}].
+   Admin accounts always receive an empty list here — they manage agents
+   from the Apps page instead of subscribing to them. ────────────────── */
+const isAdmin = computed(() => user.value?.role === 'admin');
+const subscribedAgents = computed(() => page.props.subscribedAgents ?? []);
+
+const unsubscribingId = ref(null);
+const unsubscribeDialogOpen = ref(false);
+const agentToUnsubscribe = ref(null);
+
+function openUnsubscribeDialog(agent) {
+    agentToUnsubscribe.value = agent;
+    unsubscribeDialogOpen.value = true;
+}
+
+function confirmUnsubscribe() {
+    const agent = agentToUnsubscribe.value;
+    if (!agent || unsubscribingId.value) return;
+
+    unsubscribingId.value = agent.id;
+    router.delete(route('agent.unsubscribe', agent.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            unsubscribingId.value = null;
+            unsubscribeDialogOpen.value = false;
+            agentToUnsubscribe.value = null;
+        },
+    });
+}
 </script>
 
 <template>
@@ -268,7 +303,7 @@ const goToLedger = () => {
                                 <el-icon><Setting /></el-icon>
                                 <span>Settings</span>
                             </el-button>
-                            <el-button class="profile-group-button" type="default" @click="goToLedger">
+                            <el-button class="profile-group-button" type="default" @click="editProfileOpen = true">
                                 <el-icon><Edit /></el-icon>
                                 <span>Edit Profile</span>
                             </el-button>
@@ -448,14 +483,189 @@ const goToLedger = () => {
                                 </table>
                             </div>
                         </section>
+
+                        <section id="profile-agents" class="profile-card profile-card--agents">
+                            <div class="profile-card__head">
+                                <div>
+                                    <h2 class="profile-card__title">Agents Subscribed To</h2>
+                                </div>
+                                <Link :href="route('apps.index')" class="profile-card__action">Browse Agents</Link>
+                            </div>
+
+                            <div v-if="isAdmin" class="profile-agents-empty">
+                                <div class="profile-agents-empty__icon"><el-icon><MagicStick /></el-icon></div>
+                                <p>Admin accounts manage agents directly instead of subscribing to them.</p>
+                                <Link :href="route('apps.index')" class="profile-button profile-button--primary">Manage Agents</Link>
+                            </div>
+
+                            <div v-else-if="subscribedAgents.length === 0" class="profile-agents-empty">
+                                <div class="profile-agents-empty__icon"><el-icon><MagicStick /></el-icon></div>
+                                <p>You haven't subscribed to any agents yet.</p>
+                                <Link :href="route('apps.index')" class="profile-button profile-button--primary">Browse Agents</Link>
+                            </div>
+
+                            <div v-else class="profile-agent-list">
+                                <article v-for="agent in subscribedAgents" :key="agent.id" class="profile-agent-row">
+                                    <div class="profile-agent-row__icon">
+                                        <el-icon><component :is="resolveIcon(agent.icon)" /></el-icon>
+                                    </div>
+                                    <div class="profile-agent-row__body">
+                                        <div class="profile-agent-row__name">{{ agent.name }}</div>
+                                        <div v-if="agent.functions?.length" class="profile-agent-row__functions">
+                                            <span v-for="fn in agent.functions.slice(0, 4)" :key="fn.id" class="profile-function-pill">{{ fn.name }}</span>
+                                            <span v-if="agent.functions.length > 4" class="profile-function-pill profile-function-pill--more">+{{ agent.functions.length - 4 }} more</span>
+                                        </div>
+                                        <div v-else class="profile-agent-row__note">No functions configured yet</div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="profile-agent-row__unsub"
+                                        :disabled="unsubscribingId === agent.id"
+                                        title="Unsubscribe"
+                                        @click="openUnsubscribeDialog(agent)"
+                                    >
+                                        <el-icon><Close /></el-icon>
+                                    </button>
+                                </article>
+                            </div>
+                        </section>
+
+                        <el-dialog v-model="unsubscribeDialogOpen" width="420px" align-center class="profile-modal profile-modal--danger">
+                            <template #header>
+                                <div class="profile-modal__head">
+                                    <div class="profile-modal__head-icon"><el-icon :size="18"><Close /></el-icon></div>
+                                    <div class="profile-modal__head-text">
+                                        <div class="profile-modal__eyebrow">Agents Subscribed To</div>
+                                        <div class="profile-modal__title">Unsubscribe Agent</div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <div v-if="agentToUnsubscribe" class="profile-modal__body">
+                                <p class="profile-modal__confirm-text">
+                                    Are you sure you want to unsubscribe from <strong>{{ agentToUnsubscribe.name }}</strong>?
+                                    You'll lose access to its functions until you subscribe again.
+                                </p>
+                            </div>
+
+                            <template #footer>
+                                <div class="profile-modal__footer">
+                                    <button type="button" class="profile-modal__btn-outline" @click="unsubscribeDialogOpen = false">Cancel</button>
+                                    <button
+                                        type="button"
+                                        class="profile-modal__btn-danger"
+                                        :disabled="unsubscribingId === agentToUnsubscribe?.id"
+                                        @click="confirmUnsubscribe"
+                                    >
+                                        {{ unsubscribingId === agentToUnsubscribe?.id ? 'Unsubscribing…' : 'Unsubscribe' }}
+                                    </button>
+                                </div>
+                            </template>
+                        </el-dialog>
                     </div>
                 </section>
             </div>
         </div>
+
+        <EditProfileDialog v-model="editProfileOpen" :profile="profile" />
     </AppLayout>
 </template>
 
+<style>
+/* Unscoped on purpose: <el-dialog> teleports its root to <body>, outside
+   this component's own template output, so it never carries this SFC's
+   scope attribute — a scoped (or :deep()) selector can never reach it. */
+.el-dialog.profile-modal {
+    border-radius: 18px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
+    font-family: 'Manrope', system-ui, sans-serif;
+}
+.el-dialog.profile-modal .el-dialog__header { padding: 0; margin: 0; }
+.el-dialog.profile-modal .el-dialog__body { padding: 0; }
+.el-dialog.profile-modal .el-dialog__footer { padding: 0; }
+</style>
+
 <style scoped>
+/* NOTE: <el-dialog> teleports its content to <body>, outside this
+   component's DOM subtree, so CSS custom properties from the page do NOT
+   cascade in — literal hex values are used in the .profile-modal rules. */
+.profile-modal__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    background: #fff;
+    border-bottom: 1px solid #f3f4f6;
+}
+.profile-modal__head-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: #fee2e2;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.profile-modal__head-text { flex: 1; min-width: 0; }
+.profile-modal__eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #145c42;
+    margin-bottom: 1px;
+}
+.profile-modal__title {
+    font-size: 1.0625rem;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -0.01em;
+}
+.profile-modal__body { padding: 20px 24px; }
+.profile-modal__confirm-text {
+    font-size: 0.875rem;
+    color: #374151;
+    line-height: 1.5;
+    margin: 0;
+}
+.profile-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    background: #f9fafb;
+    border-top: 1px solid #f3f4f6;
+}
+.profile-modal__btn-outline {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    color: #111827;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.profile-modal__btn-outline:hover { background: #f8fafc; }
+.profile-modal__btn-danger {
+    background: #dc2626;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.profile-modal__btn-danger:hover { background: #b91c1c; }
+.profile-modal__btn-danger:disabled { opacity: 0.6; cursor: default; }
+
 .profile-page {
     min-height: 100%;
     background: var(--surface, #f7f9fb);
@@ -736,6 +946,141 @@ const goToLedger = () => {
     color: #45695c;
     font-size: 12px;
     font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.profile-card__action:hover {
+    color: #145c42;
+}
+
+.profile-card--agents {
+    padding: 18px;
+}
+
+.profile-agents-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 28px 16px;
+    margin-top: 16px;
+    border: 1px dashed #dde5e0;
+    border-radius: 8px;
+    background: #fbfcfb;
+}
+
+.profile-agents-empty__icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #eef3f0;
+    color: #61776d;
+    font-size: 18px;
+}
+
+.profile-agents-empty p {
+    margin: 0;
+    color: #7b8a84;
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 34ch;
+}
+
+.profile-agent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.profile-agent-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid #eff3f1;
+    border-radius: 8px;
+    background: #fbfcfb;
+}
+
+.profile-agent-row__icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #eef3f0;
+    color: #145c42;
+    flex-shrink: 0;
+}
+
+.profile-agent-row__body {
+    min-width: 0;
+}
+
+.profile-agent-row__name {
+    color: #223932;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.profile-agent-row__functions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.profile-agent-row__note {
+    margin-top: 6px;
+    color: #93a29b;
+    font-size: 11px;
+}
+
+.profile-function-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #eef3f0;
+    color: #45695c;
+    font-size: 10.5px;
+    font-weight: 700;
+}
+
+.profile-function-pill--more {
+    background: transparent;
+    color: #93a29b;
+}
+
+.profile-agent-row__unsub {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #93a29b;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.profile-agent-row__unsub:hover {
+    background: #fdeceb;
+    color: #c0392b;
+}
+
+.profile-agent-row__unsub:disabled {
+    opacity: 0.5;
+    cursor: default;
 }
 
 .profile-security-list {

@@ -2,9 +2,10 @@
 import { computed, nextTick, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import {
-    Search, List, ShoppingCart, Sell, DataAnalysis, TrendCharts, Trophy,
+    Search, List, ShoppingCart, Sell, DataAnalysis, TrendCharts, Trophy, Filter,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import MarketFilterDialog from '@/Components/Market/MarketFilterDialog.vue';
 
 const props = defineProps({
     searchQuery: { type: String, default: '' },
@@ -16,6 +17,8 @@ const search = computed({
     get: () => props.searchQuery,
     set: (value) => emit('update:searchQuery', value),
 });
+
+const filterDialogOpen = ref(false);
 
 /* ══════════════════════════════════════════════════════════════════════
    Top bar — section tabs + a single search icon that expands on click
@@ -87,12 +90,23 @@ function closeSearch() {
                             <el-icon><Search /></el-icon>
                         </button>
                     </div>
+
+                    <button
+                        type="button"
+                        class="mkt-filter-toggle"
+                        title="Filter coffee"
+                        @click="filterDialogOpen = true"
+                    >
+                        <el-icon><Filter /></el-icon> <span>Filter</span>
+                    </button>
                 </div>
             </div>
 
             <slot />
 
         </div>
+
+        <MarketFilterDialog v-model="filterDialogOpen" />
     </AppLayout>
 </template>
 
@@ -151,5 +165,20 @@ function closeSearch() {
 
 @media (max-width: 480px) {
     .mkt-search-input { width: 160px; }
+}
+
+/* ── Filter toggle button ─────────────────────────────────────────────── */
+.mkt-filter-toggle {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    height: 36px; padding: 0 14px; border-radius: 8px;
+    border: 1px solid var(--border); background: #fff; color: var(--on-surface-var);
+    font-size: .8125rem; font-weight: 700;
+    cursor: pointer; transition: all .15s ease;
+}
+.mkt-filter-toggle :deep(.el-icon) { font-size: 14px; }
+.mkt-filter-toggle:hover { border-color: var(--green); color: var(--green); background: #f0f5f3; }
+
+@media (max-width: 640px) {
+    .mkt-filter-toggle span { display: none; }
 }
 </style>

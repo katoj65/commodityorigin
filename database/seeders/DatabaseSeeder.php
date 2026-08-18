@@ -60,6 +60,8 @@ class DatabaseSeeder extends Seeder
             ProcessingMetadataSeeder::class,
             MarketMetadataSeeder::class,
             MarketSeeder::class,
+            AgriculturalInputCategorySeeder::class,
+            AgriculturalInputSeeder::class,
             AuctionSeeder::class,
             OrderSeeder::class,
             CropGradeMetadataSeeder::class,

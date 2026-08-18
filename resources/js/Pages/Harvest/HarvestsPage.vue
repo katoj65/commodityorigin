@@ -15,7 +15,6 @@ const props = defineProps({
     filters:       { type: Object, default: () => ({ search: '' }) },
     estateOptions: { type: Array,  default: () => [] },
 });
-
 /* ── Real computed & search ────────────────────────────────────── */
 const visiblePages  = computed(() => {
     const cur  = props.harvests.meta.current_page || 1;

@@ -5,11 +5,15 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     ArrowLeft, Tickets, Box, Coin, Calendar, CircleCheck, CircleClose,
-    Close, Wallet as WalletIcon, CreditCard, Van, Lock,
+    Close, Wallet as WalletIcon, CreditCard, Van, Lock, Loading,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
     purchase: { type: Object, required: true },
+    tracking: {
+        type: Object,
+        default: () => ({ available: false, stage: null, is_terminal: false, steps: [], items: [] }),
+    },
 });
 
 function formatMoney(value, currency) {
@@ -27,7 +31,35 @@ function paymentLabel(method) {
 
 const paymentIcon = computed(() => (props.purchase.payment_method === 'wallet' ? WalletIcon : CreditCard));
 const isCompleted = computed(() => props.purchase.status === 'completed');
-const totalItems = computed(() => props.purchase.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0));
+
+/* ── Package tracking ────────────────────────────────────────────────── */
+const stageLabels = {
+    open: 'Open',
+    pending: 'Pending',
+    confirmed: 'Order Confirmed',
+    inspection: 'Quality Inspection',
+    processing: 'Processing',
+    shipped: 'Shipped',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled',
+    withdrawn: 'Withdrawn',
+};
+
+function stageLabel(stage) {
+    if (!stage) return 'Unknown';
+    return stageLabels[stage] ?? (stage.charAt(0).toUpperCase() + stage.slice(1));
+}
+
+function trackingTone(status) {
+    if (!status) return 'muted';
+    if (status === 'cancelled' || status === 'withdrawn') return 'cancelled';
+    if (status === 'delivered') return 'delivered';
+    return 'progress';
+}
+
+const stepLabels = { confirmed: 'Confirmed', processing: 'Processing', shipped: 'Shipped', delivered: 'Delivered' };
+const stepIcons = { confirmed: CircleCheck, processing: Loading, shipped: Van, delivered: Box };
+const stepIcon = (key) => stepIcons[key] ?? CircleCheck;
 
 /* ── Cancel ──────────────────────────────────────────────────────────── */
 const cancelOpen = ref(false);
@@ -76,8 +108,8 @@ function confirmCancel() {
                             <span class="prf-meta__value">{{ paymentLabel(purchase.payment_method) }}</span>
                         </div>
                         <div class="prf-meta__item">
-                            <span class="prf-meta__label"><el-icon :size="13"><Box /></el-icon> Total Quantity</span>
-                            <span class="prf-meta__value">{{ totalItems.toLocaleString() }} kg</span>
+                            <span class="prf-meta__label"><el-icon :size="13"><Box /></el-icon> Line Items</span>
+                            <span class="prf-meta__value">{{ purchase.items.length }}</span>
                         </div>
                         <div v-if="!isCompleted" class="prf-meta__item">
                             <span class="prf-meta__label"><el-icon :size="13"><Close /></el-icon> Cancelled</span>
@@ -96,7 +128,7 @@ function confirmCancel() {
                                     <span class="prf-item__name">{{ item.name }}</span>
                                     <span v-if="item.lot_code" class="prf-item__lot">{{ item.lot_code }}</span>
                                 </div>
-                                <span class="prf-item__meta">{{ item.quantity.toLocaleString() }} kg × {{ formatMoney(item.unit_price, purchase.currency) }}</span>
+                                <span class="prf-item__meta">{{ item.quantity.toLocaleString() }} {{ item.unit || 'kg' }} × {{ formatMoney(item.unit_price, purchase.currency) }}</span>
                                 <span class="prf-item__total">{{ formatMoney(item.line_total, purchase.currency) }}</span>
                             </div>
                         </div>
@@ -111,6 +143,47 @@ function confirmCancel() {
                                 <span>{{ formatMoney(purchase.total_amount, purchase.currency) }}</span>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- ── Package Tracking ─────────────────────────────── -->
+                    <div class="prf-section">
+                        <h2 class="prf-section__title"><el-icon :size="16"><Van /></el-icon> Package Tracking</h2>
+
+                        <p v-if="!tracking.available" class="prf-track-empty">
+                            Tracking information isn't available for this purchase yet.
+                        </p>
+
+                        <template v-else>
+                            <div class="prf-track-status" :class="`is-${trackingTone(tracking.stage)}`">
+                                <span class="prf-track-status__dot"></span>
+                                {{ stageLabel(tracking.stage) }}
+                            </div>
+
+                            <div v-if="!tracking.is_terminal" class="prf-track-steps">
+                                <div
+                                    v-for="(step, idx) in tracking.steps"
+                                    :key="step.key"
+                                    class="prf-track-step"
+                                    :class="{ 'is-reached': step.reached }"
+                                >
+                                    <div v-if="idx > 0" class="prf-track-step__line"></div>
+                                    <div class="prf-track-step__icon">
+                                        <el-icon :size="13"><component :is="stepIcon(step.key)" /></el-icon>
+                                    </div>
+                                    <span class="prf-track-step__label">{{ stepLabels[step.key] }}</span>
+                                </div>
+                            </div>
+                            <p v-else class="prf-track-empty">
+                                This order was {{ stageLabel(tracking.stage).toLowerCase() }} — it will not continue through fulfillment.
+                            </p>
+
+                            <div v-if="tracking.items.length > 1" class="prf-track-items">
+                                <div v-for="(it, idx) in tracking.items" :key="idx" class="prf-track-item">
+                                    <span class="prf-track-item__name">{{ it.name }}</span>
+                                    <span class="prf-badge" :class="`prf-badge--${trackingTone(it.status)}`">{{ stageLabel(it.status) }}</span>
+                                </div>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- ── Actions ───────────────────────────────────────── -->
@@ -284,6 +357,7 @@ function confirmCancel() {
 
 /* ── Sections ────────────────────────────────────────────────────────── */
 .prf-section { padding: 24px; }
+.prf-section + .prf-section { border-top: 1px solid var(--border); }
 
 .prf-section__title {
     display: flex;
@@ -402,11 +476,128 @@ function confirmCancel() {
 
 .prf-cancel-btn:hover { background: #fef2f2; border-color: #fecaca; }
 
+/* ── Package tracking ────────────────────────────────────────────────── */
+.prf-track-empty {
+    font-size: 0.8125rem;
+    color: var(--on-surface-var);
+    margin: 4px 0 0;
+}
+
+.prf-track-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 10px;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+}
+
+.prf-track-status__dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+.prf-track-status.is-progress { background: #eff6ff; color: #1d4ed8; }
+.prf-track-status.is-delivered { background: #dcfce7; color: #166534; }
+.prf-track-status.is-cancelled { background: #fee2e2; color: #991b1b; }
+.prf-track-status.is-muted { background: #f3f4f6; color: #6b7280; }
+
+.prf-track-steps {
+    display: flex;
+    align-items: flex-start;
+}
+
+.prf-track-step {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+}
+
+.prf-track-step__line {
+    position: absolute;
+    top: 15px;
+    right: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+}
+
+.prf-track-step.is-reached .prf-track-step__line { background: var(--green); }
+
+.prf-track-step__icon {
+    position: relative;
+    z-index: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 2px solid var(--border);
+    color: #9ca3af;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.prf-track-step.is-reached .prf-track-step__icon {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+}
+
+.prf-track-step__label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--on-surface-var);
+}
+
+.prf-track-step.is-reached .prf-track-step__label { color: var(--on-surface); }
+
+.prf-track-items {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.prf-track-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.8125rem;
+}
+
+.prf-track-item__name { color: var(--on-surface); font-weight: 600; }
+
+.prf-badge {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    white-space: nowrap;
+}
+
+.prf-badge--progress { background: #eff6ff; color: #1d4ed8; }
+.prf-badge--delivered { background: #dcfce7; color: #166534; }
+.prf-badge--cancelled { background: #fee2e2; color: #991b1b; }
+.prf-badge--muted { background: #f3f4f6; color: #6b7280; }
+
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .prf-header__inner { padding: 1.25rem; }
     .prf-body { padding: 1.25rem; }
     .prf-item { grid-template-columns: 24px minmax(0, 1fr); grid-template-rows: auto auto; }
     .prf-item__meta, .prf-item__total { grid-column: 2; justify-self: start; }
+    .prf-track-step__label { font-size: 0.625rem; }
 }
 </style>

@@ -7,6 +7,7 @@ use App\Http\Resources\HarvestResource;
 use App\Http\Resources\SeasonResource;
 use App\Models\Harvest;
 use App\Models\Season;
+use App\Services\FarmService;
 use App\Services\HarvestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,8 +18,10 @@ use Inertia\Response;
 
 class HarvestController extends Controller
 {
-    public function __construct(private readonly HarvestService $harvests)
-    {
+    public function __construct(
+        private readonly HarvestService $harvests,
+        private readonly FarmService $farms,
+    ) {
     }
 
     /**
@@ -69,6 +72,16 @@ class HarvestController extends Controller
             'pickMethodOptions' => $this->harvests->pickMethodOptions(),
             'harvestSeasonOptions' => $this->harvests->harvestSeasonOptions(),
             'isAdmin' => $user->isAdmin(),
+            // Only the farms this user created — adding a harvest is gated
+            // per-farm by FarmPolicy::update (creator only), so an admin
+            // viewing everyone's harvests here can still only attach a new
+            // one to a farm they themselves created.
+            'farmOptions' => $this->farms->listForUser($user->id)->map(fn ($farm) => [
+                'id' => $farm->id,
+                'name' => $farm->name,
+                'location' => $farm->location,
+            ])->values(),
+            'varietyOptions' => $this->farms->activeVarietyOptions(),
         ]);
     }
 

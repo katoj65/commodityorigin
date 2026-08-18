@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import { ElNotification } from 'element-plus';
 import {
     Tickets, Star, ShoppingCart, Check, Minus, Plus, Lock, CircleCheck, Medal,
     Document, Shop, MapLocation, CaretTop, CaretBottom, Coin, List, ChatLineSquare,
@@ -199,16 +200,27 @@ const totalPulseKey = ref(0);
 watch(subtotal, () => { totalPulseKey.value += 1; });
 
 const cartForm = useForm({
-    market_id: props.item.id,
+    cartable_type: 'market',
+    cartable_id: props.item.id,
     quantity: 1,
 });
 
 function addToCart() {
     clampQuantity();
-    cartForm.quantity = quantity.value;
+    const addedQuantity = quantity.value;
+    cartForm.quantity = addedQuantity;
     cartForm.post(route('checkout.items.store'), {
         preserveScroll: true,
-        onSuccess: () => { quantity.value = 1; },
+        onSuccess: () => {
+            quantity.value = 1;
+            ElNotification({
+                title: 'Added to Cart',
+                message: `${addedQuantity} kg of ${props.item.name || props.item.lot_code} was added to your cart.`,
+                type: 'success',
+                duration: 3200,
+                offset: 84,
+            });
+        },
     });
 }
 

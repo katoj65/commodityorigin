@@ -39,17 +39,34 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Add a market listing to the current user's cart, or increase its
-     * quantity if it's already there.
+     * Add a purchasable item (a coffee Market listing or an agricultural
+     * input) to the current user's cart, or increase its quantity if it's
+     * already there.
      */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'market_id' => ['required', 'integer', 'exists:markets,id'],
+            'cartable_type' => ['required', 'string', Rule::in(array_keys(CartService::CARTABLE_TYPES))],
+            'cartable_id' => [
+                'required',
+                'integer',
+                function ($attribute, $value, $fail) use ($request) {
+                    $modelClass = CartService::CARTABLE_TYPES[$request->input('cartable_type')] ?? null;
+
+                    if ($modelClass && ! $modelClass::query()->whereKey($value)->exists()) {
+                        $fail('The selected item could not be found.');
+                    }
+                },
+            ],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:1000'],
         ]);
 
-        $this->cart->addItem($request->user()->id, $validated['market_id'], $validated['quantity'] ?? 1);
+        $this->cart->addItem(
+            $request->user()->id,
+            $validated['cartable_type'],
+            $validated['cartable_id'],
+            $validated['quantity'] ?? 1,
+        );
 
         return back()->with('success', 'Added to cart.');
     }

@@ -1,9 +1,11 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import { Plus, Delete, Edit, WarnTriangleFilled, Clock, Close, Calendar as CalendarIcon, Files, CircleCheck, Loading, Star, PriceTag, Sunny, TrendCharts, List, MoreFilled, Odometer } from '@element-plus/icons-vue';
+import CreateEventModal from '@/Components/Modals/CreateEventModal.vue';
+import CreateTaskModal from '@/Components/Modals/CreateTaskModal.vue';
+import { Plus, Delete, Edit, WarnTriangleFilled, Clock, Calendar as CalendarIcon, CircleCheck, Check, List, Odometer } from '@element-plus/icons-vue';
 
 const props = defineProps({
     events: { type: Array, default: () => [] },
@@ -61,14 +63,11 @@ function taskTone(task) {
     return task.task_date < todayStr() ? 'red' : 'amber';
 }
 
-function taskStatusLabel(task) {
-    if (task.status === 'completed') return 'Done';
-    return task.task_date < todayStr() ? 'Overdue' : 'Pending';
-}
+const completedTasksCount = computed(() => props.tasks.filter((t) => t.status === 'completed').length);
 
-function formatShortDate(day) {
-    return new Date(`${day}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
+const tasksProgressPct = computed(() => (
+    props.tasks.length ? Math.round((completedTasksCount.value / props.tasks.length) * 100) : 0
+));
 
 function relativeDayLabel(day) {
     const diff = Math.round((new Date(`${day}T00:00:00`) - new Date(`${todayStr()}T00:00:00`)) / 86400000);
@@ -86,69 +85,25 @@ function dateBadge(day) {
     };
 }
 
-/* ── Create / edit dialog ─────────────────────────────────────────────── */
-const dialogOpen = ref(false);
-const editingId = ref(null);
-const form = useForm({
-    title: '',
-    description: '',
-    event_date: todayStr(),
-    type: '',
-    status: 'pending',
-    make_task: false,
-});
+/* ── Create / edit event dialog ───────────────────────────────────────── */
+const eventDialogOpen = ref(false);
+const editingEvent = ref(null);
 
-const knownTypeValues = ['', 'task', 'deadline', 'harvest', 'market'];
-const otherTypeMode = ref(false);
-
-function selectType(value) {
-    otherTypeMode.value = false;
-    form.type = value;
+function openCreateEventDialog() {
+    editingEvent.value = null;
+    eventDialogOpen.value = true;
 }
 
-function selectOtherType() {
-    otherTypeMode.value = true;
-    if (knownTypeValues.includes(form.type)) {
-        form.type = '';
-    }
+function openEditEventDialog(event) {
+    editingEvent.value = event;
+    eventDialogOpen.value = true;
 }
 
-function openCreateDialog() {
-    editingId.value = null;
-    form.reset();
-    form.clearErrors();
-    form.event_date = selectedDay.value;
-    otherTypeMode.value = false;
-    dialogOpen.value = true;
-}
+/* ── Create task dialog ──────────────────────────────────────────────── */
+const taskDialogOpen = ref(false);
 
-function openEditDialog(event) {
-    editingId.value = event.id;
-    form.clearErrors();
-    form.title = event.title;
-    form.description = event.description ?? '';
-    form.event_date = event.event_date;
-    form.type = event.type ?? '';
-    form.status = event.status;
-    form.make_task = false;
-    otherTypeMode.value = form.type !== '' && !knownTypeValues.includes(form.type);
-    dialogOpen.value = true;
-}
-
-function saveEvent() {
-    form.clearErrors();
-
-    if (!form.title.trim()) form.setError('title', 'Title is required.');
-    if (!form.event_date) form.setError('event_date', 'Date is required.');
-    if (form.errors.title || form.errors.event_date) return;
-
-    const onSuccess = () => { dialogOpen.value = false; };
-
-    if (editingId.value) {
-        form.patch(route('calendar.update', editingId.value), { preserveScroll: true, onSuccess });
-    } else {
-        form.post(route('calendar.store'), { preserveScroll: true, onSuccess });
-    }
+function openCreateTaskDialog() {
+    taskDialogOpen.value = true;
 }
 
 const confirmOpen = ref(false);
@@ -178,14 +133,6 @@ const typeLabel = (type) => {
     return known[type] ?? (type.charAt(0).toUpperCase() + type.slice(1));
 };
 
-/* ── Dialog type picker ───────────────────────────────────────────────── */
-const typeOptions = [
-    { value: '', label: 'General', icon: Star, tone: 'muted' },
-    { value: 'task', label: 'Task', icon: CircleCheck, tone: 'green' },
-    { value: 'deadline', label: 'Deadline', icon: PriceTag, tone: 'red' },
-    { value: 'harvest', label: 'Harvest', icon: Sunny, tone: 'amber' },
-    { value: 'market', label: 'Market', icon: TrendCharts, tone: 'blue' },
-];
 </script>
 
 <template>
@@ -196,28 +143,43 @@ const typeOptions = [
 
             <!-- ── Page Header ───────────────────────────────────────────── -->
             <div class="clp-page-header">
-                <div class="clp-page-header__left">
-
-                    <h1 class="clp-title">Calendar Activities</h1>
-                    <p class="clp-subtitle">Plan events, track deadlines, and stay ahead of every decision across your trading operations.</p>
+                <div class="clp-page-header__row">
+                    <div class="clp-page-header__left">
+                        <h1 class="clp-title">Calendar Activities</h1>
+                        <p class="clp-subtitle">Plan events, track deadlines, and stay ahead of every decision across your trading operations.</p>
+                    </div>
+                    <div class="clp-page-header__actions">
+                        <button type="button" class="clp-btn-outline" @click="openCreateTaskDialog">
+                            <el-icon><List /></el-icon> Add Task
+                        </button>
+                        <button type="button" class="clp-btn-primary" @click="openCreateEventDialog">
+                            <el-icon><Plus /></el-icon> New Event
+                        </button>
+                    </div>
                 </div>
-                <div class="clp-page-header__actions">
-                    <Link :href="route('task.index')" class="clp-btn-outline">
-                        <el-icon><List /></el-icon> View Tasks
-                    </Link>
-                    <button type="button" class="clp-btn-primary" @click="openCreateDialog">
-                        <el-icon><Plus /></el-icon> New Event
-                    </button>
+
+                <div v-if="dueToday.length" class="clp-ongoing">
+                    <div class="clp-ongoing__icon">
+                        <el-icon :size="14"><WarnTriangleFilled /></el-icon>
+                    </div>
+                    <span class="clp-ongoing__label">{{ dueToday.length }} event{{ dueToday.length > 1 ? 's' : '' }} ongoing today</span>
+                    <div class="clp-ongoing__chips">
+                        <button
+                            v-for="ev in dueToday"
+                            :key="ev.id"
+                            type="button"
+                            class="clp-ongoing__chip"
+                            @click="openEditEventDialog(ev)"
+                        >
+                            <span class="clp-dot" :class="typeTone(ev.type)"></span>
+                            {{ ev.title }}
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- ── Body: 70% calendar+events / 30% overview+tasks ─────────── -->
             <div class="clp-body">
-
-                <div v-if="dueToday.length" class="clp-due-banner">
-                    <el-icon><WarnTriangleFilled /></el-icon>
-                    <span>{{ dueToday.length }} event{{ dueToday.length > 1 ? 's' : '' }} due today: {{ dueToday.map((e) => e.title).join(', ') }}</span>
-                </div>
 
                 <div class="clp-grid">
                     <!-- 70% -->
@@ -274,18 +236,11 @@ const typeOptions = [
                                     </template>
                                 </el-table-column>
 
-                                <el-table-column width="120" align="right">
-                                    <template #header><span class="clp-th clp-th--right">Status</span></template>
-                                    <template #default="{ row }">
-                                        <span class="clp-badge" :class="row.status === 'completed' ? 'clp-badge--green' : 'clp-badge--amber'">{{ row.status }}</span>
-                                    </template>
-                                </el-table-column>
-
                                 <el-table-column width="90" align="right">
                                     <template #header><span class="clp-th clp-th--right">Actions</span></template>
                                     <template #default="{ row }">
                                         <div class="clp-row__actions" @click.stop>
-                                            <button type="button" class="clp-icon-btn" aria-label="Edit event" @click="openEditDialog(row)">
+                                            <button type="button" class="clp-icon-btn" aria-label="Edit event" @click="openEditEventDialog(row)">
                                                 <el-icon><Edit /></el-icon>
                                             </button>
                                             <button type="button" class="clp-icon-btn clp-icon-btn--danger" aria-label="Delete event" @click="deleteEvent(row)">
@@ -306,26 +261,41 @@ const typeOptions = [
                     <div class="clp-col-side">
                         <div class="clp-side-card">
                             <div class="clp-side-card__title"><el-icon :size="15"><Odometer /></el-icon> Overview</div>
-                            <div class="clp-kpi-list">
-                                <div class="clp-kpi-row">
-                                    <span class="clp-kpi-row__label">Total Events</span>
-                                    <strong class="clp-kpi-row__val">{{ sortedEvents.length }}</strong>
+                            <div class="clp-metric-list">
+                                <div class="clp-metric">
+                                    <span class="clp-metric__icon"><el-icon :size="14"><Files /></el-icon></span>
+                                    <span class="clp-metric__body">
+                                        <span class="clp-metric__label">Total Events</span>
+                                        <strong class="clp-metric__val">{{ sortedEvents.length }}</strong>
+                                    </span>
                                 </div>
-                                <div class="clp-kpi-row">
-                                    <span class="clp-kpi-row__label">Due Today</span>
-                                    <strong class="clp-kpi-row__val" :class="dueToday.length ? 'clp-text-amber' : ''">{{ dueToday.length }}</strong>
+                                <div class="clp-metric">
+                                    <span class="clp-metric__icon" :class="dueToday.length ? 'clp-metric__icon--amber' : ''"><el-icon :size="14"><Clock /></el-icon></span>
+                                    <span class="clp-metric__body">
+                                        <span class="clp-metric__label">Due Today</span>
+                                        <strong class="clp-metric__val" :class="dueToday.length ? 'clp-text-amber' : ''">{{ dueToday.length }}</strong>
+                                    </span>
                                 </div>
-                                <div class="clp-kpi-row">
-                                    <span class="clp-kpi-row__label">This Week</span>
-                                    <strong class="clp-kpi-row__val">{{ thisWeekCount }}</strong>
+                                <div class="clp-metric">
+                                    <span class="clp-metric__icon"><el-icon :size="14"><CalendarIcon /></el-icon></span>
+                                    <span class="clp-metric__body">
+                                        <span class="clp-metric__label">This Week</span>
+                                        <strong class="clp-metric__val">{{ thisWeekCount }}</strong>
+                                    </span>
                                 </div>
-                                <div class="clp-kpi-row">
-                                    <span class="clp-kpi-row__label">Overdue</span>
-                                    <strong class="clp-kpi-row__val" :class="overdueCount ? 'clp-text-red' : ''">{{ overdueCount }}</strong>
+                                <div class="clp-metric">
+                                    <span class="clp-metric__icon" :class="overdueCount ? 'clp-metric__icon--red' : ''"><el-icon :size="14"><WarnTriangleFilled /></el-icon></span>
+                                    <span class="clp-metric__body">
+                                        <span class="clp-metric__label">Overdue</span>
+                                        <strong class="clp-metric__val" :class="overdueCount ? 'clp-text-red' : ''">{{ overdueCount }}</strong>
+                                    </span>
                                 </div>
-                                <div class="clp-kpi-row">
-                                    <span class="clp-kpi-row__label">Completed</span>
-                                    <strong class="clp-kpi-row__val clp-text-green">{{ completedCount }}</strong>
+                                <div class="clp-metric">
+                                    <span class="clp-metric__icon clp-metric__icon--green"><el-icon :size="14"><CircleCheck /></el-icon></span>
+                                    <span class="clp-metric__body">
+                                        <span class="clp-metric__label">Completed</span>
+                                        <strong class="clp-metric__val clp-text-green">{{ completedCount }}</strong>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -333,19 +303,38 @@ const typeOptions = [
                         <div class="clp-side-card">
                             <div class="clp-side-card__title-row">
                                 <div class="clp-side-card__title"><el-icon :size="15"><List /></el-icon> Tasks</div>
-                                <Link :href="route('task.index')" class="clp-side-card__link">View All</Link>
+                                <div class="clp-tasks-head__actions">
+                                    <button type="button" class="clp-mini-btn" title="Add task" @click="openCreateTaskDialog">
+                                        <el-icon :size="12"><Plus /></el-icon>
+                                    </button>
+                                    <Link :href="route('task.index')" class="clp-side-card__link">View All</Link>
+                                </div>
+                            </div>
+
+                            <div v-if="sortedTasks.length" class="clp-tasks-progress">
+                                <div class="clp-tasks-progress__bar">
+                                    <div class="clp-tasks-progress__fill" :style="{ width: tasksProgressPct + '%' }"></div>
+                                </div>
+                                <span class="clp-tasks-progress__label">{{ completedTasksCount }}/{{ sortedTasks.length }} done</span>
                             </div>
 
                             <div v-if="!sortedTasks.length" class="clp-empty">No tasks yet.</div>
 
                             <div v-else class="clp-tasks-list">
-                                <div v-for="t in sortedTasks.slice(0, 6)" :key="t.id" class="clp-task-row">
-                                    <span class="clp-dot" :class="`clp-dot--${taskTone(t)}`"></span>
+                                <div
+                                    v-for="t in sortedTasks.slice(0, 6)"
+                                    :key="t.id"
+                                    class="clp-task-row"
+                                    :class="{ 'clp-task-row--done': t.status === 'completed' }"
+                                >
+                                    <span class="clp-task-check" :class="`clp-task-check--${taskTone(t)}`">
+                                        <el-icon v-if="t.status === 'completed'" :size="11"><Check /></el-icon>
+                                    </span>
                                     <div class="clp-task-row__body">
                                         <div class="clp-task-row__title">{{ t.title }}</div>
-                                        <div class="clp-task-row__date">{{ formatShortDate(t.task_date) }}</div>
+                                        <div class="clp-task-row__date" :class="{ 'clp-text-red': taskTone(t) === 'red' }">{{ relativeDayLabel(t.task_date) }}</div>
                                     </div>
-                                    <span class="clp-badge" :class="`clp-badge--${taskTone(t)}`">{{ taskStatusLabel(t) }}</span>
+                                    <span v-if="taskTone(t) === 'red'" class="clp-badge clp-badge--red">Overdue</span>
                                 </div>
                             </div>
                         </div>
@@ -354,124 +343,16 @@ const typeOptions = [
             </div>
         </div>
 
-        <el-dialog
-            v-model="dialogOpen"
-            width="480px"
-            destroy-on-close
-            align-center
-            :show-close="false"
-            class="clp-modal"
-        >
-            <template #header>
-                <div class="clp-modal__head">
-                    <div class="clp-modal__head-icon">
-                        <el-icon :size="18"><CalendarIcon /></el-icon>
-                    </div>
-                    <div class="clp-modal__head-text">
-                        <div class="clp-modal__eyebrow">{{ editingId ? 'Edit' : 'Create' }}</div>
-                        <div class="clp-modal__title">{{ editingId ? 'Edit Event' : 'New Event' }}</div>
-                    </div>
-                    <button type="button" class="clp-modal__close" aria-label="Close" @click="dialogOpen = false">
-                        <el-icon :size="14"><Close /></el-icon>
-                    </button>
-                </div>
-            </template>
+        <CreateEventModal
+            v-model="eventDialogOpen"
+            :event="editingEvent"
+            :default-date="selectedDay"
+        />
 
-            <div class="clp-modal__body">
-                <div class="clp-field">
-                    <label class="clp-field__label">Title</label>
-                    <el-input v-model="form.title" placeholder="e.g. Export deadline for Lot #42" class="clp-input" :class="{ 'clp-input--error': form.errors.title }" />
-                    <span v-if="form.errors.title" class="clp-field__error">{{ form.errors.title }}</span>
-                </div>
-
-                <div class="clp-field">
-                    <label class="clp-field__label"><el-icon :size="12"><Files /></el-icon> Description</label>
-                    <el-input v-model="form.description" type="textarea" :rows="3" placeholder="Optional notes" class="clp-input" />
-                </div>
-
-                <div class="clp-field">
-                    <label class="clp-field__label">Date</label>
-                    <el-date-picker v-model="form.event_date" type="date" value-format="YYYY-MM-DD" style="width:100%" class="clp-input" :class="{ 'clp-input--error': form.errors.event_date }" />
-                    <span v-if="form.errors.event_date" class="clp-field__error">{{ form.errors.event_date }}</span>
-                </div>
-
-                <div class="clp-field mt-3">
-                    <label class="clp-field__label">Type</label>
-                    <div class="clp-type-grid">
-                        <button
-                            v-for="opt in typeOptions"
-                            :key="opt.value || 'general'"
-                            type="button"
-                            class="clp-type-pill"
-                            :class="[`clp-type-pill--${opt.tone}`, { 'clp-type-pill--active': !otherTypeMode && form.type === opt.value }]"
-                            @click="selectType(opt.value)"
-                        >
-                            <el-icon :size="15"><component :is="opt.icon" /></el-icon>
-                            <span>{{ opt.label }}</span>
-                        </button>
-                        <button
-                            type="button"
-                            class="clp-type-pill clp-type-pill--muted"
-                            :class="{ 'clp-type-pill--active': otherTypeMode }"
-                            @click="selectOtherType"
-                        >
-                            <el-icon :size="15"><MoreFilled /></el-icon>
-                            <span>Other</span>
-                        </button>
-                    </div>
-
-                    <el-input
-                        v-if="otherTypeMode"
-                        v-model="form.type"
-                        placeholder="e.g. Compliance, Inspection, Shipping"
-                        class="clp-input mt-2"
-                        maxlength="255"
-                    />
-                </div>
-
-                <div v-if="editingId" class="clp-field">
-                    <label class="clp-field__label">Status</label>
-                    <div class="clp-status-toggle">
-                        <button
-                            type="button"
-                            class="clp-status-toggle__btn"
-                            :class="{ 'clp-status-toggle__btn--active': form.status === 'pending' }"
-                            @click="form.status = 'pending'"
-                        >
-                            <el-icon :size="13"><Loading /></el-icon> Pending
-                        </button>
-                        <button
-                            type="button"
-                            class="clp-status-toggle__btn clp-status-toggle__btn--green"
-                            :class="{ 'clp-status-toggle__btn--active': form.status === 'completed' }"
-                            @click="form.status = 'completed'"
-                        >
-                            <el-icon :size="13"><CircleCheck /></el-icon> Completed
-                        </button>
-                    </div>
-                </div>
-
-                <div v-if="!editingId" class="clp-field clp-field--task">
-                    <div class="clp-switch-row">
-                        <div class="clp-switch-row__text">
-                            <label class="clp-field__label"><el-icon :size="12"><CircleCheck /></el-icon> Task Reminder</label>
-                            <span class="clp-field__hint">Also add this to your tasks. You'll get a decision-support notification when it's due.</span>
-                        </div>
-                        <el-switch v-model="form.make_task" class="clp-switch" />
-                    </div>
-                </div>
-            </div>
-
-            <template #footer>
-                <div class="clp-modal__footer">
-                    <button type="button" class="clp-btn-outline" @click="dialogOpen = false">Cancel</button>
-                    <button type="button" class="clp-btn-primary" :disabled="form.processing" @click="saveEvent">
-                        <el-icon v-if="!form.processing"><Plus /></el-icon>
-                        {{ form.processing ? 'Saving…' : editingId ? 'Save Changes' : 'Create Event' }}
-                    </button>
-                </div>
-            </template>
-        </el-dialog>
+        <CreateTaskModal
+            v-model="taskDialogOpen"
+            :default-date="selectedDay"
+        />
 
         <ConfirmDialog
             v-model="confirmOpen"
@@ -500,14 +381,80 @@ const typeOptions = [
 /* ── Page header ─────────────────────────────────────────────────────── */
 .clp-page-header {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 1rem;
     padding: 1.75rem 1.5rem;
     background: #fff;
     border-bottom: 1px solid var(--border);
 }
+
+.clp-page-header__row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+/* ── Ongoing-today banner ────────────────────────────────────────────── */
+.clp-ongoing {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border: 1px solid #fde68a;
+}
+
+.clp-ongoing__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+}
+
+.clp-ongoing__label {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #92400e;
+    white-space: nowrap;
+}
+
+.clp-ongoing__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.clp-ongoing__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid #fde68a;
+    background: #fff;
+    color: #78350f;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.clp-ongoing__chip:hover {
+    background: #fffbeb;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.18);
+}
+
+.clp-ongoing__chip .clp-dot { margin-top: 0; }
 
 .clp-page-header__left {
     max-width: 560px;
@@ -550,21 +497,6 @@ const typeOptions = [
 /* ── Body ────────────────────────────────────────────────────────────── */
 .clp-body {
     padding: 1.25rem 1.5rem 3rem;
-}
-
-.clp-due-banner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-left: 3px solid #d97706;
-    color: #92400e;
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    margin-bottom: 1.25rem;
 }
 
 .clp-empty {
@@ -655,33 +587,118 @@ const typeOptions = [
 
 .clp-side-card__link:hover { color: var(--green-dark); }
 
-.clp-kpi-list {
+.clp-tasks-head__actions {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.clp-mini-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--on-surface-var);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.clp-mini-btn:hover {
+    border-color: var(--green);
+    color: var(--green);
+    background: #f0f5f3;
+}
+
+.clp-tasks-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin-top: 0.75rem;
 }
 
-.clp-kpi-row {
+.clp-tasks-progress__bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--surface-low);
+    overflow: hidden;
+}
+
+.clp-tasks-progress__fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--green), #16a34a);
+    transition: width 0.2s ease;
+}
+
+.clp-tasks-progress__label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--on-surface-var);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.clp-metric-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.5rem;
+}
+
+.clp-metric {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 8px;
+    margin: 0 -8px;
+    border-radius: 10px;
+    transition: background 0.15s ease;
+}
+
+.clp-metric:hover { background: var(--surface-low); }
+
+.clp-metric__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    flex-shrink: 0;
+    background: rgba(0, 69, 50, 0.08);
+    color: var(--green);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.clp-metric__icon--amber { background: #fef3c7; color: #92400e; }
+.clp-metric__icon--red { background: #fee2e2; color: #991b1b; }
+.clp-metric__icon--green { background: #dcfce7; color: #166534; }
+
+.clp-metric__body {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.625rem 0;
-    border-bottom: 1px solid var(--surface-low);
+    gap: 8px;
+    min-width: 0;
 }
 
-.clp-kpi-row:last-child { border-bottom: none; }
-
-.clp-kpi-row__label {
+.clp-metric__label {
     font-size: 0.8125rem;
     color: var(--on-surface-var);
     font-weight: 600;
 }
 
-.clp-kpi-row__val {
+.clp-metric__val {
     font-size: 1rem;
     font-weight: 800;
     color: var(--on-surface);
     letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
 }
 
 .clp-tasks-list {
@@ -694,13 +711,30 @@ const typeOptions = [
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 0.625rem 0;
-    border-bottom: 1px solid var(--surface-low);
+    padding: 8px;
+    margin: 0 -8px;
+    border-radius: 10px;
+    transition: background 0.15s ease;
 }
 
-.clp-task-row:last-child { border-bottom: none; }
+.clp-task-row:hover { background: var(--surface-low); }
 
-.clp-task-row .clp-dot { margin-top: 0; }
+.clp-task-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid #d1d5db;
+    color: #fff;
+    flex-shrink: 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.clp-task-check--green { background: var(--green); border-color: var(--green); }
+.clp-task-check--red { border-color: #fca5a5; }
+.clp-task-check--amber { border-color: #fcd34d; }
 
 .clp-task-row__body {
     flex: 1;
@@ -714,6 +748,13 @@ const typeOptions = [
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: color 0.15s ease;
+}
+
+.clp-task-row--done .clp-task-row__title {
+    color: var(--on-surface-var);
+    text-decoration: line-through;
+    font-weight: 600;
 }
 
 .clp-task-row__date {
@@ -852,18 +893,6 @@ const typeOptions = [
     background: #f3f4f6;
     color: #6b7280;
     border: 1px solid #d1d5db;
-}
-
-.clp-badge--green {
-    background: #dcfce7;
-    color: #166534;
-    border-color: #86efac;
-}
-
-.clp-badge--amber {
-    background: #fef3c7;
-    color: #92400e;
-    border-color: #fcd34d;
 }
 
 .clp-badge--red {
@@ -1018,276 +1047,6 @@ const typeOptions = [
 .clp-main-card :deep(.el-calendar-table th:first-child),
 .clp-main-card :deep(.el-calendar-table th:last-child) {
     color: var(--green);
-}
-
-/* ── New/Edit Event modal ────────────────────────────────────────────────
-   NOTE: <el-dialog> teleports its content to <body>, outside .clp-page's DOM
-   subtree, so CSS custom properties (var(--green) etc.) defined on .clp-page
-   do NOT cascade in. All colors below are literal hex values on purpose. */
-:deep(.el-dialog.clp-modal) {
-    border-radius: 18px;
-    padding: 0;
-    overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
-    font-family: 'Manrope', system-ui, sans-serif;
-}
-
-:deep(.el-dialog.clp-modal .el-dialog__header) {
-    padding: 0;
-    margin: 0;
-}
-
-:deep(.el-dialog.clp-modal .el-dialog__body) {
-    padding: 0;
-}
-
-:deep(.el-dialog.clp-modal .el-dialog__footer) {
-    padding: 0;
-}
-
-.clp-modal__head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 20px 24px;
-    background: #fff;
-    border-bottom: 1px solid #f3f4f6;
-}
-
-.clp-modal__head-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 11px;
-    background: rgba(0, 69, 50, 0.08);
-    color: #004532;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.clp-modal__head-text {
-    flex: 1;
-    min-width: 0;
-}
-
-.clp-modal__eyebrow {
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #004532;
-    margin-bottom: 1px;
-}
-
-.clp-modal__title {
-    font-size: 1.0625rem;
-    font-weight: 800;
-    color: #111827;
-    letter-spacing: -0.01em;
-}
-
-.clp-modal__close {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    border: none;
-    background: #f3f4f6;
-    color: #6b7280;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background 0.12s;
-}
-
-.clp-modal__close:hover {
-    background: #e5e7eb;
-    color: #111827;
-}
-
-.clp-modal__body {
-    padding: 22px 24px 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    max-height: 65vh;
-    overflow-y: auto;
-}
-
-.clp-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.clp-field__label {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.9375rem;
-    font-weight: 400;
-    color: #374151;
-}
-
-.clp-field--task {
-    margin-top: 4px;
-    padding-top: 14px;
-    border-top: 1px solid #f3f4f6;
-}
-
-.clp-field__hint {
-    font-size: 0.75rem;
-    font-weight: 400;
-    color: #6b7280;
-    line-height: 1.4;
-}
-
-.clp-field__error {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #dc2626;
-    line-height: 1.4;
-}
-
-.clp-input--error :deep(.el-input__wrapper),
-.clp-input--error :deep(.el-textarea__inner) {
-    box-shadow: 0 0 0 1.5px #dc2626 inset !important;
-}
-
-/* ── Task-reminder switch ────────────────────────────────────────────── */
-.clp-switch-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-}
-
-.clp-switch-row__text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.clp-switch-row .clp-field__label {
-    font-weight: 600;
-    color: #111827;
-}
-
-.clp-switch :deep(.el-switch__core) {
-    background: #d1d5db;
-    border-color: #d1d5db;
-}
-
-.clp-switch.is-checked :deep(.el-switch__core) {
-    background: #004532;
-    border-color: #004532;
-}
-
-.clp-input :deep(.el-input__wrapper),
-.clp-input :deep(.el-textarea__inner) {
-    border-radius: 10px;
-    box-shadow: 0 0 0 1px #e5e7eb inset;
-    background: #f9fafb;
-    transition: box-shadow 0.12s, background 0.12s;
-}
-
-.clp-input :deep(.el-input__wrapper:hover),
-.clp-input :deep(.el-textarea__inner:hover) {
-    background: #fff;
-    box-shadow: 0 0 0 1px #d1d5db inset;
-}
-
-.clp-input :deep(.el-input__wrapper.is-focus),
-.clp-input :deep(.el-textarea__inner:focus) {
-    background: #fff;
-    box-shadow: 0 0 0 1.5px #004532 inset;
-}
-
-.clp-type-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-}
-
-.clp-type-pill {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 9px 8px;
-    border-radius: 10px;
-    border: 1.5px solid #e5e7eb;
-    background: #fff;
-    color: #6b7280;
-    font-size: 0.75rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.12s;
-}
-
-.clp-type-pill:hover {
-    background: #f9fafb;
-    border-color: #d1d5db;
-}
-
-.clp-type-pill--active.clp-type-pill--muted { background: #f3f4f6; border-color: #9ca3af; color: #374151; }
-.clp-type-pill--active.clp-type-pill--green { background: #dcfce7; border-color: #16a34a; color: #166534; }
-.clp-type-pill--active.clp-type-pill--red { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
-.clp-type-pill--active.clp-type-pill--amber { background: #fef3c7; border-color: #d97706; color: #92400e; }
-.clp-type-pill--active.clp-type-pill--blue { background: #dbeafe; border-color: #2563eb; color: #1e40af; }
-
-.clp-status-toggle {
-    display: flex;
-    gap: 8px;
-}
-
-.clp-status-toggle__btn {
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    border: 1.5px solid #e5e7eb;
-    background: #fff;
-    color: #6b7280;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.12s;
-}
-
-.clp-status-toggle__btn:hover {
-    background: #f9fafb;
-}
-
-.clp-status-toggle__btn--active {
-    background: #fef3c7;
-    border-color: #d97706;
-    color: #92400e;
-}
-
-.clp-status-toggle__btn--green.clp-status-toggle__btn--active {
-    background: #dcfce7;
-    border-color: #16a34a;
-    color: #166534;
-}
-
-.clp-modal__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 16px 24px;
-    background: #f9fafb;
-    border-top: 1px solid #f3f4f6;
-}
-
-.clp-modal__footer .clp-btn-primary,
-.clp-modal__footer .clp-btn-outline {
-    padding: 9px 18px;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */

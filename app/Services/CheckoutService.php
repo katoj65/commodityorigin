@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\AgriculturalInput;
 use App\Models\CartItem;
+use App\Models\Market;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\UserOrder;
@@ -22,10 +24,11 @@ class CheckoutService
 
     /**
      * Place an order for every active item in the buyer's cart — one Order
-     * per lot, paid either from the buyer's wallet (moved through escrow
-     * into the seller's wallet immediately) or by card (no funds move
-     * through this app; card details are never sent here beyond a masked
-     * last 4 digits for the receipt).
+     * per line item (a coffee lot or a store input), paid either from the
+     * buyer's wallet (moved through escrow into the seller's wallet
+     * immediately) or by card (no funds move through this app; card
+     * details are never sent here beyond a masked last 4 digits for the
+     * receipt).
      *
      * @param  array<string, mixed>  $delivery
      * @param  array<string, mixed>|null  $card
@@ -38,34 +41,36 @@ class CheckoutService
             throw ValidationException::withMessages(['cart' => 'Your cart is empty.']);
         }
 
-        return DB::transaction(function () use ($buyer, $paymentMethod, $delivery, $card, $items) {
-            foreach ($items as $item) {
-                $this->placeItemOrder($buyer, $item, $paymentMethod, $delivery, $card);
-            }
+        $items = $items->values();
 
-            return $this->userOrders->createFromCheckout($buyer, $items, $paymentMethod);
+        return DB::transaction(function () use ($buyer, $paymentMethod, $delivery, $card, $items) {
+            $orders = $items->map(fn (CartItem $item) => $this->placeItemOrder($buyer, $item, $paymentMethod, $delivery, $card));
+
+            return $this->userOrders->createFromCheckout($buyer, $items, $paymentMethod, $orders);
         });
     }
 
     private function placeItemOrder(User $buyer, CartItem $item, string $paymentMethod, array $delivery, ?array $card): Order
     {
-        $market = $item->market()->lockForUpdate()->first();
+        $cartable = $item->cartable()->lockForUpdate()->first();
 
-        if (! $market) {
+        if (! $cartable) {
             throw ValidationException::withMessages([
                 'cart' => 'One of the items in your cart is no longer available for purchase.',
             ]);
         }
 
-        if (! $market->user_id) {
+        $listing = $this->listingDetails($cartable);
+
+        if (! $listing['seller_id']) {
             throw ValidationException::withMessages([
-                'cart' => "\"{$market->name}\" has no seller on record and can't be purchased.",
+                'cart' => "\"{$listing['name']}\" has no seller on record and can't be purchased.",
             ]);
         }
 
-        if ($item->quantity > $market->quantity) {
+        if ($item->quantity > $listing['available_quantity']) {
             throw ValidationException::withMessages([
-                'cart' => "Only {$market->quantity} kg of \"{$market->name}\" is left in stock.",
+                'cart' => "Only {$listing['available_quantity']} {$listing['unit']} of \"{$listing['name']}\" is left in stock.",
             ]);
         }
 
@@ -73,10 +78,10 @@ class CheckoutService
             'order_number' => $this->orders->generateOrderNumber(),
             'type' => 'request',
             'buyer_id' => $buyer->id,
-            'seller_id' => $market->user_id,
-            'crop_type' => $market->type,
-            'variety' => $market->name,
-            'grade' => $market->process,
+            'seller_id' => $listing['seller_id'],
+            'crop_type' => $listing['crop_type'],
+            'variety' => $listing['variety'],
+            'grade' => $listing['grade'],
             'quantity' => $item->quantity,
             'unit_price' => $item->unit_price,
             'total_amount' => round($item->quantity * $item->unit_price, 2),
@@ -88,19 +93,68 @@ class CheckoutService
 
         if ($paymentMethod === 'wallet') {
             $this->wallets->ensureForUser($buyer->id);
-            $this->wallets->ensureForUser($market->user_id);
+            $this->wallets->ensureForUser($listing['seller_id']);
             $this->escrow->holdAndRelease($order, $buyer->id);
         }
 
-        $market->decrement('quantity', $item->quantity);
-
-        if ($market->fresh()->quantity <= 0) {
-            $market->update(['status' => 'sold']);
-        }
+        $this->decrementStock($cartable, $item->quantity);
 
         $item->update(['status' => CartItem::STATUS_ORDERED]);
 
         return $order;
+    }
+
+    /**
+     * Normalize the fields CheckoutService needs from whatever purchasable
+     * model a cart item points to, so placeItemOrder() doesn't have to
+     * branch on type more than once.
+     *
+     * @return array{seller_id: ?int, name: string, crop_type: string, variety: ?string, grade: ?string, available_quantity: float, unit: string}
+     */
+    private function listingDetails(Market|AgriculturalInput $cartable): array
+    {
+        if ($cartable instanceof Market) {
+            return [
+                'seller_id' => $cartable->user_id,
+                'name' => $cartable->name ?? $cartable->lot_code,
+                'crop_type' => $cartable->type,
+                'variety' => $cartable->name,
+                'grade' => $cartable->process,
+                'available_quantity' => (float) $cartable->quantity,
+                'unit' => 'kg',
+            ];
+        }
+
+        return [
+            'seller_id' => $cartable->user_id,
+            'name' => $cartable->name,
+            'crop_type' => 'agricultural_input:'.$cartable->category,
+            'variety' => $cartable->tag,
+            'grade' => null,
+            'available_quantity' => (float) $cartable->stock_quantity,
+            'unit' => $cartable->unit,
+        ];
+    }
+
+    /**
+     * Deduct the purchased quantity from whichever model was bought. A
+     * Market listing that hits zero is marked sold; an AgriculturalInput
+     * simply runs low — its own "active"/"inactive" listing status is a
+     * separate, admin-managed concern, not tied to stock depth.
+     */
+    private function decrementStock(Market|AgriculturalInput $cartable, int $quantity): void
+    {
+        if ($cartable instanceof Market) {
+            $cartable->decrement('quantity', $quantity);
+
+            if ($cartable->fresh()->quantity <= 0) {
+                $cartable->update(['status' => 'sold']);
+            }
+
+            return;
+        }
+
+        $cartable->decrement('stock_quantity', $quantity);
     }
 
     /**

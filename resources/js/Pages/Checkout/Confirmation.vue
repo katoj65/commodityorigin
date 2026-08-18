@@ -135,7 +135,7 @@ function placeOrder() {
 
                             <ul class="chk-summary__items">
                                 <li v-for="item in items" :key="item.id" class="chk-summary__item">
-                                    <span class="chk-summary__item-name">{{ item.name || item.lot_code }} <em>× {{ item.quantity }}kg</em></span>
+                                    <span class="chk-summary__item-name">{{ item.name || item.lot_code }} <em>× {{ item.quantity }}{{ item.unit }}</em></span>
                                     <span>{{ formatCurrency(item.line_total) }}</span>
                                 </li>
                             </ul>

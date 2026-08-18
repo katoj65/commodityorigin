@@ -1,15 +1,14 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import {
-    PriceTag, Location, Coffee, SetUp, Star, Box, Coin, TrendCharts, View, ShoppingCart, Sell,
+    PriceTag, Location, Coffee, SetUp, Star, Box, Coin, TrendCharts, View, Filter, Close,
 } from '@element-plus/icons-vue';
 import MarketPage from './MarketPage.vue';
 
 const props = defineProps({
     markets: { type: Array, default: () => [] },
-    calendarEvents: { type: Array, default: () => [] },
-    exchangeRates: { type: Array, default: () => [] },
+    filters: { type: Object, default: () => ({}) },
 });
 
 function goToListing(row) {
@@ -18,9 +17,6 @@ function goToListing(row) {
 
 const searchQuery = ref('');
 
-/* ══════════════════════════════════════════════════════════════════════
-   Live market listings — real data
-   ══════════════════════════════════════════════════════════════════════ */
 const resolveDemandTone = (demand) => {
     const d = (demand ?? '').toLowerCase();
     if (d === 'very high') return 'primary';
@@ -62,23 +58,28 @@ const listings = computed(() => props.markets.map((m) => ({
     image: m.image || null,
 })));
 
-const uniqueOrigins = computed(() => [...new Set(listings.value.map((l) => l.origin).filter(Boolean))]);
+const searchedListings = computed(() => {
+    if (!searchQuery.value) return listings.value;
+    const q = searchQuery.value.toLowerCase();
+    return listings.value.filter((l) => `${l.name} ${l.origin} ${l.type}`.toLowerCase().includes(q));
+});
 
-const filters = reactive({ origin: '', type: '', grade: '', certification: '', market: '', maxPrice: '', availability: '', buyerRegion: '', exportRegion: '' });
+const filterLabels = {
+    type: 'Type',
+    origin: 'Origin',
+    process: 'Process',
+    min_price: 'Min Price',
+    max_price: 'Max Price',
+    min_quality: 'Min Quality',
+};
 
-const filteredListings = computed(() => listings.value.filter((l) => {
-    if (filters.origin && l.origin !== filters.origin) return false;
-    if (filters.type && l.type !== filters.type) return false;
-    if (filters.maxPrice && l.pricePerKg > Number(filters.maxPrice)) return false;
-    if (searchQuery.value) {
-        const q = searchQuery.value.toLowerCase();
-        const hay = `${l.name} ${l.origin} ${l.type}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-    }
-    return true;
-}));
-
-const clearFilters = () => Object.assign(filters, { origin: '', type: '', grade: '', certification: '', market: '', maxPrice: '', availability: '', buyerRegion: '', exportRegion: '' });
+const appliedFilters = computed(() => Object.entries(props.filters || {})
+    .filter(([, value]) => value !== null && value !== '')
+    .map(([key, value]) => ({
+        key,
+        label: filterLabels[key] || key,
+        value: key === 'min_price' || key === 'max_price' ? `$${value}/kg` : value,
+    })));
 
 /* ── Pagination ───────────────────────────────────────────────────────── */
 const currentPage = ref(1);
@@ -86,17 +87,32 @@ const pageSize = ref(25);
 
 const pagedListings = computed(() => {
     const start = (currentPage.value - 1) * pageSize.value;
-    return filteredListings.value.slice(start, start + pageSize.value);
+    return searchedListings.value.slice(start, start + pageSize.value);
 });
 
-watch(filteredListings, () => { currentPage.value = 1; });
+watch(searchedListings, () => { currentPage.value = 1; });
 </script>
 
 <template>
     <MarketPage v-model:search-query="searchQuery">
         <div class="mkt-body">
+            <div class="mkt-filter-summary">
+                <span class="mkt-filter-summary__label"><el-icon><Filter /></el-icon> Filtered results</span>
+
+                <div v-if="appliedFilters.length" class="mkt-filter-summary__chips">
+                    <span v-for="f in appliedFilters" :key="f.key" class="mkt-filter-summary__chip">
+                        {{ f.label }}: {{ f.value }}
+                    </span>
+                </div>
+                <span v-else class="mkt-filter-summary__empty">No filters applied — showing all live listings.</span>
+
+                <Link :href="route('market.index')" class="mkt-filter-summary__clear">
+                    <el-icon><Close /></el-icon> Clear
+                </Link>
+            </div>
+
             <div class="mkt-card">
-                <el-table :data="pagedListings" class="mkt-el-table" stripe row-key="id" empty-text="No lots match your search." @row-click="goToListing">
+                <el-table :data="pagedListings" class="mkt-el-table" stripe row-key="id" empty-text="No lots match this filter." @row-click="goToListing">
                     <el-table-column width="72">
                         <template #default="{ row }">
                             <div class="mkt-thumb">
@@ -154,11 +170,11 @@ watch(filteredListings, () => { currentPage.value = 1; });
                     </el-table-column>
                 </el-table>
 
-                <div v-if="filteredListings.length" class="mkt-pagination">
+                <div v-if="searchedListings.length" class="mkt-pagination">
                     <el-pagination
                         v-model:current-page="currentPage"
                         v-model:page-size="pageSize"
-                        :total="filteredListings.length"
+                        :total="searchedListings.length"
                         :page-sizes="[25, 50, 100]"
                         layout="total, sizes, prev, pager, next"
                         background
@@ -176,19 +192,58 @@ watch(filteredListings, () => { currentPage.value = 1; });
 /* ── Body ─────────────────────────────────────────────────────────────── */
 .mkt-body { padding: .75rem 0 3rem; }
 
-.mkt-section__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .875rem; padding: 0 1.5rem; }
-.mkt-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
-.mkt-title { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
-.mkt-count { font-size: .75rem; color: var(--on-surface-var); }
-.mkt-section__actions { display: flex; align-items: center; gap: 14px; }
+/* ── Filter summary bar ──────────────────────────────────────────────── */
+.mkt-filter-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin: 0 1.5rem .875rem;
+    padding: .75rem 1rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
 
-.mkt-btn-group { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--green); }
-.mkt-btn-group__item { display: inline-flex; align-items: center; gap: 5px; padding: 7px 18px; font-size: .75rem; font-weight: 700; letter-spacing: .01em; text-decoration: none; color: var(--green); background: #fff; transition: background .15s ease, color .15s ease; white-space: nowrap; }
-.mkt-btn-group__item :deep(.el-icon) { font-size: 13px; }
-.mkt-btn-group__item + .mkt-btn-group__item { border-left: 1px solid var(--green); }
-.mkt-btn-group__item:hover { background: #f0f5f3; }
-.mkt-btn-group__item--solid { background: var(--green); color: #fff; }
-.mkt-btn-group__item--solid:hover { background: var(--green-dark); }
+.mkt-filter-summary__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--on-surface-var);
+    flex-shrink: 0;
+}
+
+.mkt-filter-summary__label :deep(.el-icon) { color: var(--green); }
+
+.mkt-filter-summary__empty { font-size: .75rem; color: var(--on-surface-var); }
+
+.mkt-filter-summary__chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto; }
+
+.mkt-filter-summary__chip {
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(0, 69, 50, .08);
+    color: var(--green);
+    font-size: .75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.mkt-filter-summary__clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--on-surface-var);
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: color .15s ease;
+}
+.mkt-filter-summary__clear:hover { color: var(--green); }
 
 /* ── Table card — boxed, elevated container ─────────────────────────────── */
 .mkt-card {
@@ -252,7 +307,7 @@ watch(filteredListings, () => { currentPage.value = 1; });
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 767.98px) {
-    .mkt-section__head { padding: 0 1.25rem; }
+    .mkt-filter-summary { margin: 0 1.25rem .875rem; }
     .mkt-card { margin: 0 1.25rem; border-radius: 12px; }
     .mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1rem; }
     .mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1rem; }

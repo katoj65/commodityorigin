@@ -22,6 +22,7 @@ use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Farmer\FarmerController;
 use App\Http\Controllers\Escrow\EscrowController;
+use App\Http\Controllers\Input\AgriculturalInputController;
 use App\Http\Controllers\Inspection\InspectionController;
 use App\Http\Controllers\Lot\LotController;
 use App\Http\Controllers\Market\MarketController;
@@ -118,6 +119,7 @@ Route::middleware([
 
     // User profile routes.
     Route::post('/profile', [ProfileController::class, 'store'])->name('profile.store');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/role', [ProfileController::class, 'updateRole'])->name('profile.role');
     Route::post('/profile/currency', [ProfileController::class, 'updateCurrency'])->name('profile.currency');
 
@@ -137,6 +139,18 @@ Route::middleware([
         Route::get('/create', [CooperativeController::class, 'create'])->name('create');
         Route::post('/', [CooperativeController::class, 'store'])->name('store');
         Route::get('/{cooperative}', [CooperativeController::class, 'show'])->name('show');
+    });
+
+    // Agricultural input store — visible to every logged-in user; only
+    // admins may add, edit, or remove inputs. Registered as its own
+    // top-level group *before* the `farm` group below (which has a
+    // `/{farm}` wildcard route) so that `/farm/inputs` resolves here
+    // instead of being greedily captured as `{farm} = "inputs"`.
+    Route::prefix('farm/inputs')->name('farm.inputs.')->group(function () {
+        Route::get('/', [AgriculturalInputController::class, 'index'])->name('index');
+        Route::post('/', [AgriculturalInputController::class, 'store'])->name('store');
+        Route::patch('/{agriculturalInput}', [AgriculturalInputController::class, 'update'])->name('update');
+        Route::delete('/{agriculturalInput}', [AgriculturalInputController::class, 'destroy'])->name('destroy');
     });
 
     // Farm workspace routes. Access is enforced by FarmPolicy: admins have
@@ -325,6 +339,8 @@ Route::middleware([
         Route::get('/request', [MarketController::class, 'request'])->name('request');
         Route::get('/compare', [MarketController::class, 'compareCountries'])->name('compare');
         Route::get('/offer', [MarketController::class, 'offers'])->name('offer');
+        Route::get('/filter-options', [MarketController::class, 'filterOptions'])->name('filter.options');
+        Route::get('/filter', [MarketController::class, 'filter'])->name('filter');
         Route::get('/{market}', [MarketController::class, 'show'])->name('show');
     });
 

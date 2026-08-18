@@ -7,6 +7,7 @@ use App\Http\Resources\CalendarResource;
 use App\Http\Resources\ExchangeRateResource;
 use App\Http\Resources\ForecastResource;
 use App\Http\Resources\CountryResource;
+use App\Http\Resources\MarketListingResource;
 use App\Http\Resources\OrderResource;
 use App\Models\Market;
 use App\Services\BuyService;
@@ -17,6 +18,7 @@ use App\Services\ExchangeRateService;
 use App\Services\ForecastService;
 use App\Services\MarketService;
 use App\Services\OrderService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -111,6 +113,36 @@ class MarketController extends Controller
     }
 
     /**
+     * Display only the live listings matching the buyer's filter dialog
+     * criteria — a dedicated results page reached from the market filter.
+     */
+    public function filter(Request $request): Response
+    {
+        $filters = $request->validate([
+            'type' => ['nullable', 'string'],
+            'origin' => ['nullable', 'string'],
+            'process' => ['nullable', 'string'],
+            'min_price' => ['nullable', 'numeric', 'min:0'],
+            'max_price' => ['nullable', 'numeric', 'min:0'],
+            'min_quality' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        return Inertia::render('Market/MarketFilterResults', [
+            'markets' => MarketListingResource::collection($this->market->filteredListing($filters))->resolve(),
+            'filters' => $filters,
+        ]);
+    }
+
+    /**
+     * The distinct coffee types, origins, and processes available for the
+     * market filter dialog's dropdowns.
+     */
+    public function filterOptions(): JsonResponse
+    {
+        return response()->json($this->market->filterOptions());
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -125,7 +157,7 @@ class MarketController extends Controller
     {
         return Inertia::render('Market/ProductProfile', [
             'item' => $this->market->show($market),
-            'cartQuantity' => $this->cart->quantityFor($request->user()->id, $market->id),
+            'cartQuantity' => $this->cart->quantityFor($request->user()->id, 'market', $market->id),
         ]);
     }
 

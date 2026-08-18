@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class CartItem extends Model
 {
@@ -22,6 +23,8 @@ class CartItem extends Model
     protected $fillable = [
         'user_id',
         'market_id',
+        'cartable_id',
+        'cartable_type',
         'quantity',
         'unit_price',
         'status',
@@ -42,6 +45,20 @@ class CartItem extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * The purchasable model this cart item points to — a coffee Market
+     * listing or an AgriculturalInput. Kept alongside the legacy market()
+     * relation below for anything still reading it directly.
+     */
+    public function cartable(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    /**
+     * @deprecated Use cartable() — kept only for the legacy market_id
+     * column, which is no longer written to by new cart items.
+     */
     public function market(): BelongsTo
     {
         return $this->belongsTo(Market::class);

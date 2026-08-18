@@ -107,3 +107,69 @@
 .el-form-item.is-error .el-select__wrapper.is-focused {
     box-shadow: 0 0 0 1px var(--el-color-danger) inset !important;
 }
+
+/* ── Notifications ─────────────────────────────────────────────────────
+   Element Plus's default toast is a plain bordered rectangle with a bare
+   colored glyph. This turns the icon into a tinted badge (matching the
+   icon-badge language used across the app's cards/modals), adds a soft
+   elevated shadow and a colored accent bar per type, and tightens up the
+   typography — while leaving ElNotification's JS API untouched. */
+.el-notification {
+    align-items: flex-start;
+    gap: 4px;
+    padding: 18px 20px !important;
+    border: 1px solid var(--card-border, #eef2f0) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14) !important;
+    border-left-width: 4px !important;
+}
+.el-notification:has(.el-notification--success) { border-left-color: var(--el-color-success) !important; }
+.el-notification:has(.el-notification--warning) { border-left-color: var(--el-color-warning) !important; }
+.el-notification:has(.el-notification--error) { border-left-color: var(--el-color-danger) !important; }
+.el-notification:has(.el-notification--info) { border-left-color: var(--el-color-info) !important; }
+.el-notification:has(.el-notification--primary) { border-left-color: var(--el-color-primary) !important; }
+
+.el-notification__icon {
+    flex-shrink: 0;
+    width: 38px !important;
+    height: 38px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    font-size: 18px !important;
+    margin-top: 1px;
+}
+.el-notification__icon.el-notification--success { background: var(--el-color-success-light-9); }
+.el-notification__icon.el-notification--warning { background: var(--el-color-warning-light-9); }
+.el-notification__icon.el-notification--error { background: var(--el-color-danger-light-9); }
+.el-notification__icon.el-notification--info { background: var(--el-color-info-light-9); }
+.el-notification__icon.el-notification--primary { background: var(--el-color-primary-light-9); }
+
+.el-notification__group {
+    margin-left: 14px !important;
+    margin-right: 18px !important;
+}
+.el-notification__title {
+    font-size: 0.9375rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em;
+    color: var(--text-main, #0f172a) !important;
+}
+.el-notification__content {
+    margin-top: 4px !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.55 !important;
+    color: var(--text-muted, #64748b) !important;
+}
+.el-notification__closeBtn {
+    top: 16px !important;
+    right: 14px !important;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+.el-notification__closeBtn:hover {
+    background: var(--surface-container-low, #f2f4f6);
+    color: var(--text-main, #0f172a) !important;
+}

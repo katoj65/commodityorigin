@@ -57,6 +57,44 @@ class MarketService
     }
 
     /**
+     * Query live markets narrowed down by the buyer's filter criteria —
+     * coffee type, origin, process, price range, and minimum quality.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, Market>
+     */
+    public function filteredListing(array $filters): Collection
+    {
+        return $this->query()
+            ->where('status', 'live')
+            ->when($filters['type'] ?? null, fn (Builder $q, string $type) => $q->where('type', $type))
+            ->when($filters['origin'] ?? null, fn (Builder $q, string $origin) => $q->where('origin', $origin))
+            ->when($filters['process'] ?? null, fn (Builder $q, string $process) => $q->where('process', $process))
+            ->when($filters['min_price'] ?? null, fn (Builder $q, $min) => $q->where('price_per_kg', '>=', $min))
+            ->when($filters['max_price'] ?? null, fn (Builder $q, $max) => $q->where('price_per_kg', '<=', $max))
+            ->when($filters['min_quality'] ?? null, fn (Builder $q, $min) => $q->where('quality_score', '>=', $min))
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
+    /**
+     * The distinct coffee types, origins, and processes available across
+     * live listings — populates the market filter dialog's dropdowns.
+     *
+     * @return array<string, array<int, string>>
+     */
+    public function filterOptions(): array
+    {
+        $listings = $this->liveMarkets();
+
+        return [
+            'types' => $listings->pluck('type')->filter()->unique()->sort()->values()->all(),
+            'origins' => $listings->pluck('origin')->filter()->unique()->sort()->values()->all(),
+            'processes' => $listings->pluck('process')->filter()->unique()->sort()->values()->all(),
+        ];
+    }
+
+    /**
      * Shape a single market listing for its product profile page — pulls in
      * the underlying lot's batch/sensory/storage records when the listing
      * was posted from a tracked lot, for a fuller spec sheet.

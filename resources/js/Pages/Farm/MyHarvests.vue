@@ -1,11 +1,13 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
+import AddFarmHarvestDialog from '@/Components/Modals/AddFarmHarvestDialog.vue';
+import HarvestProfileDialog from '@/Components/Modals/HarvestProfileDialog.vue';
 import {
     Box, House, Collection, Calendar, TrendCharts, Clock,
-    View, Edit, Delete, CircleCheck, WarningFilled,
+    View, Edit, Delete, CircleCheck, WarningFilled, Plus,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -13,11 +15,11 @@ const props = defineProps({
     pickMethodOptions: { type: Array, default: () => [] },
     harvestSeasonOptions: { type: Array, default: () => [] },
     isAdmin: { type: Boolean, default: false },
+    farmOptions: { type: Array, default: () => [] },
+    varietyOptions: { type: Array, default: () => [] },
 });
 
-function goToFarm(row) {
-    router.visit(route('farm.show', row.farm_id));
-}
+const addHarvestOpen = ref(false);
 
 /* ── Row presentation helpers ─────────────────────────────────────── */
 const avatarPalette = [
@@ -137,19 +139,9 @@ function deleteHarvest() {
     });
 }
 
-/* ── View harvest — copied from FarmProfile.vue's view dialog ──────── */
-function harvestCode(h) {
-    return `#${(h.harvest_date || '').slice(0, 4) || new Date().getFullYear()}-EX${String(h.id).padStart(2, '0')}`;
-}
-
+/* ── View harvest ──────────────────────────────────────────────────── */
 const viewHarvestDialogOpen = ref(false);
 const harvestToView = ref(null);
-const harvestToViewCode = computed(() => (harvestToView.value ? harvestCode(harvestToView.value) : ''));
-const harvestToViewStatus = computed(() => {
-    if (!harvestToView.value?.status) return 'Pending';
-    const status = harvestToView.value.status;
-    return status.charAt(0).toUpperCase() + status.slice(1);
-});
 
 function openViewHarvestDialog(row) {
     harvestToView.value = props.harvests.find((h) => String(h.id) === String(row.id)) || null;
@@ -173,13 +165,10 @@ function openViewHarvestDialog(row) {
                             {{ isAdmin ? 'Every harvest recorded across all farms.' : 'Harvests recorded across the farms you created.' }}
                         </p>
                     </div>
+                    <button v-if="farmOptions.length" type="button" class="mh-btn-primary" @click="addHarvestOpen = true">
+                        <el-icon><Plus /></el-icon> Add Harvest
+                    </button>
                 </div>
-            </div>
-
-            <!-- ── Toolbar ───────────────────────────────────────────────── -->
-            <div class="mh-toolbar">
-                <span class="mh-toolbar__title">All Harvests</span>
-                <span class="mh-toolbar__count">{{ harvests.length }} total</span>
             </div>
 
             <!-- ── Table ─────────────────────────────────────────────────── -->
@@ -188,7 +177,7 @@ function openViewHarvestDialog(row) {
                 :data="harvests"
                 class="mh-table"
                 row-key="id"
-                @row-click="goToFarm"
+                @row-click="openViewHarvestDialog"
             >
                 <el-table-column min-width="220">
                     <template #header><span class="mh-th"><el-icon><House /></el-icon> Farm</span></template>
@@ -393,87 +382,22 @@ function openViewHarvestDialog(row) {
                 </template>
             </el-dialog>
 
-            <!-- ── View Harvest modal — exact copy of FarmProfile.vue's dialog ── -->
-            <el-dialog v-model="viewHarvestDialogOpen" width="560px" align-center class="fp-modal">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon">
-                            <el-icon :size="18"><Box /></el-icon>
-                        </div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Harvest History</div>
-                            <div class="fp-modal__title">Harvest {{ harvestToViewCode }}</div>
-                        </div>
-                    </div>
-                </template>
-
-                <div v-if="harvestToView" class="fp-modal__body">
-                    <div class="fp-view-section">
-                        <div class="fp-view-section__title">Overview</div>
-                        <div class="row g-2">
-                            <div class="col-6"><div class="fp-spec-cell"><span>Variety</span><strong>{{ harvestToView.variety || '—' }}</strong></div></div>
-                            <div class="col-6"><div class="fp-spec-cell"><span>Harvest Season</span><strong>{{ harvestToView.harvest_season || '—' }}</strong></div></div>
-                            <div class="col-6"><div class="fp-spec-cell"><span>Pick Method</span><strong>{{ harvestToView.pick_method || '—' }}</strong></div></div>
-                            <div class="col-6"><div class="fp-spec-cell"><span>Status</span><strong>{{ harvestToViewStatus }}</strong></div></div>
-                        </div>
-                    </div>
-
-                    <div class="fp-view-section">
-                        <div class="fp-view-section__title">Timeline</div>
-                        <div class="row g-2">
-                            <div class="col-6"><div class="fp-spec-cell"><span>Date Planted</span><strong>{{ harvestToView.date_planted || '—' }}</strong></div></div>
-                            <div class="col-6"><div class="fp-spec-cell"><span>Harvest Date</span><strong>{{ harvestToView.harvest_date || '—' }}</strong></div></div>
-                        </div>
-                    </div>
-
-                    <div class="fp-view-section">
-                        <div class="fp-view-section__title">Yield &amp; Pricing</div>
-                        <div class="row g-2">
-                            <div class="col-4"><div class="fp-spec-cell"><span>Weight</span><strong>{{ harvestToView.weight !== null && harvestToView.weight !== undefined ? `${Number(harvestToView.weight).toLocaleString()} kg` : '—' }}</strong></div></div>
-                            <div class="col-4"><div class="fp-spec-cell"><span>Price / kg</span><strong>{{ harvestToView.price !== null && harvestToView.price !== undefined ? `$${Number(harvestToView.price).toFixed(2)}` : '—' }}</strong></div></div>
-                            <div class="col-4"><div class="fp-spec-cell"><span>Ripeness</span><strong>{{ harvestToView.ripeness_percentage !== null && harvestToView.ripeness_percentage !== undefined ? `${harvestToView.ripeness_percentage}%` : '—' }}</strong></div></div>
-                        </div>
-                    </div>
-
-                    <div class="fp-view-section">
-                        <div class="fp-view-section__title">Quality Flags</div>
-                        <div class="fp-harvest-flags">
-                            <div class="fp-harvest-flag">
-                                <span>Foreign Matter</span>
-                                <span class="badge rounded-pill" style="font-size:.65rem;"
-                                    :class="harvestToView.foreign_matter_present ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
-                                    {{ harvestToView.foreign_matter_present ? 'Present' : 'None' }}
-                                </span>
-                            </div>
-                            <div class="fp-harvest-flag">
-                                <span>Pest Damage</span>
-                                <span class="badge rounded-pill" style="font-size:.65rem;"
-                                    :class="harvestToView.pest_damage ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
-                                    {{ harvestToView.pest_damage ? 'Present' : 'None' }}
-                                </span>
-                            </div>
-                            <div class="fp-harvest-flag">
-                                <span>Disease Signs</span>
-                                <span class="badge rounded-pill" style="font-size:.65rem;"
-                                    :class="harvestToView.disease_signs ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
-                                    {{ harvestToView.disease_signs ? 'Present' : 'None' }}
-                                </span>
-                            </div>
-                            <div class="fp-harvest-flag">
-                                <span>Visible Defects</span>
-                                <span class="badge rounded-pill" style="font-size:.65rem;"
-                                    :class="harvestToView.visible_defects ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
-                                    {{ harvestToView.visible_defects ? 'Present' : 'None' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="fp-view-meta">Recorded {{ harvestToView.created_at || '—' }}</div>
-                </div>
-            </el-dialog>
-
         </div>
+
+        <HarvestProfileDialog
+            v-model="viewHarvestDialogOpen"
+            :harvest="harvestToView"
+            :is-admin="isAdmin"
+        />
+
+        <AddFarmHarvestDialog
+            v-if="farmOptions.length"
+            v-model="addHarvestOpen"
+            :farm-options="farmOptions"
+            :variety-options="varietyOptions"
+            :pick-method-options="pickMethodOptions"
+            :harvest-season-options="harvestSeasonOptions"
+        />
     </AppLayout>
 </template>
 
@@ -502,11 +426,6 @@ function openViewHarvestDialog(row) {
 .mh-title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; }
 .mh-subtitle { font-size: .8125rem; color: var(--on-surface-var); margin-top: 2px; line-height: 1.5; }
 
-/* ── Toolbar ───────────────────────────────────────────────────────────── */
-.mh-toolbar { display: flex; align-items: center; justify-content: space-between; padding: .875rem clamp(1rem, 3vw, 2rem); }
-.mh-toolbar__title { font-size: .875rem; font-weight: 800; color: var(--on-surface); }
-.mh-toolbar__count { font-size: .75rem; font-weight: 600; color: var(--on-surface-var); }
-
 /* ── Buttons ───────────────────────────────────────────────────────────────
    NOTE: literal hex values on purpose, not var(--green)/var(--red) — these
    classes are also used inside <el-dialog>, which teleports its content to
@@ -522,7 +441,7 @@ function openViewHarvestDialog(row) {
    page: floating, elevated, rounded, instead of an edge-to-edge table
    sitting flat on the page background. ───────────────────────────────── */
 .mh-card {
-    margin: 0 clamp(1rem, 3vw, 2rem);
+    margin: 1.25rem clamp(1rem, 3vw, 2rem) 0;
     border: 1px solid var(--surface-high);
     border-radius: 14px;
     overflow: hidden;
@@ -618,14 +537,6 @@ function openViewHarvestDialog(row) {
 
 .fp-harvest-flags { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding: 12px; background: #f9fafb; border-radius: 10px; border: 1px solid #f3f4f6; }
 .fp-harvest-flag { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .8125rem; font-weight: 600; color: #374151; }
-
-.fp-spec-cell { background: #f8fafc; border-radius: 6px; padding: 7px 9px; }
-.fp-spec-cell span   { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; display: block; margin-bottom: 3px; line-height: 1.3; }
-.fp-spec-cell strong { font-size: 0.8125rem; font-weight: 700; color: #111827; display: block; line-height: 1.35; }
-
-.fp-view-section { display: flex; flex-direction: column; gap: 8px; }
-.fp-view-section__title { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #9ca3af; }
-.fp-view-meta { font-size: 0.75rem; color: #9ca3af; text-align: center; padding-top: 4px; border-top: 1px solid #f3f4f6; }
 
 :deep(.fp-field-input .el-input__wrapper),
 :deep(.fp-field-input .el-textarea__inner) { box-shadow: 0 0 0 1px #d1d5db inset; border-radius: 8px; }

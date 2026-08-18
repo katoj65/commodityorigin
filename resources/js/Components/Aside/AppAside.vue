@@ -9,6 +9,7 @@ import {
     Coin,
     Compass,
     Document,
+    FirstAidKit,
     Grid,
     House,
     MagicStick,
@@ -48,7 +49,6 @@ const sideSections = computed(() => [
         title: 'Main',
         items: [
             { label: 'Dashboard', href: route('dashboard'), active: route().current('dashboard'), icon: Grid },
-            { label: 'Calendar', href: route('calendar.index'), active: route().current('calendar.*'), icon: Calendar },
         ],
     },
     {
@@ -62,11 +62,13 @@ const sideSections = computed(() => [
     {
         title: 'Operations',
         items: [
+            { label: 'Calendar', href: route('calendar.index'), active: route().current('calendar.*'), icon: Calendar },
             { label: 'My Orders', href: route('orders.index'), active: route().current('orders.*'), icon: ShoppingBag },
             { label: 'Farmers', href: route('farmer.index'), active: route().current('farmer.index'), icon: User },
             { label: 'Coffee Farms', href: route('farm.index'), active: route().current('farm.index'), icon: House },
             { label: 'My Farms', href: route('farm.mine'), active: route().current('farm.mine'), icon: House },
             { label: 'My Harvests', href: route('farm.harvest.mine'), active: route().current('farm.harvest.mine'), icon: Coffee },
+            { label: 'Agricultural Inputs', href: route('farm.inputs.index'), active: route().current('farm.inputs.*'), icon: FirstAidKit },
             { label: 'Weather Forecast', href: route('farm.weather'), active: route().current('farm.weather'), icon: Sunny },
             { label: 'Cooperatives', href: route('cooperative.index'), active: route().current('cooperative.*'), icon: School },
             { label: 'Season', href: route('season.index'), active: route().current('season.*'), icon: Calendar },
@@ -78,8 +80,8 @@ const sideSections = computed(() => [
     {
         title: 'Financials',
         items: [
-            { label: 'Wallet', href: route('wallet.index'), active: route().current('wallet.*'), icon: Wallet },
             { label: 'Purchases', href: route('purchases.index'), active: route().current('purchases.*'), icon: Tickets },
+            { label: 'Wallet', href: route('wallet.index'), active: route().current('wallet.*'), icon: Wallet },
             { label: 'Currencies', href: route('currencies.index'), active: route().current('currencies.*'), icon: Coin },
         ],
     },
@@ -138,14 +140,6 @@ function go(item) {
                     <el-icon :size="18"><Grid /></el-icon>
                     <span class="app-nav-item__label">Dashboard</span>
                 </div>
-                <div
-                    class="app-nav-item"
-                    :class="{ 'app-nav-item--active': route().current('calendar.*') }"
-                    @click="router.visit(route('calendar.index'))"
-                >
-                    <el-icon :size="18"><Calendar /></el-icon>
-                    <span class="app-nav-item__label">Calendar</span>
-                </div>
 
                 <div class="app-aside__label">Marketplace</div>
                 <div
@@ -155,6 +149,14 @@ function go(item) {
                 >
                     <el-icon :size="18"><Compass /></el-icon>
                     <span class="app-nav-item__label">Market</span>
+                </div>
+                <div
+                    class="app-nav-item"
+                    :class="{ 'app-nav-item--active': route().current('calendar.*') }"
+                    @click="router.visit(route('calendar.index'))"
+                >
+                    <el-icon :size="18"><Calendar /></el-icon>
+                    <span class="app-nav-item__label">Calendar</span>
                 </div>
 
                 <template v-if="subscribedAgents.length">
@@ -185,19 +187,19 @@ function go(item) {
                 <div class="app-aside__label">Financials</div>
                 <div
                     class="app-nav-item"
-                    :class="{ 'app-nav-item--active': route().current('wallet.*') }"
-                    @click="router.visit(route('wallet.index'))"
-                >
-                    <el-icon :size="18"><Wallet /></el-icon>
-                    <span class="app-nav-item__label">Wallet</span>
-                </div>
-                <div
-                    class="app-nav-item"
                     :class="{ 'app-nav-item--active': route().current('purchases.*') }"
                     @click="router.visit(route('purchases.index'))"
                 >
                     <el-icon :size="18"><Tickets /></el-icon>
                     <span class="app-nav-item__label">Purchases</span>
+                </div>
+                <div
+                    class="app-nav-item"
+                    :class="{ 'app-nav-item--active': route().current('wallet.*') }"
+                    @click="router.visit(route('wallet.index'))"
+                >
+                    <el-icon :size="18"><Wallet /></el-icon>
+                    <span class="app-nav-item__label">Wallet</span>
                 </div>
 
                 <div class="app-aside__label">Analysis</div>

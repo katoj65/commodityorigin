@@ -8,6 +8,7 @@ import {
     Close,
     Document,
     Expand,
+    Grid,
     HomeFilled,
     MagicStick,
     Message,
@@ -197,6 +198,7 @@ function openAiAssistant() {
 const accountMenuItems = [
     { label: 'Profile settings', href: () => route('profile.show'), icon: User },
     { label: 'Dashboard', href: () => route('dashboard'), icon: Odometer },
+    { label: 'Apps', href: () => route('apps.index'), icon: Grid },
     { label: 'Home', href: () => route('home'), icon: HomeFilled },
     { label: 'Documentation', href: () => route('documentation.index'), icon: Document },
 ];

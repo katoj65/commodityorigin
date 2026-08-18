@@ -106,11 +106,36 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the authenticated user's extended profile details. Unlike
+     * store() (used during onboarding), this does not touch profile_type /
+     * users.role — editing your bio or address shouldn't change your
+     * account role.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request): RedirectResponse
     {
-        //
+        $validated = $request->validate([
+            'date_of_birth' => ['required', 'date', 'before_or_equal:today'],
+            'gender' => ['nullable', 'in:male,female,prefer_not_to_say'],
+            'address_line_1' => ['required', 'string', 'max:255'],
+            'address_line_2' => ['nullable', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:255'],
+            'state' => ['required', 'string', 'max:255'],
+            'country' => ['required', 'string', 'max:255'],
+            'postal_code' => ['nullable', 'string', 'max:255'],
+            'bio' => ['nullable', 'string', 'max:1000'],
+            'photo' => ['nullable', 'image', 'max:5120'],
+        ]);
+
+        $photoPath = ImageUploadHelper::store($request->file('photo'), 'profile-photos');
+        unset($validated['photo']);
+
+        if ($photoPath) {
+            $validated['profile_photo'] = $photoPath;
+        }
+
+        $this->profiles->save($request->user(), $validated);
+
+        return back()->with('success', 'Profile updated successfully.');
     }
 
     /**

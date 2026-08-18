@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { MapLocation, InfoFilled } from '@element-plus/icons-vue';
+import { MapLocation, InfoFilled, Postcard, Box, Document, UserFilled } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
@@ -71,7 +71,7 @@ const submit = () => form.post(route('farm.store'));
 
                         <!-- Farm Identity -->
                         <div class="af-group">
-                            <div class="af-group__title">Farm Identity</div>
+                            <div class="af-group__title"><el-icon><Postcard /></el-icon> Farm Identity</div>
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="af-label">Farm Name <span class="af-req">*</span></label>
@@ -83,7 +83,7 @@ const submit = () => form.post(route('farm.store'));
 
                         <!-- Location & Geography -->
                         <div class="af-group">
-                            <div class="af-group__title">Location &amp; Geography</div>
+                            <div class="af-group__title"><el-icon><MapLocation /></el-icon> Location &amp; Geography</div>
                             <div class="row g-3">
                                 <div class="col-12 col-sm-6">
                                     <label class="af-label">Location <span class="af-req">*</span></label>
@@ -100,7 +100,7 @@ const submit = () => form.post(route('farm.store'));
 
                         <!-- Production Details -->
                         <div class="af-group">
-                            <div class="af-group__title">Production Details</div>
+                            <div class="af-group__title"><el-icon><Box /></el-icon> Production Details</div>
                             <div class="row g-3">
                                 <div class="col-12 col-sm-6">
                                     <label class="af-label">Farm Size <span class="af-req">*</span></label>
@@ -119,7 +119,7 @@ const submit = () => form.post(route('farm.store'));
 
                         <!-- Notes -->
                         <div class="af-group">
-                            <div class="af-group__title">Notes &amp; Context <span class="af-group__opt">Optional</span></div>
+                            <div class="af-group__title"><el-icon><Document /></el-icon> Notes &amp; Context <span class="af-group__opt">Optional</span></div>
                             <el-input
                                 v-model="form.notes"
                                 type="textarea"
@@ -152,7 +152,7 @@ const submit = () => form.post(route('farm.store'));
 
                         <!-- Farmer Registration (only when registering on someone else's behalf) -->
                         <div v-if="showFarmerRegistration" class="af-group af-group--last">
-                            <div class="af-group__title">Farmer Registration</div>
+                            <div class="af-group__title"><el-icon><UserFilled /></el-icon> Farmer Registration</div>
                             <div class="row g-3">
                                 <div class="col-12 col-sm-6">
                                     <label class="af-label">First Name <span class="af-req">*</span></label>
@@ -270,17 +270,29 @@ const submit = () => form.post(route('farm.store'));
 .af-body { padding: 1.75rem 1.5rem 3rem; }
 .af-layout {
     display: grid;
-    grid-template-columns: minmax(0, 720px) 280px;
+    grid-template-columns: 7fr 3fr;
     gap: 1.5rem;
     align-items: start;
-    max-width: 1040px;
+    max-width: 1160px;
 }
 .af-main { min-width: 0; }
-.af-form { border: 1px solid var(--border-light); border-radius: 10px; padding: 1.5rem; }
+.af-form {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 1.75rem;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
+}
 
 /* ── Sidebar: instructions ────────────────────────────────────────────────── */
 .af-sidebar { position: sticky; top: 60px; }
-.af-guide { border: 1px solid var(--border-light); border-radius: 8px; overflow: hidden; }
+.af-guide {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
+}
 .af-guide__title {
     display: flex;
     align-items: center;
@@ -319,7 +331,8 @@ const submit = () => form.post(route('farm.store'));
 .af-group { padding: 1.25rem 0; border-bottom: 1px solid var(--border-light); }
 .af-group:first-child { padding-top: 0; }
 .af-group--last { border-bottom: none; padding-bottom: 0; }
-.af-group__title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); margin-bottom: 1rem; }
+.af-group__title { display: flex; align-items: center; gap: 7px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); margin-bottom: 1rem; }
+.af-group__title :deep(.el-icon) { font-size: 13px; color: var(--green); }
 .af-group__opt   { font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--on-surface-var); margin-left: 6px; }
 
 /* ── Labels & inputs ───────────────────────────────────────────────────────── */

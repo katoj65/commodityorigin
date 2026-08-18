@@ -39,6 +39,7 @@ class PurchaseController extends Controller
 
         return Inertia::render('Purchase/PurchaseProfile', [
             'purchase' => UserOrderResource::make($userOrder)->resolve(),
+            'tracking' => $this->purchases->trackingFor($userOrder),
         ]);
     }
 

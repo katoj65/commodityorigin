@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\AgriculturalInput;
 use App\Models\Batch;
 use App\Models\GalleryImage;
 use App\Models\Harvest;
 use App\Models\Lot;
 use App\Models\LotRequest;
 use App\Models\Season;
+use App\Policies\AgriculturalInputPolicy;
 use App\Policies\BatchPolicy;
 use App\Policies\GalleryImagePolicy;
 use App\Policies\HarvestPolicy;
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(AgriculturalInput::class, AgriculturalInputPolicy::class);
         Gate::policy(Batch::class, BatchPolicy::class);
         Gate::policy(GalleryImage::class, GalleryImagePolicy::class);
         Gate::policy(Harvest::class, HarvestPolicy::class);
