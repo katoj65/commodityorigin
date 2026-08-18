@@ -114,6 +114,8 @@ class ProfileController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             'date_of_birth' => ['required', 'date', 'before_or_equal:today'],
             'gender' => ['nullable', 'in:male,female,prefer_not_to_say'],
             'address_line_1' => ['required', 'string', 'max:255'],
@@ -125,6 +127,12 @@ class ProfileController extends Controller
             'bio' => ['nullable', 'string', 'max:1000'],
             'photo' => ['nullable', 'image', 'max:5120'],
         ]);
+
+        $request->user()->update([
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+        ]);
+        unset($validated['first_name'], $validated['last_name']);
 
         $photoPath = ImageUploadHelper::store($request->file('photo'), 'profile-photos');
         unset($validated['photo']);

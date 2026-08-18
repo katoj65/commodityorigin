@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,13 @@ use Illuminate\Support\Facades\Storage;
 class UserProfile extends Model
 {
     use HasFactory;
+
+    /**
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'profile_photo_url',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -50,8 +58,13 @@ class UserProfile extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function profilePhotoUrl(): ?string
+    /**
+     * Full public URL for the uploaded profile photo, or null if none has
+     * been set — appended to the model's array/JSON form so the frontend
+     * never has to reconstruct storage paths itself.
+     */
+    protected function profilePhotoUrl(): Attribute
     {
-        return $this->profile_photo ? Storage::url($this->profile_photo) : null;
+        return Attribute::get(fn (): ?string => $this->profile_photo ? Storage::disk('public')->url($this->profile_photo) : null);
     }
 }

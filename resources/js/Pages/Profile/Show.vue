@@ -318,10 +318,8 @@ function confirmUnsubscribe() {
                         <section id="profile-identity" class="profile-card profile-card--identity">
                             <div class="profile-identity__media">
                                 <div class="profile-avatar-frame">
-                                    <el-avatar
-                                        class="profile-avatar"
-                                        shape="square"
-                                    >
+                                    <img v-if="profile.profile_photo_url" :src="profile.profile_photo_url" :alt="fullName" class="profile-avatar profile-avatar--photo">
+                                    <el-avatar v-else class="profile-avatar" shape="square">
                                         <el-icon><User /></el-icon>
                                     </el-avatar>
                                 </div>
@@ -567,7 +565,7 @@ function confirmUnsubscribe() {
             </div>
         </div>
 
-        <EditProfileDialog v-model="editProfileOpen" :profile="profile" />
+        <EditProfileDialog v-model="editProfileOpen" :user="user" :profile="profile" />
     </AppLayout>
 </template>
 
@@ -839,6 +837,11 @@ function confirmUnsubscribe() {
     background: #f1f5f3;
     color: #90a49b;
     font-size: 38px;
+}
+
+.profile-avatar--photo {
+    display: block;
+    object-fit: cover;
 }
 
 .profile-identity__body {

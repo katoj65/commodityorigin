@@ -457,7 +457,7 @@ onBeforeUnmount(() => {
 
                 <el-dropdown trigger="click" placement="bottom-end" @command="handleAccountCommand">
                     <div class="shell-header__account">
-                        <el-avatar :size="32" class="shell-header__avatar">{{ userInitials }}</el-avatar>
+                        <el-avatar :size="32" :src="user?.profile?.profile_photo_url" class="shell-header__avatar">{{ userInitials }}</el-avatar>
                         <div class="shell-header__account-text">
                             <div class="shell-header__account-name">{{ user?.name }}</div>
                             <div class="shell-header__account-role">{{ user?.role || 'Account' }}</div>
@@ -518,7 +518,7 @@ onBeforeUnmount(() => {
 
             <div class="shell-drawer__footer">
                 <div class="shell-drawer__user">
-                    <el-avatar :size="32" class="shell-header__avatar">{{ userInitials }}</el-avatar>
+                    <el-avatar :size="32" :src="user?.profile?.profile_photo_url" class="shell-header__avatar">{{ userInitials }}</el-avatar>
                     <div class="shell-drawer__user-name">{{ user?.name }}</div>
                 </div>
                 <el-button class="shell-drawer__logout" @click="logout">Sign out</el-button>

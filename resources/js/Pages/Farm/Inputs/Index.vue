@@ -477,7 +477,7 @@ function onCreated() {
     --surface-low: #f8fafc;
     --surface-high: #eef2f0;
     font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
+    background: #ffffff;
     color: var(--on-surface);
     min-height: 100%;
     line-height: 1.5;

@@ -1,11 +1,12 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import { Close, Edit, Upload } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
+    user: { type: Object, default: () => ({}) },
     profile: { type: Object, default: () => ({}) },
 });
 
@@ -18,6 +19,8 @@ const dialogVisible = computed({
 
 function emptyForm() {
     return {
+        first_name: props.user?.first_name || '',
+        last_name: props.user?.last_name || '',
         date_of_birth: props.profile?.date_of_birth || '',
         gender: props.profile?.gender || '',
         address_line_1: props.profile?.address_line_1 || '',
@@ -32,14 +35,27 @@ function emptyForm() {
 }
 
 const form = useForm(emptyForm());
-const photoFileName = computed(() => form.photo?.name || null);
+
+/* ── Photo preview — shows the newly picked file once chosen, falling
+   back to the profile's already-saved photo, and to nothing (upload
+   prompt) if neither exists. ────────────────────────────────────────── */
+const localPreviewUrl = ref('');
+const displayPhotoUrl = computed(() => localPreviewUrl.value || props.profile?.profile_photo_url || null);
+
+function revokeLocalPreview() {
+    if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value);
+    localPreviewUrl.value = '';
+}
 
 watch(() => props.modelValue, (open) => {
     if (!open) return;
     form.defaults(emptyForm());
     form.reset();
     form.clearErrors();
+    revokeLocalPreview();
 });
+
+onBeforeUnmount(revokeLocalPreview);
 
 function disableFutureDates(date) {
     const today = new Date();
@@ -48,7 +64,11 @@ function disableFutureDates(date) {
 }
 
 function onPhotoChange(event) {
-    form.photo = event.target.files?.[0] || null;
+    const file = event.target.files?.[0] || null;
+    form.photo = file;
+
+    revokeLocalPreview();
+    if (file) localPreviewUrl.value = URL.createObjectURL(file);
 }
 
 function closeDialog() {
@@ -99,15 +119,36 @@ function submit() {
 
         <div class="epd-modal__body">
             <div class="epd-photo">
-                <label class="epd-photo__upload">
+                <label class="epd-photo__upload" :class="{ 'epd-photo__upload--has-image': displayPhotoUrl }">
                     <input type="file" accept="image/*" class="epd-photo__input" @change="onPhotoChange">
-                    <el-icon><Upload /></el-icon>
-                    <span>{{ photoFileName || 'Upload a new photo (optional)' }}</span>
+                    <img v-if="displayPhotoUrl" :src="displayPhotoUrl" alt="Profile photo preview" class="epd-photo__preview">
+                    <template v-if="displayPhotoUrl">
+                        <div class="epd-photo__overlay">
+                            <el-icon><Upload /></el-icon>
+                            <span>Change photo</span>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <el-icon><Upload /></el-icon>
+                        <span>Upload a profile photo (optional)</span>
+                    </template>
                 </label>
                 <span v-if="form.errors.photo" class="epd-field__error">{{ form.errors.photo }}</span>
             </div>
 
             <div class="epd-grid">
+                <div class="epd-field">
+                    <label class="epd-field__label">First Name</label>
+                    <el-input v-model="form.first_name" placeholder="First name" class="epd-input" :class="{ 'epd-input--error': form.errors.first_name }" />
+                    <span v-if="form.errors.first_name" class="epd-field__error">{{ form.errors.first_name }}</span>
+                </div>
+
+                <div class="epd-field">
+                    <label class="epd-field__label">Last Name</label>
+                    <el-input v-model="form.last_name" placeholder="Last name" class="epd-input" :class="{ 'epd-input--error': form.errors.last_name }" />
+                    <span v-if="form.errors.last_name" class="epd-field__error">{{ form.errors.last_name }}</span>
+                </div>
+
                 <div class="epd-field">
                     <label class="epd-field__label">Date of Birth</label>
                     <el-date-picker
@@ -284,6 +325,8 @@ function submit() {
 
 .epd-photo {
     margin-bottom: 18px;
+    display: flex;
+    justify-content: center;
 }
 .epd-photo__upload {
     display: flex;
@@ -298,10 +341,46 @@ function submit() {
     font-weight: 600;
     cursor: pointer;
     transition: background 0.12s ease;
+    width: 100%;
 }
 .epd-photo__upload:hover { background: #f3f4f6; }
 .epd-photo__upload .el-icon { color: #145c42; font-size: 16px; flex-shrink: 0; }
 .epd-photo__input { display: none; }
+
+.epd-photo__upload--has-image {
+    position: relative;
+    width: 104px;
+    height: 104px;
+    padding: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #f1f5f3;
+}
+.epd-photo__upload--has-image:hover { background: #f1f5f3; }
+.epd-photo__preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.epd-photo__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(15, 23, 42, 0.55);
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.epd-photo__overlay .el-icon { color: #fff; font-size: 16px; }
+.epd-photo__upload--has-image:hover .epd-photo__overlay { opacity: 1; }
 
 .epd-grid {
     display: grid;
