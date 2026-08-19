@@ -79,6 +79,7 @@ class HandleInertiaRequests extends Middleware
                     'two_factor_enabled' => ! is_null($authenticatedUser->two_factor_secret),
                     'profile' => $authenticatedUser->profile,
                     'currency_code' => $authenticatedUser->currency_code,
+                    'created_at' => $authenticatedUser->created_at,
                 ] : null,
             ],
             'flash' => [

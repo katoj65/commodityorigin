@@ -9,6 +9,7 @@ use App\Http\Resources\OrderResource;
 use App\Http\Resources\TaskResource;
 use App\Models\CropGradeMetadata;
 use App\Models\RoleMetadata;
+use App\Services\BusinessProfileService;
 use App\Services\CalendarService;
 use App\Services\ExchangeRateService;
 use App\Services\MarketService;
@@ -28,6 +29,7 @@ class Dashboard extends Controller
         private readonly TaskService $tasks,
         private readonly OrderService $orders,
         private readonly ProfileService $profiles,
+        private readonly BusinessProfileService $businessProfiles,
         private readonly MarketService $market,
     ) {
     }
@@ -198,7 +200,8 @@ class Dashboard extends Controller
     public function dashboard(Request $request)
     {
         $user       = $request->user();
-        $hasProfile = ! is_null($this->profiles->forUser($user->id));
+        $hasProfile = ! is_null($this->profiles->forUser($user->id))
+            || ! is_null($this->businessProfiles->forUser($user->id));
 
         $cropGrades = CropGradeMetadata::query()
             ->where('is_active', true)
@@ -214,6 +217,7 @@ class Dashboard extends Controller
 
         return Inertia::render('GeneralDashboard', [
             'hasProfile' => $hasProfile,
+            'businessTypeOptions' => $this->businessProfiles->businessTypeOptions(),
             'cropGrades' => $cropGrades,
             'lotRequests' => $lotRequest,
             'exchangeRates' => ExchangeRateResource::collection($this->exchangeRates->all())->resolve(),

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ExchangeRates from '@/Components/ExchangeRates.vue';
@@ -15,7 +15,7 @@ import {
     CoffeeCup, PriceTag, Opportunity, TrendCharts,
     ArrowRight, Flag, MapLocation, Ship, Position,
     MagicStick, Notebook, Sunny, Cloudy, Pouring, UserFilled, Timer,
-    Coffee, Star, Coin, OfficeBuilding, ArrowLeft,
+    Coffee, Star, Coin, OfficeBuilding,
     Calendar as CalendarIcon, List, FullScreen, Tickets,
 } from '@element-plus/icons-vue';
 
@@ -28,6 +28,7 @@ const props = defineProps({
     orders: { type: Array, default: () => [] },
     markets: { type: Array, default: () => [] },
     hasProfile: { type: Boolean, default: true },
+    businessTypeOptions: { type: Array, default: () => [] },
 });
 
 const scheduleTab = ref('calendar');
@@ -47,59 +48,43 @@ function syncNarrowViewport() {
 }
 
 /* ── Profile completion dialog ───────────────────────────────────────────
-   Two simple steps: (1) pick account type from two big, plain-language
-   cards, (2) fill one short form. No duplicate fields, no jargon — this
-   replaced an earlier two-tab design that made ordinary users fill the
-   same form twice. */
+   One screen, one tab bar: Personal vs Business. The active tab *is* the
+   account type — switching tabs sets profileForm.profile_type directly,
+   so there's no separate "confirm your type" step. Both tabs read/write
+   the same profileForm, so nothing is ever asked for twice when you flip
+   between them. */
 const profileDialogOpen = ref(!props.hasProfile);
-const profileStep = ref('type');
-
-const accountTypes = [
-    {
-        value: 'personal',
-        icon: UserFilled,
-        title: 'Just me',
-        desc: 'I\'m trading for myself.',
-    },
-    {
-        value: 'business',
-        icon: OfficeBuilding,
-        title: 'A business',
-        desc: 'I\'m trading for a company, farm, or co-op.',
-    },
-];
 
 const profileForm = useForm({
-    profile_type: '',
+    profile_type: 'personal',
+    // Personal-only fields
     date_of_birth: '',
     gender: '',
+    bio: '',
+    // Business-only fields — mirrors the business_profiles table columns
+    business_name: '',
+    business_type: '',
+    industry: 'Coffee',
+    registration_number: '',
+    tax_id: '',
+    website: '',
+    contact_email: '',
+    contact_phone: '',
+    employee_count: '',
+    year_established: '',
+    description: '',
+    // Shared by both tabs — one address, not asked for twice
     address_line_1: '',
     address_line_2: '',
     city: '',
     state: '',
     country: '',
     postal_code: '',
-    bio: '',
-    photo: null,
 });
 
-const photoPreview = ref(null);
-
-const selectedAccountType = computed(
-    () => accountTypes.find((type) => type.value === profileForm.profile_type) ?? null,
-);
-
-function chooseAccountType(type) {
-    profileForm.profile_type = type;
+watch(() => profileForm.profile_type, (type) => {
     if (type === 'business') profileForm.gender = '';
-    profileStep.value = 'details';
-}
-
-function onPhotoChange(event) {
-    const file = event.target.files[0] ?? null;
-    profileForm.photo = file;
-    photoPreview.value = file ? URL.createObjectURL(file) : null;
-}
+});
 
 function saveProfile() {
     profileForm.post(route('profile.store'), {
@@ -656,7 +641,7 @@ onBeforeUnmount(() => {
         <!-- ── Complete Your Profile modal ─────────────────────────────── -->
         <el-dialog
             v-model="profileDialogOpen"
-            width="480px"
+            width="560px"
             align-center
             :show-close="false"
             :close-on-click-modal="false"
@@ -670,143 +655,204 @@ onBeforeUnmount(() => {
                     </div>
                     <div class="gd-modal__head-text">
                         <div class="gd-modal__eyebrow">Welcome to Bean Origin</div>
-                        <div class="gd-modal__title">{{ profileStep === 'type' ? "Let's get you set up" : 'A few details about you' }}</div>
+                        <div class="gd-modal__title">A few details about you</div>
                     </div>
-                    <div class="gd-modal__step">Step {{ profileStep === 'type' ? '1' : '2' }} of 2</div>
-                </div>
-                <div class="gd-modal__progress">
-                    <span class="gd-modal__progress-bar gd-modal__progress-bar--done"></span>
-                    <span class="gd-modal__progress-bar" :class="{ 'gd-modal__progress-bar--done': profileStep === 'details' }"></span>
                 </div>
             </template>
 
-            <Transition name="gd-step" mode="out-in">
-            <!-- Step 1 — pick an account type, in plain language -->
-            <div v-if="profileStep === 'type'" key="type" class="gd-modal__body">
-                <p class="gd-modal__intro">How will you be using Bean Origin?</p>
+            <form class="gd-modal__body gd-modal__body--tabs" @submit.prevent="saveProfile">
+                <el-tabs v-model="profileForm.profile_type" class="gd-tabs">
+                    <!-- Personal ─────────────────────────────────────────── -->
+                    <el-tab-pane name="personal">
+                        <template #label>
+                            <span class="gd-tab-label"><el-icon><UserFilled /></el-icon> Personal</span>
+                        </template>
 
-                <div class="gd-type-cards">
-                    <button
-                        v-for="type in accountTypes"
-                        :key="type.value"
-                        type="button"
-                        class="gd-type-card"
-                        @click="chooseAccountType(type.value)"
-                    >
-                        <span class="gd-type-card__icon"><el-icon :size="20"><component :is="type.icon" /></el-icon></span>
-                        <span class="gd-type-card__text">
-                            <span class="gd-type-card__title">{{ type.title }}</span>
-                            <span class="gd-type-card__desc">{{ type.desc }}</span>
-                        </span>
-                        <el-icon class="gd-type-card__arrow"><ArrowRight /></el-icon>
-                    </button>
-                </div>
+                        <div class="gd-tab-panel">
+                            <div class="gd-field-row">
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Date of Birth</label>
+                                    <el-date-picker v-model="profileForm.date_of_birth" type="date" value-format="YYYY-MM-DD" placeholder="Pick a date" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.date_of_birth }" />
+                                    <span v-if="profileForm.errors.date_of_birth" class="gd-field__error mt-3">{{ profileForm.errors.date_of_birth }}</span>
+                                </div>
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Gender</label>
+                                    <el-select v-model="profileForm.gender" placeholder="Select" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.gender }">
+                                        <el-option label="Male" value="male" />
+                                        <el-option label="Female" value="female" />
+                                        <el-option label="Prefer not to say" value="prefer_not_to_say" />
+                                    </el-select>
+                                    <span v-if="profileForm.errors.gender" class="gd-field__error">{{ profileForm.errors.gender }}</span>
+                                </div>
+                            </div>
 
-                <p class="gd-modal__hint">You can change this later from your profile.</p>
-            </div>
+                            <div class="gd-field">
+                                <label class="gd-field__label">Street Address</label>
+                                <el-input v-model="profileForm.address_line_1" placeholder="Street address" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.address_line_1 }" />
+                                <span v-if="profileForm.errors.address_line_1" class="gd-field__error">{{ profileForm.errors.address_line_1 }}</span>
+                            </div>
 
-            <!-- Step 2 — one short form, no duplicate fields -->
-            <form v-else key="details" class="gd-modal__body" @submit.prevent="saveProfile">
-                <div class="gd-selected-type">
-                    <span v-if="selectedAccountType" class="gd-selected-type__chip">
-                        <el-icon :size="13"><component :is="selectedAccountType.icon" /></el-icon>
-                        {{ selectedAccountType.title }}
-                    </span>
-                    <button type="button" class="gd-back-link" @click="profileStep = 'type'">
-                        <el-icon :size="13"><ArrowLeft /></el-icon> Change
-                    </button>
-                </div>
+                            <div class="gd-field">
+                                <label class="gd-field__label">Address Line 2 <span class="gd-field__optional">(optional)</span></label>
+                                <el-input v-model="profileForm.address_line_2" placeholder="Apartment, suite, etc." class="gd-input" />
+                            </div>
 
-                <p class="gd-modal__intro">Just the basics — you can add more anytime.</p>
+                            <div class="gd-field-row">
+                                <div class="gd-field">
+                                    <label class="gd-field__label">City</label>
+                                    <el-input v-model="profileForm.city" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.city }" />
+                                    <span v-if="profileForm.errors.city" class="gd-field__error">{{ profileForm.errors.city }}</span>
+                                </div>
+                                <div class="gd-field">
+                                    <label class="gd-field__label">State / Region</label>
+                                    <el-input v-model="profileForm.state" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.state }" />
+                                    <span v-if="profileForm.errors.state" class="gd-field__error">{{ profileForm.errors.state }}</span>
+                                </div>
+                            </div>
 
-                <div class="gd-photo-row">
-                    <div class="gd-photo-preview">
-                        <img v-if="photoPreview" :src="photoPreview" alt="Profile photo preview">
-                        <el-icon v-else :size="22"><UserFilled /></el-icon>
-                    </div>
-                    <div class="gd-photo-field">
-                        <label class="gd-field__label">Photo <span class="gd-field__optional">(optional)</span></label>
-                        <label class="gd-photo-upload">
-                            <input type="file" accept="image/*" class="gd-photo-upload__input" @change="onPhotoChange">
-                            {{ profileForm.photo ? 'Change Photo' : 'Upload Photo' }}
-                        </label>
-                        <span v-if="profileForm.errors.photo" class="gd-field__error">{{ profileForm.errors.photo }}</span>
-                    </div>
-                </div>
+                            <div class="gd-field-row">
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Country</label>
+                                    <el-input v-model="profileForm.country" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.country }" />
+                                    <span v-if="profileForm.errors.country" class="gd-field__error">{{ profileForm.errors.country }}</span>
+                                </div>
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Postal Code <span class="gd-field__optional">(optional)</span></label>
+                                    <el-input v-model="profileForm.postal_code" class="gd-input" />
+                                </div>
+                            </div>
 
-                <div v-if="profileForm.profile_type === 'business'" class="gd-field">
-                    <label class="gd-field__label">Date of Registration</label>
-                    <el-date-picker v-model="profileForm.date_of_birth" type="date" value-format="YYYY-MM-DD" placeholder="Pick a date" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.date_of_birth }" />
-                    <span v-if="profileForm.errors.date_of_birth" class="gd-field__error mt-3">{{ profileForm.errors.date_of_birth }}</span>
-                </div>
-
-                <div v-else class="gd-field-row">
-                    <div class="gd-field">
-                        <label class="gd-field__label">Date of Birth</label>
-                        <el-date-picker v-model="profileForm.date_of_birth" type="date" value-format="YYYY-MM-DD" placeholder="Pick a date" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.date_of_birth }" />
-                        <span v-if="profileForm.errors.date_of_birth" class="gd-field__error mt-3">{{ profileForm.errors.date_of_birth }}</span>
-                    </div>
-                    <div class="gd-field">
-                        <label class="gd-field__label">Gender</label>
-                        <el-select v-model="profileForm.gender" placeholder="Select" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.gender }">
-                            <el-option label="Male" value="male" />
-                            <el-option label="Female" value="female" />
-                            <el-option label="Prefer not to say" value="prefer_not_to_say" />
-                        </el-select>
-                        <span v-if="profileForm.errors.gender" class="gd-field__error">{{ profileForm.errors.gender }}</span>
-                    </div>
-                </div>
-
-                <div class="gd-field">
-                    <label class="gd-field__label">Where are you located?</label>
-                    <el-input v-model="profileForm.address_line_1" placeholder="Street address" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.address_line_1 }" />
-                    <span v-if="profileForm.errors.address_line_1" class="gd-field__error">{{ profileForm.errors.address_line_1 }}</span>
-                </div>
-
-                <div class="gd-field-row">
-                    <div class="gd-field">
-                        <label class="gd-field__label">City</label>
-                        <el-input v-model="profileForm.city" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.city }" />
-                        <span v-if="profileForm.errors.city" class="gd-field__error">{{ profileForm.errors.city }}</span>
-                    </div>
-                    <div class="gd-field">
-                        <label class="gd-field__label">State / Region</label>
-                        <el-input v-model="profileForm.state" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.state }" />
-                        <span v-if="profileForm.errors.state" class="gd-field__error">{{ profileForm.errors.state }}</span>
-                    </div>
-                </div>
-
-                <div class="gd-field">
-                    <label class="gd-field__label">Country</label>
-                    <el-input v-model="profileForm.country" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.country }" />
-                    <span v-if="profileForm.errors.country" class="gd-field__error">{{ profileForm.errors.country }}</span>
-                </div>
-
-                <el-collapse class="gd-more">
-                    <el-collapse-item title="Add more details (optional)" name="more">
-                        <div class="gd-field">
-                            <label class="gd-field__label">Address Line 2</label>
-                            <el-input v-model="profileForm.address_line_2" placeholder="Apartment, suite, etc." class="gd-input" />
+                            <div class="gd-field">
+                                <label class="gd-field__label">Bio <span class="gd-field__optional">(optional)</span></label>
+                                <el-input v-model="profileForm.bio" type="textarea" :rows="3" placeholder="A short note about you" class="gd-input" />
+                                <span v-if="profileForm.errors.bio" class="gd-field__error">{{ profileForm.errors.bio }}</span>
+                            </div>
                         </div>
-                        <div class="gd-field">
-                            <label class="gd-field__label">Postal Code</label>
-                            <el-input v-model="profileForm.postal_code" class="gd-input" />
+                    </el-tab-pane>
+
+                    <!-- Business ──────────────────────────────────────────── -->
+                    <el-tab-pane name="business">
+                        <template #label>
+                            <span class="gd-tab-label"><el-icon><OfficeBuilding /></el-icon> Business</span>
+                        </template>
+
+                        <div class="gd-tab-panel">
+                            <div class="gd-field-row">
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Business Name</label>
+                                    <el-input v-model="profileForm.business_name" placeholder="Your business name" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.business_name }" />
+                                    <span v-if="profileForm.errors.business_name" class="gd-field__error">{{ profileForm.errors.business_name }}</span>
+                                </div>
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Business Type</label>
+                                    <el-select v-model="profileForm.business_type" placeholder="Select" style="width:100%" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.business_type }">
+                                        <el-option v-for="option in businessTypeOptions" :key="option" :label="option" :value="option" />
+                                    </el-select>
+                                    <span v-if="profileForm.errors.business_type" class="gd-field__error">{{ profileForm.errors.business_type }}</span>
+                                </div>
+                            </div>
+
+                            <div class="gd-field-row">
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Industry</label>
+                                    <el-input v-model="profileForm.industry" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.industry }" />
+                                    <span v-if="profileForm.errors.industry" class="gd-field__error">{{ profileForm.errors.industry }}</span>
+                                </div>
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Registration Number <span class="gd-field__optional">(optional)</span></label>
+                                    <el-input v-model="profileForm.registration_number" class="gd-input" />
+                                </div>
+                            </div>
+
+                            <div class="gd-field-row">
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Tax ID <span class="gd-field__optional">(optional)</span></label>
+                                    <el-input v-model="profileForm.tax_id" class="gd-input" />
+                                </div>
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Website <span class="gd-field__optional">(optional)</span></label>
+                                    <el-input v-model="profileForm.website" placeholder="https://" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.website }" />
+                                    <span v-if="profileForm.errors.website" class="gd-field__error">{{ profileForm.errors.website }}</span>
+                                </div>
+                            </div>
+
+                            <div class="gd-field-row">
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Contact Email <span class="gd-field__optional">(optional)</span></label>
+                                    <el-input v-model="profileForm.contact_email" placeholder="hello@business.com" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.contact_email }" />
+                                    <span v-if="profileForm.errors.contact_email" class="gd-field__error">{{ profileForm.errors.contact_email }}</span>
+                                </div>
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Contact Phone <span class="gd-field__optional">(optional)</span></label>
+                                    <el-input v-model="profileForm.contact_phone" class="gd-input" />
+                                </div>
+                            </div>
+
+                            <div class="gd-field-row">
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Employees <span class="gd-field__optional">(optional)</span></label>
+                                    <el-input v-model="profileForm.employee_count" type="number" min="0" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.employee_count }" />
+                                    <span v-if="profileForm.errors.employee_count" class="gd-field__error">{{ profileForm.errors.employee_count }}</span>
+                                </div>
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Year Established <span class="gd-field__optional">(optional)</span></label>
+                                    <el-input v-model="profileForm.year_established" type="number" min="1800" :max="new Date().getFullYear()" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.year_established }" />
+                                    <span v-if="profileForm.errors.year_established" class="gd-field__error">{{ profileForm.errors.year_established }}</span>
+                                </div>
+                            </div>
+
+                            <div class="gd-field">
+                                <label class="gd-field__label">Street Address</label>
+                                <el-input v-model="profileForm.address_line_1" placeholder="Street address" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.address_line_1 }" />
+                                <span v-if="profileForm.errors.address_line_1" class="gd-field__error">{{ profileForm.errors.address_line_1 }}</span>
+                            </div>
+
+                            <div class="gd-field">
+                                <label class="gd-field__label">Address Line 2 <span class="gd-field__optional">(optional)</span></label>
+                                <el-input v-model="profileForm.address_line_2" placeholder="Apartment, suite, etc." class="gd-input" />
+                            </div>
+
+                            <div class="gd-field-row">
+                                <div class="gd-field">
+                                    <label class="gd-field__label">City</label>
+                                    <el-input v-model="profileForm.city" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.city }" />
+                                    <span v-if="profileForm.errors.city" class="gd-field__error">{{ profileForm.errors.city }}</span>
+                                </div>
+                                <div class="gd-field">
+                                    <label class="gd-field__label">State / Region</label>
+                                    <el-input v-model="profileForm.state" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.state }" />
+                                    <span v-if="profileForm.errors.state" class="gd-field__error">{{ profileForm.errors.state }}</span>
+                                </div>
+                            </div>
+
+                            <div class="gd-field-row">
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Country</label>
+                                    <el-input v-model="profileForm.country" class="gd-input" :class="{ 'gd-input--error': profileForm.errors.country }" />
+                                    <span v-if="profileForm.errors.country" class="gd-field__error">{{ profileForm.errors.country }}</span>
+                                </div>
+                                <div class="gd-field">
+                                    <label class="gd-field__label">Postal Code <span class="gd-field__optional">(optional)</span></label>
+                                    <el-input v-model="profileForm.postal_code" class="gd-input" />
+                                </div>
+                            </div>
+
+                            <div class="gd-field">
+                                <label class="gd-field__label">Description <span class="gd-field__optional">(optional)</span></label>
+                                <el-input v-model="profileForm.description" type="textarea" :rows="3" placeholder="What does your business trade?" class="gd-input" />
+                                <span v-if="profileForm.errors.description" class="gd-field__error">{{ profileForm.errors.description }}</span>
+                            </div>
                         </div>
-                        <div class="gd-field">
-                            <label class="gd-field__label">Bio</label>
-                            <el-input v-model="profileForm.bio" type="textarea" :rows="2" placeholder="A short note about you" class="gd-input" />
-                        </div>
-                    </el-collapse-item>
-                </el-collapse>
+                    </el-tab-pane>
+                </el-tabs>
 
                 <div class="gd-modal__footer gd-modal__footer--tab">
-                    <button type="submit" class="gd-btn-primary gd-btn-primary--block" :disabled="profileForm.processing">
+                    <button type="submit" class="gd-btn-primary" :disabled="profileForm.processing">
                         <el-icon v-if="!profileForm.processing"><UserFilled /></el-icon>
                         {{ profileForm.processing ? 'Saving…' : 'Save & Start Trading' }}
                     </button>
                 </div>
             </form>
-            </Transition>
         </el-dialog>
     </AppLayout>
 </template>
@@ -1015,31 +1061,6 @@ onBeforeUnmount(() => {
     background: #fff;
 }
 
-.gd-modal__step {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: #9ca3af;
-    flex-shrink: 0;
-    white-space: nowrap;
-}
-
-.gd-modal__progress {
-    display: flex;
-    gap: 4px;
-    padding: 0 24px 16px;
-    border-bottom: 1px solid #f3f4f6;
-}
-
-.gd-modal__progress-bar {
-    flex: 1;
-    height: 3px;
-    border-radius: 999px;
-    background: #f3f4f6;
-    transition: background 0.2s ease;
-}
-
-.gd-modal__progress-bar--done { background: #004532; }
-
 .gd-modal__head-icon {
     width: 38px;
     height: 38px;
@@ -1071,96 +1092,24 @@ onBeforeUnmount(() => {
 }
 
 .gd-modal__body {
-    padding: 20px 24px 6px;
+    padding: 22px 26px 8px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    max-height: 65vh;
+    gap: 16px;
+    max-height: 68vh;
     overflow-y: auto;
-}
-
-.gd-modal__intro {
-    font-size: 0.8125rem;
-    color: #6b7280;
-    line-height: 1.5;
-    margin: 0 0 2px;
-}
-
-.gd-modal__hint {
-    font-size: 0.75rem;
-    color: #9ca3af;
-    text-align: center;
-    margin: 4px 0 0;
 }
 
 .gd-field-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
-}
-
-.gd-photo-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.gd-photo-preview {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #9ca3af;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    overflow: hidden;
-    border: 1px solid #eef2f0;
-}
-
-.gd-photo-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.gd-photo-field {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.gd-photo-upload {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: fit-content;
-    border: 1px solid #eef2f0;
-    border-radius: 8px;
-    background: #f9fafb;
-    color: #374151;
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 7px 14px;
-    cursor: pointer;
-    transition: background 0.12s, border-color 0.12s;
-}
-
-.gd-photo-upload:hover { background: #fff; border-color: #d1d5db; }
-
-.gd-photo-upload__input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
+    gap: 20px;
 }
 
 .gd-field {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
 }
 
 .gd-field__label {
@@ -1236,115 +1185,46 @@ onBeforeUnmount(() => {
     border-radius: 8px;
     font-size: 0.8125rem;
     font-weight: 700;
-    padding: 9px 18px;
+    padding: 10px 22px;
     cursor: pointer;
     transition: opacity 0.15s ease;
 }
 
 .gd-btn-primary:hover:not(:disabled) { opacity: 0.9; }
 .gd-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-.gd-btn-primary--block { width: 100%; justify-content: center; padding: 11px 18px; }
 
-/* ── Step 1: account type cards ──────────────────────────────────────── */
-.gd-type-cards {
+/* ── Personal / Business tabs ─────────────────────────────────────────
+   The active tab *is* profileForm.profile_type — each pane is a complete,
+   self-contained form for that account type, both reading/writing the
+   same profileForm so switching tabs never discards or re-asks for
+   anything already entered. */
+.gd-modal__body--tabs { gap: 10px; }
+
+.gd-tabs :deep(.el-tabs__header) { margin: 0 0 14px; }
+.gd-tabs :deep(.el-tabs__nav-wrap::after) { background: #f3f4f6; height: 1px; }
+.gd-tabs :deep(.el-tabs__nav) { gap: 4px; }
+.gd-tabs :deep(.el-tabs__item) {
+    height: 38px;
+    padding: 0 4px;
+    margin-right: 24px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #9ca3af;
+    transition: color 0.12s ease;
+}
+.gd-tabs :deep(.el-tabs__item.is-active) { color: #004532; font-weight: 700; }
+.gd-tabs :deep(.el-tabs__item:hover) { color: #004532; }
+.gd-tabs :deep(.el-tabs__active-bar) { background-color: #004532; height: 2.5px; border-radius: 999px; }
+
+.gd-tab-label { display: inline-flex; align-items: center; gap: 6px; }
+.gd-tab-label .el-icon { font-size: 16px; }
+
+.gd-tab-panel {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 20px;
+    padding: 4px 2px 10px;
 }
-
-.gd-type-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    border: 1px solid #eef2f0;
-    border-radius: 12px;
-    background: #f9fafb;
-    cursor: pointer;
-    text-align: left;
-    transition: border-color 0.12s ease, background 0.12s ease;
-}
-
-.gd-type-card:hover { border-color: #004532; background: rgba(0, 69, 50, 0.05); }
-
-.gd-type-card__icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: rgba(0, 69, 50, 0.08);
-    color: #004532;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.gd-type-card__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.gd-type-card__title { font-size: 0.875rem; font-weight: 700; color: #111827; }
-.gd-type-card__desc { font-size: 0.75rem; color: #6b7280; }
-.gd-type-card__arrow { color: #9ca3af; flex-shrink: 0; }
-
-/* ── Step 2: short form ──────────────────────────────────────────────── */
-.gd-selected-type {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: -4px;
-}
-
-.gd-selected-type__chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #004532;
-    background: rgba(0, 69, 50, 0.08);
-    border-radius: 999px;
-    padding: 5px 12px 5px 10px;
-}
-
-.gd-back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    border: none;
-    background: none;
-    color: #6b7280;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0;
-    cursor: pointer;
-}
-
-.gd-back-link:hover { color: #004532; }
-
-.gd-more :deep(.el-collapse-item__header) {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #004532;
-    background: transparent;
-    border-bottom: none;
-    height: 34px;
-}
-
-.gd-more :deep(.el-collapse-item__wrap) { background: transparent; border-bottom: none; }
-
-.gd-more :deep(.el-collapse-item__content) {
-    padding-bottom: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.gd-more { border-top: none; border-bottom: none; }
-.gd-more :deep(.el-collapse-item) { border-bottom: none; }
-
-/* ── Step transition ──────────────────────────────────────────────────── */
-.gd-step-enter-active, .gd-step-leave-active { transition: opacity 0.16s ease, transform 0.16s ease; }
-.gd-step-enter-from { opacity: 0; transform: translateX(8px); }
-.gd-step-leave-to { opacity: 0; transform: translateX(-8px); }
 
 @media (max-width: 575.98px) {
     .gd-field-row { grid-template-columns: 1fr; }

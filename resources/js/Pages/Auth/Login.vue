@@ -233,6 +233,7 @@ const submit = () => {
     font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
     letter-spacing: 0.05em !important;
     border-radius: 8px !important;
+    margin-top: 20px !important;
 }
 
 .auth-shell .submit-button.el-button:hover,

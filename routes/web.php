@@ -117,9 +117,15 @@ Route::middleware([
         Route::delete('/{country}', [CountryController::class, 'destroy'])->name('destroy');
     });
 
-    // User profile routes.
+    // User profile routes. GET /user/profile intentionally reuses Jetstream's
+    // own route name and URI — since routes/web.php is loaded after
+    // Jetstream registers its routes, this same-URI/method registration
+    // replaces Jetstream's vendor UserProfileController entirely, letting
+    // our own controller decide (by role) which Vue page to render.
+    Route::get('/user/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::post('/profile', [ProfileController::class, 'store'])->name('profile.store');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/business', [ProfileController::class, 'updateBusiness'])->name('profile.business.update');
     Route::post('/profile/role', [ProfileController::class, 'updateRole'])->name('profile.role');
     Route::post('/profile/currency', [ProfileController::class, 'updateCurrency'])->name('profile.currency');
 

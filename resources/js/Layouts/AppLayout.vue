@@ -55,6 +55,15 @@ const userInitials = computed(() => {
         .join('') || 'CO';
 });
 
+/* The header badge sits in a fixed-width strip next to the avatar/icons —
+   truncate just that display, not the full name shown inside the opened
+   dropdown or mobile drawer. */
+const truncatedUserName = computed(() => {
+    const name = user.value?.name ?? '';
+
+    return name.length > 8 ? `${name.slice(0, 8)}...` : name;
+});
+
 const mobileNavSections = computed(() => [
     {
         title: 'Main',
@@ -459,7 +468,7 @@ onBeforeUnmount(() => {
                     <div class="shell-header__account">
                         <el-avatar :size="32" :src="user?.profile?.profile_photo_url" class="shell-header__avatar">{{ userInitials }}</el-avatar>
                         <div class="shell-header__account-text">
-                            <div class="shell-header__account-name">{{ user?.name }}</div>
+                            <div class="shell-header__account-name" :title="user?.name">{{ truncatedUserName }}</div>
                             <div class="shell-header__account-role">{{ user?.role || 'Account' }}</div>
                         </div>
                     </div>

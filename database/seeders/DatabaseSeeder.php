@@ -61,6 +61,7 @@ class DatabaseSeeder extends Seeder
             MarketMetadataSeeder::class,
             MarketSeeder::class,
             AgriculturalInputCategorySeeder::class,
+            BusinessTypeSeeder::class,
             AgriculturalInputSeeder::class,
             AuctionSeeder::class,
             OrderSeeder::class,
