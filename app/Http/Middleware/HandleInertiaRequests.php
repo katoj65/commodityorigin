@@ -60,7 +60,7 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $authenticatedUser = $request->user()?->loadMissing('profile');
+        $authenticatedUser = $request->user()?->loadMissing(['profile', 'businessProfile']);
 
         return [
             ...parent::share($request),
@@ -78,6 +78,7 @@ class HandleInertiaRequests extends Middleware
                     'email_verified_at' => $authenticatedUser->email_verified_at,
                     'two_factor_enabled' => ! is_null($authenticatedUser->two_factor_secret),
                     'profile' => $authenticatedUser->profile,
+                    'business_logo_url' => $authenticatedUser->businessProfile?->logo_url,
                     'currency_code' => $authenticatedUser->currency_code,
                     'created_at' => $authenticatedUser->created_at,
                 ] : null,

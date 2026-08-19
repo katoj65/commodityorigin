@@ -1,22 +1,30 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Calendar,
     Check,
+    Close,
     DataAnalysis,
+    Document,
     Edit,
+    Grid,
     Link as LinkIcon,
     Location,
     Lock,
+    MagicStick,
     Message,
     Money,
     OfficeBuilding,
     Phone,
+    Plus,
     UserFilled,
 } from '@element-plus/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import EditBusinessProfileDialog from '@/Components/Modals/EditBusinessProfileDialog.vue';
+import AddBusinessMemberDialog from '@/Components/Modals/AddBusinessMemberDialog.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import { resolveIcon } from '@/utils/icon';
 
 const props = defineProps({
     sessions: {
@@ -31,15 +39,63 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    businessMembers: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const pageProps = usePage();
 
 const editBusinessOpen = ref(false);
+const addMemberOpen = ref(false);
 
 const user = computed(() => pageProps.props.auth.user ?? {});
 const business = computed(() => props.businessProfile ?? {});
 const hasBusinessProfile = computed(() => Boolean(props.businessProfile));
+const subscribedAgents = computed(() => pageProps.props.subscribedAgents ?? []);
+
+/* ── Remove a registered member ──────────────────────────────────────── */
+const removingMemberId = ref(null);
+const removeMemberOpen = ref(false);
+const pendingRemoveMember = ref(null);
+
+function requestRemoveMember(member) {
+    pendingRemoveMember.value = member;
+    removeMemberOpen.value = true;
+}
+
+function confirmRemoveMember() {
+    const member = pendingRemoveMember.value;
+    if (!member) return;
+
+    removingMemberId.value = member.id;
+    router.delete(route('business.members.destroy', member.id), {
+        preserveScroll: true,
+        onFinish: () => { removingMemberId.value = null; },
+    });
+}
+
+/* ── Unsubscribe from an agent ───────────────────────────────────────── */
+const unsubscribingId = ref(null);
+const unsubscribeOpen = ref(false);
+const pendingUnsubscribe = ref(null);
+
+function requestUnsubscribe(agent) {
+    pendingUnsubscribe.value = agent;
+    unsubscribeOpen.value = true;
+}
+
+function confirmUnsubscribe() {
+    const agent = pendingUnsubscribe.value;
+    if (!agent) return;
+
+    unsubscribingId.value = agent.id;
+    router.delete(route('agent.unsubscribe', agent.id), {
+        preserveScroll: true,
+        onFinish: () => { unsubscribingId.value = null; },
+    });
+}
 
 const fullName = computed(() => business.value.business_name || user.value.name || 'Business Account');
 const businessTypeLabel = computed(() =>
@@ -210,7 +266,6 @@ const statCards = computed(() => [
                             <div class="profile-identity__body">
                                 <h2 class="profile-identity__name">{{ fullName }}</h2>
                                 <div class="profile-identity__role">{{ businessTypeLabel }}</div>
-                                <p class="profile-identity__bio">{{ business.description || 'No business description on file yet.' }}</p>
 
                                 <div class="profile-contact-list">
                                     <div class="profile-contact-row">
@@ -289,24 +344,162 @@ const statCards = computed(() => [
                                     <div class="profile-owner-card__info">
                                         <div class="profile-owner-card__name">{{ user.name || 'Unknown' }}</div>
                                         <div class="profile-owner-card__meta">
-                                            <span><el-icon :size="12"><Message /></el-icon> {{ user.email || 'Email pending' }}</span>
-                                            <span v-if="user.telephone"><el-icon :size="12"><Phone /></el-icon> {{ user.telephone }}</span>
-                                            <span><el-icon :size="12"><Calendar /></el-icon> Joined {{ ownerJoinedDate }}</span>
+                                            <span><el-icon :size="14"><Message /></el-icon> {{ user.email || 'Email pending' }}</span>
+                                            <span v-if="user.telephone"><el-icon :size="14"><Phone /></el-icon> {{ user.telephone }}</span>
+                                            <span><el-icon :size="14"><Calendar /></el-icon> Joined {{ ownerJoinedDate }}</span>
                                         </div>
                                     </div>
                                 </div>
                             </article>
                         </section>
 
+                        <div class="profile-row-pair">
+                            <section class="profile-card profile-card--config">
+                                <div class="profile-card__head">
+                                    <div>
+                                        <h2 class="profile-card__title"><el-icon><Document /></el-icon> About</h2>
+                                    </div>
+                                </div>
+
+                                <p class="profile-about-text">{{ business.description || 'No business description on file yet.' }}</p>
+                            </section>
+
+                            <section class="profile-card profile-card--config">
+                                <div class="profile-card__head">
+                                    <div>
+                                        <h2 class="profile-card__title"><el-icon><Location /></el-icon> Registered Address</h2>
+                                    </div>
+                                </div>
+
+                                <div class="profile-address-block">
+                                    {{ fullAddress || 'No address on file yet.' }}
+                                </div>
+                            </section>
+                        </div>
+
                         <section class="profile-card profile-card--config">
                             <div class="profile-card__head">
                                 <div>
-                                    <h2 class="profile-card__title">Registered Address</h2>
+                                    <h2 class="profile-card__title">Subscribed Agents</h2>
                                 </div>
                             </div>
 
-                            <div class="profile-address-block">
-                                {{ fullAddress || 'No address on file yet.' }}
+                            <div v-if="subscribedAgents.length" class="profile-agents-table-wrap">
+                                <el-table :data="subscribedAgents" class="profile-agents-table" row-key="id">
+                                    <el-table-column min-width="200">
+                                        <template #header><span class="profile-agents-th"><el-icon><MagicStick /></el-icon> Agent</span></template>
+                                        <template #default="{ row }">
+                                            <div class="profile-agents-cell">
+                                                <span class="profile-agents-cell__icon"><el-icon :size="17"><component :is="resolveIcon(row.icon)" /></el-icon></span>
+                                                <span class="profile-agents-cell__name">{{ row.name }}</span>
+                                            </div>
+                                        </template>
+                                    </el-table-column>
+
+                                    <el-table-column min-width="300">
+                                        <template #header><span class="profile-agents-th"><el-icon><Grid /></el-icon> Functions</span></template>
+                                        <template #default="{ row }">
+                                            <div v-if="row.functions?.length" class="profile-agents-functions">
+                                                <span v-for="fn in row.functions" :key="fn.id" class="profile-agents-chip">
+                                                    <el-icon :size="14"><component :is="resolveIcon(fn.icon)" /></el-icon>
+                                                    {{ fn.name }}
+                                                </span>
+                                            </div>
+                                            <span v-else class="profile-agents-muted">No functions configured</span>
+                                        </template>
+                                    </el-table-column>
+
+                                    <el-table-column width="70" align="right">
+                                        <template #default="{ row }">
+                                            <button
+                                                type="button"
+                                                class="profile-agents-unsub"
+                                                :disabled="unsubscribingId === row.id"
+                                                title="Unsubscribe"
+                                                aria-label="Unsubscribe from agent"
+                                                @click="requestUnsubscribe(row)"
+                                            >
+                                                <el-icon :size="16"><Close /></el-icon>
+                                            </button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </div>
+
+                            <div v-else class="profile-agents-empty">
+                                <p>Not subscribed to any agents yet.</p>
+                            </div>
+                        </section>
+
+                        <section class="profile-card profile-card--config">
+                            <div class="profile-card__head">
+                                <div>
+                                    <h2 class="profile-card__title"><el-icon><UserFilled /></el-icon> Business Members</h2>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <Link :href="route('business.members.index')" class="profile-edit-btn profile-edit-btn--sm">
+                                        <el-icon><UserFilled /></el-icon>
+                                        <span>Manage</span>
+                                    </Link>
+                                    <button type="button" class="profile-edit-btn profile-edit-btn--sm" @click="addMemberOpen = true">
+                                        <el-icon><Plus /></el-icon>
+                                        <span>Add Member</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div v-if="businessMembers.length" class="profile-agents-table-wrap">
+                                <el-table :data="businessMembers" class="profile-agents-table" row-key="id">
+                                    <el-table-column min-width="180">
+                                        <template #header><span class="profile-agents-th"><el-icon><UserFilled /></el-icon> Member</span></template>
+                                        <template #default="{ row }">
+                                            <div class="profile-agents-cell">
+                                                <span class="profile-agents-cell__icon"><el-icon :size="17"><UserFilled /></el-icon></span>
+                                                <span class="profile-agents-cell__name">{{ row.name }}</span>
+                                            </div>
+                                        </template>
+                                    </el-table-column>
+
+                                    <el-table-column min-width="160">
+                                        <template #header><span class="profile-agents-th"><el-icon><Grid /></el-icon> Role</span></template>
+                                        <template #default="{ row }">
+                                            <div class="profile-member-role">
+                                                <span class="profile-member-role__designation">{{ row.designation }}</span>
+                                                <span class="profile-member-role__position">{{ row.position }}</span>
+                                            </div>
+                                        </template>
+                                    </el-table-column>
+
+                                    <el-table-column min-width="200">
+                                        <template #header><span class="profile-agents-th"><el-icon><Phone /></el-icon> Contact</span></template>
+                                        <template #default="{ row }">
+                                            <div class="profile-member-contact">
+                                                <span>{{ row.telephone }}</span>
+                                                <span v-if="row.email">{{ row.email }}</span>
+                                                <span v-if="row.address">{{ row.address }}</span>
+                                            </div>
+                                        </template>
+                                    </el-table-column>
+
+                                    <el-table-column width="70" align="right">
+                                        <template #default="{ row }">
+                                            <button
+                                                type="button"
+                                                class="profile-agents-unsub"
+                                                :disabled="removingMemberId === row.id"
+                                                title="Remove member"
+                                                aria-label="Remove member"
+                                                @click="requestRemoveMember(row)"
+                                            >
+                                                <el-icon :size="16"><Close /></el-icon>
+                                            </button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </div>
+
+                            <div v-else class="profile-agents-empty">
+                                <p>No members registered yet.</p>
                             </div>
                         </section>
                     </div>
@@ -318,6 +511,24 @@ const statCards = computed(() => [
             v-model="editBusinessOpen"
             :business="businessProfile"
             :business-type-options="businessTypeOptions"
+        />
+
+        <ConfirmDialog
+            v-model="unsubscribeOpen"
+            title="Unsubscribe Agent"
+            :message="`Unsubscribe from ${pendingUnsubscribe?.name ?? 'this agent'}? You'll lose access to its functions until you subscribe again.`"
+            confirm-text="Unsubscribe"
+            @confirm="confirmUnsubscribe"
+        />
+
+        <AddBusinessMemberDialog v-model="addMemberOpen" />
+
+        <ConfirmDialog
+            v-model="removeMemberOpen"
+            title="Remove Member"
+            :message="`Remove ${pendingRemoveMember?.name ?? 'this member'} from your business? This can't be undone.`"
+            confirm-text="Remove"
+            @confirm="confirmRemoveMember"
         />
     </AppLayout>
 </template>
@@ -376,6 +587,18 @@ const statCards = computed(() => [
 }
 
 .profile-edit-btn:hover { opacity: 0.9; }
+.profile-edit-btn :deep(.el-icon) { font-size: 14px; }
+
+.profile-edit-btn--sm {
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: 11px;
+    background: #fff;
+    color: #145c42;
+    border: 1px solid var(--card-border);
+}
+.profile-edit-btn--sm:hover { opacity: 1; background: #f0f5f3; }
+.profile-edit-btn--sm :deep(.el-icon) { font-size: 13px; }
 
 .profile-page__title {
     margin: 8px 0 0;
@@ -408,7 +631,7 @@ const statCards = computed(() => [
     border-radius: 10px;
     background: #eef3f0;
     color: #145c42;
-    font-size: 20px;
+    font-size: 22px;
     margin-bottom: 6px;
 }
 
@@ -517,12 +740,24 @@ const statCards = computed(() => [
     text-transform: uppercase;
 }
 
-.profile-identity__bio {
-    max-width: 26ch;
-    margin: 10px auto 0;
-    color: #73837c;
-    font-size: 12px;
-    line-height: 1.6;
+.profile-row-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    align-items: stretch;
+}
+
+.profile-row-pair .profile-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-about-text {
+    margin: 16px 0 0;
+    color: #425a51;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-line;
 }
 
 .profile-contact-list {
@@ -551,6 +786,7 @@ const statCards = computed(() => [
 
 .profile-contact-row :deep(svg) {
     color: #145c42;
+    font-size: 15px;
 }
 
 .profile-badge-list {
@@ -590,6 +826,9 @@ const statCards = computed(() => [
 }
 
 .profile-card__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     margin: 0;
     color: #233a31;
     font-size: 0.8rem;
@@ -597,6 +836,8 @@ const statCards = computed(() => [
     letter-spacing: 0.06em;
     text-transform: uppercase;
 }
+
+.profile-card__title :deep(.el-icon) { color: #145c42; font-size: 14px; }
 
 .profile-security-list {
     display: flex;
@@ -620,6 +861,7 @@ const statCards = computed(() => [
     border-radius: 8px;
     background: #eef3f0;
     color: #61776d;
+    font-size: 18px;
 }
 
 .profile-security-row__icon.is-good {
@@ -676,6 +918,8 @@ const statCards = computed(() => [
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
+
+.profile-stat-card__eyebrow :deep(.el-icon) { font-size: 13px; }
 
 .profile-stat-card__value {
     margin-top: 18px;
@@ -759,6 +1003,113 @@ const statCards = computed(() => [
     line-height: 1.6;
 }
 
+/* ── Subscribed Agents table ─────────────────────────────────────────── */
+.profile-agents-table-wrap {
+    margin-top: 16px;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.profile-agents-table {
+    --el-table-border-color: var(--card-border);
+    --el-table-header-bg-color: #fafcfb;
+    --el-table-header-text-color: #71807a;
+    font-family: 'Manrope', system-ui, sans-serif;
+}
+
+.profile-agents-table :deep(.el-table__header) th {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.profile-agents-table :deep(.el-table__cell) { padding: 12px 0; }
+.profile-agents-table :deep(.el-table__inner-wrapper::before) { display: none; }
+.profile-agents-table :deep(.el-table__header-wrapper th:first-child .cell),
+.profile-agents-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 16px; }
+.profile-agents-table :deep(.el-table__header-wrapper th:last-child .cell),
+.profile-agents-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 16px; }
+
+.profile-agents-th { display: inline-flex; align-items: center; gap: 6px; }
+.profile-agents-th :deep(.el-icon) { font-size: 15px; color: #9ca8a2; }
+
+.profile-agents-cell { display: flex; align-items: center; gap: 10px; }
+.profile-agents-cell__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #eef3f0;
+    color: #145c42;
+    flex-shrink: 0;
+}
+.profile-agents-cell__name { font-size: 13px; font-weight: 700; color: #20362e; }
+
+.profile-agents-functions { display: flex; flex-wrap: wrap; gap: 6px; }
+.profile-agents-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #f3efe2;
+    color: #8c6a2e;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.profile-agents-muted { color: #a1aca5; font-size: 12px; font-style: italic; }
+
+.profile-member-role {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.profile-member-role__designation { font-size: 13px; font-weight: 700; color: #20362e; }
+.profile-member-role__position { font-size: 11.5px; color: #7b8a84; }
+
+.profile-member-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    color: #425a51;
+}
+
+.profile-agents-unsub {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background: #fff;
+    color: #b45252;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+.profile-agents-unsub:hover:not(:disabled) { background: #fef2f2; border-color: #fecaca; }
+.profile-agents-unsub:disabled { opacity: 0.5; cursor: default; }
+
+.profile-agents-empty {
+    margin-top: 16px;
+    padding: 24px 16px;
+    border: 1px dashed var(--card-border);
+    border-radius: 8px;
+    text-align: center;
+}
+.profile-agents-empty p {
+    margin: 0;
+    color: #7b8a84;
+    font-size: 13px;
+}
+
 @media (max-width: 1200px) {
     .profile-main-grid {
         grid-template-columns: minmax(0, 1fr);
@@ -789,7 +1140,8 @@ const statCards = computed(() => [
     }
 
     .profile-stat-grid,
-    .profile-column {
+    .profile-column,
+    .profile-row-pair {
         grid-template-columns: minmax(0, 1fr);
     }
 

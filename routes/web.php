@@ -4,6 +4,7 @@ use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\AI\AiChatController;
 use App\Http\Controllers\Analysis\AnalysisController;
 use App\Http\Controllers\Bid\BidController;
+use App\Http\Controllers\Business\BusinessController;
 use App\Http\Controllers\Auction\AuctionController;
 use App\Http\Controllers\Batch\BatchController;
 use App\Http\Controllers\Buy\BuyController;
@@ -317,6 +318,27 @@ Route::middleware([
         Route::post('/', [GalleryController::class, 'store'])->name('store');
         Route::patch('/{galleryImage}', [GalleryController::class, 'update'])->name('update');
         Route::delete('/{galleryImage}', [GalleryController::class, 'destroy'])->name('destroy');
+    });
+
+    // Business directory — every registered business profile, visible to
+    // every logged-in user.
+    Route::prefix('businesses')->name('businesses.')->group(function () {
+        Route::get('/', [BusinessController::class, 'index'])->name('index');
+    });
+
+    // Business members workspace — a dedicated page for managing a
+    // business's registered members, filled in directly by the business
+    // (like a cooperative registering its member farmers) rather than by
+    // invitation. Scoped to the caller's own business by default; admins
+    // may target another business via `?business={id}`. Creating,
+    // editing, and deleting members is restricted to the business's
+    // owner or an admin — enforced in the controller.
+    Route::prefix('business')->name('business.')->group(function () {
+        Route::get('/members', [BusinessController::class, 'membersPage'])->name('members.index');
+        Route::post('/members', [BusinessController::class, 'storeMember'])->name('members.store');
+        Route::post('/members/import', [BusinessController::class, 'importMembers'])->name('members.import');
+        Route::patch('/members/{businessMember}', [BusinessController::class, 'updateMember'])->name('members.update');
+        Route::delete('/members/{businessMember}', [BusinessController::class, 'destroyMember'])->name('members.destroy');
     });
 
     // Currencies — every logged-in user may browse them to set their own

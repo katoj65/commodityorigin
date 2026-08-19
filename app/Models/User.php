@@ -103,6 +103,23 @@ class User extends Authenticatable
         return $this->hasOne(UserProfile::class);
     }
 
+    /**
+     * Get the user's business profile record, if their account is a
+     * business account.
+     */
+    public function businessProfile(): HasOne
+    {
+        return $this->hasOne(BusinessProfile::class);
+    }
+
+    /**
+     * Businesses this user is a staff member of (separate from owning one).
+     */
+    public function businessMemberships(): HasMany
+    {
+        return $this->hasMany(BusinessMember::class);
+    }
+
     public function userRole(): HasOne
     {
         return $this->hasOne(UserRole::class);

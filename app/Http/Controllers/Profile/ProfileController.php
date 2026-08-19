@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Profile;
 
 use App\Helpers\ImageUploadHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BusinessMemberResource;
 use App\Http\Resources\BusinessProfileResource;
+use App\Services\BusinessMemberService;
 use App\Services\BusinessProfileService;
 use App\Services\CurrencyService;
 use App\Services\ProfileService;
@@ -22,6 +24,7 @@ class ProfileController extends Controller
     public function __construct(
         private readonly ProfileService $profiles,
         private readonly BusinessProfileService $businessProfiles,
+        private readonly BusinessMemberService $businessMembers,
         private readonly CurrencyService $currencies,
     ) {
     }
@@ -166,6 +169,9 @@ class ProfileController extends Controller
                 'sessions' => $sessions,
                 'businessProfile' => $businessProfile ? BusinessProfileResource::make($businessProfile)->resolve() : null,
                 'businessTypeOptions' => $this->businessProfiles->businessTypeOptions(),
+                'businessMembers' => $businessProfile
+                    ? BusinessMemberResource::collection($this->businessMembers->forBusiness($businessProfile->id))->resolve()
+                    : [],
             ]);
         }
 

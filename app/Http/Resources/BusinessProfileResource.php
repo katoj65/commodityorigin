@@ -35,6 +35,8 @@ class BusinessProfileResource extends JsonResource
             'state' => $this->state,
             'country' => $this->country,
             'postal_code' => $this->postal_code,
+            'owner_name' => $this->whenLoaded('user', fn () => $this->user?->name),
+            'members_count' => $this->when(isset($this->members_count), (int) $this->members_count),
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
         ];

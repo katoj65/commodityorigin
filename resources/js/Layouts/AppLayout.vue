@@ -41,6 +41,9 @@ const page = usePage();
 const mobileMenuOpen = ref(false);
 
 const user = computed(() => page.props.auth.user);
+const avatarUrl = computed(() => (user.value?.role === 'business'
+    ? user.value?.business_logo_url
+    : user.value?.profile?.profile_photo_url));
 const unreadNotificationsCount = computed(() => page.props.unreadNotificationsCount ?? 0);
 const recentNotifications = computed(() => page.props.recentNotifications ?? []);
 const cartActiveCount = computed(() => page.props.cartActiveCount ?? 0);
@@ -466,7 +469,7 @@ onBeforeUnmount(() => {
 
                 <el-dropdown trigger="click" placement="bottom-end" @command="handleAccountCommand">
                     <div class="shell-header__account">
-                        <el-avatar :size="32" :src="user?.profile?.profile_photo_url" class="shell-header__avatar">{{ userInitials }}</el-avatar>
+                        <el-avatar :size="32" :src="avatarUrl" class="shell-header__avatar">{{ userInitials }}</el-avatar>
                         <div class="shell-header__account-text">
                             <div class="shell-header__account-name" :title="user?.name">{{ truncatedUserName }}</div>
                             <div class="shell-header__account-role">{{ user?.role || 'Account' }}</div>
@@ -527,7 +530,7 @@ onBeforeUnmount(() => {
 
             <div class="shell-drawer__footer">
                 <div class="shell-drawer__user">
-                    <el-avatar :size="32" :src="user?.profile?.profile_photo_url" class="shell-header__avatar">{{ userInitials }}</el-avatar>
+                    <el-avatar :size="32" :src="avatarUrl" class="shell-header__avatar">{{ userInitials }}</el-avatar>
                     <div class="shell-drawer__user-name">{{ user?.name }}</div>
                 </div>
                 <el-button class="shell-drawer__logout" @click="logout">Sign out</el-button>
