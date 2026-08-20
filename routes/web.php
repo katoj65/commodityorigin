@@ -35,6 +35,7 @@ use App\Http\Controllers\Purchase\PurchaseController;
 use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\Season\SeasonController;
 use App\Http\Controllers\Sell\SellController;
+use App\Http\Controllers\Store\StoreController;
 use App\Http\Controllers\Task\TaskController;
 use App\Http\Controllers\Wallet\WalletController;
 use App\Http\Controllers\Weather\WeatherForecastController;
@@ -339,6 +340,26 @@ Route::middleware([
         Route::post('/members/import', [BusinessController::class, 'importMembers'])->name('members.import');
         Route::patch('/members/{businessMember}', [BusinessController::class, 'updateMember'])->name('members.update');
         Route::delete('/members/{businessMember}', [BusinessController::class, 'destroyMember'])->name('members.destroy');
+    });
+
+    // Store workspace — every user may register one store, which must be
+    // verified by an admin before it can be opened (items added). Once
+    // open, item status changes are logged automatically so every item
+    // stays traceable.
+    Route::prefix('store')->name('store.')->group(function () {
+        Route::get('/', [StoreController::class, 'show'])->name('show');
+        Route::get('/market', [StoreController::class, 'market'])->name('market');
+        // Re-checks the caller's own account password, so it's throttled
+        // the same way the real login form is.
+        Route::post('/', [StoreController::class, 'save'])->middleware('throttle:6,1')->name('save');
+        Route::post('/{store}/verify', [StoreController::class, 'verify'])->name('verify');
+        Route::post('/{store}/reject', [StoreController::class, 'reject'])->name('reject');
+        Route::post('/items', [StoreController::class, 'storeItem'])->name('items.store');
+        Route::post('/items/import', [StoreController::class, 'importItems'])->name('items.import');
+        Route::get('/items/{storeItem}', [StoreController::class, 'showItem'])->name('items.show');
+        Route::patch('/items/{storeItem}', [StoreController::class, 'updateItem'])->name('items.update');
+        Route::patch('/items/{storeItem}/status', [StoreController::class, 'updateItemStatus'])->name('items.status');
+        Route::delete('/items/{storeItem}', [StoreController::class, 'destroyItem'])->name('items.destroy');
     });
 
     // Currencies — every logged-in user may browse them to set their own

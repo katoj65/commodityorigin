@@ -59,7 +59,6 @@ function confirmCancel() {
             <!-- ── Page header ───────────────────────────────────────────── -->
             <section class="pur-header">
                 <div class="pur-header__inner">
-                    <div class="pur-kicker">Buyer History · Bean Origin</div>
                     <h1 class="pur-title">Purchases</h1>
                     <p class="pur-subtitle">{{ activeCount }} of {{ purchases.length }} receipts active. A simple record of what you've bought at checkout.</p>
                 </div>
@@ -178,14 +177,6 @@ function confirmCancel() {
     padding: 1.75rem 1.5rem;
 }
 
-.pur-kicker {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--green);
-    margin-bottom: 4px;
-}
 
 .pur-title {
     font-size: 1.5rem;

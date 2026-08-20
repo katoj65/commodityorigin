@@ -15,6 +15,7 @@ import {
     MagicStick,
     Picture,
     School,
+    Shop,
     ShoppingBag,
     Sunny,
     Tickets,
@@ -57,6 +58,7 @@ const sideSections = computed(() => [
             { label: 'Browse Coffee', href: route('market.index'), active: route().current('market.index'), icon: Compass },
             { label: 'Live Market', href: route('market.active'), active: route().current('market.active'), icon: TrendCharts },
             { label: 'Auctions', href: route('auction.index'), active: route().current('auction.*'), icon: Trophy },
+            { label: 'My Store', href: route('store.show'), active: route().current('store.*'), icon: Shop },
         ],
     },
     {
@@ -149,6 +151,14 @@ function go(item) {
                 >
                     <el-icon :size="18"><Compass /></el-icon>
                     <span class="app-nav-item__label">Market</span>
+                </div>
+                <div
+                    class="app-nav-item"
+                    :class="{ 'app-nav-item--active': route().current('store.*') }"
+                    @click="router.visit(route('store.show'))"
+                >
+                    <el-icon :size="18"><Shop /></el-icon>
+                    <span class="app-nav-item__label">My Store</span>
                 </div>
                 <div
                     class="app-nav-item"
@@ -261,7 +271,6 @@ function go(item) {
     height: 64px;
     flex-shrink: 0;
     text-decoration: none;
-    border-bottom: 1px solid var(--border-subtle);
     transition: background 0.15s ease;
 }
 

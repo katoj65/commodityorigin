@@ -1,8 +1,9 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import AddBusinessMemberDialog from '@/Components/Modals/AddBusinessMemberDialog.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
@@ -29,6 +30,19 @@ const filteredMembers = computed(() => {
 });
 
 const activeCount = computed(() => props.members.filter((m) => m.status === 'active').length);
+
+/* ── Pagination ────────────────────────────────────────────────────────── */
+const currentPage = ref(1);
+const pageSize = 30;
+
+const pagedMembers = computed(() => {
+    const start = (currentPage.value - 1) * pageSize;
+    return filteredMembers.value.slice(start, start + pageSize);
+});
+
+watch([searchQuery, () => props.members], () => {
+    currentPage.value = 1;
+});
 
 const avatarPalette = [
     ['#d1fae5', '#065f46'], ['#dbeafe', '#1e40af'], ['#fef3c7', '#92400e'],
@@ -134,32 +148,24 @@ function confirmRemove() {
 
         <div class="bm-page">
             <!-- ── Page header ───────────────────────────────────────────── -->
-            <section class="bm-header">
-                <div class="bm-header__inner">
-                    <div class="bm-header__ident">
-
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="bm-logo">
-                                <img v-if="business.logo_url" :src="business.logo_url" :alt="business.business_name">
-                                <el-icon v-else :size="18"><OfficeBuilding /></el-icon>
-                            </div>
-                            <div>
-                                <h1 class="bm-title">{{ business.business_name }}</h1>
-                                <p class="bm-subtitle">{{ members.length }} registered member{{ members.length === 1 ? '' : 's' }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-if="canManage" class="d-flex gap-2">
-                        <input ref="fileInput" type="file" accept=".xlsx,.xls" class="d-none" @change="handleFileChange">
-                        <button type="button" class="bm-btn-outline" :disabled="importing" @click="openFilePicker">
-                            <el-icon><UploadFilled /></el-icon> {{ importing ? 'Importing…' : 'Import Excel' }}
-                        </button>
-                        <button type="button" class="bm-btn-primary" @click="openAddMember">
-                            <el-icon><Plus /></el-icon> Add Member
-                        </button>
-                    </div>
-                </div>
-            </section>
+            <PageHeader
+                :title="business.business_name"
+                :subtitle="`${members.length} registered member${members.length === 1 ? '' : 's'}`"
+            >
+                <template #icon>
+                    <img v-if="business.logo_url" :src="business.logo_url" :alt="business.business_name">
+                    <el-icon v-else :size="16"><OfficeBuilding /></el-icon>
+                </template>
+                <template v-if="canManage" #actions>
+                    <input ref="fileInput" type="file" accept=".xlsx,.xls" class="d-none" @change="handleFileChange">
+                    <button type="button" class="bm-btn-outline" :disabled="importing" @click="openFilePicker">
+                        <el-icon><UploadFilled /></el-icon> {{ importing ? 'Importing…' : 'Import Excel' }}
+                    </button>
+                    <button type="button" class="bm-btn-primary" @click="openAddMember">
+                        <el-icon><Plus /></el-icon> Add Member
+                    </button>
+                </template>
+            </PageHeader>
 
             <!-- ── Import results ───────────────────────────────────────── -->
             <div v-if="importResult && importResultVisible" class="bm-body bm-body--no-top-pad">
@@ -211,7 +217,7 @@ function confirmRemove() {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="member in filteredMembers" :key="member.id" class="bm-row">
+                                <tr v-for="member in pagedMembers" :key="member.id" class="bm-row">
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="bm-avatar" :style="avatarColors(member.id)">{{ initials(member.name) }}</span>
@@ -265,6 +271,16 @@ function confirmRemove() {
                             No members match “{{ searchQuery }}”.
                         </div>
                     </div>
+
+                    <div v-if="filteredMembers.length > pageSize" class="bm-pagination">
+                        <el-pagination
+                            v-model:current-page="currentPage"
+                            :page-size="pageSize"
+                            :total="filteredMembers.length"
+                            layout="total, prev, pager, next"
+                            background
+                        />
+                    </div>
                 </div>
 
                 <div v-else class="bm-empty">
@@ -302,53 +318,17 @@ function confirmRemove() {
     min-height: 100%;
 }
 
-/* ── Header ────────────────────────────────────────────────────────────── */
-.bm-header { background: #fff; border-bottom: 1px solid var(--border); }
-.bm-header__inner {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-    padding: 1.5rem;
-}
-.bm-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--on-surface-var);
-    text-decoration: none;
-}
-.bm-back:hover { color: var(--green); }
-.bm-logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: var(--surface-low);
-    color: var(--green);
-    overflow: hidden;
-    flex-shrink: 0;
-}
-.bm-logo img { width: 100%; height: 100%; object-fit: cover; }
-.bm-title { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
-.bm-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); margin: 2px 0 0; }
-
 .bm-btn-primary {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 38px;
-    padding: 0 16px;
+    height: 32px;
+    padding: 0 13px;
     border: none;
-    border-radius: 8px;
+    border-radius: 7px;
     background: linear-gradient(135deg, #145c42, #0d3d2c);
     color: #fff;
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
     transition: opacity 0.15s ease;
@@ -359,13 +339,13 @@ function confirmRemove() {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 38px;
-    padding: 0 16px;
+    height: 32px;
+    padding: 0 13px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 7px;
     background: #fff;
     color: var(--on-surface);
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s ease;
@@ -566,6 +546,35 @@ function confirmRemove() {
 .bm-act-btn--danger:hover { background: rgba(185, 28, 28, .08); }
 .bm-act-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* ── Pagination ────────────────────────────────────────────────────────── */
+.bm-pagination {
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+}
+.bm-pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-family: inherit; }
+.bm-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: 0.75rem; font-weight: 600; color: var(--on-surface-var); }
+.bm-pagination :deep(.btn-prev),
+.bm-pagination :deep(.btn-next) { width: 30px; height: 30px; border-radius: 7px; background: #fff; border: 1px solid var(--border); color: var(--on-surface-var); transition: all .15s ease; }
+.bm-pagination :deep(.btn-prev:hover:not(:disabled)),
+.bm-pagination :deep(.btn-next:hover:not(:disabled)) { border-color: var(--green); color: var(--green); background: var(--surface-low); }
+.bm-pagination :deep(.btn-prev:disabled),
+.bm-pagination :deep(.btn-next:disabled) { opacity: 0.5; }
+.bm-pagination :deep(.el-pager li) {
+    min-width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--on-surface);
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin: 0 2px;
+}
+.bm-pagination :deep(.el-pager li:hover) { color: var(--green); border-color: var(--green); }
+.bm-pagination :deep(.el-pager li.is-active) { background: var(--green); border-color: var(--green); color: #fff; }
+
 /* ── No search results ─────────────────────────────────────────────────── */
 .bm-no-results {
     display: flex;
@@ -597,7 +606,6 @@ function confirmRemove() {
 
 /* ── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-    .bm-header__inner { padding: 1.25rem; }
     .bm-body { padding: 1.25rem; }
 }
 </style>

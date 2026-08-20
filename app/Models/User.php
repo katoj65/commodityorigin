@@ -120,6 +120,14 @@ class User extends Authenticatable
         return $this->hasMany(BusinessMember::class);
     }
 
+    /**
+     * Get the user's store, if they have one.
+     */
+    public function store(): HasOne
+    {
+        return $this->hasOne(Store::class);
+    }
+
     public function userRole(): HasOne
     {
         return $this->hasOne(UserRole::class);

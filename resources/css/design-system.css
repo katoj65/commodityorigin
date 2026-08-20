@@ -33,15 +33,16 @@
     --danger-rose: #f43f5e;
     --info-sky: #0ea5e9;
 
-    --border-subtle: #e2e8f0;
+    /* Matches --card-border below on purpose — the app shell/aside border
+       and every internal card border share one color so borders line up
+       consistently across the whole app. */
+    --border-subtle: #eef2f0;
     --data-surface: #f1f5f9;
     --text-main: #0f172a;
     --text-muted: #64748b;
 
     /* Uniform border for white "card" containers (stat tiles, list cards,
-       panels, dashboard widgets) across every internal page. Distinct from
-       --border-subtle, which belongs to the app shell/aside and must not
-       change with the card theme. */
+       panels, dashboard widgets) across every internal page. */
     --card-border: #eef2f0;
     --card-shadow: 0 8px 20px rgba(18, 40, 31, 0.03);
 
