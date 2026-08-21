@@ -192,8 +192,7 @@ function incrementQuantity() { quantity.value += 1; }
                             title="Mount Leuser, Sumatra"
                             loading="lazy"
                             referrerpolicy="no-referrer-when-downgrade"
-                            :src="mapEmbedSrc"
-                        />
+                            :src="mapEmbedSrc"/>
                         <span class="mp-map__label"><el-icon :size="13"><LocationFilled /></el-icon>{{ mapLocationLabel }}</span>
                     </div>
                 </div>
