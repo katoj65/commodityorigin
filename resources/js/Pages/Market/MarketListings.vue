@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
-    Location, Coffee, Star, Box, CircleCheck, Search,
+    Location, Coffee, Star, Box, ArrowRight, Search,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
@@ -82,7 +82,6 @@ watch(filteredListings, () => { currentPage.value = 1; });
             <div class="mktl-body">
                 <div class="mktl-hero">
                     <div class="mktl-hero__text">
-                        <p class="mktl-hero__eyebrow">Coffee Trading Platform</p>
                         <h1 class="mktl-hero__title">Marketplace</h1>
                         <p class="mktl-hero__subtitle">Discover exceptional micro-lots, direct trade staples, and rare varietals sourced from the world's most dedicated producers.</p>
                     </div>
@@ -126,7 +125,7 @@ watch(filteredListings, () => { currentPage.value = 1; });
                             <div class="mktl-card__stock"><el-icon :size="12"><Box /></el-icon>{{ row.quantity.toLocaleString() }} kg avail.</div>
 
                             <Link :href="route('market.show', row.id)" class="mktl-card__cta" @click.stop>
-                                <el-icon :size="13"><CircleCheck /></el-icon> View Listing
+                                View Listing <el-icon :size="13"><ArrowRight /></el-icon>
                             </Link>
                         </div>
                     </article>
@@ -185,7 +184,7 @@ watch(filteredListings, () => { currentPage.value = 1; });
     margin-top: -48px;
 }
 
-.mktl-body { padding: 2.5rem 0 3rem; }
+.mktl-body { padding: 1.25rem 0 3rem; }
 
 /* ── Hero ─────────────────────────────────────────────────────────────── */
 .mktl-hero {
@@ -231,7 +230,7 @@ watch(filteredListings, () => { currentPage.value = 1; });
     .mktl-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (min-width: 1024px) {
-    .mktl-grid { grid-template-columns: repeat(3, 1fr); }
+    .mktl-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 .mktl-card {
@@ -274,9 +273,8 @@ watch(filteredListings, () => { currentPage.value = 1; });
 .mktl-card__price { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 1.0625rem; font-weight: 800; color: var(--on-surface); white-space: nowrap; }
 .mktl-card__price-unit { font-size: .6875rem; color: var(--on-surface-var); }
 
-.mktl-card__meta { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 600; color: var(--on-surface-var); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; }
-.mktl-card__meta > span:not(.mktl-card__dot) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.mktl-card__origin { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; text-transform: none; }
+.mktl-card__meta { display: flex; align-items: center; flex-wrap: wrap; row-gap: 4px; column-gap: 6px; font-size: .6875rem; font-weight: 600; color: var(--on-surface-var); text-transform: uppercase; letter-spacing: .04em; }
+.mktl-card__origin { display: inline-flex; align-items: center; gap: 4px; text-transform: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .mktl-card__dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
 
 .mktl-card__stock { display: inline-flex; align-items: center; gap: 3px; font-size: .75rem; color: var(--on-surface-var); white-space: nowrap; }

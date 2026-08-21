@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import { View, CircleCheck, Check, Clock } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -98,7 +98,7 @@ function completeInspection(inspection) {
 </script>
 
 <template>
-    <AppLayout title="Inspections" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Inspections">
         <Head title="Inspections" />
 
         <div class="insp-page">
@@ -217,7 +217,7 @@ function completeInspection(inspection) {
                 </div>
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

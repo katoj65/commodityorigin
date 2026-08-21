@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import RequestStoreDialog from '@/Components/Modals/RequestStoreDialog.vue';
 import AddEditStoreItemDialog from '@/Components/Modals/AddEditStoreItemDialog.vue';
@@ -97,7 +97,7 @@ const storeVerified = computed(() => props.store?.verification_status === 'verif
 </script>
 
 <template>
-    <AppLayout :title="title" full-width flush :show-banner="false">
+    <DesignPreviewLayout :title="title">
         <Head :title="title" />
 
         <div class="stl-page">
@@ -145,7 +145,7 @@ const storeVerified = computed(() => props.store?.verification_status === 'verif
 
         <RequestStoreDialog v-model="storeDialogOpen" :rejected="store?.verification_status === 'rejected'" />
         <AddEditStoreItemDialog v-model="itemDialogOpen" :item="null" />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

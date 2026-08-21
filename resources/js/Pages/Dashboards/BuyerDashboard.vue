@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, Checked, Clock,
     CollectionTag, Connection, Download, Location,
@@ -133,7 +133,7 @@ const badgeClass = (b) => {
 </script>
 
 <template>
-    <AppLayout title="Buyer Dashboard" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Buyer Dashboard">
 
 
         <div class="db-page">
@@ -599,7 +599,7 @@ const badgeClass = (b) => {
             </div>
 
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

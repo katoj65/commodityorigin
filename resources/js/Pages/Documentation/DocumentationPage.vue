@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     Plus, Close, UploadFilled, Download, Delete, Document, User, Calendar, House, Search, FolderOpened,
@@ -134,7 +134,7 @@ function confirmDelete() {
 </script>
 
 <template>
-    <AppLayout title="Documentation" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Documentation">
         <Head title="Documentation" />
 
         <div class="doc-page">
@@ -360,7 +360,7 @@ function confirmDelete() {
             confirm-text="Delete"
             @confirm="confirmDelete"
         />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

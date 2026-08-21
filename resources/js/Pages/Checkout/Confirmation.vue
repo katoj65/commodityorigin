@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import { Van, Lock, CircleCheck } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import PaymentMethodSection from '@/Components/PaymentMethodSection.vue';
 
 const props = defineProps({
@@ -57,7 +57,7 @@ function placeOrder() {
 </script>
 
 <template>
-    <AppLayout title="Checkout" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Checkout">
         <div class="chk-page">
             <section class="chk-header">
                 <div class="chk-header__inner">
@@ -158,7 +158,7 @@ function placeOrder() {
                 </form>
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

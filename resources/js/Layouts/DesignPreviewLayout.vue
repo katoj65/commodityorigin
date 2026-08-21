@@ -1,9 +1,9 @@
 <script setup>
-import { computed, ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
-    Bell, Calendar, Close, Compass, Document, Grid, MagicStick, Menu, Message, Odometer, Search,
-    Setting, Shop, ShoppingCart, SwitchButton, Tickets, User, Wallet,
+    Bell, Box, Calendar, Close, Compass, Document, Grid, MagicStick, Menu, Message, Odometer,
+    Search, Setting, Shop, ShoppingCart, SwitchButton, Tickets, User, Wallet,
 } from '@element-plus/icons-vue';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 
@@ -12,6 +12,13 @@ defineProps({
 });
 
 const mobileNavOpen = ref(false);
+
+// Real shared-prop data (same source AppLayout.vue reads), not mock counts —
+// injected into every Inertia response by HandleInertiaRequests.php.
+const page = usePage();
+const unreadNotificationsCount = computed(() => page.props.unreadNotificationsCount ?? 0);
+const recentNotifications = computed(() => page.props.recentNotifications ?? []);
+const cartActiveCount = computed(() => page.props.cartActiveCount ?? 0);
 
 // Mirrors AppAside.vue's non-admin nav exactly (same section labels,
 // link labels, and icons) so this preview reads as the same product —
@@ -66,15 +73,141 @@ const accountMenuItems = [
 function signOut() {
     router.post(route('logout'));
 }
+
+function notificationTimeAgo(dateTime) {
+    if (!dateTime) return '';
+
+    const diffMs = Date.now() - new Date(dateTime.replace(' ', 'T')).getTime();
+    const diffMin = Math.round(diffMs / 60000);
+
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+
+    const diffHr = Math.round(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+
+    const diffDay = Math.round(diffHr / 24);
+    if (diffDay < 7) return `${diffDay}d ago`;
+
+    return new Date(dateTime.replace(' ', 'T')).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function openNotification(notification) {
+    if (!notification.is_read) {
+        router.patch(route('notifications.read', notification.id), {}, {
+            preserveScroll: true,
+            preserveState: true,
+            onFinish: () => {
+                if (notification.action_url) router.visit(notification.action_url);
+            },
+        });
+
+        return;
+    }
+
+    if (notification.action_url) {
+        router.visit(notification.action_url);
+    }
+}
+
+function markAllNotificationsRead() {
+    router.post(route('notifications.read-all'), {}, { preserveScroll: true, preserveState: true });
+}
+
+// ── Header search — ported from AppLayout.vue's global search exactly
+// (same debounced /search/suggest endpoint, same keyboard nav, same
+// submit-to-results-page behavior) so this preview's search behaves
+// identically to the real app shell, just skinned in dp-* classes.
+const searchQuery = ref('');
+const suggestions = ref([]);
+const suggestOpen = ref(false);
+const suggestLoading = ref(false);
+const activeSuggestIndex = ref(-1);
+let suggestTimer = null;
+let suggestRequestId = 0;
+
+function closeSuggestions() {
+    suggestOpen.value = false;
+    activeSuggestIndex.value = -1;
+}
+
+function fetchSuggestions(q) {
+    const requestId = ++suggestRequestId;
+    suggestLoading.value = true;
+
+    window.axios.get(route('search.suggest'), { params: { q } })
+        .then(({ data }) => {
+            if (requestId !== suggestRequestId) return;
+            suggestions.value = data.results ?? [];
+            suggestOpen.value = true;
+        })
+        .catch(() => {
+            if (requestId !== suggestRequestId) return;
+            suggestions.value = [];
+        })
+        .finally(() => {
+            if (requestId === suggestRequestId) suggestLoading.value = false;
+        });
+}
+
+watch(searchQuery, (value) => {
+    clearTimeout(suggestTimer);
+    activeSuggestIndex.value = -1;
+    const q = value.trim();
+    if (!q) {
+        suggestions.value = [];
+        suggestOpen.value = false;
+        return;
+    }
+    suggestTimer = setTimeout(() => fetchSuggestions(q), 200);
+});
+
+function goToSuggestion(item) {
+    closeSuggestions();
+    searchQuery.value = '';
+    router.visit(route('market.show', item.id));
+}
+
+function submitSearch() {
+    closeSuggestions();
+    const q = searchQuery.value.trim();
+    router.visit(route('search.index'), q ? { data: { q }, method: 'get' } : undefined);
+}
+
+function onSearchFocus() {
+    if (searchQuery.value.trim() && suggestions.value.length) {
+        suggestOpen.value = true;
+    }
+}
+
+function onSearchBlur() {
+    setTimeout(closeSuggestions, 120);
+}
+
+function onSearchKeydown(e) {
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!suggestions.value.length) return;
+        activeSuggestIndex.value = (activeSuggestIndex.value + 1) % suggestions.value.length;
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!suggestions.value.length) return;
+        activeSuggestIndex.value = (activeSuggestIndex.value - 1 + suggestions.value.length) % suggestions.value.length;
+    } else if (e.key === 'Enter') {
+        if (activeSuggestIndex.value >= 0 && suggestions.value[activeSuggestIndex.value]) {
+            goToSuggestion(suggestions.value[activeSuggestIndex.value]);
+        } else {
+            submitSearch();
+        }
+    } else if (e.key === 'Escape') {
+        closeSuggestions();
+    }
+}
 </script>
 
 <template>
     <div class="dp-shell">
-        <Head :title="title">
-            <link rel="preconnect" href="https://fonts.googleapis.com">
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-        </Head>
+        <Head :title="title" />
 
         <!-- ── Sidebar ──────────────────────────────────────────────────── -->
         <div v-if="mobileNavOpen" class="dp-scrim" @click="mobileNavOpen = false" />
@@ -131,7 +264,47 @@ function signOut() {
                 </el-button>
 
                 <div class="dp-header__search">
-                    <el-input placeholder="Search subscribers, products..." :prefix-icon="Search" class="dp-search-input" />
+                    <div class="dp-search">
+                        <el-input
+                            v-model="searchQuery"
+                            placeholder="Search subscribers, products..."
+                            :prefix-icon="Search"
+                            class="dp-search-input"
+                            @focus="onSearchFocus"
+                            @blur="onSearchBlur"
+                            @keydown="onSearchKeydown"
+                        />
+
+                        <transition name="dp-search-fade">
+                            <div v-if="suggestOpen" class="dp-search__panel">
+                                <div v-if="suggestLoading" class="dp-search__loading">Searching…</div>
+                                <template v-else>
+                                    <button
+                                        v-for="(item, index) in suggestions"
+                                        :key="item.id"
+                                        type="button"
+                                        class="dp-search__item"
+                                        :class="{ 'dp-search__item--active': index === activeSuggestIndex }"
+                                        @mousedown.prevent="goToSuggestion(item)"
+                                        @mouseenter="activeSuggestIndex = index"
+                                    >
+                                        <span class="dp-search__item-icon"><el-icon :size="15"><Box /></el-icon></span>
+                                        <span class="dp-search__item-body">
+                                            <span class="dp-search__item-name">{{ item.name }}</span>
+                                            <span class="dp-search__item-meta">{{ [item.origin, item.type, item.lot_code].filter(Boolean).join(' · ') }}</span>
+                                        </span>
+                                        <span class="dp-search__item-price">${{ Number(item.price_per_kg).toFixed(2) }}<small>/kg</small></span>
+                                    </button>
+
+                                    <div v-if="!suggestions.length" class="dp-search__empty">No market items match "{{ searchQuery }}"</div>
+
+                                    <button type="button" class="dp-search__footer" @mousedown.prevent="submitSearch">
+                                        See all results for "{{ searchQuery }}"
+                                    </button>
+                                </template>
+                            </div>
+                        </transition>
+                    </div>
                 </div>
 
                 <div class="dp-header__actions">
@@ -139,21 +312,70 @@ function signOut() {
                         <el-icon :size="16"><MagicStick /></el-icon>
                         <span class="dp-ask-ai-btn__label">Ask AI</span>
                     </el-button>
-                    <el-badge :value="3" class="dp-icon-badge">
-                        <el-button text circle class="dp-icon-btn" @click="router.visit(route('notifications.index'))">
-                            <el-icon :size="20"><Bell /></el-icon>
-                        </el-button>
-                    </el-badge>
-                    <el-badge :value="2" class="dp-icon-badge">
-                        <el-button text circle class="dp-icon-btn">
+                    <el-popover placement="bottom-end" :width="320" trigger="click" popper-class="dp-notif-popover">
+                        <template #reference>
+                            <el-badge :value="unreadNotificationsCount" :hidden="unreadNotificationsCount === 0" :max="99" class="dp-icon-badge">
+                                <el-button text circle class="dp-icon-btn">
+                                    <el-icon :size="20"><Bell /></el-icon>
+                                </el-button>
+                            </el-badge>
+                        </template>
+
+                        <div class="dp-notif-menu__head">
+                            <span>Notifications</span>
+                            <el-button
+                                v-if="unreadNotificationsCount > 0"
+                                text
+                                size="small"
+                                type="primary"
+                                @click="markAllNotificationsRead"
+                            >
+                                Mark all read
+                            </el-button>
+                        </div>
+
+                        <el-scrollbar max-height="352px" class="dp-notif-menu__list">
+                            <button
+                                v-for="notification in recentNotifications"
+                                :key="notification.id"
+                                type="button"
+                                class="dp-notif-menu__item"
+                                :class="{ 'dp-notif-menu__item--unread': !notification.is_read }"
+                                @click="openNotification(notification)"
+                            >
+                                <span class="dp-notif-menu__dot" :class="{ 'dp-notif-menu__dot--on': !notification.is_read }" />
+                                <span class="dp-notif-menu__body">
+                                    <span class="dp-notif-menu__title">{{ notification.title }}</span>
+                                    <span v-if="notification.body" class="dp-notif-menu__text">{{ notification.body }}</span>
+                                    <span class="dp-notif-menu__time">{{ notificationTimeAgo(notification.created_at) }}</span>
+                                </span>
+                            </button>
+
+                            <el-empty
+                                v-if="recentNotifications.length === 0"
+                                description="You're all caught up"
+                                :image-size="44"
+                            />
+                        </el-scrollbar>
+
+                        <Link :href="route('notifications.index')" class="dp-notif-menu__footer">
+                            View all notifications
+                        </Link>
+                    </el-popover>
+
+                    <el-tooltip content="Messages" placement="bottom" :show-after="200">
+                        <el-button text circle class="dp-icon-btn" @click="router.visit(route('chat.index'))">
                             <el-icon :size="20"><Message /></el-icon>
                         </el-button>
-                    </el-badge>
-                    <el-badge :value="5" class="dp-icon-badge">
-                        <el-button text circle class="dp-icon-btn" @click="router.visit(route('checkout.index'))">
-                            <el-icon :size="20"><ShoppingCart /></el-icon>
-                        </el-button>
-                    </el-badge>
+                    </el-tooltip>
+
+                    <el-tooltip content="Cart" placement="bottom" :show-after="200">
+                        <el-badge :value="cartActiveCount" :hidden="cartActiveCount === 0" :max="99" class="dp-icon-badge">
+                            <el-button text circle class="dp-icon-btn" @click="router.visit(route('checkout.index'))">
+                                <el-icon :size="20"><ShoppingCart /></el-icon>
+                            </el-button>
+                        </el-badge>
+                    </el-tooltip>
                     <el-dropdown trigger="click" placement="bottom-end" popper-class="dp-account-menu">
                         <div class="dp-account">
                             <el-avatar :size="32" class="dp-avatar"><el-icon><User /></el-icon></el-avatar>
@@ -199,7 +421,7 @@ function signOut() {
    bg-[var(--x)]), silently producing invalid selectors — using real
    CSS var() in a normal stylesheet has no such issue. ─────────────── */
 .dp-shell {
-    --dp-surface: #f9f9f9;
+    --dp-surface: #f7f9fb;
     --dp-surface-container-lowest: #ffffff;
     --dp-surface-container-low: #f3f3f3;
     --dp-surface-container: #eeeeee;
@@ -219,6 +441,8 @@ function signOut() {
     --dp-secondary: #1b6d24;
     --dp-secondary-container: #a0f399;
     --dp-on-secondary-container: #217128;
+    --dp-secondary-fixed: #a3f69c;
+    --dp-on-secondary-fixed: #002204;
     --dp-tertiary-fixed: #e6e1e1;
     --dp-on-tertiary-fixed: #1d1b1b;
     --dp-error: #ba1a1a;
@@ -227,8 +451,21 @@ function signOut() {
     --dp-error-container: #ffdad6;
     --dp-border-subtle: rgba(62, 39, 35, 0.08);
 
-    --dp-font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
-    --dp-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    /* System-font stack — same reliability approach large commerce
+       platforms (e.g. Amazon) use: every name is preinstalled on its OS
+       (San Francisco on Apple, Segoe UI on Windows, Roboto on Android/
+       Chrome OS), so text renders instantly with no webfont network
+       request and no dependency on Google Fonts staying reachable. */
+    --dp-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --dp-font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Segoe UI Mono', Consolas, 'Liberation Mono', monospace;
+
+    /* Shared "content card" tokens — one fixed radius/shadow for every
+       bordered white card across pages built on this layout (product
+       detail, profile dossiers, etc.), so follow-up pages inherit a
+       consistent, professional look instead of each page picking its
+       own radius. Reference these instead of hardcoding new values. */
+    --dp-card-radius: 20px;
+    --dp-card-shadow: 0 1px 2px rgba(39, 19, 16, .03), 0 6px 16px -14px rgba(39, 19, 16, .1);
 
     display: flex;
     min-height: 100vh;
@@ -240,12 +477,12 @@ function signOut() {
     text-rendering: optimizeLegibility;
 }
 
-/* ── Typography tokens — one professional sans-serif family (Manrope,
-   this app's actual established headline/body font — see e.g.
-   ProductProfile.vue, StorePage.vue) instead of a display serif, which
-   reads as editorial/magazine rather than business software. Numeric
-   values use dp-mono (IBM Plex Mono) separately, matching this app's
-   convention of monospacing prices/stats for tabular alignment. ───── */
+/* ── Typography tokens — one professional system sans-serif stack
+   (dp-font-sans) instead of a display serif or a Google Fonts webfont,
+   which reads as editorial/magazine rather than business software and
+   carries a network-reliability risk. Numeric values use dp-mono
+   separately, matching this app's convention of monospacing
+   prices/stats for tabular alignment. ───────────────────────────────── */
 .dp-shell .dp-display-lg { font-size: 26px; line-height: 33px; letter-spacing: -0.012em; font-weight: 800; margin: 0; }
 .dp-shell .dp-display-md { font-size: 24px; line-height: 31px; letter-spacing: -0.012em; font-weight: 800; margin: 0; }
 .dp-shell .dp-headline-md { font-size: 17px; line-height: 25px; letter-spacing: -0.006em; font-weight: 700; margin: 0; }
@@ -261,7 +498,7 @@ function signOut() {
     width: 288px;
     flex-shrink: 0;
     background: var(--dp-surface-container-low);
-    border-right: 1px solid var(--dp-border-subtle);
+    border-right: 1px solid rgba(62, 39, 35, 0.05);
     display: flex;
     flex-direction: column;
     padding-top: 28px;
@@ -290,7 +527,7 @@ function signOut() {
     flex-shrink: 0;
     border-radius: 10px;
     background: var(--dp-surface-container-lowest);
-    box-shadow: 0 0 0 1px var(--dp-border-subtle), 0 2px 6px rgba(39, 19, 16, 0.12);
+    box-shadow: 0 2px 6px rgba(39, 19, 16, 0.1);
     overflow: hidden;
 }
 .dp-aside__mark { height: 30px; width: 30px; flex-shrink: 0; }
@@ -374,7 +611,7 @@ function signOut() {
     height: 30px;
     flex-shrink: 0;
     border-radius: 8px;
-    background: var(--dp-surface-container-high);
+    background: transparent;
     color: var(--dp-on-surface-variant);
     transition: background 0.2s ease, color 0.2s ease;
 }
@@ -431,13 +668,13 @@ function signOut() {
     align-items: center;
     gap: 12px;
     padding: 0 24px;
-    background: rgba(249, 249, 249, 0.9);
-    backdrop-filter: blur(12px);
+    background: var(--dp-surface-container-lowest);
     border-bottom: 1px solid var(--dp-border-subtle);
 }
 .dp-menu-btn.el-button { display: none; flex-shrink: 0; color: var(--dp-on-surface-variant); font-size: 20px; }
 .dp-header__search { flex: 1; display: flex; justify-content: center; min-width: 0; }
-.dp-search-input { max-width: 576px; width: 100%; }
+.dp-search { position: relative; max-width: 576px; width: 100%; }
+.dp-search-input { width: 100%; }
 .dp-search-input .el-input__wrapper {
     background: var(--dp-surface-container-low);
     border-radius: 10px;
@@ -447,6 +684,87 @@ function signOut() {
 }
 .dp-search-input .el-input__wrapper.is-focus { box-shadow: 0 0 0 2px var(--dp-primary-container) inset; }
 .dp-search-input :deep(.el-input__inner) { font-size: 14px; }
+
+/* ── Search suggestions dropdown — functionally identical to
+   AppLayout.vue's global search (same /search/suggest endpoint, same
+   keyboard nav and submit behavior), skinned with dp-* tokens since
+   this panel isn't teleported and can use them directly. ──────────── */
+.dp-search__panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: var(--dp-surface-container-lowest);
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(39, 19, 16, 0.16);
+    border: 1px solid var(--dp-border-subtle);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 40;
+    padding: 6px;
+}
+.dp-search__loading,
+.dp-search__empty {
+    padding: 16px 12px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--dp-on-surface-variant);
+}
+.dp-search__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    background: none;
+    border-radius: 9px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s ease;
+}
+.dp-search__item:hover,
+.dp-search__item--active {
+    background: var(--dp-surface-container-high);
+}
+.dp-search__item-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-on-surface-variant);
+}
+.dp-search__item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dp-search__item-name { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dp-search__item-meta { font-size: 11.5px; color: var(--dp-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dp-search__item-price { flex-shrink: 0; font-family: var(--dp-font-mono); font-size: 13px; font-weight: 700; color: var(--dp-primary); }
+.dp-search__item-price small { font-family: var(--dp-font-sans); font-size: 10px; font-weight: 600; color: var(--dp-on-surface-variant); margin-left: 2px; }
+.dp-search__footer {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 4px;
+    border: none;
+    border-top: 1px solid var(--dp-border-subtle);
+    background: none;
+    border-radius: 0 0 9px 9px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--dp-primary);
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.12s ease;
+}
+.dp-search__footer:hover { background: var(--dp-surface-container-low); }
+
+.dp-search-fade-enter-active,
+.dp-search-fade-leave-active { transition: opacity 0.12s ease, transform 0.12s ease; }
+.dp-search-fade-enter-from,
+.dp-search-fade-leave-to { opacity: 0; transform: translateY(-4px); }
 
 .dp-header__actions { display: flex; align-items: center; gap: 20px; margin-left: auto; padding-left: 24px; }
 
@@ -485,7 +803,7 @@ function signOut() {
    --dp-* custom properties (defined on .dp-shell) don't cascade in —
    literal hex from the same palette is used here instead. */
 .dp-account-menu.el-dropdown__popper {
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     border-radius: 10px;
     border: 1px solid #e2e2e2;
     box-shadow: 0 12px 32px rgba(39, 19, 16, 0.16);
@@ -506,6 +824,79 @@ function signOut() {
 .dp-account-menu .el-dropdown-menu__item:hover { background: #f3f3f3; color: #1a1c1c; }
 .dp-account-menu .el-dropdown-menu__item.is-divided { border-top-color: #eeeeee; }
 .dp-account-menu .el-dropdown-menu__item.is-divided:hover { color: #ba1a1a; background: #ffdad6; }
+
+/* Notifications popover — same teleport-to-<body> caveat as the account
+   menu above, so literal hex from the dp palette is used instead of
+   var(--dp-*). Structure/behavior mirrors AppLayout.vue's notif-menu
+   exactly (real unread state, mark-all-read, per-item read+navigate). */
+.dp-notif-popover.el-popover.el-popper {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    border-radius: 10px;
+    border: 1px solid #e2e2e2;
+    box-shadow: 0 12px 32px rgba(39, 19, 16, 0.16);
+    padding: 12px;
+}
+.dp-notif-menu__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1c1c;
+}
+.dp-notif-menu__list { border-top: 1px solid #eeeeee; }
+.dp-notif-menu__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid #eeeeee;
+    background: transparent;
+    padding: 10px 0;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.dp-notif-menu__item:hover { background: #f3f3f3; }
+.dp-notif-menu__item--unread { background: rgba(39, 19, 16, 0.05); }
+.dp-notif-menu__item--unread:hover { background: rgba(39, 19, 16, 0.09); }
+.dp-notif-menu__dot {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    margin-top: 6px;
+    border-radius: 999px;
+    background: transparent;
+}
+.dp-notif-menu__dot--on { background: #271310; }
+.dp-notif-menu__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dp-notif-menu__title { font-size: 13px; font-weight: 600; color: #1a1c1c; line-height: 1.4; }
+.dp-notif-menu__text {
+    font-size: 12px;
+    color: #504442;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.dp-notif-menu__time { font-size: 11px; color: #827472; margin-top: 1px; }
+.dp-notif-menu__footer {
+    display: block;
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid #eeeeee;
+    font-size: 12px;
+    font-weight: 600;
+    color: #271310;
+    text-align: center;
+    text-decoration: none;
+}
+.dp-notif-menu__footer:hover { text-decoration: underline; }
 
 .dp-main { padding: 48px 64px; display: flex; flex-direction: column; gap: 32px; }
 

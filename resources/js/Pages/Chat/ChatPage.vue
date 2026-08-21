@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     Promotion, Edit, Delete, Check, Close,
@@ -134,7 +134,7 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
 </script>
 
 <template>
-    <AppLayout title="AI Chat" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="AI Chat">
         <Head title="AI Chat" />
 
         <div class="cpg-page">
@@ -248,7 +248,7 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
             confirm-text="Delete"
             @confirm="confirmDeleteMessage"
         />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

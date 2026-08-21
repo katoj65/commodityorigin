@@ -15,7 +15,7 @@ import {
     Setting,
     User,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditProfileDialog from '@/Components/Modals/EditProfileDialog.vue';
 import { resolveIcon } from '@/utils/icon';
 
@@ -286,7 +286,7 @@ function confirmUnsubscribe() {
 </script>
 
 <template>
-    <AppLayout title="Profile" full-width flush>
+    <DesignPreviewLayout title="Profile">
         <Head title="Profile" />
 
         <div class="profile-page">
@@ -566,7 +566,7 @@ function confirmUnsubscribe() {
         </div>
 
         <EditProfileDialog v-model="editProfileOpen" :user="user" :profile="profile" />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style>

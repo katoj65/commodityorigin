@@ -50,11 +50,7 @@ function closeSearch() {
 
 <template>
     <DesignPreviewLayout title="Coffee Market">
-        <Head title="Coffee Market">
-            <link rel="preconnect" href="https://fonts.googleapis.com">
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-        </Head>
+        <Head title="Coffee Market" />
 
         <div class="mkt-page">
 
@@ -131,7 +127,7 @@ function closeSearch() {
     --on-surface: #1a1c1c;
     --on-surface-var: #504442; /* on-surface-variant */
     --surface-low: #f3f3f3;    /* surface-container-low */
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: #f9f9f9;
     color: var(--on-surface);
     min-height: 100%;

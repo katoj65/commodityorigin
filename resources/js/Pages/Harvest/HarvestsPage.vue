@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, Clock,
     CollectionTag, DataLine, Download,
@@ -108,7 +108,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 </script>
 
 <template>
-    <AppLayout title="Harvests" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Harvests">
         <Head title="Harvests" />
 
         <div class="hv-page">
@@ -483,7 +483,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
             </div>
 
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

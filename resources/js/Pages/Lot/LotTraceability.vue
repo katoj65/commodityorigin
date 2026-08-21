@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
 const props = defineProps({
     lot:    { type: Object, default: () => ({}) },
@@ -129,7 +129,7 @@ const stageColor = (c) => ({
 </script>
 
 <template>
-    <AppLayout title="Traceability Record" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Traceability Record">
         <div class="lt-root">
 
             <!-- ── Page Header ─────────────────────────────────────────────── -->
@@ -550,7 +550,7 @@ const stageColor = (c) => ({
             </div>
 
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

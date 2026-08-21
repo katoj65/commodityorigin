@@ -2,7 +2,7 @@
 import { computed, watch } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { Calendar, Crop, Location, User } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
@@ -129,7 +129,7 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout title="Add Harvest">
+    <DesignPreviewLayout title="Add Harvest">
       
 
         <div class="space-y-4">
@@ -436,5 +436,5 @@ const submit = () => {
                 </aside>
             </section>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>

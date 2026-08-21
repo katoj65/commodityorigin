@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import { Search, Close, Clock, Box, ArrowRight, MapLocation, Coffee, Star } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -82,7 +82,7 @@ const demandTone = {
 </script>
 
 <template>
-    <AppLayout title="Search" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Search">
         <Head title="Search" />
 
         <div class="sch-page">
@@ -229,7 +229,7 @@ const demandTone = {
                 </div>
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

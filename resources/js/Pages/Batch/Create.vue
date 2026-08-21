@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { Box, Document, Location, OfficeBuilding } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
@@ -45,7 +45,7 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout title="Add Batch">
+    <DesignPreviewLayout title="Add Batch">
         <Head title="Add Batch" />
 
         <div class="space-y-4">
@@ -286,7 +286,7 @@ const submit = () => {
                 </aside>
             </section>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

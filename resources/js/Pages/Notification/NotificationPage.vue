@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
     Bell, Box, TrendCharts, Coin, User, CircleCheck, Refresh, Delete, View,
 } from '@element-plus/icons-vue';
@@ -152,7 +152,7 @@ async function bulkDelete() {
 </script>
 
 <template>
-    <AppLayout title="Notifications" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Notifications">
         <Head title="Notifications" />
 
         <div class="ntf-page">
@@ -280,7 +280,7 @@ async function bulkDelete() {
                 </div>
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

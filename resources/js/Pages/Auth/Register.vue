@@ -22,11 +22,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Register">
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    </Head>
+    <Head title="Register" />
 
     <div class="auth-shell min-h-screen bg-[#121611] text-[#eef2e8]">
         <header class="fixed top-0 w-full z-50 bg-[#121611]/90 backdrop-blur-xl border-b border-[#bfcaba]/10">
@@ -239,7 +235,7 @@ const submit = () => {
 
 <style>
 .auth-shell {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     position: relative;
 }
 
@@ -295,7 +291,7 @@ const submit = () => {
     background: #a3f69c !important;
     border-color: #a3f69c !important;
     color: #002204 !important;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
     letter-spacing: 0.05em !important;
     border-radius: 8px !important;
 }

@@ -6,7 +6,7 @@ import {
     Collection, CollectionTag, DataLine,
     Plus, Promotion, Tickets,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
@@ -49,7 +49,7 @@ const submit = () => form.post(route('season.store'));
 </script>
 
 <template>
-    <AppLayout title="Create Season" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Create Season">
 
         <div class="sc-page">
 
@@ -289,7 +289,7 @@ const submit = () => form.post(route('season.store'));
             </button>
         </div>
 
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

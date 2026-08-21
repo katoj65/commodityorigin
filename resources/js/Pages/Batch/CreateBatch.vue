@@ -6,7 +6,7 @@ import {
     CircleCheck, Collection, CollectionTag, DataLine,
     Location, Opportunity, Promotion, Star, Tickets, TrendCharts,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
@@ -163,7 +163,7 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout title="Create Batch" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Create Batch">
 
         <div class="cb-page">
 
@@ -808,7 +808,7 @@ const submit = () => {
             </button>
         </div>
 
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

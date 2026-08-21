@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
     Bell, Box, Calendar, ChatDotRound, Check,
     Clock, CollectionTag, DataLine, Download,
@@ -139,7 +139,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 </script>
 
 <template>
-    <AppLayout title="Seasons" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Seasons">
         <Head title="Seasons" />
 
         <div class="sx-page">
@@ -651,7 +651,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
             </div>
 
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     Plus, Close, Coin, Edit, Delete, Search, CircleCheck, CircleClose,
@@ -102,7 +102,7 @@ function confirmDelete() {
 </script>
 
 <template>
-    <AppLayout title="Currencies" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Currencies">
         <Head title="Currencies" />
 
         <div class="cur-page">
@@ -274,7 +274,7 @@ function confirmDelete() {
             confirm-text="Delete"
             @confirm="confirmDelete"
         />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

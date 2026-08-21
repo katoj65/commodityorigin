@@ -213,14 +213,7 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="dashboard-shell flex min-h-screen flex-col overflow-x-hidden bg-page text-ink">
-        <Head :title="title">
-            <link rel="preconnect" href="https://fonts.googleapis.com" />
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-            <link
-                href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap"
-                rel="stylesheet"
-            />
-        </Head>
+        <Head :title="title" />
 
         <!-- ── Top header ─────────────────────────────────────── -->
         <header class="fixed inset-x-0 top-0 z-30 flex h-14 flex-shrink-0 items-stretch bg-white">
@@ -792,9 +785,9 @@ onBeforeUnmount(() => {
 :global(html.app-layout-scrollless::-webkit-scrollbar),
 :global(body.app-layout-scrollless::-webkit-scrollbar) { display:none; }
 
-.dashboard-shell { font-family:'Source Sans 3',sans-serif; }
-.dashboard-shell :deep(.font-display) { font-family:'IBM Plex Sans',sans-serif; }
-.dashboard-shell :deep(.font-mono)    { font-family:'IBM Plex Mono',monospace; }
+.dashboard-shell { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+.dashboard-shell :deep(.font-display) { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+.dashboard-shell :deep(.font-mono)    { font-family:ui-monospace,'SF Mono','Cascadia Code','Segoe UI Mono',Consolas,'Liberation Mono',monospace; }
 .dashboard-shell :deep(::-webkit-scrollbar)       { width:3px;height:3px; }
 .dashboard-shell :deep(::-webkit-scrollbar-track) { background:#f0f2f5; }
 .dashboard-shell :deep(::-webkit-scrollbar-thumb) { background:#d1d5db;border-radius:2px; }
@@ -809,8 +802,8 @@ onBeforeUnmount(() => {
 .account-menu-icon { width:1rem;height:1rem;flex-shrink:0; }
 
 
-.font-display { font-family:'IBM Plex Sans',sans-serif; }
-.font-mono    { font-family:'IBM Plex Mono',monospace; }
+.font-display { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+.font-mono    { font-family:ui-monospace,'SF Mono','Cascadia Code','Segoe UI Mono',Consolas,'Liberation Mono',monospace; }
 
 .dashboard-secondary-btn { display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:1px solid #e5e7eb;background:#fff;color:#6b7280;border-radius:.5rem;padding:.425rem .75rem;font-size:13px;font-weight:500;transition:all .15s; }
 .dashboard-secondary-btn:hover { background:#fff8f0;border-color:rgba(200,134,42,.3);color:#c8862a; }
@@ -818,18 +811,18 @@ onBeforeUnmount(() => {
 .dashboard-primary-btn:hover { background:#e09b3a;border-color:#e09b3a; }
 .dashboard-btn-icon { width:1rem;height:1rem;flex-shrink:0; }
 
-.range-btn,.table-filter-btn { border:1px solid #e5e7eb;color:#6b7280;background:#fff;border-radius:.5rem;padding:.3rem .625rem;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;transition:all .15s; }
+.range-btn,.table-filter-btn { border:1px solid #e5e7eb;color:#6b7280;background:#fff;border-radius:.5rem;padding:.3rem .625rem;font-family:ui-monospace,'SF Mono','Cascadia Code','Segoe UI Mono',Consolas,'Liberation Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;transition:all .15s; }
 .range-btn:hover,.table-filter-btn:hover { border-color:rgba(200,134,42,.4);background:#fff8f0;color:#c8862a; }
 .range-btn.active,.table-filter-btn.active { border-color:#c8862a;background:#c8862a;color:#fff; }
 
 .stat-card { transition:border-color .2s; }
 .stat-card:hover { border-color:#c8862a; }
 
-.dashboard-th { border-bottom:1px solid #e5e7eb;padding:.55rem 1rem;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:400;text-transform:uppercase;letter-spacing:.12em;color:#6b7280; }
+.dashboard-th { border-bottom:1px solid #e5e7eb;padding:.55rem 1rem;text-align:left;font-family:ui-monospace,'SF Mono','Cascadia Code','Segoe UI Mono',Consolas,'Liberation Mono',monospace;font-size:8px;font-weight:400;text-transform:uppercase;letter-spacing:.12em;color:#6b7280; }
 .dashboard-td { border-bottom:1px solid rgba(229,231,235,.6);padding:.625rem 1rem; }
 .lot-row:hover td { background:#fdfaf5; }
 
-.bid-btn { border:1px solid #e5e7eb;background:#fff;color:#6b7280;border-radius:.5rem;padding:.3rem .625rem;font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;transition:all .2s; }
+.bid-btn { border:1px solid #e5e7eb;background:#fff;color:#6b7280;border-radius:.5rem;padding:.3rem .625rem;font-family:ui-monospace,'SF Mono','Cascadia Code','Segoe UI Mono',Consolas,'Liberation Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;transition:all .2s; }
 .bid-btn:hover { background:#c8862a;border-color:#c8862a;color:#fff; }
 
 .avail-bar  { width:60px;height:3px;background:#e5e7eb;border-radius:2px;overflow:hidden; }

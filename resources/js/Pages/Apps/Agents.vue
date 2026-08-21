@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import { Plus, Setting } from '@element-plus/icons-vue';
 import { resolveIcon } from '@/utils/icon';
 
@@ -86,7 +86,7 @@ function toggleSubscription(agent) {
 </script>
 
 <template>
-    <AppLayout title="Apps" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Apps">
         <Head title="Apps" />
 
         <div class="ap-page">
@@ -238,7 +238,7 @@ function toggleSubscription(agent) {
                 </form>
             </el-dialog>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

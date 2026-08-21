@@ -6,7 +6,7 @@ import {
     DataLine, InfoFilled, Location, Message, OfficeBuilding,
     Phone, Promotion, User,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
@@ -58,7 +58,7 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout title="Register Cooperative" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Register Cooperative">
 
         <div class="cr-page">
 
@@ -311,7 +311,7 @@ const submit = () => {
             </button>
         </div>
 
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

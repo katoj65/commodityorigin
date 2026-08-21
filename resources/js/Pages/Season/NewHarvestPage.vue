@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Calendar, Crop, Location, User } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
@@ -205,7 +205,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <AppLayout :title="`Add Harvest to ${seasonTitle}`" full-width>
+    <DesignPreviewLayout :title="`Add Harvest to ${seasonTitle}`">
         <Head :title="`Add Harvest to ${seasonTitle}`" />
 
         <div class="new-harvest-page">
@@ -654,7 +654,7 @@ onBeforeUnmount(() => {
                 </section>
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

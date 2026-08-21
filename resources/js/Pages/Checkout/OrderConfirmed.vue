@@ -4,7 +4,7 @@ import { Link } from '@inertiajs/vue3';
 import {
     SuccessFilled, CircleCheck, Van, Wallet as WalletIcon, CreditCard, Calendar, ArrowRight, ShoppingBag,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
 const props = defineProps({
     orders: { type: Array, default: () => [] },
@@ -40,7 +40,7 @@ const statusTone = {
 </script>
 
 <template>
-    <AppLayout title="Order Confirmed" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Order Confirmed">
         <div class="ordc-page">
             <div class="ordc-body">
                 <!-- ── Success hero ─────────────────────────────────────── -->
@@ -108,7 +108,7 @@ const statusTone = {
                 </div>
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

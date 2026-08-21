@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import { Search, ShoppingCart } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -94,7 +94,7 @@ const statusTone = (s) => {
 </script>
 
 <template>
-    <AppLayout title="Live Market" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Live Market">
         <div class="am-root">
 
             <!-- ── Page Header ───────────────────────────────────────────── -->
@@ -549,7 +549,7 @@ const statusTone = (s) => {
             </button>
         </div>
 
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ElMessage } from 'element-plus';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
     ShoppingCart, Plus, Tickets, Box, Check, Close as CloseIcon,
 } from '@element-plus/icons-vue';
@@ -77,7 +77,7 @@ const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
 </script>
 
 <template>
-    <AppLayout title="Buy Coffee" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Buy Coffee">
         <Head title="Buy Coffee" />
 
         <div class="byr-page">
@@ -249,7 +249,7 @@ const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
                 </div>
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

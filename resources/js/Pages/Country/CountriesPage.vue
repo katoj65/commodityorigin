@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { Search, Filter, Refresh, Box } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
 const props = defineProps({
     countries: { type: Array, default: () => [] },
@@ -39,7 +39,7 @@ const kpis = computed(() => {
 </script>
 
 <template>
-    <AppLayout title="Countries" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Countries">
         <Head title="Countries" />
 
         <div class="cty-page">
@@ -137,7 +137,7 @@ const kpis = computed(() => {
 
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

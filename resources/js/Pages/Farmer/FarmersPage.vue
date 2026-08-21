@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, Checked,
     CollectionTag, DataLine, Download,
@@ -144,7 +144,7 @@ const badgeClass = (b) => {
 </script>
 
 <template>
-    <AppLayout title="Farmers Directory" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Farmers Directory">
         <Head title="Farmers Directory" />
 
         <div class="fd-page">
@@ -715,7 +715,7 @@ const badgeClass = (b) => {
             </div>
 
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

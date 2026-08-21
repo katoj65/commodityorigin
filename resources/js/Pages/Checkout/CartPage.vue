@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { ElMessage } from 'element-plus';
 import { Delete, Minus, Plus, ShoppingCart, ShoppingTrolley, WarningFilled } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
@@ -64,7 +64,7 @@ function confirmRemove() {
 </script>
 
 <template>
-    <AppLayout title="Cart" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Cart">
         <div class="cart-page">
             <section class="cart-header">
                 <div class="cart-header__inner">
@@ -176,7 +176,7 @@ function confirmRemove() {
             confirm-text="Remove"
             @confirm="confirmRemove"
         />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

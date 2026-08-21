@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditHarvestQualityModel from '@/Components/Modals/EditHarvestQualityModel.vue';
 import {
     Box, Calendar, ChatDotRound, Check,
@@ -176,7 +176,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 </script>
 
 <template>
-    <AppLayout title="Harvest Profile" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Harvest Profile">
         <Head title="Harvest Profile" />
 
         <div class="hp-page">
@@ -653,7 +653,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
             :pick-method-options="pickMethodOptions"
             :harvest-season-options="harvestSeasonOptions"
         />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

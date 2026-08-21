@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     Box, Coin, CircleCheck, CircleClose, Close,
@@ -52,7 +52,7 @@ function confirmCancel() {
 </script>
 
 <template>
-    <AppLayout title="Purchases" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Purchases">
         <Head title="Purchases" />
 
         <div class="pur-page">
@@ -150,7 +150,7 @@ function confirmCancel() {
             confirm-text="Cancel Order"
             @confirm="confirmCancel"
         />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

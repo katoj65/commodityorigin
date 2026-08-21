@@ -7,7 +7,7 @@ import {
     Download, Files, Location, Opportunity, Promotion,
     Star, TrendCharts, Van,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import UpdateBatchModal from '@/Components/Modals/UpdateBatchModal.vue';
 
 const props = defineProps({
@@ -156,7 +156,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 
 <template>
 
-    <AppLayout title="Batch Profile" flush :show-banner="false">
+    <DesignPreviewLayout title="Batch Profile">
         <div class="bp-page">
 
             <!--  Page Header ─────────────────────────────────────── -->
@@ -696,7 +696,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
             :batch="batch"
         />
 
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

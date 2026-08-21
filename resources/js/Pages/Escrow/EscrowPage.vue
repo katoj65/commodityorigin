@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import { View, Lock, Unlock } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -91,7 +91,7 @@ function openOrder(escrow) {
 </script>
 
 <template>
-    <AppLayout title="Escrow" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Escrow">
         <Head title="Escrow" />
 
         <div class="esc-page">
@@ -193,7 +193,7 @@ function openOrder(escrow) {
                 </div>
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
     Plus, Close, Files, Box, ShoppingCart,
     Tickets, User, Coffee, Coin, Checked, Search, FolderOpened, List,
@@ -259,7 +259,7 @@ function openOrder(order) {
 </script>
 
 <template>
-    <AppLayout title="Orders" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Orders">
         <Head title="Orders" />
 
         <div class="ord-page">
@@ -516,7 +516,7 @@ function openOrder(order) {
                 </div>
             </template>
         </el-dialog>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

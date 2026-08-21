@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
     Box, Check, DataLine, Filter, Refresh, Search, Tickets, Warning,
 } from '@element-plus/icons-vue';
@@ -75,7 +75,7 @@ const visiblePages = computed(() => {
 </script>
 
 <template>
-    <AppLayout title="Lot Requests" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Lot Requests">
         <Head title="Lot Requests" />
 
         <div class="lr-page">
@@ -263,7 +263,7 @@ const visiblePages = computed(() => {
 
             </div><!-- /container -->
         </div><!-- /lr-page -->
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

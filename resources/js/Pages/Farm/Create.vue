@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { MapLocation, InfoFilled, Postcard, Box, Document, UserFilled } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
@@ -44,7 +44,7 @@ const submit = () => form.post(route('farm.store'));
 </script>
 
 <template>
-    <AppLayout title="Add Farm" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Add Farm">
         <Head title="Add Farm" />
 
         <div class="af-page">
@@ -227,7 +227,7 @@ const submit = () => form.post(route('farm.store'));
             </div>
 
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

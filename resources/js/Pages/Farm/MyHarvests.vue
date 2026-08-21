@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import AddFarmHarvestDialog from '@/Components/Modals/AddFarmHarvestDialog.vue';
 import HarvestProfileDialog from '@/Components/Modals/HarvestProfileDialog.vue';
@@ -150,7 +150,7 @@ function openViewHarvestDialog(row) {
 </script>
 
 <template>
-    <AppLayout title="My Harvests" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="My Harvests">
         <Head title="My Harvests" />
 
         <div class="mh-page">
@@ -398,7 +398,7 @@ function openViewHarvestDialog(row) {
             :pick-method-options="pickMethodOptions"
             :harvest-season-options="harvestSeasonOptions"
         />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

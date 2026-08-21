@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import { Link } from '@inertiajs/vue3';
 import {
     Box,
@@ -130,7 +130,7 @@ const timeline = [
 </script>
 
 <template>
-    <AppLayout title="Lot Profile" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Lot Profile">
 
         <div class="lp-root">
 
@@ -731,7 +731,7 @@ const timeline = [
             </Link>
         </div>
 
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

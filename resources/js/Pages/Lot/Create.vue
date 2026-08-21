@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { Box, Document, OfficeBuilding, User } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
@@ -62,7 +62,7 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout title="Add Lot">
+    <DesignPreviewLayout title="Add Lot">
         <Head title="Add Lot" />
 
         <div class="space-y-4">
@@ -224,5 +224,5 @@ const submit = () => {
                 </aside>
             </section>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>

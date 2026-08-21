@@ -20,7 +20,7 @@ import {
     Plus,
     UserFilled,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditBusinessProfileDialog from '@/Components/Modals/EditBusinessProfileDialog.vue';
 import AddBusinessMemberDialog from '@/Components/Modals/AddBusinessMemberDialog.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -224,7 +224,7 @@ const statCards = computed(() => [
 </script>
 
 <template>
-    <AppLayout title="Business Profile" full-width flush>
+    <DesignPreviewLayout title="Business Profile">
         <Head title="Business Profile" />
 
         <div class="profile-page">
@@ -530,7 +530,7 @@ const statCards = computed(() => [
             confirm-text="Remove"
             @confirm="confirmRemoveMember"
         />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

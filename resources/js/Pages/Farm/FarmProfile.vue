@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { isGoogleMapsConfigured, renderMap } from '@/services/googleMaps';
 import {
@@ -450,7 +450,7 @@ const data=computed(()=>props.farm);
 </script>
 
 <template>
-    <AppLayout :title="farmName" full-width flush :show-banner="false">
+    <DesignPreviewLayout :title="farmName">
         <div class="fp-page">
 
             <!-- ── 1. Sticky Header ───────────────────────────────────── -->
@@ -1538,7 +1538,7 @@ const data=computed(()=>props.farm);
             </el-dialog>
 
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

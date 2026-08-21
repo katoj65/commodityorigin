@@ -8,7 +8,7 @@ import {
     EditPen, Files, Location,
     Opportunity, Plus, Promotion, Star, Tickets, TrendCharts,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditSeasonModal from '@/Components/Modals/EditSeasonModal.vue';
 
 const props = defineProps({
@@ -182,7 +182,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 </script>
 
 <template>
-    <AppLayout :title="seasonName" flush>
+    <DesignPreviewLayout :title="seasonName">
         <div class="sp-page">
 
             <!-- Page Header ─────────────────────────────────────── -->
@@ -686,7 +686,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
             @success="notifySeasonUpdateSuccess"
         />
 
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

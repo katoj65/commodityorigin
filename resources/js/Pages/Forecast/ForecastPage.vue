@@ -5,7 +5,7 @@ import {
     TrendCharts, PieChart, ArrowUp, ArrowDown, Minus, Coin, Sunny,
     Box, Ship, WarningFilled, Odometer, Tickets,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
 const props = defineProps({
     horizons: { type: Array, default: () => [] },
@@ -47,7 +47,7 @@ const confidenceCls = (c) => (c >= 80 ? 'fcp-conf--high' : c >= 65 ? 'fcp-conf--
 </script>
 
 <template>
-    <AppLayout title="Market Forecast" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Market Forecast">
         <Head title="Market Forecast" />
 
         <div class="fcp-page">
@@ -149,7 +149,7 @@ const confidenceCls = (c) => (c >= 80 ? 'fcp-conf--high' : c >= 65 ? 'fcp-conf--
 
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     ArrowLeft, ShoppingCart, Box, Delete, Close, CircleCheck, CircleClose,
@@ -315,7 +315,7 @@ const noActionsMessage = computed(() => {
 </script>
 
 <template>
-    <AppLayout :title="`Order ${order.order_number}`" full-width flush :show-banner="false">
+    <DesignPreviewLayout :title="`Order ${order.order_number}`">
         <Head :title="`Order ${order.order_number}`" />
 
         <div class="osh-page">
@@ -648,7 +648,7 @@ const noActionsMessage = computed(() => {
                 </div>
             </template>
         </el-dialog>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

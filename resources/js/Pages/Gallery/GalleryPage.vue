@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     Plus, Close, UploadFilled, Delete, Edit, Picture,
@@ -144,7 +144,7 @@ function confirmDelete() {
 </script>
 
 <template>
-    <AppLayout title="Gallery" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Gallery">
         <Head title="Gallery" />
 
         <div class="gal-page">
@@ -388,7 +388,7 @@ function confirmDelete() {
             confirm-text="Delete"
             @confirm="confirmDelete"
         />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

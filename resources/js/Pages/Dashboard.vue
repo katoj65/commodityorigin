@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import CreateProfileModal from '@/Components/Modals/CreateProfileModal.vue';
 import SelectRoleModal from '@/Components/Modals/SelectRoleModal.vue';
 
@@ -274,7 +274,7 @@ const filteredLots = computed(() => {
 </script>
 
 <template>
-    <AppLayout title="Dashboard">
+    <DesignPreviewLayout title="Dashboard">
         <div class="flex flex-col gap-3 xl:flex-row xl:gap-4">
             <div class="flex min-w-0 flex-1 flex-col gap-3">
                 <div class="flex flex-col gap-3 rounded-xl border border-[#EEF2F0] bg-white px-4 py-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
@@ -624,7 +624,7 @@ const filteredLots = computed(() => {
                 :current-role="props.currentRole"
             />
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

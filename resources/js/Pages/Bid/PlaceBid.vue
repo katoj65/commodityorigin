@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useForm, Link, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
     ArrowLeft,
     Clock,
@@ -79,7 +79,7 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout title="Place Bid" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Place Bid">
         <div class="pb-root">
 
             <!-- Page header -->
@@ -223,7 +223,7 @@ const submit = () => {
 
             </div>
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

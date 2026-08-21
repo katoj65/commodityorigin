@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import DepositModal from '@/Components/DepositModal.vue';
 import WithdrawModal from '@/Components/WithdrawModal.vue';
 import EscrowTransferModal from '@/Components/EscrowTransferModal.vue';
@@ -111,7 +111,7 @@ function openWithdraw() {
 </script>
 
 <template>
-    <AppLayout title="Wallet" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Wallet">
 
         <div class="wal-page">
             <!-- ── Two-column layout: 70% transactions / 30% balance card ── -->
@@ -264,7 +264,7 @@ function openWithdraw() {
 
         <!-- ── Withdraw modal ───────────────────────────────────────────── -->
         <WithdrawModal v-model="withdrawOpen" :currency="wallet.currency" :available-balance="wallet.available_balance" />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import {
     Plus, View, Edit, Delete, Box,
@@ -82,7 +82,7 @@ function deleteFarm() {
 </script>
 
 <template>
-    <AppLayout title="My Farms" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="My Farms">
         <Head title="My Farms" />
 
         <div class="mf-page">
@@ -276,7 +276,7 @@ function deleteFarm() {
             </el-dialog>
 
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

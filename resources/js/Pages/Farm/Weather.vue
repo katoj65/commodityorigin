@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
     Location, Calendar, WindPower, WarningFilled,
     Sunny, PartlyCloudy, Cloudy, Umbrella, Lightning, Odometer,
@@ -88,7 +88,7 @@ const regionGroups = computed(() => props.regionOptions
 </script>
 
 <template>
-    <AppLayout title="Weather Forecast" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Weather Forecast">
         <Head title="Weather Forecast" />
 
         <div class="wf-page">
@@ -160,7 +160,7 @@ const regionGroups = computed(() => props.regionOptions
             </div>
 
         </div>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

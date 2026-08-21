@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 import {
     Box, Checked, Clock, Collection, DataAnalysis,
@@ -126,7 +126,7 @@ const userInitials = computed(() => {
 </script>
 
 <template>
-    <AppLayout :title="`Lot Request #${req.id}`" :full-width="true" :flush="true" :show-banner="false">
+    <DesignPreviewLayout :title="`Lot Request #${req.id}`">
 
         <div class="lr-root">
 
@@ -525,7 +525,7 @@ const userInitials = computed(() => {
             </template>
         </el-dialog>
 
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

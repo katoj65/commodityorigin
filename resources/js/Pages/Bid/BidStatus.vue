@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
 const props = defineProps({
     bid:     { type: Object, default: () => ({}) },
@@ -73,7 +73,7 @@ const fabOpen = ref(false);
 </script>
 
 <template>
-    <AppLayout title="Bid Submitted" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Bid Submitted">
         <div class="bs-root">
 
             <!-- ── Success Hero ────────────────────────────────────────────── -->
@@ -356,7 +356,7 @@ const fabOpen = ref(false);
             </button>
         </div>
 
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>

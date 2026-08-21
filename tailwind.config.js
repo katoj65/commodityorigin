@@ -1,4 +1,3 @@
-import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
 import typography from '@tailwindcss/typography';
 
@@ -27,9 +26,6 @@ export default {
                 'green-dark': '#2D6A4F',
                 red: '#E07070',
                 up: '#52B788',
-            },
-            fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
         },
     },
