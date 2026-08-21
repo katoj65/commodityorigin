@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ExchangeRates from '@/Components/ExchangeRates.vue';
 import Calendar from '@/Components/Calendar.vue';
 import Task from '@/Components/Task.vue';
@@ -298,11 +298,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <AppLayout title="Coffee Intelligence Center" full-width flush :show-banner="false">
+    <DesignPreviewLayout title="Coffee Intelligence Center">
         <Head title="Coffee Intelligence Center" />
 
         <div class="cp-page">
-            <div class="container-fluid px-3 px-lg-4 py-3">
+            <div class="container-fluid px-0 py-0">
                 <div class="row g-3">
                     <div v-for="kpi in marketKpis" :key="kpi.label" class="col-6 col-md-3">
                         <div class="cp-kpi h-100">
@@ -854,7 +854,7 @@ onBeforeUnmount(() => {
                 </div>
             </form>
         </el-dialog>
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>
@@ -872,6 +872,7 @@ onBeforeUnmount(() => {
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
+    margin-top: -24px;
 }
 .cp-muted { color: var(--on-surface-var); }
 .cp-up   { color: #166534; font-weight: 700; }

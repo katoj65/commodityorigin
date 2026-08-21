@@ -1,10 +1,10 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import {
-    PriceTag, Location, Coffee, SetUp, Star, Box, Coin, TrendCharts, View, ShoppingCart, Sell,
+    Location, Coffee, Star, Box, CircleCheck, Search,
 } from '@element-plus/icons-vue';
-import MarketPage from './MarketPage.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
 const props = defineProps({
     markets: { type: Array, default: () => [] },
@@ -28,12 +28,6 @@ const resolveDemandTone = (demand) => {
     if (d === 'stable') return 'warning';
     if (d === 'low') return 'danger';
     return 'info';
-};
-
-const qualityTone = (score) => {
-    if (score >= 85) return 'green';
-    if (score >= 70) return 'amber';
-    return 'red';
 };
 
 const demandBadgeTone = {
@@ -62,27 +56,15 @@ const listings = computed(() => props.markets.map((m) => ({
     image: m.image || null,
 })));
 
-const uniqueOrigins = computed(() => [...new Set(listings.value.map((l) => l.origin).filter(Boolean))]);
-
-const filters = reactive({ origin: '', type: '', grade: '', certification: '', market: '', maxPrice: '', availability: '', buyerRegion: '', exportRegion: '' });
-
-const filteredListings = computed(() => listings.value.filter((l) => {
-    if (filters.origin && l.origin !== filters.origin) return false;
-    if (filters.type && l.type !== filters.type) return false;
-    if (filters.maxPrice && l.pricePerKg > Number(filters.maxPrice)) return false;
-    if (searchQuery.value) {
-        const q = searchQuery.value.toLowerCase();
-        const hay = `${l.name} ${l.origin} ${l.type}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-    }
-    return true;
-}));
-
-const clearFilters = () => Object.assign(filters, { origin: '', type: '', grade: '', certification: '', market: '', maxPrice: '', availability: '', buyerRegion: '', exportRegion: '' });
+const filteredListings = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase();
+    if (!q) return listings.value;
+    return listings.value.filter((l) => `${l.name} ${l.lot_code} ${l.origin} ${l.type}`.toLowerCase().includes(q));
+});
 
 /* ── Pagination ───────────────────────────────────────────────────────── */
 const currentPage = ref(1);
-const pageSize = ref(25);
+const pageSize = ref(24);
 
 const pagedListings = computed(() => {
     const start = (currentPage.value - 1) * pageSize.value;
@@ -93,157 +75,240 @@ watch(filteredListings, () => { currentPage.value = 1; });
 </script>
 
 <template>
-    <MarketPage v-model:search-query="searchQuery">
-        <div class="mkt-body">
-            <div class="mkt-card">
-                <el-table :data="pagedListings" class="mkt-el-table" stripe row-key="id" empty-text="No lots match your search." @row-click="goToListing">
-                    <el-table-column width="72">
-                        <template #default="{ row }">
-                            <div class="mkt-thumb">
-                                <img v-if="row.image" :src="`/storage/${row.image}`" :alt="row.name">
-                                <svg v-else class="mkt-thumb-icon" viewBox="0 0 24 24">
-                                    <ellipse cx="9" cy="12" rx="5" ry="7" transform="rotate(-25 9 12)" fill="#4b2e1d" />
-                                    <path d="M9 6 C7 9, 11 15, 9 18" stroke="#c9a27a" stroke-width="1.1" fill="none" transform="rotate(-25 9 12)" />
-                                    <ellipse cx="16.5" cy="14.5" rx="4" ry="5.5" transform="rotate(20 16.5 14.5)" fill="#6b4226" />
-                                    <path d="M16.5 10 C15 12.5, 18 16, 16.5 19" stroke="#d8b48f" stroke-width="1" fill="none" transform="rotate(20 16.5 14.5)" />
-                                </svg>
-                            </div>
-                        </template>
-                    </el-table-column>
-                    <el-table-column label="Lot" min-width="160">
-                        <template #header><el-icon class="mkt-th-icon"><PriceTag /></el-icon>Lot</template>
-                        <template #default="{ row }">
-                            <div class="mkt-item-name">{{ row.lot_code }}</div>
-                            <div class="mkt-muted" style="font-size:.7rem;">{{ row.name }}</div>
-                        </template>
-                    </el-table-column>
-                    <el-table-column label="Origin" min-width="120">
-                        <template #header><el-icon class="mkt-th-icon"><Location /></el-icon>Origin</template>
-                        <template #default="{ row }">{{ row.origin }}</template>
-                    </el-table-column>
-                    <el-table-column label="Type" min-width="100" align="center">
-                        <template #header><el-icon class="mkt-th-icon"><Coffee /></el-icon>Type</template>
-                        <template #default="{ row }"><span class="mkt-badge mkt-badge--muted">{{ row.type }}</span></template>
-                    </el-table-column>
-                    <el-table-column label="Process" min-width="110">
-                        <template #header><el-icon class="mkt-th-icon"><SetUp /></el-icon>Process</template>
-                        <template #default="{ row }">{{ row.process }}</template>
-                    </el-table-column>
-                    <el-table-column label="Quality" min-width="100" align="center">
-                        <template #header><el-icon class="mkt-th-icon"><Star /></el-icon>Quality</template>
-                        <template #default="{ row }"><span class="mkt-badge" :class="`mkt-badge--${qualityTone(row.qualityScore)}`">{{ row.qualityScore.toFixed(1) }}</span></template>
-                    </el-table-column>
-                    <el-table-column label="Quantity" min-width="110" align="right" header-align="left">
-                        <template #header><el-icon class="mkt-th-icon"><Box /></el-icon>Quantity</template>
-                        <template #default="{ row }"><span class="mkt-num">{{ row.quantity.toLocaleString() }} kg</span></template>
-                    </el-table-column>
-                    <el-table-column label="Price" min-width="110" align="right" header-align="left">
-                        <template #header><el-icon class="mkt-th-icon"><Coin /></el-icon>Price</template>
-                        <template #default="{ row }"><span class="mkt-num fw-semibold">${{ row.pricePerKg.toFixed(2) }}/kg</span></template>
-                    </el-table-column>
-                    <el-table-column label="Demand" min-width="110" align="center">
-                        <template #header><el-icon class="mkt-th-icon"><TrendCharts /></el-icon>Demand</template>
-                        <template #default="{ row }">
-                            <span class="mkt-badge" :class="demandBadgeClass(row.demandTone)">{{ row.demand }}</span>
-                        </template>
-                    </el-table-column>
-                    <el-table-column width="70" align="right">
-                        <template #default="{ row }">
-                            <Link :href="route('market.show', row.id)" class="mkt-icon-link" title="View listing" @click.stop><el-icon><View /></el-icon></Link>
-                        </template>
-                    </el-table-column>
-                </el-table>
+    <DesignPreviewLayout title="Coffee Market">
+        <Head title="Coffee Market" />
 
-                <div v-if="filteredListings.length" class="mkt-pagination">
+        <div class="mkt-page">
+            <div class="mktl-body">
+                <div class="mktl-hero">
+                    <div class="mktl-hero__text">
+                        <p class="mktl-hero__eyebrow">Coffee Trading Platform</p>
+                        <h1 class="mktl-hero__title">Marketplace</h1>
+                        <p class="mktl-hero__subtitle">Discover exceptional micro-lots, direct trade staples, and rare varietals sourced from the world's most dedicated producers.</p>
+                    </div>
+                    <label class="mktl-hero__search">
+                        <el-icon :size="16"><Search /></el-icon>
+                        <input v-model="searchQuery" type="text" placeholder="Search origin, lot, or variety…">
+                    </label>
+                </div>
+
+                <div v-if="pagedListings.length" class="mktl-grid">
+                    <article
+                        v-for="row in pagedListings"
+                        :key="row.id"
+                        class="mktl-card"
+                        @click="goToListing(row)"
+                    >
+                        <div class="mktl-card__media">
+                            <img :src="row.image ? `/storage/${row.image}` : '/images/coffee_image.jpg'" :alt="row.name">
+                            <span v-if="row.qualityScore >= 85" class="mktl-card__ribbon">Premium Lot</span>
+                            <span class="mktl-card__score"><el-icon :size="14"><Star /></el-icon>{{ row.qualityScore.toFixed(1) }}</span>
+                            <span class="mktl-card__demand mkt-badge" :class="demandBadgeClass(row.demandTone)">{{ row.demand }}</span>
+                        </div>
+
+                        <div class="mktl-card__body">
+                            <div class="mktl-card__top">
+                                <h3 class="mktl-card__title">{{ row.name }}</h3>
+                                <div class="mktl-card__price-block">
+                                    <span class="mktl-card__price">${{ row.pricePerKg.toFixed(2) }}</span>
+                                    <span class="mktl-card__price-unit">/ kg</span>
+                                </div>
+                            </div>
+
+                            <div class="mktl-card__meta">
+                                <span class="mktl-card__origin"><el-icon :size="12"><Location /></el-icon>{{ row.origin }}</span>
+                                <span v-if="row.type" class="mktl-card__dot" />
+                                <span v-if="row.type">{{ row.type }}</span>
+                                <span v-if="row.process" class="mktl-card__dot" />
+                                <span v-if="row.process">{{ row.process }}</span>
+                            </div>
+
+                            <div class="mktl-card__stock"><el-icon :size="12"><Box /></el-icon>{{ row.quantity.toLocaleString() }} kg avail.</div>
+
+                            <Link :href="route('market.show', row.id)" class="mktl-card__cta" @click.stop>
+                                <el-icon :size="13"><CircleCheck /></el-icon> View Listing
+                            </Link>
+                        </div>
+                    </article>
+                </div>
+
+                <div v-else class="mktl-empty">
+                    <el-icon :size="28"><Coffee /></el-icon>
+                    <p>{{ searchQuery ? `No lots match "${searchQuery}".` : 'No lots available right now.' }}</p>
+                    <button v-if="searchQuery" type="button" class="mktl-clear mktl-clear--pill" @click="searchQuery = ''">Clear search</button>
+                </div>
+
+                <div v-if="filteredListings.length > pageSize" class="mktl-pagination">
                     <el-pagination
                         v-model:current-page="currentPage"
                         v-model:page-size="pageSize"
                         :total="filteredListings.length"
-                        :page-sizes="[25, 50, 100]"
+                        :page-sizes="[24, 48, 96]"
                         layout="total, sizes, prev, pager, next"
                         background
                     />
                 </div>
             </div>
         </div>
-    </MarketPage>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>
-.mkt-muted { color: var(--on-surface-var); }
-.mkt-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }
-
-/* ── Body ─────────────────────────────────────────────────────────────── */
-.mkt-body { padding: .75rem 0 3rem; }
-
-.mkt-section__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .875rem; padding: 0 1.5rem; }
-.mkt-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
-.mkt-title { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
-.mkt-count { font-size: .75rem; color: var(--on-surface-var); }
-.mkt-section__actions { display: flex; align-items: center; gap: 14px; }
-
-.mkt-btn-group { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--green); }
-.mkt-btn-group__item { display: inline-flex; align-items: center; gap: 5px; padding: 7px 18px; font-size: .75rem; font-weight: 700; letter-spacing: .01em; text-decoration: none; color: var(--green); background: #fff; transition: background .15s ease, color .15s ease; white-space: nowrap; }
-.mkt-btn-group__item :deep(.el-icon) { font-size: 13px; }
-.mkt-btn-group__item + .mkt-btn-group__item { border-left: 1px solid var(--green); }
-.mkt-btn-group__item:hover { background: #f0f5f3; }
-.mkt-btn-group__item--solid { background: var(--green); color: #fff; }
-.mkt-btn-group__item--solid:hover { background: var(--green-dark); }
-
-/* ── Table card — boxed, elevated container ─────────────────────────────── */
-.mkt-card {
-    margin: 0 1.5rem;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
+/* ── Bean Origin design system — literal hex from the Stitch export, not
+   tailwind.config.js: this app's shared config already owns an old
+   dark-theme palette under similarly-named tokens (see
+   feedback_stitch_mockup_porting memory).
+   Interactive "items" (cards, inputs, buttons, pagination) are
+   borderless — separation comes from background fill and soft ambient
+   shadow rather than hairline outlines. The hero's own bottom edge is
+   the one deliberate hairline divider, kept subtle (low-opacity, not
+   the solid --border token) since it's structural, not an "item". ──── */
+.mkt-page {
+    --green: #271310;          /* primary — Deep Roast */
+    --green-dark: #1a0d0b;
+    --border: #d3c3c0;         /* outline-variant — still used for hairline dividers */
+    --on-surface: #1a1c1c;
+    --on-surface-var: #504442; /* on-surface-variant */
+    --surface-low: #f3f3f3;    /* surface-container-low */
+    --shadow-sm: 0 1px 2px rgba(39, 19, 16, .06), 0 1px 1px rgba(39, 19, 16, .04);
+    --shadow-md: 0 10px 24px -12px rgba(39, 19, 16, .18);
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #f9f9f9;
+    color: var(--on-surface);
+    min-height: 100%;
+    /* DesignPreviewLayout's .dp-main carries its own 48px top padding
+       (shared by every page it wraps) — pulled back up here so the hero
+       sits flush under the header instead of leaving a dead gap, same
+       fix applied to GeneralDashboard's .cp-page. */
+    margin-top: -48px;
 }
 
-/* ── Element Plus table, reskinned to match the market design system ──── */
-.mkt-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; }
-.mkt-el-table :deep(.el-table__row) { cursor: pointer; }
-.mkt-el-table :deep(.el-table__cell) { padding: 11px 0; }
-.mkt-el-table :deep(.cell) { padding: 0 12px; font-size: .8125rem; line-height: 1.45; }
-.mkt-el-table :deep(th.el-table__cell) { font-size: .6875rem; font-weight: 600; letter-spacing: .04em; }
-.mkt-el-table :deep(th.el-table__cell .cell) { display: flex; align-items: center; white-space: nowrap; }
-.mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.25rem; }
-.mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.25rem; }
-.mkt-el-table :deep(.el-table__inner-wrapper::before) { display: none; }
-.mkt-el-table :deep(.el-table__body td.el-table__cell) { transition: background-color .12s ease; }
-.mkt-el-table :deep(.el-table__body tr.el-table__row--striped td.el-table__cell) { background: #fafaf9; }
-.mkt-el-table :deep(.el-table__body tr:hover > td.el-table__cell) { background: var(--el-table-row-hover-bg-color); }
-.mkt-el-table :deep(.el-table__empty-block) { min-height: 160px; }
-.mkt-el-table :deep(.el-table__empty-text) { color: var(--on-surface-var); font-size: .8125rem; }
-.mkt-th-icon { width: 16px; height: 16px; margin-right: 5px; color: var(--green); opacity: .8; }
-.mkt-num { font-variant-numeric: tabular-nums; }
-.mkt-icon-link { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border); color: var(--on-surface-var); text-decoration: none; transition: all .15s ease; }
-.mkt-icon-link:hover { background: var(--surface-low); color: var(--green); border-color: var(--green); box-shadow: 0 1px 3px rgba(0, 69, 50, .12); }
+.mktl-body { padding: 2.5rem 0 3rem; }
 
-.mkt-thumb { width: 40px; height: 40px; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #f1e6d8; border: 1px solid #e6d5bf; }
-.mkt-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.mkt-thumb-icon { width: 28px; height: 28px; }
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.mktl-hero {
+    display: flex; flex-direction: column; gap: 20px;
+    margin-bottom: 32px; padding-bottom: 28px; border-bottom: 1px solid rgba(39, 19, 16, .08);
+}
+.mktl-hero__text { min-width: 0; }
+.mktl-hero__eyebrow { font-size: .6875rem; font-weight: 700; color: #1b6d24; text-transform: uppercase; letter-spacing: .1em; margin: 0 0 6px; }
+.mktl-hero__title { font-size: 1.875rem; line-height: 2.25rem; letter-spacing: -0.015em; font-weight: 800; color: var(--green); margin: 0 0 8px; }
+.mktl-hero__subtitle { font-size: .9375rem; line-height: 1.5rem; font-weight: 500; color: var(--on-surface-var); max-width: 560px; margin: 0; }
 
-.mkt-pagination { padding: 1rem 1.25rem 1.25rem; border-top: 1px solid var(--border); }
-.mkt-pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; font-family: inherit; }
-.mkt-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: .8125rem; font-weight: 600; color: var(--on-surface-var); }
-.mkt-pagination :deep(.el-pagination__sizes) { margin-right: 4px; }
-.mkt-pagination :deep(.el-select__wrapper) { border-radius: 8px; box-shadow: 0 0 0 1px var(--border) inset; min-height: 32px; font-size: .75rem; }
-.mkt-pagination :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 1px var(--green) inset; }
-.mkt-pagination :deep(.btn-prev),
-.mkt-pagination :deep(.btn-next) { width: 32px; height: 32px; border-radius: 9px; background: #fff; border: 1px solid var(--border); color: var(--on-surface-var); transition: all .15s ease; }
-.mkt-pagination :deep(.btn-prev:hover:not(:disabled)),
-.mkt-pagination :deep(.btn-next:hover:not(:disabled)) { border-color: var(--green); color: var(--green); background: #f0f5f3; }
-.mkt-pagination :deep(.btn-prev:disabled),
-.mkt-pagination :deep(.btn-next:disabled) { opacity: .4; background: #fff; border-color: var(--border); color: var(--on-surface-var); }
-.mkt-pagination :deep(.el-pager) { display: flex; align-items: center; gap: 4px; }
-.mkt-pagination :deep(.el-pager li) { min-width: 32px; height: 32px; border-radius: 9px; background: #fff; border: 1px solid var(--border); color: var(--on-surface); font-size: .8125rem; font-weight: 600; transition: all .15s ease; }
-.mkt-pagination :deep(.el-pager li:hover) { border-color: var(--green); color: var(--green); background: #f0f5f3; }
-.mkt-pagination :deep(.el-pager li.is-active) { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 2px 6px rgba(0, 69, 50, .25); }
+.mktl-hero__search {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    width: 100%; height: 46px; padding: 0 16px; border-radius: 12px;
+    background: var(--surface-low); color: var(--on-surface-var);
+    transition: box-shadow .15s ease;
+}
+.mktl-hero__search:focus-within { box-shadow: 0 0 0 2px var(--green-dark) inset; color: var(--on-surface); }
+.mktl-hero__search input {
+    flex: 1; min-width: 0; height: 100%; border: none; background: none;
+    font: inherit; font-size: .875rem; color: var(--on-surface);
+}
+.mktl-hero__search input:focus,
+.mktl-hero__search input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+.mktl-hero__search input::placeholder { color: var(--on-surface-var); }
 
-/* ── Badges ───────────────────────────────────────────────────────────── */
-.mkt-badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; font-size: .6875rem; font-weight: 600; padding: 3px 10px 3px 8px; line-height: 1.5; white-space: nowrap; }
-.mkt-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+@media (min-width: 768px) {
+    .mktl-hero { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 32px; }
+    .mktl-hero__search { width: 280px; }
+}
+
+.mktl-clear { display: inline-flex; align-items: center; gap: 4px; border: none; background: none; color: var(--green); font-size: .6875rem; font-weight: 700; cursor: pointer; padding: 0; }
+.mktl-clear:hover { text-decoration: underline; }
+.mktl-clear--pill { border: none; background: var(--surface-low); border-radius: 8px; padding: 7px 14px; margin-top: 4px; }
+
+/* ── Product grid ─────────────────────────────────────────────────────── */
+.mktl-grid { display: grid; grid-template-columns: 1fr; gap: 32px; margin-top: 8px; }
+
+@media (min-width: 640px) {
+    .mktl-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+    .mktl-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.mktl-card {
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .15s ease, transform .12s ease;
+    display: flex;
+    flex-direction: column;
+}
+.mktl-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+.mktl-card__media {
+    position: relative; width: 100%; aspect-ratio: 4 / 3; background: #f1e6d8;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.mktl-card__media img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.mktl-card:hover .mktl-card__media img { transform: scale(1.05); }
+.mktl-card__ribbon { position: absolute; top: 12px; left: 12px; background: rgba(26, 15, 12, .82); color: #fbbf24; font-size: .625rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; backdrop-filter: blur(4px); }
+.mktl-card__score {
+    position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255, 255, 255, .92); backdrop-filter: blur(4px); color: var(--on-surface);
+    font-size: .75rem; font-weight: 700; padding: 5px 10px; border-radius: 999px;
+}
+.mktl-card__score .el-icon { color: var(--green); }
+.mktl-card__ribbon ~ .mktl-card__score { top: 44px; }
+.mktl-card__demand { position: absolute; top: 12px; right: 12px; }
+
+.mktl-card__body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.mktl-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.mktl-card__title {
+    font-size: 1rem; font-weight: 700; color: var(--on-surface);
+    letter-spacing: -0.005em; line-height: 1.375rem; margin: 0 !important;
+    display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    min-height: 2.75rem;
+}
+.mktl-card__price-block { display: flex; align-items: baseline; gap: 3px; flex-shrink: 0; }
+.mktl-card__price { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 1.0625rem; font-weight: 800; color: var(--on-surface); white-space: nowrap; }
+.mktl-card__price-unit { font-size: .6875rem; color: var(--on-surface-var); }
+
+.mktl-card__meta { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 600; color: var(--on-surface-var); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; }
+.mktl-card__meta > span:not(.mktl-card__dot) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mktl-card__origin { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; text-transform: none; }
+.mktl-card__dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+
+.mktl-card__stock { display: inline-flex; align-items: center; gap: 3px; font-size: .75rem; color: var(--on-surface-var); white-space: nowrap; }
+
+.mktl-card__cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    margin-top: auto; height: 40px; border-radius: 10px;
+    background: var(--green); color: #fff; text-decoration: none;
+    font-size: .8125rem; font-weight: 700;
+    transition: background .15s ease, transform .15s ease;
+}
+.mktl-card__cta:hover { background: var(--green-dark); transform: translateY(-1px); }
+
+/* ── Empty state ──────────────────────────────────────────────────────── */
+.mktl-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 4rem 1rem; color: var(--on-surface-var); background: #fff; border-radius: 14px; box-shadow: var(--shadow-sm); }
+.mktl-empty p { margin: 0 !important; font-size: .875rem; }
+
+.mktl-pagination { margin-top: 1.25rem; padding: 1rem 1.25rem; background: #fff; border-radius: 12px; box-shadow: var(--shadow-sm); }
+.mktl-pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; font-family: inherit; }
+.mktl-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: .8125rem; font-weight: 600; color: var(--on-surface-var); }
+.mktl-pagination :deep(.el-select__wrapper) { border-radius: 8px; box-shadow: none; background: var(--surface-low); min-height: 32px; font-size: .75rem; }
+.mktl-pagination :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 2px var(--green-dark) inset; }
+.mktl-pagination :deep(.btn-prev),
+.mktl-pagination :deep(.btn-next) { width: 32px; height: 32px; border-radius: 9px; background: var(--surface-low); border: none; color: var(--on-surface-var); transition: all .15s ease; }
+.mktl-pagination :deep(.btn-prev:hover:not(:disabled)),
+.mktl-pagination :deep(.btn-next:hover:not(:disabled)) { color: var(--green); background: #ece4e2; }
+.mktl-pagination :deep(.el-pager) { display: flex; align-items: center; gap: 4px; }
+.mktl-pagination :deep(.el-pager li) { min-width: 32px; height: 32px; border-radius: 9px; background: var(--surface-low); border: none; color: var(--on-surface); font-size: .8125rem; font-weight: 600; transition: all .15s ease; }
+.mktl-pagination :deep(.el-pager li.is-active) { background: var(--green); color: #fff; }
+
+/* ── Badges (shared demand-badge classes from the market design system) ── */
+.mkt-badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; font-size: .625rem; font-weight: 700; padding: 3px 9px; line-height: 1.4; white-space: nowrap; }
 .mkt-badge--green { background: #ecfdf5; color: #059669; }
 .mkt-badge--green-solid { background: var(--green); color: #fff; }
 .mkt-badge--amber { background: #fffbeb; color: #d97706; }
@@ -251,13 +316,9 @@ watch(filteredListings, () => { currentPage.value = 1; });
 .mkt-badge--muted { background: #f5f5f4; color: #78716c; }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
-@media (max-width: 767.98px) {
-    .mkt-section__head { padding: 0 1.25rem; }
-    .mkt-card { margin: 0 1.25rem; border-radius: 12px; }
-    .mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1rem; }
-    .mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1rem; }
-    .mkt-pagination { padding: 1rem 1rem 1.25rem; }
-    .mkt-pagination :deep(.el-pagination) { justify-content: center; }
-    .mkt-pagination :deep(.el-pagination__total) { margin-right: 0; width: 100%; text-align: center; order: -1; }
+@media (max-width: 640px) {
+    .mktl-body { padding: 1.5rem 0 2.5rem; }
+    .mktl-hero__title { font-size: 1.5rem; line-height: 1.9rem; }
+    .mktl-grid { gap: 20px; }
 }
 </style>

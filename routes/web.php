@@ -43,6 +43,11 @@ use Illuminate\Support\Facades\Route;
 
 // Public landing page.
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Design preview — a literal port of a Stitch mockup, kept isolated from
+// the real app shell so it can be inspected without touching production
+// pages. Not linked from anywhere; visit directly.
+Route::get('/test/design', fn () => \Inertia\Inertia::render('Test/DesignPreview'))->name('test.design');
 Route::get('/news', [MarketController::class, 'marketIntelligence'])->name('market.news');
 Route::get('/live-market', [MarketController::class, 'liveMarket'])->name('market.live');
 Route::get('/origins', [OriginController::class, 'index'])->name('origin.index');

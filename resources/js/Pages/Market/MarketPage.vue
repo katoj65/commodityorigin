@@ -4,7 +4,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import {
     Search, List, ShoppingCart, Sell, DataAnalysis, TrendCharts, Trophy, Filter,
 } from '@element-plus/icons-vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import MarketFilterDialog from '@/Components/Market/MarketFilterDialog.vue';
 
 const props = defineProps({
@@ -49,8 +49,12 @@ function closeSearch() {
 </script>
 
 <template>
-    <AppLayout title="Coffee Market" full-width flush :show-banner="false">
-        <Head title="Coffee Market" />
+    <DesignPreviewLayout title="Coffee Market">
+        <Head title="Coffee Market">
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+        </Head>
 
         <div class="mkt-page">
 
@@ -107,27 +111,40 @@ function closeSearch() {
         </div>
 
         <MarketFilterDialog v-model="filterDialogOpen" />
-    </AppLayout>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>
 .mkt-page {
-    --green: #004532;
-    --green-dark: #002e20;
-    --gold: #c8862a;
-    --border: #eef2f0;
-    --on-surface: #111827;
-    --on-surface-var: #6b7280;
-    --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
+    /* Bean Origin design system — literal hex from the Stitch export, not
+       tailwind.config.js: this app's shared config already owns an old
+       dark-theme palette under similarly-named tokens (see
+       feedback_stitch_mockup_porting memory). Variable NAMES kept as
+       --green/--border/etc. on purpose — every .mktl-* rule in
+       MarketListings.vue already references them, and CSS custom
+       properties cascade across scoped SFC boundaries, so re-pointing
+       the values here recolors the whole page without touching every
+       rule individually. */
+    --green: #271310;          /* primary — Deep Roast */
+    --green-dark: #1a0d0b;
+    --border: #d3c3c0;         /* outline-variant */
+    --on-surface: #1a1c1c;
+    --on-surface-var: #504442; /* on-surface-variant */
+    --surface-low: #f3f3f3;    /* surface-container-low */
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f9f9f9;
     color: var(--on-surface);
     min-height: 100%;
+    /* DesignPreviewLayout's .dp-main carries its own 48px top padding
+       (shared by every page it wraps) — pulled back up here so the
+       sticky topbar sits flush under the header instead of leaving a
+       dead gap, same fix already applied to GeneralDashboard's .cp-page. */
+    margin-top: -48px;
 }
 
 /* ── Top bar ──────────────────────────────────────────────────────────── */
-.mkt-topbar { position: sticky; top: 3.5rem; z-index: 20; background: #fff; border-bottom: 1px solid var(--border); }
-.mkt-topbar__inner { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .5rem 1.5rem; }
+.mkt-topbar { position: sticky; top: 80px; z-index: 20; background: #fff; border-bottom: 1px solid var(--border); }
+.mkt-topbar__inner { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .5rem 0; }
 
 /* ── Section tabs ─────────────────────────────────────────────────────── */
 .mkt-tabs { display: flex; align-items: center; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
@@ -135,29 +152,29 @@ function closeSearch() {
 
 .mkt-tab {
     display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-    padding: 8px 14px; border-radius: 8px;
-    font-size: .8125rem; font-weight: 600; color: var(--on-surface-var);
+    padding: 10px 16px; border-radius: 999px;
+    font-size: .875rem; font-weight: 600; color: var(--on-surface-var);
     text-decoration: none; white-space: nowrap;
     transition: background .15s ease, color .15s ease;
 }
 .mkt-tab :deep(.el-icon) { font-size: 14px; }
 .mkt-tab:hover { background: var(--surface-low); color: var(--on-surface); }
-.mkt-tab--active { background: rgba(0, 69, 50, .08); color: var(--green); }
+.mkt-tab--active { background: rgba(39, 19, 16, .08); color: var(--green); font-weight: 700; }
 
 .mkt-search-wrap { position: relative; display: flex; align-items: center; flex-shrink: 0; }
 
 .mkt-search-toggle {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
     border: 1px solid var(--border); background: #fff; color: var(--on-surface-var);
     cursor: pointer; transition: all .15s ease;
 }
-.mkt-search-toggle:hover { border-color: var(--green); color: var(--green); background: #f0f5f3; }
-.mkt-search-wrap--open .mkt-search-toggle { border-color: var(--green); color: var(--green); background: #f0f5f3; }
+.mkt-search-toggle:hover { border-color: var(--green); color: var(--green); background: var(--surface-low); }
+.mkt-search-wrap--open .mkt-search-toggle { border-color: var(--green); color: var(--green); background: var(--surface-low); }
 
 .mkt-search-input {
-    width: 220px; height: 36px; margin-right: 8px; border: 1px solid var(--border); border-radius: 9px;
-    padding: 0 12px; font-size: .8125rem; font-family: inherit; outline: none;
+    width: 220px; height: 36px; margin-right: 8px; border: 1px solid var(--border); border-radius: 10px;
+    padding: 0 12px; font-size: .875rem; font-family: inherit; outline: none;
     background: var(--surface-low); color: var(--on-surface);
     transition: border-color .15s ease, background .15s ease;
 }
@@ -167,16 +184,16 @@ function closeSearch() {
     .mkt-search-input { width: 160px; }
 }
 
-/* ── Filter toggle button ─────────────────────────────────────────────── */
+/* ── Filter toggle button — the mockup's "All Filters" primary pill ────── */
 .mkt-filter-toggle {
     display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-    height: 36px; padding: 0 14px; border-radius: 8px;
-    border: 1px solid var(--border); background: #fff; color: var(--on-surface-var);
-    font-size: .8125rem; font-weight: 700;
+    height: 36px; padding: 0 16px; border-radius: 999px;
+    border: none; background: var(--green); color: #fff;
+    font-size: .875rem; font-weight: 600;
     cursor: pointer; transition: all .15s ease;
 }
 .mkt-filter-toggle :deep(.el-icon) { font-size: 14px; }
-.mkt-filter-toggle:hover { border-color: var(--green); color: var(--green); background: #f0f5f3; }
+.mkt-filter-toggle:hover { background: var(--green-dark); }
 
 @media (max-width: 640px) {
     .mkt-filter-toggle span { display: none; }
