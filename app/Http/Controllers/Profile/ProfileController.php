@@ -295,6 +295,22 @@ class ProfileController extends Controller
     }
 
     /**
+     * Delete the authenticated user's business profile (and, by cascade,
+     * its registered members). The user keeps their account and role —
+     * they land back on an empty business profile page afterward.
+     */
+    public function destroyBusiness(Request $request): RedirectResponse
+    {
+        $businessProfile = $this->businessProfiles->forUser($request->user()->id);
+
+        abort_unless($businessProfile, 404);
+
+        $businessProfile->delete();
+
+        return redirect()->route('profile.show')->with('success', 'Business profile deleted successfully.');
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)

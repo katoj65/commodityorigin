@@ -133,6 +133,7 @@ Route::middleware([
     Route::post('/profile', [ProfileController::class, 'store'])->name('profile.store');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/business', [ProfileController::class, 'updateBusiness'])->name('profile.business.update');
+    Route::delete('/profile/business', [ProfileController::class, 'destroyBusiness'])->name('profile.business.destroy');
     Route::post('/profile/role', [ProfileController::class, 'updateRole'])->name('profile.role');
     Route::post('/profile/currency', [ProfileController::class, 'updateCurrency'])->name('profile.currency');
 

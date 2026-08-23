@@ -3,11 +3,10 @@ import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
-import PageHeader from '@/Components/PageHeader.vue';
 import AddBusinessMemberDialog from '@/Components/Modals/AddBusinessMemberDialog.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
-    Close, Delete, EditPen, Postcard, Location, Message, OfficeBuilding, Phone, Plus, Search, UploadFilled, UserFilled, WarningFilled,
+    Close, Delete, Message, Phone, Plus, Search, UploadFilled, UserFilled, WarningFilled,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -17,7 +16,7 @@ const props = defineProps({
     importResult: { type: Object, default: null },
 });
 
-/* ── Search ────────────────────────────────────────────────────────────── */
+/* ── Search ──────────────────────────────────────────────────────────── */
 const searchQuery = ref('');
 
 const filteredMembers = computed(() => {
@@ -29,11 +28,9 @@ const filteredMembers = computed(() => {
     ].filter(Boolean).join(' ').toLowerCase().includes(q));
 });
 
-const activeCount = computed(() => props.members.filter((m) => m.status === 'active').length);
-
-/* ── Pagination ────────────────────────────────────────────────────────── */
+/* ── Pagination ──────────────────────────────────────────────────────── */
 const currentPage = ref(1);
-const pageSize = 30;
+const pageSize = 9;
 
 const pagedMembers = computed(() => {
     const start = (currentPage.value - 1) * pageSize;
@@ -44,21 +41,7 @@ watch([searchQuery, () => props.members], () => {
     currentPage.value = 1;
 });
 
-const avatarPalette = [
-    ['#d1fae5', '#065f46'], ['#dbeafe', '#1e40af'], ['#fef3c7', '#92400e'],
-    ['#fce7f3', '#9d174d'], ['#e0e7ff', '#3730a3'], ['#fee2e2', '#991b1b'],
-];
-
-function initials(name) {
-    return String(name || '?').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || '?';
-}
-
-function avatarColors(id) {
-    const [bg, fg] = avatarPalette[id % avatarPalette.length];
-    return { background: bg, color: fg };
-}
-
-/* ── Add / edit member ────────────────────────────────────────────────── */
+/* ── Add / edit member ───────────────────────────────────────────────── */
 const memberDialogOpen = ref(false);
 const editingMember = ref(null);
 
@@ -72,7 +55,7 @@ function openEditMember(member) {
     memberDialogOpen.value = true;
 }
 
-/* ── Import from Excel ────────────────────────────────────────────────── */
+/* ── Import from Excel ───────────────────────────────────────────────── */
 const fileInput = ref(null);
 const importing = ref(false);
 const importResultVisible = ref(Boolean(props.importResult));
@@ -98,7 +81,7 @@ function handleFileChange(event) {
                 title: imported > 0 ? 'Import Complete' : 'Import Failed',
                 message: imported > 0
                     ? `${imported} member${imported === 1 ? '' : 's'} imported${skipped ? `, ${skipped} row(s) skipped.` : '.'}`
-                    : 'No rows were imported. See the details below the table.',
+                    : 'No rows were imported. See the details below.',
                 type: imported > 0 ? (skipped ? 'warning' : 'success') : 'error',
                 duration: 4000,
                 offset: 84,
@@ -120,7 +103,7 @@ function handleFileChange(event) {
     });
 }
 
-/* ── Remove member ────────────────────────────────────────────────────── */
+/* ── Remove member ───────────────────────────────────────────────────── */
 const removingId = ref(null);
 const removeOpen = ref(false);
 const pendingRemove = ref(null);
@@ -143,153 +126,111 @@ function confirmRemove() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Business Members">
-        <Head title="Business Members" />
+    <DesignPreviewLayout title="Business Membership">
+        <Head title="Business Membership" />
 
         <div class="bm-page">
-            <!-- ── Page header ───────────────────────────────────────────── -->
-            <PageHeader
-                :title="business.business_name"
-                :subtitle="`${members.length} registered member${members.length === 1 ? '' : 's'}`"
-            >
-                <template #icon>
-                    <img v-if="business.logo_url" :src="business.logo_url" :alt="business.business_name">
-                    <el-icon v-else :size="16"><OfficeBuilding /></el-icon>
-                </template>
-                <template v-if="canManage" #actions>
-                    <input ref="fileInput" type="file" accept=".xlsx,.xls" class="d-none" @change="handleFileChange">
-                    <button type="button" class="bm-btn-outline" :disabled="importing" @click="openFilePicker">
-                        <el-icon><UploadFilled /></el-icon> {{ importing ? 'Importing…' : 'Import Excel' }}
-                    </button>
-                    <button type="button" class="bm-btn-primary" @click="openAddMember">
-                        <el-icon><Plus /></el-icon> Add Member
-                    </button>
-                </template>
-            </PageHeader>
-
-            <!-- ── Import results ───────────────────────────────────────── -->
-            <div v-if="importResult && importResultVisible" class="bm-body bm-body--no-top-pad">
-                <div class="bm-import-panel" :class="{ 'bm-import-panel--warn': importResult.errors.length }">
-                    <div class="bm-import-panel__icon">
-                        <el-icon :size="16"><WarningFilled v-if="importResult.errors.length" /><UploadFilled v-else /></el-icon>
-                    </div>
-                    <div class="bm-import-panel__body">
-                        <div class="bm-import-panel__title">
-                            {{ importResult.imported }} member{{ importResult.imported === 1 ? '' : 's' }} imported
-                            <span v-if="importResult.errors.length">, {{ importResult.errors.length }} row{{ importResult.errors.length === 1 ? '' : 's' }} skipped</span>
-                        </div>
-                        <ul v-if="importResult.errors.length" class="bm-import-panel__list">
-                            <li v-for="err in importResult.errors" :key="err.row">
-                                Row {{ err.row }}: {{ err.errors.join(' ') }}
-                            </li>
-                        </ul>
-                    </div>
-                    <button type="button" class="bm-import-panel__close" aria-label="Dismiss" @click="importResultVisible = false">
-                        <el-icon :size="14"><Close /></el-icon>
-                    </button>
+            <div class="bm-hero">
+                <div class="bm-hero__text">
+                    <h1 class="dp-display-md">Business Membership</h1>
+                    <p class="bm-subtitle">Manage your organization's membership tiers, renewal cycles, and authorized team members. Ensure your profile remains active to maintain access to premium trade features.</p>
                 </div>
             </div>
 
-            <!-- ── Body ──────────────────────────────────────────────────── -->
-            <div class="bm-body">
-                <div v-if="members.length" class="bm-table-card">
-                    <div class="bm-toolbar">
-                        <div class="bm-search">
-                            <el-icon><Search /></el-icon>
-                            <input v-model="searchQuery" type="text" placeholder="Search members…">
-                        </div>
-                        <div class="bm-toolbar__stats">
-                            <span class="bm-stat"><strong>{{ filteredMembers.length }}</strong> of {{ members.length }}</span>
-                            <span class="bm-stat-dot"></span>
-                            <span class="bm-stat"><strong>{{ activeCount }}</strong> active</span>
-                        </div>
+            <!-- ── Import results ───────────────────────────────────────── -->
+            <div v-if="importResult && importResultVisible" class="bm-card bm-import-panel" :class="{ 'bm-import-panel--warn': importResult.errors.length }">
+                <div class="bm-import-panel__icon">
+                    <el-icon :size="16"><WarningFilled v-if="importResult.errors.length" /><UploadFilled v-else /></el-icon>
+                </div>
+                <div class="bm-import-panel__body">
+                    <div class="bm-import-panel__title">
+                        {{ importResult.imported }} member{{ importResult.imported === 1 ? '' : 's' }} imported
+                        <span v-if="importResult.errors.length">, {{ importResult.errors.length }} row{{ importResult.errors.length === 1 ? '' : 's' }} skipped</span>
                     </div>
+                    <ul v-if="importResult.errors.length" class="bm-import-panel__list">
+                        <li v-for="err in importResult.errors" :key="err.row">Row {{ err.row }}: {{ err.errors.join(' ') }}</li>
+                    </ul>
+                </div>
+                <button type="button" class="bm-import-panel__close" aria-label="Dismiss" @click="importResultVisible = false">
+                    <el-icon :size="14"><Close /></el-icon>
+                </button>
+            </div>
 
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0 bm-table">
-                            <thead>
-                                <tr>
-                                    <th><span class="bm-th"><el-icon><UserFilled /></el-icon> Member</span></th>
-                                    <th><span class="bm-th"><el-icon><Postcard /></el-icon> Role</span></th>
-                                    <th><span class="bm-th"><el-icon><Phone /></el-icon> Contact</span></th>
-                                    <th>Status</th>
-                                    <th v-if="canManage" class="text-end">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="member in pagedMembers" :key="member.id" class="bm-row">
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="bm-avatar" :style="avatarColors(member.id)">{{ initials(member.name) }}</span>
-                                            <div>
-                                                <div class="bm-name">{{ member.name }}</div>
-                                                <div class="bm-id-chip">{{ member.id_number }}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="bm-role">
-                                            <span class="bm-role-chip">{{ member.designation }}</span>
-                                            <span class="bm-role__position">{{ member.position }}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="bm-contact">
-                                            <span class="bm-contact__row"><el-icon :size="11"><Phone /></el-icon>{{ member.telephone }}</span>
-                                            <span v-if="member.email" class="bm-contact__row"><el-icon :size="11"><Message /></el-icon>{{ member.email }}</span>
-                                            <span v-if="member.address" class="bm-contact__row"><el-icon :size="11"><Location /></el-icon>{{ member.address }}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="bm-status" :class="`bm-status--${member.status}`">{{ member.status }}</span>
-                                    </td>
-                                    <td v-if="canManage" class="text-end">
-                                        <div class="bm-row-actions">
-                                            <el-tooltip content="Edit member" placement="top">
-                                                <button type="button" class="bm-act-btn bm-act-btn--edit" @click="openEditMember(member)">
-                                                    <el-icon :size="15"><EditPen /></el-icon>
-                                                </button>
-                                            </el-tooltip>
-                                            <el-tooltip content="Remove member" placement="top">
-                                                <button
-                                                    type="button"
-                                                    class="bm-act-btn bm-act-btn--danger"
-                                                    :disabled="removingId === member.id"
-                                                    @click="requestRemove(member)"
-                                                >
-                                                    <el-icon :size="15"><Delete /></el-icon>
-                                                </button>
-                                            </el-tooltip>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <div v-if="!filteredMembers.length" class="bm-no-results">
-                            <el-icon :size="18"><Search /></el-icon>
-                            No members match “{{ searchQuery }}”.
-                        </div>
+            <!-- ── Section header ────────────────────────────────────────── -->
+            <div class="bm-section-head">
+                <h2 class="bm-section-title">Organization Members</h2>
+                <div class="bm-toolbar">
+                    <div class="bm-search">
+                        <el-icon :size="14"><Search /></el-icon>
+                        <input v-model="searchQuery" type="text" placeholder="Search members…">
                     </div>
+                    <template v-if="canManage">
+                        <input ref="fileInput" type="file" accept=".xlsx,.xls" class="d-none" @change="handleFileChange">
+                        <button type="button" class="bm-btn bm-btn--outline" :disabled="importing" @click="openFilePicker">
+                            <el-icon :size="14"><UploadFilled /></el-icon> {{ importing ? 'Importing…' : 'Import Excel' }}
+                        </button>
+                        <button type="button" class="bm-btn bm-btn--primary" @click="openAddMember">
+                            <el-icon :size="14"><Plus /></el-icon> Invite Member
+                        </button>
+                    </template>
+                </div>
+            </div>
 
-                    <div v-if="filteredMembers.length > pageSize" class="bm-pagination">
-                        <el-pagination
-                            v-model:current-page="currentPage"
-                            :page-size="pageSize"
-                            :total="filteredMembers.length"
-                            layout="total, prev, pager, next"
-                            background
-                        />
+            <!-- ── Member cards ──────────────────────────────────────────── -->
+            <div v-if="members.length">
+                <div v-if="pagedMembers.length" class="bm-grid">
+                    <div v-for="member in pagedMembers" :key="member.id" class="bm-card bm-member" :class="{ 'bm-member--inactive': member.status !== 'active' }">
+                        <div class="bm-member__head">
+                            <div class="bm-member__identity">
+                                <div class="bm-member__avatar">
+                                    <img v-if="member.photo_url" :src="member.photo_url" :alt="member.name">
+                                    <el-icon v-else :size="20"><UserFilled /></el-icon>
+                                </div>
+                                <div>
+                                    <h3 class="bm-member__name">{{ member.name }}</h3>
+                                    <p class="bm-member__title">{{ member.designation || '—' }}</p>
+                                </div>
+                            </div>
+                            <span class="bm-status-pill" :class="`bm-status-pill--${member.status === 'active' ? 'green' : 'muted'}`">{{ member.status === 'active' ? 'Active' : 'Inactive' }}</span>
+                        </div>
+
+                        <div class="bm-member__details">
+                            <span class="bm-member__detail"><el-icon :size="14"><Message /></el-icon> {{ member.email || '—' }}</span>
+                            <span class="bm-member__detail"><el-icon :size="14"><Phone /></el-icon> {{ member.telephone || '—' }}</span>
+                            <span v-if="member.position" class="bm-member__detail"><el-icon :size="14"><UserFilled /></el-icon> {{ member.position }}</span>
+                        </div>
+
+                        <div v-if="canManage" class="bm-member__actions">
+                            <button type="button" class="bm-btn bm-btn--outline bm-btn--block" @click="openEditMember(member)">
+                                {{ member.status === 'active' ? 'Manage Access' : 'Reactivate' }}
+                            </button>
+                            <button type="button" class="bm-icon-btn bm-icon-btn--danger" title="Remove member" :disabled="removingId === member.id" @click="requestRemove(member)">
+                                <el-icon :size="15"><Delete /></el-icon>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div v-else class="bm-empty">
-                    <div class="bm-empty__icon"><el-icon :size="22"><UserFilled /></el-icon></div>
-                    <div class="bm-empty__title">No members registered yet</div>
-                    <p class="bm-empty__text">
-                        {{ canManage ? 'Register your first member using the button above.' : 'This business has not registered any members yet.' }}
-                    </p>
+                <div v-else class="bm-card bm-no-results">
+                    <el-icon :size="18"><Search /></el-icon>
+                    No members match "{{ searchQuery }}".
                 </div>
+
+                <div v-if="filteredMembers.length > pageSize" class="bm-pagination">
+                    <el-pagination
+                        v-model:current-page="currentPage"
+                        :page-size="pageSize"
+                        :total="filteredMembers.length"
+                        layout="total, prev, pager, next"
+                        background
+                    />
+                </div>
+            </div>
+
+            <div v-else class="bm-card bm-empty">
+                <div class="bm-empty__icon"><el-icon :size="22"><UserFilled /></el-icon></div>
+                <div class="bm-empty__title">No members registered yet</div>
+                <p class="bm-empty__text">{{ canManage ? 'Invite your first member using the button above.' : 'This business has not registered any members yet.' }}</p>
             </div>
         </div>
 
@@ -307,64 +248,67 @@ function confirmRemove() {
 
 <style scoped>
 .bm-page {
-    --green: #145c42;
-    --border: #eef2f0;
-    --on-surface: #111827;
-    --on-surface-var: #6b7280;
-    --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
-    color: var(--on-surface);
-    min-height: 100%;
-}
-
-.bm-btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 13px;
-    border: none;
-    border-radius: 7px;
-    background: linear-gradient(135deg, #145c42, #0d3d2c);
-    color: #fff;
-    font-size: 0.75rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity 0.15s ease;
-}
-.bm-btn-primary:hover { opacity: 0.9; }
-
-.bm-btn-outline {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 13px;
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    background: #fff;
-    color: var(--on-surface);
-    font-size: 0.75rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-.bm-btn-outline:hover { background: var(--surface-low); }
-.bm-btn-outline:disabled { opacity: 0.6; cursor: default; }
-
-/* ── Import results panel ─────────────────────────────────────────────── */
-.bm-body--no-top-pad { padding-top: 0; }
-.bm-import-panel {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 12px;
-    padding: 14px 16px;
+    flex-direction: column;
+    gap: 24px;
+    font-family: var(--dp-font-sans);
 }
-.bm-import-panel--warn { background: #fffbeb; border-color: #fde68a; }
+
+/* ── Hero ────────────────────────────────────────────────────────────── */
+.bm-hero__text h1 { color: var(--dp-primary); }
+.bm-subtitle { font-size: 14px; line-height: 1.6; color: var(--dp-on-surface-variant); margin: 8px 0 0; max-width: 720px; }
+
+/* ── Cards ───────────────────────────────────────────────────────────── */
+.bm-card {
+    background: var(--dp-surface-container-lowest);
+    border-radius: var(--dp-card-radius);
+    box-shadow: var(--dp-card-shadow);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.bm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.bm-btn--outline { background: var(--dp-surface-container-lowest); color: var(--dp-on-surface); box-shadow: var(--dp-card-shadow); }
+.bm-btn--outline:hover { background: var(--dp-surface-container-low); }
+.bm-btn--outline:disabled { opacity: 0.6; cursor: default; }
+.bm-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
+.bm-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(39, 19, 16, 0.2); }
+.bm-btn--block { width: 100%; }
+.bm-btn:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
+
+.bm-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: none;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-on-surface-variant);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.bm-icon-btn--danger:hover { background: var(--dp-error-container); color: var(--dp-error); }
+.bm-icon-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Import panel ────────────────────────────────────────────────────── */
+.bm-import-panel { display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px; }
+.bm-import-panel--warn { background: #fffbeb; }
 .bm-import-panel__icon {
     display: flex;
     align-items: center;
@@ -372,240 +316,129 @@ function confirmRemove() {
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.7);
-    color: #166534;
+    background: var(--dp-secondary-container);
+    color: var(--dp-on-secondary-container);
     flex-shrink: 0;
 }
-.bm-import-panel--warn .bm-import-panel__icon { color: #92400e; }
+.bm-import-panel--warn .bm-import-panel__icon { background: #fde68a; color: #92400e; }
 .bm-import-panel__body { flex: 1; min-width: 0; }
-.bm-import-panel__title { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
-.bm-import-panel__list {
-    margin: 8px 0 0;
-    padding-left: 18px;
-    font-size: 0.75rem;
-    color: var(--on-surface-var);
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
+.bm-import-panel__title { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
+.bm-import-panel__list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--dp-on-surface-variant); display: flex; flex-direction: column; gap: 3px; }
 .bm-import-panel__close {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
     border: none;
     background: transparent;
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
     cursor: pointer;
     flex-shrink: 0;
 }
-.bm-import-panel__close:hover { background: rgba(0, 0, 0, 0.06); }
+.bm-import-panel__close:hover { background: var(--dp-surface-container-low); }
 
-/* ── Body / table ──────────────────────────────────────────────────────── */
-.bm-body { padding: 1.5rem; }
-
-.bm-table-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
-}
-
-/* ── Toolbar ───────────────────────────────────────────────────────────── */
-.bm-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-}
+/* ── Section head / toolbar ──────────────────────────────────────────── */
+.bm-section-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+.bm-section-title { margin: 0; font-size: 20px; font-weight: 800; color: var(--dp-primary); letter-spacing: -0.01em; font-family: var(--dp-font-sans); }
+.bm-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .bm-search {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 0 12px;
-    height: 36px;
-    width: 240px;
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    background: var(--surface-low);
-    color: var(--on-surface-var);
-    flex-shrink: 0;
+    padding: 0 14px;
+    height: 38px;
+    width: 220px;
+    border-radius: 999px;
+    background: var(--dp-surface-container-lowest);
+    box-shadow: var(--dp-card-shadow);
+    color: var(--dp-outline);
 }
-.bm-search :deep(.el-icon) { font-size: 14px; }
-.bm-search input {
-    border: none;
-    outline: none;
-    background: transparent;
-    font-size: 0.8125rem;
-    color: var(--on-surface);
-    width: 100%;
-    font-family: inherit;
-}
-.bm-toolbar__stats { display: flex; align-items: center; gap: 10px; }
-.bm-stat { font-size: 0.75rem; color: var(--on-surface-var); }
-.bm-stat strong { color: var(--on-surface); font-weight: 700; }
-.bm-stat-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border); }
+.bm-search input { border: none; outline: none; background: transparent; font-size: 12.5px; color: var(--dp-on-surface); width: 100%; font-family: inherit; }
 
-/* ── Table ─────────────────────────────────────────────────────────────── */
-.bm-table thead th {
-    background: var(--surface-low);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--on-surface-var);
-    padding: 11px 16px;
-    border-bottom-color: var(--border);
-    white-space: nowrap;
-}
-.bm-table tbody td { padding: 13px 16px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
-.bm-row { transition: background 0.12s; }
-.bm-row:hover { background: var(--surface-low); }
-.bm-row:not(:last-child) td { border-bottom: 1px solid var(--surface-low); }
+/* ── Member grid ─────────────────────────────────────────────────────── */
+.bm-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.bm-member { padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+.bm-member--inactive { opacity: 0.75; }
 
-.bm-th { display: inline-flex; align-items: center; gap: 5px; }
-.bm-th :deep(.el-icon) { font-size: 12px; color: #9ca3af; }
-
-.bm-avatar {
+.bm-member__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.bm-member__identity { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.bm-member__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-outline);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
-    font-size: 0.75rem;
-    font-weight: 800;
     flex-shrink: 0;
+    overflow: hidden;
 }
-.bm-name { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); line-height: 1.3; }
-.bm-id-chip {
-    display: inline-flex;
-    margin-top: 2px;
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    color: var(--on-surface-var);
-    background: var(--surface-low);
-    border-radius: 4px;
-    padding: 1px 5px;
-    font-family: 'SFMono-Regular', Consolas, monospace;
-}
+.bm-member__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.bm-member__name { margin: 0; font-size: 14.5px; font-weight: 700; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bm-member__title { margin: 3px 0 0; font-size: 12px; color: var(--dp-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.bm-role { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
-.bm-role-chip {
-    display: inline-flex;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: var(--green);
-    background: rgba(20, 92, 66, 0.08);
-    border-radius: 999px;
-    padding: 2px 9px;
-}
-.bm-role__position { font-size: 0.75rem; color: var(--on-surface-var); }
-
-.bm-contact { display: flex; flex-direction: column; gap: 4px; font-size: 0.8125rem; color: var(--on-surface-var); }
-.bm-contact__row { display: inline-flex; align-items: center; gap: 6px; }
-.bm-contact__row :deep(.el-icon) { color: #9ca3af; flex-shrink: 0; }
-
-.bm-status {
+.bm-status-pill {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: capitalize;
     padding: 3px 10px;
     border-radius: 999px;
-}
-.bm-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.bm-status--active { background: #dcfce7; color: #166534; }
-.bm-status--inactive { background: #f1f5f9; color: #64748b; }
-
-.bm-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-.bm-act-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    transition: background .15s ease;
-}
-.bm-act-btn--edit { color: var(--green); }
-.bm-act-btn--edit:hover { background: rgba(20, 92, 66, .08); }
-.bm-act-btn--danger { color: #b91c1c; }
-.bm-act-btn--danger:hover { background: rgba(185, 28, 28, .08); }
-.bm-act-btn:disabled { opacity: 0.5; cursor: default; }
-
-/* ── Pagination ────────────────────────────────────────────────────────── */
-.bm-pagination {
-    display: flex;
-    justify-content: flex-end;
-    padding: 12px 16px;
-    border-top: 1px solid var(--border);
-}
-.bm-pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-family: inherit; }
-.bm-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: 0.75rem; font-weight: 600; color: var(--on-surface-var); }
-.bm-pagination :deep(.btn-prev),
-.bm-pagination :deep(.btn-next) { width: 30px; height: 30px; border-radius: 7px; background: #fff; border: 1px solid var(--border); color: var(--on-surface-var); transition: all .15s ease; }
-.bm-pagination :deep(.btn-prev:hover:not(:disabled)),
-.bm-pagination :deep(.btn-next:hover:not(:disabled)) { border-color: var(--green); color: var(--green); background: var(--surface-low); }
-.bm-pagination :deep(.btn-prev:disabled),
-.bm-pagination :deep(.btn-next:disabled) { opacity: 0.5; }
-.bm-pagination :deep(.el-pager li) {
-    min-width: 30px;
-    height: 30px;
-    border-radius: 7px;
-    background: #fff;
-    border: 1px solid var(--border);
-    color: var(--on-surface);
-    font-size: 0.75rem;
+    font-size: 10.5px;
     font-weight: 700;
-    margin: 0 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
-.bm-pagination :deep(.el-pager li:hover) { color: var(--green); border-color: var(--green); }
-.bm-pagination :deep(.el-pager li.is-active) { background: var(--green); border-color: var(--green); color: #fff; }
+.bm-status-pill--green { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
+.bm-status-pill--muted { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
 
-/* ── No search results ─────────────────────────────────────────────────── */
-.bm-no-results {
+.bm-member__details { display: flex; flex-direction: column; gap: 8px; }
+.bm-member__detail { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--dp-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bm-member__detail .el-icon { color: var(--dp-outline); flex-shrink: 0; }
+
+.bm-member__actions { display: flex; align-items: center; gap: 8px; margin-top: auto; }
+
+/* ── States ──────────────────────────────────────────────────────────── */
+.bm-no-results, .bm-empty {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 2.5rem 1rem;
-    font-size: 0.8125rem;
-    color: var(--on-surface-var);
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--dp-outline);
 }
-.bm-no-results :deep(.el-icon) { color: #cbd5e1; }
-
-/* ── Empty state ───────────────────────────────────────────────────────── */
-.bm-empty { text-align: center; padding: 4rem 1rem; }
+.bm-no-results { flex-direction: row; padding: 40px 20px; font-size: 13px; color: var(--dp-on-surface-variant); }
 .bm-empty__icon {
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: #fff;
-    border: 1px solid var(--border);
-    color: var(--on-surface-var);
+    background: var(--dp-surface-container-low);
+    color: var(--dp-outline);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 14px;
+    margin-bottom: 6px;
 }
-.bm-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
-.bm-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0 auto; max-width: 320px; line-height: 1.5; }
+.bm-empty__title { font-size: 15px; font-weight: 700; color: var(--dp-on-surface); }
+.bm-empty__text { font-size: 13px; color: var(--dp-on-surface-variant); margin: 0; max-width: 40ch; }
 
-/* ── Responsive ────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-    .bm-body { padding: 1.25rem; }
+/* ── Pagination ──────────────────────────────────────────────────────── */
+.bm-pagination { display: flex; justify-content: flex-end; margin-top: 18px; }
+.bm-pagination :deep(.el-pagination) { font-family: inherit; }
+.bm-pagination :deep(.el-pagination__total) { color: var(--dp-on-surface-variant); font-size: 12.5px; font-weight: 600; }
+.bm-pagination :deep(.el-pager li.is-active) { background: var(--dp-primary); color: var(--dp-on-primary); }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .bm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+    .bm-grid { grid-template-columns: 1fr; }
+    .bm-search { width: 100%; }
+    .bm-toolbar { width: 100%; }
+    .bm-toolbar .bm-btn { flex: 1; }
 }
 </style>

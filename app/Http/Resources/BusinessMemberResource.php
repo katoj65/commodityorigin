@@ -30,6 +30,8 @@ class BusinessMemberResource extends JsonResource
             'email' => $this->email,
             'address' => $this->address,
             'status' => $this->status,
+            'photo_url' => $this->photo_url,
+            'bio' => $this->bio,
             'notes' => $this->notes,
             'created_at' => optional($this->created_at)?->toDateTimeString(),
         ];

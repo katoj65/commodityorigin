@@ -287,8 +287,8 @@ function submit() {
     width: 38px;
     height: 38px;
     border-radius: 11px;
-    background: rgba(20, 92, 66, 0.08);
-    color: #145c42;
+    background: rgba(39, 19, 16, 0.08);
+    color: #271310;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -300,7 +300,7 @@ function submit() {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #145c42;
+    color: #271310;
     margin-bottom: 1px;
 }
 .ebp-modal__title {
@@ -352,7 +352,7 @@ function submit() {
     width: 100%;
 }
 .ebp-logo__upload:hover { background: #f3f4f6; }
-.ebp-logo__upload .el-icon { color: #145c42; font-size: 16px; flex-shrink: 0; }
+.ebp-logo__upload .el-icon { color: #271310; font-size: 16px; flex-shrink: 0; }
 .ebp-logo__input { display: none; }
 
 .ebp-logo__upload--has-image {
@@ -432,7 +432,7 @@ function submit() {
 }
 
 .ebp-btn-primary {
-    background: linear-gradient(135deg, #145c42, #0d3d2c);
+    background: #271310;
     border: 1px solid transparent;
     color: #fff;
     border-radius: 8px;

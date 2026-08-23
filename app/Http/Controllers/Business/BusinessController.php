@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Business;
 
 use App\Helpers\ExcelImportHelper;
+use App\Helpers\ImageUploadHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BusinessMemberResource;
 use App\Http\Resources\BusinessProfileResource;
@@ -143,7 +144,19 @@ class BusinessController extends Controller
      */
     private function validateMember(Request $request): array
     {
-        return $request->validate($this->members->rules());
+        $validated = $request->validate([
+            ...$this->members->rules(),
+            'photo' => ['nullable', 'image', 'max:5120'],
+        ]);
+
+        $photoPath = ImageUploadHelper::store($request->file('photo'), 'business-member-photos');
+        unset($validated['photo']);
+
+        if ($photoPath) {
+            $validated['photo'] = $photoPath;
+        }
+
+        return $validated;
     }
 
     /**

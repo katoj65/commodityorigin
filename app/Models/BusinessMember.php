@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class BusinessMember extends Model
 {
@@ -16,6 +17,7 @@ class BusinessMember extends Model
      */
     protected $appends = [
         'name',
+        'photo_url',
     ];
 
     /**
@@ -37,6 +39,8 @@ class BusinessMember extends Model
         'email',
         'address',
         'status',
+        'photo',
+        'bio',
         'notes',
     ];
 
@@ -76,5 +80,14 @@ class BusinessMember extends Model
     protected function name(): Attribute
     {
         return Attribute::get(fn (): string => trim("{$this->first_name} {$this->last_name}"));
+    }
+
+    /**
+     * Full public URL for the uploaded member photo, or null if none has
+     * been set.
+     */
+    protected function photoUrl(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->photo ? Storage::disk('public')->url($this->photo) : null);
     }
 }

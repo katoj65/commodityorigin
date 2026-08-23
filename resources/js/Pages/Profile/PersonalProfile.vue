@@ -2,271 +2,76 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import {
-    Check,
-    Close,
-    DataAnalysis,
-    Edit,
-    Location,
-    Lock,
-    MagicStick,
-    Message,
-    Monitor,
-    Phone,
-    Setting,
-    User,
+    CircleCheckFilled, Close, Edit, Location, Lock, MagicStick,
+    Message, Monitor, Phone, User,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditProfileDialog from '@/Components/Modals/EditProfileDialog.vue';
 import { resolveIcon } from '@/utils/icon';
 
 const props = defineProps({
-    sessions: {
-        type: Array,
-        default: () => [],
-    },
+    sessions: { type: Array, default: () => [] },
 });
 
 const page = usePage();
 
+/* ── Real display data — every value below comes straight from a genuine
+   user / profile / session field; nothing here is invented to fill a
+   layout slot. ─────────────────────────────────────────────────────── */
 const user = computed(() => page.props.auth.user ?? {});
 const profile = computed(() => user.value.profile ?? {});
 
-/* ── Settlement currency ─────────────────────────────────────────────── */
-const currencyOptions = computed(() => page.props.currencies ?? []);
-const currentCurrency = computed(() => currencyOptions.value.find((c) => c.code === user.value.currency_code) ?? null);
-
-const currencyForm = useForm({ currency_code: user.value.currency_code || '' });
-
-function submitCurrency(code) {
-    if (!code || code === user.value.currency_code) return;
-
-    currencyForm.currency_code = code;
-    currencyForm.post(route('profile.currency'), { preserveScroll: true });
-}
-
 const fullName = computed(() => user.value.name || 'Profile Owner');
-const roleLabel = computed(() =>
-    String(user.value.role || 'Lead Procurement Officer')
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, (char) => char.toUpperCase()),
-);
+const roleLabel = computed(() => {
+    if (!user.value.role) return '';
+    return String(user.value.role).replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+});
 const emailVerified = computed(() => Boolean(user.value.email_verified_at));
 const twoFactorEnabled = computed(() => Boolean(user.value.two_factor_enabled));
-const locationLabel = computed(() =>
-    [profile.value.city, profile.value.state, profile.value.country].filter(Boolean).join(', ') || 'Kampala, Uganda',
-);
-const birthLabel = computed(() => {
-    if (!profile.value.date_of_birth) {
-        return 'Not set';
-    }
-
-    return new Intl.DateTimeFormat('en-UG', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    }).format(new Date(profile.value.date_of_birth));
-});
-const bioText = computed(
-    () => profile.value.bio || 'Lead profile for origin operations, account verification, and market-facing identity.',
-);
+const locationLabel = computed(() => [profile.value.city, profile.value.state, profile.value.country].filter(Boolean).join(', '));
 const memberSince = computed(() => {
-    const source = user.value.created_at ? new Date(user.value.created_at) : new Date();
-
-    return Number.isNaN(source.getTime()) ? '2024' : String(source.getFullYear());
+    const source = user.value.created_at ? new Date(user.value.created_at) : null;
+    return source && !Number.isNaN(source.getTime()) ? String(source.getFullYear()) : '—';
 });
-const accountTag = computed(() => (emailVerified.value ? 'Institutional Grade' : 'Pending Verification'));
-const profileTier = computed(() => (completionPercentage.value >= 85 ? 'Gold Tier Member' : 'Profile In Progress'));
-const strategicLabel = computed(() => (twoFactorEnabled.value ? 'Trusted Access' : 'Security Review'));
 
 const completionPercentage = computed(() => {
     const fields = [
-        user.value.first_name,
-        user.value.last_name,
-        user.value.email,
-        user.value.telephone,
-        user.value.role,
-        profile.value.bio,
-        profile.value.date_of_birth,
-        profile.value.gender,
-        profile.value.address_line_1,
-        profile.value.city,
-        profile.value.state,
-        profile.value.country,
+        user.value.first_name, user.value.last_name, user.value.email, user.value.telephone, user.value.role,
+        profile.value.bio, profile.value.date_of_birth, profile.value.gender,
+        profile.value.address_line_1, profile.value.city, profile.value.state, profile.value.country,
     ];
     const completed = fields.filter((value) => String(value || '').trim() !== '').length;
 
     return Math.round((completed / fields.length) * 100);
 });
 
-const trustIndex = computed(() => {
-    let score = 52;
+/* ── Settlement currency ─────────────────────────────────────────────── */
+const currencyOptions = computed(() => page.props.currencies ?? []);
+const currentCurrency = computed(() => currencyOptions.value.find((c) => c.code === user.value.currency_code) ?? null);
+const currencyForm = useForm({ currency_code: user.value.currency_code || '' });
 
-    if (emailVerified.value) {
-        score += 18;
-    }
+function submitCurrency(code) {
+    if (!code || code === user.value.currency_code) return;
+    currencyForm.currency_code = code;
+    currencyForm.post(route('profile.currency'), { preserveScroll: true });
+}
 
-    if (twoFactorEnabled.value) {
-        score += 18;
-    }
-
-    score += Math.round(completionPercentage.value * 0.12);
-
-    return Math.min(score, 100).toFixed(1);
-});
-
-const activeSessionsCount = computed(() => Math.max(props.sessions.length, 1));
-
-const statCards = computed(() => [
-    {
-        label: 'Profile Completion',
-        value: `${completionPercentage.value}%`,
-        note: completionPercentage.value >= 85 ? 'Ready for market workflows' : 'Needs more profile detail',
-        icon: User,
-        accent: false,
-    },
-    {
-        label: 'Trust Score Index',
-        value: trustIndex.value,
-        suffix: '/100',
-        note: emailVerified.value ? 'Verified account signal' : 'Verification in progress',
-        icon: Lock,
-        accent: true,
-    },
-    {
-        label: 'Session Register',
-        value: String(activeSessionsCount.value),
-        note: activeSessionsCount.value > 1 ? 'Recent browser access recorded' : 'Single secure device',
-        icon: Monitor,
-        accent: false,
-    },
-    {
-        label: 'Market Exposure',
-        value: emailVerified.value ? 'Active' : 'Pending',
-        note: twoFactorEnabled.value ? 'Protected access enabled' : '2FA still inactive',
-        icon: DataAnalysis,
-        accent: false,
-    },
-]);
-
-const securityItems = computed(() => [
-    {
-        label: 'Email Verification',
-        value: emailVerified.value ? 'Verified' : 'Pending',
-        note: user.value.email || 'Primary email missing',
-        tone: emailVerified.value ? 'good' : 'warn',
-        icon: Message,
-    },
-    {
-        label: '2FA Status',
-        value: twoFactorEnabled.value ? 'Enabled' : 'Recommended',
-        note: twoFactorEnabled.value ? 'Authenticator linked to account' : 'Turn on stronger sign-in security',
-        tone: twoFactorEnabled.value ? 'good' : 'warn',
-        icon: Lock,
-    },
-    {
-        label: 'Profile Quality',
-        value: `${completionPercentage.value}%`,
-        note: birthLabel.value === 'Not set' ? 'Profile details still missing' : `Date of birth on file · ${birthLabel.value}`,
-        tone: completionPercentage.value >= 85 ? 'good' : 'neutral',
-        icon: Check,
-    },
-]);
-
-const configCards = computed(() => [
-    {
-        label: 'Notification Frequency',
-        value: 'Real-time Alerts',
-        note: activeSessionsCount.value > 1 ? 'Monitoring multiple recent devices' : 'Monitoring this secure device',
-        kind: 'toggle',
-        enabled: true,
-    },
-    {
-        label: 'Base Settlement Currency',
-        value: currentCurrency.value ? currentCurrency.value.code : 'Not set',
-        note: currentCurrency.value
-            ? `${currentCurrency.value.symbol} · ${currentCurrency.value.name}`
-            : `Choose from ${currencyOptions.value.length} available currencies`,
-        kind: 'currency',
-    },
-    {
-        label: 'Market Reports',
-        value: emailVerified.value ? 'Subscribed' : 'Limited Access',
-        note: emailVerified.value ? 'Weekly reporting enabled' : 'Complete verification to unlock',
-        kind: 'status',
-        enabled: emailVerified.value,
-    },
-]);
-
-const formatLedgerStamp = (input, fallbackHour) => {
-    const date = input ? new Date(input) : new Date();
-
-    if (Number.isNaN(date.getTime())) {
-        return `Apr 16, 2026 · ${fallbackHour}`;
-    }
-
-    return new Intl.DateTimeFormat('en-UG', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    }).format(date);
-};
-
-const ledgerRows = computed(() => [
-    {
-        ref: `PRF-${String(user.value.id || 24).padStart(3, '0')}-MAIL`,
-        domain: 'Identity Audit',
-        timestamp: formatLedgerStamp(user.value.email_verified_at, '09:15'),
-        outcome: emailVerified.value ? 'Verified' : 'Pending',
-        amount: user.value.email || 'Primary email',
-        tone: emailVerified.value ? 'good' : 'warn',
-    },
-    {
-        ref: `SEC-${String(user.value.id || 24).padStart(3, '0')}-2FA`,
-        domain: 'Security Protocol',
-        timestamp: formatLedgerStamp(user.value.updated_at, '11:30'),
-        outcome: twoFactorEnabled.value ? 'Finalized' : 'Action Needed',
-        amount: twoFactorEnabled.value ? 'Authenticator linked' : 'Enable 2FA',
-        tone: twoFactorEnabled.value ? 'good' : 'warn',
-    },
-    {
-        ref: `SES-${String(user.value.id || 24).padStart(3, '0')}-WEB`,
-        domain: 'Session Monitor',
-        timestamp: formatLedgerStamp(user.value.updated_at || user.value.created_at, '14:22'),
-        outcome: activeSessionsCount.value > 1 ? 'Tracked' : 'Stable',
-        amount: `${activeSessionsCount.value} browser session${activeSessionsCount.value === 1 ? '' : 's'}`,
-        tone: activeSessionsCount.value > 1 ? 'neutral' : 'good',
-    },
-    {
-        ref: `CFG-${String(user.value.id || 24).padStart(3, '0')}-BIO`,
-        domain: 'Profile Configuration',
-        timestamp: formatLedgerStamp(user.value.created_at, '17:45'),
-        outcome: completionPercentage.value >= 85 ? 'Finalized' : 'In Review',
-        amount: `${completionPercentage.value}% completion`,
-        tone: completionPercentage.value >= 85 ? 'good' : 'neutral',
-    },
-]);
-
-/* ── Edit profile ─────────────────────────────────────────────────────── */
+/* ── Edit profile ────────────────────────────────────────────────────── */
 const editProfileOpen = ref(false);
 
-/* ── Subscribed agents ────────────────────────────────────────────────
-   `subscribedAgents` is shared on every Inertia request (see
-   HandleInertiaRequests) as [{id, name, icon, functions:[{id,name,icon,slug,description}]}].
-   Admin accounts always receive an empty list here — they manage agents
-   from the Apps page instead of subscribing to them. ────────────────── */
+/* ── Subscribed agents — shared on every Inertia request; admin accounts
+   always receive an empty list here since they manage agents from the
+   Apps page instead of subscribing. ─────────────────────────────────── */
 const isAdmin = computed(() => user.value?.role === 'admin');
 const subscribedAgents = computed(() => page.props.subscribedAgents ?? []);
 
 const unsubscribingId = ref(null);
-const unsubscribeDialogOpen = ref(false);
+const unsubscribeOpen = ref(false);
 const agentToUnsubscribe = ref(null);
 
 function openUnsubscribeDialog(agent) {
     agentToUnsubscribe.value = agent;
-    unsubscribeDialogOpen.value = true;
+    unsubscribeOpen.value = true;
 }
 
 function confirmUnsubscribe() {
@@ -278,1191 +83,451 @@ function confirmUnsubscribe() {
         preserveScroll: true,
         onFinish: () => {
             unsubscribingId.value = null;
-            unsubscribeDialogOpen.value = false;
+            unsubscribeOpen.value = false;
             agentToUnsubscribe.value = null;
         },
     });
 }
+
+function sessionDeviceLabel(session) {
+    const platform = session.agent?.platform;
+    const browser = session.agent?.browser;
+
+    return [browser, platform].filter(Boolean).join(' · ') || 'Unknown device';
+}
+
+const sessionsPreview = computed(() => props.sessions.slice(0, 5));
+const extraSessionsCount = computed(() => Math.max(props.sessions.length - sessionsPreview.value.length, 0));
 </script>
 
 <template>
     <DesignPreviewLayout title="Profile">
         <Head title="Profile" />
 
-        <div class="profile-page">
-            <section class="profile-topbar">
-                <div class="profile-topbar__inner">
-                    <div class="profile-topbar__copy">
-                        <h1 class="profile-page__title">User Profile</h1>
-                        <p class="profile-page__subtitle"> Member Since {{ memberSince }}</p>
-                    </div>
+        <div class="pp-page">
+            <div class="pp-hero">
+                <div class="pp-hero__text">
+                    <h1 class="dp-display-md">User Profile</h1>
+                    <p class="pp-subtitle">Member since {{ memberSince }}</p>
+                </div>
+                <div class="pp-hero__actions">
+                    <button type="button" class="pp-btn pp-btn--outline" @click="editProfileOpen = true">
+                        <el-icon :size="14"><Edit /></el-icon> Edit Profile
+                    </button>
+                </div>
+            </div>
 
-                    <div class="profile-topbar__actions">
-                        <el-button-group class="profile-action-group">
-                            <el-button class="profile-group-button" type="default">
-                                <el-icon><Setting /></el-icon>
-                                <span>Settings</span>
-                            </el-button>
-                            <el-button class="profile-group-button" type="default" @click="editProfileOpen = true">
-                                <el-icon><Edit /></el-icon>
-                                <span>Edit Profile</span>
-                            </el-button>
-                        </el-button-group>
+            <div class="pp-stack">
+                <!-- ── Identity ───────────────────────────────────────── -->
+                <div class="pp-card pp-identity">
+                    <div class="pp-identity__avatar">
+                        <img v-if="profile.profile_photo_url" :src="profile.profile_photo_url" :alt="fullName">
+                        <el-icon v-else :size="30"><User /></el-icon>
+                    </div>
+                    <div class="pp-identity__body">
+                        <h2 class="pp-identity__name">{{ fullName }}</h2>
+                        <p v-if="roleLabel" class="pp-identity__role">{{ roleLabel }}</p>
+                        <p class="pp-identity__bio">{{ profile.bio || 'No bio added yet.' }}</p>
+                        <div class="pp-identity__contacts">
+                            <span class="pp-identity__contact"><el-icon :size="14"><Message /></el-icon> {{ user.email || '—' }}</span>
+                            <span class="pp-identity__contact"><el-icon :size="14"><Phone /></el-icon> {{ user.telephone || '—' }}</span>
+                            <span v-if="locationLabel" class="pp-identity__contact"><el-icon :size="14"><Location /></el-icon> {{ locationLabel }}</span>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            <div class="profile-shell">
-                <section class="profile-main-grid">
-                    <div class="profile-column">
-                        <section id="profile-identity" class="profile-card profile-card--identity">
-                            <div class="profile-identity__media">
-                                <div class="profile-avatar-frame">
-                                    <img v-if="profile.profile_photo_url" :src="profile.profile_photo_url" :alt="fullName" class="profile-avatar profile-avatar--photo">
-                                    <el-avatar v-else class="profile-avatar" shape="square">
-                                        <el-icon><User /></el-icon>
-                                    </el-avatar>
-                                </div>
+                <!-- ── Account Status + Currency + Quick Actions ──────── -->
+                <div class="pp-trio">
+                    <div class="pp-card">
+                        <div class="pp-card-head">
+                            <h2 class="pp-card-title"><el-icon><Lock /></el-icon> Account Status</h2>
+                        </div>
+                        <div class="pp-status-rows">
+                            <div class="pp-status-row">
+                                <span class="pp-status-row__label"><el-icon :size="14"><Message /></el-icon> Email Verification</span>
+                                <span class="pp-status-pill" :class="`pp-status-pill--${emailVerified ? 'green' : 'amber'}`">{{ emailVerified ? 'Verified' : 'Pending' }}</span>
                             </div>
-
-                            <div class="profile-identity__body">
-                                <h2 class="profile-identity__name">{{ fullName }}</h2>
-                                <div class="profile-identity__role">{{ roleLabel }}</div>
-                                <p class="profile-identity__bio">{{ bioText }}</p>
-
-                                <div class="profile-contact-list">
-                                    <div class="profile-contact-row">
-                                        <el-icon><Message /></el-icon>
-                                        <span>{{ user.email || 'Email pending' }}</span>
-                                    </div>
-                                    <div class="profile-contact-row">
-                                        <el-icon><Phone /></el-icon>
-                                        <span>{{ user.telephone || 'Telephone pending' }}</span>
-                                    </div>
-                                    <div class="profile-contact-row">
-                                        <el-icon><Location /></el-icon>
-                                        <span>{{ locationLabel }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="profile-badge-list">
-                                    <span class="profile-badge profile-badge--good">{{ profileTier }}</span>
-                                    <span class="profile-badge profile-badge--soft">{{ strategicLabel }}</span>
-                                </div>
+                            <div class="pp-status-row">
+                                <span class="pp-status-row__label"><el-icon :size="14"><Lock /></el-icon> 2FA Status</span>
+                                <span class="pp-status-pill" :class="`pp-status-pill--${twoFactorEnabled ? 'green' : 'amber'}`">{{ twoFactorEnabled ? 'Enabled' : 'Off' }}</span>
                             </div>
-                        </section>
-
-                        <section class="profile-card profile-card--security">
-                            <div class="profile-card__head">
-                                <div>
-                                    <h2 class="profile-card__title">Security Protocol</h2>
-                                </div>
+                            <div class="pp-status-row">
+                                <span class="pp-status-row__label"><el-icon :size="14"><CircleCheckFilled /></el-icon> Profile Completion</span>
+                                <span class="pp-status-pill" :class="`pp-status-pill--${completionPercentage >= 85 ? 'green' : 'muted'}`">{{ completionPercentage }}%</span>
                             </div>
-
-                            <div class="profile-security-list">
-                                <article v-for="item in securityItems" :key="item.label" class="profile-security-row">
-                                    <div class="profile-security-row__icon" :class="`is-${item.tone}`">
-                                        <el-icon><component :is="item.icon" /></el-icon>
-                                    </div>
-                                    <div class="profile-security-row__body">
-                                        <div class="profile-security-row__label">{{ item.label }}</div>
-                                        <div class="profile-security-row__note">{{ item.note }}</div>
-                                    </div>
-                                    <span class="profile-security-row__status" :class="`is-${item.tone}`">{{ item.value }}</span>
-                                </article>
-                            </div>
-                        </section>
+                        </div>
                     </div>
 
-                    <div class="profile-content">
-                        <section class="profile-stat-grid">
-                            <article
-                                v-for="item in statCards"
-                                :key="item.label"
-                                class="profile-card profile-stat-card"
-                            >
-                                <div class="profile-stat-card__eyebrow">
-                                    <el-icon><component :is="item.icon" /></el-icon>
-                                    <span>{{ item.label }}</span>
-                                </div>
-                                <div class="profile-stat-card__value">
-                                    {{ item.value }}<small v-if="item.suffix">{{ item.suffix }}</small>
-                                </div>
-                                <div v-if="item.accent" class="profile-stat-card__meter">
-                                    <span :style="{ width: `${Math.min(Number(trustIndex), 100)}%` }"></span>
-                                </div>
-                                <div class="profile-stat-card__note">{{ item.note }}</div>
-                            </article>
-                        </section>
-
-                        <section class="profile-card profile-card--config">
-                            <div class="profile-card__head">
-                                <div>
-                                    <h2 class="profile-card__title">Environment Configuration</h2>
-                                </div>
-                            </div>
-
-                            <div class="profile-config-grid">
-                                <article v-for="item in configCards" :key="item.label" class="profile-config-card">
-                                    <div class="profile-config-card__label">{{ item.label }}</div>
-
-                                    <div v-if="item.kind === 'toggle'" class="profile-config-card__toggle">
-                                        <span>{{ item.value }}</span>
-                                        <span class="profile-toggle" :class="{ 'is-on': item.enabled }"></span>
-                                    </div>
-
-                                    <div v-else-if="item.kind === 'currency'" class="profile-config-card__currency">
-                                        <el-select
-                                            v-model="currencyForm.currency_code"
-                                            filterable
-                                            placeholder="Select currency"
-                                            :disabled="currencyForm.processing"
-                                            class="profile-currency-select"
-                                            @change="submitCurrency"
-                                        >
-                                            <el-option
-                                                v-for="option in currencyOptions"
-                                                :key="option.code"
-                                                :label="`${option.code} — ${option.name}`"
-                                                :value="option.code"
-                                            >
-                                                <span class="profile-currency-option">
-                                                    <span class="profile-currency-option__code">{{ option.code }}</span>
-                                                    <span class="profile-currency-option__name">{{ option.name }}</span>
-                                                    <span class="profile-currency-option__symbol">{{ option.symbol }}</span>
-                                                </span>
-                                            </el-option>
-                                        </el-select>
-                                    </div>
-
-                                    <div v-else class="profile-config-card__status">
-                                        <span>{{ item.value }}</span>
-                                        <el-icon v-if="item.enabled"><Check /></el-icon>
-                                    </div>
-
-                                    <div class="profile-config-card__note">{{ item.note }}</div>
-                                </article>
-                            </div>
-                        </section>
-
-                        <section id="profile-ledger" class="profile-card profile-card--ledger">
-                            <div class="profile-card__head">
-                                <div>
-                                    <h2 class="profile-card__title">Audit Activity Ledger</h2>
-                                </div>
-                                <span class="profile-card__action">View Detailed Logs</span>
-                            </div>
-
-                            <div class="profile-ledger-wrap">
-                                <table class="profile-ledger-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Event Reference</th>
-                                            <th>Domain</th>
-                                            <th>Timestamp</th>
-                                            <th>Outcome</th>
-                                            <th>Magnitude</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="row in ledgerRows" :key="row.ref">
-                                            <td>{{ row.ref }}</td>
-                                            <td><span class="profile-domain-pill">{{ row.domain }}</span></td>
-                                            <td>{{ row.timestamp }}</td>
-                                            <td>
-                                                <span class="profile-outcome" :class="`is-${row.tone}`">
-                                                    <span class="profile-outcome__dot"></span>
-                                                    {{ row.outcome }}
-                                                </span>
-                                            </td>
-                                            <td>{{ row.amount }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </section>
-
-                        <section id="profile-agents" class="profile-card profile-card--agents">
-                            <div class="profile-card__head">
-                                <div>
-                                    <h2 class="profile-card__title">Agents Subscribed To</h2>
-                                </div>
-                                <Link :href="route('apps.index')" class="profile-card__action">Browse Agents</Link>
-                            </div>
-
-                            <div v-if="isAdmin" class="profile-agents-empty">
-                                <div class="profile-agents-empty__icon"><el-icon><MagicStick /></el-icon></div>
-                                <p>Admin accounts manage agents directly instead of subscribing to them.</p>
-                                <Link :href="route('apps.index')" class="profile-button profile-button--primary">Manage Agents</Link>
-                            </div>
-
-                            <div v-else-if="subscribedAgents.length === 0" class="profile-agents-empty">
-                                <div class="profile-agents-empty__icon"><el-icon><MagicStick /></el-icon></div>
-                                <p>You haven't subscribed to any agents yet.</p>
-                                <Link :href="route('apps.index')" class="profile-button profile-button--primary">Browse Agents</Link>
-                            </div>
-
-                            <div v-else class="profile-agent-list">
-                                <article v-for="agent in subscribedAgents" :key="agent.id" class="profile-agent-row">
-                                    <div class="profile-agent-row__icon">
-                                        <el-icon><component :is="resolveIcon(agent.icon)" /></el-icon>
-                                    </div>
-                                    <div class="profile-agent-row__body">
-                                        <div class="profile-agent-row__name">{{ agent.name }}</div>
-                                        <div v-if="agent.functions?.length" class="profile-agent-row__functions">
-                                            <span v-for="fn in agent.functions.slice(0, 4)" :key="fn.id" class="profile-function-pill">{{ fn.name }}</span>
-                                            <span v-if="agent.functions.length > 4" class="profile-function-pill profile-function-pill--more">+{{ agent.functions.length - 4 }} more</span>
-                                        </div>
-                                        <div v-else class="profile-agent-row__note">No functions configured yet</div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        class="profile-agent-row__unsub"
-                                        :disabled="unsubscribingId === agent.id"
-                                        title="Unsubscribe"
-                                        @click="openUnsubscribeDialog(agent)"
-                                    >
-                                        <el-icon><Close /></el-icon>
-                                    </button>
-                                </article>
-                            </div>
-                        </section>
-
-                        <el-dialog v-model="unsubscribeDialogOpen" width="420px" align-center class="profile-modal profile-modal--danger">
-                            <template #header>
-                                <div class="profile-modal__head">
-                                    <div class="profile-modal__head-icon"><el-icon :size="18"><Close /></el-icon></div>
-                                    <div class="profile-modal__head-text">
-                                        <div class="profile-modal__eyebrow">Agents Subscribed To</div>
-                                        <div class="profile-modal__title">Unsubscribe Agent</div>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <div v-if="agentToUnsubscribe" class="profile-modal__body">
-                                <p class="profile-modal__confirm-text">
-                                    Are you sure you want to unsubscribe from <strong>{{ agentToUnsubscribe.name }}</strong>?
-                                    You'll lose access to its functions until you subscribe again.
-                                </p>
-                            </div>
-
-                            <template #footer>
-                                <div class="profile-modal__footer">
-                                    <button type="button" class="profile-modal__btn-outline" @click="unsubscribeDialogOpen = false">Cancel</button>
-                                    <button
-                                        type="button"
-                                        class="profile-modal__btn-danger"
-                                        :disabled="unsubscribingId === agentToUnsubscribe?.id"
-                                        @click="confirmUnsubscribe"
-                                    >
-                                        {{ unsubscribingId === agentToUnsubscribe?.id ? 'Unsubscribing…' : 'Unsubscribe' }}
-                                    </button>
-                                </div>
-                            </template>
-                        </el-dialog>
+                    <div class="pp-card">
+                        <div class="pp-card-head">
+                            <h2 class="pp-card-title">Settlement Currency</h2>
+                        </div>
+                        <el-select
+                            v-model="currencyForm.currency_code"
+                            filterable
+                            placeholder="Select currency"
+                            :disabled="currencyForm.processing"
+                            class="pp-currency-select"
+                            @change="submitCurrency"
+                        >
+                            <el-option
+                                v-for="option in currencyOptions"
+                                :key="option.code"
+                                :label="`${option.code} — ${option.name}`"
+                                :value="option.code"
+                            />
+                        </el-select>
+                        <p class="pp-card-note">{{ currentCurrency ? `${currentCurrency.symbol} · ${currentCurrency.name}` : `Choose from ${currencyOptions.length} available currencies` }}</p>
                     </div>
-                </section>
+
+                    <div class="pp-card">
+                        <h2 class="pp-card-title">Quick Actions</h2>
+                        <div class="pp-quick-actions">
+                            <button type="button" class="pp-quick-action" @click="editProfileOpen = true">
+                                <span class="pp-quick-action__icon"><el-icon :size="16"><Edit /></el-icon></span>
+                                <span class="pp-quick-action__label">Edit Information</span>
+                            </button>
+                            <Link :href="route('apps.index')" class="pp-quick-action">
+                                <span class="pp-quick-action__icon"><el-icon :size="16"><MagicStick /></el-icon></span>
+                                <span class="pp-quick-action__label">Browse Agents</span>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Active Sessions + Subscribed Agents ────────────── -->
+                <div class="pp-pair">
+                    <div class="pp-card">
+                        <div class="pp-card-head">
+                            <h2 class="pp-card-title"><el-icon><Monitor /></el-icon> Active Sessions</h2>
+                        </div>
+                        <div v-if="sessions.length" class="pp-sessions">
+                            <div v-for="(session, index) in sessionsPreview" :key="index" class="pp-session-row">
+                                <span class="pp-session-row__icon"><el-icon :size="16"><Monitor /></el-icon></span>
+                                <div class="pp-session-row__body">
+                                    <span class="pp-session-row__device">{{ sessionDeviceLabel(session) }}</span>
+                                    <span class="pp-session-row__meta">{{ session.ip_address || 'Unknown IP' }} · {{ session.last_active }}</span>
+                                </div>
+                                <span v-if="session.is_current_device" class="pp-status-pill pp-status-pill--primary">This device</span>
+                            </div>
+                            <p v-if="extraSessionsCount > 0" class="pp-card-note pp-sessions__more">+{{ extraSessionsCount }} more session{{ extraSessionsCount === 1 ? '' : 's' }}</p>
+                        </div>
+                        <div v-else class="pp-empty">
+                            <el-icon :size="20"><Monitor /></el-icon>
+                            <p>No active sessions recorded.</p>
+                        </div>
+                    </div>
+
+                    <div class="pp-card">
+                        <div class="pp-card-head">
+                            <h2 class="pp-card-title"><el-icon><MagicStick /></el-icon> Subscribed Agents</h2>
+                            <Link :href="route('apps.index')" class="pp-card-action">Browse Agents</Link>
+                        </div>
+
+                        <div v-if="isAdmin" class="pp-empty">
+                            <el-icon :size="20"><MagicStick /></el-icon>
+                            <p>Admin accounts manage agents directly from the Apps page.</p>
+                        </div>
+                        <div v-else-if="!subscribedAgents.length" class="pp-empty">
+                            <el-icon :size="20"><MagicStick /></el-icon>
+                            <p>You haven't subscribed to any agents yet.</p>
+                        </div>
+                        <div v-else class="pp-agents">
+                            <div v-for="agent in subscribedAgents" :key="agent.id" class="pp-agent-row">
+                                <span class="pp-agent-row__icon"><el-icon :size="16"><component :is="resolveIcon(agent.icon)" /></el-icon></span>
+                                <div class="pp-agent-row__body">
+                                    <span class="pp-agent-row__name">{{ agent.name }}</span>
+                                    <div v-if="agent.functions?.length" class="pp-agent-row__functions">
+                                        <span v-for="fn in agent.functions.slice(0, 3)" :key="fn.id" class="pp-chip">{{ fn.name }}</span>
+                                        <span v-if="agent.functions.length > 3" class="pp-chip pp-chip--muted">+{{ agent.functions.length - 3 }} more</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="pp-icon-btn pp-icon-btn--danger" title="Unsubscribe" :disabled="unsubscribingId === agent.id" @click="openUnsubscribeDialog(agent)">
+                                    <el-icon :size="14"><Close /></el-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <EditProfileDialog v-model="editProfileOpen" :user="user" :profile="profile" />
+
+        <!-- ── Unsubscribe Agent modal ─────────────────────────────────── -->
+        <el-dialog v-model="unsubscribeOpen" width="min(440px, calc(100vw - 2rem))" align-center class="pp-modal pp-modal--danger">
+            <template #header>
+                <div class="pp-modal__head">
+                    <div class="pp-modal__head-icon pp-modal__head-icon--danger"><el-icon :size="18"><Close /></el-icon></div>
+                    <div class="pp-modal__head-text">
+                        <div class="pp-modal__eyebrow">Subscribed Agents</div>
+                        <div class="pp-modal__title">Unsubscribe Agent</div>
+                    </div>
+                </div>
+            </template>
+            <div v-if="agentToUnsubscribe" class="pp-modal__body">
+                <p class="pp-modal__confirm-text">Unsubscribe from <strong>{{ agentToUnsubscribe.name }}</strong>? You'll lose access to its functions until you subscribe again.</p>
+            </div>
+            <template #footer>
+                <div class="pp-modal__footer">
+                    <button type="button" class="pp-btn pp-btn--outline" @click="unsubscribeOpen = false">Cancel</button>
+                    <button type="button" class="pp-btn pp-btn--danger" :disabled="unsubscribingId === agentToUnsubscribe?.id" @click="confirmUnsubscribe">
+                        {{ unsubscribingId === agentToUnsubscribe?.id ? 'Unsubscribing…' : 'Unsubscribe' }}
+                    </button>
+                </div>
+            </template>
+        </el-dialog>
     </DesignPreviewLayout>
 </template>
 
-<style>
-/* Unscoped on purpose: <el-dialog> teleports its root to <body>, outside
-   this component's own template output, so it never carries this SFC's
-   scope attribute — a scoped (or :deep()) selector can never reach it. */
-.el-dialog.profile-modal {
-    border-radius: 18px;
-    padding: 0;
-    overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
-    font-family: 'Manrope', system-ui, sans-serif;
-}
-.el-dialog.profile-modal .el-dialog__header { padding: 0; margin: 0; }
-.el-dialog.profile-modal .el-dialog__body { padding: 0; }
-.el-dialog.profile-modal .el-dialog__footer { padding: 0; }
-</style>
-
 <style scoped>
-/* NOTE: <el-dialog> teleports its content to <body>, outside this
-   component's DOM subtree, so CSS custom properties from the page do NOT
-   cascade in — literal hex values are used in the .profile-modal rules. */
-.profile-modal__head {
+.pp-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    font-family: var(--dp-font-sans);
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────── */
+.pp-hero { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.pp-hero__text h1 { color: var(--dp-primary); }
+.pp-subtitle { font-size: 14px; line-height: 1.6; color: var(--dp-on-surface-variant); margin: 8px 0 0; }
+.pp-hero__actions { display: flex; gap: 10px; flex-shrink: 0; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.pp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+.pp-btn--outline { background: var(--dp-surface-container-lowest); color: var(--dp-on-surface); box-shadow: var(--dp-card-shadow); }
+.pp-btn--outline:hover { background: var(--dp-surface-container-low); }
+.pp-btn--danger { background: var(--dp-error); color: var(--dp-on-error); }
+.pp-btn--danger:disabled { opacity: 0.6; cursor: default; }
+.pp-btn:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
+
+.pp-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    border: none;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-on-surface-variant);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+}
+.pp-icon-btn:hover { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
+.pp-icon-btn--danger:hover { background: var(--dp-error-container); color: var(--dp-error); }
+.pp-icon-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.pp-stack { display: flex; flex-direction: column; gap: 20px; }
+.pp-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+.pp-pair > .pp-card { height: 100%; display: flex; flex-direction: column; }
+.pp-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+.pp-trio > .pp-card { height: 100%; display: flex; flex-direction: column; }
+
+.pp-card {
+    background: var(--dp-surface-container-lowest);
+    border-radius: var(--dp-card-radius);
+    box-shadow: var(--dp-card-shadow);
+    padding: 22px;
+}
+.pp-card-title {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 20px 24px;
-    background: #fff;
-    border-bottom: 1px solid #f3f4f6;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--dp-primary);
+    margin: 0 0 16px;
 }
-.profile-modal__head-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 11px;
-    background: #fee2e2;
-    color: #dc2626;
+.pp-card-title .el-icon { color: var(--dp-outline); font-size: 15px; }
+.pp-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.pp-card-head .pp-card-title { margin-bottom: 0; }
+.pp-card-action { font-size: 12px; font-weight: 700; color: var(--dp-primary); text-decoration: none; }
+.pp-card-action:hover { text-decoration: underline; }
+.pp-card-note { margin: 10px 0 0; font-size: 12px; color: var(--dp-on-surface-variant); }
+.pp-sessions__more { padding: 4px 6px 0; }
+
+.pp-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 28px 16px;
+    text-align: center;
+    color: var(--dp-outline);
+    flex: 1;
+}
+.pp-empty p { font-size: 12.5px; color: var(--dp-on-surface-variant); margin: 0; max-width: 34ch; }
+
+/* ── Identity ────────────────────────────────────────────────────────── */
+.pp-identity { display: flex; gap: 20px; align-items: flex-start; }
+.pp-identity__avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--dp-secondary-container), var(--dp-secondary-fixed));
+    color: var(--dp-on-secondary-container);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    overflow: hidden;
 }
-.profile-modal__head-text { flex: 1; min-width: 0; }
-.profile-modal__eyebrow {
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #145c42;
-    margin-bottom: 1px;
-}
-.profile-modal__title {
-    font-size: 1.0625rem;
-    font-weight: 800;
-    color: #111827;
-    letter-spacing: -0.01em;
-}
-.profile-modal__body { padding: 20px 24px; }
-.profile-modal__confirm-text {
-    font-size: 0.875rem;
-    color: #374151;
-    line-height: 1.5;
-    margin: 0;
-}
-.profile-modal__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 16px 24px;
-    background: #f9fafb;
-    border-top: 1px solid #f3f4f6;
-}
-.profile-modal__btn-outline {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    color: #111827;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    padding: 9px 18px;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-.profile-modal__btn-outline:hover { background: #f8fafc; }
-.profile-modal__btn-danger {
-    background: #dc2626;
-    border: none;
-    color: #fff;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    padding: 9px 18px;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-.profile-modal__btn-danger:hover { background: #b91c1c; }
-.profile-modal__btn-danger:disabled { opacity: 0.6; cursor: default; }
+.pp-identity__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pp-identity__body { min-width: 0; }
+.pp-identity__name { margin: 0; font-size: 19px; font-weight: 800; color: var(--dp-on-surface); letter-spacing: -0.01em; }
+.pp-identity__role { margin: 5px 0 0; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dp-secondary); }
+.pp-identity__bio { margin: 12px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--dp-on-surface-variant); max-width: 60ch; }
+.pp-identity__contacts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; }
+.pp-identity__contact { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--dp-on-surface-variant); }
+.pp-identity__contact .el-icon { color: var(--dp-outline); }
 
-.profile-page {
-    min-height: 100%;
-    background: var(--surface, #f7f9fb);
-}
+/* ── Account status ──────────────────────────────────────────────────── */
+.pp-status-rows { display: flex; flex-direction: column; gap: 10px; }
+.pp-status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 2px; }
+.pp-status-row__label { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--dp-on-surface); }
+.pp-status-row__label .el-icon { color: var(--dp-outline); }
 
-.profile-shell {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 24px 18px 28px;
-}
-
-/* Edge-to-edge: flush with the top, left, and right of the page — no
-   shell padding, no border-radius, just a bottom border like a bar. */
-.profile-topbar {
-    border-bottom: 1px solid var(--card-border);
-    background: #ffffff;
-    box-shadow: var(--card-shadow);
-}
-
-.profile-topbar__inner {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 18px;
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 18px;
-}
-
-.profile-kicker {
-    color: #1f6e50;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.profile-page__title {
-    margin: 8px 0 0;
-    color: #192f27;
-    font-size: clamp(1.2rem, 1.5vw, 1.4rem);
-    font-weight: 800;
-    line-height: 1.1;
-}
-
-.profile-page__subtitle {
-    margin: 8px 0 0;
-    color: #71817a;
-    font-size: 13px;
-}
-
-.profile-topbar__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.profile-action-group {
-    display: inline-flex;
-}
-
-.profile-button {
+.pp-status-pill {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 40px;
-    padding: 0 16px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.profile-button--ghost {
-    border: 1px solid #e8eeeb;
-    background: #ffffff;
-    color: #27443a;
-}
-
-.profile-button--primary {
-    border: 1px solid #145c42;
-    background: #145c42;
-    color: #ffffff;
-}
-
-.profile-group-button {
-    min-height: 40px;
-    padding: 0 16px;
-    border-radius: 0;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.profile-group-button :deep(.el-icon) {
-    margin-right: 8px;
-}
-
-.profile-group-button:first-child {
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
-}
-
-.profile-group-button:last-child {
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
-}
-
-.profile-main-grid {
-    display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
-    gap: 18px;
-    align-items: start;
-}
-
-.profile-column,
-.profile-content {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-.profile-card {
-    border: 1px solid var(--card-border);
-    border-radius: 8px;
-    background: #ffffff;
-    box-shadow: var(--card-shadow);
-}
-
-.profile-card--identity,
-.profile-card--security,
-.profile-card--config,
-.profile-card--ledger,
-.profile-stat-card {
-    padding: 18px;
-}
-
-.profile-card--identity {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
-.profile-identity__media {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    margin-bottom: 18px;
-}
-
-.profile-avatar-frame {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 156px;
-    height: 156px;
-    padding: 0;
+    padding: 3px 10px;
     border-radius: 999px;
-    background: transparent;
-}
-
-.profile-avatar {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    border-radius: 999px;
-    border: 0;
-    background: #f1f5f3;
-    color: #90a49b;
-    font-size: 38px;
-}
-
-.profile-avatar--photo {
-    display: block;
-    object-fit: cover;
-}
-
-.profile-identity__body {
-    width: 100%;
-}
-
-.profile-identity__name {
-    margin: 0;
-    color: #20362e;
-    font-size: 1.15rem;
-    font-weight: 800;
-    line-height: 1.15;
-}
-
-.profile-identity__role {
-    margin-top: 8px;
-    color: #406256;
-    font-size: 12px;
+    font-size: 10.5px;
     font-weight: 700;
-    text-transform: uppercase;
+    white-space: nowrap;
 }
+.pp-status-pill--green { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
+.pp-status-pill--amber { background: #fef3c7; color: #92400e; }
+.pp-status-pill--primary { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
+.pp-status-pill--muted { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
 
-.profile-identity__bio {
-    max-width: 24ch;
-    margin: 10px auto 0;
-    color: #73837c;
-    font-size: 12px;
-    line-height: 1.6;
-}
+.pp-currency-select { width: 100%; }
+.pp-currency-select :deep(.el-select__wrapper) { border-radius: 10px; min-height: 40px; }
 
-.profile-contact-list {
+/* ── Quick actions ───────────────────────────────────────────────────── */
+.pp-quick-actions { display: flex; flex-direction: column; gap: 6px; }
+.pp-quick-action {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 18px;
-    align-items: center;
-}
-
-.profile-contact-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    min-height: 38px;
-    padding: 0 12px;
-    border: 1px solid #eff3f1;
-    border-radius: 8px;
-    background: #fbfcfb;
-    color: #425a51;
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.profile-contact-row :deep(svg) {
-    color: #145c42;
-}
-
-.profile-badge-list {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 18px;
-}
-
-.profile-badge {
-    display: inline-flex;
-    align-items: center;
-    min-height: 28px;
-    padding: 0 10px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.profile-badge--good {
-    background: #dbf0e5;
-    color: #145c42;
-}
-
-.profile-badge--soft {
-    background: #f3efe2;
-    color: #8c6a2e;
-}
-
-.profile-card__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.profile-card__title {
-    margin: 0;
-    color: #233a31;
-    font-size: 0.8rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.profile-card__action {
-    color: #45695c;
-    font-size: 12px;
-    font-weight: 700;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.profile-card__action:hover {
-    color: #145c42;
-}
-
-.profile-card--agents {
-    padding: 18px;
-}
-
-.profile-agents-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 10px;
-    padding: 28px 16px;
-    margin-top: 16px;
-    border: 1px dashed #dde5e0;
-    border-radius: 8px;
-    background: #fbfcfb;
-}
-
-.profile-agents-empty__icon {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: #eef3f0;
-    color: #61776d;
-    font-size: 18px;
-}
-
-.profile-agents-empty p {
-    margin: 0;
-    color: #7b8a84;
-    font-size: 12px;
-    line-height: 1.5;
-    max-width: 34ch;
-}
-
-.profile-agent-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.profile-agent-row {
-    display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
     padding: 12px;
-    border: 1px solid #eff3f1;
-    border-radius: 8px;
-    background: #fbfcfb;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: none;
+    color: var(--dp-on-surface);
+    text-decoration: none;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
+.pp-quick-action:hover { background: var(--dp-surface-container-low); border-color: var(--dp-outline-variant); }
+.pp-quick-action__icon { color: var(--dp-outline); display: inline-flex; }
+.pp-quick-action:hover .pp-quick-action__icon { color: var(--dp-primary); }
+.pp-quick-action__label { font-size: 13.5px; font-weight: 700; }
 
-.profile-agent-row__icon {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: #eef3f0;
-    color: #145c42;
-    flex-shrink: 0;
-}
-
-.profile-agent-row__body {
-    min-width: 0;
-}
-
-.profile-agent-row__name {
-    color: #223932;
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.profile-agent-row__functions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-}
-
-.profile-agent-row__note {
-    margin-top: 6px;
-    color: #93a29b;
-    font-size: 11px;
-}
-
-.profile-function-pill {
+/* ── Sessions ────────────────────────────────────────────────────────── */
+.pp-sessions { display: flex; flex-direction: column; gap: 4px; }
+.pp-session-row { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-radius: 10px; }
+.pp-session-row__icon {
     display: inline-flex;
     align-items: center;
-    min-height: 22px;
-    padding: 0 8px;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-outline);
+    flex-shrink: 0;
+}
+.pp-session-row__body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.pp-session-row__device { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
+.pp-session-row__meta { font-size: 11.5px; color: var(--dp-on-surface-variant); }
+
+/* ── Agents ──────────────────────────────────────────────────────────── */
+.pp-agents { display: flex; flex-direction: column; gap: 4px; }
+.pp-agent-row { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-radius: 10px; }
+.pp-agent-row__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-primary);
+    flex-shrink: 0;
+}
+.pp-agent-row__body { min-width: 0; flex: 1; }
+.pp-agent-row__name { display: block; font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
+.pp-agent-row__functions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.pp-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
     border-radius: 999px;
-    background: #eef3f0;
-    color: #45695c;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-on-surface-variant);
     font-size: 10.5px;
     font-weight: 700;
 }
+.pp-chip--muted { background: transparent; color: var(--dp-outline); }
 
-.profile-function-pill--more {
-    background: transparent;
-    color: #93a29b;
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .pp-trio { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-.profile-agent-row__unsub {
-    display: grid;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    border: none;
-    background: transparent;
-    color: #93a29b;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background 0.12s ease, color 0.12s ease;
+@media (max-width: 900px) {
+    .pp-pair,
+    .pp-trio { grid-template-columns: 1fr; }
+    .pp-identity { flex-direction: column; align-items: flex-start; }
 }
 
-.profile-agent-row__unsub:hover {
-    background: #fdeceb;
-    color: #c0392b;
-}
+/* ── Modals — el-dialog teleports to <body>, outside .dp-shell, so
+   --dp-* custom properties don't cascade in; literal hex from the same
+   palette is used here, matching this app's other teleported dialogs. */
+</style>
 
-.profile-agent-row__unsub:disabled {
-    opacity: 0.5;
-    cursor: default;
-}
+<style>
+.el-dialog.pp-modal { border-radius: 18px; padding: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+.el-dialog.pp-modal .el-dialog__header { padding: 0; margin: 0; }
+.el-dialog.pp-modal .el-dialog__body { padding: 0; }
+.el-dialog.pp-modal .el-dialog__footer { padding: 0; }
 
-.profile-security-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    margin-top: 16px;
-}
+.pp-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #f3f4f6; }
+.pp-modal__head-icon { width: 38px; height: 38px; border-radius: 11px; background: rgba(39, 19, 16, 0.08); color: #271310; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pp-modal__head-icon--danger { background: #fee2e2; color: #b91c1c; }
+.pp-modal__head-text { flex: 1; min-width: 0; }
+.pp-modal__eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #271310; margin-bottom: 1px; }
+.pp-modal__title { font-size: 1.0625rem; font-weight: 800; color: #111827; letter-spacing: -0.01em; }
+.pp-modal__body { padding: 22px 24px; }
+.pp-modal__confirm-text { margin: 0; font-size: 0.875rem; color: #374151; line-height: 1.6; }
+.pp-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #f9fafb; border-top: 1px solid #f3f4f6; }
 
-.profile-security-row {
-    display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) auto;
-    gap: 12px;
-    align-items: center;
-}
-
-.profile-security-row__icon {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: #eef3f0;
-    color: #61776d;
-}
-
-.profile-security-row__icon.is-good {
-    background: #def2e8;
-    color: #145c42;
-}
-
-.profile-security-row__icon.is-warn {
-    background: #fff0dd;
-    color: #b67729;
-}
-
-.profile-security-row__label {
-    color: #223932;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.profile-security-row__note {
-    margin-top: 4px;
-    color: #7b8a84;
-    font-size: 11px;
-    line-height: 1.45;
-}
-
-.profile-security-row__status {
-    color: #637771;
-    font-size: 12px;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-.profile-security-row__status.is-good {
-    color: #145c42;
-}
-
-.profile-security-row__status.is-warn {
-    color: #b67729;
-}
-
-.profile-stat-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
-}
-
-.profile-stat-card__eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: #7d8c86;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.profile-stat-card__value {
-    margin-top: 18px;
-    color: #182f26;
-    font-size: clamp(1.3rem, 1.6vw, 1.6rem);
-    font-weight: 800;
-    line-height: 1;
-}
-
-.profile-stat-card__value small {
-    color: #80908a;
-    font-size: 1rem;
-    font-weight: 700;
-}
-
-.profile-stat-card__meter {
-    width: 100%;
-    height: 5px;
-    margin-top: 16px;
-    border-radius: 999px;
-    background: #e5ece8;
-    overflow: hidden;
-}
-
-.profile-stat-card__meter span {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: #179264;
-}
-
-.profile-stat-card__note {
-    margin-top: 10px;
-    color: #71807a;
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.profile-config-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-    margin-top: 18px;
-}
-
-.profile-config-card {
-    min-height: 120px;
-    padding: 16px;
-    border: 1px solid var(--card-border);
-    border-radius: 8px;
-    background: #fafcfb;
-}
-
-.profile-config-card__label {
-    color: #586c63;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.profile-config-card__toggle,
-.profile-config-card__status {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 16px;
-    color: #213730;
-    font-size: 14px;
-    font-weight: 700;
-}
-
-.profile-toggle {
-    position: relative;
-    flex-shrink: 0;
-    width: 42px;
-    height: 24px;
-    border-radius: 999px;
-    background: #ced8d3;
-}
-
-.profile-toggle::after {
-    content: '';
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #ffffff;
-    transition: transform 0.2s ease;
-}
-
-.profile-toggle.is-on {
-    background: #145c42;
-}
-
-.profile-toggle.is-on::after {
-    transform: translateX(18px);
-}
-
-.profile-config-card__currency {
-    margin-top: 16px;
-}
-
-.profile-currency-select {
-    width: 100%;
-}
-
-.profile-currency-select :deep(.el-select__wrapper) {
-    border-radius: 8px;
-    box-shadow: 0 0 0 1px #d8e2dc inset;
-    background: #ffffff;
-    min-height: 36px;
-}
-
-.profile-currency-select :deep(.el-select__wrapper.is-focused) {
-    box-shadow: 0 0 0 1.5px #145c42 inset;
-}
-
-.profile-currency-option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-}
-
-.profile-currency-option__code {
-    font-weight: 700;
-    color: #20362e;
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
-    flex-shrink: 0;
-}
-
-.profile-currency-option__name {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: #586c63;
-}
-
-.profile-currency-option__symbol {
-    flex-shrink: 0;
-    color: #9ca8a2;
-    font-size: 11px;
-}
-
-.profile-config-card__note {
-    margin-top: 12px;
-    color: #7d8c86;
-    font-size: 11px;
-    line-height: 1.5;
-}
-
-.profile-ledger-wrap {
-    margin-top: 18px;
-    overflow-x: auto;
-}
-
-.profile-ledger-table {
-    width: 100%;
-    min-width: 760px;
-    border-collapse: collapse;
-}
-
-.profile-ledger-table th,
-.profile-ledger-table td {
-    padding: 14px 12px;
-    border-bottom: 1px solid #edf1ee;
-    text-align: left;
-}
-
-.profile-ledger-table th {
-    color: #61756c;
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.profile-ledger-table td {
-    color: #27443a;
-    font-size: 12px;
-}
-
-.profile-ledger-table tbody tr:last-child td {
-    border-bottom: 0;
-}
-
-.profile-domain-pill {
-    display: inline-flex;
-    align-items: center;
-    min-height: 28px;
-    padding: 0 10px;
-    border-radius: 4px;
-    background: #eef3f0;
-    color: #4a6258;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.profile-outcome {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 700;
-}
-
-.profile-outcome__dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #7f9188;
-}
-
-.profile-outcome.is-good {
-    color: #145c42;
-}
-
-.profile-outcome.is-good .profile-outcome__dot {
-    background: #19a46f;
-}
-
-.profile-outcome.is-warn {
-    color: #b67729;
-}
-
-.profile-outcome.is-warn .profile-outcome__dot {
-    background: #df962f;
-}
-
-.profile-outcome.is-neutral {
-    color: #48675a;
-}
-
-.profile-outcome.is-neutral .profile-outcome__dot {
-    background: #5f8575;
-}
-
-@media (max-width: 1200px) {
-    .profile-main-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .profile-column {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 18px;
-    }
-}
-
-@media (max-width: 980px) {
-    .profile-stat-grid,
-    .profile-config-grid,
-    .profile-column {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 760px) {
-    .profile-shell {
-        padding: 16px 12px 24px;
-    }
-
-    .profile-topbar__inner {
-        flex-direction: column;
-        padding: 14px 12px;
-    }
-
-    .profile-topbar__actions {
-        width: 100%;
-    }
-
-    .profile-action-group {
-        width: 100%;
-    }
-
-    .profile-button {
-        flex: 1 1 180px;
-    }
-
-    .profile-group-button {
-        flex: 1 1 0;
-    }
-
-    .profile-stat-grid,
-    .profile-config-grid,
-    .profile-column {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .profile-security-row {
-        grid-template-columns: 40px minmax(0, 1fr);
-    }
-
-    .profile-security-row__status {
-        grid-column: 2;
-    }
-}
+.pp-modal .pp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; padding: 0 18px; border: none; border-radius: 999px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.pp-modal .pp-btn--outline { background: #fff; border: 1px solid #e5e7eb; color: #111827; }
+.pp-modal .pp-btn--outline:hover { background: #f8fafc; }
+.pp-modal .pp-btn--danger { background: #ba1a1a; color: #fff; }
+.pp-modal .pp-btn--danger:disabled { opacity: 0.6; cursor: default; }
 </style>
