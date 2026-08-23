@@ -96,7 +96,7 @@ function deleteFarm() {
                         <h1 class="mf-title mb-0">My Farms</h1>
                         <p class="mf-subtitle mb-0">Farms you've registered on Bean Origin</p>
                     </div>
-                    <Link :href="route('farm.create')" class="mf-btn-primary">
+                    <Link :href="route('farmer.index')" class="mf-btn-primary">
                         <el-icon><Plus /></el-icon> Add Farm
                     </Link>
                 </div>
@@ -177,7 +177,7 @@ function deleteFarm() {
                         <div class="mf-empty__icon"><el-icon :size="24"><Box /></el-icon></div>
                         <div class="mf-empty__title">You haven't added any farms yet</div>
                         <p class="mf-empty__text">Register your first farm to start tracking harvests, quality, and traceability.</p>
-                        <Link :href="route('farm.create')" class="mf-btn-primary">
+                        <Link :href="route('farmer.index')" class="mf-btn-primary">
                             <el-icon><Plus /></el-icon> Add Your First Farm
                         </Link>
                     </div>

@@ -5,7 +5,7 @@ import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import CreateEventModal from '@/Components/Modals/CreateEventModal.vue';
 import CreateTaskModal from '@/Components/Modals/CreateTaskModal.vue';
-import { Plus, Delete, Edit, WarnTriangleFilled, Clock, Calendar as CalendarIcon, CircleCheck, Check, List, Odometer } from '@element-plus/icons-vue';
+import { Plus, Delete, Edit, WarnTriangleFilled, Clock, Calendar as CalendarIcon, CircleCheck, Check, List, Odometer, Files } from '@element-plus/icons-vue';
 
 const props = defineProps({
     events: { type: Array, default: () => [] },
@@ -55,6 +55,9 @@ function jumpToDay(day) {
 
 const sortedEvents = computed(() => [...props.events].sort((a, b) => a.event_date.localeCompare(b.event_date)));
 
+/* ── Sidebar: Events / Tasks tabs ──────────────────────────────────────── */
+const sideTab = ref('events');
+
 /* ── Tasks (sidebar widget) ──────────────────────────────────────────── */
 const sortedTasks = computed(() => [...props.tasks].sort((a, b) => a.task_date.localeCompare(b.task_date)));
 
@@ -75,14 +78,6 @@ function relativeDayLabel(day) {
     if (diff === 1) return 'Tomorrow';
     if (diff === -1) return 'Yesterday';
     return diff > 0 ? `In ${diff} days` : `${Math.abs(diff)} days ago`;
-}
-
-function dateBadge(day) {
-    const d = new Date(`${day}T00:00:00`);
-    return {
-        month: d.toLocaleDateString('en-US', { month: 'short' }),
-        day: d.getDate(),
-    };
 }
 
 /* ── Create / edit event dialog ───────────────────────────────────────── */
@@ -126,6 +121,13 @@ const typeTone = (type) => ({
     harvest: 'clp-dot--amber',
     market: 'clp-dot--blue',
 }[type] ?? 'clp-dot--muted');
+
+const typeChipClass = (type) => ({
+    task: 'clp-chip--task',
+    deadline: 'clp-chip--deadline',
+    harvest: 'clp-chip--harvest',
+    market: 'clp-chip--market',
+}[type] ?? 'clp-chip--muted');
 
 const typeLabel = (type) => {
     if (!type) return 'Event';
@@ -193,67 +195,23 @@ const typeLabel = (type) => {
                                         @click="selectDay(data.day)"
                                     >
                                         <span class="clp-cell__num">{{ data.date.getDate() }}</span>
-                                        <div v-if="eventsByDay[data.day]?.length" class="clp-cell__dots">
-                                            <span
-                                                v-for="ev in eventsByDay[data.day].slice(0, 3)"
+                                        <div v-if="eventsByDay[data.day]?.length" class="clp-cell__chips">
+                                            <button
+                                                v-for="ev in eventsByDay[data.day].slice(0, 2)"
                                                 :key="ev.id"
-                                                class="clp-dot"
-                                                :class="typeTone(ev.type)"
-                                            ></span>
+                                                type="button"
+                                                class="clp-cell-chip"
+                                                :class="typeChipClass(ev.type)"
+                                                :title="ev.title"
+                                                @click.stop="openEditEventDialog(ev)"
+                                            >{{ ev.title }}</button>
+                                            <span v-if="eventsByDay[data.day].length > 2" class="clp-cell-more">
+                                                +{{ eventsByDay[data.day].length - 2 }} more
+                                            </span>
                                         </div>
                                     </div>
                                 </template>
                             </el-calendar>
-
-                            <div class="clp-divider"></div>
-
-                            <div class="clp-events-head">
-                                <div class="clp-panel-title"><el-icon><Clock /></el-icon> Events</div>
-                                <span class="clp-count-badge">{{ sortedEvents.length }}</span>
-                            </div>
-
-                            <el-table :data="sortedEvents" class="clp-events-table" @row-click="(row) => jumpToDay(row.event_date)">
-                                <el-table-column width="120">
-                                    <template #header><span class="clp-th"><el-icon><CalendarIcon /></el-icon> Date</span></template>
-                                    <template #default="{ row }">
-                                        <div class="clp-cell-date">
-                                            <span class="clp-cell-date__badge">{{ dateBadge(row.event_date).month }} {{ dateBadge(row.event_date).day }}</span>
-                                            <span class="clp-cell-date__relative">{{ relativeDayLabel(row.event_date) }}</span>
-                                        </div>
-                                    </template>
-                                </el-table-column>
-
-                                <el-table-column min-width="200">
-                                    <template #header><span class="clp-th">Event</span></template>
-                                    <template #default="{ row }">
-                                        <div class="clp-cell-event">
-                                            <span class="clp-dot" :class="typeTone(row.type)"></span>
-                                            <div class="clp-cell-event__body">
-                                                <div class="clp-cell-event__title">{{ row.title }}</div>
-                                                <div class="clp-cell-event__type">{{ typeLabel(row.type) }}</div>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </el-table-column>
-
-                                <el-table-column width="90" align="right">
-                                    <template #header><span class="clp-th clp-th--right">Actions</span></template>
-                                    <template #default="{ row }">
-                                        <div class="clp-row__actions" @click.stop>
-                                            <button type="button" class="clp-icon-btn" aria-label="Edit event" @click="openEditEventDialog(row)">
-                                                <el-icon><Edit /></el-icon>
-                                            </button>
-                                            <button type="button" class="clp-icon-btn clp-icon-btn--danger" aria-label="Delete event" @click="deleteEvent(row)">
-                                                <el-icon><Delete /></el-icon>
-                                            </button>
-                                        </div>
-                                    </template>
-                                </el-table-column>
-
-                                <template #empty>
-                                    <div class="clp-empty">No events yet — create one to get started.</div>
-                                </template>
-                            </el-table>
                         </div>
                     </div>
 
@@ -300,43 +258,95 @@ const typeLabel = (type) => {
                             </div>
                         </div>
 
-                        <div class="clp-side-card">
+                        <div class="clp-side-card clp-side-card--fill">
                             <div class="clp-side-card__title-row">
-                                <div class="clp-side-card__title"><el-icon :size="15"><List /></el-icon> Tasks</div>
+                                <div class="clp-tabs">
+                                    <button
+                                        type="button"
+                                        class="clp-tab"
+                                        :class="{ 'clp-tab--active': sideTab === 'events' }"
+                                        @click="sideTab = 'events'"
+                                    >
+                                        <el-icon :size="14"><Clock /></el-icon> Events
+                                        <span class="clp-tab__count">{{ sortedEvents.length }}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="clp-tab"
+                                        :class="{ 'clp-tab--active': sideTab === 'tasks' }"
+                                        @click="sideTab = 'tasks'"
+                                    >
+                                        <el-icon :size="14"><List /></el-icon> Tasks
+                                        <span class="clp-tab__count">{{ sortedTasks.length }}</span>
+                                    </button>
+                                </div>
                                 <div class="clp-tasks-head__actions">
-                                    <button type="button" class="clp-mini-btn" title="Add task" @click="openCreateTaskDialog">
+                                    <button
+                                        type="button"
+                                        class="clp-mini-btn"
+                                        :title="sideTab === 'events' ? 'Add event' : 'Add task'"
+                                        @click="sideTab === 'events' ? openCreateEventDialog() : openCreateTaskDialog()"
+                                    >
                                         <el-icon :size="12"><Plus /></el-icon>
                                     </button>
-                                    <Link :href="route('task.index')" class="clp-side-card__link">View All</Link>
+                                    <Link v-if="sideTab === 'tasks'" :href="route('task.index')" class="clp-side-card__link">View All</Link>
                                 </div>
                             </div>
 
-                            <div v-if="sortedTasks.length" class="clp-tasks-progress">
-                                <div class="clp-tasks-progress__bar">
-                                    <div class="clp-tasks-progress__fill" :style="{ width: tasksProgressPct + '%' }"></div>
-                                </div>
-                                <span class="clp-tasks-progress__label">{{ completedTasksCount }}/{{ sortedTasks.length }} done</span>
-                            </div>
-
-                            <div v-if="!sortedTasks.length" class="clp-empty">No tasks yet.</div>
-
-                            <div v-else class="clp-tasks-list">
-                                <div
-                                    v-for="t in sortedTasks.slice(0, 6)"
-                                    :key="t.id"
-                                    class="clp-task-row"
-                                    :class="{ 'clp-task-row--done': t.status === 'completed' }"
-                                >
-                                    <span class="clp-task-check" :class="`clp-task-check--${taskTone(t)}`">
-                                        <el-icon v-if="t.status === 'completed'" :size="11"><Check /></el-icon>
-                                    </span>
-                                    <div class="clp-task-row__body">
-                                        <div class="clp-task-row__title">{{ t.title }}</div>
-                                        <div class="clp-task-row__date" :class="{ 'clp-text-red': taskTone(t) === 'red' }">{{ relativeDayLabel(t.task_date) }}</div>
+                            <template v-if="sideTab === 'events'">
+                                <div v-if="!sortedEvents.length" class="clp-empty">No events yet — create one to get started.</div>
+                                <div v-else class="clp-tab-list">
+                                    <div
+                                        v-for="ev in sortedEvents"
+                                        :key="ev.id"
+                                        class="clp-event-row"
+                                        @click="jumpToDay(ev.event_date)"
+                                    >
+                                        <span class="clp-dot" :class="typeTone(ev.type)"></span>
+                                        <div class="clp-event-row__body">
+                                            <div class="clp-event-row__title">{{ ev.title }}</div>
+                                            <div class="clp-event-row__date">{{ relativeDayLabel(ev.event_date) }} · {{ typeLabel(ev.type) }}</div>
+                                        </div>
+                                        <div class="clp-row__actions" @click.stop>
+                                            <button type="button" class="clp-icon-btn" aria-label="Edit event" @click="openEditEventDialog(ev)">
+                                                <el-icon><Edit /></el-icon>
+                                            </button>
+                                            <button type="button" class="clp-icon-btn clp-icon-btn--danger" aria-label="Delete event" @click="deleteEvent(ev)">
+                                                <el-icon><Delete /></el-icon>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <span v-if="taskTone(t) === 'red'" class="clp-badge clp-badge--red">Overdue</span>
                                 </div>
-                            </div>
+                            </template>
+
+                            <template v-else>
+                                <div v-if="sortedTasks.length" class="clp-tasks-progress">
+                                    <div class="clp-tasks-progress__bar">
+                                        <div class="clp-tasks-progress__fill" :style="{ width: tasksProgressPct + '%' }"></div>
+                                    </div>
+                                    <span class="clp-tasks-progress__label">{{ completedTasksCount }}/{{ sortedTasks.length }} done</span>
+                                </div>
+
+                                <div v-if="!sortedTasks.length" class="clp-empty">No tasks yet.</div>
+
+                                <div v-else class="clp-tab-list">
+                                    <div
+                                        v-for="t in sortedTasks"
+                                        :key="t.id"
+                                        class="clp-task-row"
+                                        :class="{ 'clp-task-row--done': t.status === 'completed' }"
+                                    >
+                                        <span class="clp-task-check" :class="`clp-task-check--${taskTone(t)}`">
+                                            <el-icon v-if="t.status === 'completed'" :size="11"><Check /></el-icon>
+                                        </span>
+                                        <div class="clp-task-row__body">
+                                            <div class="clp-task-row__title">{{ t.title }}</div>
+                                            <div class="clp-task-row__date" :class="{ 'clp-text-red': taskTone(t) === 'red' }">{{ relativeDayLabel(t.task_date) }}</div>
+                                        </div>
+                                        <span v-if="taskTone(t) === 'red'" class="clp-badge clp-badge--red">Overdue</span>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -366,16 +376,11 @@ const typeLabel = (type) => {
 
 <style scoped>
 .clp-page {
-    --green: #004532;
-    --green-dark: #002e20;
-    --border: #eef2f0;
-    --on-surface: #111827;
-    --on-surface-var: #6b7280;
-    --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
-    color: var(--on-surface);
-    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-family: var(--dp-font-sans);
+    color: var(--dp-on-surface);
 }
 
 /* ── Page header ─────────────────────────────────────────────────────── */
@@ -383,9 +388,6 @@ const typeLabel = (type) => {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1.75rem 1.5rem;
-    background: #fff;
-    border-bottom: 1px solid var(--border);
 }
 
 .clp-page-header__row {
@@ -465,20 +467,20 @@ const typeLabel = (type) => {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--green);
+    color: var(--dp-secondary);
     margin-bottom: 4px;
 }
 
 .clp-title {
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-size: clamp(1.375rem, 1.05rem + 1.2vw, 1.75rem);
+    font-weight: 700;
     letter-spacing: -0.02em;
     margin: 0 0 0.25rem;
 }
 
 .clp-subtitle {
     font-size: 0.875rem;
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
     margin: 0;
     line-height: 1.6;
 }
@@ -490,20 +492,24 @@ const typeLabel = (type) => {
     padding-top: 4px;
 }
 
-.clp-text-green { color: #166534; }
+.clp-text-green { color: var(--dp-secondary); }
 .clp-text-amber { color: #92400e; }
-.clp-text-red   { color: #b91c1c; }
+.clp-text-red   { color: var(--dp-error); }
 
 /* ── Body ────────────────────────────────────────────────────────────── */
-.clp-body {
-    padding: 1.25rem 1.5rem 3rem;
-}
-
 .clp-empty {
     font-size: 0.8125rem;
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
     padding: 1rem 0;
     text-align: center;
+}
+
+.clp-side-card--fill .clp-empty {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* ── Two-column layout: 70% calendar+events / 30% overview+tasks ───────── */
@@ -511,38 +517,14 @@ const typeLabel = (type) => {
     display: grid;
     grid-template-columns: 7fr 3fr;
     gap: 1.25rem;
-    align-items: start;
+    align-items: stretch;
 }
 
 .clp-main-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 14px;
+    background: var(--dp-surface-container-lowest);
+    border-radius: var(--dp-card-radius);
+    box-shadow: var(--dp-card-shadow);
     overflow: hidden;
-}
-
-.clp-divider {
-    height: 1px;
-    background: var(--border);
-}
-
-.clp-events-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 1rem 1.25rem;
-    background: var(--surface-low);
-    border-bottom: 1px solid var(--border);
-}
-
-.clp-panel-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 0.875rem;
-    font-weight: 800;
-    color: var(--on-surface);
 }
 
 /* ── Side column: Overview + Tasks cards ─────────────────────────────── */
@@ -550,13 +532,21 @@ const typeLabel = (type) => {
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    height: 100%;
 }
 
 .clp-side-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 14px;
+    background: var(--dp-surface-container-lowest);
+    border-radius: var(--dp-card-radius);
+    box-shadow: var(--dp-card-shadow);
     padding: 1.25rem;
+}
+
+.clp-side-card--fill {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 .clp-side-card__title {
@@ -565,27 +555,123 @@ const typeLabel = (type) => {
     gap: 7px;
     font-size: 0.875rem;
     font-weight: 800;
-    color: var(--on-surface);
+    color: var(--dp-on-surface);
 }
 
 .clp-side-card__title-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    row-gap: 8px;
     gap: 10px;
     margin-bottom: 4px;
 }
 
-.clp-side-card__title :deep(.el-icon) { color: var(--green); }
+.clp-side-card__title :deep(.el-icon) { color: var(--dp-secondary); }
+
+/* ── Tabs (Events / Tasks) ─────────────────────────────────────────────── */
+.clp-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--dp-surface-container-low);
+    border-radius: 10px;
+    padding: 3px;
+}
+
+.clp-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: transparent;
+    color: var(--dp-on-surface-variant);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.clp-tab:hover { color: var(--dp-on-surface); }
+
+.clp-tab--active {
+    background: var(--dp-surface-container-lowest);
+    color: var(--dp-on-surface);
+    box-shadow: 0 1px 3px rgba(39, 19, 16, 0.08);
+}
+
+.clp-tab__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--dp-secondary-container);
+    color: var(--dp-on-secondary-container);
+    font-size: 0.625rem;
+    font-weight: 800;
+}
+
+.clp-tab:focus-visible {
+    outline: 2px solid var(--dp-primary);
+    outline-offset: 2px;
+}
+
+.clp-tab-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.75rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* ── Event row (sidebar tab) ──────────────────────────────────────────── */
+.clp-event-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    margin: 0 -8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.clp-event-row:hover { background: var(--dp-surface-container-low); }
+
+.clp-event-row .clp-dot { margin-top: 0; flex-shrink: 0; }
+
+.clp-event-row__body { flex: 1; min-width: 0; }
+
+.clp-event-row__title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--dp-on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.clp-event-row__date {
+    font-size: 0.6875rem;
+    color: var(--dp-on-surface-variant);
+    margin-top: 1px;
+}
 
 .clp-side-card__link {
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--green);
+    color: var(--dp-secondary);
     text-decoration: none;
+    white-space: nowrap;
 }
 
-.clp-side-card__link:hover { color: var(--green-dark); }
+.clp-side-card__link:hover { color: var(--dp-secondary); }
 
 .clp-tasks-head__actions {
     display: flex;
@@ -600,17 +686,22 @@ const typeLabel = (type) => {
     width: 22px;
     height: 22px;
     border-radius: 7px;
-    border: 1px solid var(--border);
-    background: #fff;
-    color: var(--on-surface-var);
+    border: 1px solid var(--dp-outline-variant);
+    background: var(--dp-surface-container-lowest);
+    color: var(--dp-on-surface-variant);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .clp-mini-btn:hover {
-    border-color: var(--green);
-    color: var(--green);
-    background: #f0f5f3;
+    border-color: var(--dp-secondary);
+    color: var(--dp-on-secondary-container);
+    background: var(--dp-secondary-container);
+}
+
+.clp-mini-btn:focus-visible {
+    outline: 2px solid var(--dp-primary);
+    outline-offset: 2px;
 }
 
 .clp-tasks-progress {
@@ -624,21 +715,21 @@ const typeLabel = (type) => {
     flex: 1;
     height: 6px;
     border-radius: 999px;
-    background: var(--surface-low);
+    background: var(--dp-surface-container-low);
     overflow: hidden;
 }
 
 .clp-tasks-progress__fill {
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, var(--green), #16a34a);
+    background: linear-gradient(90deg, var(--dp-secondary), #16a34a);
     transition: width 0.2s ease;
 }
 
 .clp-tasks-progress__label {
     font-size: 0.6875rem;
     font-weight: 700;
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }
@@ -659,7 +750,7 @@ const typeLabel = (type) => {
     transition: background 0.15s ease;
 }
 
-.clp-metric:hover { background: var(--surface-low); }
+.clp-metric:hover { background: var(--dp-surface-container-low); }
 
 .clp-metric__icon {
     display: inline-flex;
@@ -669,14 +760,14 @@ const typeLabel = (type) => {
     height: 30px;
     border-radius: 9px;
     flex-shrink: 0;
-    background: rgba(0, 69, 50, 0.08);
-    color: var(--green);
+    background: var(--dp-surface-container-low);
+    color: var(--dp-primary);
     transition: background 0.15s ease, color 0.15s ease;
 }
 
 .clp-metric__icon--amber { background: #fef3c7; color: #92400e; }
-.clp-metric__icon--red { background: #fee2e2; color: #991b1b; }
-.clp-metric__icon--green { background: #dcfce7; color: #166534; }
+.clp-metric__icon--red { background: var(--dp-error-container); color: var(--dp-error); }
+.clp-metric__icon--green { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
 
 .clp-metric__body {
     flex: 1;
@@ -689,22 +780,16 @@ const typeLabel = (type) => {
 
 .clp-metric__label {
     font-size: 0.8125rem;
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
     font-weight: 600;
 }
 
 .clp-metric__val {
     font-size: 1rem;
     font-weight: 800;
-    color: var(--on-surface);
+    color: var(--dp-on-surface);
     letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
-}
-
-.clp-tasks-list {
-    display: flex;
-    flex-direction: column;
-    margin-top: 0.75rem;
 }
 
 .clp-task-row {
@@ -717,7 +802,7 @@ const typeLabel = (type) => {
     transition: background 0.15s ease;
 }
 
-.clp-task-row:hover { background: var(--surface-low); }
+.clp-task-row:hover { background: var(--dp-surface-container-low); }
 
 .clp-task-check {
     display: inline-flex;
@@ -726,14 +811,14 @@ const typeLabel = (type) => {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    border: 1.5px solid #d1d5db;
-    color: #fff;
+    border: 1.5px solid var(--dp-outline-variant);
+    color: var(--dp-on-primary);
     flex-shrink: 0;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.clp-task-check--green { background: var(--green); border-color: var(--green); }
-.clp-task-check--red { border-color: #fca5a5; }
+.clp-task-check--green { background: var(--dp-secondary); border-color: var(--dp-secondary); }
+.clp-task-check--red { border-color: var(--dp-error); }
 .clp-task-check--amber { border-color: #fcd34d; }
 
 .clp-task-row__body {
@@ -744,7 +829,7 @@ const typeLabel = (type) => {
 .clp-task-row__title {
     font-size: 0.8125rem;
     font-weight: 700;
-    color: var(--on-surface);
+    color: var(--dp-on-surface);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -752,29 +837,15 @@ const typeLabel = (type) => {
 }
 
 .clp-task-row--done .clp-task-row__title {
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
     text-decoration: line-through;
     font-weight: 600;
 }
 
 .clp-task-row__date {
     font-size: 0.6875rem;
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
     margin-top: 1px;
-}
-
-.clp-count-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 22px;
-    height: 20px;
-    padding: 0 7px;
-    border-radius: 999px;
-    background: rgba(0, 69, 50, 0.08);
-    color: var(--green);
-    font-size: 0.6875rem;
-    font-weight: 800;
 }
 
 .clp-row__actions {
@@ -783,106 +854,50 @@ const typeLabel = (type) => {
     flex-shrink: 0;
 }
 
-/* ── Events table — Element Plus, reskinned ─────────────────────────────── */
-.clp-events-table {
-    --el-table-border-color: var(--border);
-    --el-table-header-bg-color: var(--surface-low);
-    --el-table-header-text-color: var(--on-surface-var);
-    font-family: 'Manrope', system-ui, sans-serif;
-}
-
-.clp-events-table :deep(.el-table__row) { cursor: pointer; }
-.clp-events-table :deep(.el-table__cell) { padding: 12px 0; }
-.clp-events-table :deep(.el-table__inner-wrapper::before) { display: none; }
-.clp-events-table :deep(.el-table__header-wrapper th:first-child .cell),
-.clp-events-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.25rem; }
-.clp-events-table :deep(.el-table__header-wrapper th:last-child .cell),
-.clp-events-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1.25rem; }
-
-.clp-th { display: inline-flex; align-items: center; gap: 6px; }
-.clp-th :deep(.el-icon) { font-size: 13px; color: #9ca3af; }
-.clp-th--right { justify-content: flex-end; }
-
-.clp-cell-date {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.clp-cell-date__badge {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--on-surface);
-}
-
-.clp-cell-date__relative {
-    font-size: 0.6875rem;
-    color: var(--on-surface-var);
-}
-
-.clp-cell-event {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.clp-cell-event .clp-dot { margin-top: 0; flex-shrink: 0; }
-
-.clp-cell-event__body { min-width: 0; }
-
-.clp-cell-event__title {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--on-surface);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.clp-cell-event__type {
-    font-size: 0.6875rem;
-    color: var(--on-surface-var);
-    margin-top: 1px;
-}
-
 .clp-icon-btn {
     width: 26px;
     height: 26px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: #fff;
-    color: var(--on-surface-var);
+    border-radius: 8px;
+    border: 1px solid var(--dp-outline-variant);
+    background: var(--dp-surface-container-lowest);
+    color: var(--dp-on-surface-variant);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     font-size: 12px;
+    transition: background 0.15s ease;
 }
 
 .clp-icon-btn:hover {
-    background: var(--surface-low);
+    background: var(--dp-surface-container-low);
+}
+
+.clp-icon-btn:focus-visible {
+    outline: 2px solid var(--dp-primary);
+    outline-offset: 2px;
 }
 
 .clp-icon-btn--danger:hover {
-    background: #fee2e2;
-    border-color: #fca5a5;
-    color: #991b1b;
+    background: var(--dp-error-container);
+    border-color: var(--dp-error-container);
+    color: var(--dp-error);
 }
 
 .clp-dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--green);
+    background: var(--dp-secondary);
     flex-shrink: 0;
     margin-top: 4px;
 }
 
-.clp-dot--green { background: #16a34a; }
-.clp-dot--red { background: #dc2626; }
+.clp-dot--green { background: var(--dp-secondary); }
+.clp-dot--red { background: var(--dp-error); }
 .clp-dot--amber { background: #d97706; }
 .clp-dot--blue { background: #2563eb; }
-.clp-dot--muted { background: #9ca3af; }
+.clp-dot--muted { background: var(--dp-outline); }
 
 .clp-badge {
     display: inline-flex;
@@ -890,25 +905,23 @@ const typeLabel = (type) => {
     font-size: 0.625rem;
     font-weight: 700;
     padding: 2px 8px;
-    background: #f3f4f6;
-    color: #6b7280;
-    border: 1px solid #d1d5db;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-on-surface-variant);
 }
 
 .clp-badge--red {
-    background: #fee2e2;
-    color: #991b1b;
-    border-color: #fca5a5;
+    background: var(--dp-error-container);
+    color: var(--dp-on-error-container);
 }
 
 .clp-btn-primary {
-    background: linear-gradient(135deg, #004532, #065f46);
-    border: 1px solid transparent;
-    color: #fff;
-    border-radius: 8px;
+    background: var(--dp-primary);
+    border: none;
+    color: var(--dp-on-primary);
+    border-radius: 999px;
     font-size: 0.8125rem;
-    font-weight: 700;
-    padding: 8px 16px;
+    font-weight: 600;
+    padding: 10px 18px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -918,7 +931,13 @@ const typeLabel = (type) => {
 }
 
 .clp-btn-primary:hover {
-    opacity: 0.9;
+    opacity: 0.88;
+    color: var(--dp-on-primary);
+}
+
+.clp-btn-primary:focus-visible {
+    outline: 2px solid var(--dp-primary);
+    outline-offset: 2px;
 }
 
 .clp-btn-primary:disabled {
@@ -927,13 +946,13 @@ const typeLabel = (type) => {
 }
 
 .clp-btn-outline {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    color: #111827;
-    border-radius: 8px;
+    background: var(--dp-surface-container-lowest);
+    border: 1px solid var(--dp-outline-variant);
+    color: var(--dp-on-surface);
+    border-radius: 10px;
     font-size: 0.8125rem;
-    font-weight: 700;
-    padding: 8px 16px;
+    font-weight: 600;
+    padding: 10px 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -944,13 +963,19 @@ const typeLabel = (type) => {
 }
 
 .clp-btn-outline:hover {
-    background: #f8fafc;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-on-surface);
+}
+
+.clp-btn-outline:focus-visible {
+    outline: 2px solid var(--dp-primary);
+    outline-offset: 2px;
 }
 
 /* ── Calendar cell ────────────────────────────────────────────────────── */
 .clp-cell {
     height: 100%;
-    min-height: 88px;
+    min-height: 96px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -960,12 +985,12 @@ const typeLabel = (type) => {
 }
 
 .clp-cell:hover {
-    background: var(--surface-low);
+    background: var(--dp-surface-container-low);
 }
 
 .clp-cell--selected {
-    background: rgba(0, 69, 50, 0.06);
-    box-shadow: inset 0 0 0 1.5px var(--green);
+    background: rgba(27, 109, 36, 0.06);
+    box-shadow: inset 0 0 0 1.5px var(--dp-secondary);
 }
 
 .clp-cell--other {
@@ -975,36 +1000,74 @@ const typeLabel = (type) => {
 .clp-cell__num {
     font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--on-surface);
+    color: var(--dp-on-surface);
 }
 
 .clp-cell--selected .clp-cell__num {
-    color: var(--green);
+    color: var(--dp-secondary);
     font-weight: 800;
 }
 
-.clp-cell__dots {
+.clp-cell__chips {
     display: flex;
+    flex-direction: column;
     gap: 3px;
     margin-top: 6px;
+    width: 100%;
+}
+
+.clp-cell-chip {
+    display: block;
+    width: 100%;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.clp-chip--task { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
+.clp-chip--deadline { background: var(--dp-error-container); color: var(--dp-on-error-container); }
+.clp-chip--harvest { background: #fef3c7; color: #92400e; }
+.clp-chip--market { background: #dbeafe; color: #1e40af; }
+.clp-chip--muted { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
+
+.clp-cell-more {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--dp-on-surface-variant);
+    padding: 1px 6px;
 }
 
 /* ── Element Plus calendar overrides ────────────────────────────────────
    Native Element Plus grid: bordered day cells, like a spreadsheet. The
    calendar's own border shorthand must be a full `width style color`
-   value — a bare color silently drops the border. */
+   value — a bare color silently drops the border. The card itself
+   (.clp-main-card) stays borderless (shadow only); these are strictly
+   the internal grid lines between cells, kept hairline-light so they
+   don't compete with the card's own edge. */
+.clp-main-card {
+    --clp-hairline: color-mix(in srgb, var(--dp-outline-variant) 25%, transparent);
+}
+
 .clp-main-card :deep(.el-calendar) {
-    --el-calendar-border: 1px solid var(--border);
+    --el-calendar-border: 0.5px solid var(--clp-hairline);
 }
 
 .clp-main-card :deep(.el-calendar__header) {
     padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 0.5px solid var(--clp-hairline);
 }
 
 .clp-main-card :deep(.el-calendar__title) {
     font-weight: 700;
-    color: var(--on-surface);
+    color: var(--dp-on-surface);
 }
 
 .clp-main-card :deep(.el-calendar__body) {
@@ -1021,11 +1084,11 @@ const typeLabel = (type) => {
 }
 
 .clp-main-card :deep(.el-calendar-table td) {
-    border-color: var(--border);
+    border-color: var(--clp-hairline);
 }
 
 .clp-main-card :deep(.el-calendar-table thead tr) {
-    background: var(--surface-low);
+    background: var(--dp-surface-container-low);
 }
 
 .clp-main-card :deep(.el-calendar-table th) {
@@ -1034,10 +1097,10 @@ const typeLabel = (type) => {
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
     text-align: left;
-    border-bottom: 1px solid var(--border);
-    border-right: 1px solid var(--border);
+    border-bottom: 0.5px solid var(--clp-hairline);
+    border-right: 0.5px solid var(--clp-hairline);
 }
 
 .clp-main-card :deep(.el-calendar-table th:last-child) {
@@ -1046,7 +1109,7 @@ const typeLabel = (type) => {
 
 .clp-main-card :deep(.el-calendar-table th:first-child),
 .clp-main-card :deep(.el-calendar-table th:last-child) {
-    color: var(--green);
+    color: var(--dp-secondary);
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
@@ -1056,13 +1119,17 @@ const typeLabel = (type) => {
     }
 }
 
-@media (max-width: 767.98px) {
-    .clp-page-header {
-        padding: 1.25rem;
-    }
-
-    .clp-body {
-        padding: 1.25rem 1.25rem 3rem;
+/* ── Reduced motion ────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .clp-cell,
+    .clp-metric,
+    .clp-task-row,
+    .clp-icon-btn,
+    .clp-mini-btn,
+    .clp-btn-primary,
+    .clp-btn-outline,
+    .clp-tasks-progress__fill {
+        transition: none;
     }
 }
 </style>

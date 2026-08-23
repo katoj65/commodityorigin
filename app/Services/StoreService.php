@@ -150,6 +150,22 @@ class StoreService
     }
 
     /**
+     * Every available item across every verified store, for buyers to
+     * browse — newest first, each carrying its seller's store info.
+     *
+     * @return Collection<int, StoreItem>
+     */
+    public function browsable(): Collection
+    {
+        return StoreItem::query()
+            ->where('status', 'available')
+            ->whereHas('store', fn ($query) => $query->where('verification_status', 'verified'))
+            ->with('store.user:id,first_name,last_name')
+            ->latest()
+            ->get();
+    }
+
+    /**
      * Add a new item to a store. The item's starting status is recorded as
      * its first traceability log entry.
      *

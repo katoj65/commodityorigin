@@ -40,19 +40,19 @@ class FarmPolicy
     }
 
     /**
-     * Determine whether the user can update the farm. Creator only.
+     * Determine whether the user can update the farm. Admin or creator only.
      */
     public function update(User $user, Farm $farm): bool
     {
-        return $farm->created_by_user_id === $user->id;
+        return $user->isAdmin() || $farm->created_by_user_id === $user->id;
     }
 
     /**
-     * Determine whether the user can delete the farm. Creator only.
+     * Determine whether the user can delete the farm. Admin or creator only.
      */
     public function delete(User $user, Farm $farm): bool
     {
-        return $farm->created_by_user_id === $user->id;
+        return $user->isAdmin() || $farm->created_by_user_id === $user->id;
     }
 
     /**

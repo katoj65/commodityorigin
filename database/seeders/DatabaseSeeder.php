@@ -71,6 +71,7 @@ class DatabaseSeeder extends Seeder
             ExchangeRateSeeder::class,
             ForecastSeeder::class,
             CountrySeeder::class,
+            FarmerSeeder::class,
         ]);
     }
 }

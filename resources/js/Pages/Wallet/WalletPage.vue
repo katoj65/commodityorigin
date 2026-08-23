@@ -1,14 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import DepositModal from '@/Components/DepositModal.vue';
 import WithdrawModal from '@/Components/WithdrawModal.vue';
 import EscrowTransferModal from '@/Components/EscrowTransferModal.vue';
 import {
-    Top, Bottom, Promotion, Wallet as WalletIcon, Lock, List,
-    CircleCheck, Clock, CircleClose, FolderOpened, InfoFilled,
-    Sort, Document, Calendar, Money,
+    Top, Bottom, Promotion, Lock, FolderOpened, CirclePlus, OfficeBuilding,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -29,6 +27,13 @@ function formatDate(dateTime) {
     });
 }
 
+const heroBalance = computed(() => {
+    const [intPart, decPart] = Number(props.wallet.available_balance)
+        .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        .split('.');
+    return { intPart, decPart };
+});
+
 /* ── KPIs ────────────────────────────────────────────────────────────── */
 const kpis = computed(() => {
     const received = props.transactions.filter((t) => t.is_credit).reduce((sum, t) => sum + Number(t.amount), 0);
@@ -40,6 +45,30 @@ const kpis = computed(() => {
         count: props.transactions.length,
     };
 });
+
+/* ── Cash flow: real monthly totals from the transaction ledger ────────── */
+const cashFlowView = ref('inflow');
+
+const cashFlowMonths = computed(() => {
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString('en-US', { month: 'short' }), inflow: 0, outflow: 0 });
+    }
+    const byKey = Object.fromEntries(months.map((m) => [m.key, m]));
+    for (const t of props.transactions) {
+        if (!t.created_at) continue;
+        const d = new Date(t.created_at.replace(' ', 'T'));
+        const bucket = byKey[`${d.getFullYear()}-${d.getMonth()}`];
+        if (!bucket) continue;
+        if (t.is_credit) bucket.inflow += Number(t.amount);
+        else bucket.outflow += Number(t.amount);
+    }
+    return months;
+});
+
+const cashFlowMax = computed(() => Math.max(1, ...cashFlowMonths.value.map((m) => m[cashFlowView.value])));
 
 /* ── Filters ─────────────────────────────────────────────────────────── */
 const activeFilter = ref('all');
@@ -82,12 +111,6 @@ const statusTone = {
     failed: 'wal-badge--red',
 };
 
-const statusIcon = {
-    completed: CircleCheck,
-    pending: Clock,
-    failed: CircleClose,
-};
-
 /* ── Deposit ─────────────────────────────────────────────────────────── */
 const depositOpen = ref(false);
 
@@ -112,145 +135,180 @@ function openWithdraw() {
 
 <template>
     <DesignPreviewLayout title="Wallet">
+        <Head title="Wallet" />
 
         <div class="wal-page">
-            <!-- ── Two-column layout: 70% transactions / 30% balance card ── -->
-            <div class="wal-columns">
-                <!-- 70% -->
-                <div class="wal-col-main">
-                    <div class="wal-section-head">
+
+            <div class="wal-header">
+                <div>
+                    <h1 class="wal-title">Wallet &amp; Finance</h1>
+                    <p class="wal-subtitle">Track your balance, escrow holdings, and every transaction across the exchange.</p>
+                </div>
+                <button type="button" class="wal-btn wal-btn--primary" @click="openDeposit">
+                    <el-icon :size="15"><CirclePlus /></el-icon> Deposit Funds
+                </button>
+            </div>
+
+            <!-- ── Top: balance + cash flow ─────────────────────────────── -->
+            <div class="wal-top-grid">
+                <div class="wal-card wal-balance-card">
+                    <div class="wal-balance-head">
+                        <span class="wal-status" :class="wallet.status === 'active' ? 'wal-status--on' : 'wal-status--off'">{{ wallet.status }}</span>
+                        <h2 class="wal-card-title">Total Balance</h2>
+                        <p class="wal-card-sub">Available for trading</p>
+                    </div>
+
+                    <div class="wal-balance-amount">
+                        <span class="wal-balance-amount__int">{{ wallet.currency }} {{ heroBalance.intPart }}</span>
+                        <span class="wal-balance-amount__dec">.{{ heroBalance.decPart }}</span>
+                    </div>
+
+                    <div class="wal-balance-actions">
+                        <button type="button" class="wal-btn wal-btn--sm" @click="openTransfer">
+                            <el-icon :size="13"><Promotion /></el-icon> Transfer
+                        </button>
+                        <button type="button" class="wal-btn wal-btn--sm" @click="openWithdraw">
+                            <el-icon :size="13"><Bottom /></el-icon> Withdraw
+                        </button>
+                    </div>
+
+                    <div class="wal-balance-footer">
+                        <div class="wal-balance-stat">
+                            <span class="wal-balance-stat__label">Total Balance</span>
+                            <strong class="wal-balance-stat__val">{{ formatMoney(wallet.balance) }}</strong>
+                        </div>
+                        <div class="wal-balance-stat">
+                            <span class="wal-balance-stat__label">Locked</span>
+                            <strong class="wal-balance-stat__val">{{ formatMoney(wallet.locked_balance) }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wal-card wal-cashflow-card">
+                    <div class="wal-cashflow-head">
                         <div>
-                            <h1 class="wal-section-title">Wallet</h1>
-                            <p class="wal-section-sub mt-2">Transaction details</p>
+                            <h2 class="wal-card-title">Cash Flow</h2>
+                            <p class="wal-card-sub">Last 6 months</p>
                         </div>
                         <div class="wal-segmented">
                             <button
-                                v-for="filter in filters"
-                                :key="filter.key"
                                 type="button"
                                 class="wal-segmented__option"
-                                :class="{ 'wal-segmented__option--active': activeFilter === filter.key }"
-                                @click="activeFilter = filter.key"
-                            >
-                                {{ filter.label }} <span class="wal-segmented__count">{{ tabCount(filter.key) }}</span>
-                            </button>
+                                :class="{ 'wal-segmented__option--active': cashFlowView === 'inflow' }"
+                                @click="cashFlowView = 'inflow'"
+                            >Inflow</button>
+                            <button
+                                type="button"
+                                class="wal-segmented__option"
+                                :class="{ 'wal-segmented__option--active': cashFlowView === 'outflow' }"
+                                @click="cashFlowView = 'outflow'"
+                            >Outflow</button>
                         </div>
                     </div>
 
-                    <el-table :data="filteredTransactions" class="wal-table">
-                        <template #empty>
-                            <div class="wal-empty">
-                                <el-icon :size="24"><FolderOpened /></el-icon>
-                                <p>No transactions yet — your ledger will appear here once money moves in or out.</p>
+                    <div class="wal-chart">
+                        <div v-for="m in cashFlowMonths" :key="m.key" class="wal-chart__col">
+                            <div class="wal-chart__bar-track">
+                                <div
+                                    class="wal-chart__bar"
+                                    :class="cashFlowView === 'inflow' ? 'wal-chart__bar--in' : 'wal-chart__bar--out'"
+                                    :style="{ height: `${Math.max(4, (m[cashFlowView] / cashFlowMax) * 100)}%` }"
+                                    :title="formatMoney(m[cashFlowView])"
+                                ></div>
                             </div>
-                        </template>
-                        <el-table-column width="50" align="center">
-                            <template #header>
-                                <el-icon :size="13" class="wal-th__solo"><Sort /></el-icon>
-                            </template>
-                            <template #default="{ row }">
-                                <span class="wal-dir" :class="row.is_credit ? 'wal-dir--in' : 'wal-dir--out'">
-                                    <el-icon :size="12"><component :is="row.is_credit ? Top : Bottom" /></el-icon>
-                                </span>
-                            </template>
-                        </el-table-column>
-                        <el-table-column min-width="220">
-                            <template #header>
-                                <span class="wal-th"><el-icon :size="12"><Document /></el-icon> Description</span>
-                            </template>
-                            <template #default="{ row }">
-                                <div class="wal-cell-desc">
-                                    <span class="wal-cell-desc__text">{{ row.description || typeLabel(row.type) }}</span>
-                                    <span class="wal-cell-desc__meta">
-                                        {{ typeLabel(row.type) }}<template v-if="row.counterparty_name"> · {{ row.counterparty_name }}</template>
-                                    </span>
-                                </div>
-                            </template>
-                        </el-table-column>
-                        <el-table-column width="130">
-                            <template #header>
-                                <span class="wal-th"><el-icon :size="12"><CircleCheck /></el-icon> Status</span>
-                            </template>
-                            <template #default="{ row }">
-                                <span class="wal-badge" :class="statusTone[row.status] ?? 'wal-badge--muted'">
-                                    <el-icon :size="11"><component :is="statusIcon[row.status] ?? InfoFilled" /></el-icon> {{ row.status }}
-                                </span>
-                            </template>
-                        </el-table-column>
-                        <el-table-column width="160">
-                            <template #header>
-                                <span class="wal-th"><el-icon :size="12"><Calendar /></el-icon> Date</span>
-                            </template>
-                            <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
-                        </el-table-column>
-                        <el-table-column width="170" align="right">
-                            <template #header>
-                                <span class="wal-th"><el-icon :size="12"><Money /></el-icon> Amount</span>
-                            </template>
-                            <template #default="{ row }">
-                                <span class="wal-amount" :class="row.is_credit ? 'wal-text-green' : 'wal-text-red'">
-                                    {{ row.is_credit ? '+' : '−' }}{{ formatMoney(row.amount, row.currency) }}
-                                </span>
-                            </template>
-                        </el-table-column>
-                    </el-table>
+                            <span class="wal-chart__label">{{ m.label }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Lower: wallets + recent activity ─────────────────────── -->
+            <div class="wal-lower-grid">
+                <div class="wal-col-wallets">
+                    <div class="wal-lower-head">
+                        <h3 class="wal-lower-title">Your Wallets</h3>
+                    </div>
+
+                    <div class="wal-account-tile">
+                        <div class="wal-account-tile__top">
+                            <span class="wal-account-tile__icon"><el-icon :size="18"><OfficeBuilding /></el-icon></span>
+                            <span class="wal-account-tile__badge">Primary</span>
+                        </div>
+                        <h4 class="wal-account-tile__name">Main Wallet</h4>
+                        <p class="wal-account-tile__val">{{ formatMoney(wallet.available_balance) }}</p>
+                    </div>
+
+                    <Link :href="route('escrow.index')" class="wal-account-tile wal-account-tile--dark">
+                        <div class="wal-account-tile__top">
+                            <span class="wal-account-tile__icon wal-account-tile__icon--dark"><el-icon :size="18"><Lock /></el-icon></span>
+                            <span class="wal-account-tile__badge wal-account-tile__badge--dark">Escrow</span>
+                        </div>
+                        <h4 class="wal-account-tile__name">Escrow Wallet</h4>
+                        <p class="wal-account-tile__val">{{ formatMoney(escrowWallet.balance, escrowWallet.currency) }}</p>
+                        <p class="wal-account-tile__note">Funds reserved for active trades</p>
+                    </Link>
                 </div>
 
-                <!-- 30% -->
-                <div class="wal-col-side pt-4">
-                    <div class="wal-side-card">
-                        <div class="wal-side-balance">
-                            <span class="wal-side-balance__label">
-                                <el-icon :size="13"><WalletIcon /></el-icon> Available Balance
-                                <span class="wal-status" :class="wallet.status === 'active' ? 'wal-status--on' : 'wal-status--off'">{{ wallet.status }}</span>
-                            </span>
-                            <strong class="wal-side-balance__val">{{ formatMoney(wallet.available_balance) }}</strong>
-                        </div>
-
-                        <div class="wal-side-actions">
-                            <button type="button" class="wal-btn wal-btn--primary wal-btn--block" @click="openDeposit">
-                                <el-icon :size="14"><Top /></el-icon> Deposit
-                            </button>
-                            <button type="button" class="wal-btn wal-btn--block" @click="openTransfer">
-                                <el-icon :size="14"><Promotion /></el-icon> Transfer
-                            </button>
-                            <button type="button" class="wal-btn wal-btn--block" @click="openWithdraw">
-                                <el-icon :size="14"><Bottom /></el-icon> Withdraw
-                            </button>
-                        </div>
-
-                        <div class="wal-side-divider" />
-
-                        <div class="wal-side-metrics">
-                            <Link :href="route('escrow.index')" class="wal-side-metric wal-side-metric--link">
-                                <span class="wal-side-metric__icon wal-side-metric__icon--amber"><el-icon :size="14"><Lock /></el-icon></span>
-                                <span class="wal-side-metric__body">
-                                    <span class="wal-side-metric__label">In Escrow</span>
-                                    <strong class="wal-side-metric__val">{{ formatMoney(escrowWallet.balance, escrowWallet.currency) }}</strong>
-                                </span>
-                            </Link>
-                            <div class="wal-side-metric">
-                                <span class="wal-side-metric__icon wal-side-metric__icon--green"><el-icon :size="14"><Top /></el-icon></span>
-                                <span class="wal-side-metric__body">
-                                    <span class="wal-side-metric__label">Total Received</span>
-                                    <strong class="wal-side-metric__val wal-text-green">{{ kpis.received }}</strong>
-                                </span>
-                            </div>
-                            <div class="wal-side-metric">
-                                <span class="wal-side-metric__icon wal-side-metric__icon--red"><el-icon :size="14"><Bottom /></el-icon></span>
-                                <span class="wal-side-metric__body">
-                                    <span class="wal-side-metric__label">Total Spent</span>
-                                    <strong class="wal-side-metric__val wal-text-red">{{ kpis.spent }}</strong>
-                                </span>
-                            </div>
-                            <div class="wal-side-metric">
-                                <span class="wal-side-metric__icon"><el-icon :size="14"><List /></el-icon></span>
-                                <span class="wal-side-metric__body">
-                                    <span class="wal-side-metric__label">Total Transactions</span>
-                                    <strong class="wal-side-metric__val">{{ kpis.count }}</strong>
-                                </span>
+                <div class="wal-col-main">
+                    <div class="wal-card wal-activity-card">
+                        <div class="wal-section-head">
+                            <h3 class="wal-lower-title">Recent Activity</h3>
+                            <div class="wal-segmented">
+                                <button
+                                    v-for="filter in filters"
+                                    :key="filter.key"
+                                    type="button"
+                                    class="wal-segmented__option"
+                                    :class="{ 'wal-segmented__option--active': activeFilter === filter.key }"
+                                    @click="activeFilter = filter.key"
+                                >
+                                    {{ filter.label }} <span class="wal-segmented__count">{{ tabCount(filter.key) }}</span>
+                                </button>
                             </div>
                         </div>
+
+                        <el-table :data="filteredTransactions" class="wal-table">
+                            <template #empty>
+                                <div class="wal-empty">
+                                    <el-icon :size="24"><FolderOpened /></el-icon>
+                                    <p>No transactions yet — your ledger will appear here once money moves in or out.</p>
+                                </div>
+                            </template>
+                            <el-table-column width="56" align="center">
+                                <template #default="{ row }">
+                                    <span class="wal-dir" :class="row.is_credit ? 'wal-dir--in' : 'wal-dir--out'">
+                                        <el-icon :size="13"><component :is="row.is_credit ? Top : Bottom" /></el-icon>
+                                    </span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="Description" min-width="220">
+                                <template #default="{ row }">
+                                    <div class="wal-cell-desc">
+                                        <span class="wal-cell-desc__text">{{ row.description || typeLabel(row.type) }}</span>
+                                        <span class="wal-cell-desc__meta">
+                                            {{ typeLabel(row.type) }}<template v-if="row.counterparty_name"> · {{ row.counterparty_name }}</template>
+                                        </span>
+                                    </div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="Status" width="130">
+                                <template #default="{ row }">
+                                    <span class="wal-badge" :class="statusTone[row.status] ?? 'wal-badge--muted'">
+                                        <i></i> {{ row.status }}
+                                    </span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="Date" width="160">
+                                <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
+                            </el-table-column>
+                            <el-table-column label="Amount" width="170" align="right">
+                                <template #default="{ row }">
+                                    <span class="wal-amount" :class="row.is_credit ? 'wal-text-green' : 'wal-text-red'">
+                                        {{ row.is_credit ? '+' : '−' }}{{ formatMoney(row.amount, row.currency) }}
+                                    </span>
+                                </template>
+                            </el-table-column>
+                        </el-table>
                     </div>
                 </div>
             </div>
@@ -269,48 +327,77 @@ function openWithdraw() {
 
 <style scoped>
 .wal-page {
-    --green: #004532;
-    --red: #991b1b;
-    --border: #eef2f0;
-    --on-surface: #111827;
-    --on-surface-var: #6b7280;
-    --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
-    color: var(--on-surface);
-    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-family: var(--dp-font-sans);
+    color: var(--dp-on-surface);
 }
 
+.wal-card {
+    background: var(--dp-surface-container-lowest);
+    border-radius: var(--dp-card-radius);
+    box-shadow: var(--dp-card-shadow);
+}
 
-/* ── Header buttons ──────────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────────────── */
+.wal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.wal-title {
+    font-size: clamp(1.375rem, 1.05rem + 1.2vw, 1.75rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--dp-on-surface);
+    margin: 0 0 4px;
+}
+
+.wal-subtitle {
+    font-size: 0.9375rem;
+    color: var(--dp-on-surface-variant);
+    margin: 0;
+    max-width: 560px;
+    line-height: 1.5;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
 .wal-btn {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    border-radius: 9px;
+    border-radius: 10px;
     font-size: 0.8125rem;
     font-weight: 600;
     letter-spacing: 0.01em;
-    padding: 9px 16px;
+    padding: 10px 16px;
     cursor: pointer;
-    border: 1px solid var(--border);
-    background: #fff;
-    color: var(--on-surface);
-    transition: opacity 0.15s ease, background 0.15s ease;
+    border: 1px solid var(--dp-outline-variant);
+    background: var(--dp-surface-container-lowest);
+    color: var(--dp-on-surface);
+    transition: background 0.15s ease, opacity 0.15s ease;
+    white-space: nowrap;
 }
 
-.wal-btn:hover:not(:disabled) { background: var(--surface-low); }
+.wal-btn:hover:not(:disabled) { background: var(--dp-surface-container-low); }
 .wal-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+.wal-btn:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 
 .wal-btn--primary {
-    background: linear-gradient(135deg, #004532, #065f46);
+    background: var(--dp-primary);
     border-color: transparent;
-    color: #fff;
+    color: var(--dp-on-primary);
+    border-radius: 999px;
+    padding: 10px 20px;
 }
 
-.wal-btn--primary:hover:not(:disabled) { opacity: 0.9; background: linear-gradient(135deg, #004532, #065f46); }
+.wal-btn--primary:hover:not(:disabled) { opacity: 0.88; background: var(--dp-primary); }
 
-.wal-btn--block { width: 100%; justify-content: center; }
+.wal-btn--sm { flex: 1; justify-content: center; padding: 8px 12px; font-size: 0.75rem; }
 
 .wal-status {
     display: inline-flex;
@@ -323,172 +410,112 @@ function openWithdraw() {
     letter-spacing: 0.01em;
 }
 
-.wal-status--on { background: #dcfce7; color: #166534; }
-.wal-status--off { background: #fee2e2; color: #991b1b; }
+.wal-status--on { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
+.wal-status--off { background: var(--dp-error-container); color: var(--dp-error); }
 
-.wal-text-green { color: #166534; }
-.wal-text-red { color: #991b1b; }
+.wal-text-green { color: var(--dp-secondary); }
+.wal-text-red { color: var(--dp-error); }
 
-/* ── Two-column layout ───────────────────────────────────────────────── */
-.wal-columns {
+.wal-card-title { font-size: 1.0625rem; font-weight: 700; color: var(--dp-on-surface); margin: 6px 0 2px; }
+.wal-card-sub { font-size: 0.8125rem; color: var(--dp-on-surface-variant); margin: 0; }
+
+/* ── Top grid: balance + cash flow ──────────────────────────────────── */
+.wal-top-grid {
     display: grid;
-    grid-template-columns: 7fr 3fr;
-    align-items: start;
+    grid-template-columns: 5fr 7fr;
+    gap: 1.25rem;
+    align-items: stretch;
 }
 
-.wal-col-main {
-    padding: 0 0 3rem;
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+.wal-top-grid > *,
+.wal-lower-grid > * {
     min-width: 0;
 }
 
-.wal-col-side {
-    padding: 0 1.5rem 3rem;
-    min-width: 0;
-}
-
-/* ── Side card: balance, actions, metrics ─────────────────────────────── */
-.wal-side-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 16px;
+.wal-balance-card {
     padding: 1.5rem;
-    position: sticky;
-    top: 88px;
-}
-
-.wal-side-balance {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 1.25rem;
 }
 
-.wal-side-balance__label {
+.wal-balance-head { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+
+.wal-balance-amount {
+    margin: 1.25rem 0;
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--on-surface-var);
+    align-items: baseline;
+    flex-wrap: wrap;
 }
 
-.wal-side-balance__val {
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--on-surface);
-    font-variant-numeric: tabular-nums;
-}
-
-.wal-side-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 1.5rem;
-}
-
-.wal-side-divider {
-    height: 1px;
-    background: var(--border);
-    margin-bottom: 1.25rem;
-}
-
-.wal-side-metrics {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.wal-side-metric {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px;
-    margin: 0 -8px;
-    border-radius: 10px;
-    text-decoration: none;
-    color: inherit;
-    transition: background 0.15s ease;
-}
-
-.wal-side-metric--link:hover { background: var(--surface-low); }
-
-.wal-side-metric__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 9px;
-    flex-shrink: 0;
-    background: var(--surface-low);
-    color: var(--on-surface-var);
-}
-
-.wal-side-metric__icon--green { background: #dcfce7; color: #166534; }
-.wal-side-metric__icon--red { background: #fee2e2; color: #991b1b; }
-.wal-side-metric__icon--amber { background: #fef3c7; color: #92400e; }
-
-.wal-side-metric__body {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
-.wal-side-metric__label {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    color: var(--on-surface-var);
-}
-
-.wal-side-metric__val {
-    font-size: 0.8125rem;
+.wal-balance-amount__int {
+    font-size: clamp(1.75rem, 1.2rem + 2.2vw, 2.5rem);
     font-weight: 700;
-    color: var(--on-surface);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+    color: var(--dp-primary);
     font-variant-numeric: tabular-nums;
 }
 
-/* ── Section head + filter ─────────────────────────────────────────────── */
-.wal-section-head {
+.wal-balance-amount__dec {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--dp-on-surface-variant);
+    font-variant-numeric: tabular-nums;
+}
+
+.wal-balance-actions {
     display: flex;
-    align-items: flex-end;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+}
+
+.wal-balance-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--dp-outline-variant);
+    margin-top: auto;
+}
+
+.wal-balance-stat { display: flex; flex-direction: column; gap: 3px; }
+.wal-balance-stat__label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dp-on-surface-variant); }
+.wal-balance-stat__val { font-size: 0.9375rem; font-weight: 700; color: var(--dp-on-surface); font-variant-numeric: tabular-nums; }
+
+/* ── Cash flow chart ─────────────────────────────────────────────────── */
+.wal-cashflow-card { padding: 1.5rem; display: flex; flex-direction: column; }
+
+.wal-cashflow-head {
+    display: flex;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
-    margin: 0 0 0.75rem;
-    padding: 1.5rem 1.5rem 1rem;
-    background: #fff;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
 }
 
-.wal-section-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-    color: var(--on-surface);
-    margin: 0;
+.wal-chart {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: clamp(8px, 2vw, 24px);
+    min-height: 160px;
 }
 
-.wal-section-sub {
-    font-size: 0.75rem;
-    color: var(--on-surface-var);
-    line-height: 1.3;
-    margin: 0;
-}
+.wal-chart__col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; height: 100%; }
+.wal-chart__bar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.wal-chart__bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.3s ease; min-height: 4px; }
+.wal-chart__bar--in { background: var(--dp-secondary); }
+.wal-chart__bar--out { background: var(--dp-error); opacity: 0.85; }
+.wal-chart__label { font-size: 0.75rem; color: var(--dp-on-surface-variant); font-weight: 600; }
 
+/* ── Segmented toggle (shared: cash flow + activity filters) ───────────── */
 .wal-segmented {
     display: flex;
     gap: 2px;
     padding: 3px;
-    background: var(--surface-low);
+    background: var(--dp-surface-container-low);
     border-radius: 10px;
+    flex-wrap: wrap;
 }
 
 .wal-segmented__option {
@@ -498,7 +525,7 @@ function openWithdraw() {
     border: none;
     border-radius: 8px;
     background: transparent;
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
     font-size: 0.75rem;
     font-weight: 700;
     padding: 7px 12px;
@@ -507,12 +534,13 @@ function openWithdraw() {
     transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.wal-segmented__option:hover { color: var(--on-surface); }
+.wal-segmented__option:hover { color: var(--dp-on-surface); }
+.wal-segmented__option:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 
 .wal-segmented__option--active {
-    background: #fff;
-    color: var(--green);
-    box-shadow: 0 1px 3px rgba(17, 24, 39, 0.1);
+    background: var(--dp-surface-container-lowest);
+    color: var(--dp-secondary);
+    box-shadow: 0 1px 3px rgba(39, 19, 16, 0.1);
 }
 
 .wal-segmented__count {
@@ -523,100 +551,158 @@ function openWithdraw() {
     height: 16px;
     padding: 0 4px;
     border-radius: 999px;
-    background: rgba(0, 69, 50, 0.08);
-    color: var(--green);
+    background: var(--dp-secondary-container);
+    color: var(--dp-on-secondary-container);
     font-size: 0.625rem;
     font-weight: 800;
 }
 
-.wal-segmented__option--active .wal-segmented__count { background: rgba(0, 69, 50, 0.14); }
-
-/* ── Table ───────────────────────────────────────────────────────────── */
-.wal-table {
-    --el-table-border-color: var(--border);
-    --el-table-header-bg-color: var(--surface-low);
-    --el-table-header-text-color: var(--on-surface-var);
-    font-family: 'Manrope', system-ui, sans-serif;
+/* ── Lower grid: wallets + activity ─────────────────────────────────── */
+.wal-lower-grid {
+    display: grid;
+    grid-template-columns: 4fr 8fr;
+    gap: 1.25rem;
+    align-items: start;
 }
+
+.wal-col-wallets { display: flex; flex-direction: column; gap: 1rem; }
+.wal-lower-head { display: flex; align-items: center; justify-content: space-between; }
+.wal-lower-title { font-size: 1.0625rem; font-weight: 700; color: var(--dp-on-surface); margin: 0; }
+
+.wal-account-tile {
+    background: var(--dp-surface-container-lowest);
+    border-radius: 18px;
+    box-shadow: var(--dp-card-shadow);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wal-account-tile:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(39,19,16,.05), 0 12px 24px -14px rgba(39,19,16,.18); }
+.wal-account-tile:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
+.wal-account-tile--dark:focus-visible { outline-color: var(--dp-on-primary); }
+
+.wal-account-tile--dark { background: var(--dp-primary); color: var(--dp-on-primary); }
+
+.wal-account-tile__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+
+.wal-account-tile__icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--dp-secondary-container);
+    color: var(--dp-on-secondary-container);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wal-account-tile__icon--dark { background: rgba(255,255,255,.12); color: var(--dp-on-primary); }
+
+.wal-account-tile__badge {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-on-surface-variant);
+}
+
+.wal-account-tile__badge--dark { background: rgba(255,255,255,.14); color: var(--dp-on-primary); }
+
+.wal-account-tile__name { font-size: 0.9375rem; font-weight: 700; margin: 0; }
+.wal-account-tile__val { font-size: 1.125rem; font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; }
+.wal-account-tile__note { font-size: 0.75rem; opacity: 0.75; margin: 2px 0 0; }
+
+/* ── Recent activity ─────────────────────────────────────────────────── */
+.wal-col-main { min-width: 0; }
+
+.wal-activity-card { padding: 1.5rem; overflow-x: auto; }
+
+.wal-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+}
+
+.wal-table {
+    --el-table-header-bg-color: var(--dp-surface-container-low);
+    --el-table-header-text-color: var(--dp-on-surface-variant);
+    --el-table-tr-bg-color: transparent;
+    --el-table-row-hover-bg-color: var(--dp-surface-container-low);
+    font-family: var(--dp-font-sans);
+}
+
+/* Borderless: Element's default table draws a hairline under every header
+   and body cell — dropped in favor of generous row padding + hover shading
+   for separation, matching this app's card-based (no internal dividers)
+   convention. */
+.wal-table :deep(.el-table__cell) { border-bottom: none !important; }
+.wal-table :deep(.el-table__inner-wrapper::before),
+.wal-table :deep(.el-table__inner-wrapper::after),
+.wal-table :deep(.el-table::before) { display: none !important; }
 
 .wal-table :deep(.el-table__header) th {
     font-size: 0.6875rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    padding: 11px 0;
+    padding: 12px 0;
 }
 
-.wal-table :deep(.cell) { padding: 0 12px; line-height: 1.5; }
-.wal-table :deep(.el-table__inner-wrapper::before) { display: none; }
-.wal-table :deep(td.el-table__cell) { padding: 12px 0; }
-.wal-table :deep(.el-table__row:hover .el-table__cell) { background: var(--surface-low); }
-
-.wal-th {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.wal-th .el-icon,
-.wal-th__solo { color: var(--on-surface-var); opacity: 0.85; }
+.wal-table :deep(.cell) { padding: 0 14px; line-height: 1.5; }
+.wal-table :deep(td.el-table__cell) { padding: 16px 0; }
+.wal-table :deep(.el-table__row) { transition: background 0.15s ease; }
 
 .wal-dir {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     border-radius: 999px;
 }
 
-.wal-dir--in { background: #dcfce7; color: #166534; }
-.wal-dir--out { background: #fee2e2; color: #991b1b; }
+.wal-dir--in { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
+.wal-dir--out { background: var(--dp-error-container); color: var(--dp-error); }
 
-.wal-cell-desc {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.wal-cell-desc__text {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--on-surface);
-    letter-spacing: -0.005em;
-}
-
-.wal-cell-desc__meta {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--on-surface-var);
-    letter-spacing: 0.01em;
-}
+.wal-cell-desc { display: flex; flex-direction: column; gap: 4px; }
+.wal-cell-desc__text { font-size: 0.8125rem; font-weight: 600; color: var(--dp-on-surface); letter-spacing: -0.005em; }
+.wal-cell-desc__meta { font-size: 0.75rem; font-weight: 500; color: var(--dp-on-surface-variant); letter-spacing: 0.01em; }
 
 .wal-amount {
     font-size: 0.8125rem;
     font-weight: 700;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-variant-numeric: tabular-nums;
 }
 
 .wal-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     border-radius: 999px;
     font-size: 0.6875rem;
     font-weight: 600;
     letter-spacing: 0.01em;
-    padding: 5px 10px;
+    padding: 5px 10px 5px 8px;
     text-transform: capitalize;
     white-space: nowrap;
 }
 
-.wal-badge--green { background: #dcfce7; color: #166534; }
+.wal-badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+.wal-badge--green { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
 .wal-badge--amber { background: #fef3c7; color: #92400e; }
-.wal-badge--red { background: #fee2e2; color: #991b1b; }
-.wal-badge--muted { background: #f3f4f6; color: #6b7280; }
+.wal-badge--red { background: var(--dp-error-container); color: var(--dp-error); }
+.wal-badge--muted { background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); }
 
 .wal-empty {
     display: flex;
@@ -624,10 +710,10 @@ function openWithdraw() {
     align-items: center;
     gap: 8px;
     padding: 2.5rem 1rem;
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
 }
 
-.wal-empty .el-icon { color: #d1d5db; }
+.wal-empty .el-icon { color: var(--dp-outline-variant); }
 
 .wal-empty p {
     max-width: 320px;
@@ -638,22 +724,24 @@ function openWithdraw() {
     text-align: center;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────── */
-@media (max-width: 1023.98px) {
-    .wal-columns { grid-template-columns: 1fr; }
-    .wal-col-main { border-right: none; }
-    .wal-col-side {
-        order: -1;
-        border-bottom: 1px solid var(--border);
-        padding-bottom: 1.75rem;
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .wal-account-tile,
+    .wal-chart__bar {
+        transition: none;
     }
-    .wal-side-card { position: static; }
+    .wal-account-tile:hover { transform: none; }
 }
 
-@media (max-width: 767.98px) {
-    .wal-section-head { padding: 1.25rem 1.25rem 1rem; }
-    .wal-col-main { padding: 0 1.25rem 3rem; }
-    .wal-col-side { padding: 1.25rem 1.25rem 1.75rem; }
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .wal-top-grid { grid-template-columns: 1fr; }
+    .wal-lower-grid { grid-template-columns: 1fr; }
+    .wal-col-wallets { flex-direction: row; }
+    .wal-account-tile { flex: 1; }
 }
 
+@media (max-width: 640px) {
+    .wal-col-wallets { flex-direction: column; }
+}
 </style>

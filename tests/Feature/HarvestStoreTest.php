@@ -55,13 +55,11 @@ class HarvestStoreTest extends TestCase
             'user_id' => $user->id,
             'first_name' => 'Amina',
             'last_name' => 'Nabirye',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'amina@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Bugisu Cooperative',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([
@@ -114,13 +112,11 @@ class HarvestStoreTest extends TestCase
             'user_id' => $user->id,
             'first_name' => 'Amina',
             'last_name' => 'Nabirye',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'amina@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Bugisu Cooperative',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([
@@ -157,13 +153,11 @@ class HarvestStoreTest extends TestCase
             'user_id' => $user->id,
             'first_name' => 'Amina',
             'last_name' => 'Nabirye',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'amina@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Bugisu Cooperative',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([
@@ -220,13 +214,11 @@ class HarvestStoreTest extends TestCase
             'user_id' => $owner->id,
             'first_name' => 'Amina',
             'last_name' => 'Nabirye',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'amina@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Bugisu Cooperative',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([
@@ -270,13 +262,11 @@ class HarvestStoreTest extends TestCase
             'user_id' => $owner->id,
             'first_name' => 'Amina',
             'last_name' => 'Nabirye',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'amina@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Bugisu Cooperative',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([
@@ -323,13 +313,11 @@ class HarvestStoreTest extends TestCase
             'user_id' => $user->id,
             'first_name' => 'Amina',
             'last_name' => 'Nabirye',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'amina@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Bugisu Cooperative',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([
@@ -390,13 +378,11 @@ class HarvestStoreTest extends TestCase
             'user_id' => $user->id,
             'first_name' => 'Amina',
             'last_name' => 'Nabirye',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'amina@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Bugisu Cooperative',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([
@@ -441,13 +427,11 @@ class HarvestStoreTest extends TestCase
             'user_id' => $user->id,
             'first_name' => 'Amina',
             'last_name' => 'Nabirye',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'amina@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Bugisu Cooperative',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([
@@ -500,13 +484,11 @@ class HarvestStoreTest extends TestCase
             'user_id' => $user->id,
             'first_name' => 'Amina',
             'last_name' => 'Nabirye',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'amina@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Bugisu Cooperative',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([

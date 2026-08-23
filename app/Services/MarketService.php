@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Http\Resources\MarketImageResource;
 use App\Models\Market;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -103,7 +104,7 @@ class MarketService
      */
     public function show(Market $market): array
     {
-        $market->loadMissing(['user', 'lot.batch', 'lot.sensoryProfile', 'lot.storageProfile']);
+        $market->loadMissing(['user', 'lot.batch', 'lot.sensoryProfile', 'lot.storageProfile', 'images']);
 
         $lot = $market->lot;
         $batch = $lot?->batch;
@@ -167,6 +168,7 @@ class MarketService
             'status' => $market->status,
             'notes' => $market->notes ?: $lot?->description,
             'image' => $market->image,
+            'images' => MarketImageResource::collection($market->images)->resolve(),
             'seller_name' => $market->user?->name,
             'created_at' => optional($market->created_at)?->toDateTimeString(),
             'specs' => $specs,

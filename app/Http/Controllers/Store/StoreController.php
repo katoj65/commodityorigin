@@ -52,7 +52,10 @@ class StoreController extends Controller
     {
         $store = $this->stores->forUser($request->user()->id);
 
-        return Inertia::render('Store/Market', $this->headerContext($request, $store));
+        return Inertia::render('Store/Market', [
+            ...$this->headerContext($request, $store),
+            'items' => StoreItemResource::collection($this->stores->browsable())->resolve(),
+        ]);
     }
 
     /**

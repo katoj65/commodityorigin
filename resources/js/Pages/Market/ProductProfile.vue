@@ -1,16 +1,22 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
 import {
     Minus, Plus, ShoppingBag, LocationFilled, ArrowLeft,
     Grape, Pouring, Connection, UserFilled,
     Star, TrendCharts, Setting, Collection, MapLocation, ChatLineSquare, House, Calendar,
+    MoreFilled, Edit, Picture, Delete,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import EditMarketListingDialog from '@/Components/Modals/EditMarketListingDialog.vue';
+import AddMarketImagesDialog from '@/Components/Modals/AddMarketImagesDialog.vue';
 
-defineProps({
+const props = defineProps({
     item: { type: Object, default: () => ({}) },
     cartQuantity: { type: Number, default: 0 },
+    canManage: { type: Boolean, default: false },
+    maxImages: { type: Number, default: 3 },
 });
 
 /* ── Hard-coded showcase content — ported 1:1 from the "Sumatra
@@ -86,6 +92,25 @@ const PLACEHOLDER_IMAGE = '/images/coffee_image.jpg';
 const quantity = ref(1);
 function decrementQuantity() { if (quantity.value > 1) quantity.value -= 1; }
 function incrementQuantity() { quantity.value += 1; }
+
+/* ── Owner management — Edit / Add Images / Delete dropdown, visible only
+   when canManage is true (the authenticated user listed this lot). This
+   is the one real, backend-wired piece on this page — it acts on the
+   real `item` regardless of the placeholder content shown above. ─────── */
+const editDialogOpen = ref(false);
+const addImagesDialogOpen = ref(false);
+const deleteConfirmOpen = ref(false);
+const remainingImageSlots = computed(() => Math.max(0, props.maxImages - (props.item.images?.length || 0)));
+
+function onManageCommand(command) {
+    if (command === 'edit') editDialogOpen.value = true;
+    else if (command === 'add-images') addImagesDialogOpen.value = true;
+    else if (command === 'delete') deleteConfirmOpen.value = true;
+}
+
+function confirmDeleteListing() {
+    router.delete(route('market.destroy', props.item.id));
+}
 </script>
 
 <template>
@@ -134,6 +159,21 @@ function incrementQuantity() { quantity.value += 1; }
 
                 <div class="mp-hero__buy">
                     <div class="mp-buy-card">
+                        <div v-if="canManage" class="mp-manage">
+                            <el-dropdown trigger="click" placement="bottom-end" popper-class="mp-manage-menu" @command="onManageCommand">
+                                <button type="button" class="mp-manage__btn">
+                                    <el-icon :size="16"><MoreFilled /></el-icon> Manage Listing
+                                </button>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item command="edit"><el-icon><Edit /></el-icon> Edit</el-dropdown-item>
+                                        <el-dropdown-item command="add-images" :disabled="remainingImageSlots <= 0"><el-icon><Picture /></el-icon> Add Images</el-dropdown-item>
+                                        <el-dropdown-item command="delete" divided><el-icon><Delete /></el-icon> Delete</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </div>
+
                         <div class="mp-buy-card__price-row">
                             <span class="mp-buy-card__price">${{ product.price.toFixed(2) }}</span>
                             <span class="mp-buy-card__unit">/ {{ product.unit }}</span>
@@ -215,6 +255,16 @@ function incrementQuantity() { quantity.value += 1; }
                 </div>
             </section>
         </div>
+
+        <EditMarketListingDialog v-model="editDialogOpen" :item="item" />
+        <AddMarketImagesDialog v-model="addImagesDialogOpen" :market-id="item.id" :remaining-slots="remainingImageSlots" />
+        <ConfirmDialog
+            v-model="deleteConfirmOpen"
+            title="Delete Listing"
+            :message="`${item.name || item.lot_code} will be permanently removed from the marketplace, along with its photos.`"
+            confirm-text="Delete Listing"
+            @confirm="confirmDeleteListing"
+        />
     </DesignPreviewLayout>
 </template>
 
@@ -226,7 +276,7 @@ function incrementQuantity() { quantity.value += 1; }
    headline font — see MarketListings.vue) is used in place of
    DESIGN.md's Playfair Display, since the "app theme" already committed
    to a single sans-serif system everywhere else. ───────────────────────── */
-.mp-page { font-family: var(--dp-font-sans); color: var(--dp-on-surface); margin-top: -24px; }
+.mp-page { font-family: var(--dp-font-sans); color: var(--dp-on-surface); }
 
 .mp-back {
     display: inline-flex; align-items: center; gap: 6px; margin-bottom: 16px;
@@ -280,6 +330,15 @@ function incrementQuantity() { quantity.value += 1; }
 .mp-hero__buy { display: flex; flex-direction: column; gap: 20px; }
 .mp-buy-card { padding: 22px; background: var(--dp-surface-container-lowest); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); transition: box-shadow .2s ease; }
 .mp-buy-card:hover { box-shadow: 0 1px 2px rgba(39, 19, 16, .04), 0 14px 28px -14px rgba(39, 19, 16, .18); }
+
+.mp-manage { margin-bottom: 14px; }
+.mp-manage__btn {
+    width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px; border: 1px solid var(--dp-outline-variant); border-radius: 8px; background: var(--dp-surface-container-lowest);
+    color: var(--dp-on-surface-variant); font-size: .8125rem; font-weight: 700; cursor: pointer; transition: background .12s ease;
+}
+.mp-manage__btn:hover { background: var(--dp-surface-container-low); color: var(--dp-on-surface); }
+
 .mp-buy-card__price-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; }
 .mp-buy-card__price { font-family: var(--dp-font-sans); font-size: 1.75rem; font-weight: 800; letter-spacing: -.01em; color: var(--dp-on-surface); }
 .mp-buy-card__unit { font-size: .75rem; color: var(--dp-on-surface-variant); }
@@ -318,7 +377,7 @@ function incrementQuantity() { quantity.value += 1; }
 .mp-farmer-card__impact { display: flex; align-items: center; gap: 8px; font-size: .6875rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--dp-on-surface); }
 .mp-farmer-card__impact-icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; background: var(--dp-secondary-fixed); color: var(--dp-on-secondary-fixed); }
 
-.mp-map { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--dp-card-radius); overflow: hidden; box-shadow: var(--dp-card-shadow); background: var(--dp-surface-container-high); }
+.mp-map { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--dp-card-radius); overflow: hidden; box-shadow: var(--dp-card-shadow); }
 .mp-map__frame { width: 100%; height: 100%; border: 0; display: block; }
 .mp-map__label {
     position: absolute; left: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px;
@@ -349,4 +408,29 @@ function incrementQuantity() { quantity.value += 1; }
     .mp-sustainability__grid { grid-template-columns: 1fr; }
     .mp-hero__stat-grid { grid-template-columns: 1fr 1fr; }
 }
+</style>
+
+<style>
+/* Unscoped on purpose: the dropdown popper teleports to <body>, outside
+   this component's own scope, so a scoped selector can never reach it.
+   Literal dp-palette hex is used here for the same reason. */
+.mp-manage-menu.el-dropdown__popper {
+    border-radius: 10px;
+    border: 1px solid #e2e2e2;
+    box-shadow: 0 12px 32px rgba(39, 19, 16, 0.16);
+    min-width: 180px;
+}
+.mp-manage-menu .el-dropdown-menu { padding: 6px; }
+.mp-manage-menu .el-dropdown-menu__item {
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #504442;
+    padding: 9px 10px;
+    gap: 10px;
+}
+.mp-manage-menu .el-dropdown-menu__item:hover { background: #f3f3f3; color: #1a1c1c; }
+.mp-manage-menu .el-dropdown-menu__item.is-disabled { color: #c4bab8; }
+.mp-manage-menu .el-dropdown-menu__item.is-divided { border-top-color: #eeeeee; }
+.mp-manage-menu .el-dropdown-menu__item.is-divided:hover { color: #ba1a1a; background: #ffdad6; }
 </style>

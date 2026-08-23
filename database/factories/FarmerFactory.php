@@ -21,88 +21,49 @@ class FarmerFactory extends Factory
     public function definition(): array
     {
         $profiles = [
-            [
-                'district' => 'Mbale',
-                'sub_counties' => ['Buginyanya', 'Busiu', 'Bukonde'],
-                'coffee_types' => ['arabica'],
-                'cooperatives' => ['Sipi Farmers Cooperative', 'Mount Elgon Growers Union'],
-            ],
-            [
-                'district' => 'Sironko',
-                'sub_counties' => ['Budadiri', 'Bumasifwa', 'Bukiyi'],
-                'coffee_types' => ['arabica'],
-                'cooperatives' => ['Bugisu Arabica Growers', 'Elgon Highland Cooperative'],
-            ],
-            [
-                'district' => 'Kapchorwa',
-                'sub_counties' => ['Tegeres', 'Kaserem', 'Chema'],
-                'coffee_types' => ['arabica'],
-                'cooperatives' => ['Sebei Highlands Cooperative', 'Kapchorwa Coffee Farmers Union'],
-            ],
-            [
-                'district' => 'Kasese',
-                'sub_counties' => ['Kisinga', 'Kyarumba', 'Nyakiyumbu'],
-                'coffee_types' => ['arabica', 'mixed'],
-                'cooperatives' => ['Rwenzori Coffee Cooperative', 'Kasese Highland Farmers'],
-            ],
-            [
-                'district' => 'Ntungamo',
-                'sub_counties' => ['Rubaare', 'Itojo', 'Nyakyera'],
-                'coffee_types' => ['arabica', 'robusta', 'mixed'],
-                'cooperatives' => ['Ankole Coffee Producers Union', 'Southwest Coffee Network'],
-            ],
-            [
-                'district' => 'Mukono',
-                'sub_counties' => ['Nakifuma', 'Mpatta', 'Kojja'],
-                'coffee_types' => ['robusta'],
-                'cooperatives' => ['Lake Victoria Coffee Growers', 'Mukono Coffee Producers Cooperative'],
-            ],
-            [
-                'district' => 'Masaka',
-                'sub_counties' => ['Buwunga', 'Kyanamukaka', 'Kabonera'],
-                'coffee_types' => ['robusta'],
-                'cooperatives' => ['Masaka Coffee Farmers SACCO', 'Greater Masaka Growers Union'],
-            ],
-            [
-                'district' => 'Luwero',
-                'sub_counties' => ['Wobulenzi', 'Butuntumula', 'Bamunanika'],
-                'coffee_types' => ['robusta'],
-                'cooperatives' => ['Luwero Coffee Collective', 'Central Uganda Coffee Cooperative'],
-            ],
+            ['district' => 'Mbale', 'subcounties' => ['Buginyanya', 'Busiu', 'Bukonde'], 'region' => 'Eastern'],
+            ['district' => 'Sironko', 'subcounties' => ['Budadiri', 'Bumasifwa', 'Bukiyi'], 'region' => 'Eastern'],
+            ['district' => 'Kapchorwa', 'subcounties' => ['Tegeres', 'Kaserem', 'Chema'], 'region' => 'Eastern'],
+            ['district' => 'Kasese', 'subcounties' => ['Kisinga', 'Kyarumba', 'Nyakiyumbu'], 'region' => 'Western'],
+            ['district' => 'Ntungamo', 'subcounties' => ['Rubaare', 'Itojo', 'Nyakyera'], 'region' => 'Western'],
+            ['district' => 'Mukono', 'subcounties' => ['Nakifuma', 'Mpatta', 'Kojja'], 'region' => 'Central'],
+            ['district' => 'Masaka', 'subcounties' => ['Buwunga', 'Kyanamukaka', 'Kabonera'], 'region' => 'Central'],
+            ['district' => 'Luwero', 'subcounties' => ['Wobulenzi', 'Butuntumula', 'Bamunanika'], 'region' => 'Central'],
         ];
 
         $profile = fake()->randomElement($profiles);
         $firstName = fake()->firstName();
         $lastName = fake()->lastName();
         $email = fake()->unique()->safeEmail();
-        $telephone = '+2567'.fake()->unique()->numerify('########');
-        $coffeeType = fake()->randomElement($profile['coffee_types']);
-        $farmSize = fake()->randomFloat(1, 0.5, 8.0).' acres';
+        $tel = '+2567'.fake()->unique()->numerify('########');
 
         return [
             'user_id' => User::factory()->state([
                 'first_name' => $firstName,
                 'last_name' => $lastName,
                 'role' => 'farmer',
-                'telephone' => $telephone,
+                'telephone' => $tel,
                 'email' => $email,
             ]),
+            'cooperative_id' => null,
+            'farmer_number' => 'FMR-'.now()->format('Y').'-'.strtoupper(fake()->unique()->bothify('??####')),
             'first_name' => $firstName,
+            'middle_name' => fake()->boolean(30) ? fake()->firstName() : null,
             'last_name' => $lastName,
-            'telephone' => $telephone,
+            'gender' => fake()->randomElement(['male', 'female']),
+            'date_of_birth' => fake()->dateTimeBetween('-65 years', '-18 years')->format('Y-m-d'),
+            'tel' => $tel,
             'email' => fake()->boolean(85) ? $email : null,
+            'country' => 'Uganda',
+            'region' => $profile['region'],
             'district' => $profile['district'],
-            'sub_county' => fake()->randomElement($profile['sub_counties']),
-            'coffee_type' => $coffeeType,
-            'cooperative' => fake()->boolean(80) ? fake()->randomElement($profile['cooperatives']) : null,
-            'farm_size' => fake()->boolean(90) ? $farmSize : null,
-            'notes' => fake()->optional(0.65)->randomElement([
-                'Delivers hand-picked cherries during peak season.',
-                'Active in traceability training and record keeping.',
-                'Interested in expanding certified export volumes.',
-                'Uses raised drying beds for specialty micro-lots.',
-                'Regular supplier to the local wet mill and coop collection center.',
-            ]),
+            'county' => null,
+            'subcounty' => fake()->randomElement($profile['subcounties']),
+            'parish' => fake()->boolean(60) ? fake()->citySuffix() : null,
+            'village' => fake()->boolean(70) ? fake()->streetName() : null,
+            'national_id' => fake()->boolean(75) ? strtoupper(fake()->unique()->bothify('CM########????')) : null,
+            'status' => 'active',
+            'verification_status' => fake()->randomElement(['pending', 'verified']),
         ];
     }
 }

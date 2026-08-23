@@ -144,6 +144,8 @@ Route::middleware([
         Route::get('/create', [FarmerController::class, 'create'])->name('create');
         Route::post('/', [FarmerController::class, 'store'])->name('store');
         Route::get('/{farmer}', [FarmerController::class, 'show'])->name('show');
+        Route::patch('/{farmer}', [FarmerController::class, 'update'])->name('update');
+        Route::delete('/{farmer}', [FarmerController::class, 'destroy'])->name('destroy');
     });
 
     // Cooperative workspace routes.
@@ -170,7 +172,6 @@ Route::middleware([
     // full access, everyone else must be subscribed to the Farmer Agent.
     Route::prefix('farm')->name('farm.')->group(function () {
         Route::get('/', [FarmController::class, 'index'])->name('index');
-        Route::get('/create', [FarmController::class, 'create'])->name('create');
         Route::get('/farm-list', [FarmController::class, 'myFarms'])->name('mine');
         Route::get('/harvest', [HarvestController::class, 'mine'])->name('harvest.mine');
         Route::patch('/harvest/{harvest}', [HarvestController::class, 'update'])->name('harvest.update');
@@ -179,10 +180,11 @@ Route::middleware([
         Route::post('/', [FarmController::class, 'store'])->name('store');
         Route::get('/{farm}', [FarmController::class, 'show'])->name('show');
         Route::patch('/{farm}', [FarmController::class, 'update'])->name('update');
-        Route::patch('/{farm}/specs', [FarmController::class, 'updateSpecs'])->name('specs.update');
-        Route::patch('/{farm}/location', [FarmController::class, 'updateLocation'])->name('location.update');
         Route::post('/{farm}/harvests', [FarmController::class, 'storeHarvest'])->name('harvests.store');
         Route::delete('/{farm}/harvests/{harvest}', [FarmController::class, 'destroyHarvest'])->name('harvests.destroy');
+        Route::post('/{farm}/collections', [FarmController::class, 'storeCollection'])->name('collections.store');
+        Route::patch('/{farm}/collections/{collection}', [FarmController::class, 'updateCollection'])->name('collections.update');
+        Route::delete('/{farm}/collections/{collection}', [FarmController::class, 'destroyCollection'])->name('collections.destroy');
         Route::post('/{farm}/documents', [FarmController::class, 'storeDocument'])->name('documents.store');
         Route::delete('/{farm}/documents/{document}', [FarmController::class, 'destroyDocument'])->name('documents.destroy');
         Route::post('/geocode', GeocodeController::class)->name('geocode');
@@ -396,6 +398,10 @@ Route::middleware([
         Route::get('/filter-options', [MarketController::class, 'filterOptions'])->name('filter.options');
         Route::get('/filter', [MarketController::class, 'filter'])->name('filter');
         Route::get('/{market}', [MarketController::class, 'show'])->name('show');
+        Route::patch('/{market}', [MarketController::class, 'update'])->name('update');
+        Route::delete('/{market}', [MarketController::class, 'destroy'])->name('destroy');
+        Route::post('/{market}/images', [MarketController::class, 'storeImages'])->name('images.store');
+        Route::delete('/{market}/images/{image}', [MarketController::class, 'destroyImage'])->name('images.destroy');
     });
 
     // Buyer workspace routes.

@@ -185,10 +185,7 @@ function confirmRemove() {
 </template>
 
 <style scoped>
-/* margin-top matches ProductProfile.vue's .mp-page (-24px against dp-main's
-   48px padding) so every dp-* page opens with the same 24px gap under the
-   header instead of each page picking its own offset. */
-.cart-page { font-family: var(--dp-font-sans); color: var(--dp-on-surface); margin: -24px 0 0; }
+.cart-page { font-family: var(--dp-font-sans); color: var(--dp-on-surface); }
 
 /* ── Header ──────────────────────────────────────────────────────────── */
 .cart-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 32px; }

@@ -872,7 +872,6 @@ onBeforeUnmount(() => {
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
-    margin-top: -24px;
 }
 .cp-muted { color: var(--on-surface-var); }
 .cp-up   { color: #166534; font-weight: 700; }

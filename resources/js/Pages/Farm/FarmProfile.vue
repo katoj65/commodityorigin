@@ -1,47 +1,115 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { isGoogleMapsConfigured, renderMap } from '@/services/googleMaps';
 import {
-    Bell, Box, ChatDotRound, Check, Checked, Clock,
-    CollectionTag, DataLine, Delete, Download, Edit,
-    Location, Medal, Opportunity, Plus, Promotion,
-    ShoppingCart, Star, TrendCharts, Van, View,
-    Warning,
-    Sunny, PartlyCloudy, Cloudy, Umbrella, Lightning,
-    Files, Upload, Document,
+    Box, CaretRight, ChatDotRound, CircleCheckFilled, Coffee, Delete, Document, Download, Edit, Files,
+    Location, MapLocation, Plus, Promotion, User,
+    Sunny, PartlyCloudy, Cloudy, Umbrella, Lightning, Grid,
+    Upload, Warning,
+    InfoFilled, LocationFilled, HomeFilled, Aim, Top,
+    Calendar, Medal, Money, Ticket, Memo,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
     farm: { type: Object, required: true },
     canEdit: { type: Boolean, default: false },
     varietyOptions: { type: Array, default: () => [] },
-    climaticZoneOptions: { type: Array, default: () => [] },
+    cropVarietyOptions: { type: Array, default: () => [] },
+    certificationOptions: { type: Array, default: () => [] },
     soilTypeOptions: { type: Array, default: () => [] },
-    harvests: { type: Array, default: () => [] },
-    pickMethodOptions: { type: Array, default: () => [] },
+    climaticZoneOptions: { type: Array, default: () => [] },
     harvestSeasonOptions: { type: Array, default: () => [] },
     weatherRegion: { type: String, default: null },
     weatherOutlook: { type: Array, default: () => [] },
     documents: { type: Array, default: () => [] },
     documentTypeOptions: { type: Array, default: () => [] },
+    collections: { type: Array, default: () => [] },
+    collectionUnitOptions: { type: Array, default: () => [] },
+    collectionPaymentStatusOptions: { type: Array, default: () => [] },
 });
 
-/* ── Edit farm dialog (creator only) ──────────────────────────────── */
+/* ── Real display computed — every value below comes straight from a
+   genuine Farm column; nothing here is invented to fill a layout slot. */
+const farmName = computed(() => props.farm.name || 'Farm Profile');
+
+const addressParts = computed(() => [
+    props.farm.village, props.farm.parish, props.farm.subcounty,
+    props.farm.county, props.farm.district, props.farm.region, props.farm.country,
+].filter(Boolean));
+
+const subtitle = computed(() => {
+    const place = [props.farm.district, props.farm.country].filter(Boolean).join(', ');
+    const type = props.farm.coffee_type ? `${props.farm.coffee_type} coffee` : 'Coffee';
+    return place ? `A ${type} farm in ${place}.` : `A ${type} farm.`;
+});
+
+const hasCoordinates = computed(() =>
+    props.farm.latitude !== null && props.farm.latitude !== undefined &&
+    props.farm.longitude !== null && props.farm.longitude !== undefined,
+);
+const latitudeLabel = computed(() => hasCoordinates.value ? `${props.farm.latitude}°` : '—');
+const longitudeLabel = computed(() => hasCoordinates.value ? `${props.farm.longitude}°` : '—');
+const elevationLabel = computed(() => (props.farm.elevation !== null && props.farm.elevation !== undefined) ? `${props.farm.elevation}m` : '—');
+
+const locationTrail = computed(() => [props.farm.country, props.farm.region, props.farm.district, props.farm.county].filter(Boolean).join(' › '));
+
+const farmerName = computed(() => [props.farm.farmer?.first_name, props.farm.farmer?.last_name].filter(Boolean).join(' '));
+
+/* ── Agronomy — real, linked via soil_metadata_id / climate_zone_metadata_id
+   / the farm_crop_varieties & farm_certifications pivots. Composed into
+   readable copy from the linked records' own real fields; nothing here
+   is invented per-farm. ───────────────────────────────────────────────── */
+const certificationList = computed(() => props.farm.certifications || []);
+
+const waterConservationPercent = computed(() => Math.min(100, props.farm.water_conservation_percentage || 0));
+const carbonSequestrationPercent = computed(() => Math.min(100, ((props.farm.carbon_sequestration || 0) / 20) * 100));
+const soilHealthPercent = computed(() => Math.min(100, ((props.farm.soil_health_index || 0) / 5) * 100));
+
+function gaugeStyle(percent, color) {
+    return { background: `conic-gradient(${color} ${percent}%, var(--dp-surface-container-high) ${percent}% 100%)` };
+}
+
+/* ── Edit farm dialog (creator only) — every field here is a real Farm
+   column, matching AddFarmDialog.vue's field set exactly. ────────────── */
 const editDialogOpen = ref(false);
 
-const editForm = useForm({
-    name: props.farm.name,
-    location: props.farm.location,
-    size: props.farm.size,
-    altitude: props.farm.altitude,
-    variety: props.farm.variety,
-    notes: props.farm.notes,
-});
+function emptyEditForm() {
+    return {
+        name: props.farm.name || '',
+        coffee_type: props.farm.coffee_type || '',
+        tel: props.farm.tel || '',
+        email: props.farm.email || '',
+        status: props.farm.status || 'active',
+        country: props.farm.country || '',
+        region: props.farm.region || '',
+        district: props.farm.district || '',
+        county: props.farm.county || '',
+        subcounty: props.farm.subcounty || '',
+        parish: props.farm.parish || '',
+        village: props.farm.village || '',
+        latitude: props.farm.latitude ?? '',
+        longitude: props.farm.longitude ?? '',
+        elevation: props.farm.elevation ?? '',
+        total_area: props.farm.total_area ?? '',
+        coffee_area: props.farm.coffee_area ?? '',
+        soil_metadata_id: props.farm.soil_metadata_id ?? null,
+        climate_zone_metadata_id: props.farm.climate_zone_metadata_id ?? null,
+        water_conservation_percentage: props.farm.water_conservation_percentage ?? '',
+        carbon_sequestration: props.farm.carbon_sequestration ?? '',
+        soil_health_index: props.farm.soil_health_index ?? '',
+        soil_type: props.farm.soil_type || '',
+        crop_variety_ids: (props.farm.crop_varieties || []).map((v) => v.id),
+        certification_ids: (props.farm.certifications || []).map((c) => c.id),
+    };
+}
+
+const editForm = useForm(emptyEditForm());
 
 function openEditDialog() {
+    editForm.defaults(emptyEditForm());
     editForm.reset();
     editForm.clearErrors();
     editDialogOpen.value = true;
@@ -54,7 +122,34 @@ function submitEditFarm() {
     });
 }
 
-/* ── Delete farm ───────────────────────────────────────────────────── */
+/* ── Geocode from address — composed from the farm's own real address
+   fields (the legacy single `location` string this used to read never
+   existed as a Farm column). ─────────────────────────────────────────── */
+const geocoding = ref(false);
+const geocodeError = ref('');
+
+async function locateFromAddress() {
+    geocodeError.value = '';
+    const address = addressParts.value.join(', ');
+
+    if (!address) {
+        geocodeError.value = 'This farm has no address fields on file to look up.';
+        return;
+    }
+
+    geocoding.value = true;
+    try {
+        const { data } = await axios.post(route('farm.geocode'), { address });
+        editForm.latitude = data.lat;
+        editForm.longitude = data.lng;
+    } catch (error) {
+        geocodeError.value = error.response?.data?.message || 'Could not resolve coordinates for that address.';
+    } finally {
+        geocoding.value = false;
+    }
+}
+
+/* ── Delete farm ───────────────────────────────────────────────────────── */
 const deleteDialogOpen = ref(false);
 const deletingFarm = ref(false);
 
@@ -68,138 +163,145 @@ function deleteFarm() {
     });
 }
 
-/* ── Edit environmental specs dialog (creator only) ──────────────────── */
-const specsDialogOpen = ref(false);
-
-const specsForm = useForm({
-    rainfall: props.farm.rainfall,
-    temperature: props.farm.temperature,
-    humidity: props.farm.humidity,
-    soil_type: props.farm.soil_type,
-    climatic_zone: props.farm.climatic_zone,
-});
-
-function openSpecsDialog() {
-    specsForm.reset();
-    specsForm.clearErrors();
-    specsDialogOpen.value = true;
-}
-
-function submitSpecsForm() {
-    specsForm.patch(route('farm.specs.update', props.farm.id), {
-        preserveScroll: true,
-        onSuccess: () => { specsDialogOpen.value = false; },
-    });
-}
-
-/* ── Edit farm location dialog (creator only) ─────────────────────────── */
-const locationDialogOpen = ref(false);
-
-const locationForm = useForm({
-    latitude: props.farm.latitude,
-    longitude: props.farm.longitude,
-    altitude: props.farm.altitude,
-});
-
-function openLocationDialog() {
-    locationForm.reset();
-    locationForm.clearErrors();
-    locationDialogOpen.value = true;
-}
-
-function submitLocationForm() {
-    locationForm.patch(route('farm.location.update', props.farm.id), {
-        preserveScroll: true,
-        onSuccess: () => { locationDialogOpen.value = false; },
-    });
-}
-
-const geocoding = ref(false);
-const geocodeError = ref('');
-
-async function locateFromAddress() {
-    geocodeError.value = '';
-
-    if (!props.farm.location) {
-        geocodeError.value = 'This farm has no address on file to look up.';
-        return;
-    }
-
-    geocoding.value = true;
-    try {
-        const { data } = await axios.post(route('farm.geocode'), { address: props.farm.location });
-        locationForm.latitude = data.lat;
-        locationForm.longitude = data.lng;
-    } catch (error) {
-        geocodeError.value = error.response?.data?.message || 'Could not resolve coordinates for that address.';
-    } finally {
-        geocoding.value = false;
-    }
-}
-
-/* ── Add harvest dialog (creator only) ────────────────────────────────── */
-const harvestDialogOpen = ref(false);
-
-const harvestForm = useForm({
-    variety: '',
-    date_planted: '',
-    harvest_date: '',
-    harvest_season: '',
-    pick_method: '',
-    price: '',
-    weight: '',
-    ripeness_percentage: '',
-    foreign_matter_present: false,
-    pest_damage: false,
-    disease_signs: false,
-    visible_defects: false,
-});
-
 function disableFutureDates(date) {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
     return date.getTime() > today.getTime();
 }
 
-function openHarvestDialog() {
-    harvestForm.reset();
-    harvestForm.clearErrors();
-    harvestForm.variety = props.farm.variety || '';
-    harvestDialogOpen.value = true;
+/* ── Add / edit collection dialog (admin or creator) ───────────────────── */
+const collectionDialogOpen = ref(false);
+const editingCollectionId = ref(null);
+
+const collectionForm = useForm({
+    collection_date: '',
+    coffee_type: '',
+    variety: '',
+    harvest_season: '',
+    quantity: '',
+    unit: 'kg',
+    initial_moisture: '',
+    initial_defects: '',
+    initial_grade: '',
+    initial_quality_score: '',
+    collection_price: '',
+    currency: 'USD',
+    payment_status: 'pending',
+    reference: '',
+    notes: '',
+});
+
+const collectionDialogTitle = computed(() => editingCollectionId.value ? 'Edit Collection' : 'Add Collection');
+const collectionSubmitLabel = computed(() => {
+    if (collectionForm.processing) return 'Saving…';
+    return editingCollectionId.value ? 'Update Collection' : 'Save Collection';
+});
+
+function openCollectionDialog() {
+    collectionForm.reset();
+    collectionForm.clearErrors();
+    editingCollectionId.value = null;
+    collectionForm.coffee_type = props.farm.coffee_type || '';
+    collectionDialogOpen.value = true;
 }
 
-function submitHarvestForm() {
-    harvestForm.post(route('farm.harvests.store', props.farm.id), {
+function openEditCollectionDialog(row) {
+    const collection = props.collections.find((c) => String(c.id) === String(row.id)) || row;
+    collectionForm.clearErrors();
+    editingCollectionId.value = collection.id;
+    collectionForm.collection_date = collection.collection_date || '';
+    collectionForm.coffee_type = collection.coffee_type || '';
+    collectionForm.variety = collection.variety || '';
+    collectionForm.harvest_season = collection.harvest_season || '';
+    collectionForm.quantity = collection.quantity ?? '';
+    collectionForm.unit = collection.unit || 'kg';
+    collectionForm.initial_moisture = collection.initial_moisture ?? '';
+    collectionForm.initial_defects = collection.initial_defects ?? '';
+    collectionForm.initial_grade = collection.initial_grade || '';
+    collectionForm.initial_quality_score = collection.initial_quality_score ?? '';
+    collectionForm.collection_price = collection.collection_price ?? '';
+    collectionForm.currency = collection.currency || 'USD';
+    collectionForm.payment_status = collection.payment_status || 'pending';
+    collectionForm.reference = collection.reference || '';
+    collectionForm.notes = collection.notes || '';
+    viewCollectionDialogOpen.value = false;
+    collectionDialogOpen.value = true;
+}
+
+function editCollectionFromView() {
+    if (collectionToView.value) openEditCollectionDialog(collectionToView.value);
+}
+
+function submitCollectionForm() {
+    const options = {
         preserveScroll: true,
         onSuccess: () => {
-            harvestDialogOpen.value = false;
-            harvestForm.reset();
+            collectionDialogOpen.value = false;
+            collectionForm.reset();
+            editingCollectionId.value = null;
         },
-    });
+    };
+
+    if (editingCollectionId.value) {
+        collectionForm.patch(route('farm.collections.update', [props.farm.id, editingCollectionId.value]), options);
+    } else {
+        collectionForm.post(route('farm.collections.store', props.farm.id), options);
+    }
 }
 
-/* ── Delete harvest dialog (creator only) ─────────────────────────────── */
-const deleteHarvestDialogOpen = ref(false);
-const deletingHarvest = ref(false);
-const harvestToDelete = ref(null);
+/* ── Delete collection dialog (admin or creator) ───────────────────────── */
+const deleteCollectionDialogOpen = ref(false);
+const deletingCollection = ref(false);
+const collectionToDelete = ref(null);
 
-function openDeleteHarvestDialog(harvest) {
-    harvestToDelete.value = harvest;
-    deleteHarvestDialogOpen.value = true;
+function openDeleteCollectionDialog(row) {
+    collectionToDelete.value = props.collections.find((c) => String(c.id) === String(row.id)) || row;
+    viewCollectionDialogOpen.value = false;
+    deleteCollectionDialogOpen.value = true;
 }
 
-function deleteHarvest() {
-    if (!harvestToDelete.value) return;
-    deletingHarvest.value = true;
-    router.delete(route('farm.harvests.destroy', [props.farm.id, harvestToDelete.value.id]), {
+function deleteCollection() {
+    if (!collectionToDelete.value) return;
+    deletingCollection.value = true;
+    router.delete(route('farm.collections.destroy', [props.farm.id, collectionToDelete.value.id]), {
         preserveScroll: true,
         onFinish: () => {
-            deletingHarvest.value = false;
-            deleteHarvestDialogOpen.value = false;
-            harvestToDelete.value = null;
+            deletingCollection.value = false;
+            deleteCollectionDialogOpen.value = false;
+            collectionToDelete.value = null;
         },
     });
 }
+
+const collectionPaymentStatusTone = { pending: 'amber', partial: 'amber', paid: 'green', cancelled: 'muted' };
+
+const collectionRows = computed(() => props.collections.map((c) => ({
+    id: c.id,
+    date: c.collection_date || '—',
+    coffeeType: c.coffee_type || '—',
+    variety: c.variety || '—',
+    qty: (c.quantity !== null && c.quantity !== undefined) ? `${Number(c.quantity).toLocaleString()} ${c.unit || 'kg'}` : '—',
+    grade: c.initial_grade || '—',
+    paymentStatus: c.payment_status ? c.payment_status.charAt(0).toUpperCase() + c.payment_status.slice(1) : 'Pending',
+    tone: collectionPaymentStatusTone[(c.payment_status || 'pending').toLowerCase()] || 'primary',
+})));
+
+/* ── View collection dialog ────────────────────────────────────────────── */
+const viewCollectionDialogOpen = ref(false);
+const collectionToView = ref(null);
+
+function openViewCollectionDialog(row) {
+    collectionToView.value = props.collections.find((c) => String(c.id) === String(row.id)) || null;
+    viewCollectionDialogOpen.value = true;
+}
+
+const collectionToViewPaymentStatus = computed(() => {
+    if (!collectionToView.value?.payment_status) return 'Pending';
+    const s = collectionToView.value.payment_status;
+    return s.charAt(0).toUpperCase() + s.slice(1);
+});
+
+const collectionToViewTone = computed(() => collectionPaymentStatusTone[(collectionToView.value?.payment_status || 'pending').toLowerCase()] || 'primary');
 
 /* ── Upload document dialog (creator only) ────────────────────────────── */
 const documentDialogOpen = ref(false);
@@ -274,27 +376,7 @@ function formatDocDate(value) {
     return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-/* ── Real computed from prop ───────────────────────────────────── */
-const farmName    = computed(() => props.farm.name || 'Farm Profile');
-const farmerName  = computed(() => [props.farm.farmer?.first_name, props.farm.farmer?.last_name].filter(Boolean).join(' ') || 'Assigned Producer');
-const locationLabel = computed(() =>
-    props.farm.location ||
-    [props.farm.farmer?.sub_county, props.farm.farmer?.district, 'Uganda'].filter(Boolean).join(', ') ||
-    'Origin pending',
-);
-const estateBrief = computed(() =>
-    props.farm.notes ||
-    `${farmName.value} is managed for traceable coffee production with structured harvesting, post-harvest discipline, and field-level quality monitoring.`,
-);
-const altitudeRange = computed(() => props.farm.altitude || '—');
-const latitudeLabel  = computed(() => (props.farm.latitude !== null && props.farm.latitude !== undefined) ? `${props.farm.latitude}°N` : '—');
-const longitudeLabel = computed(() => (props.farm.longitude !== null && props.farm.longitude !== undefined) ? `${props.farm.longitude}°E` : '—');
-
-/* ── Google Map ────────────────────────────────────────────────────── */
-const hasCoordinates = computed(() =>
-    props.farm.latitude !== null && props.farm.latitude !== undefined &&
-    props.farm.longitude !== null && props.farm.longitude !== undefined,
-);
+/* ── Google Map — real, driven by the farm's own lat/long. ───────────── */
 const mapConfigured = isGoogleMapsConfigured();
 const mapEl = ref(null);
 const mapReady = ref(false);
@@ -317,59 +399,9 @@ async function mountMap() {
 
 onMounted(mountMap);
 watch(() => [props.farm.latitude, props.farm.longitude], mountMap);
-const farmSize      = computed(() => props.farm.size || '—');
-const variety       = computed(() => props.farm.variety || props.farm.farmer?.coffee_type || 'Arabica');
-const rainfall      = computed(() => props.farm.rainfall    || '—');
-const temperature   = computed(() => props.farm.temperature || '—');
-const humidityIndex = computed(() => props.farm.humidity    || '—');
-const soilType      = computed(() => props.farm.soil_type     || '—');
-const climaticZone  = computed(() => props.farm.climatic_zone || '—');
-const bagsEstimate  = computed(() => {
-    if (props.farm.total_bags_produced) return `${props.farm.total_bags_produced.toLocaleString()} Bags`;
-    const d = String(props.farm.size || '').match(/\d+/);
-    return d?.[0] ? `${d[0]} Bags` : '—';
-});
-const thumb = computed(() =>
-    [props.farm.name?.[0], props.farm.variety?.[0]].filter(Boolean).join('').slice(0, 2).toUpperCase() || 'ES',
-);
-const isRobusta = computed(() => variety.value.toLowerCase().includes('robusta'));
-const qualityScore = computed(() => isRobusta.value ? 84.3 : 88.5);
 
-const harvestStatusTone = { pending: 'warning', processing: 'warning', processed: 'success', ready: 'success', sold: 'primary' };
-function harvestCode(h) {
-    return `#${(h.harvest_date || '').slice(0, 4) || new Date().getFullYear()}-EX${String(h.id).padStart(2, '0')}`;
-}
-const harvestRows = computed(() => props.harvests.map((h) => ({
-    id: h.id,
-    code: harvestCode(h),
-    season: h.harvest_season || '—',
-    date: h.harvest_date || '—',
-    qty: h.weight !== null && h.weight !== undefined ? `${Number(h.weight).toLocaleString()} kg` : '—',
-    score: h.ripeness_percentage !== null && h.ripeness_percentage !== undefined ? Number(h.ripeness_percentage) : null,
-    status: h.status ? h.status.charAt(0).toUpperCase() + h.status.slice(1) : 'Pending',
-    tone: harvestStatusTone[(h.status || 'pending').toLowerCase()] || 'primary',
-})));
-
-/* ── View harvest dialog ───────────────────────────────────────────── */
-const viewHarvestDialogOpen = ref(false);
-const harvestToView = ref(null);
-const harvestToViewCode = computed(() => harvestToView.value ? harvestCode(harvestToView.value) : '');
-const harvestToViewStatus = computed(() => {
-    if (!harvestToView.value?.status) return 'Pending';
-    const s = harvestToView.value.status;
-    return s.charAt(0).toUpperCase() + s.slice(1);
-});
-
-function openViewHarvestDialog(row) {
-    harvestToView.value = props.harvests.find((h) => String(h.id) === String(row.id)) || null;
-    viewHarvestDialogOpen.value = true;
-}
-
-/* ── Static / mock data for new sections ───────────────────────── */
-const productionBars = [52, 64, 68, 78, 74, 82, 88, 84, 90, 86, 92, 88];
-const qualityBars    = [72, 78, 76, 82, 80, 86, 84, 88, 86, 90, 89, 92];
-
-/* ── Farm Weather — planting-season outlook ───────────────────────── */
+/* ── Farm Weather — real, planting-season outlook for the matched
+   region (see FarmController::show(), matched against farm.district). */
 const weatherConditionMeta = {
     'Sunny': { icon: Sunny, bg: '#fffbeb', color: '#b45309' },
     'Partly Cloudy': { icon: PartlyCloudy, bg: '#eff6ff', color: '#1d4ed8' },
@@ -397,1440 +429,1430 @@ function weatherMonthLabel(row) {
 const weatherPreviewCount = 3;
 const weatherPreview = computed(() => props.weatherOutlook.slice(0, weatherPreviewCount));
 const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPreviewCount);
-
-const traceStages = [
-    { label: 'Farm',    icon: Location,      status: 'Verified',   date: 'Oct 2024', complete: true  },
-    { label: 'Harvest', icon: Box,           status: 'Recorded',   date: 'Mar 2025', complete: true  },
-    { label: 'Batch',   icon: CollectionTag, status: 'Processing', date: 'Apr 2025', complete: false },
-    { label: 'Lot',     icon: Star,          status: 'Pending',    date: '—',        complete: false },
-    { label: 'Market',  icon: ShoppingCart,  status: 'Ready',      date: '—',        complete: false },
-];
-
-const sustainability = [
-    { label: 'Shade Farming',          value: '94%',       icon: Star   },
-    { label: 'Water Usage',            value: 'Low Impact', icon: Check  },
-    { label: 'Carbon Footprint',       value: '<0.62kg/kg', icon: Check  },
-    { label: 'Soil Management',        value: 'Organic',    icon: Medal  },
-    { label: 'Climate-Smart Practices',value: 'Active',     icon: Checked},
-];
-
-const lots = [
-    { name: `${farmName.value} Natural Lot 1`, type: variety.value, score: qualityScore.value, price: '$4.80–5.20', qty: '1,200 kg', demand: 'High',   badges: ['Verified','Export Ready'], tone: 'success' },
-    { name: `${farmName.value} Washed Lot 2`,  type: variety.value, score: qualityScore.value - 1, price: '$4.40–4.80', qty: '900 kg',   demand: 'Medium', badges: ['Verified'],               tone: 'warning' },
-];
-
-const buyerMarkets = [
-    { region: 'Germany / EU', demand: 'High',   price: '$5.00–5.40', pct: 85, tone: 'success' },
-    { region: 'UAE',          demand: 'Extreme', price: '$1.80–2.10', pct: 96, tone: 'danger'  },
-    { region: 'USA',          demand: 'High',    price: '$4.80–5.20', pct: 78, tone: 'success' },
-    { region: 'Japan',        demand: 'Medium',  price: '$5.20–5.80', pct: 62, tone: 'warning' },
-];
-
-const timeline = [
-    { icon: Location,      text: 'Farm registered on Bean Origin',              date: 'Jan 2024',  tone: 'success' },
-    { icon: Star,          text: 'Season 2024/25 created and activated',        date: 'Oct 2024',  tone: 'primary' },
-    { icon: Box,           text: 'Harvest HV-001 recorded — 2,400 kg',          date: 'Mar 2025',  tone: 'success' },
-    { icon: CollectionTag, text: 'Batch created — processing stage',            date: 'Apr 2025',  tone: 'warning' },
-    { icon: ShoppingCart,  text: 'First lot submitted to market',               date: 'Apr 2025',  tone: 'info'   },
-    { icon: Van,           text: 'Lot 1 sold — Nordic Roasters, Sweden',        date: 'May 2025',  tone: 'primary' },
-];
-
-const insights = [
-    { text: 'This farm shows strong specialty Arabica potential with consistent 88+ cupping scores.', tone: 'success' },
-    { text: 'Harvest consistency is improving season over season — up 12% vs 2023/24.',               tone: 'primary' },
-    { text: 'Export demand is increasing for this farm\'s coffee profile in EU and UAE markets.',     tone: 'warning' },
-];
-
-const alerts = reactive({ harvestUpdates: true, qualityAlerts: true, buyerInterest: false, exportUpdates: true });
-
-const data=computed(()=>props.farm);
-
-
-
 </script>
 
 <template>
     <DesignPreviewLayout :title="farmName">
-        <div class="fp-page">
+        <Head :title="farmName" />
 
-            <!-- ── 1. Sticky Header ───────────────────────────────────── -->
-            <div class="fp-header">
-                <div class="container-fluid px-3 px-lg-4">
-                    <div class="d-flex align-items-center justify-content-between gap-3 py-3 flex-wrap">
-                        <div>
-                            <div class="fp-header-kicker">Farm Profile</div>
-                            <h1 class="fp-title mb-0">{{ farmName }}</h1>
-                            <p class="fp-subtitle mb-0">Verified coffee farm with traceable production data</p>
-                        </div>
-                        <el-button-group v-if="props.canEdit" class="fp-btn-group">
-                            <el-button :icon="Edit" @click="openEditDialog">Edit</el-button>
-                            <el-button :icon="Delete" type="danger" @click="deleteDialogOpen = true">Delete</el-button>
-                        </el-button-group>
-                    </div>
-                    <!-- <div class="d-flex flex-wrap gap-2 pb-2">
-                        <span class="fp-hbadge"><el-icon><Checked /></el-icon> Verified Farm</span>
-                        <span class="fp-hbadge fp-hbadge--soft"><el-icon><Check /></el-icon> Traceable Production</span>
-                        <span class="fp-hbadge fp-hbadge--blue"><el-icon><Van /></el-icon> Export Ready</span>
-                        <span class="fp-hbadge fp-hbadge--amber"><el-icon><Star /></el-icon> Sustainable</span>
-                    </div> -->
+        <div class="fp-page">
+            <!-- ── Hero ──────────────────────────────────────────────────── -->
+            <div class="fp-hero">
+                <div class="fp-hero__text">
+                    <h1 class="dp-display-md">{{ farmName }}</h1>
+                    <p class="fp-subtitle">{{ subtitle }}</p>
+                </div>
+                <div v-if="canEdit" class="fp-hero__actions">
+                    <button type="button" class="fp-btn fp-btn--outline" @click="openEditDialog">
+                        <el-icon :size="15"><Edit /></el-icon> Edit Farm
+                    </button>
+                    <button type="button" class="fp-btn fp-btn--danger-outline" @click="deleteDialogOpen = true">
+                        <el-icon :size="15"><Delete /></el-icon> Delete
+                    </button>
                 </div>
             </div>
 
-            <div class="container-fluid px-3 px-lg-4 py-3">
-
-                <!-- ── 2. Hero Overview Card ──────────────────────────── -->
-                <div class="fp-hero-card mb-3">
-                    <div class="row g-0 align-items-stretch">
-                        <!-- Left: Identity -->
-                        <div class="col-12 col-md-4 fp-hero-identity">
-                            <div class="fp-farm-avatar-lg">{{ thumb }}</div>
-                            <div class="fp-hero-name">{{ farmName }}</div>
-
-                            <div class="d-flex align-items-center gap-1 mb-2">
-                                <el-icon style="font-size:12px; color:var(--on-surface-var);"><Location /></el-icon>
-                                <span class="fp-td-muted" style="font-size:.8125rem;">{{ locationLabel }}</span>
-                            </div>
-                            <div class="d-flex flex-wrap gap-1 mb-3">
-                                <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle" style="font-size:.65rem;">Verified</span>
-                                <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle" style="font-size:.65rem;">Export Ready</span>
-                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size:.65rem;">Organic</span>
-                            </div>
-                            <!-- <div class="fp-contact-row">
-                                <span class="fp-td-muted" style="font-size:.75rem;">{{ props.farm.farmer?.email || 'producer@exchange.ug' }}</span>
-                            </div> -->
-                            <!-- <div class="fp-contact-row">
-                                <span class="fp-td-muted" style="font-size:.75rem;">{{ props.farm.farmer?.telephone || '+256 700 000000' }}</span>
-                            </div> -->
+            <div class="fp-stack">
+                <!-- ── General Information + Location ───────────────────── -->
+                <div class="fp-pair">
+                    <div class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title"><el-icon><InfoFilled /></el-icon> General Information</h2>
                         </div>
 
-                        <!-- Center: Specs -->
-                        <div class="col-12 col-md-4 fp-hero-specs">
-                            <div class="fp-specs-head">
-                                <div class="fp-specs-title" style="margin-bottom:0;">Farm Specifications</div>
-                                <button v-if="props.canEdit" type="button" class="fp-specs-edit-btn" title="Edit environmental specifications" @click="openSpecsDialog">
-                                    <el-icon><Edit /></el-icon>
+                        <div class="fp-info-header">
+                            <div class="fp-info-avatar"><el-icon :size="22"><Coffee /></el-icon></div>
+                            <div class="fp-info-header__body">
+                                <div class="fp-info-header__name">{{ farm.name }}</div>
+                                <div class="fp-info-header__meta">
+                                    <span class="fp-mono">{{ farm.farm_code || '—' }}</span>
+                                    <span v-if="farm.coffee_type" class="fp-info-header__dot">•</span>
+                                    <span v-if="farm.coffee_type">{{ farm.coffee_type }}</span>
+                                </div>
+                            </div>
+                            <strong class="fp-status-pill" :class="`fp-status-pill--${farm.status === 'inactive' ? 'muted' : 'green'}`">
+                                {{ farm.status === 'inactive' ? 'Inactive' : 'Active' }}
+                            </strong>
+                        </div>
+
+                        <div class="fp-info-rows">
+                            <div class="fp-info-row">
+                                <span class="fp-info-row__icon"><el-icon :size="14"><ChatDotRound /></el-icon></span>
+                                <span class="fp-info-row__label">Phone</span>
+                                <span class="fp-info-row__value">{{ farm.tel || '—' }}</span>
+                            </div>
+                            <div class="fp-info-row">
+                                <span class="fp-info-row__icon"><el-icon :size="14"><Promotion /></el-icon></span>
+                                <span class="fp-info-row__label">Email</span>
+                                <span class="fp-info-row__value fp-truncate">{{ farm.email || '—' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title"><el-icon><Location /></el-icon> Location</h2>
+                        </div>
+
+                        <div class="fp-loc-header">
+                            <div class="fp-loc-avatar"><el-icon :size="20"><LocationFilled /></el-icon></div>
+                            <div class="fp-loc-header__body">
+                                <div class="fp-loc-header__trail">{{ locationTrail || '—' }}</div>
+                                <div class="fp-loc-header__sub">Administrative origin trail</div>
+                            </div>
+                        </div>
+
+                        <div class="fp-loc-coords">
+                            <span class="fp-loc-coords__icon"><el-icon :size="14"><Aim /></el-icon></span>
+                            <span class="fp-loc-coords__label">Coordinates</span>
+                            <span class="fp-loc-coords__value fp-mono">{{ latitudeLabel }}, {{ longitudeLabel }}</span>
+                        </div>
+
+                        <div class="fp-grid-2 fp-loc-grid">
+                            <div class="fp-stat-cell"><span><el-icon :size="12"><Location /></el-icon> Subcounty</span><strong>{{ farm.subcounty || '—' }}</strong></div>
+                            <div class="fp-stat-cell"><span><el-icon :size="12"><Location /></el-icon> Parish</span><strong>{{ farm.parish || '—' }}</strong></div>
+                            <div class="fp-stat-cell fp-field--span2"><span><el-icon :size="12"><HomeFilled /></el-icon> Village</span><strong>{{ farm.village || '—' }}</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Map + Technical Specs + Sustainability Metrics ────── -->
+                <div class="fp-trio">
+                    <div class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title">Location &amp; Origin Map</h2>
+                            <el-icon :size="18" class="fp-card-head-icon"><MapLocation /></el-icon>
+                        </div>
+                        <div class="fp-map-tile">
+                            <template v-if="hasCoordinates && mapConfigured">
+                                <div ref="mapEl" class="fp-map-canvas"></div>
+                                <div v-if="!mapReady && !mapFailed" class="fp-map-empty">
+                                    <span class="fp-muted">Loading map…</span>
+                                </div>
+                                <div v-if="mapFailed" class="fp-map-empty">
+                                    <el-icon :size="20"><Warning /></el-icon>
+                                    <span class="fp-muted">Map failed to load.</span>
+                                </div>
+                            </template>
+                            <div v-else class="fp-map-empty">
+                                <el-icon :size="20"><Location /></el-icon>
+                                <span class="fp-muted fp-muted--center">
+                                    {{ hasCoordinates ? 'Map unavailable — Google Maps is not configured.' : 'No coordinates set for this farm.' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title"><el-icon><Grid /></el-icon> Technical Specs</h2>
+                        </div>
+
+                        <div class="fp-spec-tiles">
+                            <div class="fp-spec-tile">
+                                <span class="fp-spec-tile__label">Total Area</span>
+                                <div class="fp-spec-tile__value">
+                                    <template v-if="farm.total_area !== null && farm.total_area !== undefined">{{ farm.total_area }}<span class="fp-spec-tile__unit">ha</span></template>
+                                    <template v-else>—</template>
+                                </div>
+                            </div>
+                            <div class="fp-spec-tile">
+                                <span class="fp-spec-tile__label">Coffee Area</span>
+                                <div class="fp-spec-tile__value">
+                                    <template v-if="farm.coffee_area !== null && farm.coffee_area !== undefined">{{ farm.coffee_area }}<span class="fp-spec-tile__unit">ha</span></template>
+                                    <template v-else>—</template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="fp-info-rows">
+                            <div class="fp-info-row">
+                                <span class="fp-info-row__icon"><el-icon :size="14"><Top /></el-icon></span>
+                                <span class="fp-info-row__label">Elevation</span>
+                                <span class="fp-info-row__value">{{ elevationLabel }}</span>
+                            </div>
+                            <div class="fp-info-row">
+                                <span class="fp-info-row__icon"><el-icon :size="14"><Grid /></el-icon></span>
+                                <span class="fp-info-row__label">Soil Type</span>
+                                <span class="fp-info-row__value">{{ farm.soil?.name || '—' }}</span>
+                            </div>
+                            <div class="fp-info-row">
+                                <span class="fp-info-row__icon"><el-icon :size="14"><PartlyCloudy /></el-icon></span>
+                                <span class="fp-info-row__label">Climate</span>
+                                <span class="fp-info-row__value">{{ farm.climate_zone?.name || '—' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title"><el-icon><CircleCheckFilled /></el-icon> Sustainability Metrics</h2>
+                        </div>
+                        <div class="fp-gauge-row">
+                            <div class="fp-gauge">
+                                <div class="fp-gauge__ring" :style="gaugeStyle(waterConservationPercent, 'var(--dp-secondary)')">
+                                    <div class="fp-gauge__hole"><el-icon :size="16"><Umbrella /></el-icon></div>
+                                </div>
+                                <div class="fp-gauge__value">{{ farm.water_conservation_percentage !== null && farm.water_conservation_percentage !== undefined ? `${farm.water_conservation_percentage}%` : '—' }}</div>
+                                <div class="fp-gauge__label">Water Conservation</div>
+                            </div>
+                            <div class="fp-gauge">
+                                <div class="fp-gauge__ring" :style="gaugeStyle(carbonSequestrationPercent, 'var(--dp-surface-tint)')">
+                                    <div class="fp-gauge__hole"><el-icon :size="16"><Cloudy /></el-icon></div>
+                                </div>
+                                <div class="fp-gauge__value">{{ farm.carbon_sequestration !== null && farm.carbon_sequestration !== undefined ? `${farm.carbon_sequestration}` : '—' }}<span v-if="farm.carbon_sequestration !== null && farm.carbon_sequestration !== undefined" class="fp-gauge__unit">tCO2e/ha</span></div>
+                                <div class="fp-gauge__label">Carbon Sequestration</div>
+                            </div>
+                            <div class="fp-gauge">
+                                <div class="fp-gauge__ring" :style="gaugeStyle(soilHealthPercent, 'var(--dp-secondary-fixed)')">
+                                    <div class="fp-gauge__hole"><el-icon :size="16"><Grid /></el-icon></div>
+                                </div>
+                                <div class="fp-gauge__value">{{ farm.soil_health_index !== null && farm.soil_health_index !== undefined ? `${farm.soil_health_index}/5.0` : '—' }}</div>
+                                <div class="fp-gauge__label">Soil Health</div>
+                            </div>
+                        </div>
+
+                        <div class="fp-metric-footer">
+                            <div>
+                                <span class="fp-stat-cell__label">Certifications</span>
+                                <div v-if="certificationList.length" class="fp-chip-row">
+                                    <span v-for="cert in certificationList" :key="cert.id" class="fp-chip" :title="cert.description || ''">{{ cert.name }}</span>
+                                </div>
+                                <span v-else class="fp-muted">None recorded</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Farm Collections ──────────────────────────────────── -->
+                <div class="fp-card fp-card--flush">
+                    <div class="fp-card-head fp-card-head--padded">
+                        <h2 class="fp-card-title"><el-icon><Coffee /></el-icon> Farm Collections</h2>
+                        <button v-if="canEdit" type="button" class="fp-btn fp-btn--outline" @click="openCollectionDialog">
+                            <el-icon :size="14"><Plus /></el-icon> Add Collection
+                        </button>
+                    </div>
+
+                    <div v-if="collectionRows.length" class="table-responsive">
+                        <table class="table align-middle mb-0 fp-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Coffee Type</th>
+                                    <th>Variety</th>
+                                    <th>Grade</th>
+                                    <th class="text-end">Quantity</th>
+                                    <th class="text-end">Payment</th>
+                                    <th v-if="canEdit" class="text-end"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="c in collectionRows" :key="c.id" class="fp-table-row" @click="openViewCollectionDialog(c)">
+                                    <td class="fp-mono fp-table-strong">{{ c.date }}</td>
+                                    <td class="fp-muted">{{ c.coffeeType }}</td>
+                                    <td class="fp-muted">{{ c.variety }}</td>
+                                    <td class="fp-muted">{{ c.grade }}</td>
+                                    <td class="text-end fp-table-strong">{{ c.qty }}</td>
+                                    <td class="text-end">
+                                        <span class="fp-status-pill" :class="`fp-status-pill--${c.tone}`">{{ c.paymentStatus }}</span>
+                                    </td>
+                                    <td v-if="canEdit" class="text-end fp-table-actions">
+                                        <button type="button" class="fp-icon-btn" title="Edit collection" @click.stop="openEditCollectionDialog(c)">
+                                            <el-icon :size="14"><Edit /></el-icon>
+                                        </button>
+                                        <button type="button" class="fp-icon-btn fp-icon-btn--danger" title="Delete collection" @click.stop="openDeleteCollectionDialog(c)">
+                                            <el-icon :size="14"><Delete /></el-icon>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-else class="fp-empty">
+                        <el-icon :size="20"><Coffee /></el-icon>
+                        <p>No collections recorded yet for this farm.</p>
+                    </div>
+                </div>
+
+                <!-- ── Farm Owner + Weather ──────────────────────────────── -->
+                <div class="fp-pair">
+                    <div v-if="farm.farmer" class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title"><el-icon><User /></el-icon> Farm Owner</h2>
+                        </div>
+
+                        <div class="fp-owner">
+                            <div class="fp-owner__avatar-wrap">
+                                <div class="fp-owner__avatar">
+                                    {{ (farm.farmer.first_name?.[0] || '') + (farm.farmer.last_name?.[0] || '') || '?' }}
+                                </div>
+                                <span v-if="farm.farmer.verification_status === 'verified'" class="fp-owner__badge">
+                                    <el-icon :size="11"><CircleCheckFilled /></el-icon>
+                                </span>
+                            </div>
+                            <div class="fp-owner__body">
+                                <div class="fp-owner__name">{{ farmerName }}</div>
+                                <span v-if="farm.farmer.verification_status" class="fp-status-pill" :class="`fp-status-pill--${farm.farmer.verification_status === 'verified' ? 'green' : 'amber'}`">
+                                    {{ farm.farmer.verification_status }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="fp-owner__contacts">
+                            <div v-if="farm.farmer.district || farm.farmer.subcounty" class="fp-owner__contact">
+                                <span class="fp-owner__contact-icon"><el-icon :size="14"><Location /></el-icon></span>
+                                <span>{{ [farm.farmer.subcounty, farm.farmer.district].filter(Boolean).join(', ') }}</span>
+                            </div>
+                            <a v-if="farm.farmer.tel" :href="`tel:${farm.farmer.tel}`" class="fp-owner__contact fp-owner__contact--link">
+                                <span class="fp-owner__contact-icon"><el-icon :size="14"><ChatDotRound /></el-icon></span>
+                                <span>{{ farm.farmer.tel }}</span>
+                            </a>
+                            <a v-if="farm.farmer.email" :href="`mailto:${farm.farmer.email}`" class="fp-owner__contact fp-owner__contact--link">
+                                <span class="fp-owner__contact-icon"><el-icon :size="14"><Promotion /></el-icon></span>
+                                <span class="fp-truncate">{{ farm.farmer.email }}</span>
+                            </a>
+                            <div v-if="farm.farmer.cooperative" class="fp-owner__contact">
+                                <span class="fp-owner__contact-icon"><el-icon :size="14"><MapLocation /></el-icon></span>
+                                <span>{{ farm.farmer.cooperative.name }}</span>
+                            </div>
+                        </div>
+
+                        <Link :href="route('farmer.show', farm.farmer.id)" class="fp-owner__cta">
+                            View Farmer Profile <el-icon :size="14"><CaretRight /></el-icon>
+                        </Link>
+                    </div>
+
+                    <div class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title">Farm Weather</h2>
+                            <el-icon :size="18" class="fp-card-head-icon"><Sunny /></el-icon>
+                        </div>
+                        <template v-if="weatherOutlook.length">
+                            <p class="fp-weather-intro">
+                                Planting-season outlook<template v-if="weatherRegion"> for {{ weatherRegion }}</template>.
+                            </p>
+                            <div class="fp-weather-grid">
+                                <div v-for="month in weatherPreview" :key="month.id" class="fp-weather-card">
+                                    <div class="fp-weather-card__icon" :style="weatherIconStyle(month)">
+                                        <el-icon :size="20"><component :is="weatherIcon(month)" /></el-icon>
+                                    </div>
+                                    <div class="fp-weather-card__month">{{ weatherMonthLabel(month) }}</div>
+                                    <div class="fp-weather-card__temp">{{ month.temperature_min }}°<span>–</span>{{ month.temperature_max }}°</div>
+                                    <div class="fp-weather-card__condition">{{ month.condition }}</div>
+                                    <div v-if="month.rainfall_mm !== null || month.humidity_percentage !== null" class="fp-weather-card__meta">
+                                        <span v-if="month.rainfall_mm !== null">{{ month.rainfall_mm }}mm</span>
+                                        <span v-if="month.humidity_percentage !== null">{{ month.humidity_percentage }}% RH</span>
+                                    </div>
+                                    <p v-if="month.advisory" class="fp-weather-card__tip">{{ month.advisory }}</p>
+                                </div>
+                            </div>
+                            <Link :href="route('farm.weather')" class="fp-btn fp-btn--outline fp-btn--block fp-mt">
+                                <el-icon><Sunny /></el-icon>
+                                {{ hasMoreWeather ? `View ${weatherOutlook.length - weatherPreviewCount} More Months` : 'View Full Forecast' }}
+                            </Link>
+                        </template>
+                        <p v-else class="fp-muted">No seasonal outlook available yet for this farm's region.</p>
+                    </div>
+                </div>
+
+                <!-- ── Documents ─────────────────────────────────────────── -->
+                <div class="fp-card">
+                    <div class="fp-card-head">
+                        <h2 class="fp-card-title"><el-icon><Files /></el-icon> Documents</h2>
+                        <button v-if="canEdit" type="button" class="fp-btn fp-btn--outline" @click="openDocumentDialog">
+                            <el-icon :size="14"><Upload /></el-icon> Upload
+                        </button>
+                    </div>
+
+                    <div v-if="documents.length" class="fp-doc-list">
+                        <div v-for="doc in documents" :key="doc.id" class="fp-doc-item">
+                            <div class="fp-doc-item__icon"><el-icon :size="16"><Document /></el-icon></div>
+                            <div class="fp-doc-item__body">
+                                <div class="fp-doc-item__title">{{ doc.title }}</div>
+                                <div class="fp-muted">
+                                    <span v-if="doc.document_type">{{ doc.document_type }} · </span>{{ formatFileSize(doc.file_size) }} · {{ formatDocDate(doc.created_at) }}
+                                </div>
+                            </div>
+                            <div class="fp-doc-item__actions">
+                                <a :href="doc.file_url" target="_blank" rel="noopener" class="fp-icon-btn" title="Download">
+                                    <el-icon :size="14"><Download /></el-icon>
+                                </a>
+                                <button v-if="canEdit" type="button" class="fp-icon-btn fp-icon-btn--danger" title="Delete" @click="openDeleteDocumentDialog(doc)">
+                                    <el-icon :size="14"><Delete /></el-icon>
                                 </button>
                             </div>
-                            <div class="row g-2">
-                                <div class="col-6"><div class="fp-spec-cell"><span>Farm Size</span><strong>{{ farmSize }}</strong></div></div>
-                                <div class="col-6"><div class="fp-spec-cell"><span>Altitude</span><strong>{{ altitudeRange }}</strong></div></div>
-                                <div class="col-6"><div class="fp-spec-cell"><span>Coffee Type</span><strong>{{ variety }}</strong></div></div>
-                                <div class="col-6"><div class="fp-spec-cell"><span>Total Bags</span><strong>{{ bagsEstimate }}</strong></div></div>
-                                <div class="col-6"><div class="fp-spec-cell"><span>Rainfall</span><strong>{{ rainfall }}</strong></div></div>
-                                <div class="col-6"><div class="fp-spec-cell"><span>Temperature</span><strong>{{ temperature }}</strong></div></div>
-                                <div class="col-6"><div class="fp-spec-cell"><span>Humidity</span><strong>{{ humidityIndex }}</strong></div></div>
-                                <div class="col-6"><div class="fp-spec-cell"><span>Status</span><strong class="fp-up">{{ props.farm.status || 'Active' }}</strong></div></div>
-                                <div class="col-6"><div class="fp-spec-cell"><span>Soil Type</span><strong>{{ soilType }}</strong></div></div>
-                                <div class="col-6"><div class="fp-spec-cell"><span>Climatic Zone</span><strong>{{ climaticZone }}</strong></div></div>
-                            </div>
                         </div>
-
-                        <!-- Right: Performance -->
-                        <div class="col-12 col-md-4 fp-hero-perf">
-                            <div class="fp-specs-title">Performance &amp; Trust</div>
-                            <div class="fp-quality-ring-wrap mb-3">
-                                <div class="fp-quality-ring">
-                                    <svg viewBox="0 0 80 80" width="100" height="100">
-                                        <circle cx="40" cy="40" r="34" fill="none" stroke="#e5e7eb" stroke-width="8"/>
-                                        <circle cx="40" cy="40" r="34" fill="none" stroke="#004532" stroke-width="8"
-                                            stroke-dasharray="213.6"
-                                            :stroke-dashoffset="213.6 - (213.6 * ((qualityScore - 80) / 20))"
-                                            stroke-linecap="round"
-                                            transform="rotate(-90 40 40)"/>
-                                    </svg>
-                                    <div class="fp-quality-ring-inner">
-                                        <div class="fp-quality-score">{{ qualityScore }}</div>
-                                        <div class="fp-quality-label">SCA Score</div>
-                                    </div>
-                                </div>
-                                <div class="ms-3">
-                                    <span class="badge bg-success text-white mb-1 d-block" style="font-size:.65rem;">Specialty Grade</span>
-                                    <span class="badge bg-primary text-white mb-1 d-block" style="font-size:.65rem;">Export Quality</span>
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-block" style="font-size:.65rem;">Premium</span>
-                                </div>
-                            </div>
-                            <div class="d-flex flex-column gap-2">
-                                <div class="fp-perf-row"><span>Yield Efficiency</span><strong class="fp-up">88%</strong></div>
-                                <div class="fp-perf-row"><span>Export Readiness</span><strong class="fp-up">92%</strong></div>
-                                <div class="fp-perf-row"><span>Verification</span><strong class="fp-up">Verified ✓</strong></div>
-                                <div class="fp-perf-row"><span>Defect Rate</span><strong>0.8%</strong></div>
-                            </div>
-                        </div>
+                    </div>
+                    <div v-else class="fp-empty">
+                        <el-icon :size="20"><Files /></el-icon>
+                        <p>No documents uploaded yet.</p>
+                        <button v-if="canEdit" type="button" class="fp-btn fp-btn--outline" @click="openDocumentDialog">
+                            <el-icon :size="14"><Upload /></el-icon> Upload Document
+                        </button>
                     </div>
                 </div>
-
-                <!-- ── Main 2-column grid ──────────────────────────────── -->
-                <div class="row g-3">
-
-                    <!-- Left column -->
-                    <div class="col-12 col-xxl-8">
-                        <div class="d-flex flex-column gap-3">
-
-                            <!-- 3. Farm Location & Map -->
-                            <div class="fp-card">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <div class="fp-card-title mb-0">
-                                        <el-icon class="fp-card-icon"><Location /></el-icon>
-                                        Farm Location &amp; Environment
-                                    </div>
-                                    <button v-if="props.canEdit" type="button" class="fp-specs-edit-btn" title="Edit farm location" @click="openLocationDialog">
-                                        <el-icon><Edit /></el-icon>
-                                    </button>
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-12 col-md-7">
-                                        <div class="fp-map-tile">
-                                            <template v-if="hasCoordinates && mapConfigured">
-                                                <div ref="mapEl" class="fp-map-canvas"></div>
-                                                <div v-if="!mapReady && !mapFailed" class="fp-map-empty">
-                                                    <span class="fp-td-muted" style="font-size:.75rem;">Loading map…</span>
-                                                </div>
-                                                <div v-if="mapFailed" class="fp-map-empty">
-                                                    <el-icon style="font-size:20px; color:var(--on-surface-var);"><Warning /></el-icon>
-                                                    <span class="fp-td-muted" style="font-size:.75rem;">Map failed to load.</span>
-                                                </div>
-                                            </template>
-                                            <div v-else class="fp-map-empty">
-                                                <el-icon style="font-size:20px; color:var(--on-surface-var);"><Location /></el-icon>
-                                                <span class="fp-td-muted" style="font-size:.75rem; text-align:center;">
-                                                    {{ hasCoordinates ? 'Map unavailable — Google Maps is not configured.' : 'No coordinates set for this farm.' }}
-                                                </span>
-                                            </div>
-                                            <div class="fp-map-coords">
-                                                <div class="fw-semibold" style="font-size:.8125rem;">{{ latitudeLabel }}, {{ longitudeLabel }}</div>
-                                                <div class="fp-td-muted" style="font-size:.7rem;">GPS coordinates — {{ locationLabel }}</div>
-                                            </div>
-                                            <div class="fp-map-badges">
-                                                <span class="fp-map-badge">{{ altitudeRange }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-12 col-md-5">
-                                        <div class="d-flex flex-column gap-2 h-100 justify-content-center">
-                                            <div class="fp-env-row"><span>Annual Rainfall</span><strong>{{ rainfall }}</strong></div>
-                                            <div class="fp-env-row"><span>Temperature</span><strong>{{ temperature }}</strong></div>
-                                            <div class="fp-env-row"><span>Humidity Index</span><strong>{{ humidityIndex }}</strong></div>
-                                            <div class="fp-env-row"><span>Soil Type</span><strong>{{ soilType }}</strong></div>
-                                            <div class="fp-env-row"><span>Climate Zone</span><strong>{{ climaticZone }}</strong></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 4. Harvest History -->
-                            <div class="fp-card p-0 overflow-hidden">
-                                <div class="d-flex align-items-center justify-content-between gap-2 px-3 py-2 border-bottom">
-                                    <div class="fp-card-title">
-                                        <el-icon class="fp-card-icon"><Box /></el-icon>
-                                        Harvest History
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" style="font-size:.65rem;">{{ harvestRows.length }} harvests</span>
-                                        <button v-if="props.canEdit" type="button" class="fp-specs-edit-btn" title="Add harvest" @click="openHarvestDialog">
-                                            <el-icon><Plus /></el-icon>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table align-middle mb-0 fp-table">
-                                        <thead>
-                                            <tr>
-                                                <th><span class="fp-table-th"><el-icon><Box /></el-icon> Harvest ID</span></th>
-                                                <th><span class="fp-table-th"><el-icon><CollectionTag /></el-icon> Season</span></th>
-                                                <th><span class="fp-table-th"><el-icon><Clock /></el-icon> Date</span></th>
-                                                <th><span class="fp-table-th"><el-icon><DataLine /></el-icon> Quantity</span></th>
-                                                <th><span class="fp-table-th"><el-icon><Star /></el-icon> Quality Score</span></th>
-                                                <th><span class="fp-table-th"><el-icon><Checked /></el-icon> Status</span></th>
-                                                <th class="text-end">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-for="h in harvestRows" :key="h.id" class="fp-table-row">
-                                                <td class="fp-item-name">{{ h.code }}</td>
-                                                <td class="fp-td-muted">{{ h.season }}</td>
-                                                <td class="fp-td-muted">{{ h.date }}</td>
-                                                <td class="fw-semibold">{{ h.qty }}</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span v-if="h.score !== null" class="fp-score-pill" :class="h.score >= 88 ? 'fp-score-pill--high' : 'fp-score-pill--mid'">{{ h.score }}</span>
-                                                        <span v-else class="fp-td-muted">—</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span class="badge rounded-pill" style="font-size:.65rem;"
-                                                        :class="h.tone === 'success' ? 'bg-success-subtle text-success-emphasis border border-success-subtle'
-                                                              : h.tone === 'warning' ? 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-                                                              : 'bg-primary-subtle text-primary-emphasis border border-primary-subtle'">
-                                                        {{ h.status }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-end">
-                                                    <div class="d-flex gap-1 justify-content-end">
-                                                        <button type="button" class="btn btn-sm fp-btn-outline fp-act-btn" @click="openViewHarvestDialog(h)"><el-icon><View /></el-icon> View</button>
-                                                        <button v-if="props.canEdit" type="button" class="btn btn-sm fp-btn-danger-ghost fp-act-btn" @click="openDeleteHarvestDialog(h)"><el-icon><Delete /></el-icon> Delete</button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr v-if="harvestRows.length === 0">
-                                                <td colspan="7">
-                                                    <div class="fp-table-empty">
-                                                        <div class="fp-table-empty__icon"><el-icon :size="18"><Box /></el-icon></div>
-                                                        <div class="fp-table-empty__title">No harvests recorded yet</div>
-                                                        <p class="fp-table-empty__text">Add a harvest to start tracking yield, quality, and season history for this farm.</p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <!-- 5. Production Overview -->
-                            <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><TrendCharts /></el-icon>
-                                    Production Overview
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-12 col-md-6">
-                                        <div class="fp-td-muted mb-1" style="font-size:.75rem;">Annual Production Trend</div>
-                                        <div class="fp-chart">
-                                            <div class="fp-chart-bars">
-                                                <div v-for="(v, i) in productionBars" :key="i" class="fp-chart-col">
-                                                    <div class="fp-chart-bar fp-chart-bar--prod" :style="{ height: `${v}%` }"></div>
-                                                    <span class="fp-chart-lbl">{{ ['J','F','M','A','M','J','J','A','S','O','N','D'][i] }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <div class="fp-td-muted mb-1" style="font-size:.75rem;">Quality Trend</div>
-                                        <div class="fp-chart">
-                                            <div class="fp-chart-bars">
-                                                <div v-for="(v, i) in qualityBars" :key="i" class="fp-chart-col">
-                                                    <div class="fp-chart-bar fp-chart-bar--qual" :style="{ height: `${v}%` }"></div>
-                                                    <span class="fp-chart-lbl">{{ ['J','F','M','A','M','J','J','A','S','O','N','D'][i] }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row g-2 mt-2">
-                                    <div class="col-6 col-md-3"><div class="fp-spec-cell"><span>Avg Production</span><strong>5,400 kg/yr</strong></div></div>
-                                    <div class="col-6 col-md-3"><div class="fp-spec-cell"><span>Yield / ha</span><strong>2.4 t</strong></div></div>
-                                    <div class="col-6 col-md-3"><div class="fp-spec-cell"><span>Active Season</span><strong>2024/25</strong></div></div>
-                                    <div class="col-6 col-md-3"><div class="fp-spec-cell"><span>Coffee Type Split</span><strong>{{ variety }} 100%</strong></div></div>
-                                </div>
-                            </div>
-
-                            <!-- 6. Farm-to-Market Traceability -->
-                            <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Van /></el-icon>
-                                    Farm-to-Market Traceability
-                                </div>
-                                <div class="fp-trace-flow">
-                                    <div v-for="(stage, i) in traceStages" :key="stage.label" class="fp-trace-stage">
-                                        <div class="fp-trace-dot" :class="stage.complete ? 'fp-trace-dot--done' : 'fp-trace-dot--pending'">
-                                            <el-icon><component :is="stage.icon" /></el-icon>
-                                        </div>
-                                        <div class="fp-trace-label">{{ stage.label }}</div>
-                                        <div class="fp-trace-status" :class="stage.complete ? 'fp-up' : 'fp-td-muted'">{{ stage.status }}</div>
-                                        <div class="fp-trace-date fp-td-muted">{{ stage.date }}</div>
-                                        <div v-if="i < traceStages.length - 1" class="fp-trace-line" :class="stage.complete ? 'fp-trace-line--done' : ''"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 11. Available Lots -->
-                            <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><ShoppingCart /></el-icon>
-                                    Available Coffee Lots
-                                </div>
-                                <div class="row g-3">
-                                    <div v-for="lot in lots" :key="lot.name" class="col-12 col-md-6">
-                                        <div class="fp-lot-card h-100">
-                                            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                                <div class="fp-item-name">{{ lot.name }}</div>
-                                                <div class="fp-score-pill" :class="lot.score >= 88 ? 'fp-score-pill--high' : 'fp-score-pill--mid'" style="flex-shrink:0;">{{ lot.score }}</div>
-                                            </div>
-                                            <div class="d-flex flex-wrap gap-1 mb-2">
-                                                <span v-for="b in lot.badges" :key="b" class="badge rounded-pill" style="font-size:.6rem; padding:2px 7px;"
-                                                    :class="b === 'Verified' ? 'bg-success-subtle text-success-emphasis border border-success-subtle'
-                                                          : 'bg-primary-subtle text-primary-emphasis border border-primary-subtle'">{{ b }}</span>
-                                            </div>
-                                            <div class="row g-1 mb-3">
-                                                <div class="col-6"><div class="fp-spec-cell"><span>Type</span><strong>{{ lot.type }}</strong></div></div>
-                                                <div class="col-6"><div class="fp-spec-cell"><span>Qty</span><strong>{{ lot.qty }}</strong></div></div>
-                                                <div class="col-6"><div class="fp-spec-cell"><span>Price/kg</span><strong>{{ lot.price }}</strong></div></div>
-                                                <div class="col-6"><div class="fp-spec-cell"><span>Demand</span>
-                                                    <strong :class="lot.tone === 'success' ? 'fp-up' : 'fp-warn'">{{ lot.demand }}</strong>
-                                                </div></div>
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <button class="btn fp-btn-outline btn-sm flex-fill fp-act-btn"><el-icon><View /></el-icon> View Lot</button>
-                                                <button class="btn fp-btn-primary btn-sm flex-fill fp-act-btn"><el-icon><ShoppingCart /></el-icon> Buy</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 12. Buyer Interest & Demand -->
-                            <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><TrendCharts /></el-icon>
-                                    Buyer Interest &amp; Demand
-                                </div>
-                                <div class="d-flex flex-column gap-3">
-                                    <div v-for="m in buyerMarkets" :key="m.region">
-                                        <div class="d-flex align-items-center justify-content-between mb-1">
-                                            <span class="fw-semibold" style="font-size:.8125rem;">{{ m.region }}</span>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="fp-td-muted" style="font-size:.75rem;">{{ m.price }}</span>
-                                                <span class="badge rounded-pill" style="font-size:.65rem;"
-                                                    :class="m.tone === 'danger'  ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle'
-                                                          : m.tone === 'success' ? 'bg-success-subtle text-success-emphasis border border-success-subtle'
-                                                          : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'">
-                                                    {{ m.demand }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="fp-bar-track">
-                                            <div class="fp-bar-fill"
-                                                :style="{ width: `${m.pct}%`,
-                                                          background: m.tone === 'danger' ? '#ef4444' : m.tone === 'success' ? '#004532' : '#f59e0b' }">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 14. Activity Timeline -->
-                            <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Clock /></el-icon>
-                                    Activity Timeline
-                                </div>
-                                <div class="fp-timeline">
-                                    <div v-for="(act, i) in timeline" :key="i" class="fp-timeline-item">
-                                        <div class="fp-timeline-dot" :class="`fp-timeline-dot--${act.tone}`">
-                                            <el-icon><component :is="act.icon" /></el-icon>
-                                        </div>
-                                        <div class="fp-timeline-body">
-                                            <div class="fp-timeline-text">{{ act.text }}</div>
-                                            <div class="fp-timeline-time">{{ act.date }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <!-- Right rail -->
-                    <div class="col-12 col-xxl-4">
-                        <div class="fp-rail">
-
-                            <!-- Farmer attached to farm -->
-                            <div class="fp-card" v-if="props.farm.farmer">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Star /></el-icon>
-                                    Farm Owner
-                                </div>
-                                <div class="d-flex align-items-center gap-3 mb-3">
-                                    <div class="fp-farmer-avatar">
-                                        {{ (props.farm.farmer.first_name?.[0] || '') + (props.farm.farmer.last_name?.[0] || '') || '?' }}
-                                    </div>
-                                    <div>
-                                        <div class="fp-item-name">{{ farmerName }}</div>
-                                        <div class="fp-td-muted" style="font-size:.75rem;">Single origin producer</div>
-                                        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle mt-1 d-inline-block" style="font-size:.6rem;">Verified</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex flex-column gap-1 mb-3">
-                                    <div class="fp-farmer-row" v-if="props.farm.farmer.district || props.farm.farmer.sub_county">
-                                        <el-icon style="font-size:12px; color:var(--on-surface-var); flex-shrink:0;"><Location /></el-icon>
-                                        <span>{{ [props.farm.farmer.sub_county, props.farm.farmer.district].filter(Boolean).join(', ') }}</span>
-                                    </div>
-                                    <div class="fp-farmer-row" v-if="props.farm.farmer.telephone">
-                                        <el-icon style="font-size:12px; color:var(--on-surface-var); flex-shrink:0;"><ChatDotRound /></el-icon>
-                                        <span>{{ props.farm.farmer.telephone }}</span>
-                                    </div>
-                                    <div class="fp-farmer-row" v-if="props.farm.farmer.email">
-                                        <el-icon style="font-size:12px; color:var(--on-surface-var); flex-shrink:0;"><Promotion /></el-icon>
-                                        <span>{{ props.farm.farmer.email }}</span>
-                                    </div>
-                                </div>
-                                <div class="row g-1 mb-3">
-                                    <div class="col-6" v-if="props.farm.farmer.coffee_type">
-                                        <div class="fp-spec-cell"><span>Coffee Type</span><strong>{{ props.farm.farmer.coffee_type }}</strong></div>
-                                    </div>
-                                    <div class="col-6" v-if="props.farm.farmer.farm_size">
-                                        <div class="fp-spec-cell"><span>Farm Size</span><strong>{{ props.farm.farmer.farm_size }}</strong></div>
-                                    </div>
-                                    <div class="col-12" v-if="props.farm.farmer.cooperative">
-                                        <div class="fp-spec-cell"><span>Cooperative</span><strong>{{ props.farm.farmer.cooperative }}</strong></div>
-                                    </div>
-                                </div>
-                                <button class="btn fp-btn-outline btn-sm w-100"><el-icon><ShoppingCart /></el-icon> Contact Farmer</button>
-                            </div>
-
-                            <!-- 7. Farm Weather -->
-                            <div class="fp-card">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <div class="fp-card-title mb-0">
-                                        <el-icon class="fp-card-icon"><Sunny /></el-icon>
-                                        Farm Weather
-                                    </div>
-                                    <span class="fp-weather-region"><el-icon><Location /></el-icon>{{ locationLabel }}</span>
-                                </div>
-
-                                <template v-if="weatherOutlook.length">
-                                    <p class="fp-weather-intro">
-                                        Planting-season outlook for {{ locationLabel }}.
-                                        <template v-if="weatherRegion && !locationLabel.toLowerCase().includes(weatherRegion.split('(')[0].trim().toLowerCase())">
-                                            Nearest regional data: {{ weatherRegion }}.
-                                        </template>
-                                    </p>
-                                    <div class="fp-weather-list">
-                                        <div v-for="month in weatherPreview" :key="month.id" class="fp-weather-row">
-                                            <div class="fp-weather-row__icon" :style="weatherIconStyle(month)">
-                                                <el-icon :size="16"><component :is="weatherIcon(month)" /></el-icon>
-                                            </div>
-                                            <div class="fp-weather-row__body">
-                                                <div class="fp-weather-row__head">
-                                                    <span class="fp-weather-row__month">{{ weatherMonthLabel(month) }}</span>
-                                                    <span class="fp-weather-row__temp">{{ month.temperature_min }}°–{{ month.temperature_max }}°C</span>
-                                                </div>
-                                                <div class="fp-weather-row__meta">
-                                                    {{ month.condition }}<template v-if="month.rainfall_mm !== null"> · {{ month.rainfall_mm }}mm rain</template><template v-if="month.humidity_percentage !== null"> · {{ month.humidity_percentage }}% humidity</template>
-                                                </div>
-                                                <p v-if="month.advisory" class="fp-weather-row__tip">{{ month.advisory }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <Link :href="route('farm.weather')" class="btn fp-btn-outline btn-sm w-100 mt-3">
-                                        <el-icon><Sunny /></el-icon>
-                                        {{ hasMoreWeather ? `View ${weatherOutlook.length - weatherPreviewCount} More Months` : 'View Full Forecast' }}
-                                    </Link>
-                                </template>
-                                <p v-else class="fp-td-muted" style="font-size:.8125rem;">No seasonal outlook available yet for this farm's region.</p>
-                            </div>
-
-                            <!-- 8. Documents -->
-                            <div class="fp-card">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <div class="fp-card-title mb-0">
-                                        <el-icon class="fp-card-icon"><Files /></el-icon>
-                                        Documents
-                                    </div>
-                                    <button v-if="props.canEdit" type="button" class="fp-doc-upload-btn" @click="openDocumentDialog">
-                                        <el-icon><Upload /></el-icon> Upload
-                                    </button>
-                                </div>
-
-                                <div v-if="documents.length" class="fp-doc-list">
-                                    <div v-for="doc in documents" :key="doc.id" class="fp-doc-item">
-                                        <div class="fp-doc-item__icon"><el-icon :size="16"><Document /></el-icon></div>
-                                        <div class="fp-doc-item__body">
-                                            <div class="fp-doc-item__title">{{ doc.title }}</div>
-                                            <div class="fp-doc-item__meta">
-                                                <span v-if="doc.document_type">{{ doc.document_type }} · </span>{{ formatFileSize(doc.file_size) }} · {{ formatDocDate(doc.created_at) }}
-                                            </div>
-                                        </div>
-                                        <div class="fp-doc-item__actions">
-                                            <a :href="doc.file_url" target="_blank" rel="noopener" class="fp-doc-action fp-doc-action--download" title="Download">
-                                                <el-icon><Download /></el-icon>
-                                            </a>
-                                            <button v-if="props.canEdit" type="button" class="fp-doc-action fp-doc-action--delete" title="Delete" @click="openDeleteDocumentDialog(doc)">
-                                                <el-icon><Delete /></el-icon>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div v-else class="fp-doc-empty">
-                                    <div class="fp-doc-empty__icon"><el-icon :size="20"><Files /></el-icon></div>
-                                    <p>No documents uploaded yet.</p>
-                                    <button v-if="props.canEdit" type="button" class="btn fp-btn-outline btn-sm" @click="openDocumentDialog">
-                                        <el-icon><Upload /></el-icon> Upload Document
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- 9. Sustainability & Practices -->
-                            <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Star /></el-icon>
-                                    Sustainability &amp; Practices
-                                </div>
-                                <div class="d-flex flex-wrap gap-1 mb-3">
-                                    <span class="fp-sus-badge">Sustainable</span>
-                                    <span class="fp-sus-badge fp-sus-badge--amber">Organic Practices</span>
-                                    <span class="fp-sus-badge fp-sus-badge--blue">Eco Certified</span>
-                                </div>
-                                <div class="d-flex flex-column gap-2">
-                                    <div v-for="s in sustainability" :key="s.label" class="fp-sus-row">
-                                        <el-icon style="font-size:13px; color:var(--green);"><component :is="s.icon" /></el-icon>
-                                        <span class="fp-cert-label flex-fill">{{ s.label }}</span>
-                                        <strong class="fp-up" style="font-size:.8125rem;">{{ s.value }}</strong>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 10. Market Readiness -->
-                            <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Van /></el-icon>
-                                    Market Readiness
-                                </div>
-                                <div class="row g-2 mb-3">
-                                    <div class="col-6"><div class="fp-spec-cell"><span>Export Lots</span><strong class="fp-up">{{ lots.length }}</strong></div></div>
-                                    <div class="col-6"><div class="fp-spec-cell"><span>Avg Price</span><strong>$4.60–5.20</strong></div></div>
-                                    <div class="col-6"><div class="fp-spec-cell"><span>Buyer Interest</span><strong class="fp-up">High</strong></div></div>
-                                    <div class="col-6"><div class="fp-spec-cell"><span>Active Contracts</span><strong>1</strong></div></div>
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <button class="btn fp-btn-primary btn-sm"><el-icon><ShoppingCart /></el-icon> View Lots</button>
-                                    <button class="btn fp-btn-outline btn-sm"><el-icon><DataLine /></el-icon> Sell Coffee</button>
-                                </div>
-                            </div>
-
-                            <!-- 15. AI Farm Insights -->
-                            <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Opportunity /></el-icon>
-                                    AI Farm Insights
-                                </div>
-                                <div class="d-flex flex-column gap-2">
-                                    <div v-for="ins in insights" :key="ins.text" class="fp-insight-card" :class="`fp-insight-card--${ins.tone}`">
-                                        <el-icon class="fp-insight-icon"><Opportunity /></el-icon>
-                                        <p class="fp-insight-text">{{ ins.text }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 16. Smart Alerts -->
-                            <div class="fp-card">
-                                <div class="fp-card-title mb-3">
-                                    <el-icon class="fp-card-icon"><Bell /></el-icon>
-                                    Smart Alerts
-                                </div>
-                                <div class="d-flex flex-column gap-2">
-                                    <div v-for="(val, key) in alerts" :key="key" class="fp-alert-row">
-                                        <span>{{ { harvestUpdates: 'Harvest Updates', qualityAlerts: 'Quality Alerts', buyerInterest: 'Buyer Interest Alerts', exportUpdates: 'Export Readiness Updates' }[key] }}</span>
-                                        <button class="fp-toggle" :class="{ 'fp-toggle--on': alerts[key] }" @click="alerts[key] = !alerts[key]"><i></i></button>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                </div><!-- /main grid -->
-                <div class="pb-5"></div>
             </div>
+        </div>
 
-            <!-- ── Edit Farm modal (creator only) ─────────────────────── -->
-            <el-dialog v-model="editDialogOpen" width="50%" align-center class="fp-modal">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon">
-                            <el-icon :size="18"><Edit /></el-icon>
-                        </div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Farm Profile</div>
-                            <div class="fp-modal__title">Edit Farm</div>
-                        </div>
+        <!-- ── Edit Farm modal (creator only) ─────────────────────────── -->
+        <el-dialog v-model="editDialogOpen" width="min(720px, calc(100vw - 2rem))" align-center destroy-on-close :close-on-click-modal="false" class="fp-modal">
+            <template #header>
+                <div class="fp-modal__head">
+                    <div class="fp-modal__head-icon"><el-icon :size="18"><Edit /></el-icon></div>
+                    <div class="fp-modal__head-text">
+                        <div class="fp-modal__eyebrow">Farm Profile</div>
+                        <div class="fp-modal__title">Edit Farm</div>
                     </div>
-                </template>
+                </div>
+            </template>
 
-                <form id="edit-farm-form" class="fp-modal__body" @submit.prevent="submitEditFarm">
-                    <div class="fp-field">
-                        <label class="fp-field__label">Farm Name</label>
+            <form id="edit-farm-form" class="fp-modal__body" @submit.prevent="submitEditFarm">
+                <div class="fp-grid-2">
+                    <div class="fp-field fp-field--span2">
+                        <label class="fp-field__label">Farm Name <span class="fp-req">*</span></label>
                         <el-input v-model="editForm.name" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.name }" />
                         <InputError class="fp-field__error" :message="editForm.errors.name" />
                     </div>
 
-                    <div class="fp-field-row">
-                        <div class="fp-field">
-                            <label class="fp-field__label">Location</label>
-                            <el-input v-model="editForm.location" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.location }" />
-                            <InputError class="fp-field__error" :message="editForm.errors.location" />
-                        </div>
-                        <div class="fp-field">
-                            <label class="fp-field__label">Altitude</label>
-                            <el-input v-model="editForm.altitude" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.altitude }" />
-                            <InputError class="fp-field__error" :message="editForm.errors.altitude" />
-                        </div>
-                    </div>
-
-                    <div class="fp-field-row">
-                        <div class="fp-field">
-                            <label class="fp-field__label">Farm Size</label>
-                            <el-input v-model="editForm.size" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.size }" />
-                            <InputError class="fp-field__error" :message="editForm.errors.size" />
-                        </div>
-                        <div class="fp-field">
-                            <label class="fp-field__label">Variety</label>
-                            <el-select v-model="editForm.variety" placeholder="Select crop variety" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': editForm.errors.variety }">
-                                <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
-                            </el-select>
-                            <InputError class="fp-field__error" :message="editForm.errors.variety" />
-                        </div>
-                    </div>
-
                     <div class="fp-field">
-                        <label class="fp-field__label">Notes <span class="fp-field__optional">(optional)</span></label>
-                        <el-input v-model="editForm.notes" type="textarea" :rows="3" class="fp-field-input" />
-                        <InputError class="fp-field__error" :message="editForm.errors.notes" />
+                        <label class="fp-field__label">Coffee Type</label>
+                        <el-input v-model="editForm.coffee_type" placeholder="e.g. Arabica" class="fp-field-input" />
+                        <InputError class="fp-field__error" :message="editForm.errors.coffee_type" />
                     </div>
-                </form>
-
-                <template #footer>
-                    <div class="fp-modal__footer">
-                        <button type="submit" form="edit-farm-form" class="btn fp-btn-primary btn-sm" :disabled="editForm.processing">
-                            {{ editForm.processing ? 'Saving…' : 'Save Changes' }}
-                        </button>
-                    </div>
-                </template>
-            </el-dialog>
-
-            <!-- ── Delete Farm modal (creator only) ────────────────────── -->
-            <el-dialog v-model="deleteDialogOpen" width="420px" align-center class="fp-modal fp-modal--danger">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon fp-modal__head-icon--danger">
-                            <el-icon :size="18"><Delete /></el-icon>
-                        </div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Farm Profile</div>
-                            <div class="fp-modal__title">Delete Farm</div>
-                        </div>
-                    </div>
-                </template>
-
-                <div class="fp-modal__body">
-                    <p class="fp-modal__confirm-text">
-                        Are you sure you want to delete <strong>{{ farmName }}</strong>? This action cannot be undone.
-                    </p>
-                </div>
-
-                <div class="fp-modal__footer">
-                    <button type="button" class="btn fp-btn-outline btn-sm" @click="deleteDialogOpen = false">Cancel</button>
-                    <button type="button" class="btn fp-btn-danger btn-sm" :disabled="deletingFarm" @click="deleteFarm">
-                        {{ deletingFarm ? 'Deleting…' : 'Delete Farm' }}
-                    </button>
-                </div>
-            </el-dialog>
-
-            <!-- ── Edit Environmental Specs modal (creator only) ──────── -->
-            <el-dialog v-model="specsDialogOpen" width="480px" align-center class="fp-modal">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon">
-                            <el-icon :size="18"><Edit /></el-icon>
-                        </div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Farm Profile</div>
-                            <div class="fp-modal__title">Edit Farm Specifications</div>
-                        </div>
-                    </div>
-                </template>
-
-                <form id="specs-form" class="fp-modal__body" @submit.prevent="submitSpecsForm">
-                    <div class="fp-field-row">
-                        <div class="fp-field">
-                            <label class="fp-field__label">Rainfall</label>
-                            <el-input v-model="specsForm.rainfall" placeholder="e.g. 1,850 mm" class="fp-field-input" :class="{ 'fp-field-input--error': specsForm.errors.rainfall }" />
-                            <InputError class="fp-field__error" :message="specsForm.errors.rainfall" />
-                        </div>
-                        <div class="fp-field">
-                            <label class="fp-field__label">Temperature</label>
-                            <el-input v-model="specsForm.temperature" placeholder="e.g. 18.5°C – 24.2°C" class="fp-field-input" :class="{ 'fp-field-input--error': specsForm.errors.temperature }" />
-                            <InputError class="fp-field__error" :message="specsForm.errors.temperature" />
-                        </div>
-                    </div>
-
-                    <div class="fp-field-row">
-                        <div class="fp-field">
-                            <label class="fp-field__label">Humidity</label>
-                            <el-input v-model="specsForm.humidity" placeholder="e.g. 62%" class="fp-field-input" :class="{ 'fp-field-input--error': specsForm.errors.humidity }" />
-                            <InputError class="fp-field__error" :message="specsForm.errors.humidity" />
-                        </div>
-                        <div class="fp-field">
-                            <label class="fp-field__label">Soil Type</label>
-                            <el-select v-model="specsForm.soil_type" placeholder="Select soil type" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': specsForm.errors.soil_type }">
-                                <el-option v-for="option in soilTypeOptions" :key="option.id" :label="option.name" :value="option.name" />
-                            </el-select>
-                            <InputError class="fp-field__error" :message="specsForm.errors.soil_type" />
-                        </div>
-                    </div>
-
                     <div class="fp-field">
-                        <label class="fp-field__label">Climatic Zone</label>
-                        <el-select v-model="specsForm.climatic_zone" placeholder="Select climatic zone" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': specsForm.errors.climatic_zone }">
-                            <el-option v-for="option in climaticZoneOptions" :key="option.id" :label="option.name" :value="option.name" />
+                        <label class="fp-field__label">Status</label>
+                        <el-select v-model="editForm.status" class="fp-field-input w-100">
+                            <el-option label="Active" value="active" />
+                            <el-option label="Inactive" value="inactive" />
                         </el-select>
-                        <InputError class="fp-field__error" :message="specsForm.errors.climatic_zone" />
                     </div>
-                </form>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Phone</label>
+                        <el-input v-model="editForm.tel" placeholder="e.g. +256 700 000000" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.tel }" />
+                        <InputError class="fp-field__error" :message="editForm.errors.tel" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Email</label>
+                        <el-input v-model="editForm.email" placeholder="e.g. farm@example.com" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.email }" />
+                        <InputError class="fp-field__error" :message="editForm.errors.email" />
+                    </div>
 
-                <template #footer>
-                    <div class="fp-modal__footer">
-                        <button type="button" class="btn fp-btn-outline btn-sm" @click="specsDialogOpen = false">Cancel</button>
-                        <button type="submit" form="specs-form" class="btn fp-btn-primary btn-sm" :disabled="specsForm.processing">
-                            {{ specsForm.processing ? 'Saving…' : 'Save Changes' }}
+                    <div class="fp-field">
+                        <label class="fp-field__label">Country</label>
+                        <el-input v-model="editForm.country" class="fp-field-input" />
+                        <InputError class="fp-field__error" :message="editForm.errors.country" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Region</label>
+                        <el-input v-model="editForm.region" class="fp-field-input" />
+                        <InputError class="fp-field__error" :message="editForm.errors.region" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">District</label>
+                        <el-input v-model="editForm.district" class="fp-field-input" />
+                        <InputError class="fp-field__error" :message="editForm.errors.district" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">County</label>
+                        <el-input v-model="editForm.county" class="fp-field-input" />
+                        <InputError class="fp-field__error" :message="editForm.errors.county" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Sub-county</label>
+                        <el-input v-model="editForm.subcounty" class="fp-field-input" />
+                        <InputError class="fp-field__error" :message="editForm.errors.subcounty" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Parish</label>
+                        <el-input v-model="editForm.parish" class="fp-field-input" />
+                        <InputError class="fp-field__error" :message="editForm.errors.parish" />
+                    </div>
+                    <div class="fp-field fp-field--span2">
+                        <label class="fp-field__label">Village</label>
+                        <el-input v-model="editForm.village" class="fp-field-input" />
+                        <InputError class="fp-field__error" :message="editForm.errors.village" />
+                    </div>
+                </div>
+
+                <div class="fp-modal__section">
+                    <div class="fp-modal__section-head">
+                        <div class="fp-modal__section-title">Coordinates &amp; Size</div>
+                        <button type="button" class="fp-btn fp-btn--outline" :disabled="geocoding" @click="locateFromAddress">
+                            <el-icon :size="14"><Location /></el-icon> {{ geocoding ? 'Locating…' : 'Locate from address' }}
                         </button>
                     </div>
-                </template>
-            </el-dialog>
+                    <span v-if="geocodeError" class="fp-field__error d-block mb-2">{{ geocodeError }}</span>
 
-            <!-- ── Edit Farm Location modal (creator only) ─────────────── -->
-            <el-dialog v-model="locationDialogOpen" width="480px" align-center class="fp-modal">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon">
-                            <el-icon :size="18"><Location /></el-icon>
-                        </div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Farm Profile</div>
-                            <div class="fp-modal__title">Edit Farm Location</div>
-                        </div>
-                    </div>
-                </template>
-
-                <form id="location-form" class="fp-modal__body" @submit.prevent="submitLocationForm">
-                    <div class="fp-locate-row">
-                        <button type="button" class="btn fp-btn-outline btn-sm" :disabled="geocoding" @click="locateFromAddress">
-                            <el-icon><Location /></el-icon>
-                            {{ geocoding ? 'Locating…' : 'Locate from farm address' }}
-                        </button>
-                        <span v-if="geocodeError" class="fp-locate-error">{{ geocodeError }}</span>
-                    </div>
-
-                    <div class="fp-field-row">
+                    <div class="fp-grid-2">
                         <div class="fp-field">
                             <label class="fp-field__label">Latitude</label>
-                            <el-input v-model="locationForm.latitude" placeholder="e.g. 0.3476" class="fp-field-input" :class="{ 'fp-field-input--error': locationForm.errors.latitude }" />
-                            <InputError class="fp-field__error" :message="locationForm.errors.latitude" />
+                            <el-input v-model="editForm.latitude" type="number" step="0.0000001" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.latitude }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.latitude" />
                         </div>
                         <div class="fp-field">
                             <label class="fp-field__label">Longitude</label>
-                            <el-input v-model="locationForm.longitude" placeholder="e.g. 34.1162" class="fp-field-input" :class="{ 'fp-field-input--error': locationForm.errors.longitude }" />
-                            <InputError class="fp-field__error" :message="locationForm.errors.longitude" />
-                        </div>
-                    </div>
-
-                    <div class="fp-field">
-                        <label class="fp-field__label">Altitude</label>
-                        <el-input v-model="locationForm.altitude" placeholder="e.g. 1,950m" class="fp-field-input" :class="{ 'fp-field-input--error': locationForm.errors.altitude }" />
-                        <InputError class="fp-field__error" :message="locationForm.errors.altitude" />
-                    </div>
-                </form>
-
-                <template #footer>
-                    <div class="fp-modal__footer">
-                        <button type="submit" form="location-form" class="btn fp-btn-primary btn-sm" :disabled="locationForm.processing">
-                            {{ locationForm.processing ? 'Saving…' : 'Save Changes' }}
-                        </button>
-                    </div>
-                </template>
-            </el-dialog>
-
-            <!-- ── Add Harvest modal (creator only) ──────────────────── -->
-            <el-dialog v-model="harvestDialogOpen" width="560px" align-center class="fp-modal">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon">
-                            <el-icon :size="18"><Box /></el-icon>
-                        </div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Farm Profile</div>
-                            <div class="fp-modal__title">Add Harvest</div>
-                        </div>
-                    </div>
-                </template>
-
-                <form id="harvest-form" novalidate class="fp-modal__body" @submit.prevent="submitHarvestForm">
-                    <div class="fp-field-row">
-                        <div class="fp-field">
-                            <label class="fp-field__label">Variety</label>
-                            <el-select v-model="harvestForm.variety" placeholder="Select crop variety" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.variety }">
-                                <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
-                            </el-select>
-                            <InputError class="fp-field__error" :message="harvestForm.errors.variety" />
+                            <el-input v-model="editForm.longitude" type="number" step="0.0000001" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.longitude }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.longitude" />
                         </div>
                         <div class="fp-field">
-                            <label class="fp-field__label">Harvest Season</label>
-                            <el-select v-model="harvestForm.harvest_season" placeholder="Select season" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.harvest_season }">
-                                <el-option v-for="option in harvestSeasonOptions" :key="option" :label="option" :value="option" />
-                            </el-select>
-                            <InputError class="fp-field__error" :message="harvestForm.errors.harvest_season" />
-                        </div>
-                    </div>
-
-                    <div class="fp-field-row fp-field-row--spaced">
-                        <div class="fp-field">
-                            <label class="fp-field__label">Date Planted</label>
-                            <el-date-picker v-model="harvestForm.date_planted" type="date" value-format="YYYY-MM-DD" placeholder="Select date" :disabled-date="disableFutureDates" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.date_planted }" />
-                            <InputError class="fp-field__error fp-field__error--spaced" :message="harvestForm.errors.date_planted" />
+                            <label class="fp-field__label">Elevation (m)</label>
+                            <el-input v-model="editForm.elevation" type="number" step="0.01" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.elevation }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.elevation" />
                         </div>
                         <div class="fp-field">
-                            <label class="fp-field__label">Harvest Date</label>
-                            <el-date-picker v-model="harvestForm.harvest_date" type="date" value-format="YYYY-MM-DD" placeholder="Select date" :disabled-date="disableFutureDates" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.harvest_date }" />
-                            <InputError class="fp-field__error fp-field__error--spaced" :message="harvestForm.errors.harvest_date" />
+                            <label class="fp-field__label">Total Area (ha)</label>
+                            <el-input v-model="editForm.total_area" type="number" min="0" step="0.01" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.total_area }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.total_area" />
                         </div>
-                    </div>
-
-                    <div class="fp-field-row">
-                        <div class="fp-field">
-                            <label class="fp-field__label">Pick Method</label>
-                            <el-select v-model="harvestForm.pick_method" placeholder="Select pick method" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.pick_method }">
-                                <el-option v-for="option in pickMethodOptions" :key="option" :label="option" :value="option" />
-                            </el-select>
-                            <InputError class="fp-field__error" :message="harvestForm.errors.pick_method" />
+                        <div class="fp-field fp-field--span2">
+                            <label class="fp-field__label">Coffee Area (ha)</label>
+                            <el-input v-model="editForm.coffee_area" type="number" min="0" step="0.01" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.coffee_area }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.coffee_area" />
                         </div>
-                        <div class="fp-field">
-                            <label class="fp-field__label">Ripeness %</label>
-                            <el-input-number v-model="harvestForm.ripeness_percentage" :min="0" :max="100" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.ripeness_percentage }" />
-                            <InputError class="fp-field__error" :message="harvestForm.errors.ripeness_percentage" />
-                        </div>
-                    </div>
-
-                    <div class="fp-field-row">
-                        <div class="fp-field">
-                            <label class="fp-field__label">Weight (kg)</label>
-                            <el-input-number v-model="harvestForm.weight" :min="0.01" :precision="2" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.weight }" />
-                            <InputError class="fp-field__error" :message="harvestForm.errors.weight" />
-                        </div>
-                        <div class="fp-field">
-                            <label class="fp-field__label">Price (per kg)</label>
-                            <el-input-number v-model="harvestForm.price" :min="0.01" :precision="2" class="fp-field-input w-100" :class="{ 'fp-field-input--error': harvestForm.errors.price }" />
-                            <InputError class="fp-field__error" :message="harvestForm.errors.price" />
-                        </div>
-                    </div>
-
-                    <div class="fp-harvest-flags">
-                        <div class="fp-harvest-flag">
-                            <span>Foreign matter present</span>
-                            <el-switch v-model="harvestForm.foreign_matter_present" />
-                        </div>
-                        <div class="fp-harvest-flag">
-                            <span>Pest damage</span>
-                            <el-switch v-model="harvestForm.pest_damage" />
-                        </div>
-                        <div class="fp-harvest-flag">
-                            <span>Disease signs</span>
-                            <el-switch v-model="harvestForm.disease_signs" />
-                        </div>
-                        <div class="fp-harvest-flag">
-                            <span>Visible defects</span>
-                            <el-switch v-model="harvestForm.visible_defects" />
-                        </div>
-                    </div>
-                </form>
-
-                <template #footer>
-                    <div class="fp-modal__footer">
-                        <button type="submit" form="harvest-form" class="btn fp-btn-primary btn-sm" :disabled="harvestForm.processing">
-                            {{ harvestForm.processing ? 'Saving…' : 'Save Harvest' }}
-                        </button>
-                    </div>
-                </template>
-            </el-dialog>
-
-            <!-- ── Delete Harvest modal (creator only) ─────────────────── -->
-            <el-dialog v-model="deleteHarvestDialogOpen" width="440px" align-center class="fp-modal fp-modal--danger">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon fp-modal__head-icon--danger">
-                            <el-icon :size="18"><Delete /></el-icon>
-                        </div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Harvest History</div>
-                            <div class="fp-modal__title">Delete Harvest</div>
-                        </div>
-                    </div>
-                </template>
-
-                <div v-if="harvestToDelete" class="fp-modal__body">
-                    <p class="fp-modal__confirm-text">
-                        Are you sure you want to delete this harvest record? This action cannot be undone.
-                    </p>
-                    <div class="fp-harvest-preview">
-                        <div class="fp-harvest-preview__row"><span>Harvest ID</span><strong>{{ harvestToDelete.code }}</strong></div>
-                        <div class="fp-harvest-preview__row"><span>Season</span><strong>{{ harvestToDelete.season }}</strong></div>
-                        <div class="fp-harvest-preview__row"><span>Date</span><strong>{{ harvestToDelete.date }}</strong></div>
-                        <div class="fp-harvest-preview__row"><span>Quantity</span><strong>{{ harvestToDelete.qty }}</strong></div>
                     </div>
                 </div>
 
-                <template #footer>
-                    <div class="fp-modal__footer">
-                        <button type="button" class="btn fp-btn-outline btn-sm" @click="deleteHarvestDialogOpen = false">Cancel</button>
-                        <button type="button" class="btn fp-btn-danger btn-sm" :disabled="deletingHarvest" @click="deleteHarvest">
-                            {{ deletingHarvest ? 'Deleting…' : 'Delete Harvest' }}
-                        </button>
-                    </div>
-                </template>
-            </el-dialog>
-
-            <!-- ── View Harvest modal ───────────────────────────────────── -->
-            <el-dialog v-model="viewHarvestDialogOpen" width="560px" align-center class="fp-modal">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon">
-                            <el-icon :size="18"><Box /></el-icon>
+                <div class="fp-modal__section">
+                    <div class="fp-modal__section-title">Agronomy</div>
+                    <div class="fp-grid-2">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Soil Type <span class="fp-field__optional">(from list)</span></label>
+                            <el-select v-model="editForm.soil_metadata_id" placeholder="Select soil type" clearable class="fp-field-input w-100">
+                                <el-option v-for="opt in soilTypeOptions" :key="opt.id" :label="opt.name" :value="opt.id" />
+                            </el-select>
                         </div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Harvest History</div>
-                            <div class="fp-modal__title">Harvest {{ harvestToViewCode }}</div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Soil Type <span class="fp-field__optional">(free text)</span></label>
+                            <el-input v-model="editForm.soil_type" placeholder="e.g. Volcanic Loam" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.soil_type }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.soil_type" />
                         </div>
-                    </div>
-                </template>
-
-                <div v-if="harvestToView" class="fp-modal__body">
-                    <div class="fp-view-section">
-                        <div class="fp-view-section__title">Overview</div>
-                        <div class="row g-2">
-                            <div class="col-6"><div class="fp-spec-cell"><span>Variety</span><strong>{{ harvestToView.variety || '—' }}</strong></div></div>
-                            <div class="col-6"><div class="fp-spec-cell"><span>Harvest Season</span><strong>{{ harvestToView.harvest_season || '—' }}</strong></div></div>
-                            <div class="col-6"><div class="fp-spec-cell"><span>Pick Method</span><strong>{{ harvestToView.pick_method || '—' }}</strong></div></div>
-                            <div class="col-6"><div class="fp-spec-cell"><span>Status</span><strong>{{ harvestToViewStatus }}</strong></div></div>
+                        <div class="fp-field fp-field--span2">
+                            <label class="fp-field__label">Climate Zone</label>
+                            <el-select v-model="editForm.climate_zone_metadata_id" placeholder="Select climate zone" clearable class="fp-field-input w-100">
+                                <el-option v-for="opt in climaticZoneOptions" :key="opt.id" :label="opt.name" :value="opt.id" />
+                            </el-select>
                         </div>
-                    </div>
-
-                    <div class="fp-view-section">
-                        <div class="fp-view-section__title">Timeline</div>
-                        <div class="row g-2">
-                            <div class="col-6"><div class="fp-spec-cell"><span>Date Planted</span><strong>{{ harvestToView.date_planted || '—' }}</strong></div></div>
-                            <div class="col-6"><div class="fp-spec-cell"><span>Harvest Date</span><strong>{{ harvestToView.harvest_date || '—' }}</strong></div></div>
+                        <div class="fp-field fp-field--span2">
+                            <label class="fp-field__label">Varietals Grown</label>
+                            <el-select v-model="editForm.crop_variety_ids" multiple placeholder="Select varieties" class="fp-field-input w-100">
+                                <el-option v-for="opt in cropVarietyOptions" :key="opt.id" :label="opt.name" :value="opt.id" />
+                            </el-select>
+                        </div>
+                        <div class="fp-field fp-field--span2">
+                            <label class="fp-field__label">Certifications</label>
+                            <el-select v-model="editForm.certification_ids" multiple placeholder="Select certifications" class="fp-field-input w-100">
+                                <el-option v-for="opt in certificationOptions" :key="opt.id" :label="opt.name" :value="opt.id" />
+                            </el-select>
                         </div>
                     </div>
-
-                    <div class="fp-view-section">
-                        <div class="fp-view-section__title">Yield &amp; Pricing</div>
-                        <div class="row g-2">
-                            <div class="col-4"><div class="fp-spec-cell"><span>Weight</span><strong>{{ harvestToView.weight !== null && harvestToView.weight !== undefined ? `${Number(harvestToView.weight).toLocaleString()} kg` : '—' }}</strong></div></div>
-                            <div class="col-4"><div class="fp-spec-cell"><span>Price / kg</span><strong>{{ harvestToView.price !== null && harvestToView.price !== undefined ? `$${Number(harvestToView.price).toFixed(2)}` : '—' }}</strong></div></div>
-                            <div class="col-4"><div class="fp-spec-cell"><span>Ripeness</span><strong>{{ harvestToView.ripeness_percentage !== null && harvestToView.ripeness_percentage !== undefined ? `${harvestToView.ripeness_percentage}%` : '—' }}</strong></div></div>
-                        </div>
-                    </div>
-
-                    <div class="fp-view-section">
-                        <div class="fp-view-section__title">Quality Flags</div>
-                        <div class="fp-harvest-flags">
-                            <div class="fp-harvest-flag">
-                                <span>Foreign Matter</span>
-                                <span class="badge rounded-pill" style="font-size:.65rem;"
-                                    :class="harvestToView.foreign_matter_present ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
-                                    {{ harvestToView.foreign_matter_present ? 'Present' : 'None' }}
-                                </span>
-                            </div>
-                            <div class="fp-harvest-flag">
-                                <span>Pest Damage</span>
-                                <span class="badge rounded-pill" style="font-size:.65rem;"
-                                    :class="harvestToView.pest_damage ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
-                                    {{ harvestToView.pest_damage ? 'Present' : 'None' }}
-                                </span>
-                            </div>
-                            <div class="fp-harvest-flag">
-                                <span>Disease Signs</span>
-                                <span class="badge rounded-pill" style="font-size:.65rem;"
-                                    :class="harvestToView.disease_signs ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
-                                    {{ harvestToView.disease_signs ? 'Present' : 'None' }}
-                                </span>
-                            </div>
-                            <div class="fp-harvest-flag">
-                                <span>Visible Defects</span>
-                                <span class="badge rounded-pill" style="font-size:.65rem;"
-                                    :class="harvestToView.visible_defects ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
-                                    {{ harvestToView.visible_defects ? 'Present' : 'None' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="fp-view-meta">Recorded {{ harvestToView.created_at || '—' }}</div>
                 </div>
-            </el-dialog>
 
-            <!-- ── Upload Document modal (creator only) ─────────────────── -->
-            <el-dialog v-model="documentDialogOpen" width="480px" align-center class="fp-modal">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon">
-                            <el-icon :size="18"><Upload /></el-icon>
+                <div class="fp-modal__section">
+                    <div class="fp-modal__section-title">Sustainability &amp; Traceability</div>
+                    <div class="fp-grid-3">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Water Conservation %</label>
+                            <el-input v-model="editForm.water_conservation_percentage" type="number" min="0" max="100" step="0.1" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.water_conservation_percentage }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.water_conservation_percentage" />
                         </div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Farm Profile</div>
-                            <div class="fp-modal__title">Upload Document</div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Carbon Sequestration <span class="fp-field__optional">(tCO2e/ha)</span></label>
+                            <el-input v-model="editForm.carbon_sequestration" type="number" min="0" step="0.1" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.carbon_sequestration }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.carbon_sequestration" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Soil Health Index <span class="fp-field__optional">(0–5)</span></label>
+                            <el-input v-model="editForm.soil_health_index" type="number" min="0" max="5" step="0.1" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.soil_health_index }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.soil_health_index" />
                         </div>
                     </div>
-                </template>
+                </div>
+            </form>
 
-                <form id="document-form" novalidate class="fp-modal__body" @submit.prevent="submitDocumentForm">
-                    <div class="fp-field">
-                        <label class="fp-field__label">Document Title</label>
-                        <el-input v-model="documentForm.title" placeholder="e.g. Organic Certification 2026" class="fp-field-input" :class="{ 'fp-field-input--error': documentForm.errors.title }" />
-                        <InputError class="fp-field__error" :message="documentForm.errors.title" />
+            <template #footer>
+                <div class="fp-modal__footer">
+                    <button type="button" class="fp-btn fp-btn--outline" @click="editDialogOpen = false">Cancel</button>
+                    <button type="submit" form="edit-farm-form" class="fp-btn fp-btn--primary" :disabled="editForm.processing">
+                        {{ editForm.processing ? 'Saving…' : 'Save Changes' }}
+                    </button>
+                </div>
+            </template>
+        </el-dialog>
+
+        <!-- ── Delete Farm modal ────────────────────────────────────────── -->
+        <el-dialog v-model="deleteDialogOpen" width="min(420px, calc(100vw - 2rem))" align-center class="fp-modal fp-modal--danger">
+            <template #header>
+                <div class="fp-modal__head">
+                    <div class="fp-modal__head-icon fp-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
+                    <div class="fp-modal__head-text">
+                        <div class="fp-modal__eyebrow">Farm Profile</div>
+                        <div class="fp-modal__title">Delete Farm</div>
                     </div>
+                </div>
+            </template>
+            <div class="fp-modal__body">
+                <p class="fp-modal__confirm-text">Are you sure you want to delete <strong>{{ farmName }}</strong>? This action cannot be undone.</p>
+            </div>
+            <template #footer>
+                <div class="fp-modal__footer">
+                    <button type="button" class="fp-btn fp-btn--outline" @click="deleteDialogOpen = false">Cancel</button>
+                    <button type="button" class="fp-btn fp-btn--danger" :disabled="deletingFarm" @click="deleteFarm">
+                        {{ deletingFarm ? 'Deleting…' : 'Delete Farm' }}
+                    </button>
+                </div>
+            </template>
+        </el-dialog>
 
+        <!-- ── Add Collection modal ─────────────────────────────────────── -->
+        <el-dialog v-model="collectionDialogOpen" width="min(600px, calc(100vw - 2rem))" align-center destroy-on-close :close-on-click-modal="false" class="fp-modal">
+            <template #header>
+                <div class="fp-modal__head">
+                    <div class="fp-modal__head-icon"><el-icon :size="18"><Coffee /></el-icon></div>
+                    <div class="fp-modal__head-text">
+                        <div class="fp-modal__eyebrow">Farm Profile</div>
+                        <div class="fp-modal__title">{{ collectionDialogTitle }}</div>
+                    </div>
+                </div>
+            </template>
+
+            <form id="collection-form" novalidate class="fp-modal__body" @submit.prevent="submitCollectionForm">
+                <div class="fp-grid-2">
                     <div class="fp-field">
-                        <label class="fp-field__label">Document Type <span class="fp-field__optional">(optional)</span></label>
-                        <el-select v-model="documentForm.document_type" placeholder="Select a type" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': documentForm.errors.document_type }">
-                            <el-option v-for="option in documentTypeOptions" :key="option" :label="option" :value="option" />
+                        <label class="fp-field__label">Collection Date</label>
+                        <el-date-picker v-model="collectionForm.collection_date" type="date" value-format="YYYY-MM-DD" placeholder="Select date" :disabled-date="disableFutureDates" class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.collection_date }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.collection_date" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Coffee Type</label>
+                        <el-input v-model="collectionForm.coffee_type" placeholder="e.g. Arabica" class="fp-field-input" :class="{ 'fp-field-input--error': collectionForm.errors.coffee_type }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.coffee_type" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Variety</label>
+                        <el-select v-model="collectionForm.variety" placeholder="Select crop variety" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.variety }">
+                            <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
                         </el-select>
-                        <InputError class="fp-field__error" :message="documentForm.errors.document_type" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.variety" />
                     </div>
-
                     <div class="fp-field">
-                        <label class="fp-field__label">File</label>
-                        <label class="fp-doc-dropzone" :class="{ 'fp-doc-dropzone--error': documentForm.errors.document }">
-                            <input type="file" class="fp-doc-dropzone__input" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx" @change="onDocumentFileChange">
-                            <el-icon :size="20"><Upload /></el-icon>
-                            <span v-if="documentFileName" class="fp-doc-dropzone__filename">{{ documentFileName }}</span>
-                            <span v-else class="fp-doc-dropzone__hint">Click to choose a file — image, PDF, or Word document (max 10MB)</span>
-                        </label>
-                        <InputError class="fp-field__error" :message="documentForm.errors.document" />
+                        <label class="fp-field__label">Harvest Season</label>
+                        <el-select v-model="collectionForm.harvest_season" placeholder="Select season" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.harvest_season }">
+                            <el-option v-for="option in harvestSeasonOptions" :key="option" :label="option" :value="option" />
+                        </el-select>
+                        <InputError class="fp-field__error" :message="collectionForm.errors.harvest_season" />
                     </div>
-                </form>
-
-                <template #footer>
-                    <div class="fp-modal__footer">
-                        <button type="submit" form="document-form" class="btn fp-btn-primary btn-sm" :disabled="documentForm.processing">
-                            {{ documentForm.processing ? 'Uploading…' : 'Upload Document' }}
-                        </button>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Quantity</label>
+                        <el-input-number v-model="collectionForm.quantity" :min="0.01" :precision="2" class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.quantity }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.quantity" />
                     </div>
-                </template>
-            </el-dialog>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Unit</label>
+                        <el-select v-model="collectionForm.unit" placeholder="Select unit" class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.unit }">
+                            <el-option v-for="option in collectionUnitOptions" :key="option" :label="option" :value="option" />
+                        </el-select>
+                        <InputError class="fp-field__error" :message="collectionForm.errors.unit" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Initial Moisture %</label>
+                        <el-input-number v-model="collectionForm.initial_moisture" :min="0" :max="100" :precision="2" class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.initial_moisture }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.initial_moisture" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Initial Defects</label>
+                        <el-input-number v-model="collectionForm.initial_defects" :min="0" :precision="2" class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.initial_defects }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.initial_defects" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Initial Grade</label>
+                        <el-input v-model="collectionForm.initial_grade" placeholder="e.g. Grade A" class="fp-field-input" :class="{ 'fp-field-input--error': collectionForm.errors.initial_grade }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.initial_grade" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Initial Quality Score</label>
+                        <el-input-number v-model="collectionForm.initial_quality_score" :min="0" :max="100" :precision="2" class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.initial_quality_score }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.initial_quality_score" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Collection Price</label>
+                        <el-input-number v-model="collectionForm.collection_price" :min="0" :precision="2" class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.collection_price }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.collection_price" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Currency</label>
+                        <el-input v-model="collectionForm.currency" placeholder="USD" maxlength="3" class="fp-field-input" :class="{ 'fp-field-input--error': collectionForm.errors.currency }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.currency" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Payment Status</label>
+                        <el-select v-model="collectionForm.payment_status" placeholder="Select status" class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.payment_status }">
+                            <el-option v-for="option in collectionPaymentStatusOptions" :key="option" :label="option.charAt(0).toUpperCase() + option.slice(1)" :value="option" />
+                        </el-select>
+                        <InputError class="fp-field__error" :message="collectionForm.errors.payment_status" />
+                    </div>
+                    <div class="fp-field">
+                        <label class="fp-field__label">Reference</label>
+                        <el-input v-model="collectionForm.reference" placeholder="Payment / lot reference" class="fp-field-input" :class="{ 'fp-field-input--error': collectionForm.errors.reference }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.reference" />
+                    </div>
+                    <div class="fp-field fp-field--span2">
+                        <label class="fp-field__label">Notes</label>
+                        <el-input v-model="collectionForm.notes" type="textarea" :rows="3" class="fp-field-input" :class="{ 'fp-field-input--error': collectionForm.errors.notes }" />
+                        <InputError class="fp-field__error" :message="collectionForm.errors.notes" />
+                    </div>
+                </div>
+            </form>
 
-            <!-- ── Delete Document modal (creator only) ──────────────────── -->
-            <el-dialog v-model="deleteDocumentDialogOpen" width="420px" align-center class="fp-modal fp-modal--danger">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon fp-modal__head-icon--danger">
-                            <el-icon :size="18"><Delete /></el-icon>
+            <template #footer>
+                <div class="fp-modal__footer">
+                    <button type="button" class="fp-btn fp-btn--outline" @click="collectionDialogOpen = false">Cancel</button>
+                    <button type="submit" form="collection-form" class="fp-btn fp-btn--primary" :disabled="collectionForm.processing">
+                        {{ collectionSubmitLabel }}
+                    </button>
+                </div>
+            </template>
+        </el-dialog>
+
+        <!-- ── View Collection modal ────────────────────────────────────── -->
+        <el-dialog v-model="viewCollectionDialogOpen" width="min(560px, calc(100vw - 2rem))" align-center class="fp-modal">
+            <template #header>
+                <div class="fp-modal__head">
+                    <div class="fp-modal__head-icon"><el-icon :size="18"><Coffee /></el-icon></div>
+                    <div class="fp-modal__head-text">
+                        <div class="fp-modal__eyebrow">Farm Collections</div>
+                        <div class="fp-modal__title">{{ collectionToView?.coffee_type || 'Collection' }} · {{ collectionToView?.collection_date || '—' }}</div>
+                    </div>
+                </div>
+            </template>
+
+            <div v-if="collectionToView" class="fp-modal__body">
+                <div class="fp-collection-hero">
+                    <div class="fp-collection-hero__qty">
+                        <span class="fp-collection-hero__label"><el-icon :size="12"><Box /></el-icon> Quantity Collected</span>
+                        <div class="fp-collection-hero__value">
+                            {{ collectionToView.quantity !== null && collectionToView.quantity !== undefined ? Number(collectionToView.quantity).toLocaleString() : '—' }}
+                            <span class="fp-collection-hero__unit">{{ collectionToView.unit || 'kg' }}</span>
                         </div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Farm Profile</div>
-                            <div class="fp-modal__title">Delete Document</div>
-                        </div>
                     </div>
-                </template>
-
-                <div v-if="documentToDelete" class="fp-modal__body">
-                    <p class="fp-modal__confirm-text">
-                        Are you sure you want to delete <strong>{{ documentToDelete.title }}</strong>? This action cannot be undone.
-                    </p>
+                    <span class="fp-status-pill" :class="`fp-status-pill--${collectionToViewTone}`">{{ collectionToViewPaymentStatus }}</span>
                 </div>
 
-                <template #footer>
-                    <div class="fp-modal__footer">
-                        <button type="button" class="btn fp-btn-outline btn-sm" @click="deleteDocumentDialogOpen = false">Cancel</button>
-                        <button type="button" class="btn fp-btn-danger btn-sm" :disabled="deletingDocument" @click="deleteDocument">
-                            {{ deletingDocument ? 'Deleting…' : 'Delete Document' }}
-                        </button>
+                <div class="fp-view-section">
+                    <div class="fp-view-section__title"><el-icon :size="12"><InfoFilled /></el-icon> Collection Details</div>
+                    <div class="fp-grid-2">
+                        <div class="fp-stat-cell"><span><el-icon :size="12"><Coffee /></el-icon> Coffee Type</span><strong>{{ collectionToView.coffee_type || '—' }}</strong></div>
+                        <div class="fp-stat-cell"><span><el-icon :size="12"><Grid /></el-icon> Variety</span><strong>{{ collectionToView.variety || '—' }}</strong></div>
+                        <div class="fp-stat-cell"><span><el-icon :size="12"><Sunny /></el-icon> Harvest Season</span><strong>{{ collectionToView.harvest_season || '—' }}</strong></div>
+                        <div class="fp-stat-cell"><span><el-icon :size="12"><Calendar /></el-icon> Collection Date</span><strong>{{ collectionToView.collection_date || '—' }}</strong></div>
                     </div>
-                </template>
-            </el-dialog>
+                </div>
 
-        </div>
+                <div class="fp-view-section">
+                    <div class="fp-view-section__title"><el-icon :size="12"><CircleCheckFilled /></el-icon> Quality Assessment</div>
+                    <div class="fp-grid-3">
+                        <div class="fp-stat-cell"><span><el-icon :size="12"><Umbrella /></el-icon> Moisture</span><strong>{{ collectionToView.initial_moisture !== null && collectionToView.initial_moisture !== undefined ? `${collectionToView.initial_moisture}%` : '—' }}</strong></div>
+                        <div class="fp-stat-cell"><span><el-icon :size="12"><Warning /></el-icon> Defects</span><strong>{{ collectionToView.initial_defects !== null && collectionToView.initial_defects !== undefined ? collectionToView.initial_defects : '—' }}</strong></div>
+                        <div class="fp-stat-cell"><span><el-icon :size="12"><Medal /></el-icon> Grade</span><strong>{{ collectionToView.initial_grade || '—' }}</strong></div>
+                        <div class="fp-stat-cell fp-field--span2"><span><el-icon :size="12"><CircleCheckFilled /></el-icon> Quality Score</span><strong>{{ collectionToView.initial_quality_score !== null && collectionToView.initial_quality_score !== undefined ? `${collectionToView.initial_quality_score} / 100` : '—' }}</strong></div>
+                    </div>
+                </div>
+
+                <div class="fp-view-section">
+                    <div class="fp-view-section__title"><el-icon :size="12"><Money /></el-icon> Payment</div>
+                    <div class="fp-grid-2">
+                        <div class="fp-stat-cell"><span><el-icon :size="12"><Money /></el-icon> Collection Price</span><strong>{{ collectionToView.collection_price !== null && collectionToView.collection_price !== undefined ? `${collectionToView.currency || 'USD'} ${Number(collectionToView.collection_price).toLocaleString()}` : '—' }}</strong></div>
+                        <div class="fp-stat-cell"><span><el-icon :size="12"><Ticket /></el-icon> Reference</span><strong>{{ collectionToView.reference || '—' }}</strong></div>
+                    </div>
+                </div>
+
+                <div v-if="collectionToView.notes" class="fp-view-section">
+                    <div class="fp-view-section__title"><el-icon :size="12"><Memo /></el-icon> Notes</div>
+                    <p class="fp-collection-notes">{{ collectionToView.notes }}</p>
+                </div>
+
+                <p class="fp-muted">Recorded {{ formatDocDate(collectionToView.created_at) }}</p>
+            </div>
+
+            <template #footer>
+                <div class="fp-modal__footer">
+                    <button type="button" class="fp-btn fp-btn--outline" @click="viewCollectionDialogOpen = false">Close</button>
+                    <button v-if="canEdit" type="button" class="fp-btn fp-btn--danger" @click="openDeleteCollectionDialog(collectionToView)">
+                        <el-icon :size="14"><Delete /></el-icon> Delete
+                    </button>
+                    <button v-if="canEdit" type="button" class="fp-btn fp-btn--primary" @click="editCollectionFromView">
+                        <el-icon :size="14"><Edit /></el-icon> Edit
+                    </button>
+                </div>
+            </template>
+        </el-dialog>
+
+        <!-- ── Delete Collection modal ──────────────────────────────────── -->
+        <el-dialog v-model="deleteCollectionDialogOpen" width="min(440px, calc(100vw - 2rem))" align-center class="fp-modal fp-modal--danger">
+            <template #header>
+                <div class="fp-modal__head">
+                    <div class="fp-modal__head-icon fp-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
+                    <div class="fp-modal__head-text">
+                        <div class="fp-modal__eyebrow">Farm Collections</div>
+                        <div class="fp-modal__title">Delete Collection</div>
+                    </div>
+                </div>
+            </template>
+            <div v-if="collectionToDelete" class="fp-modal__body">
+                <p class="fp-modal__confirm-text">Are you sure you want to delete this collection record? This action cannot be undone.</p>
+                <dl class="fp-preview">
+                    <div class="fp-preview__row"><dt>Coffee Type</dt><dd>{{ collectionToDelete.coffee_type || '—' }}</dd></div>
+                    <div class="fp-preview__row"><dt>Date</dt><dd>{{ collectionToDelete.collection_date || '—' }}</dd></div>
+                    <div class="fp-preview__row"><dt>Quantity</dt><dd>{{ collectionToDelete.quantity !== null && collectionToDelete.quantity !== undefined ? `${Number(collectionToDelete.quantity).toLocaleString()} ${collectionToDelete.unit || 'kg'}` : '—' }}</dd></div>
+                </dl>
+            </div>
+            <template #footer>
+                <div class="fp-modal__footer">
+                    <button type="button" class="fp-btn fp-btn--outline" @click="deleteCollectionDialogOpen = false">Cancel</button>
+                    <button type="button" class="fp-btn fp-btn--danger" :disabled="deletingCollection" @click="deleteCollection">
+                        {{ deletingCollection ? 'Deleting…' : 'Delete Collection' }}
+                    </button>
+                </div>
+            </template>
+        </el-dialog>
+
+        <!-- ── Upload Document modal ────────────────────────────────────── -->
+        <el-dialog v-model="documentDialogOpen" width="min(480px, calc(100vw - 2rem))" align-center destroy-on-close :close-on-click-modal="false" class="fp-modal">
+            <template #header>
+                <div class="fp-modal__head">
+                    <div class="fp-modal__head-icon"><el-icon :size="18"><Upload /></el-icon></div>
+                    <div class="fp-modal__head-text">
+                        <div class="fp-modal__eyebrow">Farm Profile</div>
+                        <div class="fp-modal__title">Upload Document</div>
+                    </div>
+                </div>
+            </template>
+
+            <form id="document-form" novalidate class="fp-modal__body" @submit.prevent="submitDocumentForm">
+                <div class="fp-field">
+                    <label class="fp-field__label">Document Title</label>
+                    <el-input v-model="documentForm.title" placeholder="e.g. Organic Certification 2026" class="fp-field-input" :class="{ 'fp-field-input--error': documentForm.errors.title }" />
+                    <InputError class="fp-field__error" :message="documentForm.errors.title" />
+                </div>
+                <div class="fp-field">
+                    <label class="fp-field__label">Document Type <span class="fp-field__optional">(optional)</span></label>
+                    <el-select v-model="documentForm.document_type" placeholder="Select a type" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': documentForm.errors.document_type }">
+                        <el-option v-for="option in documentTypeOptions" :key="option" :label="option" :value="option" />
+                    </el-select>
+                    <InputError class="fp-field__error" :message="documentForm.errors.document_type" />
+                </div>
+                <div class="fp-field">
+                    <label class="fp-field__label">File</label>
+                    <label class="fp-dropzone" :class="{ 'fp-dropzone--error': documentForm.errors.document }">
+                        <input type="file" class="fp-dropzone__input" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx" @change="onDocumentFileChange">
+                        <el-icon :size="20"><Upload /></el-icon>
+                        <span v-if="documentFileName" class="fp-dropzone__filename">{{ documentFileName }}</span>
+                        <span v-else class="fp-dropzone__hint">Click to choose a file — image, PDF, or Word document (max 10MB)</span>
+                    </label>
+                    <InputError class="fp-field__error" :message="documentForm.errors.document" />
+                </div>
+            </form>
+
+            <template #footer>
+                <div class="fp-modal__footer">
+                    <button type="button" class="fp-btn fp-btn--outline" @click="documentDialogOpen = false">Cancel</button>
+                    <button type="submit" form="document-form" class="fp-btn fp-btn--primary" :disabled="documentForm.processing">
+                        {{ documentForm.processing ? 'Uploading…' : 'Upload Document' }}
+                    </button>
+                </div>
+            </template>
+        </el-dialog>
+
+        <!-- ── Delete Document modal ────────────────────────────────────── -->
+        <el-dialog v-model="deleteDocumentDialogOpen" width="min(420px, calc(100vw - 2rem))" align-center class="fp-modal fp-modal--danger">
+            <template #header>
+                <div class="fp-modal__head">
+                    <div class="fp-modal__head-icon fp-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
+                    <div class="fp-modal__head-text">
+                        <div class="fp-modal__eyebrow">Farm Profile</div>
+                        <div class="fp-modal__title">Delete Document</div>
+                    </div>
+                </div>
+            </template>
+            <div v-if="documentToDelete" class="fp-modal__body">
+                <p class="fp-modal__confirm-text">Are you sure you want to delete <strong>{{ documentToDelete.title }}</strong>? This action cannot be undone.</p>
+            </div>
+            <template #footer>
+                <div class="fp-modal__footer">
+                    <button type="button" class="fp-btn fp-btn--outline" @click="deleteDocumentDialogOpen = false">Cancel</button>
+                    <button type="button" class="fp-btn fp-btn--danger" :disabled="deletingDocument" @click="deleteDocument">
+                        {{ deletingDocument ? 'Deleting…' : 'Delete Document' }}
+                    </button>
+                </div>
+            </template>
+        </el-dialog>
     </DesignPreviewLayout>
 </template>
 
 <style scoped>
-/* ── Tokens ────────────────────────────────────────────────────────────────── */
 .fp-page {
-    --green:          #004532;
-    --green-grad:     #065f46;
-    --on-green:       #ffffff;
-    --on-surface:     #111827;
-    --on-surface-var: #6b7280;
-    --surface-white:  #ffffff;
-    --surface-low:    #f8fafc;
-    --surface-mid:    #f1f5f9;
-    --surface-high:   #eef2f0;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
-    color: var(--on-surface);
-    min-height: 100%;
-    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    font-family: var(--dp-font-sans);
 }
 
-/* ── Header ────────────────────────────────────────────────────────────────── */
-.fp-header      { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
-.fp-header-kicker { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 4px; line-height: 1; }
-.fp-title       { font-size: 1.1875rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
-.fp-subtitle    { font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.5; margin-top: 2px; }
-.fp-hbadge      { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
-.fp-hbadge--soft { background: #dcfce7; color: #166534; }
-.fp-hbadge--blue { background: #dbeafe; color: #1e40af; }
-.fp-hbadge--amber{ background: #fef3c7; color: #92400e; }
+/* ── Hero ────────────────────────────────────────────────────────────── */
+.fp-hero { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.fp-hero__text { max-width: 640px; }
+.fp-hero__text h1 { color: var(--dp-primary); }
+.fp-subtitle { font-size: 14px; line-height: 1.6; color: var(--dp-on-surface-variant); margin: 8px 0 0; }
+.fp-hero__actions { display: flex; gap: 10px; flex-shrink: 0; }
 
-/* ── Buttons ───────────────────────────────────────────────────────────────── */
-.fp-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
-.fp-btn-primary:hover { background: var(--green-grad); border-color: var(--green-grad); color: #fff; }
-.fp-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
-.fp-btn-outline:hover { background: var(--surface-low); }
-.fp-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
-.fp-btn-danger  { background: #dc2626; border-color: #dc2626; color: #fff; border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
-.fp-btn-danger:hover { background: #b91c1c; border-color: #b91c1c; color: #fff; }
-.fp-btn-danger:disabled { opacity: .6; cursor: not-allowed; }
-.fp-btn-danger-ghost { background: #fef2f2; border-color: transparent; color: #dc2626; border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
-.fp-btn-danger-ghost:hover { background: #fee2e2; }
-.fp-btn-group { border: 1px solid var(--surface-high); border-radius: 8px; overflow: hidden; }
-.fp-btn-group :deep(.el-button) { border: none; border-radius: 0; }
-.fp-btn-group :deep(.el-button + .el-button) { border-left: 1px solid var(--surface-high); }
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.fp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.fp-btn--outline { background: var(--dp-surface-container-lowest); color: var(--dp-on-surface); box-shadow: var(--dp-card-shadow); }
+.fp-btn--outline:hover { background: var(--dp-surface-container-low); }
+.fp-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
+.fp-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(39, 19, 16, 0.2); }
+.fp-btn--primary:disabled { opacity: 0.6; cursor: default; transform: none; box-shadow: none; }
+.fp-btn--danger { background: var(--dp-error); color: var(--dp-on-error); }
+.fp-btn--danger:disabled { opacity: 0.6; cursor: default; }
+.fp-btn--danger-outline { background: var(--dp-surface-container-lowest); color: var(--dp-error); box-shadow: var(--dp-card-shadow); }
+.fp-btn--danger-outline:hover { background: var(--dp-error-container); }
+.fp-btn--block { width: 100%; }
+.fp-btn:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
+.fp-mt { margin-top: 14px; }
 
-/* ── Hero card ─────────────────────────────────────────────────────────────── */
-.fp-hero-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
-.fp-hero-identity { padding: 1.25rem; border-right: 1px solid var(--surface-high); background: linear-gradient(180deg, #f0fdf4, #ffffff); display: flex; flex-direction: column; }
-.fp-hero-specs, .fp-hero-perf { padding: 1.25rem; }
-.fp-hero-specs { border-right: 1px solid var(--surface-high); }
-.fp-farm-avatar-lg { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(145deg, #1f2937, #0f172a); color: #d1fae5; font-weight: 800; font-size: 1.125rem; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
-.fp-hero-name   { font-size: 1.125rem; font-weight: 800; color: var(--on-surface); line-height: 1.3; margin-bottom: 4px; }
-.fp-hero-farmer { font-size: 0.8125rem; color: var(--on-surface-var); margin-bottom: 6px; }
-.fp-contact-row { font-size: 0.75rem; color: var(--on-surface-var); margin-bottom: 3px; }
-.fp-specs-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--on-surface-var); margin-bottom: 12px; }
-.fp-specs-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
-.fp-specs-edit-btn { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--surface-high); background: var(--surface-white); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; flex-shrink: 0; transition: background 0.15s ease, color 0.15s ease; }
-.fp-specs-edit-btn:hover { background: var(--surface-low); color: var(--green); }
+.fp-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-on-surface-variant);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.fp-icon-btn:hover { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
+.fp-icon-btn--danger:hover { background: var(--dp-error-container); color: var(--dp-error); }
+.fp-icon-btn:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 
-/* ── Quality ring ──────────────────────────────────────────────────────────── */
-.fp-quality-ring-wrap { display: flex; align-items: center; }
-.fp-quality-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fp-quality-ring-inner { position: absolute; text-align: center; }
-.fp-quality-score { font-size: 1.1875rem; font-weight: 800; color: var(--green); line-height: 1; font-variant-numeric: tabular-nums; }
-.fp-quality-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); margin-top: 2px; }
-.fp-perf-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.4; }
-.fp-perf-row:last-child { border-bottom: none; }
-.fp-perf-row strong { color: var(--on-surface); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.fp-card {
+    background: var(--dp-surface-container-lowest);
+    border-radius: var(--dp-card-radius);
+    box-shadow: var(--dp-card-shadow);
+    padding: 22px;
+}
+.fp-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--dp-primary);
+    margin: 0 0 16px;
+}
+.fp-card-title .el-icon { color: var(--dp-outline); font-size: 15px; }
+.fp-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.fp-card-head .fp-card-title { margin-bottom: 0; }
 
-/* ── Spec cell ─────────────────────────────────────────────────────────────── */
-.fp-spec-cell { background: var(--surface-low); border-radius: 6px; padding: 7px 9px; }
-.fp-spec-cell span   { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-surface-var); display: block; margin-bottom: 3px; line-height: 1.3; }
-.fp-spec-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.fp-muted { color: var(--dp-on-surface-variant); font-size: 12.5px; }
+.fp-muted--center { text-align: center; }
 
-/* ── Cards ─────────────────────────────────────────────────────────────────── */
-.fp-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 14px; padding: 1.25rem; box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 1px 8px rgba(0,0,0,.03); transition: box-shadow 0.15s ease, border-color 0.15s ease; }
-.fp-card:hover { border-color: #d1d5db; box-shadow: 0 2px 4px rgba(0,0,0,.03), 0 6px 18px rgba(0,0,0,.05); }
-.fp-card-title { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); letter-spacing: -0.01em; line-height: 1.3; }
-.fp-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+/* ── Page layout ───────────────────────────────────────────────────────── */
+.fp-stack { display: flex; flex-direction: column; gap: 20px; }
+.fp-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+.fp-pair > .fp-card { height: 100%; display: flex; flex-direction: column; }
+.fp-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+.fp-trio > .fp-card { height: 100%; display: flex; flex-direction: column; }
+.fp-card-head-icon { color: var(--dp-outline); flex-shrink: 0; }
+.fp-card-head--padded { padding: 22px 22px 0; margin-bottom: 8px; }
+.fp-mono { font-family: var(--dp-font-mono); }
+.fp-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 100%; }
+.fp-stat-cell__label { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dp-outline); margin-bottom: 6px; }
 
-/* ── Map ───────────────────────────────────────────────────────────────────── */
-.fp-map-tile { position: relative; min-height: 180px; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, rgba(0,0,0,.04) 25%, transparent 25%) -12px 0/24px 24px, linear-gradient(225deg, rgba(0,0,0,.04) 25%, transparent 25%) -12px 0/24px 24px, linear-gradient(315deg, rgba(0,0,0,.04) 25%, transparent 25%) 0 0/24px 24px, linear-gradient(45deg, rgba(0,0,0,.04) 25%, transparent 25%) 0 0/24px 24px, #f6f7f7; border: 1px solid var(--surface-high); }
-.fp-map-canvas { position: absolute; inset: 0; }
-.fp-map-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 1rem; text-align: center; }
-.fp-map-coords { position: absolute; bottom: 0.75rem; left: 0.75rem; right: 0.75rem; background: rgba(255,255,255,.92); border-radius: 8px; padding: 8px 10px; }
-.fp-map-badges { position: absolute; top: 0.75rem; right: 0.75rem; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
-.fp-map-badge { background: rgba(0,69,50,0.85); color: #fff; border-radius: 999px; font-size: 0.625rem; font-weight: 700; padding: 3px 8px; }
-.fp-env-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.4; }
-.fp-env-row:last-child { border-bottom: none; }
-.fp-env-row strong { color: var(--on-surface); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* ── Sustainability metrics ───────────────────────────────────────────── */
+.fp-gauge-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.fp-gauge { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+.fp-gauge__ring {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fp-gauge__hole {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--dp-surface-container-lowest);
+    color: var(--dp-outline);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.fp-gauge__value { font-size: 14px; font-weight: 800; color: var(--dp-on-surface); line-height: 1.2; }
+.fp-gauge__unit { display: block; font-size: 9.5px; font-weight: 700; color: var(--dp-outline); text-transform: uppercase; letter-spacing: 0.04em; }
+.fp-gauge__label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dp-outline); line-height: 1.3; }
 
-/* ── Production chart ──────────────────────────────────────────────────────── */
-.fp-chart { height: 100px; display: flex; align-items: flex-end; background: var(--surface-low); border-radius: 8px; padding: 6px; }
-.fp-chart-bars { display: flex; align-items: flex-end; gap: 2px; width: 100%; height: 100%; }
-.fp-chart-col  { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; height: 100%; justify-content: flex-end; }
-.fp-chart-bar  { width: 100%; border-radius: 2px 2px 0 0; }
-.fp-chart-bar--prod { background: var(--green); }
-.fp-chart-bar--qual { background: #059669; }
-.fp-chart-lbl  { font-size: 0.5625rem; color: var(--on-surface-var); font-weight: 600; }
+.fp-metric-footer {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid color-mix(in srgb, var(--dp-outline-variant) 25%, transparent);
+}
+.fp-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.fp-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: var(--dp-surface-container-high);
+    color: var(--dp-on-surface-variant);
+    font-size: 11.5px;
+    font-weight: 700;
+}
 
-/* ── Table ─────────────────────────────────────────────────────────────────── */
-.fp-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 10px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
-.fp-table tbody td { padding: 11px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; font-variant-numeric: tabular-nums; }
-.fp-table-row { transition: background 0.1s; }
-.fp-table-row:hover { background: var(--surface-low); }
-.fp-item-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.4; }
-.fp-td-muted  { color: var(--on-surface-var); font-size: 0.8125rem; line-height: 1.4; }
-.fp-act-btn   { font-size: 0.75rem !important; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.fp-score-pill { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 800; padding: 2px 8px; font-variant-numeric: tabular-nums; }
-.fp-score-pill--high { background: #dcfce7; color: #166534; }
-.fp-score-pill--mid  { background: #fef3c7; color: #92400e; }
-.fp-up   { color: #166534; font-weight: 700; }
-.fp-warn { color: #92400e; font-weight: 700; }
+/* ── Flush-padding table card (Farm Collections) ──────────────────────── */
+.fp-card--flush { padding: 0; overflow: hidden; }
+.fp-table thead th {
+    background: var(--dp-surface-container-low);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--dp-on-surface-variant);
+    padding: 12px 22px;
+    border-bottom-color: transparent;
+    white-space: nowrap;
+}
+.fp-table tbody td { padding: 14px 22px; font-size: 13px; border-color: color-mix(in srgb, var(--dp-outline-variant) 25%, transparent); vertical-align: middle; }
+.fp-table-row { cursor: pointer; transition: background 0.12s ease; }
+.fp-table-row:hover { background: var(--dp-surface-container-low); }
+.fp-table-row:last-child td { border-bottom: none; }
+.fp-table-strong { font-weight: 700; color: var(--dp-on-surface); }
 
-/* ── Table header icons (matches sibling el-table pattern) ───────────────── */
-.fp-table-th { display: inline-flex; align-items: center; gap: 6px; }
-.fp-table-th :deep(.el-icon) { font-size: 12px; color: #9ca3af; }
+/* ── Farm owner card ─────────────────────────────────────────────────── */
+.fp-owner { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.fp-owner__avatar-wrap { position: relative; flex-shrink: 0; }
+.fp-owner__avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--dp-secondary-container), var(--dp-secondary-fixed));
+    color: var(--dp-on-secondary-container);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+}
+.fp-owner__badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--dp-secondary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--dp-surface-container-lowest);
+}
+.fp-owner__name { font-size: 15px; font-weight: 700; color: var(--dp-on-surface); margin-bottom: 5px; }
 
-/* ── In-table empty state ─────────────────────────────────────────────────── */
-.fp-table-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 2rem 1rem; }
-.fp-table-empty__icon { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; }
-.fp-table-empty__title { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
-.fp-table-empty__text { font-size: 0.75rem; color: var(--on-surface-var); margin: 0; max-width: 320px; line-height: 1.5; }
+.fp-owner__contacts { display: flex; flex-direction: column; gap: 4px; margin-bottom: 18px; }
+.fp-owner__contact {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 6px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--dp-on-surface-variant);
+    text-decoration: none;
+    transition: background 0.12s ease;
+}
+.fp-owner__contact span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-owner__contact--link:hover { background: var(--dp-surface-container-low); color: var(--dp-on-surface); }
+.fp-owner__contact-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-outline);
+    flex-shrink: 0;
+}
 
-/* ── Traceability ──────────────────────────────────────────────────────────── */
-.fp-trace-flow { display: flex; justify-content: space-between; align-items: flex-start; position: relative; }
-.fp-trace-stage { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; position: relative; z-index: 1; }
-.fp-trace-dot { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-.fp-trace-dot--done    { background: #dcfce7; color: #166534; }
-.fp-trace-dot--pending { background: var(--surface-high); color: var(--on-surface-var); }
-.fp-trace-label  { font-size: 0.6875rem; font-weight: 700; color: var(--on-surface); text-align: center; margin-top: 2px; }
-.fp-trace-status { font-size: 0.6875rem; font-weight: 600; text-align: center; }
-.fp-trace-date   { font-size: 0.625rem; color: var(--on-surface-var); text-align: center; }
-.fp-trace-line   { position: absolute; top: 19px; left: 50%; width: 100%; height: 2px; background: var(--surface-high); z-index: 0; }
-.fp-trace-line--done { background: #16a34a; }
+.fp-owner__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 38px;
+    margin-top: auto;
+    border-radius: 999px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-primary);
+    font-size: 12.5px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease, gap 0.15s ease;
+}
+.fp-owner__cta:hover { background: var(--dp-surface-container-high); gap: 9px; }
+.fp-owner__cta:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 
-/* ── Lot card ──────────────────────────────────────────────────────────────── */
-.fp-lot-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; display: flex; flex-direction: column; }
+/* ── General information card ────────────────────────────────────────── */
+.fp-info-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.fp-info-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-outline);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fp-info-header__body { min-width: 0; flex: 1; }
+.fp-info-header__name { font-size: 16px; font-weight: 800; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-info-header__meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 12px; font-weight: 600; color: var(--dp-on-surface-variant); }
+.fp-info-header__meta .fp-mono { color: var(--dp-outline); }
+.fp-info-header__dot { color: var(--dp-outline); }
 
-/* ── Bars ──────────────────────────────────────────────────────────────────── */
-.fp-bar-track { height: 6px; background: var(--surface-high); border-radius: 999px; overflow: hidden; }
-.fp-bar-fill  { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+.fp-info-rows { display: flex; flex-direction: column; gap: 4px; }
+.fp-info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 6px;
+    border-radius: 9px;
+    transition: background 0.12s ease;
+}
+.fp-info-row:hover { background: var(--dp-surface-container-low); }
+.fp-info-row__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-outline);
+    flex-shrink: 0;
+}
+.fp-info-row__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dp-outline); width: 64px; flex-shrink: 0; }
+.fp-info-row__value { font-size: 13.5px; font-weight: 700; color: var(--dp-on-surface); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
-.fp-cert-label { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.4; }
+/* ── Location card ───────────────────────────────────────────────────── */
+.fp-loc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.fp-loc-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-outline);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fp-loc-header__body { min-width: 0; flex: 1; }
+.fp-loc-header__trail { font-size: 14px; font-weight: 800; color: var(--dp-on-surface); line-height: 1.35; overflow-wrap: break-word; }
+.fp-loc-header__sub { font-size: 11px; font-weight: 600; color: var(--dp-outline); margin-top: 2px; }
 
-/* ── Farm Weather card ─────────────────────────────────────────────────────── */
-.fp-weather-region { display: inline-flex; align-items: center; gap: 4px; font-size: .6875rem; font-weight: 700; color: var(--on-surface-var); background: var(--surface-low); border-radius: 999px; padding: 3px 9px; flex-shrink: 0; }
-.fp-weather-intro { font-size: .75rem; color: var(--on-surface-var); margin: 0 0 10px; line-height: 1.4; }
-.fp-weather-list { display: flex; flex-direction: column; gap: 10px; }
-.fp-weather-row { display: flex; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--surface-low); }
-.fp-weather-row:last-child { padding-bottom: 0; border-bottom: none; }
-.fp-weather-row__icon { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fp-weather-row__body { flex: 1; min-width: 0; }
-.fp-weather-row__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.fp-weather-row__month { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
-.fp-weather-row__temp { font-size: .75rem; font-weight: 700; color: var(--on-surface); flex-shrink: 0; font-variant-numeric: tabular-nums; }
-.fp-weather-row__meta { font-size: .6875rem; color: var(--on-surface-var); margin-top: 1px; }
-.fp-weather-row__tip { font-size: .75rem; color: #374151; line-height: 1.4; margin: 4px 0 0; }
+.fp-loc-coords {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    background: var(--dp-surface-container-low);
+}
+.fp-loc-coords__icon { display: inline-flex; color: var(--dp-outline); flex-shrink: 0; }
+.fp-loc-coords__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dp-outline); }
+.fp-loc-coords__value { font-size: 12.5px; font-weight: 700; color: var(--dp-on-surface); margin-left: auto; }
 
-/* ── Farmer card ───────────────────────────────────────────────────────────── */
-.fp-farmer-avatar { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fp-farmer-row { display: flex; align-items: center; gap: 7px; font-size: 0.8125rem; color: var(--on-surface-var); padding: 4px 0; line-height: 1.4; }
+.fp-loc-grid { margin-top: auto; }
 
-/* ── Sustainability ────────────────────────────────────────────────────────── */
-.fp-sus-badge { display: inline-flex; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
-.fp-sus-badge--amber { background: #fef3c7; color: #92400e; }
-.fp-sus-badge--blue  { background: #dbeafe; color: #1e40af; }
-.fp-sus-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
-.fp-sus-row:last-child { border-bottom: none; }
+/* ── Technical specs card ────────────────────────────────────────────── */
+.fp-spec-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.fp-spec-tile { padding: 14px 16px; border-radius: 12px; background: var(--dp-surface-container-low); }
+.fp-spec-tile__label { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dp-outline); margin-bottom: 6px; }
+.fp-spec-tile__value { font-size: 22px; font-weight: 800; color: var(--dp-on-surface); line-height: 1; }
+.fp-spec-tile__unit { font-size: 12px; font-weight: 700; color: var(--dp-outline); margin-left: 3px; }
 
-/* ── Timeline ──────────────────────────────────────────────────────────────── */
-.fp-timeline { display: flex; flex-direction: column; }
-.fp-timeline-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--surface-low); }
-.fp-timeline-item:last-child { border-bottom: none; }
-.fp-timeline-dot { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
-.fp-timeline-dot--success { background: #dcfce7; color: #166534; }
-.fp-timeline-dot--primary { background: #dbeafe; color: #1d4ed8; }
-.fp-timeline-dot--warning { background: #fef3c7; color: #92400e; }
-.fp-timeline-dot--info    { background: #e0f2fe; color: #0369a1; }
-.fp-timeline-dot--danger  { background: #fee2e2; color: #b91c1c; }
-.fp-timeline-body { flex: 1; min-width: 0; }
-.fp-timeline-text { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.4; }
-.fp-timeline-time { font-size: 0.6875rem; color: var(--on-surface-var); margin-top: 2px; }
+/* ── Status pill ─────────────────────────────────────────────────────── */
+.fp-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+.fp-status-pill--green { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
+.fp-status-pill--amber { background: #fef3c7; color: #92400e; }
+.fp-status-pill--primary { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
+.fp-status-pill--danger { background: var(--dp-error-container); color: var(--dp-on-error-container); }
+.fp-status-pill--muted { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
 
-/* ── Documents ─────────────────────────────────────────────────────────────── */
-.fp-doc-upload-btn { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,69,50,0.08); color: var(--green); border: none; border-radius: 7px; font-size: .75rem; font-weight: 700; padding: 5px 11px; cursor: pointer; transition: background .15s ease; flex-shrink: 0; }
-.fp-doc-upload-btn:hover { background: rgba(0,69,50,0.15); }
+/* ── Stat row / cells ────────────────────────────────────────────────── */
+.fp-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.fp-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px; }
+.fp-field--span2 { grid-column: span 2; }
+.fp-stat-cell { display: flex; flex-direction: column; gap: 4px; }
+.fp-stat-cell span { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dp-outline); }
+.fp-stat-cell span .el-icon { color: var(--dp-primary); opacity: 0.6; flex-shrink: 0; }
+.fp-stat-cell strong { font-size: 13.5px; font-weight: 700; color: var(--dp-on-surface); }
 
-.fp-doc-list { display: flex; flex-direction: column; }
-.fp-doc-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--surface-low); }
-.fp-doc-item:last-child { border-bottom: none; }
-.fp-doc-item__icon { width: 32px; height: 32px; border-radius: 9px; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fp-doc-item__body { flex: 1; min-width: 0; }
-.fp-doc-item__title { font-size: .8125rem; font-weight: 700; color: var(--on-surface); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fp-doc-item__meta { font-size: .6875rem; color: var(--on-surface-var); margin-top: 1px; }
-.fp-doc-item__actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-.fp-doc-action { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; border: none; background: transparent; color: var(--on-surface-var); cursor: pointer; text-decoration: none; transition: background .15s ease, color .15s ease; }
-.fp-doc-action--download:hover { background: rgba(0,69,50,0.08); color: var(--green); }
-.fp-doc-action--delete:hover { background: #fef2f2; color: #dc2626; }
-
-.fp-doc-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 1.5rem 0.5rem; color: var(--on-surface-var); }
-.fp-doc-empty__icon { width: 44px; height: 44px; border-radius: 12px; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; margin-bottom: 2px; }
-.fp-doc-empty p { font-size: .8125rem; margin: 0; }
-
-.fp-doc-dropzone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; border: 1.5px dashed var(--surface-high); border-radius: 10px; padding: 1.25rem 1rem; cursor: pointer; color: var(--on-surface-var); transition: border-color .15s ease, background .15s ease; position: relative; }
-.fp-doc-dropzone:hover { border-color: var(--green); background: rgba(0,69,50,0.03); }
-.fp-doc-dropzone--error { border-color: #dc2626; }
-.fp-doc-dropzone__input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.fp-doc-dropzone__hint { font-size: .75rem; line-height: 1.4; max-width: 260px; }
-.fp-doc-dropzone__filename { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
-
-/* ── AI Insights ───────────────────────────────────────────────────────────── */
-.fp-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 10px; border: 1px solid; }
-.fp-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
-.fp-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
-.fp-insight-card--warning { background: #fffbeb; border-color: #fde68a; }
-.fp-insight-icon { font-size: 14px; color: var(--green); flex-shrink: 0; margin-top: 1px; }
-.fp-insight-text { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
-
-/* ── Alerts ────────────────────────────────────────────────────────────────── */
-.fp-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 8px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; line-height: 1.4; }
-.fp-alert-row:last-child { border-bottom: none; }
-.fp-toggle { width: 32px; height: 18px; border-radius: 999px; border: none; padding: 2px; background: var(--surface-high); cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
-.fp-toggle i { display: block; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
-.fp-toggle--on { background: var(--green); }
-.fp-toggle--on i { transform: translateX(14px); }
-
-/* ── Right rail ────────────────────────────────────────────────────────────── */
-.fp-rail { display: flex; flex-direction: column; gap: 1.125rem; position: sticky; top: 100px; }
-
-/* ── Edit modal — same design language as other dialogs in the app ───
-   NOTE: <el-dialog> teleports to <body>, outside .fp-page, so CSS
-   custom properties like var(--green) do not cascade in — literal hex
-   values are used below on purpose. */
-:deep(.el-dialog.fp-modal) {
-    border-radius: 18px;
-    padding: 0;
+/* ── Map ─────────────────────────────────────────────────────────────── */
+.fp-map-tile {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 20, 15, .22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    background: var(--dp-surface-container-low);
 }
-:deep(.el-dialog.fp-modal .el-dialog__header) { padding: 0; margin: 0; }
-:deep(.el-dialog.fp-modal .el-dialog__body) { padding: 0; }
-:deep(.el-dialog.fp-modal .el-dialog__footer) { padding: 0; }
+.fp-map-canvas { width: 100%; height: 100%; }
+.fp-map-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    color: var(--dp-outline);
+}
+.fp-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 30px 16px;
+    text-align: center;
+    color: var(--dp-outline);
+}
+.fp-empty p { font-size: 13px; color: var(--dp-on-surface-variant); margin: 0; }
+
+/* ── Weather ─────────────────────────────────────────────────────────── */
+.fp-weather-intro { font-size: 12.5px; color: var(--dp-on-surface-variant); margin: 0 0 14px; }
+.fp-weather-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.fp-weather-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 5px;
+    padding: 16px 10px;
+    border-radius: 14px;
+    background: var(--dp-surface-container-low);
+    transition: background 0.15s ease;
+}
+.fp-weather-card:hover { background: var(--dp-surface-container-high); }
+.fp-weather-card__icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2px;
+}
+.fp-weather-card__month { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dp-on-surface-variant); }
+.fp-weather-card__temp { font-size: 19px; font-weight: 800; color: var(--dp-primary); font-family: var(--dp-font-mono); }
+.fp-weather-card__temp span { color: var(--dp-outline); font-weight: 600; font-size: 13px; margin: 0 1px; }
+.fp-weather-card__condition { font-size: 12px; font-weight: 600; color: var(--dp-on-surface); }
+.fp-weather-card__meta { display: flex; gap: 8px; font-size: 10.5px; color: var(--dp-outline); font-family: var(--dp-font-mono); }
+.fp-weather-card__tip { font-size: 11px; color: var(--dp-on-surface-variant); font-style: italic; line-height: 1.4; margin: 2px 0 0; }
+
+/* ── Documents ───────────────────────────────────────────────────────── */
+.fp-doc-list { display: flex; flex-direction: column; }
+.fp-doc-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid color-mix(in srgb, var(--dp-outline-variant) 25%, transparent); }
+.fp-doc-item:last-child { border-bottom: none; }
+.fp-doc-item__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--dp-primary-container);
+    color: var(--dp-on-primary-container);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fp-doc-item__body { flex: 1; min-width: 0; }
+.fp-doc-item__title { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-doc-item__actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.fp-table-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .fp-btn,
+    .fp-icon-btn,
+    .fp-table-row { transition: none; }
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+    .fp-trio { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+    .fp-pair { grid-template-columns: 1fr; }
+    .fp-trio { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+    .fp-card { padding: 18px; }
+    .fp-card-head--padded { padding: 18px 18px 0; }
+    .fp-table thead th,
+    .fp-table tbody td { padding: 12px 18px; }
+    .fp-grid-2 { grid-template-columns: 1fr; }
+    .fp-field--span2 { grid-column: span 1; }
+    .fp-hero { align-items: flex-start; }
+    .fp-hero__actions { width: 100%; }
+    .fp-hero__actions .fp-btn { flex: 1; }
+    .fp-weather-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .fp-weather-card { padding: 12px 6px; }
+}
+
+/* ── Modals — el-dialog teleports to <body>, outside .dp-shell, so
+   --dp-* custom properties don't cascade in; literal hex from the same
+   palette is used here, matching this app's other teleported dialogs. */
+</style>
+
+<style>
+.el-dialog.fp-modal { border-radius: 18px; padding: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+.el-dialog.fp-modal .el-dialog__header { padding: 0; margin: 0; }
+.el-dialog.fp-modal .el-dialog__body { padding: 0; }
+.el-dialog.fp-modal .el-dialog__footer { padding: 0; }
 
 .fp-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #f3f4f6; }
-.fp-modal__head-icon { width: 38px; height: 38px; border-radius: 11px; background: rgba(0,69,50,.08); color: #004532; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fp-modal__head-icon--danger { background: #fee2e2; color: #dc2626; }
+.fp-modal__head-icon { width: 38px; height: 38px; border-radius: 11px; background: rgba(39, 19, 16, 0.08); color: #271310; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fp-modal__head-icon--danger { background: #fee2e2; color: #b91c1c; }
 .fp-modal__head-text { flex: 1; min-width: 0; }
-.fp-modal__eyebrow { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #004532; margin-bottom: 1px; }
-.fp-modal__title { font-size: 1.0625rem; font-weight: 800; color: #111827; letter-spacing: -.01em; }
+.fp-modal__eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #271310; margin-bottom: 1px; }
+.fp-modal__title { font-size: 1.0625rem; font-weight: 800; color: #111827; letter-spacing: -0.01em; }
 
-.fp-modal__body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; max-height: 65vh; overflow-y: auto; }
-.fp-modal__confirm-text { font-size: 0.875rem; color: #374151; line-height: 1.5; margin: 0; }
+.fp-modal__body { padding: 22px 24px 6px; max-height: 70vh; overflow-y: auto; }
+.fp-modal__confirm-text { font-size: 0.875rem; color: #374151; line-height: 1.6; margin: 0 0 4px; }
+.fp-modal__section { margin-top: 20px; padding-top: 18px; border-top: 1px solid #f3f4f6; }
+.fp-modal__section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.fp-modal__section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; }
 
-.fp-harvest-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #f3f4f6; border: 1px solid #f3f4f6; border-radius: 10px; overflow: hidden; margin-top: 14px; }
-.fp-harvest-preview__row { background: #fff; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
-.fp-harvest-preview__row span { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; }
-.fp-harvest-preview__row strong { font-size: 0.8125rem; font-weight: 700; color: #111827; font-variant-numeric: tabular-nums; }
-
-.fp-view-section { display: flex; flex-direction: column; gap: 8px; }
-.fp-view-section__title { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #9ca3af; }
-.fp-view-meta { font-size: 0.75rem; color: #9ca3af; text-align: center; padding-top: 4px; border-top: 1px solid #f3f4f6; }
-
-.fp-locate-row { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-.fp-locate-error { font-size: .75rem; font-weight: 600; color: #dc2626; }
-.fp-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.fp-field-row--spaced { margin-bottom: 10px; }
-.fp-field { display: flex; flex-direction: column; gap: 5px; }
-.fp-field__label { font-size: .75rem; font-weight: 600; color: #374151; }
-.fp-field__optional { font-weight: 400; color: #9ca3af; }
-.fp-field__error { font-size: .75rem; font-weight: 600; color: #dc2626; margin-top: 4px; display: block; }
-.fp-field__error--spaced { margin-top: 8px; }
-.fp-field__error--spaced :deep(p) { margin-top: 8px !important; }
-
-.fp-harvest-flags { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding: 12px; background: #f9fafb; border-radius: 10px; border: 1px solid #f3f4f6; }
-.fp-harvest-flag { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .8125rem; font-weight: 600; color: #374151; }
-
+.fp-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fp-field__label { font-size: 0.8125rem; font-weight: 700; color: #111827; }
+.fp-field__optional { color: #9ca3af; font-weight: 500; }
+.fp-req { color: #dc2626; }
+.fp-field__error { font-size: 0.75rem; font-weight: 600; color: #dc2626; line-height: 1.4; }
+.fp-field-input { width: 100%; }
 .fp-field-input--error :deep(.el-input__wrapper),
-.fp-field-input--error :deep(.el-textarea__inner),
 .fp-field-input--error :deep(.el-select__wrapper),
-.fp-field-input--error.el-date-editor,
-.fp-field-input--error:deep(.el-date-editor) { box-shadow: 0 0 0 1.5px #dc2626 inset !important; }
+.fp-field-input--error.el-input .el-input__wrapper { box-shadow: 0 0 0 1.5px #dc2626 inset !important; }
+
+.fp-preview { margin: 14px 0 0; display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 10px; background: #f9fafb; }
+.fp-preview__row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8125rem; }
+.fp-preview__row dt { color: #6b7280; margin: 0; }
+.fp-preview__row dd { color: #111827; font-weight: 700; margin: 0; }
+
+/* ── View Collection modal ──────────────────────────────────────────────── */
+.fp-view-section { margin-bottom: 18px; }
+.fp-view-section:last-of-type { margin-bottom: 8px; }
+.fp-view-section__title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b7280;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f3f4f6;
+}
+.fp-view-section__title .el-icon { color: #9ca3af; }
+
+.fp-collection-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    background: #f9fafb;
+}
+.fp-collection-hero__label { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin-bottom: 4px; }
+.fp-collection-hero__label .el-icon { color: #9ca3af; }
+.fp-collection-hero__value { font-size: 26px; font-weight: 800; color: #111827; line-height: 1; }
+.fp-collection-hero__unit { font-size: 13px; font-weight: 700; color: #6b7280; margin-left: 4px; }
+.fp-collection-notes { margin: 0; padding: 12px 14px; border-radius: 10px; background: #f9fafb; font-size: 13px; line-height: 1.55; color: #374151; white-space: pre-wrap; }
+
+
+.fp-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 24px 16px;
+    border: 1.5px dashed #d1d5db;
+    border-radius: 12px;
+    background: #f9fafb;
+    color: #6b7280;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.fp-dropzone:hover { border-color: #271310; background: #f3f4f6; }
+.fp-dropzone--error { border-color: #dc2626; }
+.fp-dropzone__input { display: none; }
+.fp-dropzone__hint { font-size: 0.75rem; }
+.fp-dropzone__filename { font-size: 0.8125rem; font-weight: 700; color: #111827; }
 
 .fp-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #f9fafb; border-top: 1px solid #f3f4f6; }
 
-/* ── Responsive ────────────────────────────────────────────────────────────── */
-@media (max-width: 1399.98px) { .fp-rail { position: static; } }
-@media (max-width: 991.98px)  { .fp-hero-identity, .fp-hero-specs { border-right: none; border-bottom: 1px solid var(--surface-high); } }
-@media (max-width: 767.98px)  {
-    .fp-field-row { grid-template-columns: 1fr; }
-    :deep(.el-dialog.fp-modal) { width: 92vw !important; }
+@media (max-width: 640px) {
+    .fp-grid-2,
+    .fp-grid-3 { grid-template-columns: 1fr; }
+    .fp-field--span2 { grid-column: span 1; }
+    .fp-info-row { flex-wrap: wrap; }
+    .fp-info-row__label { width: auto; }
+    .fp-info-row__value { flex-basis: 100%; }
 }
 </style>

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Market extends Model
 {
@@ -44,5 +45,14 @@ class Market extends Model
     public function lot(): BelongsTo
     {
         return $this->belongsTo(Lot::class);
+    }
+
+    /**
+     * Extra gallery photos for this listing (up to 3, enforced in
+     * MarketImageService) — separate from the single `image` cover field.
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(MarketImage::class)->orderBy('position');
     }
 }

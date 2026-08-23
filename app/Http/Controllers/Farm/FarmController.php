@@ -4,16 +4,17 @@ namespace App\Http\Controllers\Farm;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ClimateZoneMetadataResource;
+use App\Http\Resources\FarmCollectionResource;
 use App\Http\Resources\FarmDocumentResource;
 use App\Http\Resources\FarmResource;
-use App\Http\Resources\HarvestResource;
 use App\Http\Resources\SoilMetadataResource;
 use App\Http\Resources\WeatherForecastResource;
 use App\Models\Farm;
+use App\Models\FarmCollection;
 use App\Models\FarmDocument;
-use App\Models\Farmer;
 use App\Models\Harvest;
 use App\Services\ClimateZoneMetadataService;
+use App\Services\FarmCollectionService;
 use App\Services\FarmDocumentService;
 use App\Services\FarmService;
 use App\Services\HarvestService;
@@ -21,7 +22,6 @@ use App\Services\SoilMetadataService;
 use App\Services\WeatherForecastService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -31,11 +31,12 @@ class FarmController extends Controller
 {
     public function __construct(
         private readonly FarmService $farms,
-        private readonly ClimateZoneMetadataService $climateZones,
-        private readonly SoilMetadataService $soils,
         private readonly HarvestService $harvests,
         private readonly WeatherForecastService $weather,
         private readonly FarmDocumentService $documents,
+        private readonly SoilMetadataService $soils,
+        private readonly ClimateZoneMetadataService $climateZones,
+        private readonly FarmCollectionService $collections,
     ) {
     }
 
@@ -63,77 +64,52 @@ class FarmController extends Controller
     }
 
     /**
-     * Show the farm creation form. Accepts an optional ?farmer=ID query
-     * parameter to pre-select and lock the farmer; otherwise the page
-     * lets the user say whether they are the farmer.
-     */
-    public function create(Request $request): Response
-    {
-        Gate::authorize('create', Farm::class);
-
-        $farmer = $request->query('farmer')
-            ? Farmer::query()->findOrFail($request->query('farmer'))
-            : null;
-
-        return Inertia::render('Farm/Create', [
-            'farmer' => $farmer ? $this->farms->farmerSummary($farmer) : null,
-            'varietyOptions' => $this->farms->activeVarietyOptions(),
-        ]);
-    }
-
-    /**
-     * Store a newly created resource in storage. The farmer attached to
-     * the farm is resolved one of three ways: an explicit farmer_id (the
-     * ?farmer= locked flow), the authenticated user's own farmer record
-     * (is_self_farmer), or a freshly registered farmer (farmer.*).
+     * Store a newly created resource in storage. Always submitted for a
+     * specific, already-known farmer (see AddFarmDialog.vue on the
+     * farmer profile page) — no self-farmer or inline-registration
+     * branching needed here.
      */
     public function store(Request $request): RedirectResponse
     {
         Gate::authorize('create', Farm::class);
 
-        $varietyOptions = $this->farms->activeVarietyOptions()->all();
-
-        $farmData = $request->validate([
+        $validated = $request->validate([
+            'farmer_id' => ['required', 'integer', 'exists:farmers,id'],
             'name' => ['required', 'string', 'max:255'],
-            'location' => ['required', 'string', 'max:255'],
-            'size' => ['required', 'string', 'max:100'],
-            'altitude' => ['nullable', 'string', 'max:100'],
-            'variety' => ['required', 'string', 'max:150', Rule::in($varietyOptions)],
-            'notes' => ['nullable', 'string', 'max:1000'],
+            'country' => ['nullable', 'string', 'max:255'],
+            'region' => ['nullable', 'string', 'max:255'],
+            'district' => ['nullable', 'string', 'max:255'],
+            'county' => ['nullable', 'string', 'max:255'],
+            'subcounty' => ['nullable', 'string', 'max:255'],
+            'parish' => ['nullable', 'string', 'max:255'],
+            'village' => ['nullable', 'string', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'elevation' => ['nullable', 'numeric'],
+            'total_area' => ['nullable', 'numeric', 'min:0'],
+            'coffee_area' => ['nullable', 'numeric', 'min:0'],
+            'coffee_type' => ['nullable', 'string', 'max:100'],
+            'tel' => ['nullable', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'status' => ['nullable', 'string', 'in:active,inactive'],
+            'soil_metadata_id' => ['nullable', 'integer', 'exists:soil_metadata,id'],
+            'climate_zone_metadata_id' => ['nullable', 'integer', 'exists:climate_zone_metadata,id'],
+            'water_conservation_percentage' => ['nullable', 'numeric', 'between:0,100'],
+            'carbon_sequestration' => ['nullable', 'numeric', 'min:0'],
+            'soil_health_index' => ['nullable', 'numeric', 'between:0,5'],
+            'soil_type' => ['nullable', 'string', 'max:150'],
+            'crop_variety_ids' => ['nullable', 'array'],
+            'crop_variety_ids.*' => ['integer', 'exists:crop_variety_metadata,id'],
+            'certification_ids' => ['nullable', 'array'],
+            'certification_ids.*' => ['integer', 'exists:certification_metadata,id'],
         ]);
 
-        $farm = DB::transaction(function () use ($request, $farmData) {
-            if ($request->filled('farmer_id')) {
-                $request->validate(['farmer_id' => ['exists:farmers,id']]);
-                $farmer = Farmer::query()->findOrFail($request->input('farmer_id'));
-            } elseif ($request->boolean('is_self_farmer')) {
-                $farmer = $this->farms->farmerForUser($request->user());
-            } else {
-                $farmerData = $request->validate([
-                    'farmer.first_name' => ['required', 'string', 'max:255'],
-                    'farmer.last_name' => ['required', 'string', 'max:255'],
-                    'farmer.telephone' => ['required', 'string', 'max:50'],
-                    'farmer.email' => ['nullable', 'email', 'max:255'],
-                    'farmer.district' => ['required', 'string', 'max:255'],
-                    'farmer.sub_county' => ['nullable', 'string', 'max:255'],
-                    'farmer.coffee_type' => ['required', 'string', 'max:100'],
-                    'farmer.cooperative' => ['nullable', 'string', 'max:255'],
-                ])['farmer'];
-                $farmer = $this->farms->registerFarmer($farmerData);
-            }
+        $this->farms->create([
+            ...$validated,
+            'created_by_user_id' => $request->user()->id,
+        ]);
 
-            return $this->farms->create([
-                ...$farmData,
-                'farmer_id' => $farmer->id,
-                'created_by_user_id' => $request->user()->id,
-            ]);
-        });
-
-        // Whoever registers a farm can always view its profile page, even
-        // without directory access (see FarmPolicy::view()).
-        return redirect()
-            ->route('farm.show', $farm->id)
-            ->with('success', 'Farm added successfully.');
+        return back()->with('success', 'Farm added successfully.');
     }
 
     /**
@@ -145,87 +121,70 @@ class FarmController extends Controller
 
         $farm = $this->farms->show($farm);
 
-        $weatherRegion = $this->weather->matchRegionFor($farm->location);
+        $weatherRegion = $this->weather->matchRegionFor($farm->district);
         $weatherOutlook = $weatherRegion ? $this->weather->monthlyOutlookForRegion($weatherRegion) : collect();
 
         return Inertia::render('Farm/FarmProfile', [
             'farm' => FarmResource::make($farm)->resolve(),
             'canEdit' => Gate::allows('update', $farm),
             'varietyOptions' => $this->farms->activeVarietyOptions(),
-            'climaticZoneOptions' => ClimateZoneMetadataResource::collection($this->climateZones->active())->resolve(),
+            'cropVarietyOptions' => $this->farms->activeVarietyMetadata(),
+            'certificationOptions' => $this->farms->activeCertificationOptions(),
             'soilTypeOptions' => SoilMetadataResource::collection($this->soils->active())->resolve(),
-            'harvests' => HarvestResource::collection($farm->harvests)->resolve(),
-            'pickMethodOptions' => $this->harvests->pickMethodOptions(),
+            'climaticZoneOptions' => ClimateZoneMetadataResource::collection($this->climateZones->active())->resolve(),
             'harvestSeasonOptions' => $this->harvests->harvestSeasonOptions(),
             'weatherRegion' => $weatherRegion,
             'weatherOutlook' => WeatherForecastResource::collection($weatherOutlook)->resolve(),
             'documents' => FarmDocumentResource::collection($farm->documents)->resolve(),
             'documentTypeOptions' => $this->harvests->documentTypeOptions(),
+            'collections' => FarmCollectionResource::collection($farm->collections)->resolve(),
+            'collectionUnitOptions' => $this->collections->unitOptions(),
+            'collectionPaymentStatusOptions' => $this->collections->paymentStatusOptions(),
         ]);
     }
 
     /**
-     * Update the specified resource in storage. Creator only.
+     * Update the specified resource in storage. Creator only. Covers every
+     * editable farm field (identity, address, geolocation, size) in one
+     * form — see AddFarmDialog.vue / the Edit Farm dialog on FarmProfile.
      */
     public function update(Request $request, Farm $farm): RedirectResponse
     {
         Gate::authorize('update', $farm);
 
-        $varietyOptions = $this->farms->activeVarietyOptions()->all();
-
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'location' => ['required', 'string', 'max:255'],
-            'size' => ['required', 'string', 'max:100'],
-            'altitude' => ['nullable', 'string', 'max:100'],
-            'variety' => ['required', 'string', 'max:150', Rule::in($varietyOptions)],
-            'notes' => ['nullable', 'string', 'max:1000'],
+            'country' => ['nullable', 'string', 'max:255'],
+            'region' => ['nullable', 'string', 'max:255'],
+            'district' => ['nullable', 'string', 'max:255'],
+            'county' => ['nullable', 'string', 'max:255'],
+            'subcounty' => ['nullable', 'string', 'max:255'],
+            'parish' => ['nullable', 'string', 'max:255'],
+            'village' => ['nullable', 'string', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'elevation' => ['nullable', 'numeric'],
+            'total_area' => ['nullable', 'numeric', 'min:0'],
+            'coffee_area' => ['nullable', 'numeric', 'min:0'],
+            'coffee_type' => ['nullable', 'string', 'max:100'],
+            'tel' => ['nullable', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'status' => ['nullable', 'string', 'in:active,inactive'],
+            'soil_metadata_id' => ['nullable', 'integer', 'exists:soil_metadata,id'],
+            'climate_zone_metadata_id' => ['nullable', 'integer', 'exists:climate_zone_metadata,id'],
+            'water_conservation_percentage' => ['nullable', 'numeric', 'between:0,100'],
+            'carbon_sequestration' => ['nullable', 'numeric', 'min:0'],
+            'soil_health_index' => ['nullable', 'numeric', 'between:0,5'],
+            'soil_type' => ['nullable', 'string', 'max:150'],
+            'crop_variety_ids' => ['nullable', 'array'],
+            'crop_variety_ids.*' => ['integer', 'exists:crop_variety_metadata,id'],
+            'certification_ids' => ['nullable', 'array'],
+            'certification_ids.*' => ['integer', 'exists:certification_metadata,id'],
         ]);
 
         $this->farms->update($farm, $validated);
 
         return back()->with('success', 'Farm updated successfully.');
-    }
-
-    /**
-     * Update the farm's environmental specifications. Creator only.
-     */
-    public function updateSpecs(Request $request, Farm $farm): RedirectResponse
-    {
-        Gate::authorize('update', $farm);
-
-        $climaticZoneOptions = $this->climateZones->activeNames()->all();
-        $soilTypeOptions = $this->soils->activeNames()->all();
-
-        $validated = $request->validate([
-            'rainfall' => ['nullable', 'string', 'max:100'],
-            'temperature' => ['nullable', 'string', 'max:100'],
-            'humidity' => ['nullable', 'string', 'max:100'],
-            'soil_type' => ['nullable', 'string', 'max:150', Rule::in($soilTypeOptions)],
-            'climatic_zone' => ['nullable', 'string', 'max:150', Rule::in($climaticZoneOptions)],
-        ]);
-
-        $this->farms->update($farm, $validated);
-
-        return back()->with('success', 'Environmental specifications updated successfully.');
-    }
-
-    /**
-     * Update the farm's location coordinates and altitude. Creator only.
-     */
-    public function updateLocation(Request $request, Farm $farm): RedirectResponse
-    {
-        Gate::authorize('update', $farm);
-
-        $validated = $request->validate([
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'altitude' => ['nullable', 'string', 'max:100'],
-        ]);
-
-        $this->farms->update($farm, $validated);
-
-        return back()->with('success', 'Farm location updated successfully.');
     }
 
     /**
@@ -289,6 +248,82 @@ class FarmController extends Controller
         $this->harvests->delete($harvest);
 
         return back()->with('success', 'Harvest deleted successfully.');
+    }
+
+    /**
+     * Record a new coffee collection against this farm. Admin or creator only.
+     */
+    public function storeCollection(Request $request, Farm $farm): RedirectResponse
+    {
+        Gate::authorize('update', $farm);
+
+        $validated = $request->validate($this->collectionValidationRules());
+
+        $this->collections->create([
+            ...$validated,
+            'farm_id' => $farm->id,
+        ]);
+
+        return back()->with('success', 'Collection recorded successfully.');
+    }
+
+    /**
+     * Update an existing coffee collection against this farm. Admin or creator only.
+     */
+    public function updateCollection(Request $request, Farm $farm, FarmCollection $collection): RedirectResponse
+    {
+        Gate::authorize('update', $farm);
+
+        abort_unless($collection->farm_id === $farm->id, 404);
+
+        $validated = $request->validate($this->collectionValidationRules());
+
+        $this->collections->update($collection, $validated);
+
+        return back()->with('success', 'Collection updated successfully.');
+    }
+
+    /**
+     * Delete a coffee collection recorded against this farm. Admin or creator only.
+     */
+    public function destroyCollection(Farm $farm, FarmCollection $collection): RedirectResponse
+    {
+        Gate::authorize('update', $farm);
+
+        abort_unless($collection->farm_id === $farm->id, 404);
+
+        $this->collections->delete($collection);
+
+        return back()->with('success', 'Collection deleted successfully.');
+    }
+
+    /**
+     * Validation rules shared by storeCollection() and updateCollection().
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    private function collectionValidationRules(): array
+    {
+        $unitOptions = $this->collections->unitOptions();
+        $paymentStatusOptions = $this->collections->paymentStatusOptions();
+
+        return [
+            'collection_date' => ['required', 'date', 'before_or_equal:today'],
+            'coffee_type' => ['required', 'string', 'max:100'],
+            'variety' => ['nullable', 'string', 'max:255'],
+            'harvest_season' => ['nullable', 'string', 'max:255'],
+            'quantity' => ['required', 'numeric', 'min:0.01'],
+            'unit' => ['nullable', 'string', 'max:20', Rule::in($unitOptions)],
+            'initial_moisture' => ['nullable', 'numeric', 'between:0,100'],
+            'initial_defects' => ['nullable', 'numeric', 'min:0'],
+            'initial_grade' => ['nullable', 'string', 'max:100'],
+            'initial_quality_score' => ['nullable', 'numeric', 'between:0,100'],
+            'collection_price' => ['nullable', 'numeric', 'min:0'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'payment_status' => ['nullable', 'string', 'max:50', Rule::in($paymentStatusOptions)],
+            'reference' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ];
     }
 
     /**

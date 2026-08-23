@@ -11,36 +11,43 @@ class Farmer extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'user_id',
+        'cooperative_id',
+        'farmer_number',
         'first_name',
+        'middle_name',
         'last_name',
-        'telephone',
+        'gender',
+        'date_of_birth',
+        'tel',
         'email',
+        'country',
+        'region',
         'district',
-        'sub_county',
-        'coffee_type',
-        'cooperative',
-        'farm_size',
-        'notes',
+        'county',
+        'subcounty',
+        'parish',
+        'village',
+        'national_id',
+        'status',
+        'verification_status',
     ];
 
-    /**
-     * Get the user who owns the farmer record.
-     */
+    protected $casts = [
+        'date_of_birth' => 'date',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get the farms attached to this farmer.
-     */
+    public function cooperative(): BelongsTo
+    {
+        return $this->belongsTo(Cooperative::class);
+    }
+
     public function farms(): HasMany
     {
         return $this->hasMany(Farm::class);

@@ -2,10 +2,12 @@
 import { computed, ref, watch } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
-    Bell, Box, Calendar, Close, Compass, Document, Grid, MagicStick, Menu, Message, Odometer,
-    Search, Setting, Shop, ShoppingCart, SwitchButton, Tickets, User, Wallet,
+    Bell, Box, Calendar, Close, Coffee, CoffeeCup, Coin, Compass, Document, FirstAidKit, Grid,
+    House, MagicStick, Menu, Message, Odometer, Picture, School, Search, Setting, Shop,
+    ShoppingBag, ShoppingCart, Sunny, SwitchButton, Tickets, TrendCharts, Trophy, User, Wallet,
 } from '@element-plus/icons-vue';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
+import { resolveIcon } from '@/utils/icon';
 
 defineProps({
     title: { type: String, default: 'Bean Origin' },
@@ -20,10 +22,25 @@ const unreadNotificationsCount = computed(() => page.props.unreadNotificationsCo
 const recentNotifications = computed(() => page.props.recentNotifications ?? []);
 const cartActiveCount = computed(() => page.props.cartActiveCount ?? 0);
 
-// Mirrors AppAside.vue's non-admin nav exactly (same section labels,
-// link labels, and icons) so this preview reads as the same product —
-// now wired to the same real routes AppAside.vue uses.
-const navSections = computed(() => [
+// Mirrors AppAside.vue's role-gated nav exactly (same section labels,
+// link labels, icons, and admin/non-admin branching) so this preview
+// reads as the same product — wired to the same real routes and the
+// same real `auth.user.role` / `subscribedAgents` shared props.
+const user = computed(() => page.props.auth?.user ?? null);
+const isAdmin = computed(() => user.value?.role === 'admin');
+const subscribedAgents = computed(() => page.props.subscribedAgents ?? []);
+
+function functionIsRoute(fn) {
+    return !!fn.slug;
+}
+
+// Built off Ziggy's own base URL (not a relative path) since the app can
+// be served from a subpath — matches AppAside.vue's exact helper.
+function functionHref(fn) {
+    return fn.slug ? `${Ziggy.url}/${fn.slug.replace(/^\/+/, '')}` : '#';
+}
+
+const adminNavSections = computed(() => [
     {
         label: 'Main',
         items: [
@@ -33,9 +50,28 @@ const navSections = computed(() => [
     {
         label: 'Marketplace',
         items: [
-            { index: 'market', label: 'Market', icon: Compass, href: route('market.index'), active: route().current('market.index') },
+            { index: 'market-browse', label: 'Browse Coffee', icon: Compass, href: route('market.index'), active: route().current('market.index') },
+            { index: 'market-live', label: 'Live Market', icon: TrendCharts, href: route('market.active'), active: route().current('market.active') },
+            { index: 'auctions', label: 'Auctions', icon: Trophy, href: route('auction.index'), active: route().current('auction.*') },
             { index: 'store', label: 'My Store', icon: Shop, href: route('store.show'), active: route().current('store.*') },
+        ],
+    },
+    {
+        label: 'Operations',
+        items: [
             { index: 'calendar', label: 'Calendar', icon: Calendar, href: route('calendar.index'), active: route().current('calendar.*') },
+            { index: 'orders', label: 'My Orders', icon: ShoppingBag, href: route('orders.index'), active: route().current('orders.*') },
+            { index: 'farmers', label: 'Farmers', icon: User, href: route('farmer.index'), active: route().current('farmer.index') },
+            { index: 'farms', label: 'Coffee Farms', icon: House, href: route('farm.index'), active: route().current('farm.index') },
+            { index: 'my-farms', label: 'My Farms', icon: House, href: route('farm.mine'), active: route().current('farm.mine') },
+            { index: 'my-harvests', label: 'My Harvests', icon: Coffee, href: route('farm.harvest.mine'), active: route().current('farm.harvest.mine') },
+            { index: 'inputs', label: 'Agricultural Inputs', icon: FirstAidKit, href: route('farm.inputs.index'), active: route().current('farm.inputs.*') },
+            { index: 'weather', label: 'Weather Forecast', icon: Sunny, href: route('farm.weather'), active: route().current('farm.weather') },
+            { index: 'cooperatives', label: 'Cooperatives', icon: School, href: route('cooperative.index'), active: route().current('cooperative.*') },
+            { index: 'season', label: 'Season', icon: Calendar, href: route('season.index'), active: route().current('season.*') },
+            { index: 'lots', label: 'All Lots', icon: CoffeeCup, href: route('lot.index'), active: route().current('lot.index') },
+            { index: 'harvests', label: 'Harvests', icon: Coffee, href: route('harvest.index'), active: route().current('harvest.*') },
+            { index: 'batches', label: 'Batches', icon: Box, href: route('batch.index'), active: route().current('batch.*') },
         ],
     },
     {
@@ -43,18 +79,64 @@ const navSections = computed(() => [
         items: [
             { index: 'purchases', label: 'Purchases', icon: Tickets, href: route('purchases.index'), active: route().current('purchases.*') },
             { index: 'wallet', label: 'Wallet', icon: Wallet, href: route('wallet.index'), active: route().current('wallet.*') },
+            { index: 'currencies', label: 'Currencies', icon: Coin, href: route('currencies.index'), active: route().current('currencies.*') },
         ],
     },
     {
         label: 'Analysis',
         items: [
+            { index: 'documentation', label: 'Documentation', icon: Document, href: route('documentation.index'), active: route().current('documentation.*') },
+            { index: 'gallery', label: 'Gallery', icon: Picture, href: route('gallery.index'), active: route().current('gallery.*') },
             { index: 'chat', label: 'AI Assistant', icon: MagicStick, tertiary: true, href: route('chat.index'), active: route().current('chat.*') },
         ],
     },
 ]);
 
+const nonAdminNavSections = computed(() => {
+    const sections = [
+        {
+            label: 'Main',
+            items: [
+                { index: 'dashboard', label: 'Dashboard', icon: Grid, href: route('dashboard'), active: route().current('dashboard') },
+            ],
+        },
+        {
+            label: 'Marketplace',
+            items: [
+                { index: 'market', label: 'Market', icon: Compass, href: route('market.index'), active: route().current('market.*') },
+                { index: 'store', label: 'My Store', icon: Shop, href: route('store.show'), active: route().current('store.*') },
+                { index: 'calendar', label: 'Calendar', icon: Calendar, href: route('calendar.index'), active: route().current('calendar.*') },
+            ],
+        },
+    ];
+
+    if (subscribedAgents.value.length) {
+        sections.push({ label: 'My Agents', agents: subscribedAgents.value });
+    }
+
+    sections.push({
+        label: 'Financials',
+        items: [
+            { index: 'purchases', label: 'Purchases', icon: Tickets, href: route('purchases.index'), active: route().current('purchases.*') },
+            { index: 'wallet', label: 'Wallet', icon: Wallet, href: route('wallet.index'), active: route().current('wallet.*') },
+        ],
+    });
+
+    sections.push({
+        label: 'Analysis',
+        items: [
+            { index: 'chat', label: 'AI Assistant', icon: MagicStick, tertiary: true, href: route('chat.index'), active: route().current('chat.*') },
+        ],
+    });
+
+    return sections;
+});
+
+const navSections = computed(() => (isAdmin.value ? adminNavSections.value : nonAdminNavSections.value));
+
 const activeNavIndex = computed(() => {
     for (const section of navSections.value) {
+        if (!section.items) continue;
         const match = section.items.find((item) => item.active);
         if (match) return match.index;
     }
@@ -229,29 +311,53 @@ function onSearchKeydown(e) {
             <el-menu :default-active="activeNavIndex" class="dp-nav" @select="mobileNavOpen = false">
                 <template v-for="section in navSections" :key="section.label">
                     <div class="dp-nav__label">{{ section.label }}</div>
-                    <el-menu-item
-                        v-for="item in section.items"
-                        :key="item.index"
-                        :index="item.index"
-                        class="dp-nav__item"
-                        :class="{ 'dp-nav__item--tertiary': item.tertiary }"
-                    >
-                        <Link :href="item.href" class="dp-nav__link">
-                            <span class="dp-nav__icon"><el-icon :size="16"><component :is="item.icon" /></el-icon></span>
-                            <span>{{ item.label }}</span>
-                        </Link>
-                    </el-menu-item>
+
+                    <template v-if="section.items">
+                        <el-menu-item
+                            v-for="item in section.items"
+                            :key="item.index"
+                            :index="item.index"
+                            class="dp-nav__item"
+                            :class="{ 'dp-nav__item--tertiary': item.tertiary }"
+                        >
+                            <Link :href="item.href" class="dp-nav__link">
+                                <span class="dp-nav__icon"><el-icon :size="16"><component :is="item.icon" /></el-icon></span>
+                                <span>{{ item.label }}</span>
+                            </Link>
+                        </el-menu-item>
+                    </template>
+
+                    <template v-else-if="section.agents">
+                        <div v-for="agent in section.agents" :key="agent.id" class="dp-nav__agent">
+                            <div class="dp-nav__item dp-nav__item--static">
+                                <span class="dp-nav__icon"><el-icon :size="16"><component :is="resolveIcon(agent.icon)" /></el-icon></span>
+                                <span>{{ agent.name }}</span>
+                            </div>
+                            <div v-if="agent.functions?.length" class="dp-nav__fn-list">
+                                <component
+                                    :is="functionIsRoute(fn) ? Link : 'span'"
+                                    v-for="fn in agent.functions"
+                                    :key="fn.id"
+                                    :href="functionIsRoute(fn) ? functionHref(fn) : undefined"
+                                    class="dp-nav__fn-item"
+                                >
+                                    <el-icon :size="14"><component :is="resolveIcon(fn.icon)" /></el-icon>
+                                    <span>{{ fn.name }}</span>
+                                </component>
+                            </div>
+                        </div>
+                    </template>
                 </template>
             </el-menu>
 
             <div class="dp-aside__footer">
                 <span class="dp-aside__avatar-wrap">
-                    <el-avatar :size="34" class="dp-avatar"><el-icon><User /></el-icon></el-avatar>
+                    <el-avatar :size="34" class="dp-avatar">{{ (user?.name ?? '').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || 'CO' }}</el-avatar>
                     <span class="dp-aside__status" />
                 </span>
                 <div class="dp-aside__user">
-                    <p class="dp-aside__user-name">Roaster Admin</p>
-                    <p class="dp-aside__user-role">Bean Origin</p>
+                    <p class="dp-aside__user-name">{{ user?.name || 'Account' }}</p>
+                    <p class="dp-aside__user-role">{{ user?.role || 'Bean Origin' }}</p>
                 </div>
             </div>
         </aside>
@@ -432,10 +538,10 @@ function onSearchKeydown(e) {
     --dp-outline: #827472;
     --dp-outline-variant: #d3c3c0;
     --dp-surface-tint: #745853;
-    --dp-primary: #271310;
+    --dp-primary: #121611;
     --dp-on-primary: #ffffff;
-    --dp-primary-container: #3e2723;
-    --dp-on-primary-container: #ae8d87;
+    --dp-primary-container: #1a2018;
+    --dp-on-primary-container: #a3f69c;
     --dp-primary-fixed: #ffdad4;
     --dp-on-primary-fixed: #2b1613;
     --dp-secondary: #1b6d24;
@@ -497,8 +603,8 @@ function onSearchKeydown(e) {
 .dp-aside {
     width: 288px;
     flex-shrink: 0;
-    background: var(--dp-surface-container-low);
-    border-right: 1px solid rgba(62, 39, 35, 0.05);
+    background: #121611;
+    border-right: 1px solid rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
     padding-top: 28px;
@@ -517,7 +623,7 @@ function onSearchKeydown(e) {
     padding: 0 20px;
     margin-bottom: 36px;
 }
-.dp-aside__close.el-button { display: none; margin-left: auto; flex-shrink: 0; color: var(--dp-on-surface-variant); }
+.dp-aside__close.el-button { display: none; margin-left: auto; flex-shrink: 0; color: rgba(255, 255, 255, 0.75); }
 .dp-aside__mark-wrap {
     display: inline-flex;
     align-items: center;
@@ -537,7 +643,7 @@ function onSearchKeydown(e) {
     font-weight: 800;
     line-height: 1.15;
     letter-spacing: -0.01em;
-    color: var(--dp-primary);
+    color: #ffffff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -547,7 +653,7 @@ function onSearchKeydown(e) {
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--dp-outline);
+    color: rgba(255, 255, 255, 0.65);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -560,7 +666,7 @@ function onSearchKeydown(e) {
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--dp-outline);
+    color: rgba(255, 255, 255, 0.55);
 }
 .dp-nav__label:first-child { margin-top: 0; }
 
@@ -579,7 +685,7 @@ function onSearchKeydown(e) {
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.02em;
-    color: var(--dp-on-surface-variant);
+    color: rgba(255, 255, 255, 0.75);
     transition: all 0.2s ease;
 }
 .dp-nav__link {
@@ -593,15 +699,54 @@ function onSearchKeydown(e) {
     text-decoration: none;
 }
 .dp-nav .dp-nav__item.el-menu-item:hover {
-    background: var(--dp-surface-container-high);
-    color: var(--dp-on-surface);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
 }
 .dp-nav .dp-nav__item.el-menu-item.is-active {
-    background: var(--dp-primary-container);
-    color: var(--dp-on-primary-container);
+    background: #ffffff;
+    color: #121611;
     font-weight: 700;
 }
 .dp-nav .dp-nav__item .el-icon { color: inherit; }
+
+/* Agent header row + its function links — plain divs (not el-menu-item),
+   since a dynamic function list doesn't fit el-menu's fixed-index model.
+   Mirrors AppAside.vue's .app-nav-item--static / .app-fn-item. */
+.dp-nav__agent { margin-bottom: 2px; }
+.dp-nav__item--static {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    margin-bottom: 2px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.75);
+    cursor: default;
+}
+.dp-nav__fn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 1px 0 4px;
+}
+.dp-nav__fn-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px 6px 18px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.dp-nav__fn-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
 
 .dp-nav__icon {
     display: inline-flex;
@@ -612,16 +757,16 @@ function onSearchKeydown(e) {
     flex-shrink: 0;
     border-radius: 8px;
     background: transparent;
-    color: var(--dp-on-surface-variant);
+    color: inherit;
     transition: background 0.2s ease, color 0.2s ease;
 }
 .dp-nav .dp-nav__item.el-menu-item:hover .dp-nav__icon {
-    background: var(--dp-surface-container-highest);
-    color: var(--dp-on-surface);
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
 }
 .dp-nav .dp-nav__item.el-menu-item.is-active .dp-nav__icon {
-    background: var(--dp-primary);
-    color: var(--dp-on-primary);
+    background: rgba(13, 99, 27, 0.1);
+    color: #121611;
 }
 
 /* AI Assistant — matches AppAside.vue's tertiary nav-item treatment
@@ -639,7 +784,7 @@ function onSearchKeydown(e) {
     margin: 24px 20px 0;
     padding: 12px;
     border-radius: 14px;
-    background: var(--dp-surface-container);
+    background: rgba(255, 255, 255, 0.08);
 }
 .dp-aside__avatar-wrap { position: relative; flex-shrink: 0; }
 .dp-aside__status {
@@ -649,12 +794,12 @@ function onSearchKeydown(e) {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: var(--dp-secondary);
-    border: 2px solid var(--dp-surface-container);
+    background: #6fe08a;
+    border: 2px solid #121611;
 }
 .dp-aside__user { min-width: 0; overflow: hidden; }
-.dp-aside__user-name { font-size: 14px; font-weight: 600; color: var(--dp-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
-.dp-aside__user-role { font-size: 12px; color: var(--dp-on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+.dp-aside__user-name { font-size: 14px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+.dp-aside__user-role { font-size: 12px; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
 
 /* ── Content column ───────────────────────────────────────────────────── */
 .dp-content { flex: 1; min-width: 0; }
@@ -669,7 +814,6 @@ function onSearchKeydown(e) {
     gap: 12px;
     padding: 0 24px;
     background: var(--dp-surface-container-lowest);
-    border-bottom: 1px solid var(--dp-border-subtle);
 }
 .dp-menu-btn.el-button { display: none; flex-shrink: 0; color: var(--dp-on-surface-variant); font-size: 20px; }
 .dp-header__search { flex: 1; display: flex; justify-content: center; min-width: 0; }
@@ -871,7 +1015,7 @@ function onSearchKeydown(e) {
     border-radius: 999px;
     background: transparent;
 }
-.dp-notif-menu__dot--on { background: #271310; }
+.dp-notif-menu__dot--on { background: #121611; }
 .dp-notif-menu__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .dp-notif-menu__title { font-size: 13px; font-weight: 600; color: #1a1c1c; line-height: 1.4; }
 .dp-notif-menu__text {
@@ -892,7 +1036,7 @@ function onSearchKeydown(e) {
     border-top: 1px solid #eeeeee;
     font-size: 12px;
     font-weight: 600;
-    color: #271310;
+    color: #121611;
     text-align: center;
     text-decoration: none;
 }

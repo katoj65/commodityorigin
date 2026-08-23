@@ -10,16 +10,20 @@ use App\Http\Resources\CountryResource;
 use App\Http\Resources\MarketListingResource;
 use App\Http\Resources\OrderResource;
 use App\Models\Market;
+use App\Models\MarketImage;
 use App\Services\BuyService;
 use App\Services\CalendarService;
 use App\Services\CartService;
 use App\Services\CountryService;
 use App\Services\ExchangeRateService;
 use App\Services\ForecastService;
+use App\Services\MarketImageService;
 use App\Services\MarketService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -34,6 +38,7 @@ class MarketController extends Controller
         private readonly ForecastService $forecasts,
         private readonly CountryService $countries,
         private readonly CartService $cart,
+        private readonly MarketImageService $marketImages,
     ) {
     }
 
@@ -158,23 +163,82 @@ class MarketController extends Controller
         return Inertia::render('Market/ProductProfile', [
             'item' => $this->market->show($market),
             'cartQuantity' => $this->cart->quantityFor($request->user()->id, 'market', $market->id),
+            'canManage' => Gate::allows('update', $market),
+            'maxImages' => MarketImageService::MAX_IMAGES,
         ]);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified resource in storage. Owner only.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Market $market): RedirectResponse
     {
-        //
+        Gate::authorize('update', $market);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'origin' => ['nullable', 'string', 'max:255'],
+            'type' => ['nullable', 'string', 'max:255'],
+            'process' => ['nullable', 'string', 'max:255'],
+            'price_per_kg' => ['required', 'numeric', 'min:0'],
+            'quantity' => ['required', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $market->update($validated);
+
+        return back();
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage — owner only. Gallery
+     * photos cascade-delete at the database level; their files are removed
+     * first so nothing orphans in storage.
      */
-    public function destroy(string $id)
+    public function destroy(Market $market): RedirectResponse
     {
-        //
+        Gate::authorize('delete', $market);
+
+        foreach ($market->images as $image) {
+            $this->marketImages->delete($image);
+        }
+
+        $market->delete();
+
+        return redirect()->route('market.index');
+    }
+
+    /**
+     * Add up to MarketImageService::MAX_IMAGES gallery photos to a
+     * listing — owner only. Extra files beyond the remaining slots are
+     * silently dropped rather than erroring, so a seller can always just
+     * select their whole folder without doing the math themselves.
+     */
+    public function storeImages(Request $request, Market $market): RedirectResponse
+    {
+        Gate::authorize('update', $market);
+
+        $validated = $request->validate([
+            'images' => ['required', 'array', 'min:1'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $this->marketImages->store($market, $validated['images']);
+
+        return back();
+    }
+
+    /**
+     * Remove one gallery photo from a listing — owner only.
+     */
+    public function destroyImage(Market $market, MarketImage $image): RedirectResponse
+    {
+        Gate::authorize('update', $market);
+        abort_unless($image->market_id === $market->id, 404);
+
+        $this->marketImages->delete($image);
+
+        return back();
     }
 
     /**

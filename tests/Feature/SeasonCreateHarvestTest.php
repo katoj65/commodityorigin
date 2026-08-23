@@ -63,13 +63,11 @@ class SeasonCreateHarvestTest extends TestCase
             'user_id' => $user->id,
             'first_name' => 'Samuel',
             'last_name' => 'Okello',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'samuel@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Sipi Falls Union',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([
@@ -150,13 +148,11 @@ class SeasonCreateHarvestTest extends TestCase
             'user_id' => $user->id,
             'first_name' => 'Samuel',
             'last_name' => 'Okello',
-            'telephone' => '+256700000001',
+            'tel' => '+256700000001',
             'email' => 'samuel@example.com',
             'district' => 'Mbale',
-            'sub_county' => 'Bungokho',
-            'coffee_type' => 'Arabica',
-            'cooperative' => 'Sipi Falls Union',
-            'farm_size' => '6 acres',
+            'subcounty' => 'Bungokho',
+            'farmer_number' => 'FMR-TEST-'.uniqid(),
         ]);
 
         $farm = Farm::query()->create([

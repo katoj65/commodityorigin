@@ -28,6 +28,7 @@ class StoreItemResource extends JsonResource
             'image_url' => $this->image_url,
             'status' => $this->status,
             'notes' => $this->notes,
+            'seller_name' => $this->whenLoaded('store', fn () => $this->store?->user?->name),
             'status_logs' => $this->whenLoaded('statusLogs', fn () => StoreItemStatusLogResource::collection($this->statusLogs)->resolve()),
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),

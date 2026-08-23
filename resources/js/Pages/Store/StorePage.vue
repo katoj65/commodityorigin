@@ -7,7 +7,7 @@ import AddEditStoreItemDialog from '@/Components/Modals/AddEditStoreItemDialog.v
 import StoreItemStatusDialog from '@/Components/Modals/StoreItemStatusDialog.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
-    Check, Close, Clock, Delete, EditPen, Goods, Plus, Search, Shop, UploadFilled, WarningFilled,
+    Check, Close, Clock, Delete, EditPen, Goods, Plus, RefreshLeft, Search, Shop, UploadFilled, WarningFilled,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -26,17 +26,39 @@ const importResultVisible = ref(Boolean(props.importResult));
 
 /* ── Search + filter + pagination ─────────────────────────────────────── */
 const searchQuery = ref('');
+const categoryFilter = ref('all');
+const sortBy = ref('newest');
 const currentPage = ref(1);
 const pageSize = 30;
+
+const categories = computed(() => {
+    const seen = new Set();
+    props.items.forEach((i) => { if (i.category) seen.add(i.category); });
+    return [...seen].sort();
+});
+
+function resetFilters() {
+    searchQuery.value = '';
+    categoryFilter.value = 'all';
+    sortBy.value = 'newest';
+}
 
 const filteredItems = computed(() => {
     const q = searchQuery.value.trim().toLowerCase();
 
-    return props.items.filter((i) => {
+    const filtered = props.items.filter((i) => {
         const matchesStatus = statusFilter.value === 'all' || i.status === statusFilter.value;
+        const matchesCategory = categoryFilter.value === 'all' || i.category === categoryFilter.value;
         const matchesSearch = !q || [i.name, i.category, i.status].filter(Boolean).join(' ').toLowerCase().includes(q);
-        return matchesStatus && matchesSearch;
+        return matchesStatus && matchesCategory && matchesSearch;
     });
+
+    const sorted = [...filtered];
+    if (sortBy.value === 'price_asc') sorted.sort((a, b) => a.price - b.price);
+    else if (sortBy.value === 'price_desc') sorted.sort((a, b) => b.price - a.price);
+    else sorted.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+
+    return sorted;
 });
 
 const pagedItems = computed(() => {
@@ -44,9 +66,20 @@ const pagedItems = computed(() => {
     return filteredItems.value.slice(start, start + pageSize);
 });
 
-watch([searchQuery, statusFilter, () => props.items], () => {
+watch([searchQuery, statusFilter, categoryFilter, sortBy, () => props.items], () => {
     currentPage.value = 1;
 });
+
+/* ── Category pill tone — hashed so the same category always renders the
+   same tone, matching Store/Market.vue's browse-table treatment. ─────── */
+const TONES = ['st-pill--a', 'st-pill--b', 'st-pill--c', 'st-pill--d'];
+
+function pillTone(value) {
+    if (!value) return TONES[0];
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) % TONES.length;
+    return TONES[hash];
+}
 
 function formatMoney(value, currency) {
     const amount = Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -153,11 +186,17 @@ function submitReject() {
         v-model:status-filter="statusFilter"
         v-model:import-result-visible="importResultVisible"
     >
-        <template #icon>
-            <el-icon :size="16"><Shop /></el-icon>
-        </template>
 
         <div class="st-page">
+            <!-- ── Editorial intro — always shown, regardless of store state ── -->
+            <div class="st-body st-body--no-bottom-pad">
+                <div class="st-hero">
+                    <span class="st-kicker">The Store · Bean Origin</span>
+                    <h1 class="dp-display-md">My Store</h1>
+                    <p class="st-subtitle">Every item you've listed, its live status, and its full trace history — in one place.</p>
+                </div>
+            </div>
+
             <!-- ── Admin: pending store verifications ───────────────────── -->
             <div v-if="isAdmin && pendingStores.length" class="st-body st-body--no-bottom-pad">
                 <div class="st-pending-card">
@@ -232,23 +271,43 @@ function submitReject() {
                     <el-icon :size="18"><WarningFilled /></el-icon>
                     <div>
                         <div class="st-status-banner__title">Verification rejected</div>
-                        <p class="st-status-banner__text">{{ store.rejection_reason || 'No reason was given.' }} Resubmit to request another review.</p>
+                        <p class="st-status-banner__text">{{ store.rejection_reason || 'No reason was given.' }}</p>
+                        <button type="button" class="st-btn-primary mt-2" @click="storeDialogOpen = true">
+                            <el-icon><EditPen /></el-icon> Resubmit
+                        </button>
                     </div>
                 </div>
 
                 <!-- Verified: items inventory -->
                 <template v-else>
-                    <div v-if="items.length" class="st-table-card">
-                        <div class="st-toolbar">
-                            <div class="st-search">
-                                <el-icon><Search /></el-icon>
-                                <input v-model="searchQuery" type="text" placeholder="Search items…">
-                            </div>
-                            <div class="st-toolbar__stats">
+                    <div v-if="items.length" class="st-inventory">
+                        <!-- ── Search + filters ─────────────────────────────── -->
+                        <div class="st-controls">
+                            <div class="st-search-row">
+                                <div class="st-search">
+                                    <el-icon><Search /></el-icon>
+                                    <input v-model="searchQuery" type="text" placeholder="Search items…">
+                                </div>
                                 <span class="st-stat"><strong>{{ filteredItems.length }}</strong> of {{ items.length }}</span>
+                            </div>
+
+                            <div class="st-filter-bar">
+                                <el-select v-model="categoryFilter" class="st-filter-pill" placeholder="Category">
+                                    <el-option label="Category: All" value="all" />
+                                    <el-option v-for="c in categories" :key="c" :label="c" :value="c" />
+                                </el-select>
+                                <el-select v-model="sortBy" class="st-filter-pill" placeholder="Sort">
+                                    <el-option label="Newest First" value="newest" />
+                                    <el-option label="Price: Low to High" value="price_asc" />
+                                    <el-option label="Price: High to Low" value="price_desc" />
+                                </el-select>
+                                <button type="button" class="st-reset" @click="resetFilters">
+                                    <el-icon :size="14"><RefreshLeft /></el-icon> Reset Filters
+                                </button>
                             </div>
                         </div>
 
+                    <div class="st-table-card">
                         <div class="table-responsive">
                             <table class="table align-middle mb-0 st-table">
                                 <thead>
@@ -273,7 +332,10 @@ function submitReject() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="st-muted">{{ item.category || '—' }}</td>
+                                        <td>
+                                            <span v-if="item.category" class="st-pill" :class="pillTone(item.category)">{{ item.category }}</span>
+                                            <span v-else class="st-muted">—</span>
+                                        </td>
                                         <td>
                                             <div class="st-price">{{ formatMoney(item.price, item.currency_code) }}</div>
                                             <div class="st-muted" style="font-size:.75rem;">{{ item.quantity }} {{ item.unit || '' }}</div>
@@ -314,7 +376,7 @@ function submitReject() {
                             <div v-if="!filteredItems.length" class="st-no-results">
                                 <el-icon :size="18"><Search /></el-icon>
                                 <span v-if="searchQuery">No items match “{{ searchQuery }}”.</span>
-                                <span v-else>No items match the selected status.</span>
+                                <span v-else>No items match your filters.</span>
                             </div>
                         </div>
 
@@ -358,7 +420,7 @@ function submitReject() {
                         <div v-else class="st-no-results st-cards">
                             <el-icon :size="18"><Search /></el-icon>
                             <span v-if="searchQuery">No items match “{{ searchQuery }}”.</span>
-                            <span v-else>No items match the selected status.</span>
+                            <span v-else>No items match your filters.</span>
                         </div>
 
                         <div v-if="filteredItems.length > pageSize" class="st-pagination">
@@ -370,6 +432,7 @@ function submitReject() {
                                 background
                             />
                         </div>
+                    </div>
                     </div>
 
                     <div v-else class="st-empty">
@@ -410,14 +473,7 @@ function submitReject() {
 
 <style scoped>
 .st-page {
-    --green: #145c42;
-    --border: #eef2f0;
-    --on-surface: #111827;
-    --on-surface-var: #6b7280;
-    --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
-    color: var(--on-surface);
+    font-family: var(--dp-font-sans);
     min-height: 100%;
 }
 
@@ -426,40 +482,42 @@ function submitReject() {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 32px;
-    padding: 0 13px;
+    height: 34px;
+    padding: 0 16px;
     border: none;
-    border-radius: 7px;
-    background: linear-gradient(135deg, #145c42, #0d3d2c);
-    color: #fff;
-    font-size: 0.75rem;
+    border-radius: 999px;
+    background: var(--dp-primary);
+    color: var(--dp-on-primary);
+    font-size: 12.5px;
     font-weight: 700;
     cursor: pointer;
-    transition: opacity 0.15s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.st-btn-primary:hover { opacity: 0.9; }
-.st-btn-primary:disabled { opacity: 0.6; cursor: default; }
-.st-btn-primary--danger { background: linear-gradient(135deg, #b91c1c, #7f1d1d); }
+.st-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(39, 19, 16, 0.2); }
+.st-btn-primary:disabled { opacity: 0.6; cursor: default; transform: none; box-shadow: none; }
+.st-btn-primary--danger { background: var(--dp-error); }
+.st-btn-primary:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 
 .st-btn-outline {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 32px;
-    padding: 0 13px;
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    background: #fff;
-    color: var(--on-surface);
-    font-size: 0.75rem;
+    height: 34px;
+    padding: 0 16px;
+    border: 1px solid var(--dp-outline-variant);
+    border-radius: 999px;
+    background: var(--dp-surface-container-lowest);
+    color: var(--dp-on-surface);
+    font-size: 12.5px;
     font-weight: 700;
     text-decoration: none;
     cursor: pointer;
     transition: background 0.15s ease;
 }
-.st-btn-outline:hover { background: var(--surface-low); }
-.st-btn-outline--danger { color: #b91c1c; border-color: #fecaca; }
-.st-btn-outline--danger:hover { background: #fef2f2; }
+.st-btn-outline:hover { background: var(--dp-surface-container-low); }
+.st-btn-outline--danger { color: var(--dp-error); border-color: color-mix(in srgb, var(--dp-error) 35%, transparent); }
+.st-btn-outline--danger:hover { background: var(--dp-error-container); }
+.st-btn-outline:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 
 /* ── Body ──────────────────────────────────────────────────────────────── */
 .st-body { padding: 1.5rem; }
@@ -470,12 +528,11 @@ function submitReject() {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 12px;
+    background: var(--dp-secondary-container);
+    border-radius: var(--dp-card-radius);
     padding: 14px 16px;
 }
-.st-import-panel--warn { background: #fffbeb; border-color: #fde68a; }
+.st-import-panel--warn { background: #fef3c7; }
 .st-import-panel__icon {
     display: flex;
     align-items: center;
@@ -483,18 +540,18 @@ function submitReject() {
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.7);
-    color: #166534;
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--dp-on-secondary-container);
     flex-shrink: 0;
 }
 .st-import-panel--warn .st-import-panel__icon { color: #92400e; }
 .st-import-panel__body { flex: 1; min-width: 0; }
-.st-import-panel__title { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
+.st-import-panel__title { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
 .st-import-panel__list {
     margin: 8px 0 0;
     padding-left: 18px;
-    font-size: 0.75rem;
-    color: var(--on-surface-var);
+    font-size: 12px;
+    color: var(--dp-on-surface-variant);
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -508,7 +565,7 @@ function submitReject() {
     border-radius: 6px;
     border: none;
     background: transparent;
-    color: var(--on-surface-var);
+    color: var(--dp-on-surface-variant);
     cursor: pointer;
     flex-shrink: 0;
 }
@@ -517,8 +574,7 @@ function submitReject() {
 /* ── Admin pending panel ───────────────────────────────────────────────── */
 .st-pending-card {
     background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 14px;
+    border-radius: var(--dp-card-radius);
     overflow: hidden;
 }
 .st-pending-card__head {
@@ -526,7 +582,7 @@ function submitReject() {
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
-    font-size: 0.8125rem;
+    font-size: 13px;
     font-weight: 700;
     color: #92400e;
     border-bottom: 1px solid #fde68a;
@@ -541,7 +597,7 @@ function submitReject() {
     border-radius: 999px;
     background: #f59e0b;
     color: #fff;
-    font-size: 0.6875rem;
+    font-size: 11px;
 }
 .st-pending-row {
     display: flex;
@@ -552,8 +608,8 @@ function submitReject() {
     border-bottom: 1px solid #fef3c7;
 }
 .st-pending-row:last-child { border-bottom: none; }
-.st-pending-row__name { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
-.st-pending-row__meta { font-size: 0.75rem; color: #92400e; margin-top: 1px; }
+.st-pending-row__name { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
+.st-pending-row__meta { font-size: 12px; color: #92400e; margin-top: 1px; }
 .st-pending-row__actions { display: flex; gap: 8px; flex-shrink: 0; }
 
 /* ── Empty state ───────────────────────────────────────────────────────── */
@@ -562,87 +618,152 @@ function submitReject() {
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: #fff;
-    border: 1px solid var(--border);
-    color: var(--on-surface-var);
+    background: var(--dp-primary-container);
+    color: var(--dp-on-primary-container);
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 14px;
 }
-.st-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
-.st-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0 auto; max-width: 340px; line-height: 1.5; }
+.st-empty__title { font-size: 16px; font-weight: 700; color: var(--dp-primary); margin-bottom: 4px; }
+.st-empty__text { font-size: 13px; color: var(--dp-on-surface-variant); margin: 0 auto; max-width: 340px; line-height: 1.5; }
 
 /* ── Status banners ────────────────────────────────────────────────────── */
 .st-status-banner {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    padding: 16px;
-    border-radius: 12px;
+    padding: 18px;
+    border-radius: var(--dp-card-radius);
     max-width: 560px;
     margin: 0 auto;
+    background: var(--dp-surface-container-lowest);
+    box-shadow: var(--dp-card-shadow);
 }
-.st-status-banner--pending { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
-.st-status-banner--rejected { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-.st-status-banner__title { font-size: 0.875rem; font-weight: 700; }
-.st-status-banner__text { font-size: 0.8125rem; margin: 2px 0 0; line-height: 1.5; opacity: 0.9; }
+.st-status-banner--pending { color: var(--dp-primary); }
+.st-status-banner--pending .el-icon { color: var(--dp-secondary); }
+.st-status-banner--rejected { color: var(--dp-on-error-container); }
+.st-status-banner--rejected .el-icon { color: var(--dp-error); }
+.st-status-banner__title { font-size: 14px; font-weight: 700; color: var(--dp-on-surface); }
+.st-status-banner__text { font-size: 13px; margin: 2px 0 0; line-height: 1.5; color: var(--dp-on-surface-variant); }
 
-/* ── Table card ────────────────────────────────────────────────────────── */
-.st-table-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
+/* ── Inventory: editorial intro ───────────────────────────────────────── */
+.st-inventory { display: flex; flex-direction: column; gap: 20px; }
+.st-hero { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
+.st-hero h1 { color: var(--dp-primary); }
+.st-kicker {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--dp-primary);
 }
+.st-subtitle { font-size: 14px; line-height: 1.6; color: var(--dp-on-surface-variant); margin: 0; }
 
-.st-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-}
+/* ── Search + filters ────────────────────────────────────────────────── */
+.st-controls { display: flex; flex-direction: column; gap: 12px; }
+.st-search-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .st-search {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 0 12px;
-    height: 36px;
-    width: 240px;
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    background: var(--surface-low);
-    color: var(--on-surface-var);
+    padding: 0 14px;
+    height: 40px;
+    width: 260px;
+    border-radius: 999px;
+    background: var(--dp-surface-container-lowest);
+    box-shadow: var(--dp-card-shadow);
+    color: var(--dp-on-surface-variant);
     flex-shrink: 0;
 }
 .st-search :deep(.el-icon) { font-size: 14px; }
-.st-search input { border: none; outline: none; background: transparent; font-size: 0.8125rem; color: var(--on-surface); width: 100%; font-family: inherit; }
-.st-toolbar__stats { display: flex; align-items: center; gap: 10px; }
-.st-stat { font-size: 0.75rem; color: var(--on-surface-var); }
-.st-stat strong { color: var(--on-surface); font-weight: 700; }
+.st-search input { border: none; outline: none; background: transparent; font-size: 13px; color: var(--dp-on-surface); width: 100%; font-family: inherit; }
+.st-stat { font-size: 12.5px; color: var(--dp-on-surface-variant); margin-left: auto; }
+.st-stat strong { color: var(--dp-on-surface); font-weight: 700; }
+
+.st-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    background: var(--dp-surface-container-lowest);
+    border-radius: 14px;
+    box-shadow: var(--dp-card-shadow);
+    padding: 14px 16px;
+}
+.st-filter-pill { width: 168px; }
+.st-filter-pill :deep(.el-select__wrapper) {
+    min-height: 38px !important;
+    height: 38px !important;
+    border-radius: 10px;
+    background: var(--dp-surface-container-low);
+    box-shadow: none !important;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dp-on-surface-variant);
+    padding-left: 14px;
+}
+.st-filter-pill :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 1.5px var(--dp-primary) inset !important; }
+.st-filter-pill :deep(.el-select__placeholder) { color: var(--dp-on-surface-variant); }
+
+.st-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--dp-primary);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.st-reset:hover { text-decoration: underline; }
+.st-reset:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 3px; }
+
+/* Category pill — tone hashed per value, matching Store/Market.vue's
+   browse-table treatment for a consistent look across both pages. */
+.st-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.st-pill--a { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
+.st-pill--b { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
+.st-pill--c { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
+.st-pill--d { background: var(--dp-tertiary-fixed); color: var(--dp-on-tertiary-fixed); }
+
+/* ── Table card ────────────────────────────────────────────────────────── */
+.st-table-card {
+    background: var(--dp-surface-container-lowest);
+    border-radius: var(--dp-card-radius);
+    box-shadow: var(--dp-card-shadow);
+    overflow: hidden;
+}
 
 .st-table thead th {
-    background: var(--surface-low);
-    font-size: 0.6875rem;
+    background: var(--dp-surface-container-low);
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--on-surface-var);
-    padding: 11px 16px;
-    border-bottom-color: var(--border);
+    color: var(--dp-on-surface-variant);
+    padding: 12px 16px;
+    border-bottom-color: transparent;
     white-space: nowrap;
 }
-.st-table tbody td { padding: 13px 16px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
+.st-table tbody td { padding: 13px 16px; font-size: 13px; border-color: color-mix(in srgb, var(--dp-outline-variant) 25%, transparent); vertical-align: middle; }
 .st-row { transition: background 0.12s; cursor: pointer; }
-.st-row:hover { background: var(--surface-low); }
-.st-row:not(:last-child) td { border-bottom: 1px solid var(--surface-low); }
+.st-row:hover { background: var(--dp-surface-container-low); }
+.st-row:last-child td { border-bottom: none; }
 
 .st-th { display: inline-flex; align-items: center; gap: 5px; }
-.st-th :deep(.el-icon) { font-size: 12px; color: #9ca3af; }
+.st-th :deep(.el-icon) { font-size: 12px; color: var(--dp-outline); }
 
 .st-thumb {
     display: flex;
@@ -650,38 +771,39 @@ function submitReject() {
     justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: 8px;
-    background: rgba(20, 92, 66, 0.08);
-    color: var(--green);
+    border-radius: 9px;
+    background: var(--dp-primary-container);
+    color: var(--dp-on-primary-container);
     flex-shrink: 0;
     overflow: hidden;
 }
 .st-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.st-name { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
+.st-name { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
 .st-name--link { text-decoration: none; }
-.st-name--link:hover { color: var(--green); text-decoration: underline; }
-.st-muted { color: var(--on-surface-var); }
-.st-price { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
+.st-name--link:hover { color: var(--dp-primary); text-decoration: underline; }
+.st-muted { color: var(--dp-on-surface-variant); }
+.st-price { font-size: 13px; font-weight: 700; color: var(--dp-primary); font-family: var(--dp-font-mono); }
 
 .st-status {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-size: 0.6875rem;
+    font-size: 11px;
     font-weight: 700;
     text-transform: capitalize;
-    padding: 3px 10px;
+    padding: 4px 11px;
     border-radius: 999px;
     border: none;
     cursor: pointer;
 }
-.st-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.st-status--available { background: #dcfce7; color: #166534; }
+.st-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.st-status:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
+.st-status--available { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
 .st-status--reserved { background: #fef3c7; color: #92400e; }
 .st-status--sold { background: #dbeafe; color: #1e40af; }
 .st-status--shipped { background: #ede9fe; color: #6d28d9; }
-.st-status--delivered { background: #dcfce7; color: #166534; }
-.st-status--archived { background: #f1f5f9; color: #64748b; }
+.st-status--delivered { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
+.st-status--archived { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
 
 .st-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
 .st-act-btn {
@@ -690,7 +812,7 @@ function submitReject() {
     justify-content: center;
     width: 28px;
     height: 28px;
-    border-radius: 7px;
+    border-radius: 8px;
     border: none;
     background: transparent;
     cursor: pointer;
@@ -698,11 +820,12 @@ function submitReject() {
 }
 .st-act-btn--trace { color: #6d28d9; }
 .st-act-btn--trace:hover { background: rgba(109, 40, 217, .08); }
-.st-act-btn--edit { color: var(--green); }
-.st-act-btn--edit:hover { background: rgba(20, 92, 66, .08); }
-.st-act-btn--danger { color: #b91c1c; }
-.st-act-btn--danger:hover { background: rgba(185, 28, 28, .08); }
+.st-act-btn--edit { color: var(--dp-secondary); }
+.st-act-btn--edit:hover { background: color-mix(in srgb, var(--dp-secondary) 10%, transparent); }
+.st-act-btn--danger { color: var(--dp-error); }
+.st-act-btn--danger:hover { background: var(--dp-error-container); }
 .st-act-btn:disabled { opacity: 0.5; cursor: default; }
+.st-act-btn:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 
 .st-no-results {
     display: flex;
@@ -710,16 +833,16 @@ function submitReject() {
     justify-content: center;
     gap: 8px;
     padding: 2.5rem 1rem;
-    font-size: 0.8125rem;
-    color: var(--on-surface-var);
+    font-size: 13px;
+    color: var(--dp-on-surface-variant);
 }
-.st-no-results :deep(.el-icon) { color: #cbd5e1; }
+.st-no-results :deep(.el-icon) { color: var(--dp-outline); }
 
 /* ── Mobile card list (replaces table below 640px) ────────────────────── */
 .st-cards { display: none; }
 .st-card {
     padding: 14px 16px;
-    border-bottom: 1px solid var(--surface-low);
+    border-bottom: 1px solid color-mix(in srgb, var(--dp-outline-variant) 25%, transparent);
 }
 .st-card:last-child { border-bottom: none; }
 .st-card__top { display: flex; align-items: center; gap: 10px; }
@@ -731,30 +854,47 @@ function submitReject() {
     width: auto;
     height: 32px;
     gap: 5px;
-    font-size: 0.75rem;
+    font-size: 12px;
     font-weight: 700;
-    background: var(--surface-low);
+    background: var(--dp-surface-container-low);
 }
 
-.st-pagination { display: flex; justify-content: flex-end; padding: 12px 16px; border-top: 1px solid var(--border); }
+.st-pagination { display: flex; justify-content: flex-end; padding: 12px 16px; border-top: 1px solid color-mix(in srgb, var(--dp-outline-variant) 25%, transparent); }
 .st-pagination :deep(.el-pagination) { display: flex; align-items: center; gap: 6px; font-family: inherit; }
-.st-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: 0.75rem; font-weight: 600; color: var(--on-surface-var); }
+.st-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: 12px; font-weight: 600; color: var(--dp-on-surface-variant); }
 .st-pagination :deep(.btn-prev),
-.st-pagination :deep(.btn-next) { width: 30px; height: 30px; border-radius: 7px; background: #fff; border: 1px solid var(--border); color: var(--on-surface-var); }
-.st-pagination :deep(.el-pager li) { min-width: 30px; height: 30px; border-radius: 7px; background: #fff; border: 1px solid var(--border); color: var(--on-surface); font-size: 0.75rem; font-weight: 700; margin: 0 2px; }
-.st-pagination :deep(.el-pager li.is-active) { background: var(--green); border-color: var(--green); color: #fff; }
+.st-pagination :deep(.btn-next) { width: 30px; height: 30px; border-radius: 8px; background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); color: var(--dp-on-surface-variant); }
+.st-pagination :deep(.el-pager li) { min-width: 30px; height: 30px; border-radius: 8px; background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); color: var(--dp-on-surface); font-size: 12px; font-weight: 700; margin: 0 2px; }
+.st-pagination :deep(.el-pager li.is-active) { background: var(--dp-primary); border-color: var(--dp-primary); color: var(--dp-on-primary); }
+
+@media (prefers-reduced-motion: reduce) {
+    .st-btn-primary,
+    .st-row,
+    .st-act-btn { transition: none; }
+}
+
+@media (max-width: 900px) {
+    .st-filter-pill { width: 150px; }
+}
 
 @media (max-width: 640px) {
     .st-body { padding: 1.25rem; }
     .table-responsive { display: none; }
     .st-cards { display: block; }
-    .st-toolbar { padding: 12px 14px; }
     .st-search { width: 100%; }
+    .st-stat { margin-left: 0; }
+    .st-filter-pill { width: 100%; }
+    .st-filter-bar { flex-direction: column; align-items: stretch; }
+    .st-reset { margin-left: 0; justify-content: center; padding: 8px 0 0; }
 }
 </style>
 
 <style>
-.el-dialog.st-reject-modal { border-radius: 16px; font-family: 'Manrope', system-ui, sans-serif; }
-.st-reject-modal__title { font-size: 1rem; font-weight: 800; color: #111827; }
+/* Dialog teleports to <body>, outside .dp-shell, so --dp-* custom
+   properties don't cascade in — literal hex from the same palette is
+   used here instead, matching DesignPreviewLayout's own teleported
+   popovers/dropdowns. */
+.el-dialog.st-reject-modal { border-radius: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+.st-reject-modal__title { font-size: 16px; font-weight: 800; color: #271310; }
 .el-dialog.st-reject-modal .el-dialog__footer { display: flex; justify-content: flex-end; gap: 10px; }
 </style>
