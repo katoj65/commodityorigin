@@ -262,9 +262,9 @@ function toggleSubscription(agent) {
 
 .ap-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 48px 20px; background: var(--surface-low); border: 1px solid var(--border); border-radius: 10px; text-align: center; }
 
-.ap-tile { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); transition: box-shadow .15s, transform .15s; }
+.ap-tile { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); transition: box-shadow .15s, transform .15s; }
 .ap-tile:hover { box-shadow: 0 8px 24px rgba(0,0,0,.10); transform: translateY(-2px); border-color: rgba(0,69,50,0.2); }
-.ap-tile__icon { width: 44px; height: 44px; border-radius: 10px; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+.ap-tile__icon { width: 44px; height: 44px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
 .ap-manage-link { display: inline-flex; align-items: center; gap: 4px; font-size: .6875rem; font-weight: 600; color: var(--on-surface-var); text-decoration: none; padding: 4px 8px; border-radius: 6px; }
 .ap-manage-link:hover { background: var(--surface-low); color: var(--green); }
 .ap-tile__name { font-size: .9375rem; font-weight: 700; color: var(--on-surface); margin-bottom: 6px; }

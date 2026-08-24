@@ -833,7 +833,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .ad-kpi__sub   { font-size: 0.625rem; color: var(--on-surface-var); }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
-.ad-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.ad-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .ad-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 .ad-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
@@ -939,7 +939,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .ad-health-label { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
-.ad-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 10px; border: 1px solid; }
+.ad-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 6px; border: 1px solid; }
 .ad-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .ad-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .ad-insight-card--warning { background: #fffbeb; border-color: #fde68a; }

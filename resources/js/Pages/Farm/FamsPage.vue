@@ -819,7 +819,7 @@ const badgeClass = (b) => {
 .fm-view-btn--active { background: var(--surface-white); color: var(--green); box-shadow: 0 1px 3px rgba(0,0,0,.08); font-weight: 700; }
 
 /* ── Farm card (grid) ──────────────────────────────────────────────────────── */
-.fm-farm-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; flex-direction: column; transition: box-shadow 0.15s; }
+.fm-farm-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; flex-direction: column; transition: box-shadow 0.15s; }
 .fm-farm-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); border-color: rgba(0,69,50,0.2); }
 .fm-farm-avatar { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(145deg, #1f2937, #0f172a); color: #d1fae5; font-weight: 800; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fm-farm-name    { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); line-height: 1.3; }
@@ -845,18 +845,18 @@ const badgeClass = (b) => {
 .fm-altitude-badge { display: inline-flex; background: #f0f9ff; color: #0369a1; border-radius: 6px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; font-variant-numeric: tabular-nums; }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
-.fm-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.fm-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .fm-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 .fm-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
 /* ── Featured ──────────────────────────────────────────────────────────────── */
-.fm-featured-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; display: flex; flex-direction: column; }
+.fm-featured-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 0.875rem; display: flex; flex-direction: column; }
 .fm-featured-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green); margin-bottom: 4px; }
 .fm-featured-name  { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
 .fm-featured-score { font-size: 1.25rem; font-weight: 800; color: var(--green); font-variant-numeric: tabular-nums; }
 
 /* ── Regional ──────────────────────────────────────────────────────────────── */
-.fm-region-card  { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; }
+.fm-region-card  { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 0.875rem; }
 .fm-region-name  { font-size: 0.9375rem; font-weight: 800; color: var(--on-surface); margin-bottom: 2px; }
 .fm-region-farms { font-size: 0.75rem; color: var(--on-surface-var); margin-bottom: 4px; }
 
@@ -907,7 +907,7 @@ const badgeClass = (b) => {
 .fm-cert-label { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
-.fm-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 10px; border: 1px solid; }
+.fm-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 6px; border: 1px solid; }
 .fm-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .fm-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .fm-insight-card--warning { background: #fffbeb; border-color: #fde68a; }

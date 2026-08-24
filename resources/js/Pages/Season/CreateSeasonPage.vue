@@ -365,12 +365,12 @@ const submit = () => form.post(route('season.store'));
 .sc-section { padding: 0 24px 12px; }
 
 /* ── Cards ───────────────────────────────────────────────────────── */
-.sc-card { border: 1px solid #eef2f0; border-radius: 8px; background: #fff; overflow: hidden; }
+.sc-card { border: 1px solid #eef2f0; border-radius: 6px; background: #fff; overflow: hidden; }
 .sc-card--sticky { position: sticky; top: 12px; }
 .sc-card-head {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     padding: 8px 14px; border-bottom: 1px solid #e8ecec;
-    background: #f8f9f9; border-radius: 7px 7px 0 0; flex-wrap: wrap;
+    background: #f8f9f9; border-radius: 6px 6px 0 0; flex-wrap: wrap;
 }
 .sc-card-title {
     display: flex; align-items: center; gap: 5px;
@@ -554,7 +554,7 @@ const submit = () => form.post(route('season.store'));
 /* ── AI Insights ─────────────────────────────────────────────────── */
 .sc-insights-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 @media (max-width: 768px) { .sc-insights-grid { grid-template-columns: 1fr; } }
-.sc-insight-card { display: flex; align-items: flex-start; gap: 8px; padding: 12px; border-radius: 7px; border: 1px solid; }
+.sc-insight-card { display: flex; align-items: flex-start; gap: 8px; padding: 12px; border-radius: 6px; border: 1px solid; }
 .sc-insight-card--green { background: #eef5f1; border-color: #c3ddd2; }
 .sc-insight-card--blue  { background: #eff6ff; border-color: #bfdbfe; }
 .sc-insight-card--amber { background: #fffbeb; border-color: #fde68a; }
@@ -569,7 +569,7 @@ const submit = () => form.post(route('season.store'));
 .sc-float { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .sc-float-btn { width: 44px; height: 44px; border-radius: 50%; background: #003f2c; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: background .14s; }
 .sc-float-btn:hover { background: #004532; }
-.sc-chat-panel { width: 290px; border: 1px solid #eef2f0; border-radius: 10px; background: #fff; overflow: hidden; }
+.sc-chat-panel { width: 290px; border: 1px solid #eef2f0; border-radius: 6px; background: #fff; overflow: hidden; }
 .sc-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid #e8ecec; background: #f8f9f9; }
 .sc-chat-close { font-size: 18px; line-height: 1; background: none; border: none; color: #94a1b2; cursor: pointer; padding: 0; }
 .sc-chat-prompts { padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f0f2f2; }

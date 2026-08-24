@@ -46,9 +46,4 @@ class Season extends Model
     {
         return $this->hasMany(Harvest::class);
     }
-
-    public function batches(): HasMany
-    {
-        return $this->hasMany(Batch::class);
-    }
 }

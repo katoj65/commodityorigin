@@ -15,6 +15,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    currencyOptions: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const emit = defineEmits(['update:modelValue', 'success']);
@@ -30,6 +34,7 @@ const form = useForm({
     quantity_bags: '',
     net_weight_kg: '',
     price: '',
+    currency: 'USD',
     moisture_content: '',
     processing_date: '',
     processing_method: '',
@@ -55,6 +60,7 @@ const hydrateForm = () => {
         quantity_bags: props.batch.quantity_bags ?? '',
         net_weight_kg: props.batch.net_weight_kg ?? '',
         price: props.batch.price ?? '',
+        currency: props.batch.currency ?? 'USD',
         moisture_content: props.batch.moisture_content ?? '',
         processing_date: props.batch.processing_date ?? '',
         processing_method: props.batch.processing_method ?? '',
@@ -174,6 +180,18 @@ const submit = () => {
             <el-form-item label="Price">
                 <el-input v-model="form.price" type="number" min="0" step="0.01" placeholder="e.g. 2450" />
                 <InputError :message="form.errors.price" class="modal-input-error" />
+            </el-form-item>
+
+            <el-form-item label="Currency">
+                <el-select v-model="form.currency" filterable placeholder="Select currency" class="!w-full">
+                    <el-option
+                        v-for="option in currencyOptions"
+                        :key="option"
+                        :label="option"
+                        :value="option"
+                    />
+                </el-select>
+                <InputError :message="form.errors.currency" class="modal-input-error" />
             </el-form-item>
 
             <el-form-item label="Processing date">

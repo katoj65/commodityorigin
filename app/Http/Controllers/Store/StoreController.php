@@ -4,8 +4,20 @@ namespace App\Http\Controllers\Store;
 
 use App\Helpers\ExcelImportHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BatchResource;
+use App\Http\Resources\FarmCollectionResource;
+use App\Http\Resources\LotResource;
 use App\Http\Resources\StoreItemResource;
 use App\Http\Resources\StoreResource;
+use App\Models\Batch;
+use App\Models\FarmCollection;
+use App\Models\Lot;
+use App\Models\CropVarietyMetadata;
+use App\Models\Currency;
+use App\Models\DryingMethodMetadata;
+use App\Models\MillingMetadata;
+use App\Models\ProcessingMetadata;
+use App\Models\SeasonMetadata;
 use App\Models\Store;
 use App\Models\StoreItem;
 use App\Services\StoreService;
@@ -31,10 +43,60 @@ class StoreController extends Controller
     public function show(Request $request): Response
     {
         $store = $this->stores->forUser($request->user()->id);
+        $userId = $request->user()->id;
+        $verified = (bool) $store?->isVerified();
 
         return Inertia::render('Store/StorePage', [
             ...$this->headerContext($request, $store),
-            'items' => $store?->isVerified() ? StoreItemResource::collection($this->stores->items($store->id))->resolve() : [],
+            'farmCollections' => $verified ? FarmCollectionResource::collection(
+                FarmCollection::query()
+                    ->where('user_id', $userId)
+                    ->with('farm')
+                    ->latest('collection_date')
+                    ->get()
+            )->resolve() : [],
+            'batches' => $verified ? BatchResource::collection(
+                Batch::query()->where('user_id', $userId)->latest()->get()
+            )->resolve() : [],
+            'lots' => $verified ? LotResource::collection(
+                Lot::query()->where('user_id', $userId)->with('batch')->latest()->get()
+            )->resolve() : [],
+            'processOptions' => $verified ? ProcessingMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name')
+                : [],
+            'dryingMethodOptions' => $verified ? DryingMethodMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name')
+                : [],
+            'millingOptions' => $verified ? MillingMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name')
+                : [],
+            'coffeeTypeOptions' => $verified ? CropVarietyMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name')
+                : [],
+            'harvestSeasonOptions' => $verified ? SeasonMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name')
+                : [],
+            'currencyOptions' => $verified ? Currency::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('code')
+                ->pluck('code')
+                : [],
             'isAdmin' => $request->user()->isAdmin(),
             'pendingStores' => $request->user()->isAdmin()
                 ? StoreResource::collection($this->stores->pending())->resolve()

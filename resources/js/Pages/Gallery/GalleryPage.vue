@@ -514,7 +514,7 @@ function confirmDelete() {
     position: relative;
     padding: 0;
     border: none;
-    border-radius: 14px;
+    border-radius: 6px;
     overflow: hidden;
     background: #fff;
     cursor: pointer;
@@ -589,7 +589,7 @@ function confirmDelete() {
 .gal-card__icon-btn {
     width: 26px;
     height: 26px;
-    border-radius: 7px;
+    border-radius: 6px;
     border: none;
     background: var(--surface-low);
     color: #6b7280;

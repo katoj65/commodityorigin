@@ -768,7 +768,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .fr-kpi__sub   { font-size: 0.625rem; color: var(--on-surface-var); }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
-.fr-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.fr-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .fr-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 .fr-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
@@ -788,7 +788,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .fr-chart-note { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--green); font-weight: 600; }
 
 /* ── Farms ─────────────────────────────────────────────────────────────────── */
-.fr-farm-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; }
+.fr-farm-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 0.875rem; }
 .fr-farm-name { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
 .fr-farm-loc  { font-size: 0.75rem; color: var(--on-surface-var); margin-top: 2px; }
 .fr-detail-cell { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 5px 8px; }
@@ -849,7 +849,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .fr-timeline-time { font-size: 0.6875rem; color: var(--on-surface-var); margin-top: 2px; }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
-.fr-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 10px; border: 1px solid; }
+.fr-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 6px; border: 1px solid; }
 .fr-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .fr-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .fr-insight-card--warning { background: #fffbeb; border-color: #fde68a; }

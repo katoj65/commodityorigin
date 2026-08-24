@@ -154,7 +154,7 @@ const fillPrompt = p => { chatInput.value = p; };
 
 /* ── Submit ──────────────────────────────────────────────────── */
 const submit = () => {
-    form.transform(data => ({ ...data, season_id: props.season.id, harvest_ids: selectedHarvestIds.value }));
+    form.transform(data => ({ ...data, harvest_ids: selectedHarvestIds.value }));
     form.post(route('batch.store'), {
         preserveScroll: true,
         onFinish: () => form.transform(data => data),
@@ -934,7 +934,7 @@ const submit = () => {
 /* ── Card ────────────────────────────────────────────────────────── */
 .cb-card {
     border: 1px solid #eef2f0;
-    border-radius: 8px;
+    border-radius: 6px;
     background: #fff;
     overflow: hidden;
 }
@@ -944,7 +944,7 @@ const submit = () => {
     padding: 8px 14px;
     border-bottom: 1px solid #e8ecec;
     background: #f8f9f9;
-    border-radius: 7px 7px 0 0;
+    border-radius: 6px 6px 0 0;
     flex-wrap: wrap;
 }
 .cb-card-title {
@@ -1086,7 +1086,7 @@ const submit = () => {
 /* ── AI Insights ─────────────────────────────────────────────────── */
 .cb-insights-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 @media (max-width: 768px) { .cb-insights-grid { grid-template-columns: 1fr; } }
-.cb-insight-card { display: flex; align-items: flex-start; gap: 8px; padding: 12px; border-radius: 7px; border: 1px solid; }
+.cb-insight-card { display: flex; align-items: flex-start; gap: 8px; padding: 12px; border-radius: 6px; border: 1px solid; }
 .cb-insight-card--green { background: #eef5f1; border-color: #c3ddd2; }
 .cb-insight-card--blue  { background: #eff6ff; border-color: #bfdbfe; }
 .cb-insight-card--amber { background: #fffbeb; border-color: #fde68a; }
@@ -1112,7 +1112,7 @@ const submit = () => {
     padding: 3px 8px; border-radius: 5px;
 }
 .cb-summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
-.cb-summary-stat { text-align: center; padding: 8px; border: 1px solid #e8ecec; border-radius: 5px; background: #fafbfb; }
+.cb-summary-stat { text-align: center; padding: 8px; border: 1px solid #e8ecec; border-radius: 6px; background: #fafbfb; }
 .cb-summary-val { font-size: 17px; font-weight: 800; color: #1f2a2a; line-height: 1.1; }
 .cb-summary-val--green { color: #004532; }
 .cb-summary-list { display: flex; flex-direction: column; gap: 0; }
@@ -1158,7 +1158,7 @@ const submit = () => {
 .cb-float { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .cb-float-btn { width: 44px; height: 44px; border-radius: 50%; background: #003f2c; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: background .14s; }
 .cb-float-btn:hover { background: #004532; }
-.cb-chat-panel { width: 290px; border: 1px solid #eef2f0; border-radius: 10px; background: #fff; overflow: hidden; }
+.cb-chat-panel { width: 290px; border: 1px solid #eef2f0; border-radius: 6px; background: #fff; overflow: hidden; }
 .cb-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid #e8ecec; background: #f8f9f9; }
 .cb-chat-close { font-size: 18px; line-height: 1; background: none; border: none; color: #94a1b2; cursor: pointer; padding: 0; }
 .cb-chat-prompts { padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f0f2f2; }

@@ -305,7 +305,7 @@ function deleteFarmer() {
 /* ── Cards ───────────────────────────────────────────────────────── */
 .fpr-card {
     background: var(--dp-surface-container-lowest); box-shadow: var(--dp-card-shadow);
-    border-radius: 16px; padding: 24px;
+    border-radius: 6px; padding: 24px;
 }
 .fpr-card-heading { font-size: 1.125rem; font-weight: 700; color: var(--dp-primary); margin: 0 0 16px !important; }
 
@@ -314,7 +314,7 @@ function deleteFarmer() {
 .fpr-photo-wrap { position: relative; width: 128px; height: 128px; margin-bottom: 16px; }
 .fpr-photo {
     width: 128px; height: 128px; border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(39,19,16,.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,.15);
     display: flex; align-items: center; justify-content: center;
     background-image: var(--fpr-tone-gradient);
 }
@@ -324,7 +324,7 @@ function deleteFarmer() {
     width: 28px; height: 28px; border-radius: 999px;
     background: var(--dp-secondary-container); color: var(--dp-on-secondary-container);
     display: flex; align-items: center; justify-content: center;
-    font-size: .8125rem; box-shadow: 0 1px 3px rgba(39,19,16,.2);
+    font-size: .8125rem; box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }
 
 .fpr-tone-a { --fpr-tone-gradient: linear-gradient(150deg, var(--dp-primary-container), var(--dp-primary)); }
@@ -345,7 +345,7 @@ function deleteFarmer() {
 
 .fpr-action-row { display: flex; gap: 12px; }
 .fpr-action-btn {
-    width: 40px; height: 40px; border-radius: 999px; border: none;
+    width: 40px; height: 40px; border-radius: 6px; border: none;
     background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant);
     display: flex; align-items: center; justify-content: center; cursor: pointer;
     text-decoration: none; transition: background .15s ease, color .15s ease;
@@ -375,10 +375,10 @@ function deleteFarmer() {
 @media (max-width: 640px) { .fpr-metrics { grid-template-columns: 1fr; } }
 .fpr-metric-card {
     background: var(--dp-surface-container-lowest); box-shadow: var(--dp-card-shadow);
-    border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 14px;
+    border-radius: 6px; padding: 18px; display: flex; align-items: center; gap: 14px;
     transition: box-shadow .15s ease, transform .15s ease; min-width: 0;
 }
-.fpr-metric-card:hover { box-shadow: 0 1px 2px rgba(39,19,16,.04), 0 14px 28px -14px rgba(39,19,16,.18); transform: translateY(-1px); }
+.fpr-metric-card:hover { box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 14px 28px -14px rgba(0,0,0,.18); transform: translateY(-1px); }
 .fpr-metric-icon {
     width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
     background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant);
@@ -398,7 +398,7 @@ function deleteFarmer() {
 
 .fpr-page-nav { display: flex; gap: 8px; }
 .fpr-page-btn {
-    width: 32px; height: 32px; border-radius: 999px;
+    width: 32px; height: 32px; border-radius: 6px;
     border: 1px solid var(--dp-outline-variant); background: transparent; color: var(--dp-on-surface-variant);
     display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: .875rem;
     transition: color .15s ease, border-color .15s ease, background .15s ease;
@@ -411,10 +411,10 @@ function deleteFarmer() {
 .fpr-farm-card {
     display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 12px; cursor: pointer;
     background: var(--dp-surface-container-lowest); box-shadow: var(--dp-card-shadow);
-    border-radius: 12px; transition: box-shadow .15s ease, transform .15s ease; min-width: 0;
+    border-radius: 6px; transition: box-shadow .15s ease, transform .15s ease; min-width: 0;
 }
 @media (min-width: 768px) { .fpr-farm-card { flex-direction: row; } }
-.fpr-farm-card:hover { box-shadow: 0 1px 2px rgba(39,19,16,.04), 0 14px 28px -14px rgba(39,19,16,.18); transform: translateY(-1px); }
+.fpr-farm-card:hover { box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 14px 28px -14px rgba(0,0,0,.18); transform: translateY(-1px); }
 .fpr-farm-thumb {
     width: 100%; height: 96px; border-radius: 8px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
@@ -426,16 +426,16 @@ function deleteFarmer() {
 .fpr-farm-name { font-size: .875rem; font-weight: 700; color: var(--dp-primary); margin: 0 0 2px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fpr-farm-desc { font-size: .75rem; color: var(--dp-on-surface-variant); margin: 0 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fpr-farm-view {
-    flex-shrink: 0; width: 32px; height: 32px; border-radius: 999px; border: none;
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 6px; border: none;
     background: var(--dp-surface-container-low); color: var(--dp-primary);
     display: none; align-items: center; justify-content: center; cursor: pointer;
 }
 @media (min-width: 768px) { .fpr-farm-view { display: flex; } }
 
 .fpr-btn {
-    display: inline-flex; align-items: center; gap: 8px; width: fit-content;
-    border-radius: 999px; padding: 10px 20px; font-size: .8125rem; font-weight: 700;
-    border: 2px solid transparent; cursor: pointer; font-family: var(--dp-font-sans);
+    display: inline-flex; align-items: center; gap: 6px; width: fit-content;
+    height: 36px; border-radius: 6px; padding: 0 16px; font-size: 13px; font-weight: 600;
+    border: 1px solid transparent; cursor: pointer; font-family: var(--dp-font-sans);
     transition: background .15s ease, transform .15s ease;
 }
 .fpr-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }

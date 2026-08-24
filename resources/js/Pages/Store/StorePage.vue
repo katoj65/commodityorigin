@@ -1,143 +1,64 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import StoreLayout from '@/Layouts/StoreLayout.vue';
-import AddEditStoreItemDialog from '@/Components/Modals/AddEditStoreItemDialog.vue';
-import StoreItemStatusDialog from '@/Components/Modals/StoreItemStatusDialog.vue';
-import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import AddFarmCollectionModal from '@/Components/Modals/AddFarmCollectionModal.vue';
+import AddBatchModal from '@/Components/Modals/AddBatchModal.vue';
+import AddLotModal from '@/Components/Modals/AddLotModal.vue';
 import {
-    Check, Close, Clock, Delete, EditPen, Goods, Plus, RefreshLeft, Search, Shop, UploadFilled, WarningFilled,
+    ArrowDown, Box, Check, Checked, CircleCheck, Clock, Close, Coffee, Coin, EditPen, Files, Filter,
+    FolderOpened, Medal, MoreFilled, Odometer, OfficeBuilding, Operation, Plus, Promotion, RefreshRight,
+    Shop, Sort, Ticket, Top, UploadFilled, Van, View, Wallet, WarningFilled,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
     store: { type: Object, default: null },
-    items: { type: Array, default: () => [] },
+    farmCollections: { type: Array, default: () => [] },
+    batches: { type: Array, default: () => [] },
+    lots: { type: Array, default: () => [] },
+    processOptions: { type: Array, default: () => [] },
+    dryingMethodOptions: { type: Array, default: () => [] },
+    millingOptions: { type: Array, default: () => [] },
+    coffeeTypeOptions: { type: Array, default: () => [] },
+    harvestSeasonOptions: { type: Array, default: () => [] },
+    currencyOptions: { type: Array, default: () => [] },
     statusOptions: { type: Array, default: () => [] },
     isAdmin: { type: Boolean, default: false },
     pendingStores: { type: Array, default: () => [] },
     importResult: { type: Object, default: null },
 });
 
+/* ── Uncommitted Inventory section tabs ──────────────────────────────── */
+const inventoryTab = ref('collections');
+
+/* ── Hero "Register New ▾" dropdown — opens the matching independent
+   modal component instead of navigating away. ────────────────────────── */
+const addCollectionOpen = ref(false);
+const addBatchOpen = ref(false);
+const addLotOpen = ref(false);
+
+function handleRegisterCommand(command) {
+    if (command === 'collection') addCollectionOpen.value = true;
+    else if (command === 'batch') addBatchOpen.value = true;
+    else if (command === 'lot') addLotOpen.value = true;
+}
+
+const quickTransfer = reactive({ sourceWarehouse: '', destinationStore: '', lotId: '', quantity: null });
+
+function formatMoney(amount, currency) {
+    const value = Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return currency ? `${currency} ${value}` : `$${value}`;
+}
+
 /* ── Shared with StoreLayout's header buttons via v-model ─────────────── */
 const storeDialogOpen = ref(false);
 const statusFilter = ref('all');
 const importResultVisible = ref(Boolean(props.importResult));
 
-/* ── Search + filter + pagination ─────────────────────────────────────── */
-const searchQuery = ref('');
-const categoryFilter = ref('all');
-const sortBy = ref('newest');
-const currentPage = ref(1);
-const pageSize = 30;
-
-const categories = computed(() => {
-    const seen = new Set();
-    props.items.forEach((i) => { if (i.category) seen.add(i.category); });
-    return [...seen].sort();
-});
-
-function resetFilters() {
-    searchQuery.value = '';
-    categoryFilter.value = 'all';
-    sortBy.value = 'newest';
-}
-
-const filteredItems = computed(() => {
-    const q = searchQuery.value.trim().toLowerCase();
-
-    const filtered = props.items.filter((i) => {
-        const matchesStatus = statusFilter.value === 'all' || i.status === statusFilter.value;
-        const matchesCategory = categoryFilter.value === 'all' || i.category === categoryFilter.value;
-        const matchesSearch = !q || [i.name, i.category, i.status].filter(Boolean).join(' ').toLowerCase().includes(q);
-        return matchesStatus && matchesCategory && matchesSearch;
-    });
-
-    const sorted = [...filtered];
-    if (sortBy.value === 'price_asc') sorted.sort((a, b) => a.price - b.price);
-    else if (sortBy.value === 'price_desc') sorted.sort((a, b) => b.price - a.price);
-    else sorted.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
-
-    return sorted;
-});
-
-const pagedItems = computed(() => {
-    const start = (currentPage.value - 1) * pageSize;
-    return filteredItems.value.slice(start, start + pageSize);
-});
-
-watch([searchQuery, statusFilter, categoryFilter, sortBy, () => props.items], () => {
-    currentPage.value = 1;
-});
-
-/* ── Category pill tone — hashed so the same category always renders the
-   same tone, matching Store/Market.vue's browse-table treatment. ─────── */
-const TONES = ['st-pill--a', 'st-pill--b', 'st-pill--c', 'st-pill--d'];
-
-function pillTone(value) {
-    if (!value) return TONES[0];
-    let hash = 0;
-    for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) % TONES.length;
-    return TONES[hash];
-}
-
-function formatMoney(value, currency) {
-    const amount = Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return currency ? `${currency} ${amount}` : amount;
-}
-
-function statusLabel(status) {
-    if (!status) return '—';
-    return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
 function formatDate(value) {
     if (!value) return '';
     return new Date(value.replace(' ', 'T')).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-/* ── Edit item (row-level; header's "Add Item" button owns creation) ──── */
-const itemDialogOpen = ref(false);
-const editingItem = ref(null);
-
-function openEditItem(item) {
-    editingItem.value = item;
-    itemDialogOpen.value = true;
-}
-
-function openItemPage(item, event) {
-    if (event.target.closest('button, a')) return;
-    router.visit(route('store.items.show', item.id));
-}
-
-/* ── Status / trace ───────────────────────────────────────────────────── */
-const statusDialogOpen = ref(false);
-const activeItem = ref(null);
-
-function openStatusDialog(item) {
-    activeItem.value = item;
-    statusDialogOpen.value = true;
-}
-
-/* ── Remove item ──────────────────────────────────────────────────────── */
-const removingId = ref(null);
-const removeOpen = ref(false);
-const pendingRemove = ref(null);
-
-function requestRemove(item) {
-    pendingRemove.value = item;
-    removeOpen.value = true;
-}
-
-function confirmRemove() {
-    const item = pendingRemove.value;
-    if (!item) return;
-
-    removingId.value = item.id;
-    router.delete(route('store.items.destroy', item.id), {
-        preserveScroll: true,
-        onFinish: () => { removingId.value = null; },
-    });
 }
 
 /* ── Admin: verify / reject pending stores ───────────────────────────── */
@@ -188,17 +109,8 @@ function submitReject() {
     >
 
         <div class="st-page">
-            <!-- ── Editorial intro — always shown, regardless of store state ── -->
-            <div class="st-body st-body--no-bottom-pad">
-                <div class="st-hero">
-                    <span class="st-kicker">The Store · Bean Origin</span>
-                    <h1 class="dp-display-md">My Store</h1>
-                    <p class="st-subtitle">Every item you've listed, its live status, and its full trace history — in one place.</p>
-                </div>
-            </div>
-
             <!-- ── Admin: pending store verifications ───────────────────── -->
-            <div v-if="isAdmin && pendingStores.length" class="st-body st-body--no-bottom-pad">
+            <div v-if="isAdmin && pendingStores.length">
                 <div class="st-pending-card">
                     <div class="st-pending-card__head">
                         <el-icon :size="15"><WarningFilled /></el-icon>
@@ -223,7 +135,7 @@ function submitReject() {
             </div>
 
             <!-- ── Import results ───────────────────────────────────────── -->
-            <div v-if="importResult && importResultVisible" class="st-body st-body--no-bottom-pad">
+            <div v-if="importResult && importResultVisible">
                 <div class="st-import-panel" :class="{ 'st-import-panel--warn': importResult.errors.length }">
                     <div class="st-import-panel__icon">
                         <el-icon :size="16"><WarningFilled v-if="importResult.errors.length" /><UploadFilled v-else /></el-icon>
@@ -246,7 +158,7 @@ function submitReject() {
             </div>
 
             <!-- ── Body ──────────────────────────────────────────────────── -->
-            <div class="st-body">
+            <div>
                 <!-- No store yet -->
                 <div v-if="!store" class="st-empty">
                     <div class="st-empty__icon"><el-icon :size="22"><Shop /></el-icon></div>
@@ -278,182 +190,318 @@ function submitReject() {
                     </div>
                 </div>
 
-                <!-- Verified: items inventory -->
+                <!-- Verified: static preview layout (placeholder content — this
+                     app has no warehouses/transfers/blockchain ledger backing
+                     these numbers; matches the supplied mockup exactly). ──── -->
                 <template v-else>
-                    <div v-if="items.length" class="st-inventory">
-                        <!-- ── Search + filters ─────────────────────────────── -->
-                        <div class="st-controls">
-                            <div class="st-search-row">
-                                <div class="st-search">
-                                    <el-icon><Search /></el-icon>
-                                    <input v-model="searchQuery" type="text" placeholder="Search items…">
-                                </div>
-                                <span class="st-stat"><strong>{{ filteredItems.length }}</strong> of {{ items.length }}</span>
-                            </div>
-
-                            <div class="st-filter-bar">
-                                <el-select v-model="categoryFilter" class="st-filter-pill" placeholder="Category">
-                                    <el-option label="Category: All" value="all" />
-                                    <el-option v-for="c in categories" :key="c" :label="c" :value="c" />
-                                </el-select>
-                                <el-select v-model="sortBy" class="st-filter-pill" placeholder="Sort">
-                                    <el-option label="Newest First" value="newest" />
-                                    <el-option label="Price: Low to High" value="price_asc" />
-                                    <el-option label="Price: High to Low" value="price_desc" />
-                                </el-select>
-                                <button type="button" class="st-reset" @click="resetFilters">
-                                    <el-icon :size="14"><RefreshLeft /></el-icon> Reset Filters
+                <div class="st-verified">
+                    <div class="st-hero">
+                        <div class="st-hero__text">
+                            <h1 class="st-title">My Store</h1>
+                            <p class="st-subtitle">Manage your active inventory, process transfers, and certify lots on the blockchain before pushing to market.</p>
+                        </div>
+                        <div class="st-hero__actions">
+                            <button type="button" class="st-btn-outline">
+                                <el-icon><Sort /></el-icon> Transfer Stock
+                            </button>
+                            <el-dropdown trigger="click" @command="handleRegisterCommand">
+                                <button type="button" class="st-btn-primary">
+                                    <el-icon><Plus /></el-icon> Register New <el-icon class="st-caret"><ArrowDown /></el-icon>
                                 </button>
-                            </div>
+                                <template #dropdown>
+                                    <el-dropdown-menu class="st-register-menu">
+                                        <el-dropdown-item command="collection">Farm Collection</el-dropdown-item>
+                                        <el-dropdown-item command="batch">Batch</el-dropdown-item>
+                                        <el-dropdown-item command="lot">Lot</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
                         </div>
+                    </div>
 
-                    <div class="st-table-card">
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0 st-table">
-                                <thead>
-                                    <tr>
-                                        <th><span class="st-th"><el-icon><Goods /></el-icon> Item</span></th>
-                                        <th>Category</th>
-                                        <th>Price / Qty</th>
-                                        <th>Status</th>
-                                        <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="item in pagedItems" :key="item.id" class="st-row" @click="openItemPage(item, $event)">
-                                        <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="st-thumb">
-                                                    <img v-if="item.image_url" :src="item.image_url" :alt="item.name">
-                                                    <el-icon v-else :size="15"><Goods /></el-icon>
-                                                </span>
-                                                <div>
-                                                    <Link :href="route('store.items.show', item.id)" class="st-name st-name--link">{{ item.name }}</Link>
+                    <!-- ── KPI snapshot ──────────────────────────────────── -->
+                    <div class="st-kpi-grid">
+                        <div class="st-kpi">
+                            <div class="st-kpi__top">
+                                <div class="st-kpi__icon st-kpi__icon--a"><el-icon><Box /></el-icon></div>
+                                <span class="st-kpi__chip st-kpi__chip--up"><el-icon :size="12"><Top /></el-icon> +5.2%</span>
+                            </div>
+                            <div class="st-kpi__label">Total Stock</div>
+                            <div class="st-kpi__value">12,450 <span class="st-kpi__unit">kg</span></div>
+                        </div>
+                        <div class="st-kpi">
+                            <div class="st-kpi__top">
+                                <div class="st-kpi__icon st-kpi__icon--b"><el-icon><Clock /></el-icon></div>
+                            </div>
+                            <div class="st-kpi__label">Uncommitted</div>
+                            <div class="st-kpi__value">3,200 <span class="st-kpi__unit">kg</span></div>
+                            <div class="st-kpi__sub">Ready for market prep</div>
+                        </div>
+                        <div class="st-kpi">
+                            <div class="st-kpi__top">
+                                <div class="st-kpi__icon st-kpi__icon--c"><el-icon><Van /></el-icon></div>
+                                <span class="st-kpi__chip">4 active</span>
+                            </div>
+                            <div class="st-kpi__label">Active Transfers</div>
+                            <div class="st-kpi__value">4</div>
+                            <div class="st-kpi__sub"><el-icon :size="12"><Clock /></el-icon> 2 arriving today</div>
+                        </div>
+                        <div class="st-kpi">
+                            <div class="st-kpi__top">
+                                <div class="st-kpi__icon st-kpi__icon--d"><el-icon><CircleCheck /></el-icon></div>
+                                <el-icon :size="16" class="st-kpi__check"><CircleCheck /></el-icon>
+                            </div>
+                            <div class="st-kpi__label">Certified Lots</div>
+                            <div class="st-kpi__value">18</div>
+                            <div class="st-kpi__sub st-kpi__sub--green">100% blockchain verified</div>
+                        </div>
+                    </div>
+
+                    <div class="st-layout">
+                        <div class="st-col-main">
+                            <div class="st-tabs-wrap">
+                                <div class="st-section-actions">
+                                    <button type="button" class="st-icon-btn"><el-icon><Filter /></el-icon></button>
+                                    <button type="button" class="st-icon-btn"><el-icon><MoreFilled /></el-icon></button>
+                                </div>
+                                <el-tabs v-model="inventoryTab" class="st-el-tabs">
+
+                                <!-- ── Farm Collection (farm_collections) ───────────── -->
+                                <el-tab-pane label="Farm Collection" name="collections">
+                                    <div class="st-table-card">
+                                        <div class="st-table-scroll"><el-table :data="farmCollections" class="st-el-table">
+                                            <el-table-column min-width="190">
+                                                <template #header><span class="st-th"><el-icon><OfficeBuilding /></el-icon> Farm</span></template>
+                                                <template #default="{ row }">
+                                                    <div class="st-cell">
+                                                        <span class="st-thumb"><el-icon :size="15"><OfficeBuilding /></el-icon></span>
+                                                        <div>
+                                                            <div class="st-name">{{ row.farm?.name || `Farm #${row.farm_id}` }}</div>
+                                                            <div class="st-muted st-caption">{{ row.collection_date ? formatDate(row.collection_date) : '—' }}</div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column min-width="180">
+                                                <template #header><span class="st-th"><el-icon><Coffee /></el-icon> Coffee &amp; Variety</span></template>
+                                                <template #default="{ row }">
+                                                    <div class="st-cell">
+                                                        <span class="st-thumb"><el-icon :size="15"><Coffee /></el-icon></span>
+                                                        <span class="st-commodity">{{ row.coffee_type || '—' }}<span v-if="row.variety" class="st-muted"> · {{ row.variety }}</span></span>
+                                                    </div>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column width="110" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Box /></el-icon> Quantity</span></template>
+                                                <template #default="{ row }">{{ Number(row.quantity || 0).toLocaleString() }} {{ row.unit || '' }}</template>
+                                            </el-table-column>
+                                            <el-table-column width="110" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Medal /></el-icon> Grade</span></template>
+                                                <template #default="{ row }"><span class="st-pill st-pill--a">{{ row.initial_grade || '—' }}</span></template>
+                                            </el-table-column>
+                                            <el-table-column width="130" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Coin /></el-icon> Price</span></template>
+                                                <template #default="{ row }"><span class="st-pill st-pill--b">{{ formatMoney(row.collection_price, row.currency) }}</span></template>
+                                            </el-table-column>
+                                            <el-table-column width="110" align="right">
+                                                <template #header><span class="st-th st-th--end">Actions</span></template>
+                                                <template #default="{ row }">
+                                                    <Link v-if="row.farm_id" :href="route('farm.show', row.farm_id)" class="st-link-action"><el-icon :size="13"><View /></el-icon> View Farm</Link>
+                                                </template>
+                                            </el-table-column>
+                                            <template #empty>
+                                                <div class="st-empty-cell">
+                                                    <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
+                                                    No farm collections recorded yet.
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span v-if="item.category" class="st-pill" :class="pillTone(item.category)">{{ item.category }}</span>
-                                            <span v-else class="st-muted">—</span>
-                                        </td>
-                                        <td>
-                                            <div class="st-price">{{ formatMoney(item.price, item.currency_code) }}</div>
-                                            <div class="st-muted" style="font-size:.75rem;">{{ item.quantity }} {{ item.unit || '' }}</div>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="st-status" :class="`st-status--${item.status}`" @click="openStatusDialog(item)">
-                                                {{ statusLabel(item.status) }}
-                                            </button>
-                                        </td>
-                                        <td class="text-end">
-                                            <div class="st-row-actions">
-                                                <el-tooltip content="Status & trace history" placement="top">
-                                                    <button type="button" class="st-act-btn st-act-btn--trace" @click="openStatusDialog(item)">
-                                                        <el-icon :size="15"><Clock /></el-icon>
-                                                    </button>
-                                                </el-tooltip>
-                                                <el-tooltip content="Edit item" placement="top">
-                                                    <button type="button" class="st-act-btn st-act-btn--edit" @click="openEditItem(item)">
-                                                        <el-icon :size="15"><EditPen /></el-icon>
-                                                    </button>
-                                                </el-tooltip>
-                                                <el-tooltip content="Remove item" placement="top">
-                                                    <button
-                                                        type="button"
-                                                        class="st-act-btn st-act-btn--danger"
-                                                        :disabled="removingId === item.id"
-                                                        @click="requestRemove(item)"
-                                                    >
-                                                        <el-icon :size="15"><Delete /></el-icon>
-                                                    </button>
-                                                </el-tooltip>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                            </template>
+                                        </el-table></div>
 
-                            <div v-if="!filteredItems.length" class="st-no-results">
-                                <el-icon :size="18"><Search /></el-icon>
-                                <span v-if="searchQuery">No items match “{{ searchQuery }}”.</span>
-                                <span v-else>No items match your filters.</span>
-                            </div>
-                        </div>
-
-                        <div v-if="pagedItems.length" class="st-cards">
-                            <div v-for="item in pagedItems" :key="item.id" class="st-card">
-                                <div class="st-card__top">
-                                    <span class="st-thumb">
-                                        <img v-if="item.image_url" :src="item.image_url" :alt="item.name">
-                                        <el-icon v-else :size="15"><Goods /></el-icon>
-                                    </span>
-                                    <div class="st-card__title">
-                                        <Link :href="route('store.items.show', item.id)" class="st-name st-name--link">{{ item.name }}</Link>
-                                        <div class="st-muted" style="font-size:.75rem;">{{ item.category || '—' }}</div>
+                                        <div class="st-pagination-foot">
+                                            <span class="st-pagination-foot__text">Showing {{ farmCollections.length }} farm collection{{ farmCollections.length === 1 ? '' : 's' }}</span>
+                                        </div>
                                     </div>
-                                    <button type="button" class="st-status" :class="`st-status--${item.status}`" @click="openStatusDialog(item)">
-                                        {{ statusLabel(item.status) }}
+                                </el-tab-pane>
+
+                                <!-- ── Batches (batches) ─────────────────────────────── -->
+                                <el-tab-pane label="Batches" name="batches">
+                                    <div class="st-table-card">
+                                        <div class="st-table-scroll"><el-table :data="batches" class="st-el-table">
+                                            <el-table-column min-width="190">
+                                                <template #header><span class="st-th"><el-icon><Files /></el-icon> Batch</span></template>
+                                                <template #default="{ row }">
+                                                    <div class="st-cell">
+                                                        <span class="st-thumb"><el-icon :size="15"><Files /></el-icon></span>
+                                                        <div>
+                                                            <div class="st-name">{{ row.batch_number || `Batch #${row.id}` }}</div>
+                                                            <div class="st-muted st-caption">{{ row.processing_date ? formatDate(row.processing_date) : '—' }}</div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column min-width="180">
+                                                <template #header><span class="st-th"><el-icon><Coffee /></el-icon> Variety</span></template>
+                                                <template #default="{ row }">
+                                                    <div class="st-cell">
+                                                        <span class="st-thumb"><el-icon :size="15"><Coffee /></el-icon></span>
+                                                        <span class="st-commodity">{{ row.variety || '—' }}</span>
+                                                    </div>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column width="130" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Box /></el-icon> Quantity</span></template>
+                                                <template #default="{ row }">
+                                                    {{ row.quantity_bags ? `${Number(row.quantity_bags).toLocaleString()} bags` : '—' }}
+                                                    <div v-if="row.net_weight_kg" class="st-muted st-caption">{{ Number(row.net_weight_kg).toLocaleString() }} kg</div>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column width="110" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Checked /></el-icon> Status</span></template>
+                                                <template #default="{ row }"><span class="st-pill st-pill--a">{{ row.status || '—' }}</span></template>
+                                            </el-table-column>
+                                            <el-table-column width="110" align="right">
+                                                <template #header><span class="st-th st-th--end">Actions</span></template>
+                                                <template #default="{ row }">
+                                                    <Link :href="route('batch.show', row.id)" class="st-link-action"><el-icon :size="13"><View /></el-icon> View Batch</Link>
+                                                </template>
+                                            </el-table-column>
+                                            <template #empty>
+                                                <div class="st-empty-cell">
+                                                    <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
+                                                    No batches created yet.
+                                                </div>
+                                            </template>
+                                        </el-table></div>
+
+                                        <div class="st-pagination-foot">
+                                            <span class="st-pagination-foot__text">Showing {{ batches.length }} batch{{ batches.length === 1 ? '' : 'es' }}</span>
+                                        </div>
+                                    </div>
+                                </el-tab-pane>
+
+                                <!-- ── Lots (lots) ───────────────────────────────────── -->
+                                <el-tab-pane label="Lots" name="lots">
+                                    <div class="st-table-card">
+                                        <div class="st-table-scroll"><el-table :data="lots" class="st-el-table">
+                                            <el-table-column min-width="180">
+                                                <template #header><span class="st-th"><el-icon><Ticket /></el-icon> Lot</span></template>
+                                                <template #default="{ row }">
+                                                    <div class="st-cell">
+                                                        <span class="st-thumb"><el-icon :size="15"><Ticket /></el-icon></span>
+                                                        <div>
+                                                            <div class="st-name">{{ row.lot_name || row.lot_number || `Lot #${row.id}` }}</div>
+                                                            <div v-if="row.lot_name && row.lot_number" class="st-muted st-caption">{{ row.lot_number }}</div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column min-width="180">
+                                                <template #header><span class="st-th"><el-icon><Operation /></el-icon> Process &amp; Grade</span></template>
+                                                <template #default="{ row }">
+                                                    <div class="st-cell">
+                                                        <span class="st-thumb"><el-icon :size="15"><Operation /></el-icon></span>
+                                                        <span class="st-commodity">{{ row.process || '—' }}<span v-if="row.grade" class="st-muted"> · {{ row.grade }}</span></span>
+                                                    </div>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column width="130" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Odometer /></el-icon> Weight</span></template>
+                                                <template #default="{ row }">{{ row.net_weight_kg ? `${Number(row.net_weight_kg).toLocaleString()} kg` : '—' }}</template>
+                                            </el-table-column>
+                                            <el-table-column width="130" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Coin /></el-icon> Price</span></template>
+                                                <template #default="{ row }"><span class="st-pill st-pill--b">{{ formatMoney(row.price, null) }}</span></template>
+                                            </el-table-column>
+                                            <el-table-column width="110" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Checked /></el-icon> Status</span></template>
+                                                <template #default="{ row }"><span class="st-pill st-pill--a">{{ row.status || '—' }}</span></template>
+                                            </el-table-column>
+                                            <el-table-column width="110" align="right">
+                                                <template #header><span class="st-th st-th--end">Actions</span></template>
+                                                <template #default="{ row }">
+                                                    <Link :href="route('lot.show', row.id)" class="st-link-action"><el-icon :size="13"><View /></el-icon> View Lot</Link>
+                                                </template>
+                                            </el-table-column>
+                                            <template #empty>
+                                                <div class="st-empty-cell">
+                                                    <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
+                                                    No lots created yet.
+                                                </div>
+                                            </template>
+                                        </el-table></div>
+
+                                        <div class="st-pagination-foot">
+                                            <span class="st-pagination-foot__text">Showing {{ lots.length }} lot{{ lots.length === 1 ? '' : 's' }}</span>
+                                        </div>
+                                    </div>
+                                </el-tab-pane>
+                            </el-tabs>
+                            </div>
+                        </div>
+
+                        <!-- ── Right rail ────────────────────────────────────── -->
+                        <div class="st-col-side">
+                            <div class="st-side-card">
+                                <h3 class="st-side-card__eyebrow">Quick Transfer</h3>
+                                <form class="st-qt-form" @submit.prevent>
+                                    <label class="st-qt-field">
+                                        <span class="st-qt-field__label">Source Warehouse</span>
+                                        <el-select v-model="quickTransfer.sourceWarehouse" placeholder="Select warehouse" class="st-qt-el">
+                                            <template #prefix><el-icon><OfficeBuilding /></el-icon></template>
+                                            <el-option label="Rotterdam Port Facility (A-12)" value="rotterdam" />
+                                            <el-option label="Bremen Storage" value="bremen" />
+                                        </el-select>
+                                    </label>
+                                    <label class="st-qt-field">
+                                        <span class="st-qt-field__label">Destination Store</span>
+                                        <el-select v-model="quickTransfer.destinationStore" placeholder="Select store" class="st-qt-el">
+                                            <template #prefix><el-icon><Shop /></el-icon></template>
+                                            <el-option label="My Primary Store" value="primary" />
+                                            <el-option label="Secondary Reserve" value="secondary" />
+                                        </el-select>
+                                    </label>
+                                    <div class="st-qt-grid">
+                                        <label class="st-qt-field">
+                                            <span class="st-qt-field__label">Lot ID</span>
+                                            <el-input v-model="quickTransfer.lotId" placeholder="LOT-000" class="st-qt-el" />
+                                        </label>
+                                        <label class="st-qt-field">
+                                            <span class="st-qt-field__label">Quantity</span>
+                                            <el-input-number v-model="quickTransfer.quantity" :min="0" controls-position="right" class="st-qt-el st-qt-el--number" />
+                                        </label>
+                                    </div>
+                                    <button type="submit" class="st-btn-primary st-qt-submit">
+                                        <el-icon><Promotion /></el-icon> Initiate Transfer
                                     </button>
+                                </form>
+                            </div>
+
+                            <div class="st-side-card st-side-card--dark">
+                                <div class="st-side-card__head">
+                                    <div class="st-side-card__head-left">
+                                        <span class="st-side-card__icon"><el-icon :size="18"><Wallet /></el-icon></span>
+                                        <h3 class="st-side-card__eyebrow st-side-card__eyebrow--dark">Blockchain Status</h3>
+                                    </div>
+                                    <span class="st-pulse"><i></i><i></i></span>
                                 </div>
-                                <div class="st-card__body">
-                                    <div class="st-price">{{ formatMoney(item.price, item.currency_code) }}</div>
-                                    <div class="st-muted" style="font-size:.75rem;">{{ item.quantity }} {{ item.unit || '' }}</div>
-                                </div>
-                                <div class="st-card__actions">
-                                    <button type="button" class="st-act-btn st-act-btn--trace" @click="openStatusDialog(item)">
-                                        <el-icon :size="15"><Clock /></el-icon> Trace
-                                    </button>
-                                    <button type="button" class="st-act-btn st-act-btn--edit" @click="openEditItem(item)">
-                                        <el-icon :size="15"><EditPen /></el-icon> Edit
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="st-act-btn st-act-btn--danger"
-                                        :disabled="removingId === item.id"
-                                        @click="requestRemove(item)"
-                                    >
-                                        <el-icon :size="15"><Delete /></el-icon> Remove
-                                    </button>
+                                <p class="st-side-card__text">2 lots require certification before they can be pushed to the public market.</p>
+                                <div class="st-chain-list">
+                                    <div class="st-chain-row">
+                                        <span>LOT-7731-ETH</span>
+                                        <button type="button" class="st-chain-commit">Commit</button>
+                                    </div>
+                                    <div class="st-chain-row">
+                                        <span>LOT-9012-GUA</span>
+                                        <span class="st-chain-syncing"><el-icon :size="14" class="st-icon-spin"><RefreshRight /></el-icon> Syncing</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div v-else class="st-no-results st-cards">
-                            <el-icon :size="18"><Search /></el-icon>
-                            <span v-if="searchQuery">No items match “{{ searchQuery }}”.</span>
-                            <span v-else>No items match your filters.</span>
-                        </div>
-
-                        <div v-if="filteredItems.length > pageSize" class="st-pagination">
-                            <el-pagination
-                                v-model:current-page="currentPage"
-                                :page-size="pageSize"
-                                :total="filteredItems.length"
-                                layout="total, prev, pager, next"
-                                background
-                            />
-                        </div>
                     </div>
-                    </div>
-
-                    <div v-else class="st-empty">
-                        <div class="st-empty__icon"><el-icon :size="22"><Goods /></el-icon></div>
-                        <div class="st-empty__title">No items yet</div>
-                        <p class="st-empty__text">Add your first item using the button above.</p>
-                    </div>
+                </div>
                 </template>
             </div>
         </div>
-
-        <AddEditStoreItemDialog v-model="itemDialogOpen" :item="editingItem" />
-        <StoreItemStatusDialog v-model="statusDialogOpen" :item="activeItem" :status-options="statusOptions" />
-
-        <ConfirmDialog
-            v-model="removeOpen"
-            title="Remove Item"
-            :message="`Remove ${pendingRemove?.name ?? 'this item'} from your store? This can't be undone.`"
-            confirm-text="Remove"
-            @confirm="confirmRemove"
-        />
 
         <!-- Admin reject reason -->
         <el-dialog v-model="rejectDialogOpen" width="min(440px, calc(100vw - 2rem))" align-center :close-on-click-modal="false" class="st-reject-modal">
@@ -468,13 +516,64 @@ function submitReject() {
                 </button>
             </template>
         </el-dialog>
+
+        <!-- ── Register New ▾ modals ─────────────────────────────────────── -->
+        <AddFarmCollectionModal
+            v-model="addCollectionOpen"
+            :coffee-type-options="coffeeTypeOptions"
+            :harvest-season-options="harvestSeasonOptions"
+            :currency-options="currencyOptions"
+        />
+        <AddBatchModal v-model="addBatchOpen" :process-options="processOptions" :variety-options="coffeeTypeOptions" :drying-method-options="dryingMethodOptions" :currency-options="currencyOptions" :milling-options="millingOptions" />
+        <AddLotModal v-model="addLotOpen" :batches="batches" :process-options="processOptions" />
     </StoreLayout>
 </template>
 
 <style scoped>
+/* This page ports a Stitch mockup whose brand primary (#000000, "Deep
+   Roast") is a different color than --dp-primary (#121611) — an old
+   dark-theme value that collides under the same token name. Literal hex
+   from the DESIGN.md palette is used throughout instead, matching the
+   convention already established on BusinessProfile/MarketListings/
+   Confirmation. Surface/neutral tokens happen to match --dp-* numerically,
+   but are still hardcoded here so the whole page stays self-contained. */
 .st-page {
-    font-family: var(--dp-font-sans);
+    /* UI.md theme (2026-08-24): app-wide default, superseding the
+       earlier Claude Console pass. See reference_ui_md_design_system
+       memory for the full spec. */
+    --primary: #000000;
+    --primary-container: #262626;
+    --on-primary-container: #F1F2F3;
+    --secondary: #7EE787;
+    --secondary-container: #E5FAE7;
+    --on-secondary-container: #2F6B35;
+    --tertiary: #191818;
+    --tertiary-container: #2e2c2c;
+    --on-tertiary-container: #979393;
+    --error: #F85149;
+    --error-container: #FEEDED;
+    --on-error-container: #C6413A;
+    --surface: #ffffff;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #F5F6F7;
+    --surface-container: #F1F2F3;
+    --surface-container-high: #E5E7EB;
+    --on-surface: #121516;
+    --on-surface-variant: #4B5457;
+    --outline: #6F7677;
+    --outline-variant: #E5E7EB;
+    /* Standard card border for this literal-hex theme — flat, not
+       alpha-blended, since --outline-variant is already the light
+       target color. Reuse this exact value on other pages. */
+    --card-border: #E5E7EB;
+    --card-radius: 6px;
+    --sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--sans);
+    color: var(--on-surface);
     min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 /* ── Buttons ───────────────────────────────────────────────────────────── */
@@ -482,54 +581,90 @@ function submitReject() {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 34px;
+    height: 36px;
     padding: 0 16px;
     border: none;
-    border-radius: 999px;
-    background: var(--dp-primary);
-    color: var(--dp-on-primary);
-    font-size: 12.5px;
-    font-weight: 700;
+    border-radius: 6px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity .15s ease;
+    white-space: nowrap;
 }
-.st-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(39, 19, 16, 0.2); }
+.st-btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); }
 .st-btn-primary:disabled { opacity: 0.6; cursor: default; transform: none; box-shadow: none; }
-.st-btn-primary--danger { background: var(--dp-error); }
-.st-btn-primary:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
+.st-btn-primary--danger { background: var(--error); }
+.st-btn-primary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.st-caret { font-size: 11px; margin-left: -2px; }
+
+/* ── "Register New ▾" dropdown menu ───────────────────────────────────── */
+.st-register-menu.el-dropdown-menu { border-radius: 6px; border: 1px solid var(--card-border); padding: 4px; }
+.st-register-menu :deep(.el-dropdown-menu__item) {
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--on-surface);
+    padding: 8px 12px;
+}
+.st-register-menu :deep(.el-dropdown-menu__item:hover) { background: var(--surface-container-low); color: var(--on-surface); }
 
 .st-btn-outline {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 34px;
+    height: 36px;
     padding: 0 16px;
-    border: 1px solid var(--dp-outline-variant);
-    border-radius: 999px;
-    background: var(--dp-surface-container-lowest);
-    color: var(--dp-on-surface);
-    font-size: 12.5px;
-    font-weight: 700;
-    text-decoration: none;
+    border: none;
+    border-radius: 6px;
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     transition: background 0.15s ease;
+    white-space: nowrap;
 }
-.st-btn-outline:hover { background: var(--dp-surface-container-low); }
-.st-btn-outline--danger { color: var(--dp-error); border-color: color-mix(in srgb, var(--dp-error) 35%, transparent); }
-.st-btn-outline--danger:hover { background: var(--dp-error-container); }
-.st-btn-outline:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
+.st-btn-outline:hover:not(:disabled) { background: color-mix(in srgb, var(--outline-variant) 35%, transparent); }
+.st-btn-outline--danger { color: var(--error); background: transparent; border: 1px solid color-mix(in srgb, var(--error) 35%, transparent); }
+.st-btn-outline--danger:hover { background: var(--error-container); }
+.st-btn-outline:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* ── Body ──────────────────────────────────────────────────────────────── */
-.st-body { padding: 1.5rem; }
-.st-body--no-bottom-pad { padding-bottom: 0; }
+/* No local page padding — matching the app's native pattern (e.g.
+   WalletPage.vue): DesignPreviewLayout's .dp-main already supplies the
+   page margin, and sections are spaced via .st-page's own gap instead of
+   a second, nested padding layer. */
+
+/* ── Editorial hero — font, spacing, and margins copied from
+   MarketListings.vue's .mktl-topbar, the app's default page-header
+   pattern (2026-08-24). ─────────────────────────────────────────────── */
+.st-verified { display: flex; flex-direction: column; gap: 32px; }
+.st-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.st-hero__text { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
+.st-title {
+    font-size: 1.5rem;
+    line-height: 1.9rem;
+    letter-spacing: -0.015em;
+    font-weight: 800;
+    color: var(--primary);
+    margin: 0 0 6px;
+}
+.st-subtitle { font-size: .9375rem; line-height: 1.5rem; font-weight: 400; color: var(--on-surface-variant); margin: 0; max-width: 620px; }
+.st-hero__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+@media (max-width: 575.98px) {
+    .st-title { font-size: 1.25rem; line-height: 1.6rem; }
+}
 
 /* ── Import results panel ─────────────────────────────────────────────── */
 .st-import-panel {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    background: var(--dp-secondary-container);
-    border-radius: var(--dp-card-radius);
+    background: var(--secondary-container);
+    border-radius: 6px;
     padding: 14px 16px;
 }
 .st-import-panel--warn { background: #fef3c7; }
@@ -541,17 +676,17 @@ function submitReject() {
     height: 30px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.6);
-    color: var(--dp-on-secondary-container);
+    color: var(--on-secondary-container);
     flex-shrink: 0;
 }
 .st-import-panel--warn .st-import-panel__icon { color: #92400e; }
 .st-import-panel__body { flex: 1; min-width: 0; }
-.st-import-panel__title { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
+.st-import-panel__title { font-size: 13px; font-weight: 700; color: var(--on-surface); }
 .st-import-panel__list {
     margin: 8px 0 0;
     padding-left: 18px;
     font-size: 12px;
-    color: var(--dp-on-surface-variant);
+    color: var(--on-surface-variant);
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -565,18 +700,14 @@ function submitReject() {
     border-radius: 6px;
     border: none;
     background: transparent;
-    color: var(--dp-on-surface-variant);
+    color: var(--on-surface-variant);
     cursor: pointer;
     flex-shrink: 0;
 }
 .st-import-panel__close:hover { background: rgba(0, 0, 0, 0.06); }
 
 /* ── Admin pending panel ───────────────────────────────────────────────── */
-.st-pending-card {
-    background: #fffbeb;
-    border-radius: var(--dp-card-radius);
-    overflow: hidden;
-}
+.st-pending-card { background: #fffbeb; border-radius: 6px; overflow: hidden; }
 .st-pending-card__head {
     display: flex;
     align-items: center;
@@ -608,7 +739,7 @@ function submitReject() {
     border-bottom: 1px solid #fef3c7;
 }
 .st-pending-row:last-child { border-bottom: none; }
-.st-pending-row__name { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
+.st-pending-row__name { font-size: 13px; font-weight: 700; color: var(--on-surface); }
 .st-pending-row__meta { font-size: 12px; color: #92400e; margin-top: 1px; }
 .st-pending-row__actions { display: flex; gap: 8px; flex-shrink: 0; }
 
@@ -618,15 +749,15 @@ function submitReject() {
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: var(--dp-primary-container);
-    color: var(--dp-on-primary-container);
+    background: var(--primary-container);
+    color: var(--on-primary-container);
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 14px;
 }
-.st-empty__title { font-size: 16px; font-weight: 700; color: var(--dp-primary); margin-bottom: 4px; }
-.st-empty__text { font-size: 13px; color: var(--dp-on-surface-variant); margin: 0 auto; max-width: 340px; line-height: 1.5; }
+.st-empty__title { font-size: 17px; font-weight: 800; letter-spacing: -0.006em; color: var(--primary); margin-bottom: 4px; }
+.st-empty__text { font-size: 13px; color: var(--on-surface-variant); margin: 0 auto; max-width: 340px; line-height: 1.5; }
 
 /* ── Status banners ────────────────────────────────────────────────────── */
 .st-status-banner {
@@ -634,96 +765,179 @@ function submitReject() {
     align-items: flex-start;
     gap: 12px;
     padding: 18px;
-    border-radius: var(--dp-card-radius);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
     max-width: 560px;
     margin: 0 auto;
-    background: var(--dp-surface-container-lowest);
-    box-shadow: var(--dp-card-shadow);
+    background: var(--surface-container-lowest);
 }
-.st-status-banner--pending { color: var(--dp-primary); }
-.st-status-banner--pending .el-icon { color: var(--dp-secondary); }
-.st-status-banner--rejected { color: var(--dp-on-error-container); }
-.st-status-banner--rejected .el-icon { color: var(--dp-error); }
-.st-status-banner__title { font-size: 14px; font-weight: 700; color: var(--dp-on-surface); }
-.st-status-banner__text { font-size: 13px; margin: 2px 0 0; line-height: 1.5; color: var(--dp-on-surface-variant); }
+.st-status-banner--pending { color: var(--primary); }
+.st-status-banner--pending .el-icon { color: var(--secondary); }
+.st-status-banner--rejected { color: var(--on-error-container); }
+.st-status-banner--rejected .el-icon { color: var(--error); }
+.st-status-banner__title { font-size: 14px; font-weight: 700; color: var(--on-surface); }
+.st-status-banner__text { font-size: 13px; margin: 2px 0 0; line-height: 1.5; color: var(--on-surface-variant); }
 
-/* ── Inventory: editorial intro ───────────────────────────────────────── */
-.st-inventory { display: flex; flex-direction: column; gap: 20px; }
-.st-hero { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
-.st-hero h1 { color: var(--dp-primary); }
-.st-kicker {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    color: var(--dp-primary);
+/* ── KPI snapshot ──────────────────────────────────────────────────────── */
+.st-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.st-kpi {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    padding: 22px;
 }
-.st-subtitle { font-size: 14px; line-height: 1.6; color: var(--dp-on-surface-variant); margin: 0; }
-
-/* ── Search + filters ────────────────────────────────────────────────── */
-.st-controls { display: flex; flex-direction: column; gap: 12px; }
-.st-search-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.st-search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 14px;
+.st-kpi__top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.st-kpi__icon {
+    width: 40px;
     height: 40px;
-    width: 260px;
-    border-radius: 999px;
-    background: var(--dp-surface-container-lowest);
-    box-shadow: var(--dp-card-shadow);
-    color: var(--dp-on-surface-variant);
-    flex-shrink: 0;
-}
-.st-search :deep(.el-icon) { font-size: 14px; }
-.st-search input { border: none; outline: none; background: transparent; font-size: 13px; color: var(--dp-on-surface); width: 100%; font-family: inherit; }
-.st-stat { font-size: 12.5px; color: var(--dp-on-surface-variant); margin-left: auto; }
-.st-stat strong { color: var(--dp-on-surface); font-weight: 700; }
-
-.st-filter-bar {
+    border-radius: 12px;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
-    background: var(--dp-surface-container-lowest);
-    border-radius: 14px;
-    box-shadow: var(--dp-card-shadow);
-    padding: 14px 16px;
+    justify-content: center;
 }
-.st-filter-pill { width: 168px; }
-.st-filter-pill :deep(.el-select__wrapper) {
-    min-height: 38px !important;
-    height: 38px !important;
-    border-radius: 10px;
-    background: var(--dp-surface-container-low);
-    box-shadow: none !important;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--dp-on-surface-variant);
-    padding-left: 14px;
-}
-.st-filter-pill :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 1.5px var(--dp-primary) inset !important; }
-.st-filter-pill :deep(.el-select__placeholder) { color: var(--dp-on-surface-variant); }
-
-.st-reset {
+.st-kpi__icon--a { background: color-mix(in srgb, var(--primary) 6%, var(--surface-container-lowest)); color: var(--primary); }
+.st-kpi__icon--b { background: color-mix(in srgb, var(--secondary-container) 22%, var(--surface-container-lowest)); color: var(--on-secondary-container); }
+.st-kpi__icon--c { background: color-mix(in srgb, var(--tertiary-container) 12%, var(--surface-container-lowest)); color: var(--tertiary); }
+.st-kpi__icon--d { background: color-mix(in srgb, #88d982 22%, var(--surface-container-lowest)); color: var(--secondary); }
+.st-kpi__chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin-left: auto;
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--dp-primary);
-    font-size: 13px;
+    gap: 3px;
+    font-size: 11px;
     font-weight: 700;
-    cursor: pointer;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
 }
-.st-reset:hover { text-decoration: underline; }
-.st-reset:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 3px; }
+.st-kpi__chip--up { background: color-mix(in srgb, var(--secondary) 10%, transparent); color: var(--secondary); }
+.st-kpi__check { color: var(--secondary); }
+.st-kpi__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--on-surface-variant); margin-bottom: 4px; }
+.st-kpi__value { font-size: 24px; font-weight: 800; letter-spacing: -0.012em; color: var(--on-surface); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.st-kpi__unit { font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--on-surface-variant); }
+.st-kpi__sub { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 12px; color: var(--on-surface-variant); }
+.st-kpi__sub--green { color: var(--secondary); font-weight: 600; }
 
-/* Category pill — tone hashed per value, matching Store/Market.vue's
-   browse-table treatment for a consistent look across both pages. */
+/* ── Two-column layout ─────────────────────────────────────────────────── */
+.st-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.st-col-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.st-col-side { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+
+/* ── Uncommitted Inventory tabs (el-tabs) ─────────────────────────────── */
+/* This Element Plus version has no #extra slot on el-tabs, so the
+   filter/more icon buttons are positioned over the tab nav row instead. */
+.st-tabs-wrap { position: relative; }
+.st-section-actions { position: absolute; top: 0; right: 0; height: 40px; display: flex; align-items: center; gap: 4px; flex-shrink: 0; z-index: 1; }
+.st-el-tabs :deep(.el-tabs__header) { margin: 0 0 16px; }
+.st-el-tabs :deep(.el-tabs__nav-wrap::after) { background: var(--card-border); height: 1px; }
+.st-el-tabs :deep(.el-tabs__item) {
+    height: 40px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+}
+.st-el-tabs :deep(.el-tabs__item:first-child) { padding-left: 0; }
+.st-el-tabs :deep(.el-tabs__item:hover) { color: var(--on-surface); }
+.st-el-tabs :deep(.el-tabs__item.is-active) { color: var(--primary); font-weight: 700; }
+.st-el-tabs :deep(.el-tabs__active-bar) { background-color: var(--primary); }
+.st-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    transition: background .15s ease;
+}
+.st-icon-btn:hover { background: var(--surface-container); }
+.st-icon-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ── Table card ────────────────────────────────────────────────────────── */
+.st-table-card {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+}
+
+/* ── Element Plus table theming ───────────────────────────────────────── */
+.st-table-scroll { overflow-x: auto; }
+.st-el-table {
+    --el-table-bg-color: var(--surface-container-lowest);
+    --el-table-tr-bg-color: var(--surface-container-lowest);
+    --el-table-border-color: var(--card-border);
+    --el-table-header-bg-color: var(--surface-container-low);
+    --el-table-header-text-color: var(--on-surface-variant);
+    --el-table-text-color: var(--on-surface);
+    --el-table-row-hover-bg-color: color-mix(in srgb, var(--surface-container-low) 50%, transparent);
+    font-family: var(--sans);
+    width: 100%;
+}
+.st-el-table :deep(.el-table__inner-wrapper::before) { display: none; }
+.st-el-table :deep(.el-table__header-wrapper th.el-table__cell) {
+    padding: 14px 10px;
+    border-bottom: 1px solid var(--card-border);
+}
+.st-el-table :deep(.el-table__header-wrapper th.el-table__cell:first-child) { padding-left: 16px; }
+.st-el-table :deep(.el-table__header-wrapper th.el-table__cell:last-child) { padding-right: 16px; }
+.st-el-table :deep(.el-table__body-wrapper td.el-table__cell) {
+    padding: 18px 10px;
+    border-bottom: 1px solid var(--card-border);
+}
+.st-el-table :deep(.el-table__body-wrapper td.el-table__cell:first-child) { padding-left: 16px; }
+.st-el-table :deep(.el-table__body-wrapper td.el-table__cell:last-child) { padding-right: 16px; }
+.st-el-table :deep(.el-table__row:last-child td.el-table__cell) { border-bottom: none; }
+.st-el-table :deep(.el-table__row .cell) { line-height: 1.4; }
+.st-el-table :deep(.el-table__row:hover .st-link-action) { opacity: 1; }
+.st-el-table :deep(.el-table__empty-block) { min-height: 220px; }
+
+.st-th { display: inline-flex; align-items: flex-start; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.4; }
+.st-th .el-icon { margin-top: 1px; flex-shrink: 0; font-size: 13px; color: var(--on-surface-variant); }
+.st-th--end { justify-content: flex-end; }
+
+.st-cell { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+
+.st-empty-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 2.5rem 1rem;
+    color: var(--on-surface-variant);
+    font-size: 13px;
+}
+.st-empty-cell__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
+}
+
+.st-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--surface-container-high);
+    color: var(--on-surface-variant);
+    flex-shrink: 0;
+}
+.st-name { font-size: 13.5px; font-weight: 700; color: var(--on-surface); }
+.st-caption { font-size: 11.5px; margin-top: 2px; }
+.st-muted { color: var(--on-surface-variant); }
+.st-commodity { font-size: 13.5px; color: var(--on-surface); }
+
 .st-pill {
     display: inline-flex;
     align-items: center;
@@ -733,159 +947,181 @@ function submitReject() {
     font-weight: 700;
     white-space: nowrap;
 }
-.st-pill--a { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
-.st-pill--b { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
-.st-pill--c { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
-.st-pill--d { background: var(--dp-tertiary-fixed); color: var(--dp-on-tertiary-fixed); }
+.st-pill--a { background: var(--surface-container); color: var(--on-surface-variant); border: 1px solid color-mix(in srgb, var(--outline-variant) 50%, transparent); }
+.st-pill--b { background: color-mix(in srgb, var(--secondary-container) 35%, transparent); color: var(--on-secondary-container); border: 1px solid color-mix(in srgb, var(--secondary-container) 60%, transparent); }
 
-/* ── Table card ────────────────────────────────────────────────────────── */
-.st-table-card {
-    background: var(--dp-surface-container-lowest);
-    border-radius: var(--dp-card-radius);
-    box-shadow: var(--dp-card-shadow);
-    overflow: hidden;
+.st-link-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    background: none;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0;
+    transition: opacity .15s ease;
 }
+.st-link-action:hover { text-decoration: underline; }
+.st-link-action:focus-visible { opacity: 1; outline: 2px solid var(--primary); outline-offset: 2px; }
+.st-link-action--muted { color: var(--on-surface-variant); }
+.st-link-action--muted:hover { color: var(--on-surface); }
 
-.st-table thead th {
-    background: var(--dp-surface-container-low);
+.st-pagination-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 24px;
+    border-top: 1px solid color-mix(in srgb, var(--outline-variant) 15%, transparent);
+    background: color-mix(in srgb, var(--surface-container-low) 25%, transparent);
+}
+.st-pagination-foot__text { font-size: 12px; color: var(--on-surface-variant); }
+.st-pagination-foot__nav { display: flex; gap: 12px; }
+.st-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    padding: 2px;
+}
+.st-page-btn:hover:not(:disabled) { color: var(--primary); }
+.st-page-btn:disabled { opacity: 0.3; cursor: default; }
+.st-page-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.st-icon-rotate-90 { transform: rotate(90deg); }
+.st-icon-rotate-270 { transform: rotate(270deg); }
+
+/* ── Right rail: Quick Transfer ───────────────────────────────────────── */
+.st-side-card {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    padding: 24px;
+}
+.st-side-card__eyebrow {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--dp-on-surface-variant);
-    padding: 12px 16px;
-    border-bottom-color: transparent;
-    white-space: nowrap;
+    letter-spacing: .1em;
+    color: var(--on-surface-variant);
+    margin: 0 0 22px;
 }
-.st-table tbody td { padding: 13px 16px; font-size: 13px; border-color: color-mix(in srgb, var(--dp-outline-variant) 25%, transparent); vertical-align: middle; }
-.st-row { transition: background 0.12s; cursor: pointer; }
-.st-row:hover { background: var(--dp-surface-container-low); }
-.st-row:last-child td { border-bottom: none; }
 
-.st-th { display: inline-flex; align-items: center; gap: 5px; }
-.st-th :deep(.el-icon) { font-size: 12px; color: var(--dp-outline); }
+.st-qt-form { display: flex; flex-direction: column; gap: 20px; }
+.st-qt-field { display: flex; flex-direction: column; gap: 8px; }
+.st-qt-field__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-variant); }
+/* Element Plus fields (el-select, el-input, el-input-number), skinned to
+   match this card's original plain-HTML look — same bg/radius/shadow. */
+.st-qt-el { width: 100%; }
+.st-qt-el :deep(.el-select__wrapper),
+.st-qt-el :deep(.el-input__wrapper) {
+    background: var(--surface-container-low);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, .05) !important;
+    border-radius: 12px;
+    padding: 6px 14px;
+    min-height: 44px;
+}
+.st-qt-el :deep(.el-select__wrapper.is-focused),
+.st-qt-el :deep(.el-input__wrapper.is-focus) {
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, .05), 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent) !important;
+}
+.st-qt-el :deep(.el-select__placeholder),
+.st-qt-el :deep(.el-select__selected-item),
+.st-qt-el :deep(.el-input__inner) { font-size: 13.5px; color: var(--on-surface); font-family: inherit; }
+.st-qt-el :deep(.el-select__prefix) { color: var(--on-surface-variant); margin-right: 6px; }
+.st-qt-el--number :deep(.el-input-number) { width: 100%; }
 
-.st-thumb {
+.st-qt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.st-qt-submit { width: 100%; justify-content: center; margin-top: 4px; }
+
+/* ── Right rail: Blockchain Status (dark) ─────────────────────────────── */
+.st-side-card--dark { background: var(--primary-container); border-color: rgba(255, 255, 255, .08); color: #fff; }
+.st-side-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.st-side-card__head-left { display: flex; align-items: center; gap: 10px; }
+.st-side-card__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, .1);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-    background: var(--dp-primary-container);
-    color: var(--dp-on-primary-container);
-    flex-shrink: 0;
-    overflow: hidden;
+    color: #fff;
 }
-.st-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.st-name { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
-.st-name--link { text-decoration: none; }
-.st-name--link:hover { color: var(--dp-primary); text-decoration: underline; }
-.st-muted { color: var(--dp-on-surface-variant); }
-.st-price { font-size: 13px; font-weight: 700; color: var(--dp-primary); font-family: var(--dp-font-mono); }
+.st-side-card__eyebrow--dark { color: #fff; margin: 0; }
+.st-pulse { display: flex; align-items: center; gap: 4px; }
+.st-pulse i { width: 6px; height: 6px; border-radius: 50%; background: var(--secondary); display: block; }
+.st-pulse i:first-child { animation: st-pulse-fade 1.6s ease-in-out infinite; }
+.st-pulse i:last-child { opacity: .4; }
+@keyframes st-pulse-fade { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 
-.st-status {
-    display: inline-flex;
+.st-side-card__text { font-size: 13.5px; line-height: 1.6; color: rgba(255, 255, 255, .8); margin: 0 0 20px; }
+
+.st-chain-list { display: flex; flex-direction: column; gap: 12px; }
+.st-chain-row {
+    display: flex;
     align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: capitalize;
-    padding: 4px 11px;
-    border-radius: 999px;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .08);
+    font-size: 13px;
+    font-weight: 600;
+}
+.st-chain-commit {
     border: none;
-    cursor: pointer;
-}
-.st-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-.st-status:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
-.st-status--available { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
-.st-status--reserved { background: #fef3c7; color: #92400e; }
-.st-status--sold { background: #dbeafe; color: #1e40af; }
-.st-status--shipped { background: #ede9fe; color: #6d28d9; }
-.st-status--delivered { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
-.st-status--archived { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
-
-.st-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-.st-act-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
     border-radius: 8px;
-    border: none;
-    background: transparent;
+    padding: 6px 14px;
+    background: var(--on-primary-container);
+    color: var(--primary-container);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
     cursor: pointer;
     transition: background .15s ease;
 }
-.st-act-btn--trace { color: #6d28d9; }
-.st-act-btn--trace:hover { background: rgba(109, 40, 217, .08); }
-.st-act-btn--edit { color: var(--dp-secondary); }
-.st-act-btn--edit:hover { background: color-mix(in srgb, var(--dp-secondary) 10%, transparent); }
-.st-act-btn--danger { color: var(--dp-error); }
-.st-act-btn--danger:hover { background: var(--dp-error-container); }
-.st-act-btn:disabled { opacity: 0.5; cursor: default; }
-.st-act-btn:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
-
-.st-no-results {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 2.5rem 1rem;
-    font-size: 13px;
-    color: var(--dp-on-surface-variant);
-}
-.st-no-results :deep(.el-icon) { color: var(--dp-outline); }
-
-/* ── Mobile card list (replaces table below 640px) ────────────────────── */
-.st-cards { display: none; }
-.st-card {
-    padding: 14px 16px;
-    border-bottom: 1px solid color-mix(in srgb, var(--dp-outline-variant) 25%, transparent);
-}
-.st-card:last-child { border-bottom: none; }
-.st-card__top { display: flex; align-items: center; gap: 10px; }
-.st-card__title { flex: 1; min-width: 0; }
-.st-card__body { display: flex; align-items: baseline; justify-content: space-between; margin: 8px 0 10px; padding-left: 42px; }
-.st-card__actions { display: flex; align-items: center; gap: 8px; }
-.st-card__actions .st-act-btn {
-    flex: 1;
-    width: auto;
-    height: 32px;
-    gap: 5px;
-    font-size: 12px;
-    font-weight: 700;
-    background: var(--dp-surface-container-low);
-}
-
-.st-pagination { display: flex; justify-content: flex-end; padding: 12px 16px; border-top: 1px solid color-mix(in srgb, var(--dp-outline-variant) 25%, transparent); }
-.st-pagination :deep(.el-pagination) { display: flex; align-items: center; gap: 6px; font-family: inherit; }
-.st-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: 12px; font-weight: 600; color: var(--dp-on-surface-variant); }
-.st-pagination :deep(.btn-prev),
-.st-pagination :deep(.btn-next) { width: 30px; height: 30px; border-radius: 8px; background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); color: var(--dp-on-surface-variant); }
-.st-pagination :deep(.el-pager li) { min-width: 30px; height: 30px; border-radius: 8px; background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); color: var(--dp-on-surface); font-size: 12px; font-weight: 700; margin: 0 2px; }
-.st-pagination :deep(.el-pager li.is-active) { background: var(--dp-primary); border-color: var(--dp-primary); color: var(--dp-on-primary); }
+.st-chain-commit:hover { background: #fff; }
+.st-chain-commit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.st-chain-syncing { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: rgba(255, 255, 255, .55); }
+.st-icon-spin { animation: st-spin 1.4s linear infinite; }
+@keyframes st-spin { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
+    .st-kpi,
     .st-btn-primary,
     .st-row,
-    .st-act-btn { transition: none; }
+    .st-pulse i,
+    .st-icon-spin { transition: none; animation: none; }
 }
 
-@media (max-width: 900px) {
-    .st-filter-pill { width: 150px; }
+@media (max-width: 1180px) {
+    .st-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 1024px) {
+    .st-layout { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
-    .st-body { padding: 1.25rem; }
-    .table-responsive { display: none; }
-    .st-cards { display: block; }
-    .st-search { width: 100%; }
-    .st-stat { margin-left: 0; }
-    .st-filter-pill { width: 100%; }
-    .st-filter-bar { flex-direction: column; align-items: stretch; }
-    .st-reset { margin-left: 0; justify-content: center; padding: 8px 0 0; }
+    .st-page { gap: 16px; }
+    .st-verified { gap: 18px; }
+    .st-hero { flex-direction: column; align-items: stretch; }
+    .st-hero__actions { flex-direction: column; align-items: stretch; }
+    .st-hero__actions .st-btn-outline,
+    .st-hero__actions .st-btn-primary { justify-content: center; }
+    .st-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .st-kpi { padding: 16px; }
+    .st-kpi__value { font-size: 22px; }
+    .st-link-action { opacity: 1; }
+    .st-qt-grid { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -894,7 +1130,7 @@ function submitReject() {
    properties don't cascade in — literal hex from the same palette is
    used here instead, matching DesignPreviewLayout's own teleported
    popovers/dropdowns. */
-.el-dialog.st-reject-modal { border-radius: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-.st-reject-modal__title { font-size: 16px; font-weight: 800; color: #271310; }
+.el-dialog.st-reject-modal { border-radius: 6px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+.st-reject-modal__title { font-size: 16px; font-weight: 800; color: #000000; }
 .el-dialog.st-reject-modal .el-dialog__footer { display: flex; justify-content: flex-end; gap: 10px; }
 </style>

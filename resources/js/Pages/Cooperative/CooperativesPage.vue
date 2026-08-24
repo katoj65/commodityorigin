@@ -757,7 +757,7 @@ const badgeClass = (b) => {
 .cp-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0; max-width: 320px; line-height: 1.5; }
 
 /* ── Cooperative card (grid) ───────────────────────────────────────────────── */
-.cp-coop-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; flex-direction: column; transition: box-shadow 0.15s; }
+.cp-coop-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; flex-direction: column; transition: box-shadow 0.15s; }
 .cp-coop-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); border-color: rgba(0,69,50,0.2); }
 .cp-coop-avatar { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 0.9375rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .cp-coop-avatar--sm { width: 32px; height: 32px; border-radius: 8px; font-size: 0.8125rem; }
@@ -772,21 +772,21 @@ const badgeClass = (b) => {
 .cp-type-chip { display: inline-flex; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
-.cp-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.cp-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .cp-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 
 /* ── Table cards (Directory / Available Coffee / Sourcing Requests) ──────── */
-.cp-table-card { border-radius: 14px; box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14); }
+.cp-table-card { border-radius: 6px; box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14); }
 .cp-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
 /* ── Featured ──────────────────────────────────────────────────────────────── */
-.cp-featured-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; display: flex; flex-direction: column; }
+.cp-featured-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 0.875rem; display: flex; flex-direction: column; }
 .cp-featured-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green); margin-bottom: 4px; }
 .cp-featured-name  { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
 .cp-featured-score { font-size: 1.25rem; font-weight: 800; color: var(--green); }
 
 /* ── Regional cards ────────────────────────────────────────────────────────── */
-.cp-region-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; }
+.cp-region-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 0.875rem; }
 .cp-region-name  { font-size: 0.9375rem; font-weight: 800; color: var(--on-surface); margin-bottom: 2px; }
 .cp-region-coops { font-size: 0.75rem; color: var(--on-surface-var); margin-bottom: 4px; }
 
@@ -834,7 +834,7 @@ const badgeClass = (b) => {
 .cp-bar-fill   { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
-.cp-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 10px; border: 1px solid; }
+.cp-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 6px; border: 1px solid; }
 .cp-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .cp-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .cp-insight-card--warning { background: #fffbeb; border-color: #fde68a; }

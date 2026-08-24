@@ -185,8 +185,8 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
 
 .fd-btn-primary {
     position: relative; z-index: 1;
-    display: inline-flex; align-items: center; gap: 6px; background: var(--dp-primary); color: var(--dp-on-primary);
-    border: none; border-radius: 999px; font-size: 0.875rem; font-weight: 600; padding: 10px 20px;
+    display: inline-flex; align-items: center; gap: 6px; height: 36px; background: var(--dp-primary); color: var(--dp-on-primary);
+    border: none; border-radius: 6px; font-size: 13px; font-weight: 600; padding: 0 16px;
     text-decoration: none; white-space: nowrap; transition: opacity .15s ease;
 }
 .fd-btn-primary:hover { opacity: 0.88; color: var(--dp-on-primary); }
@@ -220,7 +220,7 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
 .fd-pill-select :deep(.el-select__selected-item) { color: var(--dp-on-surface); }
 
 .fd-tune-btn {
-    width: 40px; height: 40px; border-radius: 999px; border: none; flex-shrink: 0;
+    width: 40px; height: 40px; border-radius: 6px; border: none; flex-shrink: 0;
     background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant);
     display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s ease;
 }
@@ -228,8 +228,8 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
 .fd-tune-btn:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 
 .fd-btn-outline {
-    display: inline-flex; align-items: center; gap: 6px; height: 38px; border-radius: 10px;
-    font-size: 0.8125rem; font-weight: 600; padding: 0 14px; white-space: nowrap; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px; height: 36px; border-radius: 6px;
+    font-size: 13px; font-weight: 600; padding: 0 16px; white-space: nowrap; text-decoration: none;
     cursor: pointer; transition: background .15s ease;
     background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); color: var(--dp-on-surface);
 }
@@ -260,7 +260,7 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
     padding: 16px 20px; display: flex; align-items: center; gap: 24px;
     transition: box-shadow .15s ease, transform .15s ease;
 }
-.fd-row:hover { box-shadow: 0 2px 4px rgba(39,19,16,.05), 0 12px 24px -14px rgba(39,19,16,.18); transform: translateY(-1px); }
+.fd-row:hover { box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 12px 24px -14px rgba(0,0,0,.18); transform: translateY(-1px); }
 
 .fd-row__avatar {
     width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
@@ -290,7 +290,7 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
 
 .fd-contact-btn {
     width: 38px; height: 38px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    border-radius: 10px; border: 1px solid var(--dp-outline-variant); background: var(--dp-surface-container-lowest);
+    border-radius: 6px; border: 1px solid var(--dp-outline-variant); background: var(--dp-surface-container-lowest);
     color: var(--dp-on-surface); text-decoration: none; transition: background .15s ease;
 }
 .fd-contact-btn:hover { background: var(--dp-surface-container-low); color: var(--dp-on-surface); }

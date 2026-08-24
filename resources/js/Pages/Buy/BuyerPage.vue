@@ -273,7 +273,7 @@ const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
 .byr-title { font-size: 1.125rem; font-weight: 800; letter-spacing: -.02em; }
 .byr-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
 
-.byr-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.byr-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .byr-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; font-weight: 700; color: var(--on-surface); }
 .byr-card-icon { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 

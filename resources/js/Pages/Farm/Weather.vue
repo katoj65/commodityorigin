@@ -193,13 +193,13 @@ const regionGroups = computed(() => props.regionOptions
 .wf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
 
 /* ── Region card ───────────────────────────────────────────────────────── */
-.wf-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); transition: box-shadow .15s ease, transform .15s ease; }
+.wf-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); transition: box-shadow .15s ease, transform .15s ease; }
 .wf-card:hover { box-shadow: 0 12px 28px -16px rgba(15, 23, 42, .18); transform: translateY(-1px); }
 
 .wf-card__head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: 12px 16px; border-bottom: 1px solid var(--surface-high); }
 .wf-card__region { display: flex; align-items: center; gap: 6px; font-size: .875rem; font-weight: 800; color: var(--on-surface); }
 .wf-card__pin { font-size: 14px; color: var(--green); }
-.wf-card__count { font-size: .6875rem; font-weight: 700; color: var(--on-surface-var); background: var(--surface-low); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.wf-card__count { font-size: .6875rem; font-weight: 700; color: var(--on-surface-var); background: var(--surface-low); border-radius: 6px; padding: 3px 9px; white-space: nowrap; }
 
 /* ── Hero tile ─────────────────────────────────────────────────────────── */
 .wf-hero { display: flex; align-items: center; gap: 14px; padding: 16px; }

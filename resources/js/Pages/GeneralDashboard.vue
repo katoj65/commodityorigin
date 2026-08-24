@@ -16,7 +16,7 @@ import {
     ArrowRight, Flag, MapLocation, Ship, Position,
     MagicStick, Notebook, Sunny, Cloudy, Pouring, UserFilled, Timer,
     Coffee, Star, Coin, OfficeBuilding,
-    Calendar as CalendarIcon, List, FullScreen, Tickets,
+    Calendar as CalendarIcon, List, FullScreen, Tickets, Compass,
 } from '@element-plus/icons-vue';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
@@ -119,7 +119,7 @@ const marketChartData = {
         {
             label: 'Arabica ($/lb)',
             data: [4.92, 4.88, 4.95, 5.01, 4.97, 5.05, 5.10],
-            borderColor: '#004532',
+            borderColor: '#000000',
             backgroundColor: 'rgba(0,69,50,0.08)',
             tension: 0.35,
             fill: true,
@@ -128,7 +128,7 @@ const marketChartData = {
         {
             label: 'Robusta ($/mt ÷1000)',
             data: [2.2, 2.18, 2.25, 2.28, 2.22, 2.35, 2.34],
-            borderColor: '#c8862a',
+            borderColor: '#D29922',
             backgroundColor: 'rgba(200,134,42,0.08)',
             tension: 0.35,
             fill: true,
@@ -213,7 +213,7 @@ const historicalChartData = {
         {
             label: 'Arabica ($/lb)',
             data: [1.15, 1.78, 2.24, 1.82, 2.41, 4.28, 5.10],
-            borderColor: '#004532',
+            borderColor: '#000000',
             backgroundColor: 'rgba(0,69,50,0.08)',
             tension: 0.3,
             fill: true,
@@ -222,7 +222,7 @@ const historicalChartData = {
         {
             label: 'Robusta ($/mt ÷1000)',
             data: [1.32, 1.75, 2.02, 2.51, 3.12, 4.02, 4.68],
-            borderColor: '#c8862a',
+            borderColor: '#D29922',
             backgroundColor: 'rgba(200,134,42,0.08)',
             tension: 0.3,
             fill: true,
@@ -300,10 +300,26 @@ onBeforeUnmount(() => {
 <template>
     <DesignPreviewLayout title="Coffee Intelligence Center">
         <Head title="Coffee Intelligence Center" />
-
+        
         <div class="cp-page">
+
+            <div class="cp-hero">
+                <div class="cp-hero__text">
+                    <h1 class="cp-hero__title">Coffee Intelligence Center</h1>
+                    <p class="cp-hero__subtitle">Prices, orders, and tasks from across the exchange, updated in real time and all in one place.</p>
+                </div>
+                <div class="cp-hero__actions">
+                    <Link :href="route('calendar.index')" class="cp-hero__btn cp-hero__btn--outline">
+                        <el-icon><CalendarIcon /></el-icon> View Calendar
+                    </Link>
+                    <Link :href="route('market.index')" class="cp-hero__btn cp-hero__btn--primary">
+                        <el-icon><Compass /></el-icon> Browse Market
+                    </Link>
+                </div>
+            </div>
+
             <div class="container-fluid px-0 py-0">
-                <div class="row g-3">
+                <div class="row g-4">
                     <div v-for="kpi in marketKpis" :key="kpi.label" class="col-6 col-md-3">
                         <div class="cp-kpi h-100">
                             <div class="cp-kpi__icon"><el-icon><component :is="kpi.icon" /></el-icon></div>
@@ -859,20 +875,62 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .cp-page {
-    --green: #004532;
-    --green-dark: #002e20;
-    --gold: #c8862a;
-    --border: #eef2f0;
-    --on-surface: #111827;
-    --on-surface-var: #6b7280;
-    --surface-low: #f8fafc;
-    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
-    --shadow-md: 0 6px 16px rgba(15, 23, 42, .08);
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
+    /* UI.md theme (2026-08-24): app-wide default. See
+       reference_ui_md_design_system memory for the full spec. */
+    --green: #000000;
+    --green-dark: #262626;
+    --gold: #D29922;
+    --border: #E5E7EB;
+    --card-border: #E5E7EB;
+    --card-radius: 6px;
+    --on-surface: #121516;
+    --on-surface-var: #4B5457;
+    --surface-low: #F5F6F7;
+    --shadow-sm: none;
+    --shadow-md: none;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--surface, #ffffff);
     color: var(--on-surface);
     min-height: 100%;
 }
+/* ── Hero — font, spacing, and margins copied from MarketListings.vue's
+   .mktl-topbar, the app's default page-header pattern (2026-08-24). ──── */
+.cp-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 16px; }
+.cp-hero__text { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
+.cp-hero__title {
+    font-size: 1.5rem;
+    line-height: 1.9rem;
+    letter-spacing: -0.015em;
+    font-weight: 800;
+    color: #000000;
+    margin: 0 0 6px;
+}
+.cp-hero__subtitle { font-size: .9375rem; line-height: 1.5rem; font-weight: 400; color: #504442; margin: 0; max-width: 620px; }
+.cp-hero__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+@media (max-width: 575.98px) {
+    .cp-hero__title { font-size: 1.25rem; line-height: 1.6rem; }
+}
+
+.cp-hero__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
+    white-space: nowrap;
+}
+.cp-hero__btn--primary { padding: 0 16px; background: #000000; color: #fff; }
+.cp-hero__btn--primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); }
+.cp-hero__btn--outline { padding: 0 16px; background: #e8e8e8; color: var(--on-surface); }
+.cp-hero__btn--outline:hover { background: color-mix(in srgb, #E5E7EB 35%, transparent); }
+
 .cp-muted { color: var(--on-surface-var); }
 .cp-up   { color: #166534; font-weight: 700; }
 .cp-down { color: #991b1b; font-weight: 700; }
@@ -886,21 +944,21 @@ onBeforeUnmount(() => {
 .cp-btn-primary:active { transform: translateY(1px); }
 
 /* ── KPI tiles ────────────────────────────────────────────────────────── */
-.cp-kpi { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: .875rem; box-shadow: var(--card-shadow); transition: box-shadow .15s ease, transform .15s ease; }
+.cp-kpi { background: #fff; border: 1px solid var(--card-border) !important; border-radius: var(--card-radius); padding: 1.25rem; box-shadow: var(--card-shadow); transition: box-shadow .15s ease, transform .15s ease; }
 .cp-kpi:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .cp-kpi__icon { width: 28px; height: 28px; border-radius: 50%; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; margin-bottom: 8px; }
 .cp-kpi__label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); display: block; }
-.cp-kpi__value { font-size: 1.1875rem; font-weight: 800; color: var(--on-surface); line-height: 1.2; margin: 4px 0 2px; letter-spacing: -.01em; }
+.cp-kpi__value { font-size: 1.5rem; font-weight: 700; color: var(--on-surface); line-height: 1.2; margin: 6px 0 2px; letter-spacing: -.01em; }
 .cp-kpi__value small { font-size: .625rem; font-weight: 600; color: var(--on-surface-var); }
 .cp-kpi__change { font-size: .6875rem; font-weight: 700; }
 
 /* ── Card ─────────────────────────────────────────────────────────────── */
-.cp-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: var(--card-shadow); transition: box-shadow .15s ease; }
+.cp-card { background: #fff; border: 1px solid var(--card-border) !important; border-radius: var(--card-radius); padding: 1rem; box-shadow: var(--card-shadow); transition: box-shadow .15s ease; }
 .cp-card:hover { box-shadow: var(--shadow-md); }
 .cp-card--flat { box-shadow: none; }
 .cp-card--flat:hover { box-shadow: none; }
 .cp-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; font-weight: 700; color: var(--on-surface); line-height: 1.3; }
-.cp-card-icon  { width: 26px; height: 26px; border-radius: 8px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.cp-card-icon  { width: 26px; height: 26px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
 /* ── Schedule (combined Calendar + Tasks) card ───────────────────────────
    Single card, two views. A tab switcher replaces the two separate widget
@@ -1066,7 +1124,7 @@ onBeforeUnmount(() => {
     height: 38px;
     border-radius: 11px;
     background: rgba(0, 69, 50, 0.08);
-    color: #004532;
+    color: #000000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1080,7 +1138,7 @@ onBeforeUnmount(() => {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #004532;
+    color: #000000;
     margin-bottom: 1px;
 }
 
@@ -1157,7 +1215,7 @@ onBeforeUnmount(() => {
 .gd-input :deep(.el-textarea__inner:focus),
 .gd-input :deep(.el-select__wrapper.is-focused) {
     background: #fff;
-    box-shadow: 0 0 0 1.5px #004532 inset;
+    box-shadow: 0 0 0 1.5px #000000 inset;
 }
 
 .gd-modal__footer {
@@ -1179,7 +1237,7 @@ onBeforeUnmount(() => {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: linear-gradient(135deg, #004532, #065f46);
+    background: linear-gradient(135deg, #000000, #065f46);
     border: 1px solid transparent;
     color: #fff;
     border-radius: 8px;
@@ -1212,9 +1270,9 @@ onBeforeUnmount(() => {
     color: #9ca3af;
     transition: color 0.12s ease;
 }
-.gd-tabs :deep(.el-tabs__item.is-active) { color: #004532; font-weight: 700; }
-.gd-tabs :deep(.el-tabs__item:hover) { color: #004532; }
-.gd-tabs :deep(.el-tabs__active-bar) { background-color: #004532; height: 2.5px; border-radius: 999px; }
+.gd-tabs :deep(.el-tabs__item.is-active) { color: #000000; font-weight: 700; }
+.gd-tabs :deep(.el-tabs__item:hover) { color: #000000; }
+.gd-tabs :deep(.el-tabs__active-bar) { background-color: #000000; height: 2.5px; border-radius: 999px; }
 
 .gd-tab-label { display: inline-flex; align-items: center; gap: 6px; }
 .gd-tab-label .el-icon { font-size: 16px; }
@@ -1228,6 +1286,9 @@ onBeforeUnmount(() => {
 
 @media (max-width: 575.98px) {
     .gd-field-row { grid-template-columns: 1fr; }
+    .cp-hero { flex-direction: column; align-items: stretch; }
+    .cp-hero__actions { flex-direction: column; align-items: stretch; }
+    .cp-hero__btn { justify-content: center; }
 }
 
 @media (max-width: 480px) {

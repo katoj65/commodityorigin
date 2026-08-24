@@ -635,7 +635,7 @@ const stageColor = (c) => ({
 .lt-kv strong     { color: var(--on-surface); font-weight: 600; text-align: right; }
 
 /* ── KPI cards ─────────────────────────────────────────────────────────────── */
-.lt-kpi-card      { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 8px; padding: 10px 12px; text-align: center; }
+.lt-kpi-card      { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 10px 12px; text-align: center; }
 .lt-kpi-val       { font-size: 1rem; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
 .lt-kpi-label     { font-size: 0.6875rem; color: var(--on-surface-var); font-weight: 600; margin-top: 2px; }
 
@@ -677,7 +677,7 @@ const stageColor = (c) => ({
 /* ── Quality journey ───────────────────────────────────────────────────────── */
 .lt-quality-chain   { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .lt-qj-step         { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 240px; }
-.lt-qj-card         { background: #fff; border: 1px solid var(--surface-high); border-radius: 10px; padding: 12px 20px; text-align: center; width: 100%; }
+.lt-qj-card         { background: #fff; border: 1px solid var(--surface-high); border-radius: 6px; padding: 12px 20px; text-align: center; width: 100%; }
 .lt-qj-card--active { background: #f0faf5; border-color: #a6f2d1; }
 .lt-qj-score        { font-size: 1.375rem; font-weight: 900; color: var(--primary); letter-spacing: -0.02em; }
 .lt-qj-label        { font-size: 0.75rem; font-weight: 700; color: var(--on-surface); }
@@ -700,12 +700,12 @@ const stageColor = (c) => ({
 .lt-own-date        { font-size: 0.75rem; color: var(--on-surface-var); }
 
 /* ── Gallery ───────────────────────────────────────────────────────────────── */
-.lt-gallery-card    { border: 1px solid var(--surface-high); border-radius: 10px; overflow: hidden; }
+.lt-gallery-card    { border: 1px solid var(--surface-high); border-radius: 6px; overflow: hidden; }
 .lt-gallery-thumb   { background: #f8fdf9; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 2rem; border-bottom: 1px solid var(--surface-high); }
 .lt-gallery-label   { font-size: 0.75rem; font-weight: 700; color: var(--on-surface-var); padding: 8px 10px; text-align: center; }
 
 /* ── Related records ───────────────────────────────────────────────────────── */
-.lt-related-card    { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+.lt-related-card    { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
 .lt-related-icon    { font-size: 1.5rem; flex-shrink: 0; }
 .lt-related-info    { flex: 1; min-width: 0; }
 .lt-related-label   { font-size: 0.75rem; font-weight: 700; color: var(--on-surface-var); }

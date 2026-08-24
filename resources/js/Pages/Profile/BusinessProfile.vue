@@ -108,7 +108,7 @@ function memberInitials(member) {
             <div class="bp-hero">
                 <div class="bp-hero__text">
                     <h1 class="dp-display-md">Business Profile</h1>
-                    <p class="bp-subtitle">Manage your company's core details, contact information, and leadership structure. This information is visible to verified trade partners.</p>
+                    <p class="bp-subtitle">This is your company's home base — keep the details current so verified trade partners always see the right picture.</p>
                 </div>
                 <div v-if="hasBusinessProfile" class="bp-hero__actions">
                     <button type="button" class="bp-btn bp-btn--outline" @click="editBusinessOpen = true">
@@ -354,6 +354,8 @@ function memberInitials(member) {
 
 <style scoped>
 .bp-page {
+    --card-border: var(--dp-outline-variant);
+    --card-radius: 6px;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -364,7 +366,7 @@ function memberInitials(member) {
 .bp-hero { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .bp-hero__text { max-width: 640px; }
 .bp-hero__text h1 { color: var(--dp-primary); }
-.bp-subtitle { font-size: 14px; line-height: 1.6; color: var(--dp-on-surface-variant); margin: 8px 0 0; }
+.bp-subtitle { font-size: .9375rem; line-height: 1.5rem; font-weight: 400; color: var(--dp-on-surface-variant); margin: 0; }
 .bp-hero__actions { display: flex; gap: 10px; flex-shrink: 0; }
 
 /* ── Buttons ─────────────────────────────────────────────────────────── */
@@ -421,7 +423,8 @@ function memberInitials(member) {
 
 .bp-card {
     background: var(--dp-surface-container-lowest);
-    border-radius: var(--dp-card-radius);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
     box-shadow: var(--dp-card-shadow);
     padding: 22px;
 }
@@ -499,7 +502,7 @@ function memberInitials(member) {
     justify-content: center;
     gap: 4px;
     padding: 14px 8px;
-    border-radius: 12px;
+    border-radius: 6px;
     background: var(--dp-surface-container-low);
     text-align: center;
 }

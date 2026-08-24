@@ -142,7 +142,7 @@ const submitRole = () => {
 
 .role-card {
     border: 1px solid #e5e7eb;
-    border-radius: 18px;
+    border-radius: 6px;
     background: #ffffff;
     padding: 1rem;
     transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
@@ -177,7 +177,7 @@ const submitRole = () => {
 .role-card__check {
     width: 1.5rem;
     height: 1.5rem;
-    border-radius: 999px;
+    border-radius: 6px;
     border: 1px solid #d1d5db;
     display: flex;
     align-items: center;

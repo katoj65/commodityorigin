@@ -739,7 +739,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .hp-info-cell strong { font-size: .8125rem; font-weight: 700; color: var(--on-surface); display: block; }
 
 /* ── Map tile ──────────────────────────────────────────────────────────────── */
-.hp-map-tile { min-height: 140px; border: 1.5px dashed var(--border-m); border-radius: 8px; background: var(--surface-low); position: relative; display: flex; align-items: flex-end; padding: 12px; overflow: hidden; }
+.hp-map-tile { min-height: 140px; border: 1.5px dashed var(--border-m); border-radius: 6px; background: var(--surface-low); position: relative; display: flex; align-items: flex-end; padding: 12px; overflow: hidden; }
 .hp-map-pin  { position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; background: var(--green); transform: translate(-50%, -70%) rotate(-45deg); }
 .hp-map-pin::after { content: ''; position: absolute; width: 9px; height: 9px; border-radius: 50%; background: #fff; top: 7px; left: 7px; }
 .hp-map-info { position: relative; z-index: 1; }

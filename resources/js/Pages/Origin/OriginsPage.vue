@@ -603,7 +603,7 @@ const badgeClass = (b) => {
 /* ── Stat Cards ────────────────────────────────────────────────────────────── */
 .og-stat-card {
     background: var(--surface-white); border: 1px solid var(--surface-high);
-    border-radius: 10px; padding: 0.875rem; text-align: center;
+    border-radius: 6px; padding: 0.875rem; text-align: center;
 }
 .og-stat-icon { display: block; font-size: 18px; color: var(--green); margin-bottom: 6px; }
 .og-stat-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); }
@@ -618,7 +618,7 @@ const badgeClass = (b) => {
 /* ── Region Cards ──────────────────────────────────────────────────────────── */
 .og-region-card {
     background: var(--surface-white); border: 1px solid var(--surface-high);
-    border-radius: 12px; padding: 1rem; display: flex; flex-direction: column;
+    border-radius: 6px; padding: 1rem; display: flex; flex-direction: column;
 }
 .og-region-emoji { font-size: 1.5rem; line-height: 1; margin-bottom: 4px; }
 .og-region-name  { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
@@ -635,7 +635,7 @@ const badgeClass = (b) => {
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
 .og-card {
     background: var(--surface-white); border: 1px solid var(--surface-high);
-    border-radius: 12px; padding: 1.125rem;
+    border-radius: 6px; padding: 1.125rem;
 }
 .og-card-title { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 .og-card-icon  { width: 26px; height: 26px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
@@ -650,7 +650,7 @@ const badgeClass = (b) => {
 .og-tag { display: inline-flex; align-items: center; background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 999px; font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); padding: 5px 14px; }
 
 /* Cup score */
-.og-cup-score-card { background: var(--surface-low); border-radius: 10px; padding: 1rem; }
+.og-cup-score-card { background: var(--surface-low); border-radius: 6px; padding: 1rem; }
 .og-cup-score-inner { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
 .og-cup-score-ring  { width: 56px; height: 56px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .og-cup-score-num   { font-size: 1.25rem; font-weight: 800; color: #fff; }
@@ -681,20 +681,20 @@ const badgeClass = (b) => {
 .og-cal-months-axis span { font-size: 0.5625rem; color: var(--on-surface-var); font-weight: 600; }
 
 /* ── Processing ────────────────────────────────────────────────────────────── */
-.og-method-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 1rem; text-align: center; transition: border-color 0.15s; }
+.og-method-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; text-align: center; transition: border-color 0.15s; }
 .og-method-card:hover { border-color: var(--green); }
 .og-method-icon { font-size: 1.75rem; margin-bottom: 8px; }
 .og-method-name { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
 .og-method-desc { font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.45; }
 
 /* ── Market Cards ──────────────────────────────────────────────────────────── */
-.og-market-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 10px; padding: 1rem; }
+.og-market-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; }
 .og-market-name   { font-size: 1rem; font-weight: 800; color: var(--on-surface); }
 .og-market-coffee { font-size: 0.8125rem; color: var(--on-surface-var); }
 .og-market-score  { font-size: 0.6875rem; color: var(--on-surface-var); font-weight: 600; }
 
 /* ── Lot Cards ─────────────────────────────────────────────────────────────── */
-.og-lot-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; }
+.og-lot-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; display: flex; flex-direction: column; }
 .og-lot-name   { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 .og-lot-region { font-size: 0.75rem; color: var(--on-surface-var); margin-top: 2px; }
 .og-lot-badge  { font-size: 0.6rem; padding: 2px 7px; }
@@ -706,12 +706,12 @@ const badgeClass = (b) => {
 .og-sustain-desc  { font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.5; }
 
 /* ── Opportunities ─────────────────────────────────────────────────────────── */
-.og-opp-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; }
+.og-opp-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; }
 .og-opp-route  { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 .og-opp-market { font-size: 0.8125rem; color: var(--on-surface-var); margin-top: 2px; }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
-.og-insight-card { display: flex; align-items: flex-start; gap: 10px; padding: 1rem; border-radius: 10px; border: 1px solid; }
+.og-insight-card { display: flex; align-items: flex-start; gap: 10px; padding: 1rem; border-radius: 6px; border: 1px solid; }
 .og-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .og-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .og-insight-card--info    { background: #eff6ff; border-color: #bfdbfe; }

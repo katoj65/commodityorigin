@@ -202,7 +202,7 @@ watch(searchedListings, () => { currentPage.value = 1; });
     padding: .75rem 1rem;
     background: #fff;
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 6px;
 }
 
 .mkt-filter-summary__label {
@@ -223,7 +223,7 @@ watch(searchedListings, () => { currentPage.value = 1; });
 
 .mkt-filter-summary__chip {
     padding: 5px 12px;
-    border-radius: 999px;
+    border-radius: 6px;
     background: rgba(0, 69, 50, .08);
     color: var(--green);
     font-size: .75rem;
@@ -249,7 +249,7 @@ watch(searchedListings, () => { currentPage.value = 1; });
 .mkt-card {
     margin: 0 1.5rem;
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 6px;
     overflow: hidden;
     background: #fff;
     box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
@@ -308,7 +308,7 @@ watch(searchedListings, () => { currentPage.value = 1; });
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 767.98px) {
     .mkt-filter-summary { margin: 0 1.25rem .875rem; }
-    .mkt-card { margin: 0 1.25rem; border-radius: 12px; }
+    .mkt-card { margin: 0 1.25rem; border-radius: 6px; }
     .mkt-el-table :deep(.el-table__cell:first-child .cell) { padding-left: 1rem; }
     .mkt-el-table :deep(.el-table__cell:last-child .cell) { padding-right: 1rem; }
     .mkt-pagination { padding: 1rem 1rem 1.25rem; }

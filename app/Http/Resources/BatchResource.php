@@ -16,13 +16,13 @@ class BatchResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'season_id' => $this->season_id,
             'batch_number' => $this->batch_number,
             'variety' => $this->variety,
             'warehouse_location' => $this->warehouse_location,
             'quantity_bags' => $this->quantity,
             'net_weight_kg' => $this->weight,
             'price' => $this->price,
+            'currency' => $this->currency,
             'moisture_content' => $this->moisture_content,
             'processing_date' => optional($this->processing_date)?->toDateString(),
             'processing_method' => $this->processing_method,
@@ -36,9 +36,6 @@ class BatchResource extends JsonResource
             'notes' => $this->notes,
             'can_manage' => $request->user() ? $request->user()->can('update', $this->resource) : false,
             'compliances' => $this->whenLoaded('compliances', fn (): array => BatchComplianceResource::collection($this->compliances)->resolve()),
-            'season' => $this->whenLoaded('season', fn (): ?array => $this->season
-                ? SeasonResource::make($this->season)->resolve()
-                : null),
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
         ];

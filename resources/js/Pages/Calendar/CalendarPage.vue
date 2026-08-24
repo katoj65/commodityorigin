@@ -148,7 +148,7 @@ const typeLabel = (type) => {
                 <div class="clp-page-header__row">
                     <div class="clp-page-header__left">
                         <h1 class="clp-title">Calendar Activities</h1>
-                        <p class="clp-subtitle">Plan events, track deadlines, and stay ahead of every decision across your trading operations.</p>
+                        <p class="clp-subtitle">Keep every harvest, buyer call, and deadline in view — so nothing slips through the cracks.</p>
                     </div>
                     <div class="clp-page-header__actions">
                         <button type="button" class="clp-btn-outline" @click="openCreateTaskDialog">
@@ -376,6 +376,7 @@ const typeLabel = (type) => {
 
 <style scoped>
 .clp-page {
+    --card-border: var(--dp-outline-variant);
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -472,17 +473,19 @@ const typeLabel = (type) => {
 }
 
 .clp-title {
-    font-size: clamp(1.375rem, 1.05rem + 1.2vw, 1.75rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+    line-height: 1.9rem;
+    letter-spacing: -0.015em;
+    font-weight: 800;
+    margin: 0 0 6px;
 }
 
 .clp-subtitle {
-    font-size: 0.875rem;
+    font-size: .9375rem;
+    line-height: 1.5rem;
+    font-weight: 400;
     color: var(--dp-on-surface-variant);
     margin: 0;
-    line-height: 1.6;
 }
 
 .clp-page-header__actions {
@@ -522,6 +525,7 @@ const typeLabel = (type) => {
 
 .clp-main-card {
     background: var(--dp-surface-container-lowest);
+    border: 1px solid var(--card-border);
     border-radius: var(--dp-card-radius);
     box-shadow: var(--dp-card-shadow);
     overflow: hidden;
@@ -537,6 +541,7 @@ const typeLabel = (type) => {
 
 .clp-side-card {
     background: var(--dp-surface-container-lowest);
+    border: 1px solid var(--card-border);
     border-radius: var(--dp-card-radius);
     box-shadow: var(--dp-card-shadow);
     padding: 1.25rem;
@@ -1117,6 +1122,10 @@ const typeLabel = (type) => {
     .clp-grid {
         grid-template-columns: 1fr;
     }
+}
+
+@media (max-width: 575.98px) {
+    .clp-title { font-size: 1.25rem; line-height: 1.6rem; }
 }
 
 /* ── Reduced motion ────────────────────────────────────────────────────── */

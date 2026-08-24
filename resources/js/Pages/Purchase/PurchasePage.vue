@@ -201,7 +201,7 @@ function confirmCancel() {
 .pur-card {
     background: #fff;
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 6px;
     overflow: hidden;
     box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
 }

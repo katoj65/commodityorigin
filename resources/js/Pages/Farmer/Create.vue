@@ -243,19 +243,19 @@ const submit = () => {
 /* ── Buttons ─────────────────────────────────────────────────────── */
 .fr-btn {
     display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 999px; font-size: .8125rem; font-weight: 700;
-    letter-spacing: .01em; cursor: pointer; border: 2px solid transparent;
+    height: 36px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    letter-spacing: .01em; cursor: pointer; border: 1px solid transparent;
     text-decoration: none; white-space: nowrap; font-family: var(--dp-font-sans);
     transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
 }
 .fr-btn--primary {
-    padding: 12px 26px; background: var(--dp-primary); color: var(--dp-on-primary);
-    box-shadow: 0 10px 24px -12px rgba(39,19,16,.45);
+    padding: 0 16px; background: var(--dp-primary); color: var(--dp-on-primary);
+    box-shadow: 0 10px 24px -12px rgba(0,0,0,.45);
 }
-.fr-btn--primary:hover:not(:disabled) { box-shadow: 0 14px 28px -12px rgba(39,19,16,.5); transform: translateY(-1px); }
+.fr-btn--primary:hover:not(:disabled) { box-shadow: 0 14px 28px -12px rgba(0,0,0,.5); transform: translateY(-1px); }
 .fr-btn--primary:disabled { opacity: .65; cursor: not-allowed; }
 .fr-btn--outline {
-    padding: 10px 24px; background: transparent; color: var(--dp-primary);
+    padding: 0 16px; background: transparent; color: var(--dp-primary);
     border-color: var(--dp-outline-variant);
 }
 .fr-btn--outline:hover { background: var(--dp-surface-container-low); }
@@ -273,7 +273,7 @@ const submit = () => {
 /* ── Cards ───────────────────────────────────────────────────────── */
 .fr-card {
     background: var(--dp-surface-container-lowest);
-    border-radius: 24px;
+    border-radius: 6px;
     box-shadow: var(--dp-card-shadow);
     padding: 32px;
 }

@@ -203,7 +203,7 @@ const confidenceCls = (c) => (c >= 80 ? 'fcp-conf--high' : c >= 65 ? 'fcp-conf--
 .fcp-conf-label { font-size: .6875rem; color: var(--on-surface-var); font-weight: 600; white-space: nowrap; }
 
 /* ── Horizon cards ───────────────────────────────────────────────────── */
-.fcp-horizon-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1.125rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; flex-direction: column; }
+.fcp-horizon-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1.125rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; flex-direction: column; }
 .fcp-horizon-card__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .fcp-horizon-badge { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); background: var(--surface-low); border-radius: 999px; padding: 3px 10px; }
 .fcp-horizon-metric { font-size: 1.375rem; font-weight: 800; margin-bottom: 6px; }
@@ -214,7 +214,7 @@ const confidenceCls = (c) => (c >= 80 ? 'fcp-conf--high' : c >= 65 ? 'fcp-conf--
 .fcp-conf-label { margin-top: 6px; display: block; }
 
 /* ── Signal cards ────────────────────────────────────────────────────── */
-.fcp-signal-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1.125rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; flex-direction: column; transition: box-shadow .15s, transform .15s; }
+.fcp-signal-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1.125rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; flex-direction: column; transition: box-shadow .15s, transform .15s; }
 .fcp-signal-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.08); transform: translateY(-1px); }
 .fcp-signal-card__top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
 .fcp-signal-icon { width: 32px; height: 32px; border-radius: 9px; background: rgba(200,134,42,0.12); color: var(--gold); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }

@@ -452,7 +452,7 @@ function deleteFunction(fn) {
 .agd-title { font-size: 1.125rem; font-weight: 800; letter-spacing: -.02em; }
 .agd-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
 
-.agd-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+.agd-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem; }
 .agd-card__title { font-size: .8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); margin-bottom: 12px; }
 .agd-desc { font-size: .8125rem; color: var(--on-surface); line-height: 1.6; }
 

@@ -362,12 +362,12 @@ function openOrder(escrow) {
 .esc-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    height: 42px;
-    padding: 0 20px;
-    border-radius: 999px;
+    gap: 6px;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 6px;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.01em;
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -386,7 +386,7 @@ function openOrder(escrow) {
     background: var(--dp-primary);
     color: var(--dp-on-primary);
 }
-.esc-btn--block:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(39, 19, 16, 0.2); }
+.esc-btn--block:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
 .esc-btn:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 
 /* ── KPI cards ───────────────────────────────────────────────────────── */
@@ -568,7 +568,7 @@ function openOrder(escrow) {
     justify-content: center;
     width: 30px;
     height: 30px;
-    border-radius: 8px;
+    border-radius: 6px;
     border: none;
     background: none;
     color: var(--dp-on-surface-variant);

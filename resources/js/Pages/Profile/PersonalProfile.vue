@@ -282,6 +282,8 @@ const extraSessionsCount = computed(() => Math.max(props.sessions.length - sessi
 
 <style scoped>
 .pp-page {
+    --card-border: var(--dp-outline-variant);
+    --card-radius: 6px;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -291,7 +293,7 @@ const extraSessionsCount = computed(() => Math.max(props.sessions.length - sessi
 /* ── Hero ────────────────────────────────────────────────────────────── */
 .pp-hero { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .pp-hero__text h1 { color: var(--dp-primary); }
-.pp-subtitle { font-size: 14px; line-height: 1.6; color: var(--dp-on-surface-variant); margin: 8px 0 0; }
+.pp-subtitle { font-size: .9375rem; line-height: 1.5rem; font-weight: 400; color: var(--dp-on-surface-variant); margin: 0; }
 .pp-hero__actions { display: flex; gap: 10px; flex-shrink: 0; }
 
 /* ── Buttons ─────────────────────────────────────────────────────────── */
@@ -343,7 +345,8 @@ const extraSessionsCount = computed(() => Math.max(props.sessions.length - sessi
 
 .pp-card {
     background: var(--dp-surface-container-lowest);
-    border-radius: var(--dp-card-radius);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
     box-shadow: var(--dp-card-shadow);
     padding: 22px;
 }

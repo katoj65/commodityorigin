@@ -817,12 +817,12 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-rail { display: flex; flex-direction: column; gap: 12px; }
 
 /* ── Card ────────────────────────────────────────────────────────── */
-.sp-card { border: 1px solid #eef2f0; border-radius: 8px; background: #fff; overflow: hidden; }
+.sp-card { border: 1px solid #eef2f0; border-radius: 6px; background: #fff; overflow: hidden; }
 .sp-card-head {
     display: flex; align-items: center; justify-content: space-between;
     gap: 10px; padding: 8px 14px;
     border-bottom: 1px solid #e8ecec; background: #f8f9f9;
-    border-radius: 7px 7px 0 0; flex-wrap: wrap;
+    border-radius: 6px 6px 0 0; flex-wrap: wrap;
 }
 .sp-card-title {
     display: flex; align-items: center; gap: 5px;
@@ -961,7 +961,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-float { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .sp-float-btn { width: 44px; height: 44px; border-radius: 50%; background: #003f2c; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: background .14s; }
 .sp-float-btn:hover { background: #004532; }
-.sp-chat-panel { width: 290px; border: 1px solid #eef2f0; border-radius: 10px; background: #fff; overflow: hidden; }
+.sp-chat-panel { width: 290px; border: 1px solid #eef2f0; border-radius: 6px; background: #fff; overflow: hidden; }
 .sp-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid #e8ecec; background: #f8f9f9; }
 .sp-chat-close { font-size: 18px; line-height: 1; background: none; border: none; color: #94a1b2; cursor: pointer; padding: 0; }
 .sp-chat-prompts { padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f0f2f2; }

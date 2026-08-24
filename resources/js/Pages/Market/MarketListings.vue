@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
-    Coffee, Star, Box, Search, Sort, ShoppingCart, Plus,
+    Coffee, Star, Box, Search, Filter, ShoppingCart, Plus,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
@@ -101,19 +101,25 @@ function addToCart(row) {
             <div class="mktl-topbar mt-4">
                 <div class="mktl-topbar__text">
                     <h1 class="mktl-topbar__title">Coffee Marketplace</h1>
-                    <p class="mktl-topbar__subtitle">Discover {{ listings.length }} premium lot{{ listings.length === 1 ? '' : 's' }} from around the world.</p>
+                    <p class="mktl-topbar__subtitle">{{ listings.length }} premium lot{{ listings.length === 1 ? '' : 's' }} sourced from growers around the world, ready to discover.</p>
                 </div>
                 <div class="mktl-topbar__actions">
                     <label class="mktl-hero__search">
                         <el-icon :size="15"><Search /></el-icon>
                         <input v-model="searchQuery" type="text" placeholder="Search origin, lot, or variety…">
                     </label>
-                    <button type="button" class="mktl-sort" @click="toggleSort">
-                        <el-icon :size="16"><Sort /></el-icon> Sort: Score ({{ sortDescending ? 'High to Low' : 'Low to High' }})
-                    </button>
                     <Link :href="route('market.offer')" class="mktl-create">
                         <el-icon :size="16"><Plus /></el-icon> Create Offer
                     </Link>
+                    <button
+                        type="button"
+                        class="mktl-filter-btn"
+                        :title="`Sort by score: ${sortDescending ? 'High to Low' : 'Low to High'}`"
+                        :aria-label="`Sort by score, currently ${sortDescending ? 'high to low' : 'low to high'}`"
+                        @click="toggleSort"
+                    >
+                        <el-icon :size="17"><Filter /></el-icon>
+                    </button>
                 </div>
             </div>
 
@@ -202,18 +208,22 @@ function addToCart(row) {
    the one deliberate hairline divider, kept subtle (low-opacity, not
    the solid --border token) since it's structural, not an "item". ──── */
 .mkt-page {
-    --green: #271310;          /* primary — Deep Roast */
-    --green-dark: #1a0d0b;
-    --border: #d3c3c0;         /* outline-variant — still used for hairline dividers */
-    --on-surface: #1a1c1c;
-    --on-surface-var: #504442; /* on-surface-variant */
-    --surface-low: #f3f3f3;    /* surface-container-low */
-    --shadow-sm: 0 1px 2px rgba(39, 19, 16, .06), 0 1px 1px rgba(39, 19, 16, .04);
-    --shadow-md: 0 10px 24px -12px rgba(39, 19, 16, .18);
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    /* UI.md theme (2026-08-24): app-wide default. See
+       reference_ui_md_design_system memory for the full spec. */
+    --green: #000000;           /* primary accent */
+    --green-dark: #262626;
+    --border: #E5E7EB;          /* outline-variant */
+    --card-border: #E5E7EB;
+    --card-radius: 6px;
+    --on-surface: #121516;
+    --on-surface-var: #4B5457;  /* on-surface-variant */
+    --surface-low: #F5F6F7;     /* surface-container-low */
+    --shadow-sm: none;
+    --shadow-md: none;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: #f9f9f9;
+    background: #fff;
     color: var(--on-surface);
     min-height: 100%;
     /* DesignPreviewLayout's .dp-main carries its own 48px top padding
@@ -230,14 +240,14 @@ function addToCart(row) {
     display: flex; flex-direction: column; gap: 14px;
     margin-bottom: 16px; padding-bottom: 16px;
 }
-.mktl-topbar__text { min-width: 0; }
+.mktl-topbar__text { min-width: 0; flex: 1; }
 .mktl-topbar__title { font-size: 1.5rem; line-height: 1.9rem; letter-spacing: -0.015em; font-weight: 800; color: var(--green); margin: 0 0 6px; }
-.mktl-topbar__subtitle { font-size: .9375rem; line-height: 1.5rem; font-weight: 500; color: var(--on-surface-var); margin: 0; }
-.mktl-topbar__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.mktl-topbar__subtitle { font-size: .9375rem; line-height: 1.5rem; font-weight: 400; color: var(--on-surface-var); margin: 0; }
+.mktl-topbar__actions { display: flex; flex-wrap: nowrap; flex-shrink: 0; align-items: center; gap: 10px; }
 
 .mktl-hero__search {
     display: flex; align-items: center; gap: 9px; flex-shrink: 0;
-    width: 100%; height: 42px; padding: 0 15px; border-radius: 999px;
+    width: 100%; height: 36px; padding: 0 14px; border-radius: 999px;
     background: var(--surface-low); color: var(--on-surface-var);
     transition: box-shadow .15s ease;
 }
@@ -253,16 +263,25 @@ function addToCart(row) {
 }
 .mktl-hero__search input::placeholder { color: var(--on-surface-var); }
 
-.mktl-sort, .mktl-create {
-    display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
-    height: 42px; padding: 0 18px; border-radius: 999px; border: none;
-    font-size: .8125rem; font-weight: 700; white-space: nowrap; cursor: pointer;
+.mktl-create {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    height: 36px; padding: 0 16px; border-radius: 6px; border: none;
+    font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
     text-decoration: none; transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
+    background: var(--green); color: #fff;
 }
-.mktl-sort { background: var(--surface-low); color: var(--on-surface); }
-.mktl-sort:hover { background: #ece4e2; }
-.mktl-create { background: var(--green); color: #fff; box-shadow: 0 6px 16px -8px rgba(39, 19, 16, .4); }
-.mktl-create:hover { background: var(--green-dark); transform: translateY(-1px); }
+.mktl-create:hover { background: var(--green-dark); transform: translateY(-1px); box-shadow: 0 6px 16px -8px rgba(0, 0, 0, .4); }
+.mktl-create:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+/* ── Single filter/sort action, kept to one control on the right ────────── */
+.mktl-filter-btn {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: 6px; border: none;
+    background: var(--surface-low); color: var(--on-surface-var); cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.mktl-filter-btn:hover { background: #ece4e2; color: var(--on-surface); }
+.mktl-filter-btn:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 
 @media (min-width: 768px) {
     .mktl-topbar { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 32px; }
@@ -274,35 +293,39 @@ function addToCart(row) {
 .mktl-clear--pill { border: none; background: var(--surface-low); border-radius: 8px; padding: 7px 14px; margin-top: 4px; }
 
 /* ── Product grid ─────────────────────────────────────────────────────── */
+/* auto-fill + minmax(0, 1fr) keeps every column the same width and never
+   lets a card's own content (long spec text, badges) force a column wider
+   than its share — the classic grid-track overflow bug that made the
+   last column spill past the viewport and made images inconsistent
+   width from card to card. */
 .mktl-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 8px; }
 
 @media (min-width: 640px) {
-    .mktl-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (min-width: 1024px) {
-    .mktl-grid { grid-template-columns: repeat(4, 1fr); }
+    .mktl-grid { grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); }
 }
 
 .mktl-card {
     background: #fff;
-    border-radius: 16px;
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
     padding: 16px;
     cursor: pointer;
     box-shadow: var(--shadow-sm);
     transition: box-shadow .15s ease, transform .12s ease;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 .mktl-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 
 .mktl-card__media {
-    position: relative; width: 100%; aspect-ratio: 3 / 4; background: var(--surface-low);
-    border-radius: 12px; margin-bottom: 14px; overflow: hidden;
+    position: relative; width: 100%; aspect-ratio: 4 / 3; background: var(--surface-low);
+    border-radius: var(--card-radius); margin-bottom: 14px; overflow: hidden;
 }
 .mktl-card__media img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; transition: transform .5s ease; }
 .mktl-card:hover .mktl-card__media img { transform: scale(1.05); }
 
-.mktl-card__badge { position: absolute; top: 12px; right: 12px; font-size: .6875rem; font-weight: 700; padding: 4px 11px; border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.mktl-card__badge { position: absolute; top: 12px; right: 12px; font-size: .6875rem; font-weight: 700; padding: 4px 11px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .mktl-card__badge--green { background: #a0f399; color: #217128; }
 .mktl-card__badge--dark { background: #2e2c2c; color: #979393; }
 .mktl-card__badge--red { background: #ffdad6; color: #93000a; }
@@ -325,7 +348,7 @@ function addToCart(row) {
 }
 
 .mktl-card__specs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 2px 0 4px; }
-.mktl-card__spec { background: var(--surface-low); border-radius: 9px; padding: 7px 10px; min-width: 0; }
+.mktl-card__spec { background: var(--surface-low); border-radius: 6px; padding: 7px 10px; min-width: 0; }
 .mktl-card__spec span { display: block; font-size: .5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-var); margin-bottom: 2px; }
 .mktl-card__spec strong { display: block; font-size: .8125rem; font-weight: 600; color: var(--on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -339,7 +362,7 @@ function addToCart(row) {
 
 .mktl-card__cart {
     display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-    width: 44px; height: 44px; border-radius: 999px; border: none;
+    width: 44px; height: 44px; border-radius: 6px; border: none;
     background: var(--surface-low); color: var(--on-surface); cursor: pointer;
     transition: background .15s ease, color .15s ease;
 }
@@ -349,10 +372,10 @@ function addToCart(row) {
 .mktl-card__stock { display: inline-flex; align-items: center; gap: 4px; font-size: .6875rem; color: var(--on-surface-var); white-space: nowrap; margin-top: 8px; }
 
 /* ── Empty state ──────────────────────────────────────────────────────── */
-.mktl-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 4rem 1rem; color: var(--on-surface-var); background: #fff; border-radius: 14px; box-shadow: var(--shadow-sm); }
+.mktl-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 4rem 1rem; color: var(--on-surface-var); background: #fff; border: 1px solid var(--card-border); border-radius: var(--card-radius); box-shadow: var(--shadow-sm); }
 .mktl-empty p { margin: 0 !important; font-size: .875rem; }
 
-.mktl-pagination { margin-top: 1.25rem; padding: 1rem 1.25rem; background: #fff; border-radius: 12px; box-shadow: var(--shadow-sm); }
+.mktl-pagination { margin-top: 1.25rem; padding: 1rem 1.25rem; background: #fff; border: 1px solid var(--card-border); border-radius: var(--card-radius); box-shadow: var(--shadow-sm); }
 .mktl-pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; font-family: inherit; }
 .mktl-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: .8125rem; font-weight: 600; color: var(--on-surface-var); }
 .mktl-pagination :deep(.el-select__wrapper) { border-radius: 8px; box-shadow: none; background: var(--surface-low); min-height: 32px; font-size: .75rem; }

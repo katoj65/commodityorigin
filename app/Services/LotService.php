@@ -158,10 +158,6 @@ class LotService
             return $query->whereKey($harvestIds)->get();
         }
 
-        if ($batch->season_id) {
-            return $query->where('season_id', $batch->season_id)->get();
-        }
-
         return collect();
     }
 

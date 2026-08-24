@@ -34,18 +34,6 @@ const heroBalance = computed(() => {
     return { intPart, decPart };
 });
 
-/* ── KPIs ────────────────────────────────────────────────────────────── */
-const kpis = computed(() => {
-    const received = props.transactions.filter((t) => t.is_credit).reduce((sum, t) => sum + Number(t.amount), 0);
-    const spent = props.transactions.filter((t) => !t.is_credit).reduce((sum, t) => sum + Number(t.amount), 0);
-
-    return {
-        received: formatMoney(received),
-        spent: formatMoney(spent),
-        count: props.transactions.length,
-    };
-});
-
 /* ── Cash flow: real monthly totals from the transaction ledger ────────── */
 const cashFlowView = ref('inflow');
 
@@ -142,7 +130,7 @@ function openWithdraw() {
             <div class="wal-header">
                 <div>
                     <h1 class="wal-title">Wallet &amp; Finance</h1>
-                    <p class="wal-subtitle">Track your balance, escrow holdings, and every transaction across the exchange.</p>
+                    <p class="wal-subtitle">See exactly where your money is — balance, escrow, and every transaction along the way.</p>
                 </div>
                 <button type="button" class="wal-btn wal-btn--primary" @click="openDeposit">
                     <el-icon :size="15"><CirclePlus /></el-icon> Deposit Funds
@@ -281,7 +269,7 @@ function openWithdraw() {
                                     </span>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="Description" min-width="220">
+                            <el-table-column label="Description" width="210">
                                 <template #default="{ row }">
                                     <div class="wal-cell-desc">
                                         <span class="wal-cell-desc__text">{{ row.description || typeLabel(row.type) }}</span>
@@ -298,10 +286,10 @@ function openWithdraw() {
                                     </span>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="Date" width="160">
-                                <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
+                            <el-table-column label="Date" width="170">
+                                <template #default="{ row }"><span class="wal-cell-date">{{ formatDate(row.created_at) }}</span></template>
                             </el-table-column>
-                            <el-table-column label="Amount" width="170" align="right">
+                            <el-table-column label="Amount" width="130" align="right">
                                 <template #default="{ row }">
                                     <span class="wal-amount" :class="row.is_credit ? 'wal-text-green' : 'wal-text-red'">
                                         {{ row.is_credit ? '+' : '−' }}{{ formatMoney(row.amount, row.currency) }}
@@ -327,6 +315,7 @@ function openWithdraw() {
 
 <style scoped>
 .wal-page {
+    --card-border: var(--dp-outline-variant);
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -336,6 +325,7 @@ function openWithdraw() {
 
 .wal-card {
     background: var(--dp-surface-container-lowest);
+    border: 1px solid var(--card-border);
     border-radius: var(--dp-card-radius);
     box-shadow: var(--dp-card-shadow);
 }
@@ -350,31 +340,34 @@ function openWithdraw() {
 }
 
 .wal-title {
-    font-size: clamp(1.375rem, 1.05rem + 1.2vw, 1.75rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-size: 1.5rem;
+    line-height: 1.9rem;
+    letter-spacing: -0.015em;
+    font-weight: 800;
     color: var(--dp-on-surface);
-    margin: 0 0 4px;
+    margin: 0 0 6px;
 }
 
 .wal-subtitle {
-    font-size: 0.9375rem;
+    font-size: .9375rem;
+    line-height: 1.5rem;
+    font-weight: 400;
     color: var(--dp-on-surface-variant);
     margin: 0;
     max-width: 560px;
-    line-height: 1.5;
 }
 
 /* ── Buttons ─────────────────────────────────────────────────────────── */
 .wal-btn {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    border-radius: 10px;
-    font-size: 0.8125rem;
+    gap: 6px;
+    height: 36px;
+    border-radius: 6px;
+    font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.01em;
-    padding: 10px 16px;
+    padding: 0 16px;
     cursor: pointer;
     border: 1px solid var(--dp-outline-variant);
     background: var(--dp-surface-container-lowest);
@@ -391,13 +384,13 @@ function openWithdraw() {
     background: var(--dp-primary);
     border-color: transparent;
     color: var(--dp-on-primary);
-    border-radius: 999px;
-    padding: 10px 20px;
+    border-radius: 6px;
+    padding: 0 16px;
 }
 
 .wal-btn--primary:hover:not(:disabled) { opacity: 0.88; background: var(--dp-primary); }
 
-.wal-btn--sm { flex: 1; justify-content: center; padding: 8px 12px; font-size: 0.75rem; }
+.wal-btn--sm { flex: 1; justify-content: center; height: 32px; padding: 0 12px; font-size: 12px; }
 
 .wal-status {
     display: inline-flex;
@@ -448,7 +441,7 @@ function openWithdraw() {
 }
 
 .wal-balance-amount__int {
-    font-size: clamp(1.75rem, 1.2rem + 2.2vw, 2.5rem);
+    font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2rem);
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--dp-primary);
@@ -456,7 +449,7 @@ function openWithdraw() {
 }
 
 .wal-balance-amount__dec {
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--dp-on-surface-variant);
     font-variant-numeric: tabular-nums;
@@ -560,7 +553,7 @@ function openWithdraw() {
 /* ── Lower grid: wallets + activity ─────────────────────────────────── */
 .wal-lower-grid {
     display: grid;
-    grid-template-columns: 4fr 8fr;
+    grid-template-columns: 3fr 9fr;
     gap: 1.25rem;
     align-items: start;
 }
@@ -571,7 +564,8 @@ function openWithdraw() {
 
 .wal-account-tile {
     background: var(--dp-surface-container-lowest);
-    border-radius: 18px;
+    border: 1px solid var(--card-border);
+    border-radius: var(--dp-card-radius);
     box-shadow: var(--dp-card-shadow);
     padding: 1.25rem;
     display: flex;
@@ -582,18 +576,18 @@ function openWithdraw() {
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.wal-account-tile:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(39,19,16,.05), 0 12px 24px -14px rgba(39,19,16,.18); }
+.wal-account-tile:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 12px 24px -14px rgba(0,0,0,.18); }
 .wal-account-tile:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 .wal-account-tile--dark:focus-visible { outline-color: var(--dp-on-primary); }
 
-.wal-account-tile--dark { background: var(--dp-primary); color: var(--dp-on-primary); }
+.wal-account-tile--dark { background: var(--dp-primary); border-color: rgba(255, 255, 255, .08); color: var(--dp-on-primary); }
 
 .wal-account-tile__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 
 .wal-account-tile__icon {
     width: 38px;
     height: 38px;
-    border-radius: 12px;
+    border-radius: 6px;
     background: var(--dp-secondary-container);
     color: var(--dp-on-secondary-container);
     display: flex;
@@ -607,7 +601,7 @@ function openWithdraw() {
     font-size: 0.6875rem;
     font-weight: 700;
     padding: 3px 10px;
-    border-radius: 999px;
+    border-radius: 6px;
     background: var(--dp-surface-container-low);
     color: var(--dp-on-surface-variant);
 }
@@ -649,6 +643,15 @@ function openWithdraw() {
 .wal-table :deep(.el-table__inner-wrapper::after),
 .wal-table :deep(.el-table::before) { display: none !important; }
 
+/* Element's header/body wrappers default to overflow-x: hidden, which — on
+   any container narrower than the columns' combined width (a common squeeze
+   on tablet widths and the 3-col sidebar layout) — silently clips the
+   rightmost column (Amount, the most important cell in a ledger) instead of
+   scrolling it into view. Restored as a real, visible horizontal scroll so
+   no transaction data is ever hidden without a way to reach it. */
+.wal-table :deep(.el-table__header-wrapper),
+.wal-table :deep(.el-table__body-wrapper) { overflow-x: auto; }
+
 .wal-table :deep(.el-table__header) th {
     font-size: 0.6875rem;
     font-weight: 600;
@@ -676,6 +679,8 @@ function openWithdraw() {
 .wal-cell-desc { display: flex; flex-direction: column; gap: 4px; }
 .wal-cell-desc__text { font-size: 0.8125rem; font-weight: 600; color: var(--dp-on-surface); letter-spacing: -0.005em; }
 .wal-cell-desc__meta { font-size: 0.75rem; font-weight: 500; color: var(--dp-on-surface-variant); letter-spacing: 0.01em; }
+
+.wal-cell-date { font-size: 0.8125rem; color: var(--dp-on-surface-variant); white-space: nowrap; }
 
 .wal-amount {
     font-size: 0.8125rem;
@@ -742,6 +747,11 @@ function openWithdraw() {
 }
 
 @media (max-width: 640px) {
+    .wal-title { font-size: 1.25rem; line-height: 1.6rem; }
     .wal-col-wallets { flex-direction: column; }
+    .wal-activity-card { padding: 1.25rem 0 1.25rem 1.25rem; }
+    .wal-table :deep(.cell) { padding: 0 8px; }
+    .wal-table :deep(.el-table__header) th { padding: 10px 0; }
+    .wal-cell-desc__meta { display: none; }
 }
 </style>

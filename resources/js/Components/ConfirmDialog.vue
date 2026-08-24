@@ -68,7 +68,7 @@ function confirm() {
     width: 100%;
     max-width: 380px;
     background: #fff;
-    border-radius: 20px;
+    border-radius: 6px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.08);
     padding: 28px 28px 24px;
     display: flex;

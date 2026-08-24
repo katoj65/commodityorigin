@@ -926,7 +926,7 @@ onBeforeUnmount(() => {
 
 .role-card {
     border: 1.5px solid #e5e7eb;
-    border-radius: 12px;
+    border-radius: 6px;
     padding: .875rem 1rem;
     background: #fff;
     cursor: pointer;

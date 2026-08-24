@@ -431,7 +431,7 @@ const submit = () => {
     align-items: flex-start;
     background: #fcfdfd;
     border: 1px solid #eef2f5;
-    border-radius: 10px;
+    border-radius: 6px;
     display: flex;
     gap: 16px;
     justify-content: space-between;

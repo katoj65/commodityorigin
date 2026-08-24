@@ -616,7 +616,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .hv-timeline-body { flex: 1; min-width: 0; }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
-.hv-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: .875rem; border-radius: 8px; border: 1px solid; }
+.hv-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: .875rem; border-radius: 6px; border: 1px solid; }
 .hv-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .hv-insight-card--primary { background: #eff6ff; border-color: #bfdbfe; }
 .hv-insight-card--warning { background: #fffbeb; border-color: #fde68a; }

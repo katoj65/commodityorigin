@@ -1,613 +1,278 @@
 <script setup>
-import { computed, ref } from 'vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
-import {
-    Bottom, Calendar, Clock, Cloudy, Coin, CoffeeCup, Document, EditPen, MapLocation,
-    Notebook, Opportunity, Position, Pouring, PriceTag, Ship, Sunny, Tickets, Timer, Top,
-    TrendCharts, Van, WarningFilled,
-} from '@element-plus/icons-vue';
 
-/* Content ported from GeneralDashboard.vue (the real, live dashboard page)
-   into this design-system preview — same sections/data, restyled with the
-   dp-* components already established on this page. The profile-completion
-   modal and the unused "Decision Center" data (defined in the source but
-   never rendered there) are left out as out of scope for a static preview. */
+/* Design-system preview — built strictly to the token values in UI.md
+   (dark, compact, developer-console aesthetic). Scoped locally to this
+   page (literal hex, not the app's --dp-* light theme) since UI.md
+   describes a distinct visual system, same pattern this app already
+   uses for other literal-hex "themed" pages. */
 
-// 1. Market Pulse
-const marketKpis = [
-    { label: 'Arabica (KC)', value: '$5.10', unit: '/lb', change: '+2.4%', up: true, icon: CoffeeCup },
-    { label: 'Robusta (RM)', value: '$2,340', unit: '/mt', change: '+1.1%', up: true, icon: CoffeeCup },
-    { label: 'Coffee C Price', value: '186.40', unit: '¢/lb', change: '-0.6%', up: false, icon: PriceTag },
-    { label: 'Market Sentiment', value: 'Bullish', unit: '', change: '72/100', up: true, icon: Opportunity },
+const metrics = [
+    { label: 'Total Batches', value: '1,284', secondary: '+42 this week' },
+    { label: 'Active Lots', value: '317', secondary: '18 pending review' },
+    { label: 'Avg Cup Score', value: '86.4', secondary: '+0.6 vs last month' },
+    { label: 'On-Chain Records', value: '9,102', secondary: '100% verified' },
 ];
 
-// 2. Price Trend + Orders/Requests
-const priceRange = ref('7D');
-
-const ordersTab = ref('orders');
-const orders = [
-    { code: 'ORD-2291', item: 'Washed Yirgacheffe, 2t', status: 'Processing', statusType: 'warning' },
-    { code: 'ORD-2288', item: 'Sul de Minas NY 2/3, 1 container', status: 'Shipped', statusType: 'info' },
-    { code: 'ORD-2276', item: 'Colombia Supremo, 5t', status: 'Delivered', statusType: 'success' },
-];
-const buyerRequests = [
-    { buyer: 'Nordic Roasters', request: 'Grade AA Arabica, 5t', budget: '$26,500' },
-    { buyer: 'Berlin Kaffee', request: 'Organic Robusta, 8t', budget: '$19,200' },
-    { buyer: 'Dubai Specialty Co', request: 'Washed Arabica, 3t', budget: '$15,800' },
+const batches = [
+    { id: 'UG-RBT-2026-0041', variety: 'Robusta', weight: '1,240 kg', status: 'Processing', type: 'warning' },
+    { id: 'ET-ARB-2026-0118', variety: 'Arabica', weight: '860 kg', status: 'Verified', type: 'success' },
+    { id: 'BR-NAT-2026-0077', variety: 'Natural', weight: '2,100 kg', status: 'Flagged', type: 'error' },
+    { id: 'VN-RBT-2026-0033', variety: 'Robusta', weight: '640 kg', status: 'Queued', type: 'info' },
 ];
 
-// Market Opportunities
-const markets = [
-    { lot: 'LOT-4471', name: 'Ethiopia Yirgacheffe', origin: 'Ethiopia', type: 'Washed', quality: 92, price: '$6.40', demand: 'High', demandType: 'success' },
-    { lot: 'LOT-4468', name: 'Colombia Supremo', origin: 'Colombia', type: 'Washed', quality: 88, price: '$5.35', demand: 'Medium', demandType: 'warning' },
-    { lot: 'LOT-4460', name: 'Brazil Cerrado', origin: 'Brazil', type: 'Natural', quality: 84, price: '$4.10', demand: 'Medium', demandType: 'warning' },
-    { lot: 'LOT-4452', name: 'Vietnam Robusta', origin: 'Vietnam', type: 'Natural', quality: 79, price: '$2.71', demand: 'Low', demandType: 'info' },
-];
+const stages = ['Farm', 'Collection', 'Batch', 'Processing', 'Lot', 'Inventory', 'Blockchain', 'Market'];
+const activeStageIndex = 4;
 
-// 3. Coffee Prices — Farmgate vs Export
-const priceComparison = [
-    { country: 'Uganda', farmgate: '$4.10/kg', exportPrice: '$5.35/kg', delta: '+30.5%' },
-    { country: 'Ethiopia', farmgate: '$4.62/kg', exportPrice: '$5.88/kg', delta: '+27.3%' },
-    { country: 'Brazil', farmgate: '$5.02/kg', exportPrice: '$6.10/kg', delta: '+21.5%' },
-    { country: 'Vietnam', farmgate: '$2.18/kg', exportPrice: '$2.71/kg', delta: '+24.3%' },
-];
-
-// Schedule — Calendar/Tasks
-const scheduleTab = ref('calendar');
-const events = [
-    { date: 'Oct 15 - 20', title: 'Harvest Commencement', place: 'Ethiopia, Sidama Region', active: true },
-    { date: 'Nov 02', title: 'Coffee Expo 2024', place: 'Tokyo, Japan - Trade Delegation', active: false },
-    { date: 'Nov 18', title: 'Q4 Market Analysis', place: 'Internal Webinar', active: false },
-];
-const tasks = [
-    { icon: WarningFilled, tint: '#ffdad6', tintColor: '#93000a', title: 'Approve Sample #402', tag: 'Urgent', tagType: 'danger', due: 'Due in 4 hours' },
-    { icon: EditPen, tint: '#ffdad4', tintColor: '#2b1613', title: 'Finalize Brazil Contract', tag: 'High', tagType: 'info', due: 'Due Tomorrow' },
-    { icon: Van, tint: '#e6e1e1', tintColor: '#1d1b1b', title: 'Review Shipping Documents', tag: 'Medium', tagType: '', due: 'Due in 3 days' },
-];
-
-// 4. Supply & Demand
-const producingCountries = [
-    { country: 'Brazil', volume: '3.2M t', share: 38 },
-    { country: 'Vietnam', volume: '1.5M t', share: 17 },
-    { country: 'Colombia', volume: '0.7M t', share: 8 },
-    { country: 'Uganda', volume: '0.32M t', share: 4 },
-];
-const demandHotspots = [
-    { region: 'United Arab Emirates', trend: '+14%', note: 'Specialty imports rising sharply' },
-    { region: 'China', trend: '+21%', note: 'Fastest-growing consumption market' },
-    { region: 'Germany', trend: '+5%', note: 'Steady organic & Fairtrade demand' },
-];
-
-const exchangeRates = [
-    { pair: 'USD / KES', rate: '129.40' },
-    { pair: 'USD / ETB', rate: '118.75' },
-    { pair: 'USD / BRL', rate: '5.42' },
-    { pair: 'USD / VND', rate: '25,180' },
-];
-
-// 5. Shipping & Ports
-const shippingRoutes = [
-    { route: 'Mombasa → Rotterdam', transit: '24 days', status: 'On time', statusType: 'success' },
-    { route: 'Santos → Hamburg', transit: '19 days', status: 'Delayed 2d', statusType: 'warning' },
-    { route: 'Ho Chi Minh → Dubai', transit: '11 days', status: 'On time', statusType: 'success' },
-];
-const portCongestion = [
-    { port: 'Mombasa', congestion: 42 },
-    { port: 'Santos', congestion: 68 },
-    { port: 'Rotterdam', congestion: 35 },
-    { port: 'Jebel Ali', congestion: 28 },
-];
-const transitTimeStats = [
-    { label: 'Average Shipping Days', value: '18.3 days' },
-    { label: 'Fastest Route', value: 'Ho Chi Minh → Dubai (11d)' },
-    { label: 'Estimated Arrival', value: 'Jul 29, 2026' },
-    { label: 'On-Time Performance', value: '82%' },
-];
-
-// 6. Intelligence & News
-const newsCategories = ['All', 'Coffee News', 'Government Policies', 'Trade Agreements', 'Climate News'];
-const activeCategory = ref('All');
-const newsItems = [
-    { category: 'Coffee News', title: "Arabica futures climb on tightening Q3 outlook", importance: 'High', importanceType: 'danger', region: 'Global', time: '2h ago' },
-    { category: 'Government Policies', title: 'Uganda announces new export licensing framework', importance: 'Medium', importanceType: 'warning', region: 'Uganda', time: '5h ago' },
-    { category: 'Trade Agreements', title: 'EU–Vietnam trade pact lowers coffee tariffs', importance: 'Medium', importanceType: 'warning', region: 'EU / Vietnam', time: '1d ago' },
-    { category: 'Climate News', title: 'Rainfall delays harvest across Minas Gerais', importance: 'High', importanceType: 'danger', region: 'Brazil', time: '4h ago' },
-];
-const showAllNews = ref(false);
-const categoryNews = computed(() => (activeCategory.value === 'All'
-    ? newsItems
-    : newsItems.filter((n) => n.category === activeCategory.value)));
-const filteredNews = computed(() => (showAllNews.value ? categoryNews.value : categoryNews.value.slice(0, 3)));
-function selectCategory(c) {
-    activeCategory.value = c;
-    showAllNews.value = false;
-}
-
-const weather = [
-    { place: 'Minas Gerais, Brazil', icon: Pouring, condition: 'Rain, 19°C', note: 'Harvest delay risk' },
-    { place: 'Central Highlands, Vietnam', icon: Sunny, condition: 'Sunny, 27°C', note: 'Favorable for drying' },
-    { place: 'Sidamo, Ethiopia', icon: Cloudy, condition: 'Cloudy, 21°C', note: 'Stable conditions' },
+const activity = [
+    { time: '12:41:08', event: 'BATCH_CREATED', meta: 'UG-RBT-2026-0041' },
+    { time: '12:43:02', event: 'QUALITY_RECORDED', meta: 'Moisture: 11.8%' },
+    { time: '12:45:03', event: 'LOT_CREATED', meta: 'LOT-2026-0081' },
 ];
 </script>
 
 <template>
-<DesignPreviewLayout title="Coffee Intelligence Center">
+<DesignPreviewLayout title="Design Preview">
+    <div class="dpv-page">
 
-    <div class="dp-kpi-grid">
-        <el-card
-            v-for="kpi in marketKpis"
-            :key="kpi.label"
-            class="dp-stat-card"
-            shadow="hover"
-            :body-style="{ padding: '20px' }"
-        >
-            <div class="dp-stat-card__head">
-                <p class="dp-label-md">{{ kpi.label }}</p>
-                <el-icon :size="18" class="dp-stat-card__icon"><component :is="kpi.icon" /></el-icon>
-            </div>
-            <p class="dp-headline-md dp-mono dp-stat-card__value">
-                {{ kpi.value }}<span v-if="kpi.unit" class="dp-caption dp-stat-card__unit">{{ kpi.unit }}</span>
-            </p>
-            <p class="dp-caption dp-stat-card__delta" :class="kpi.up ? 'dp-stat-card__delta--up' : 'dp-stat-card__delta--down'">
-                <el-icon :size="12"><component :is="kpi.up ? Top : Bottom" /></el-icon>
-                {{ kpi.change }}
-            </p>
-        </el-card>
-    </div>
+        <header class="dpv-header">
+            <h1 class="dpv-title">Design Preview</h1>
+            <p class="dpv-subtitle">Token reference built to UI.md &mdash; dark, compact, developer-console aesthetic.</p>
+        </header>
 
-    <div class="dp-split dp-split--70-30">
-        <el-card class="dp-card" shadow="never" :body-style="{ padding: '32px' }">
-            <div class="dp-card__head">
-                <h2 class="dp-headline-md dp-card-title"><el-icon :size="18"><TrendCharts /></el-icon>Price Trend</h2>
-                <el-radio-group v-model="priceRange" class="dp-range-toggle">
-                    <el-radio-button label="7D" value="7D" />
-                    <el-radio-button label="7Y" value="7Y" />
-                </el-radio-group>
-            </div>
-            <div class="dp-chart">
-                <div class="dp-chart__axis">
-                    <span class="dp-caption dp-mono">$5.20</span>
-                    <span class="dp-caption dp-mono">$4.90</span>
-                    <span class="dp-caption dp-mono">$4.60</span>
-                    <span class="dp-caption dp-mono">$4.30</span>
-                </div>
-                <div class="dp-chart__plot">
-                    <svg viewBox="0 0 500 200" preserveAspectRatio="none">
-                        <polyline
-                            fill="none"
-                            stroke="var(--dp-primary)"
-                            stroke-width="2.5"
-                            points="0,150 60,160 120,140 180,110 240,125 300,70 360,90 420,45 480,60 500,20"
-                        />
-                    </svg>
-                    <span class="dp-chart__point" />
+        <section class="dpv-section">
+            <div class="dpv-metric-grid">
+                <div v-for="m in metrics" :key="m.label" class="dpv-metric">
+                    <span class="dpv-metric__label">{{ m.label }}</span>
+                    <span class="dpv-metric__value dpv-mono">{{ m.value }}</span>
+                    <span class="dpv-metric__secondary">{{ m.secondary }}</span>
                 </div>
             </div>
-            <div class="dp-chart__labels">
-                <span class="dp-caption dp-mono">Mon</span>
-                <span class="dp-caption dp-mono">Wed</span>
-                <span class="dp-caption dp-mono">Fri</span>
-                <span class="dp-caption dp-mono">Sun</span>
-            </div>
-        </el-card>
+        </section>
 
-        <el-card class="dp-card" shadow="never" :body-style="{ padding: '28px' }">
-            <div class="dp-card__head">
-                <h2 class="dp-headline-md dp-card-title"><el-icon :size="18"><Tickets /></el-icon>Orders</h2>
-                <el-radio-group v-model="ordersTab" class="dp-range-toggle">
-                    <el-radio-button label="orders" value="orders">Orders <span class="dp-badge-count">{{ orders.length }}</span></el-radio-button>
-                    <el-radio-button label="requests" value="requests">Requests <span class="dp-badge-count">{{ buyerRequests.length }}</span></el-radio-button>
-                </el-radio-group>
+        <section class="dpv-section">
+            <h2 class="dpv-section-title">Recent Batches</h2>
+            <div class="dpv-panel dpv-panel--table">
+                <table class="dpv-table">
+                    <thead>
+                        <tr>
+                            <th>Batch ID</th>
+                            <th>Variety</th>
+                            <th>Weight</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="row in batches" :key="row.id">
+                            <td class="dpv-mono">{{ row.id }}</td>
+                            <td>{{ row.variety }}</td>
+                            <td class="dpv-mono">{{ row.weight }}</td>
+                            <td>
+                                <span class="dpv-badge" :class="`dpv-badge--${row.type}`">
+                                    <span class="dpv-badge__dot" />{{ row.status }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <el-table v-if="ordersTab === 'orders'" :data="orders" :show-header="false" class="dp-table dp-table--plain">
-                <el-table-column label="Order">
-                    <template #default="{ row }">
-                        <p class="dp-body-md dp-table__primary">{{ row.code }}</p>
-                        <p class="dp-caption dp-table__muted">{{ row.item }}</p>
-                    </template>
-                </el-table-column>
-                <el-table-column label="Status" width="130" class-name="dp-nowrap">
-                    <template #default="{ row }">
-                        <el-tag :type="row.statusType" size="small" round>{{ row.status }}</el-tag>
-                    </template>
-                </el-table-column>
-            </el-table>
-            <el-table v-else :data="buyerRequests" :show-header="false" class="dp-table dp-table--plain">
-                <el-table-column label="Buyer">
-                    <template #default="{ row }">
-                        <p class="dp-body-md dp-table__primary">{{ row.buyer }}</p>
-                        <p class="dp-caption dp-table__muted">{{ row.request }}</p>
-                    </template>
-                </el-table-column>
-                <el-table-column label="Budget" class-name="dp-mono dp-nowrap" width="100">
-                    <template #default="{ row }">
-                        <span class="dp-trend dp-trend--up">{{ row.budget }}</span>
-                    </template>
-                </el-table-column>
-            </el-table>
-        </el-card>
-    </div>
+        </section>
 
-    <div>
-        <el-card class="dp-table-card" shadow="never" :body-style="{ padding: 0 }">
-            <div class="dp-table-scroll">
-                <el-table :data="markets" class="dp-table dp-table--wide">
-                    <el-table-column label="Lot">
-                        <template #default="{ row }">
-                            <p class="dp-body-md dp-table__primary">{{ row.lot }}</p>
-                            <p class="dp-caption dp-table__muted">{{ row.name }}</p>
-                        </template>
-                    </el-table-column>
-                    <el-table-column prop="origin" label="Origin" />
-                    <el-table-column prop="type" label="Type" />
-                    <el-table-column prop="quality" label="Quality" class-name="dp-mono" />
-                    <el-table-column prop="price" label="Price / kg" class-name="dp-mono" />
-                    <el-table-column label="Demand">
-                        <template #default="{ row }">
-                            <el-tag :type="row.demandType" size="small" round>{{ row.demand }}</el-tag>
-                        </template>
-                    </el-table-column>
-                </el-table>
+        <section class="dpv-section">
+            <h2 class="dpv-section-title">Traceability</h2>
+            <div class="dpv-panel">
+                <ol class="dpv-timeline">
+                    <li v-for="(stage, i) in stages" :key="stage" class="dpv-timeline__item" :class="{ 'dpv-timeline__item--done': i <= activeStageIndex }">
+                        <span class="dpv-timeline__node" />
+                        <span class="dpv-timeline__title">{{ stage }}</span>
+                    </li>
+                </ol>
             </div>
-        </el-card>
-    </div>
+        </section>
 
-    <div class="dp-split dp-split--60-40">
-        <div>
-            <el-card class="dp-table-card" shadow="never" :body-style="{ padding: 0 }">
-                <div class="dp-table-scroll">
-                    <el-table :data="priceComparison" class="dp-table dp-table--wide">
-                        <el-table-column prop="country" label="Country" />
-                        <el-table-column prop="farmgate" label="Farmgate" class-name="dp-mono" />
-                        <el-table-column prop="exportPrice" label="Export" class-name="dp-mono" />
-                        <el-table-column label="Margin" class-name="dp-mono">
-                            <template #default="{ row }">
-                                <span class="dp-trend dp-trend--up">{{ row.delta }}</span>
-                            </template>
-                        </el-table-column>
-                    </el-table>
-                </div>
-            </el-card>
-        </div>
-
-        <el-card class="dp-card dp-events" shadow="never" :body-style="{ padding: '28px' }">
-            <div class="dp-card__head">
-                <h2 class="dp-headline-md dp-card-title"><el-icon :size="18"><Calendar /></el-icon>Schedule</h2>
-                <el-radio-group v-model="scheduleTab" class="dp-range-toggle">
-                    <el-radio-button label="calendar" value="calendar">Calendar</el-radio-button>
-                    <el-radio-button label="tasks" value="tasks">Tasks <span class="dp-badge-count">{{ tasks.length }}</span></el-radio-button>
-                </el-radio-group>
-            </div>
-            <el-timeline v-if="scheduleTab === 'calendar'" class="dp-timeline">
-                <el-timeline-item v-for="ev in events" :key="ev.title" :hollow="!ev.active">
-                    <p class="dp-caption" :class="ev.active ? 'dp-timeline__date--active' : 'dp-timeline__date'">{{ ev.date }}</p>
-                    <p class="dp-body-md dp-timeline__title">{{ ev.title }}</p>
-                    <p class="dp-caption dp-timeline__place">{{ ev.place }}</p>
-                </el-timeline-item>
-            </el-timeline>
-            <div v-else class="dp-tasks">
-                <el-card
-                    v-for="task in tasks"
-                    :key="task.title"
-                    class="dp-task"
-                    shadow="hover"
-                    :body-style="{ padding: '16px' }"
-                >
-                    <div class="dp-task__icon" :style="{ background: task.tint, color: task.tintColor }">
-                        <el-icon :size="20"><component :is="task.icon" /></el-icon>
-                    </div>
-                    <div class="dp-task__body">
-                        <div class="dp-task__top">
-                            <h3 class="dp-headline-sm dp-truncate">{{ task.title }}</h3>
-                            <el-tag :type="task.tagType || undefined" class="dp-task__tag" size="small" round>{{ task.tag }}</el-tag>
-                        </div>
-                        <div class="dp-caption dp-task__meta">
-                            <span><el-icon :size="13"><Clock /></el-icon>{{ task.due }}</span>
-                        </div>
-                    </div>
-                </el-card>
-            </div>
-        </el-card>
-    </div>
-
-    <div class="dp-split">
-        <el-card class="dp-card" shadow="never" :body-style="{ padding: '28px' }">
-            <div class="dp-tri">
-                <div class="dp-tri__col">
-                    <h3 class="dp-headline-sm dp-panel-title"><el-icon :size="18"><MapLocation /></el-icon>Producing Countries</h3>
-                    <el-table :data="producingCountries" :show-header="false" class="dp-table">
-                        <el-table-column prop="country" label="Country" class-name="dp-nowrap" width="92" />
-                        <el-table-column label="Share">
-                            <template #default="{ row }">
-                                <el-progress :percentage="row.share" :stroke-width="6" :show-text="false" color="var(--dp-primary)" />
-                            </template>
-                        </el-table-column>
-                        <el-table-column prop="volume" label="Volume" class-name="dp-mono dp-nowrap" width="76" align="right" />
-                    </el-table>
-                </div>
-                <div class="dp-tri__col">
-                    <h3 class="dp-headline-sm dp-panel-title"><el-icon :size="18"><Opportunity /></el-icon>Demand Hotspots</h3>
-                    <el-table :data="demandHotspots" :show-header="false" class="dp-table">
-                        <el-table-column label="Region">
-                            <template #default="{ row }">
-                                <p class="dp-body-md dp-table__primary">{{ row.region }}</p>
-                                <p class="dp-caption dp-table__muted">{{ row.note }}</p>
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="Trend" class-name="dp-mono dp-nowrap" width="76">
-                            <template #default="{ row }">
-                                <span class="dp-trend dp-trend--up">{{ row.trend }}</span>
-                            </template>
-                        </el-table-column>
-                    </el-table>
+        <section class="dpv-section">
+            <h2 class="dpv-section-title">System Log</h2>
+            <div class="dpv-panel dpv-panel--dense">
+                <div v-for="row in activity" :key="row.time + row.event" class="dpv-log-row">
+                    <span class="dpv-log-row__time dpv-mono">{{ row.time }}</span>
+                    <span class="dpv-log-row__event">{{ row.event }}</span>
+                    <span class="dpv-log-row__meta dpv-mono">{{ row.meta }}</span>
                 </div>
             </div>
-        </el-card>
+        </section>
 
-        <el-card class="dp-card" shadow="never" :body-style="{ padding: '28px' }">
-            <h3 class="dp-headline-sm dp-panel-title"><el-icon :size="18"><Coin /></el-icon>Currency Exchange</h3>
-            <el-table :data="exchangeRates" :show-header="false" class="dp-table">
-                <el-table-column prop="pair" label="Pair" />
-                <el-table-column prop="rate" label="Rate" class-name="dp-mono" align="right" />
-            </el-table>
-        </el-card>
-    </div>
-
-    <el-card class="dp-card" shadow="never" :body-style="{ padding: '28px' }">
-        <div class="dp-tri">
-            <div class="dp-tri__col">
-                <h3 class="dp-headline-sm dp-panel-title"><el-icon :size="18"><Ship /></el-icon>Shipping Routes</h3>
-                <el-table :data="shippingRoutes" :show-header="false" class="dp-table">
-                    <el-table-column label="Route">
-                        <template #default="{ row }">
-                            <p class="dp-body-md dp-table__primary">{{ row.route }}</p>
-                            <p class="dp-caption dp-table__muted">Transit: {{ row.transit }}</p>
-                        </template>
-                    </el-table-column>
-                    <el-table-column label="Status" width="120" class-name="dp-nowrap">
-                        <template #default="{ row }">
-                            <el-tag :type="row.statusType" size="small" round>{{ row.status }}</el-tag>
-                        </template>
-                    </el-table-column>
-                </el-table>
-            </div>
-            <div class="dp-tri__col">
-                <h3 class="dp-headline-sm dp-panel-title"><el-icon :size="18"><Position /></el-icon>Port Congestion</h3>
-                <el-table :data="portCongestion" :show-header="false" class="dp-table">
-                    <el-table-column prop="port" label="Port" class-name="dp-nowrap" width="96" />
-                    <el-table-column label="Congestion">
-                        <template #default="{ row }">
-                            <el-progress
-                                :percentage="row.congestion"
-                                :stroke-width="6"
-                                :show-text="false"
-                                :color="row.congestion > 55 ? 'var(--dp-error)' : 'var(--dp-primary)'"
-                            />
-                        </template>
-                    </el-table-column>
-                    <el-table-column label="%" class-name="dp-mono dp-nowrap" width="60" align="right">
-                        <template #default="{ row }">{{ row.congestion }}%</template>
-                    </el-table-column>
-                </el-table>
-            </div>
-            <div class="dp-tri__col">
-                <h3 class="dp-headline-sm dp-panel-title"><el-icon :size="18"><Timer /></el-icon>Transit Time</h3>
-                <el-table :data="transitTimeStats" :show-header="false" class="dp-table">
-                    <el-table-column prop="label" label="Label" />
-                    <el-table-column prop="value" label="Value" class-name="dp-mono" align="right" />
-                </el-table>
-            </div>
-        </div>
-    </el-card>
-
-    <div class="dp-split dp-split--25-75">
-        <el-card class="dp-card" shadow="never" :body-style="{ padding: '24px' }">
-            <h3 class="dp-headline-sm dp-panel-title"><el-icon :size="18"><Notebook /></el-icon>Categories</h3>
-            <el-menu :default-active="activeCategory" class="dp-cat-menu" @select="selectCategory">
-                <el-menu-item v-for="c in newsCategories" :key="c" :index="c" class="dp-cat-item">
-                    <span>{{ c }}</span>
-                    <span class="dp-cat-count">{{ c === 'All' ? newsItems.length : newsItems.filter((n) => n.category === c).length }}</span>
-                </el-menu-item>
-            </el-menu>
-        </el-card>
-
-        <el-card class="dp-card" shadow="never" :body-style="{ padding: '28px' }">
-            <div class="dp-tri">
-                <div class="dp-tri__col">
-                    <h3 class="dp-headline-sm dp-panel-title"><el-icon :size="18"><Document /></el-icon>Latest Updates</h3>
-                    <ul class="dp-news">
-                        <li v-for="n in filteredNews" :key="n.title">
-                            <div class="dp-news__top">
-                                <el-tag :type="n.importanceType" size="small" round>{{ n.importance }}</el-tag>
-                                <span class="dp-caption dp-news__cat">{{ n.category }}</span>
-                                <span class="dp-caption dp-news__meta">{{ n.time }}</span>
-                            </div>
-                            <p class="dp-body-md dp-news__title">{{ n.title }}</p>
-                            <span class="dp-caption dp-news__region"><el-icon :size="12"><MapLocation /></el-icon>{{ n.region }}</span>
-                        </li>
-                    </ul>
-                    <el-button
-                        v-if="categoryNews.length > 3"
-                        text
-                        class="dp-news__more"
-                        @click="showAllNews = !showAllNews"
-                    >{{ showAllNews ? 'View Less' : 'View More' }}</el-button>
+        <section class="dpv-section">
+            <h2 class="dpv-section-title">Controls</h2>
+            <div class="dpv-panel dpv-panel--large">
+                <div class="dpv-controls-row">
+                    <button type="button" class="dpv-btn dpv-btn--primary">Create Batch</button>
+                    <button type="button" class="dpv-btn dpv-btn--secondary">Export</button>
+                    <button type="button" class="dpv-btn dpv-btn--small">Filter</button>
+                    <button type="button" class="dpv-icon-btn" aria-label="More options">&hellip;</button>
                 </div>
-                <div class="dp-tri__col">
-                    <h3 class="dp-headline-sm dp-panel-title"><el-icon :size="18"><Sunny /></el-icon>Weather Forecast</h3>
-                    <div class="dp-weather-list">
-                        <div v-for="w in weather" :key="w.place" class="dp-weather-row">
-                            <div>
-                                <p class="dp-body-md dp-table__primary">{{ w.place }}</p>
-                                <p class="dp-caption dp-weather-row__now"><el-icon :size="14"><component :is="w.icon" /></el-icon>{{ w.condition }}</p>
-                            </div>
-                            <p class="dp-caption dp-table__muted" style="max-width:96px;text-align:right;">{{ w.note }}</p>
-                        </div>
-                    </div>
+                <div class="dpv-field">
+                    <label class="dpv-field__label" for="dpv-search">Search batches</label>
+                    <input id="dpv-search" type="text" class="dpv-input" placeholder="LOT-2026-0081">
                 </div>
             </div>
-        </el-card>
+        </section>
+
     </div>
 </DesignPreviewLayout>
 </template>
 
 <style scoped>
-/* Tokens/typography classes live on .dp-shell in DesignPreviewLayout.vue
-   and cascade down through the slot into this page's markup. */
+/* ── Tokens (UI.md §1) ─────────────────────────────────────────────────── */
+.dpv-page {
+    --surface: #ffffff;
+    --surface-2: #F5F6F7;
+    --surface-elevated: #F1F2F3;
+    --border: #292D2E;
+    --card-border: #E5E7EB;
+    --text: #121516;
+    --text-2: #4B5457;
+    --text-muted: #6F7677;
+    --success: #7EE787;
+    --warning: #D29922;
+    --error: #F85149;
+    --info: #58A6FF;
+    /* Primary/brand accent (buttons, focus rings) — distinct from
+       --info, which stays blue for genuine status semantics only. */
+    --primary: #000000;
+    --font-sans: Inter, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
 
-.dp-hero-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
-.dp-eyebrow { color: var(--dp-primary); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 8px !important; }
+    /* Offsets DesignPreviewLayout's .dp-main padding (48px 64px desktop,
+       stepping down at its own breakpoints below) so the visible margin
+       around this page's content is a generous, centered-looking 48px
+       on every side (UI.md's own "5xl" spacing token), without touching
+       the shared layout used by every other page. */
+    margin: 0 -16px;
+    color: var(--text);
+    font-family: var(--font-sans);
+}
+.dpv-mono { font-family: var(--font-mono); }
 
-.dp-live-pill { display: flex; align-items: center; gap: 8px; background: var(--dp-surface-container); color: var(--dp-on-surface-variant); font-size: 13px; font-weight: 500; padding: 8px 16px; border-radius: 999px; }
-.dp-live-dot { position: relative; display: inline-flex; width: 12px; height: 12px; border-radius: 50%; background: var(--dp-secondary); }
-.dp-live-dot__ping { position: absolute; inset: 0; border-radius: 50%; background: var(--dp-secondary); opacity: 0.75; animation: dp-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite; }
-@keyframes dp-ping { 75%, 100% { transform: scale(2.4); opacity: 0; } }
+/* ── Page header (§3) ──────────────────────────────────────────────────── */
+.dpv-header { margin-bottom: 20px; }
+.dpv-title { font-size: 28px; line-height: 36px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); margin: 0 0 6px; }
+.dpv-subtitle { font-size: 14px; line-height: 20px; font-weight: 400; color: var(--text-muted); margin: 0; }
 
-.dp-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: -24px; }
-.dp-kpi-grid .dp-stat-card__head { margin-bottom: 20px; }
+/* ── Sections (§3: 32px between sections) ─────────────────────────────── */
+.dpv-section + .dpv-section { margin-top: 24px; }
+.dpv-section-title { font-size: 18px; line-height: 24px; font-weight: 600; color: var(--text); margin: 0 0 12px; }
 
-.dp-stat-card { border-radius: 12px; border: 1px solid var(--dp-border-subtle); overflow: hidden; position: relative; height: 100%; }
-.dp-stat-card :deep(.el-card__body) { position: relative; z-index: 1; }
-.dp-stat-card__head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 48px; position: relative; }
-.dp-stat-card__icon { color: var(--dp-outline-variant); }
-.dp-stat-card__value { color: var(--dp-primary); position: relative; font-size: 21px; line-height: 26px; letter-spacing: -0.015em; font-weight: 800; }
-.dp-stat-card__unit { font-family: var(--dp-font-sans); font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--dp-on-surface-variant); margin-left: 4px; }
-.dp-stat-card__delta { display: flex; align-items: center; gap: 4px; margin-top: 9px; position: relative; }
-.dp-stat-card__delta--up { color: var(--dp-secondary); }
-.dp-stat-card__delta--down { color: var(--dp-error); }
-.dp-stat-card__delta--neutral { color: var(--dp-on-surface-variant); }
+/* ── Panels/cards (§7) ─────────────────────────────────────────────────── */
+.dpv-panel { background: var(--surface); border: 1px solid var(--card-border); border-radius: 6px; padding: 16px; }
+.dpv-panel--dense { padding: 12px; }
+.dpv-panel--large { padding: 24px; }
+.dpv-panel--table { padding: 0; overflow: hidden; }
 
-.dp-card { border-radius: 14px; border: 1px solid var(--dp-border-subtle); height: 100%; }
-.dp-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
-.dp-card-title { display: flex; align-items: center; gap: 8px; }
-.dp-card-title .el-icon { color: var(--dp-primary); }
+/* ── Metric grid (§8, §9) ──────────────────────────────────────────────── */
+.dpv-metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.dpv-metric { background: var(--surface); border: 1px solid var(--card-border); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.dpv-metric__label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+.dpv-metric__value { font-size: 24px; line-height: 32px; font-weight: 600; color: var(--text); }
+.dpv-metric__secondary { font-size: 12px; line-height: 16px; color: var(--text-2); }
 
-.dp-range-toggle :deep(.el-radio-button__inner) { border-radius: 8px !important; border: none; background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); font-size: 14px; font-weight: 600; box-shadow: none !important; padding: 8px 16px; margin-left: 8px; display: inline-flex; align-items: center; }
-.dp-range-toggle :deep(.el-radio-button.is-active .el-radio-button__inner) { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
-.dp-badge-count { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; margin-left: 6px; border-radius: 999px; background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 800; }
-
-.dp-chart { height: 256px; position: relative; display: flex; padding: 0 8px 24px; border-bottom: 2px solid var(--dp-surface-container-highest); }
-.dp-chart__axis { position: absolute; left: 0; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-between; color: var(--dp-outline-variant); padding: 24px 0; }
-.dp-chart__plot { width: 100%; height: 100%; margin-left: 48px; position: relative; display: flex; align-items: flex-end; }
-.dp-chart__plot svg { width: 100%; height: 100%; }
-.dp-chart__point { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--dp-primary); right: 10%; top: 20%; box-shadow: 0 0 0 4px var(--dp-surface-container-lowest); }
-.dp-chart__labels { display: flex; justify-content: space-between; margin-left: 48px; margin-top: 16px; color: var(--dp-outline-variant); }
-
-.dp-split { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: stretch; }
-.dp-split > * { min-width: 0; }
-.dp-split--70-30 { grid-template-columns: 7fr 3fr; }
-.dp-split--60-40 { grid-template-columns: 3fr 2fr; }
-.dp-split--25-75 { grid-template-columns: 1fr 3fr; }
-
-.dp-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; gap: 12px; }
-.dp-link-btn.el-button { color: var(--dp-primary); font-size: 14px; font-weight: 600; letter-spacing: 0.05em; padding: 0; height: auto; display: inline-flex; align-items: center; gap: 4px; }
-.dp-link-btn.el-button:hover { color: var(--dp-primary-container); }
-
-.dp-tasks { display: flex; flex-direction: column; gap: 12px; }
-.dp-task { border-radius: 10px; border: none; cursor: pointer; }
-.dp-task :deep(.el-card__body) { display: flex; align-items: flex-start; gap: 16px; }
-.dp-task__icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.dp-task__body { flex: 1; min-width: 0; }
-.dp-task__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-.dp-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dp-task__tag { flex-shrink: 0; letter-spacing: 0.05em; text-transform: uppercase; border: none; }
-.dp-task__meta { display: flex; align-items: center; gap: 16px; color: var(--dp-outline); }
-.dp-task__meta span { display: flex; align-items: center; gap: 4px; }
-
-.dp-table-card { border-radius: 14px; border: 1px solid var(--dp-border-subtle); overflow: hidden; height: 100%; }
-.dp-table-scroll { overflow-x: auto; }
-.dp-table.el-table { --el-table-border-color: var(--dp-surface-container-highest); font-family: var(--dp-font-sans); }
-.dp-table--wide.el-table { min-width: 480px; }
-.dp-table--plain :deep(td.el-table__cell) { border-bottom: none; padding: 15px 0; }
-.dp-table--plain :deep(.el-table__inner-wrapper::before) { display: none; }
-.dp-table--plain :deep(tr) { background: transparent; }
-.dp-table :deep(th.el-table__cell) { background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-.dp-table :deep(td.el-table__cell) { padding: 14px 0; color: var(--dp-on-surface); }
-.dp-table :deep(.cell) { padding: 0 16px; }
-.dp-table :deep(.dp-nowrap .cell) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dp-table :deep(.el-progress-bar__outer) { background: var(--dp-surface-container-high); }
-.dp-table__primary { font-weight: 500; margin: 0; }
-.dp-table__muted { color: var(--dp-outline-variant); margin: 2px 0 0; }
-
-.dp-trend { display: inline-flex; align-items: center; gap: 4px; font-weight: 500; }
-.dp-trend--up { color: var(--dp-secondary); }
-.dp-trend--down { color: var(--dp-error); }
-
-.dp-panel-title { display: flex; align-items: center; gap: 8px; margin-bottom: 16px !important; color: var(--dp-on-surface); }
-.dp-panel-title .el-icon { color: var(--dp-primary); }
-
-/* Tri-panel — auto-adapts to 2 or 3 columns (Producing/Demand;
-   Shipping/Port/Transit) with a divider between each. */
-.dp-tri { display: flex; gap: 0; align-items: stretch; }
-.dp-tri__col { flex: 1 1 0; min-width: 0; padding: 0 28px; }
-.dp-tri__col:first-child { padding-left: 0; }
-.dp-tri__col:last-child { padding-right: 0; }
-.dp-tri__col:not(:first-child) { border-left: 1px solid var(--dp-border-subtle); }
-
-/* Categories list — News (el-menu). */
-.dp-cat-menu.el-menu { border-right: none; background: transparent; }
-.dp-cat-item.el-menu-item {
-    height: auto;
-    line-height: normal;
-    padding: 9px 10px !important;
-    margin-bottom: 2px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 13px;
+/* ── Table (§10) ───────────────────────────────────────────────────────── */
+.dpv-table { width: 100%; border-collapse: collapse; }
+.dpv-table thead th {
+    height: 40px;
+    padding: 10px 12px;
+    font-size: 12px;
     font-weight: 600;
-    color: var(--dp-on-surface-variant);
+    text-align: left;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--card-border);
 }
-.dp-cat-item.el-menu-item:hover { background: var(--dp-surface-container); color: var(--dp-on-surface-variant); }
-.dp-cat-item.el-menu-item.is-active { background: var(--dp-primary-container); color: var(--dp-on-primary-container); border: none; }
-.dp-cat-count { font-size: 11px; font-weight: 700; color: var(--dp-outline); background: var(--dp-surface-container); border-radius: 999px; padding: 1px 8px; }
-.dp-cat-item.el-menu-item.is-active .dp-cat-count { background: var(--dp-surface-container-lowest); color: var(--dp-primary); }
+.dpv-table tbody td {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--card-border);
+}
+.dpv-table tbody tr:last-child td { border-bottom: none; }
 
-.dp-events { position: relative; background: var(--dp-surface-container) !important; }
-.dp-timeline { margin-bottom: 0; }
-.dp-timeline :deep(.el-timeline-item__tail) { border-color: var(--dp-outline-variant); opacity: 0.5; }
-.dp-timeline :deep(.el-timeline-item__node) { background: var(--dp-surface-container-lowest); }
-.dp-timeline :deep(.el-timeline-item__wrapper) { padding-left: 20px; }
-.dp-timeline__date { color: var(--dp-outline); margin-bottom: 4px !important; }
-.dp-timeline__date--active { color: var(--dp-primary); margin-bottom: 4px !important; }
-.dp-timeline__title { font-weight: 600; color: var(--dp-on-surface); margin: 0 !important; }
-.dp-timeline__place { color: var(--dp-on-surface-variant); margin-top: 4px !important; }
+/* ── Badges (§17, §16 — color used only for dot/border, not a fill) ──── */
+.dpv-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 22px; padding: 0 7px; border-radius: 4px;
+    font-size: 11px; font-weight: 500;
+    background: var(--surface-elevated); color: var(--text-2);
+    border: 1px solid var(--card-border);
+}
+.dpv-badge__dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.dpv-badge--success .dpv-badge__dot { background: var(--success); }
+.dpv-badge--warning .dpv-badge__dot { background: var(--warning); }
+.dpv-badge--error .dpv-badge__dot { background: var(--error); }
+.dpv-badge--info .dpv-badge__dot { background: var(--info); }
 
-.dp-news { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
-.dp-news li { padding-bottom: 14px; border-bottom: 1px solid var(--dp-surface-container); }
-.dp-news li:last-child { border-bottom: none; padding-bottom: 0; }
-.dp-news__top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.dp-news__cat { color: var(--dp-primary); font-weight: 700; }
-.dp-news__meta { color: var(--dp-outline); margin-left: auto; }
-.dp-news__title { color: var(--dp-on-surface); font-weight: 600; margin-bottom: 4px !important; }
-.dp-news__region { display: inline-flex; align-items: center; gap: 4px; color: var(--dp-outline); }
-.dp-news__more { padding: 0; height: auto; margin-top: 4px; color: var(--dp-primary); font-size: 13px; font-weight: 600; }
-.dp-news__more:hover { color: var(--dp-primary-container); }
+/* ── Traceability timeline (§15) ───────────────────────────────────────── */
+.dpv-timeline { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 32px; }
+.dpv-timeline__item { display: flex; align-items: center; gap: 8px; }
+.dpv-timeline__node { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.dpv-timeline__item--done .dpv-timeline__node { background: var(--info); }
+.dpv-timeline__title { font-size: 13px; color: var(--text-2); }
+.dpv-timeline__item--done .dpv-timeline__title { color: var(--text); }
 
-.dp-weather-list { display: flex; flex-direction: column; gap: 12px; }
-.dp-weather-row { padding: 14px; background: var(--dp-surface-container); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.dp-weather-row p { margin: 0; }
-.dp-weather-row__now { display: flex; align-items: center; gap: 8px; color: var(--dp-on-surface-variant); margin-top: 4px !important; }
+/* ── Activity / system log (§14) ───────────────────────────────────────── */
+.dpv-log-row { display: flex; align-items: baseline; gap: 12px; min-height: 32px; }
+.dpv-log-row + .dpv-log-row { margin-top: 4px; }
+.dpv-log-row__time { font-size: 11px; color: var(--text-muted); flex-shrink: 0; width: 72px; }
+.dpv-log-row__event { font-size: 13px; color: var(--text); flex-shrink: 0; }
+.dpv-log-row__meta { font-size: 12px; color: var(--text-2); }
 
+/* ── Buttons (§11) ─────────────────────────────────────────────────────── */
+.dpv-controls-row { display: flex; align-items: center; gap: 8px; }
+.dpv-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 36px; padding: 0 14px; border-radius: 6px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    border: 1px solid transparent; cursor: pointer;
+    transition: background 180ms, border-color 180ms;
+}
+.dpv-btn--primary { background: var(--primary); color: #ffffff; }
+.dpv-btn--primary:hover { background: #262626; }
+.dpv-btn--secondary { background: var(--surface-elevated); color: var(--text); border-color: var(--card-border); }
+.dpv-btn--secondary:hover { border-color: var(--text-muted); }
+.dpv-btn--small { height: 30px; padding: 0 10px; font-size: 12px; background: var(--surface-elevated); color: var(--text-2); border-color: var(--card-border); }
+.dpv-icon-btn {
+    width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--surface-elevated); color: var(--text-2); border: 1px solid var(--card-border); border-radius: 6px;
+    cursor: pointer; transition: border-color 180ms;
+}
+.dpv-icon-btn:hover { border-color: var(--text-muted); }
+
+/* ── Inputs (§12) ──────────────────────────────────────────────────────── */
+.dpv-field { margin-top: 16px; max-width: 320px; }
+.dpv-field__label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 6px; }
+.dpv-input {
+    width: 100%; height: 36px; padding: 0 10px; font-family: inherit; font-size: 13px;
+    background: var(--surface-2); color: var(--text); border: 1px solid var(--card-border); border-radius: 6px;
+}
+.dpv-input::placeholder { color: var(--text-muted); font-family: var(--font-mono); }
+.dpv-input:focus { outline: none; border-color: var(--primary); }
+
+/* ── Responsive (§19) ──────────────────────────────────────────────────── */
+/* Margins re-tuned to each of .dp-main's own padding breakpoints
+   (32px 24px / 24px 16px / 20px 12px) so the visible margin stays
+   exactly 48px on every side at every size. */
 @media (max-width: 1279.98px) {
-    .dp-kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    .dp-split { grid-template-columns: 1fr; }
-    .dp-tri { flex-direction: column; gap: 20px; }
-    .dp-tri__col { padding: 0; }
-    .dp-tri__col:not(:first-child) { border-left: none; border-top: 1px solid var(--dp-border-subtle); padding-top: 20px; }
+    .dpv-page { margin: 16px 24px; }
 }
-
+@media (max-width: 1199.98px) and (min-width: 768px) {
+    .dpv-metric-grid { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 767.98px) {
-    .dp-hero-head { margin-bottom: 24px; }
-    .dp-kpi-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-    .dp-stat-card :deep(.el-card__body) { padding: 16px !important; }
-    .dp-card :deep(.el-card__body) { padding: 20px !important; }
-    .dp-card__head { margin-bottom: 20px; }
-    .dp-chart { height: 200px; padding: 0 4px 16px; }
-    .dp-split { gap: 16px; }
-    .dp-section-head { margin-bottom: 20px; }
-    .dp-task :deep(.el-card__body) { padding: 14px !important; gap: 12px; }
-    .dp-task__icon { width: 36px; height: 36px; }
+    .dpv-page { margin: 24px 32px; }
+    .dpv-metric-grid { grid-template-columns: 1fr; }
+    .dpv-timeline { gap: 16px; }
+    .dpv-controls-row { flex-wrap: wrap; }
+}
+@media (max-width: 479.98px) {
+    .dpv-page { margin: 28px 36px; }
 }
 </style>

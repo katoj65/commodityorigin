@@ -145,7 +145,7 @@ const statusTone = {
 /* ── Order cards ─────────────────────────────────────────────────────── */
 .ordc-list { display: flex; flex-direction: column; gap: 1rem; }
 
-.ordc-card { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.ordc-card { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 
 .ordc-card__head {
     display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem;

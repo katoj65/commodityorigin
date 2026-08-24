@@ -872,7 +872,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 /* ── Featured lots ─────────────────────────────────────────────────────────── */
 .lt-featured-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 12px 16px; scrollbar-width: none; }
 .lt-featured-scroll::-webkit-scrollbar { display: none; }
-.lt-featured-card { flex: 0 0 160px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.lt-featured-card { flex: 0 0 160px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .lt-featured-img  { height: 90px; background: #f1f5f9; position: relative; }
 .lt-featured-img-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .lt-featured-tag  { position: absolute; top: 6px; left: 6px; background: #c8862a; color: #fff; font-size: .5rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; border-radius: 999px; padding: 2px 7px; }
@@ -893,7 +893,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .lt-trend-icon { font-size: .875rem; }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
-.lt-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: .875rem; border-radius: 8px; border: 1px solid; }
+.lt-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: .875rem; border-radius: 6px; border: 1px solid; }
 .lt-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .lt-insight-card--primary { background: #eff6ff; border-color: #bfdbfe; }
 .lt-insight-card--warning { background: #fffbeb; border-color: #fde68a; }

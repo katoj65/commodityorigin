@@ -289,68 +289,66 @@ const fillPrompt = (p) => { chatInput.value = p; };
                     <div class="bt-muted">{{ rangeSummary }}</div>
                 </div>
                 <div class="bt-table-wrap">
-                    <table class="bt-table">
-                        <thead>
-                            <tr>
-                                <th>Batch ID</th>
-                                <th>Season / Warehouse</th>
-                                <th>Coffee Type</th>
-                                <th class="text-end">Bags</th>
-                                <th class="text-end">Quantity (kg)</th>
-                                <th class="text-end">Moisture</th>
-                                <th class="text-end">Quality</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="batches.data.length === 0">
-                                <td colspan="10" class="bt-empty">No batches recorded yet.</td>
-                            </tr>
-                            <tr v-for="batch in batches.data" :key="batch.id">
-                                <td>
-                                    <span class="bt-code">{{ batch.batch_number }}</span>
-                                </td>
-                                <td>
-                                    <div class="bt-primary">{{ batch.warehouse_location || '—' }}</div>
-                                    <div class="bt-muted">{{ batch.season_name || 'Unassigned' }}</div>
-                                </td>
-                                <td>
-                                    <div class="bt-muted">{{ batch.coffee_type || 'Arabica' }}</div>
-                                </td>
-                                <td class="text-end">
-                                    <div class="bt-primary">{{ Number(batch.quantity_bags || 0).toLocaleString() }}</div>
-                                </td>
-                                <td class="text-end">
-                                    <div class="bt-primary">{{ formatWeight(batch.net_weight_kg) }}</div>
-                                </td>
-                                <td class="text-end">
-                                    <div class="bt-primary">{{ formatMoisture(batch.moisture_content) }}</div>
-                                    <div class="bt-muted" :class="{ 'bt-ok': processLabel(batch) === 'Stable', 'bt-warn': processLabel(batch) === 'Review', 'bt-hold': processLabel(batch) === 'Hold' }">
-                                        {{ processLabel(batch) }}
-                                    </div>
-                                </td>
-                                <td class="text-end">
-                                    <div class="bt-score">{{ scoreLabel(batch) }}</div>
-                                </td>
-                                <td>
-                                    <span class="bt-status" :class="`bt-status--${statusClass(batch.status)}`">
-                                        {{ statusLabel(batch.status) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="bt-muted">{{ formatDate(batch.created_at) }}</div>
-                                </td>
-                                <td class="text-end">
-                                    <div class="d-flex gap-2 justify-content-end">
-                                        <Link :href="batch.show_url" class="bt-action">View</Link>
-                                        <Link :href="route('batch.create-lot', batch.id)" class="bt-action bt-action--lot">Create Lot</Link>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <el-table :data="batches.data" border class="bt-el-table">
+                        <el-table-column min-width="140">
+                            <template #header>Batch ID</template>
+                            <template #default="{ row }"><span class="bt-code">{{ row.batch_number }}</span></template>
+                        </el-table-column>
+                        <el-table-column min-width="160">
+                            <template #header>Season / Warehouse</template>
+                            <template #default="{ row }">
+                                <div class="bt-primary">{{ row.warehouse_location || '—' }}</div>
+                                <div class="bt-muted">{{ row.season_name || 'Unassigned' }}</div>
+                            </template>
+                        </el-table-column>
+                        <el-table-column min-width="100">
+                            <template #header>Coffee Type</template>
+                            <template #default="{ row }"><div class="bt-muted">{{ row.coffee_type || 'Arabica' }}</div></template>
+                        </el-table-column>
+                        <el-table-column width="70" align="right">
+                            <template #header>Bags</template>
+                            <template #default="{ row }"><div class="bt-primary">{{ Number(row.quantity_bags || 0).toLocaleString() }}</div></template>
+                        </el-table-column>
+                        <el-table-column width="110" align="right">
+                            <template #header>Quantity (kg)</template>
+                            <template #default="{ row }"><div class="bt-primary">{{ formatWeight(row.net_weight_kg) }}</div></template>
+                        </el-table-column>
+                        <el-table-column width="100" align="right">
+                            <template #header>Moisture</template>
+                            <template #default="{ row }">
+                                <div class="bt-primary">{{ formatMoisture(row.moisture_content) }}</div>
+                                <div class="bt-muted" :class="{ 'bt-ok': processLabel(row) === 'Stable', 'bt-warn': processLabel(row) === 'Review', 'bt-hold': processLabel(row) === 'Hold' }">
+                                    {{ processLabel(row) }}
+                                </div>
+                            </template>
+                        </el-table-column>
+                        <el-table-column width="90" align="right">
+                            <template #header>Quality</template>
+                            <template #default="{ row }"><div class="bt-score">{{ scoreLabel(row) }}</div></template>
+                        </el-table-column>
+                        <el-table-column width="110">
+                            <template #header>Status</template>
+                            <template #default="{ row }">
+                                <span class="bt-status" :class="`bt-status--${statusClass(row.status)}`">{{ statusLabel(row.status) }}</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column width="100">
+                            <template #header>Created</template>
+                            <template #default="{ row }"><div class="bt-muted">{{ formatDate(row.created_at) }}</div></template>
+                        </el-table-column>
+                        <el-table-column width="150" align="right">
+                            <template #header>Actions</template>
+                            <template #default="{ row }">
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <Link :href="row.show_url" class="bt-action">View</Link>
+                                    <Link :href="route('batch.create-lot', row.id)" class="bt-action bt-action--lot">Create Lot</Link>
+                                </div>
+                            </template>
+                        </el-table-column>
+                        <template #empty>
+                            <div class="bt-empty">No batches recorded yet.</div>
+                        </template>
+                    </el-table>
                 </div>
                 <!-- Pagination -->
                 <div class="bt-foot">
@@ -927,7 +925,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 /* ── Card ────────────────────────────────────────────────────────── */
 .bt-card {
     border: 1px solid #eef2f0;
-    border-radius: 8px;
+    border-radius: 6px;
     background: #fff;
     margin: 12px 24px 0;
     overflow: hidden;
@@ -941,7 +939,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     padding: 8px 14px;
     border-bottom: 1px solid #e8ecec;
     background: #f8f9f9;
-    border-radius: 7px 7px 0 0;
+    border-radius: 6px 6px 0 0;
     flex-wrap: wrap;
 }
 .bt-card-title {
@@ -957,32 +955,30 @@ const fillPrompt = (p) => { chatInput.value = p; };
 }
 .bt-card-body { padding: 12px 14px; flex: 1; }
 
-/* ── Table ───────────────────────────────────────────────────────── */
+/* ── Table (Element Plus, bordered, light header) ─────────────────── */
 .bt-table-wrap { overflow-x: auto; }
-.bt-table {
+.bt-el-table {
     width: 100%;
-    border-collapse: collapse;
     font-size: 12px;
+    --el-table-border-color: #eef2f0;
+    --el-table-header-bg-color: #f6f8f8;
+    --el-table-header-text-color: #7b8796;
+    --el-table-row-hover-bg-color: #f8fbf9;
+    --el-table-text-color: #1f2a2a;
 }
-.bt-table thead th {
-    padding: 7px 12px;
-    background: #f6f8f8;
-    border-bottom: 1px solid #eef2f0;
+.bt-el-table :deep(.el-table__header th.el-table__cell) {
+    padding: 7px 0;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
     font-weight: 800;
     letter-spacing: .12em;
     text-transform: uppercase;
-    color: #7b8796;
     white-space: nowrap;
 }
-.bt-table tbody td {
-    padding: 8px 12px;
-    border-bottom: 1px solid #f0f2f2;
+.bt-el-table :deep(.el-table__body td.el-table__cell) {
+    padding: 8px 0;
     vertical-align: middle;
 }
-.bt-table tbody tr:last-child td { border-bottom: none; }
-.bt-table tbody tr:hover td { background: #f8fbf9; }
 .bt-primary { font-size: 13px; font-weight: 700; color: #1f2a2a; }
 .bt-muted   { font-size: 11px; color: #94a1b2; }
 .bt-ok   { color: #16a05d; }
@@ -1107,7 +1103,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 }
 .bt-grid-card {
     border: 1px solid #eef2f0;
-    border-radius: 7px;
+    border-radius: 6px;
     background: #fff;
     display: flex;
     flex-direction: column;
@@ -1376,7 +1372,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-chat-panel {
     width: 300px;
     border: 1px solid #eef2f0;
-    border-radius: 10px;
+    border-radius: 6px;
     background: #fff;
     overflow: hidden;
 }

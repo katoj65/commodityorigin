@@ -17,6 +17,7 @@ class FarmCollection extends Model
      */
     protected $fillable = [
         'farm_id',
+        'user_id',
         'collection_date',
         'coffee_type',
         'variety',
@@ -54,5 +55,13 @@ class FarmCollection extends Model
     public function farm(): BelongsTo
     {
         return $this->belongsTo(Farm::class);
+    }
+
+    /**
+     * Get the user who recorded this collection.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

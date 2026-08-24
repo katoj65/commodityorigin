@@ -752,7 +752,7 @@ function openOrder(order) {
 .ord-card {
     margin: 0 1.5rem;
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 6px;
     overflow: hidden;
     background: #fff;
     box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
@@ -1109,7 +1109,7 @@ function openOrder(order) {
     .ord-toolbar { padding: 0 1.25rem; align-items: stretch; }
     .ord-search-wrap { width: 100%; }
     .ord-search-input { width: 100%; }
-    .ord-card { margin: 0 1.25rem; border-radius: 12px; }
+    .ord-card { margin: 0 1.25rem; border-radius: 6px; }
     .ord-table :deep(.el-table__header-wrapper th:first-child .cell),
     .ord-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1rem; }
     .ord-table :deep(.el-table__header-wrapper th:last-child .cell),

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Batch extends Model
@@ -18,13 +17,13 @@ class Batch extends Model
      */
     protected $fillable = [
         'user_id',
-        'season_id',
         'batch_number',
         'variety',
         'warehouse_location',
         'quantity',
         'weight',
         'price',
+        'currency',
         'moisture_content',
         'processing_date',
         'processing_method',
@@ -52,14 +51,6 @@ class Batch extends Model
         'defect_count' => 'integer',
         'cup_score' => 'decimal:2',
     ];
-
-    /**
-     * Get the season attached to this batch.
-     */
-    public function season(): BelongsTo
-    {
-        return $this->belongsTo(Season::class);
-    }
 
     /**
      * Get the ownership records attached to the batch.

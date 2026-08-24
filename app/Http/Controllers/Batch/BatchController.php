@@ -7,13 +7,12 @@ use App\Http\Resources\BatchResource;
 use App\Http\Resources\HarvestResource;
 use App\Http\Resources\SeasonResource;
 use App\Models\Batch;
-use App\Models\Season;
+use App\Models\Currency;
 use App\Services\BatchService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -84,6 +83,11 @@ class BatchController extends Controller
             'batch' => BatchResource::make($batch)->resolve(),
             'season' => $season ? SeasonResource::make($season)->resolve() : null,
             'harvests' => HarvestResource::collection($harvests)->resolve(),
+            'currencyOptions' => Currency::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('code')
+                ->pluck('code'),
         ]);
     }
 
@@ -93,12 +97,6 @@ class BatchController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateBatchData($request);
-        $seasonId = $validated['season_id'] ?? null;
-
-        if ($seasonId) {
-            $season = Season::query()->findOrFail($seasonId);
-            Gate::authorize('view', $season);
-        }
 
         $batch = $this->batches->create($validated, $request->user()->id);
 
@@ -119,14 +117,8 @@ class BatchController extends Controller
         Gate::authorize('update', $batch);
 
         $validated = $this->validateBatchData($request, $batch);
-        $seasonId = $validated['season_id'] ?? $batch->season_id;
 
-        if ($seasonId) {
-            $season = Season::query()->findOrFail($seasonId);
-            Gate::authorize('view', $season);
-        }
-
-        $this->batches->update($batch, $validated, $seasonId);
+        $this->batches->update($batch, $validated);
 
         return back()->with('success', 'Batch updated successfully.');
     }
@@ -176,7 +168,7 @@ class BatchController extends Controller
     {
         $validated = $request->validate([
             'batch_number' => [
-                'required',
+                $batch === null ? 'nullable' : 'required',
                 'string',
                 'max:100',
                 Rule::unique('batches', 'batch_number')->ignore($batch),
@@ -186,6 +178,7 @@ class BatchController extends Controller
             'quantity_bags' => ['required', 'integer', 'min:1'],
             'net_weight_kg' => ['required', 'numeric', 'min:1'],
             'price' => ['required', 'numeric', 'min:0'],
+            'currency' => ['nullable', 'string', 'size:3'],
             'moisture_content' => ['nullable', 'numeric', 'between:0,100'],
             'processing_date' => ['required', 'date', 'before_or_equal:today'],
             'processing_method' => ['required', 'string', 'max:255'],
@@ -196,23 +189,9 @@ class BatchController extends Controller
             'defect_count' => ['nullable', 'integer', 'min:0'],
             'cup_score' => ['nullable', 'numeric', 'between:0,100'],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'season_id' => ['nullable', 'exists:seasons,id'],
             'harvest_ids' => ['nullable', 'array'],
             'harvest_ids.*' => ['integer', 'exists:harvests,id'],
         ]);
-
-        if (!empty($validated['season_id']) && !empty($validated['harvest_ids'])) {
-            $mismatchedHarvest = $this->batches->hasHarvestsOutsideSeason(
-                $validated['harvest_ids'],
-                $validated['season_id'],
-            );
-
-            if ($mismatchedHarvest) {
-                throw ValidationException::withMessages([
-                    'harvest_ids' => 'Selected harvests must belong to the chosen season.',
-                ]);
-            }
-        }
 
         return $validated;
     }

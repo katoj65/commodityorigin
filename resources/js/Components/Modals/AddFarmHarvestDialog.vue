@@ -467,7 +467,7 @@ function submit() {
     gap: 14px;
     padding: 14px;
     border: 1px solid #eef2f5;
-    border-radius: 10px;
+    border-radius: 6px;
     background: #fcfdfd;
 }
 

@@ -20,6 +20,7 @@ use App\Services\FarmService;
 use App\Services\HarvestService;
 use App\Services\SoilMetadataService;
 use App\Services\WeatherForecastService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -60,6 +61,33 @@ class FarmController extends Controller
         return Inertia::render('Farm/MyFarms', [
             'farms' => FarmResource::collection($this->farms->listForUser($request->user()->id))->resolve(),
             'varietyOptions' => $this->farms->activeVarietyOptions(),
+        ]);
+    }
+
+    /**
+     * Look up a farm strictly by its farm code — no ownership scoping —
+     * used by the "New Farm Collection" modal's farm-code text field to
+     * resolve a farm id before submitting. A match here doesn't mean the
+     * caller may act on the farm; FarmPolicy::update() still enforces
+     * that separately when the resolved id is actually used (e.g. on
+     * farm.collections.store).
+     */
+    public function findByCode(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'farm_code' => ['required', 'string', 'max:255'],
+        ]);
+
+        $farm = $this->farms->findByCode($validated['farm_code']);
+
+        if (! $farm) {
+            return response()->json(['message' => 'No farm with that code was found.'], 404);
+        }
+
+        return response()->json([
+            'id' => $farm->id,
+            'name' => $farm->name,
+            'farm_code' => $farm->farm_code,
         ]);
     }
 
@@ -251,30 +279,33 @@ class FarmController extends Controller
     }
 
     /**
-     * Record a new coffee collection against this farm. Admin or creator only.
+     * Record a new coffee collection against this farm. A collection is
+     * its own piece of content — any authenticated user (route middleware
+     * already restricts to farmer/admin roles) may record one against any
+     * farm found by code; it isn't gated by who created the farm itself.
      */
     public function storeCollection(Request $request, Farm $farm): RedirectResponse
     {
-        Gate::authorize('update', $farm);
-
         $validated = $request->validate($this->collectionValidationRules());
 
         $this->collections->create([
             ...$validated,
             'farm_id' => $farm->id,
+            'user_id' => $request->user()->id,
         ]);
 
         return back()->with('success', 'Collection recorded successfully.');
     }
 
     /**
-     * Update an existing coffee collection against this farm. Admin or creator only.
+     * Update an existing coffee collection. Only the user who recorded it
+     * (or an admin) may edit it — ownership of the collection itself, not
+     * of the farm it was recorded against.
      */
     public function updateCollection(Request $request, Farm $farm, FarmCollection $collection): RedirectResponse
     {
-        Gate::authorize('update', $farm);
-
         abort_unless($collection->farm_id === $farm->id, 404);
+        abort_unless($request->user()->isAdmin() || $collection->user_id === $request->user()->id, 403);
 
         $validated = $request->validate($this->collectionValidationRules());
 
@@ -284,13 +315,13 @@ class FarmController extends Controller
     }
 
     /**
-     * Delete a coffee collection recorded against this farm. Admin or creator only.
+     * Delete a coffee collection. Only the user who recorded it (or an
+     * admin) may delete it.
      */
-    public function destroyCollection(Farm $farm, FarmCollection $collection): RedirectResponse
+    public function destroyCollection(Request $request, Farm $farm, FarmCollection $collection): RedirectResponse
     {
-        Gate::authorize('update', $farm);
-
         abort_unless($collection->farm_id === $farm->id, 404);
+        abort_unless($request->user()->isAdmin() || $collection->user_id === $request->user()->id, 403);
 
         $this->collections->delete($collection);
 

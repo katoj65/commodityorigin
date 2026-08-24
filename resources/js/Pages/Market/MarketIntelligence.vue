@@ -566,7 +566,7 @@ const sendChat = () => {
 .mi-kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.875rem; margin-bottom: 2rem; }
 .mi-kpi-card {
     background: var(--surface-white); border: 1px solid var(--surface-high);
-    border-radius: 12px; padding: 14px;
+    border-radius: 6px; padding: 14px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .mi-kpi-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -610,12 +610,12 @@ const sendChat = () => {
 .mi-story-card {
     display: flex; flex-direction: column;
     background: var(--surface-white); border: 1px solid var(--surface-high);
-    border-radius: 14px; padding: 1.125rem;
+    border-radius: 6px; padding: 1.125rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .mi-story-card__meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
 .mi-story-card__age {
-    background: var(--surface-mid); border-radius: 999px;
+    background: var(--surface-mid); border-radius: 6px;
     font-size: 0.6875rem; font-weight: 700; color: var(--on-surface-var);
     padding: 2px 10px;
 }
@@ -626,7 +626,7 @@ const sendChat = () => {
 .mi-story-card__title { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); line-height: 1.35; margin: 0 0 8px; }
 .mi-story-card__body  { font-size: 0.8125rem; color: var(--on-surface-var); line-height: 1.55; margin: 0 0 auto; }
 .mi-story-card__impact {
-    margin-top: 1rem; padding: 12px; border-radius: 8px;
+    margin-top: 1rem; padding: 12px; border-radius: 6px;
     background: var(--surface-low); border: 1px solid var(--surface-high);
 }
 .mi-story-card__impact-label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #3b82f6; display: block; margin-bottom: 4px; }
@@ -652,7 +652,7 @@ const sendChat = () => {
 
 .mi-card {
     background: var(--surface-white); border: 1px solid var(--surface-high);
-    border-radius: 14px; padding: 1.125rem;
+    border-radius: 6px; padding: 1.125rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .mi-card-title {

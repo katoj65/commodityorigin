@@ -798,7 +798,7 @@ const badgeClass = (b) => {
 .ex-kpi__sub   { font-size: 0.625rem; color: var(--on-surface-var); }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
-.ex-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.ex-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .ex-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 .ex-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
@@ -852,7 +852,7 @@ const badgeClass = (b) => {
 .ex-footer-dot--red    { background: #dc2626; }
 
 /* ── Shipment tracking ─────────────────────────────────────────────────────── */
-.ex-ship-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; }
+.ex-ship-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 0.875rem; }
 .ex-eta-badge { display: inline-flex; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
 .ex-stages { position: relative; display: flex; justify-content: space-between; align-items: flex-start; margin-top: 12px; gap: 0; }
 .ex-stage { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; position: relative; z-index: 1; }
@@ -908,7 +908,7 @@ const badgeClass = (b) => {
 .ex-opp-score { font-size: 0.75rem; font-weight: 700; color: var(--green); }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
-.ex-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 10px; border: 1px solid; }
+.ex-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 6px; border: 1px solid; }
 .ex-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .ex-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .ex-insight-card--warning { background: #fffbeb; border-color: #fde68a; }

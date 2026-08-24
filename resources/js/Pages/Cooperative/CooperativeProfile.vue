@@ -734,7 +734,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-tag--amber{ background: #fef3c7; color: #92400e; }
 
 /* ── Map ───────────────────────────────────────────────────────────────────── */
-.co-map-tile { min-height: 130px; border: 1.5px dashed var(--border-m); border-radius: 8px; background: var(--surface-low); position: relative; display: flex; align-items: flex-end; padding: 12px; overflow: hidden; }
+.co-map-tile { min-height: 130px; border: 1.5px dashed var(--border-m); border-radius: 6px; background: var(--surface-low); position: relative; display: flex; align-items: flex-end; padding: 12px; overflow: hidden; }
 .co-map-pin  { position: absolute; top: 50%; left: 50%; width: 28px; height: 28px; border-radius: 50% 50% 50% 0; background: var(--green); transform: translate(-50%, -70%) rotate(-45deg); }
 .co-map-pin::after { content: ''; position: absolute; width: 10px; height: 10px; border-radius: 50%; background: #fff; top: 9px; left: 9px; }
 .co-map-info { position: relative; z-index: 1; }
@@ -811,7 +811,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-timeline-body { flex: 1; min-width: 0; }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
-.co-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: .875rem; border-radius: 8px; border: 1px solid; }
+.co-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: .875rem; border-radius: 6px; border: 1px solid; }
 .co-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .co-insight-card--primary { background: #eff6ff; border-color: #bfdbfe; }
 .co-insight-card--warning { background: #fffbeb; border-color: #fde68a; }

@@ -174,6 +174,7 @@ Route::middleware([
     Route::prefix('farm')->name('farm.')->group(function () {
         Route::get('/', [FarmController::class, 'index'])->name('index');
         Route::get('/farm-list', [FarmController::class, 'myFarms'])->name('mine');
+        Route::get('/find-by-code', [FarmController::class, 'findByCode'])->name('find-by-code');
         Route::get('/harvest', [HarvestController::class, 'mine'])->name('harvest.mine');
         Route::patch('/harvest/{harvest}', [HarvestController::class, 'update'])->name('harvest.update');
         Route::delete('/harvest/{harvest}', [HarvestController::class, 'destroy'])->name('harvest.destroy');
@@ -214,10 +215,16 @@ Route::middleware([
         Route::get('/season/{season}/create', [SeasonController::class, 'createBatch'])->name('create-season');
         Route::get('/{batch}/create-lot', [LotController::class, 'createLot'])->name('create-lot');
         Route::post('/{batch}/create-lot', [LotController::class, 'storeFromBatch'])->name('store-lot');
+        Route::post('/{batch}/compliance', [BatchController::class, 'storeCompliance'])->name('compliance.store');
+    });
+
+    // Batch create/view/update/delete: open to any authenticated user —
+    // ownership (or admin) is enforced by BatchPolicy, not by role, since a
+    // batch's own owner needs to reach and edit it regardless of role.
+    Route::prefix('batch')->name('batch.')->group(function () {
         Route::post('/', [BatchController::class, 'store'])->name('store');
         Route::patch('/{batch}', [BatchController::class, 'update'])->name('update');
         Route::delete('/{batch}', [BatchController::class, 'destroy'])->name('destroy');
-        Route::post('/{batch}/compliance', [BatchController::class, 'storeCompliance'])->name('compliance.store');
         Route::get('/{batch}', [BatchController::class, 'show'])->name('show');
     });
 

@@ -842,7 +842,7 @@ const currencyChartData = computed(() => ({
 }
 
 /* ── Cards (grid items — forecast signals, currency rates) ────────────── */
-.man-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
+.man-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; }
 .man-card-title { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
 
 /* ── Panels (borderless — chart wraps, ranked lists, text blocks) ─────── */
@@ -858,7 +858,7 @@ const currencyChartData = computed(() => ({
 .man-kpi-line:last-child { border-bottom: none; }
 
 /* ── AI cards ────────────────────────────────────────────────────────── */
-.man-ai-card { background: linear-gradient(135deg, #f0fdf4, #ffffff); border: 1px solid #bbf7d0; border-radius: 10px; padding: 1.125rem; }
+.man-ai-card { background: linear-gradient(135deg, #f0fdf4, #ffffff); border: 1px solid #bbf7d0; border-radius: 6px; padding: 1.125rem; }
 .man-ai-text { font-size: .875rem; line-height: 1.6; color: var(--on-surface); margin: 0; }
 
 /* ── Insights ────────────────────────────────────────────────────────── */

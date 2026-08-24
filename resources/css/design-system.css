@@ -8,9 +8,9 @@
 
 :root {
     /* ---- Design-system tokens (mirrors DESIGN.md) ---- */
-    --surface: #f7f9fb;
+    --surface: #ffffff;
     --surface-dim: #d8dadc;
-    --surface-bright: #f7f9fb;
+    --surface-bright: #ffffff;
     --surface-container-lowest: #ffffff;
     --surface-container-low: #f2f4f6;
     --surface-container: #eceef0;
@@ -21,40 +21,36 @@
     --outline: #707a6c;
     --outline-variant: #bfcaba;
 
-    --brand-primary: #0d631b;
-    --brand-primary-container: #2e7d32;
-    --on-primary-container: #cbffc2;
+    --brand-primary: #000000;
+    --brand-primary-container: #262626;
+    --on-primary-container: #F1F2F3;
     --brand-secondary: #79573f;
     --brand-secondary-container: #ffd1b3;
     --brand-tertiary: #923357;
 
-    --success-emerald: #10b981;
-    --warning-amber: #f59e0b;
-    --danger-rose: #f43f5e;
-    --info-sky: #0ea5e9;
+    --success-emerald: #7EE787;
+    --warning-amber: #D29922;
+    --danger-rose: #F85149;
+    --info-sky: #58A6FF;
 
     /* Matches --card-border below on purpose — the app shell/aside border
        and every internal card border share one color so borders line up
        consistently across the whole app. */
     --border-subtle: #eef2f0;
     --data-surface: #f1f5f9;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
+    --text-main: #121516;
+    --text-muted: #6F7677;
 
-    /* Uniform border for white "card" containers (stat tiles, list cards,
-       panels, dashboard widgets) across every internal page. */
-    --card-border: #eef2f0;
-    --card-shadow: 0 8px 20px rgba(18, 40, 31, 0.03);
+    /* UI.md theme (2026-08-24): app-wide default, superseding the earlier
+       Claude Console pass. See reference_ui_md_design_system memory. */
+    --card-border: #E5E7EB;
+    --card-shadow: none;
 
-    /* System-font stack — the same reliability approach large commerce
-       platforms (e.g. Amazon) use for their base UI text: every name here
-       is preinstalled on its OS, so text renders instantly with no
-       webfont network request, no flash-of-unstyled-text, and no risk of
-       a CDN (Google Fonts) being slow, blocked, or unavailable. */
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
 
-    --radius-card: 16px;
-    --radius-control: 8px;
+    --radius-card: 6px;
+    --radius-control: 6px;
     --radius-pill: 999px;
 
     --shadow-float: 0px 4px 20px rgba(0, 0, 0, 0.04);
@@ -65,65 +61,65 @@
     /* ---- Element Plus semantic overrides ---- */
     --el-font-family: var(--font-sans);
 
-    --el-color-primary: #0d631b;
-    --el-color-primary-rgb: 13, 99, 27;
-    --el-color-primary-light-3: #56925f;
-    --el-color-primary-light-5: #86b18d;
-    --el-color-primary-light-7: #b6d0bb;
-    --el-color-primary-light-8: #cfe0d1;
-    --el-color-primary-light-9: #e7efe8;
-    --el-color-primary-dark-2: #0a4f16;
+    --el-color-primary: #000000;
+    --el-color-primary-rgb: 0, 0, 0;
+    --el-color-primary-light-3: #404040;
+    --el-color-primary-light-5: #737373;
+    --el-color-primary-light-7: #A6A6A6;
+    --el-color-primary-light-8: #BFBFBF;
+    --el-color-primary-light-9: #F1F2F3;
+    --el-color-primary-dark-2: #262626;
 
-    --el-color-success: #10b981;
-    --el-color-success-rgb: 16, 185, 129;
-    --el-color-success-light-3: #58cea7;
-    --el-color-success-light-5: #88dcc0;
-    --el-color-success-light-7: #b7ead9;
-    --el-color-success-light-8: #cff1e6;
-    --el-color-success-light-9: #e7f8f2;
-    --el-color-success-dark-2: #0d9467;
+    --el-color-success: #7EE787;
+    --el-color-success-rgb: 126, 231, 135;
+    --el-color-success-light-3: #A4EEAA;
+    --el-color-success-light-5: #BEF3C3;
+    --el-color-success-light-7: #D8F8DB;
+    --el-color-success-light-8: #E5FAE7;
+    --el-color-success-light-9: #F2FDF3;
+    --el-color-success-dark-2: #65B96C;
 
-    --el-color-warning: #f59e0b;
-    --el-color-warning-rgb: 245, 158, 11;
-    --el-color-warning-light-3: #f8bb54;
-    --el-color-warning-light-5: #face85;
-    --el-color-warning-light-7: #fce2b6;
-    --el-color-warning-light-8: #fdecce;
-    --el-color-warning-light-9: #fef5e7;
-    --el-color-warning-dark-2: #c47e09;
+    --el-color-warning: #D29922;
+    --el-color-warning-rgb: 210, 153, 34;
+    --el-color-warning-light-3: #DFB864;
+    --el-color-warning-light-5: #E8CC90;
+    --el-color-warning-light-7: #F1E0BD;
+    --el-color-warning-light-8: #F6EAD3;
+    --el-color-warning-light-9: #FAF5E9;
+    --el-color-warning-dark-2: #A87A1B;
 
-    --el-color-danger: #f43f5e;
-    --el-color-danger-rgb: 244, 63, 94;
-    --el-color-danger-light-3: #f7798e;
-    --el-color-danger-light-5: #fa9fae;
-    --el-color-danger-light-7: #fcc5cf;
-    --el-color-danger-light-8: #fdd9df;
-    --el-color-danger-light-9: #feecef;
-    --el-color-danger-dark-2: #c3324b;
+    --el-color-danger: #F85149;
+    --el-color-danger-rgb: 248, 81, 73;
+    --el-color-danger-light-3: #FA857F;
+    --el-color-danger-light-5: #FBA8A4;
+    --el-color-danger-light-7: #FDCBC8;
+    --el-color-danger-light-8: #FDDCDA;
+    --el-color-danger-light-9: #FEEDED;
+    --el-color-danger-dark-2: #C6413A;
 
-    --el-color-error: #f43f5e;
-    --el-color-error-rgb: 244, 63, 94;
-    --el-color-error-light-3: #f7798e;
-    --el-color-error-light-5: #fa9fae;
-    --el-color-error-light-7: #fcc5cf;
-    --el-color-error-light-8: #fdd9df;
-    --el-color-error-light-9: #feecef;
-    --el-color-error-dark-2: #c3324b;
+    --el-color-error: #F85149;
+    --el-color-error-rgb: 248, 81, 73;
+    --el-color-error-light-3: #FA857F;
+    --el-color-error-light-5: #FBA8A4;
+    --el-color-error-light-7: #FDCBC8;
+    --el-color-error-light-8: #FDDCDA;
+    --el-color-error-light-9: #FEEDED;
+    --el-color-error-dark-2: #C6413A;
 
-    --el-color-info: #0ea5e9;
-    --el-color-info-rgb: 14, 165, 233;
-    --el-color-info-light-3: #56c0f0;
-    --el-color-info-light-5: #86d2f4;
-    --el-color-info-light-7: #b7e4f8;
-    --el-color-info-light-8: #cfedfb;
-    --el-color-info-light-9: #e7f6fd;
-    --el-color-info-dark-2: #0b84ba;
+    --el-color-info: #58A6FF;
+    --el-color-info-rgb: 88, 166, 255;
+    --el-color-info-light-3: #8AC0FF;
+    --el-color-info-light-5: #ABD2FF;
+    --el-color-info-light-7: #CDE4FF;
+    --el-color-info-light-8: #DDEDFF;
+    --el-color-info-light-9: #EEF6FF;
+    --el-color-info-dark-2: #4685CC;
 
     --el-bg-color: #ffffff;
     --el-bg-color-page: #f7f9fb;
     --el-bg-color-overlay: #ffffff;
 
-    --el-text-color-primary: #0f172a;
+    --el-text-color-primary: #121516;
     --el-text-color-regular: #334155;
     --el-text-color-secondary: #64748b;
     --el-text-color-placeholder: #94a3b8;
@@ -144,7 +140,7 @@
     --el-fill-color-dark: #e9edf1;
     --el-fill-color-darker: #e2e8f0;
 
-    --el-border-radius-base: 8px;
+    --el-border-radius-base: 6px;
     --el-border-radius-small: 6px;
     --el-border-radius-round: 999px;
     --el-border-radius-circle: 100%;

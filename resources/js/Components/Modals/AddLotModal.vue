@@ -1,0 +1,280 @@
+<script setup>
+import { computed, watch } from 'vue';
+import { useForm } from '@inertiajs/vue3';
+import { ElNotification } from 'element-plus';
+import { Close, Tickets } from '@element-plus/icons-vue';
+
+const props = defineProps({
+    modelValue: { type: Boolean, default: false },
+    batches: { type: Array, default: () => [] },
+    processOptions: { type: Array, default: () => [] },
+});
+
+const emit = defineEmits(['update:modelValue']);
+
+const dialogVisible = computed({
+    get: () => props.modelValue,
+    set: (value) => emit('update:modelValue', value),
+});
+
+function emptyForm() {
+    return {
+        batch_id: '',
+        lot_number: '',
+        lot_name: '',
+        description: '',
+        process: '',
+        grade: '',
+        quantity_bags: '',
+        bag_weight_kg: '',
+        price: '',
+        quality_score: '',
+        notes: '',
+    };
+}
+
+const form = useForm(emptyForm());
+
+watch(() => props.modelValue, (open) => {
+    if (!open) return;
+    form.defaults(emptyForm());
+    form.reset();
+    form.clearErrors();
+    if (props.batches.length === 1) form.batch_id = props.batches[0].id;
+});
+
+function closeDialog() {
+    dialogVisible.value = false;
+}
+
+function submit() {
+    form.post(route('lot.store'), {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            closeDialog();
+            ElNotification({ title: 'Lot Created', message: 'The new lot was added.', type: 'success', duration: 3200, offset: 84 });
+        },
+    });
+}
+</script>
+
+<template>
+    <el-dialog
+        v-model="dialogVisible"
+        width="min(600px, calc(100vw - 2rem))"
+        destroy-on-close
+        align-center
+        :close-on-click-modal="false"
+        :show-close="false"
+        class="alm-modal"
+    >
+        <template #header>
+            <div class="alm-modal__head">
+                <div class="alm-modal__head-icon">
+                    <el-icon :size="18"><Tickets /></el-icon>
+                </div>
+                <div class="alm-modal__head-text">
+                    <div class="alm-modal__eyebrow">Inventory</div>
+                    <div class="alm-modal__title">New Lot</div>
+                </div>
+                <button type="button" class="alm-modal__close" aria-label="Close" @click="closeDialog">
+                    <el-icon :size="14"><Close /></el-icon>
+                </button>
+            </div>
+        </template>
+
+        <div class="alm-modal__body">
+                <div class="alm-field alm-field--span2">
+                    <label class="alm-field__label">Batch</label>
+                    <el-select v-model="form.batch_id" placeholder="Select batch" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.batch_id }">
+                        <el-option v-for="batch in batches" :key="batch.id" :label="`${batch.batch_number} — ${batch.variety || 'Unspecified variety'}`" :value="batch.id" />
+                    </el-select>
+                    <span v-if="form.errors.batch_id" class="alm-field__error">{{ form.errors.batch_id }}</span>
+                </div>
+
+                <div class="alm-grid">
+                    <div class="alm-field">
+                        <label class="alm-field__label">Lot Number</label>
+                        <el-input v-model="form.lot_number" placeholder="e.g. LOT-2026-001" class="alm-input" :class="{ 'alm-input--error': form.errors.lot_number }" />
+                        <span v-if="form.errors.lot_number" class="alm-field__error">{{ form.errors.lot_number }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Lot Name <small>(optional)</small></label>
+                        <el-input v-model="form.lot_name" placeholder="e.g. Yirgacheffe Reserve" class="alm-input" :class="{ 'alm-input--error': form.errors.lot_name }" />
+                        <span v-if="form.errors.lot_name" class="alm-field__error">{{ form.errors.lot_name }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Process</label>
+                        <el-select v-model="form.process" placeholder="Select process" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.process }">
+                            <el-option v-for="option in processOptions" :key="option" :label="option" :value="option" />
+                        </el-select>
+                        <span v-if="form.errors.process" class="alm-field__error">{{ form.errors.process }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Grade</label>
+                        <el-input v-model="form.grade" placeholder="e.g. AA" class="alm-input" :class="{ 'alm-input--error': form.errors.grade }" />
+                        <span v-if="form.errors.grade" class="alm-field__error">{{ form.errors.grade }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Quantity (bags)</label>
+                        <el-input-number v-model="form.quantity_bags" :min="1" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.quantity_bags }" />
+                        <span v-if="form.errors.quantity_bags" class="alm-field__error">{{ form.errors.quantity_bags }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Bag Weight (kg)</label>
+                        <el-input-number v-model="form.bag_weight_kg" :min="1" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.bag_weight_kg }" />
+                        <span v-if="form.errors.bag_weight_kg" class="alm-field__error">{{ form.errors.bag_weight_kg }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Price <small>(optional)</small></label>
+                        <el-input-number v-model="form.price" :min="0" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.price }" />
+                        <span v-if="form.errors.price" class="alm-field__error">{{ form.errors.price }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Quality Score <small>(optional)</small></label>
+                        <el-input-number v-model="form.quality_score" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.quality_score }" />
+                        <span v-if="form.errors.quality_score" class="alm-field__error">{{ form.errors.quality_score }}</span>
+                    </div>
+                    <div class="alm-field alm-field--span2">
+                        <label class="alm-field__label">Description <small>(optional)</small></label>
+                        <el-input v-model="form.description" type="textarea" :rows="2" class="alm-input" :class="{ 'alm-input--error': form.errors.description }" />
+                        <span v-if="form.errors.description" class="alm-field__error">{{ form.errors.description }}</span>
+                    </div>
+                    <div class="alm-field alm-field--span2">
+                        <label class="alm-field__label">Notes <small>(optional)</small></label>
+                        <el-input v-model="form.notes" type="textarea" :rows="2" class="alm-input" :class="{ 'alm-input--error': form.errors.notes }" />
+                        <span v-if="form.errors.notes" class="alm-field__error">{{ form.errors.notes }}</span>
+                    </div>
+                </div>
+        </div>
+
+        <template #footer>
+            <div class="alm-modal__footer">
+                <button type="button" class="alm-btn-outline" @click="closeDialog">Cancel</button>
+                <button type="button" class="alm-btn-primary" :disabled="form.processing" @click="submit">
+                    {{ form.processing ? 'Saving…' : 'Save Lot' }}
+                </button>
+            </div>
+        </template>
+    </el-dialog>
+</template>
+
+<style>
+.el-dialog.alm-modal {
+    --el-dialog-padding-primary: 0;
+    border-radius: 6px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+    font-family: 'Inter', system-ui, sans-serif;
+}
+.el-dialog.alm-modal .el-dialog__header { padding: 0; margin: 0; }
+.el-dialog.alm-modal .el-dialog__body { padding: 0; }
+.el-dialog.alm-modal .el-dialog__footer { padding: 0; }
+</style>
+
+<style scoped>
+.alm-modal__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    background: #fff;
+    border-bottom: 1px solid #E5E7EB;
+}
+.alm-modal__head-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: #F1F2F3;
+    color: #121516;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.alm-modal__head-text { flex: 1; min-width: 0; }
+.alm-modal__eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #6F7677;
+    margin-bottom: 1px;
+}
+.alm-modal__title { font-size: 1.0625rem; font-weight: 700; color: #121516; letter-spacing: -0.01em; }
+.alm-modal__close {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: #F1F2F3;
+    color: #4B5457;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.12s;
+}
+.alm-modal__close:hover { background: #E5E7EB; color: #121516; }
+
+.alm-modal__body { padding: 22px 24px 8px; max-height: 72vh; overflow-y: auto; }
+
+.alm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.alm-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin-bottom: 16px; }
+.alm-field--span2 { grid-column: span 2; }
+
+.alm-field__label { font-size: 12px; font-weight: 600; color: #121516; }
+.alm-field__label small { font-weight: 500; color: #6F7677; text-transform: none; }
+.alm-field__error { font-size: 12px; font-weight: 500; color: #F85149; line-height: 1.4; }
+
+.alm-input { width: 100%; }
+.alm-input :deep(.el-input__wrapper),
+.alm-input :deep(.el-select__wrapper),
+.alm-input :deep(.el-textarea__inner) { border-radius: 6px; }
+.alm-input--error :deep(.el-input__wrapper),
+.alm-input--error :deep(.el-select__wrapper),
+.alm-input--error :deep(.el-textarea__inner) { box-shadow: 0 0 0 1.5px #F85149 inset !important; }
+
+.alm-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    background: #F5F6F7;
+    border-top: 1px solid #E5E7EB;
+}
+.alm-btn-primary {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 36px; padding: 0 16px;
+    background: #000000;
+    border: 1px solid transparent;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+.alm-btn-primary:hover { opacity: 0.88; }
+.alm-btn-primary:disabled { opacity: 0.5; cursor: default; }
+.alm-btn-outline {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 36px; padding: 0 16px;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    color: #121516;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.alm-btn-outline:hover { background: #F5F6F7; }
+
+@media (max-width: 640px) {
+    .alm-grid { grid-template-columns: 1fr; }
+}
+</style>

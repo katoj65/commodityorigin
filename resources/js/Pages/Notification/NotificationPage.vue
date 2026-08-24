@@ -285,7 +285,7 @@ async function bulkDelete() {
 
 <style scoped>
 .ntf-page {
-    --green: #004532;
+    --green: #000000;
     --border: #eef2f0;
     --on-surface: #0b0d0f;
     --on-surface-var: #6b7280;
@@ -358,7 +358,7 @@ async function bulkDelete() {
     justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: 999px;
+    border-radius: 6px;
     border: none;
     background: none;
     color: var(--on-surface-var);

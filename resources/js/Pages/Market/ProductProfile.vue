@@ -276,7 +276,11 @@ function confirmDeleteListing() {
    headline font — see MarketListings.vue) is used in place of
    DESIGN.md's Playfair Display, since the "app theme" already committed
    to a single sans-serif system everywhere else. ───────────────────────── */
-.mp-page { font-family: var(--dp-font-sans); color: var(--dp-on-surface); }
+.mp-page {
+    --card-border: var(--dp-outline-variant);
+    font-family: var(--dp-font-sans);
+    color: var(--dp-on-surface);
+}
 
 .mp-back {
     display: inline-flex; align-items: center; gap: 6px; margin-bottom: 16px;
@@ -303,7 +307,7 @@ function confirmDeleteListing() {
     box-shadow: 0 2px 6px rgba(39, 19, 16, .15);
 }
 .mp-hero__thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.mp-hero__thumb { aspect-ratio: 1 / 1; border-radius: 9px; overflow: hidden; background: var(--dp-surface-container); box-shadow: var(--dp-card-shadow); }
+.mp-hero__thumb { aspect-ratio: 1 / 1; border-radius: var(--dp-card-radius); overflow: hidden; background: var(--dp-surface-container); box-shadow: var(--dp-card-shadow); }
 .mp-hero__thumb img { width: 100%; height: 100%; object-fit: cover; }
 
 .mp-hero__specs { display: flex; flex-direction: column; gap: 22px; }
@@ -316,7 +320,7 @@ function confirmDeleteListing() {
 .mp-hero__desc { font-size: 1rem; line-height: 1.6; color: var(--dp-on-surface-variant); margin: 0 !important; }
 
 .mp-hero__stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.mp-hero__stat { display: flex; flex-direction: column; gap: 5px; background: var(--dp-surface-container); border-radius: 12px; padding: 14px 16px; transition: box-shadow .15s ease, transform .15s ease; }
+.mp-hero__stat { display: flex; flex-direction: column; gap: 5px; background: var(--dp-surface-container); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px 16px; transition: box-shadow .15s ease, transform .15s ease; }
 .mp-hero__stat:hover { box-shadow: var(--dp-card-shadow); transform: translateY(-1px); }
 .mp-hero__stat-label { display: flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--dp-outline); }
 .mp-hero__stat-value { font-size: .9375rem; font-weight: 700; color: var(--dp-on-surface); }
@@ -328,7 +332,7 @@ function confirmDeleteListing() {
 .mp-hero__chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
 .mp-hero__buy { display: flex; flex-direction: column; gap: 20px; }
-.mp-buy-card { padding: 22px; background: var(--dp-surface-container-lowest); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); transition: box-shadow .2s ease; }
+.mp-buy-card { padding: 22px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); transition: box-shadow .2s ease; }
 .mp-buy-card:hover { box-shadow: 0 1px 2px rgba(39, 19, 16, .04), 0 14px 28px -14px rgba(39, 19, 16, .18); }
 
 .mp-manage { margin-bottom: 14px; }
@@ -358,19 +362,19 @@ function confirmDeleteListing() {
 }
 .mp-cart-btn:hover { opacity: .92; transform: translateY(-1px); }
 
-.mp-trader-note { padding: 20px; border-radius: var(--dp-card-radius); background: rgba(62, 39, 35, .06); box-shadow: var(--dp-card-shadow); }
+.mp-trader-note { padding: 20px; border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); background: rgba(62, 39, 35, .06); box-shadow: var(--dp-card-shadow); }
 .mp-trader-note__label { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--dp-primary); margin-bottom: 6px; }
 .mp-trader-note__text { font-size: .8125rem; line-height: 1.65; color: var(--dp-on-surface); margin: 0 !important; }
 
 /* ── The Origin ──────────────────────────────────────────────────────── */
-.mp-origin-story { margin-top: 48px; padding: 32px; background: var(--dp-surface-container-lowest); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); }
+.mp-origin-story { margin-top: 48px; padding: 32px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); }
 .mp-origin-story__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
 .mp-origin-story__left { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .mp-origin-story__stats { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
 .mp-origin-story__stats p { display: flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--dp-outline); margin: 0 !important; }
 .mp-origin-story__stats strong { font-size: .9375rem; font-weight: 700; color: var(--dp-on-surface); }
 
-.mp-farmer-card { padding: 20px; background: var(--dp-surface-container); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); height: fit-content; transition: box-shadow .15s ease, transform .15s ease; }
+.mp-farmer-card { padding: 20px; background: var(--dp-surface-container); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); height: fit-content; transition: box-shadow .15s ease, transform .15s ease; }
 .mp-farmer-card:hover { transform: translateY(-1px); box-shadow: 0 1px 2px rgba(39, 19, 16, .04), 0 14px 28px -14px rgba(39, 19, 16, .18); }
 .mp-farmer-card__title { display: flex; align-items: center; gap: 6px; font-size: .875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-primary); margin: 0 0 10px !important; }
 .mp-farmer-card__text { font-size: .8125rem; line-height: 1.65; color: var(--dp-on-surface-variant); margin: 0 0 14px !important; }
@@ -387,7 +391,7 @@ function confirmDeleteListing() {
 }
 
 /* ── Sustainability & Traceability ───────────────────────────────────── */
-.mp-sustainability { margin-top: 32px; padding: 32px; background: var(--dp-surface-container-lowest); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); }
+.mp-sustainability { margin-top: 32px; padding: 32px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); }
 .mp-sustainability__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 24px; }
 .mp-sustainability__head { display: flex; align-items: center; gap: 8px; font-size: .9375rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface); margin: 0 0 10px !important; }
 .mp-sustainability__head :deep(.el-icon) { color: var(--dp-primary); }

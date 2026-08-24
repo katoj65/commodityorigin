@@ -24,7 +24,7 @@ class BatchPolicy
      */
     public function update(User $user, Batch $batch): bool
     {
-        return (int) $batch->user_id === (int) $user->id;
+        return $user->isAdmin() || (int) $batch->user_id === (int) $user->id;
     }
 
     /**
@@ -32,6 +32,6 @@ class BatchPolicy
      */
     public function delete(User $user, Batch $batch): bool
     {
-        return (int) $batch->user_id === (int) $user->id;
+        return $user->isAdmin() || (int) $batch->user_id === (int) $user->id;
     }
 }

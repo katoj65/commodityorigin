@@ -819,7 +819,7 @@ const noActionsMessage = computed(() => {
 .osh-card {
     background: #fff;
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 6px;
     padding: 22px 24px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14);
     transition: box-shadow .15s ease;
@@ -974,7 +974,7 @@ const noActionsMessage = computed(() => {
     width: 100%;
     background: var(--surface-low);
     border-left: 3px solid var(--accent);
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 1.1rem 3rem 1.1rem 1.25rem;
     overflow: hidden;
 }
@@ -1017,7 +1017,7 @@ const noActionsMessage = computed(() => {
     gap: 8px;
     min-width: 0;
     background: var(--surface-low);
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 12px 14px;
 }
 

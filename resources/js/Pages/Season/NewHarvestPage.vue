@@ -672,7 +672,7 @@ onBeforeUnmount(() => {
 .app-card {
     background: #ffffff;
     border: 1px solid #eef2f0;
-    border-radius: 16px;
+    border-radius: 6px;
     box-shadow: none;
 }
 
@@ -1080,7 +1080,7 @@ onBeforeUnmount(() => {
 .activities-card {
     background: #084b39;
     border: 1px solid #084b39;
-    border-radius: 16px;
+    border-radius: 6px;
     color: #fff;
     padding: 20px;
 }
@@ -1104,7 +1104,7 @@ onBeforeUnmount(() => {
 .summary-badge {
     align-items: center;
     background: #0f5d3b;
-    border-radius: 999px;
+    border-radius: 6px;
     color: #fff;
     display: flex;
     height: 44px;
@@ -1115,7 +1115,7 @@ onBeforeUnmount(() => {
 .summary-farm {
     background: #f8fbf9;
     border: 1px solid #e8f0eb;
-    border-radius: 16px;
+    border-radius: 6px;
     margin-top: 16px;
     padding: 16px;
 }
@@ -1151,7 +1151,7 @@ onBeforeUnmount(() => {
 .summary-guide {
     background: #fafafa;
     border: 1px dashed #d1d5db;
-    border-radius: 12px;
+    border-radius: 6px;
     margin-top: 18px;
     padding: 14px;
 }

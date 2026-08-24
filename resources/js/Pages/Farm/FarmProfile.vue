@@ -1309,12 +1309,12 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     align-items: center;
     justify-content: center;
     gap: 6px;
-    height: 38px;
-    padding: 0 18px;
+    height: 36px;
+    padding: 0 16px;
     border: none;
-    border-radius: 999px;
-    font-size: 12.5px;
-    font-weight: 700;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     text-decoration: none;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -1322,7 +1322,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 .fp-btn--outline { background: var(--dp-surface-container-lowest); color: var(--dp-on-surface); box-shadow: var(--dp-card-shadow); }
 .fp-btn--outline:hover { background: var(--dp-surface-container-low); }
 .fp-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
-.fp-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(39, 19, 16, 0.2); }
+.fp-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
 .fp-btn--primary:disabled { opacity: 0.6; cursor: default; transform: none; box-shadow: none; }
 .fp-btn--danger { background: var(--dp-error); color: var(--dp-on-error); }
 .fp-btn--danger:disabled { opacity: 0.6; cursor: default; }
@@ -1338,7 +1338,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     justify-content: center;
     width: 30px;
     height: 30px;
-    border-radius: 8px;
+    border-radius: 6px;
     border: none;
     background: var(--dp-surface-container-low);
     color: var(--dp-on-surface-variant);
@@ -1603,7 +1603,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 
 /* ── Technical specs card ────────────────────────────────────────────── */
 .fp-spec-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
-.fp-spec-tile { padding: 14px 16px; border-radius: 12px; background: var(--dp-surface-container-low); }
+.fp-spec-tile { padding: 14px 16px; border-radius: 6px; background: var(--dp-surface-container-low); }
 .fp-spec-tile__label { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dp-outline); margin-bottom: 6px; }
 .fp-spec-tile__value { font-size: 22px; font-weight: 800; color: var(--dp-on-surface); line-height: 1; }
 .fp-spec-tile__unit { font-size: 12px; font-weight: 700; color: var(--dp-outline); margin-left: 3px; }
@@ -1639,7 +1639,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     position: relative;
     width: 100%;
     height: 220px;
-    border-radius: 14px;
+    border-radius: 6px;
     overflow: hidden;
     background: var(--dp-surface-container-low);
 }
@@ -1677,7 +1677,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     text-align: center;
     gap: 5px;
     padding: 16px 10px;
-    border-radius: 14px;
+    border-radius: 6px;
     background: var(--dp-surface-container-low);
     transition: background 0.15s ease;
 }

@@ -234,14 +234,18 @@ function placeOrder() {
 
 <style scoped>
 .chk-page {
-    --green: #271310;
-    --green-dark: #1a0d0b;
-    --border: #d3c3c0;
-    --on-surface: #1a1c1c;
-    --on-surface-var: #504442;
-    --surface-low: #f3f3f3;
-    --surface-container: #eeeeee;
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    /* UI.md theme (2026-08-24): app-wide default. See
+       reference_ui_md_design_system memory for the full spec. */
+    --green: #000000;
+    --green-dark: #262626;
+    --border: #E5E7EB;
+    --card-border: #E5E7EB;
+    --card-radius: 6px;
+    --on-surface: #121516;
+    --on-surface-var: #4B5457;
+    --surface-low: #F5F6F7;
+    --surface-container: #F1F2F3;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color: var(--on-surface);
     min-height: 100%;
     /* DesignPreviewLayout's .dp-main carries its own 48px/64px top+side
@@ -266,10 +270,10 @@ function placeOrder() {
     display: flex; align-items: center; justify-content: center; gap: 10px;
     width: 100%; margin-top: 1.5rem; padding: 18px; border: none; border-radius: 12px;
     background: var(--green); color: #fff; font-size: 1.125rem; font-weight: 700;
-    cursor: pointer; box-shadow: 0 8px 24px rgba(39, 19, 16, .2);
+    cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
     transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
 }
-.chk-pay-btn:hover:not(:disabled) { background: var(--green-dark); transform: translateY(-2px); box-shadow: 0 12px 28px rgba(39, 19, 16, .28); }
+.chk-pay-btn:hover:not(:disabled) { background: var(--green-dark); transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0, 0, 0, .28); }
 .chk-pay-btn:disabled { opacity: .5; cursor: default; transform: none; }
 
 /* ── Billing address (compact summary + expandable form) ──────────────── */
@@ -300,12 +304,12 @@ function placeOrder() {
 
 /* ── Summary ─────────────────────────────────────────────────────────── */
 .chk-summary { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 5.5rem; }
-.chk-summary__card { border-radius: 24px; padding: 1.75rem; background: var(--surface-container); position: relative; overflow: hidden; }
+.chk-summary__card { border: 1px solid var(--card-border); border-radius: var(--card-radius); padding: 1.75rem; background: var(--surface-container); position: relative; overflow: hidden; }
 .chk-summary__title { font-size: 1.25rem; font-weight: 800; color: var(--green); margin: 0 0 1.25rem; }
 .chk-summary__items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; max-height: 320px; overflow-y: auto; }
-.chk-summary__item { display: flex; align-items: flex-start; gap: 12px; padding: 10px; background: #fff; border-radius: 12px; box-shadow: 0 1px 2px rgba(39, 19, 16, .06); }
+.chk-summary__item { display: flex; align-items: flex-start; gap: 12px; padding: 10px; background: #fff; border: 1px solid var(--card-border); border-radius: var(--card-radius); }
 .chk-summary__thumb {
-    width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0; overflow: hidden;
+    width: 52px; height: 52px; border-radius: 6px; flex-shrink: 0; overflow: hidden;
     background: var(--surface-low); color: var(--on-surface-var);
     display: flex; align-items: center; justify-content: center;
 }
@@ -316,7 +320,7 @@ function placeOrder() {
 .chk-summary__item-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: .75rem; font-variant-numeric: tabular-nums; }
 .chk-summary__item-row span:last-child { font-weight: 700; color: var(--on-surface); }
 
-.chk-summary__divider { border-top: 1px solid rgba(39, 19, 16, .12); margin: 1.25rem 0; }
+.chk-summary__divider { border-top: 1px solid rgba(0, 0, 0, .12); margin: 1.25rem 0; }
 .chk-summary__totals { display: flex; flex-direction: column; gap: 10px; }
 .chk-summary__row { display: flex; align-items: center; justify-content: space-between; font-size: .875rem; color: var(--on-surface-var); }
 .chk-summary__total { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }

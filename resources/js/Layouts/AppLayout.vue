@@ -619,7 +619,7 @@ onBeforeUnmount(() => {
     right: 0;
     background: #fff;
     border: 1px solid var(--border-subtle);
-    border-radius: 14px;
+    border-radius: 6px;
     box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
     padding: 6px;
     z-index: 40;

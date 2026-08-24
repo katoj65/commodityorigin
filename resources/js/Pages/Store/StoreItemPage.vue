@@ -202,7 +202,7 @@ function confirmRemove() {
 
 <style scoped>
 .sip-page {
-    --green: #145c42;
+    --green: #271310;
     --border: #eef2f0;
     --on-surface: #111827;
     --on-surface-var: #6b7280;
@@ -222,7 +222,7 @@ function confirmRemove() {
 .sip-card {
     background: #fff;
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 6px;
     padding: 26px 28px;
     box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
 }
@@ -240,7 +240,7 @@ function confirmRemove() {
     width: 80px;
     height: 80px;
     border-radius: 16px;
-    background: rgba(20, 92, 66, 0.08);
+    background: rgba(39, 19, 16, 0.08);
     color: var(--green);
     flex-shrink: 0;
     overflow: hidden;
@@ -257,14 +257,14 @@ function confirmRemove() {
 /* ── Detail grid — icon-tile facts, matches the spec-tile pattern used
    across other detail pages in the app. ────────────────────────────── */
 .sip-detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-.sip-detail-tile { display: flex; align-items: center; gap: 12px; background: var(--surface-low); border-radius: 10px; padding: 12px 14px; }
+.sip-detail-tile { display: flex; align-items: center; gap: 12px; background: var(--surface-low); border-radius: 6px; padding: 12px 14px; }
 .sip-detail-tile__icon {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: 9px;
+    border-radius: 6px;
     background: #fff;
     color: var(--green);
     flex-shrink: 0;

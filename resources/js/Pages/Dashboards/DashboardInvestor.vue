@@ -573,7 +573,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .iv-kpi__change { font-size: 0.6875rem; font-weight: 700; color: var(--green); margin-top: 3px; }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
-.iv-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.iv-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .iv-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 .iv-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
@@ -615,7 +615,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .iv-down { color: #b91c1c; font-weight: 700; }
 
 /* ── Opportunities ─────────────────────────────────────────────────────────── */
-.iv-opp-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; }
+.iv-opp-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; display: flex; flex-direction: column; }
 .iv-opp-name { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
 .iv-detail-cell { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 5px 8px; }
 .iv-detail-cell span   { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; }
@@ -645,7 +645,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .iv-toggle--on i { transform: translateX(14px); }
 
 /* AI Insights */
-.iv-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 10px; border: 1px solid; }
+.iv-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 6px; border: 1px solid; }
 .iv-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .iv-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .iv-insight-card--warning { background: #fffbeb; border-color: #fde68a; }

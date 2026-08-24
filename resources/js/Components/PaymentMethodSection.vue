@@ -140,17 +140,21 @@ defineExpose({
 
 <style scoped>
 .pm-card {
-    --green: #271310;
-    --green-dark: #1a0d0b;
-    --border: #d3c3c0;
-    --on-surface: #1a1c1c;
-    --on-surface-var: #504442;
-    --surface-low: #f3f3f3;
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    /* UI.md theme (2026-08-24): app-wide default. See
+       reference_ui_md_design_system memory for the full spec. */
+    --green: #000000;
+    --green-dark: #262626;
+    --border: #E5E7EB;
+    --on-surface: #121516;
+    --on-surface-var: #4B5457;
+    --surface-low: #F5F6F7;
+    --card-border: #E5E7EB;
+    --card-radius: 6px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: #fff;
-    border-radius: 24px;
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
     padding: 2rem;
-    box-shadow: 0 1px 2px rgba(39, 19, 16, .06), 0 1px 1px rgba(39, 19, 16, .04);
 }
 
 .pm-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 2rem; }
@@ -187,7 +191,7 @@ defineExpose({
 .pm-tab__label { font-size: .8125rem; font-weight: 700; color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pm-tab__meta { font-size: .6875rem; color: var(--on-surface-var); font-variant-numeric: tabular-nums; overflow-wrap: break-word; line-height: 1.4; }
 
-.pm-tab--active { border-color: var(--green); background: rgba(39, 19, 16, .04); }
+.pm-tab--active { border-color: var(--green); background: rgba(0, 0, 0, .04); }
 .pm-tab--active .pm-tab__radio { border-color: var(--green); }
 .pm-tab--active .pm-tab__radio span { opacity: 1; }
 .pm-tab--active .pm-tab__icon { color: var(--green); }
@@ -222,7 +226,7 @@ defineExpose({
 .pm-card-note { display: flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 500; text-transform: none; color: var(--on-surface-var); margin: 0; }
 .pm-card-note :deep(.el-icon) { color: var(--green); flex-shrink: 0; }
 
-.pm-divider { border-top: 1px solid rgba(39, 19, 16, .12); margin: 1.75rem 0; }
+.pm-divider { border-top: 1px solid rgba(0, 0, 0, .12); margin: 1.75rem 0; }
 
 @media (max-width: 640px) {
     .pm-card { padding: 1.5rem; }

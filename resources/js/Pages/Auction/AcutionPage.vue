@@ -318,7 +318,7 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
 .auc-kpi__label { font-size: .625rem; font-weight: 700; color: var(--on-surface-var); margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
 
 /* ── Cards ───────────────────────────────────────────────────────────── */
-.auc-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14); }
+.auc-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14); }
 .auc-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .8438rem; font-weight: 700; color: var(--on-surface); }
 .auc-card-icon { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
@@ -327,7 +327,7 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
 /* ── Live auction feed — modern activity-stream card ──────────────────── */
 .auc-feed-card {
     display: flex; flex-direction: column;
-    background: #fff; border: 1px solid var(--border); border-radius: 14px;
+    background: #fff; border: 1px solid var(--border); border-radius: 6px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14);
     padding: 1rem 1rem 0.25rem;
     position: relative; overflow: hidden;
@@ -373,7 +373,7 @@ const auctionQualityCls = (score) => (score >= 85 ? 'auc-badge--green' : score >
 
 /* ── Element Plus table, reskinned to match the exchange design system ── */
 .auc-num { font-variant-numeric: tabular-nums; }
-.auc-table-card { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14); }
+.auc-table-card { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14); }
 .auc-el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--surface-low); --el-table-header-text-color: var(--on-surface-var); --el-table-row-hover-bg-color: #f3f6f5; --el-table-text-color: var(--on-surface); font-family: inherit; }
 .auc-el-table :deep(.el-table__cell) { padding: 11px 0; }
 .auc-el-table :deep(.cell) { padding: 0 12px; font-size: .8125rem; line-height: 1.45; }

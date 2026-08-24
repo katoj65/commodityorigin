@@ -37,6 +37,20 @@ class FarmService
     }
 
     /**
+     * Find a farm by its farm code — strictly by code, regardless of who
+     * created it. Not an authorization check: a match here doesn't imply
+     * the caller may act on the farm (e.g. record a collection against
+     * it) — that's still enforced separately by FarmPolicy::update() when
+     * the farm is actually used.
+     */
+    public function findByCode(string $farmCode): ?Farm
+    {
+        return $this->query()
+            ->where('farm_code', $farmCode)
+            ->first();
+    }
+
+    /**
      * Get every farm belonging to the given user's farmer profile, with
      * its farmer and harvest count, newest first.
      */

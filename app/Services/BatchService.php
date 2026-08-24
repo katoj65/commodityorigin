@@ -10,6 +10,7 @@ use App\Models\Season;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 
 class BatchService
 {
@@ -44,10 +45,7 @@ class BatchService
                         ->orWhere('notes', 'like', "%{$term}%")
                         ->orWhere('price', 'like', "%{$term}%")
                         ->orWhere('quantity', 'like', "%{$term}%")
-                        ->orWhere('weight', 'like', "%{$term}%")
-                        ->orWhereHas('season', function (Builder $query) use ($term): void {
-                            $query->where('name', 'like', "%{$term}%");
-                        });
+                        ->orWhere('weight', 'like', "%{$term}%");
                 });
             });
     }
@@ -71,17 +69,25 @@ class BatchService
      */
     public function loadProfileRelations(Batch $batch): Batch
     {
-        return $batch->load(['compliances', 'ownerships', 'season']);
+        return $batch->load(['compliances', 'ownerships']);
     }
 
     /**
-     * Resolve the season id associated with a batch, falling back to its ownerships.
+     * Resolve the season id associated with a batch, derived from whichever
+     * harvest is attached to it via a BatchOwnership record (batches no
+     * longer carry their own season_id column).
      */
     public function resolveSeasonId(Batch $batch): ?int
     {
-        return $batch->season_id ?: $batch->ownerships
-            ->firstWhere('owner_type', Season::class)
+        $harvestId = $batch->ownerships
+            ->firstWhere('owner_type', Harvest::class)
             ?->owner_id;
+
+        if (!$harvestId) {
+            return null;
+        }
+
+        return Harvest::query()->find($harvestId)?->season_id;
     }
 
     /**
@@ -110,19 +116,6 @@ class BatchService
     }
 
     /**
-     * Determine whether any of the given harvests belong to a different season.
-     *
-     * @param  array<int, int>  $harvestIds
-     */
-    public function hasHarvestsOutsideSeason(array $harvestIds, int $seasonId): bool
-    {
-        return Harvest::query()
-            ->whereKey($harvestIds)
-            ->where('season_id', '!=', $seasonId)
-            ->exists();
-    }
-
-    /**
      * Create a batch from validated payload data.
      *
      * @param  array<string, mixed>  $validated
@@ -131,13 +124,13 @@ class BatchService
     {
         return Batch::query()->create([
             'user_id' => $userId,
-            'season_id' => $validated['season_id'] ?? null,
-            'batch_number' => $validated['batch_number'],
+            'batch_number' => $validated['batch_number'] ?? $this->generateBatchNumber(),
             'variety' => $validated['variety'] ?? null,
             'warehouse_location' => $validated['warehouse_location'],
             'quantity' => $validated['quantity_bags'],
             'weight' => $validated['net_weight_kg'],
             'price' => $validated['price'] ?? null,
+            'currency' => $validated['currency'] ?? 'USD',
             'moisture_content' => $validated['moisture_content'] ?? null,
             'processing_date' => $validated['processing_date'] ?? null,
             'processing_method' => $validated['processing_method'] ?? null,
@@ -150,6 +143,19 @@ class BatchService
             'notes' => $validated['notes'] ?? null,
             'status' => 'received',
         ]);
+    }
+
+    /**
+     * Generate a unique, human-readable batch number (e.g. BATCH-2026-AB12CD)
+     * — used when the caller doesn't supply one on creation.
+     */
+    protected function generateBatchNumber(): string
+    {
+        do {
+            $number = sprintf('BATCH-%d-%s', now()->year, strtoupper(Str::random(6)));
+        } while (Batch::query()->where('batch_number', $number)->exists());
+
+        return $number;
     }
 
     /**
@@ -181,16 +187,16 @@ class BatchService
      *
      * @param  array<string, mixed>  $validated
      */
-    public function update(Batch $batch, array $validated, ?int $seasonId): Batch
+    public function update(Batch $batch, array $validated): Batch
     {
         $batch->update([
-            'season_id' => $seasonId,
             'batch_number' => $validated['batch_number'],
             'variety' => $validated['variety'],
             'warehouse_location' => $validated['warehouse_location'],
             'quantity' => $validated['quantity_bags'],
             'weight' => $validated['net_weight_kg'],
             'price' => $validated['price'],
+            'currency' => $validated['currency'] ?? $batch->currency,
             'moisture_content' => $validated['moisture_content'] ?? null,
             'processing_date' => $validated['processing_date'],
             'processing_method' => $validated['processing_method'],

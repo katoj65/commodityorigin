@@ -785,7 +785,7 @@ const submit = (intent = 'create') => {
 .lot-bottom-card {
     background: #ffffff;
     border: 1px solid #eef2f0;
-    border-radius: 18px;
+    border-radius: 6px;
     box-shadow: 0 10px 22px rgba(18, 34, 49, 0.03);
 }
 
@@ -894,7 +894,7 @@ const submit = (intent = 'create') => {
 
 .lot-stat-card {
     background: #ffffff;
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 14px 16px;
 }
 
@@ -1248,7 +1248,7 @@ const submit = (intent = 'create') => {
 
 .lot-token-card {
     background: #f4f6f8;
-    border-radius: 10px;
+    border-radius: 6px;
     display: grid;
     gap: 6px;
     padding: 14px;
@@ -1385,7 +1385,7 @@ const submit = (intent = 'create') => {
 .lot-mini-news-card {
     background: #fbfcfd;
     border: 1px solid #ebeff3;
-    border-radius: 10px;
+    border-radius: 6px;
     display: grid;
     gap: 6px;
     padding: 14px;

@@ -660,7 +660,7 @@ const badgeClass = (b) => {
 .db-kpi__sub   { font-size: 0.625rem; color: var(--on-surface-var); }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
-.db-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.db-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .db-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
 .db-card-icon  { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
@@ -669,7 +669,7 @@ const badgeClass = (b) => {
 .db-rec-scroll::-webkit-scrollbar { height: 4px; }
 .db-rec-scroll::-webkit-scrollbar-track { background: var(--surface-low); border-radius: 999px; }
 .db-rec-scroll::-webkit-scrollbar-thumb { background: var(--surface-high); border-radius: 999px; }
-.db-rec-card   { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 10px; padding: 0.875rem; min-width: 200px; flex-shrink: 0; display: flex; flex-direction: column; }
+.db-rec-card   { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 0.875rem; min-width: 200px; flex-shrink: 0; display: flex; flex-direction: column; }
 .db-rec-name   { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
 .db-rec-origin { font-size: 0.75rem; color: var(--on-surface-var); margin-top: 2px; }
 .db-rec-score  { width: 38px; height: 38px; border-radius: 50%; background: var(--green); color: #fff; font-size: 0.6875rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -769,7 +769,7 @@ const badgeClass = (b) => {
 .db-opp-price { font-size: 0.75rem; color: var(--on-surface-var); }
 
 /* AI Insights */
-.db-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 10px; border: 1px solid; }
+.db-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 6px; border: 1px solid; }
 .db-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .db-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .db-insight-card--warning { background: #fffbeb; border-color: #fde68a; }

@@ -133,7 +133,7 @@ function confirmRemove() {
             <div class="bm-hero">
                 <div class="bm-hero__text">
                     <h1 class="dp-display-md">Business Membership</h1>
-                    <p class="bm-subtitle">Manage your organization's membership tiers, renewal cycles, and authorized team members. Ensure your profile remains active to maintain access to premium trade features.</p>
+                    <p class="bm-subtitle">Your team, all in one place — keep memberships active and the right people connected so nothing lapses.</p>
                 </div>
             </div>
 
@@ -248,6 +248,8 @@ function confirmRemove() {
 
 <style scoped>
 .bm-page {
+    --card-border: var(--dp-outline-variant);
+    --card-radius: 6px;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -256,12 +258,13 @@ function confirmRemove() {
 
 /* ── Hero ────────────────────────────────────────────────────────────── */
 .bm-hero__text h1 { color: var(--dp-primary); }
-.bm-subtitle { font-size: 14px; line-height: 1.6; color: var(--dp-on-surface-variant); margin: 8px 0 0; max-width: 720px; }
+.bm-subtitle { font-size: .9375rem; line-height: 1.5rem; font-weight: 400; color: var(--dp-on-surface-variant); margin: 0; max-width: 720px; }
 
 /* ── Cards ───────────────────────────────────────────────────────────── */
 .bm-card {
     background: var(--dp-surface-container-lowest);
-    border-radius: var(--dp-card-radius);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
     box-shadow: var(--dp-card-shadow);
 }
 
@@ -330,7 +333,7 @@ function confirmRemove() {
     justify-content: center;
     width: 26px;
     height: 26px;
-    border-radius: 8px;
+    border-radius: 6px;
     border: none;
     background: transparent;
     color: var(--dp-on-surface-variant);

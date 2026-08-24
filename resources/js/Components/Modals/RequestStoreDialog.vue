@@ -124,8 +124,8 @@ function submit() {
     width: 38px;
     height: 38px;
     border-radius: 11px;
-    background: rgba(20, 92, 66, 0.08);
-    color: #145c42;
+    background: rgba(39, 19, 16, 0.08);
+    color: #271310;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -137,7 +137,7 @@ function submit() {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #145c42;
+    color: #271310;
     margin-bottom: 1px;
 }
 .rsd-modal__title { font-size: 1.0625rem; font-weight: 800; color: #111827; letter-spacing: -0.01em; }
@@ -176,7 +176,7 @@ function submit() {
     border-top: 1px solid #f3f4f6;
 }
 .rsd-btn-primary {
-    background: linear-gradient(135deg, #145c42, #0d3d2c);
+    background: #271310;
     border: 1px solid transparent;
     color: #fff;
     border-radius: 8px;

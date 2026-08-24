@@ -14,6 +14,7 @@ const props = defineProps({
     batch:    { type: Object, required: true },
     season:   { type: Object, default: null },
     harvests: { type: Array,  default: () => [] },
+    currencyOptions: { type: Array, default: () => [] },
 });
 
 /* ── Modal ───────────────────────────────────────────────────── */
@@ -694,6 +695,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
             v-if="canManageBatch"
             v-model="updateBatchModalOpen"
             :batch="batch"
+            :currency-options="currencyOptions"
         />
 
     </DesignPreviewLayout>
@@ -901,7 +903,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 /* ── Card ────────────────────────────────────────────────────────── */
 .bp-card {
     border: 1px solid #eef2f0;
-    border-radius: 8px;
+    border-radius: 6px;
     background: #fff;
     overflow: hidden;
 }
@@ -913,7 +915,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     padding: 8px 14px;
     border-bottom: 1px solid #e8ecec;
     background: #f8f9f9;
-    border-radius: 7px 7px 0 0;
+    border-radius: 6px 6px 0 0;
     flex-wrap: wrap;
 }
 .bp-card-title {
@@ -1264,7 +1266,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 }
 .bp-float-btn:hover { background: #004532; }
 .bp-chat-panel {
-    width: 290px; border: 1px solid #eef2f0; border-radius: 10px; background: #fff; overflow: hidden;
+    width: 290px; border: 1px solid #eef2f0; border-radius: 6px; background: #fff; overflow: hidden;
 }
 .bp-chat-head {
     display: flex; align-items: center; justify-content: space-between;

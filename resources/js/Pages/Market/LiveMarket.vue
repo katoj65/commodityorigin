@@ -746,7 +746,7 @@ const badgeClass = (b) => {
 /* ── Cards ───────────────────────────────────────────────────────── */
 .lm-card {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 1rem;
+    border-radius: 6px; padding: 1rem;
 }
 .lm-card--flush { padding: 0; }
 .lm-card__head {
@@ -755,7 +755,7 @@ const badgeClass = (b) => {
 }
 .lm-card__head--border {
     padding: .625rem 1rem; border-bottom: 1px solid var(--border);
-    margin-bottom: 0; background: var(--surface-l); border-radius: 11px 11px 0 0;
+    margin-bottom: 0; background: var(--surface-l); border-radius: 6px 6px 0 0;
 }
 .lm-card__title {
     display: inline-flex; align-items: center; gap: 7px;
@@ -880,7 +880,7 @@ const badgeClass = (b) => {
 /* ── AI Signal Card ──────────────────────────────────────────────── */
 .lm-signal-card {
     background: linear-gradient(140deg, #003326, #004532);
-    border-radius: 12px; padding: 1rem; border: none;
+    border-radius: 6px; padding: 1rem; border: none;
 }
 .lm-signal-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .875rem; }
 .lm-signal-card__title { display: flex; align-items: center; gap: 6px; font-size: .875rem; font-weight: 700; color: rgba(255,255,255,.8); }

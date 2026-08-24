@@ -527,51 +527,47 @@ function onSearchKeydown(e) {
    bg-[var(--x)]), silently producing invalid selectors — using real
    CSS var() in a normal stylesheet has no such issue. ─────────────── */
 .dp-shell {
-    --dp-surface: #f7f9fb;
+    /* UI.md theme (2026-08-24): app-wide default, superseding the
+       earlier Claude Console pass. See reference_ui_md_design_system
+       memory for the full spec. */
+    --dp-surface: #ffffff;
     --dp-surface-container-lowest: #ffffff;
-    --dp-surface-container-low: #f3f3f3;
-    --dp-surface-container: #eeeeee;
-    --dp-surface-container-high: #e8e8e8;
-    --dp-surface-container-highest: #e2e2e2;
-    --dp-on-surface: #1a1c1c;
-    --dp-on-surface-variant: #504442;
-    --dp-outline: #827472;
-    --dp-outline-variant: #d3c3c0;
-    --dp-surface-tint: #745853;
-    --dp-primary: #121611;
+    --dp-surface-container-low: #F5F6F7;
+    --dp-surface-container: #F1F2F3;
+    --dp-surface-container-high: #E5E7EB;
+    --dp-surface-container-highest: #D9DCDD;
+    --dp-on-surface: #121516;
+    --dp-on-surface-variant: #4B5457;
+    --dp-outline: #6F7677;
+    --dp-outline-variant: #E5E7EB;
+    --dp-surface-tint: #000000;
+    --dp-primary: #000000;
     --dp-on-primary: #ffffff;
-    --dp-primary-container: #1a2018;
-    --dp-on-primary-container: #a3f69c;
-    --dp-primary-fixed: #ffdad4;
-    --dp-on-primary-fixed: #2b1613;
-    --dp-secondary: #1b6d24;
-    --dp-secondary-container: #a0f399;
-    --dp-on-secondary-container: #217128;
-    --dp-secondary-fixed: #a3f69c;
-    --dp-on-secondary-fixed: #002204;
-    --dp-tertiary-fixed: #e6e1e1;
-    --dp-on-tertiary-fixed: #1d1b1b;
-    --dp-error: #ba1a1a;
+    --dp-primary-container: #262626;
+    --dp-on-primary-container: #F1F2F3;
+    --dp-primary-fixed: #F1F2F3;
+    --dp-on-primary-fixed: #121516;
+    --dp-secondary: #7EE787;
+    --dp-secondary-container: #E5FAE7;
+    --dp-on-secondary-container: #2F6B35;
+    --dp-secondary-fixed: #A4EEAA;
+    --dp-on-secondary-fixed: #12310F;
+    --dp-tertiary-fixed: #F1F2F3;
+    --dp-on-tertiary-fixed: #121516;
+    --dp-error: #F85149;
     --dp-on-error: #ffffff;
-    --dp-on-error-container: #93000a;
-    --dp-error-container: #ffdad6;
-    --dp-border-subtle: rgba(62, 39, 35, 0.08);
+    --dp-on-error-container: #C6413A;
+    --dp-error-container: #FEEDED;
+    --dp-border-subtle: #E5E7EB;
 
-    /* System-font stack — same reliability approach large commerce
-       platforms (e.g. Amazon) use: every name is preinstalled on its OS
-       (San Francisco on Apple, Segoe UI on Windows, Roboto on Android/
-       Chrome OS), so text renders instantly with no webfont network
-       request and no dependency on Google Fonts staying reachable. */
-    --dp-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --dp-font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Segoe UI Mono', Consolas, 'Liberation Mono', monospace;
+    --dp-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --dp-font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
 
     /* Shared "content card" tokens — one fixed radius/shadow for every
-       bordered white card across pages built on this layout (product
-       detail, profile dossiers, etc.), so follow-up pages inherit a
-       consistent, professional look instead of each page picking its
-       own radius. Reference these instead of hardcoding new values. */
-    --dp-card-radius: 20px;
-    --dp-card-shadow: 0 1px 2px rgba(39, 19, 16, .03), 0 6px 16px -14px rgba(39, 19, 16, .1);
+       bordered white card across pages built on this layout. Reference
+       these instead of hardcoding new values. */
+    --dp-card-radius: 6px;
+    --dp-card-shadow: none;
 
     display: flex;
     min-height: 100vh;
@@ -590,7 +586,9 @@ function onSearchKeydown(e) {
    separately, matching this app's convention of monospacing
    prices/stats for tabular alignment. ───────────────────────────────── */
 .dp-shell .dp-display-lg { font-size: 26px; line-height: 33px; letter-spacing: -0.012em; font-weight: 800; margin: 0; }
-.dp-shell .dp-display-md { font-size: 24px; line-height: 31px; letter-spacing: -0.012em; font-weight: 800; margin: 0; }
+/* Page-title size synced to MarketListings.vue's .mktl-topbar__title, the
+   app's default page-header pattern (2026-08-24). */
+.dp-shell .dp-display-md { font-size: 1.5rem; line-height: 1.9rem; letter-spacing: -0.015em; font-weight: 800; margin: 0 0 6px; }
 .dp-shell .dp-headline-md { font-size: 17px; line-height: 25px; letter-spacing: -0.006em; font-weight: 700; margin: 0; }
 .dp-shell .dp-headline-sm { font-size: 14px; line-height: 21px; letter-spacing: -0.003em; font-weight: 700; margin: 0; }
 .dp-shell .dp-body-lg { font-size: 13.5px; line-height: 21px; font-weight: 500; letter-spacing: 0.001em; margin: 0; }
@@ -814,6 +812,7 @@ function onSearchKeydown(e) {
     gap: 12px;
     padding: 0 24px;
     background: var(--dp-surface-container-lowest);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
 }
 .dp-menu-btn.el-button { display: none; flex-shrink: 0; color: var(--dp-on-surface-variant); font-size: 20px; }
 .dp-header__search { flex: 1; display: flex; justify-content: center; min-width: 0; }
@@ -839,7 +838,7 @@ function onSearchKeydown(e) {
     left: 0;
     right: 0;
     background: var(--dp-surface-container-lowest);
-    border-radius: 14px;
+    border-radius: 6px;
     box-shadow: 0 16px 40px rgba(39, 19, 16, 0.16);
     border: 1px solid var(--dp-border-subtle);
     max-height: 400px;

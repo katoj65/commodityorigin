@@ -715,7 +715,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .sx-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 3rem 1rem; text-align: center; }
 
 /* ── Season cards ──────────────────────────────────────────────────────────── */
-.sx-season-card { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; transition: border-color .12s; }
+.sx-season-card { border: 1px solid var(--border); border-radius: 6px; padding: 1rem; display: flex; flex-direction: column; transition: border-color .12s; }
 .sx-season-card:hover { border-color: var(--border-m); }
 .sx-season-name { font-size: .9375rem; font-weight: 700; color: var(--green); text-decoration: none; line-height: 1.3; }
 .sx-season-name:hover { text-decoration: underline; }
@@ -809,7 +809,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .sx-sus-badge--blue  { background: #dbeafe; color: #1e40af; }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
-.sx-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: .875rem; border-radius: 8px; border: 1px solid; }
+.sx-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: .875rem; border-radius: 6px; border: 1px solid; }
 .sx-insight-card--success { background: #f0fdf4; border-color: #bbf7d0; }
 .sx-insight-card--primary { background: #eff6ff; border-color: #bfdbfe; }
 .sx-insight-card--warning { background: #fffbeb; border-color: #fde68a; }
