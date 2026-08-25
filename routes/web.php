@@ -16,6 +16,7 @@ use App\Http\Controllers\Currency\CurrencyController;
 use App\Http\Controllers\Documentation\DocumentationController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Farm\GeocodeController;
+use App\Http\Controllers\FarmCollection\FarmCollectionController;
 use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Gallery\GalleryController;
 use App\Http\Controllers\Harvest\HarvestController;
@@ -193,6 +194,12 @@ Route::middleware([
         Route::delete('/{farm}', [FarmController::class, 'destroy'])->name('destroy');
     });
 
+    // Farm Collection detail routes.
+    Route::prefix('farm-collection')->name('farm-collection.')->group(function () {
+        Route::get('/find-by-code', [FarmCollectionController::class, 'findByCode'])->name('find-by-code');
+        Route::get('/{collection}', [FarmCollectionController::class, 'show'])->name('show');
+    });
+
     // Lot workspace routes.
     Route::prefix('lot')->name('lot.')->middleware('role:farmer,admin,buyer')->group(function () {
         Route::get('/', [LotController::class, 'index'])->name('index');
@@ -226,6 +233,7 @@ Route::middleware([
         Route::patch('/{batch}', [BatchController::class, 'update'])->name('update');
         Route::delete('/{batch}', [BatchController::class, 'destroy'])->name('destroy');
         Route::get('/{batch}', [BatchController::class, 'show'])->name('show');
+        Route::post('/{batch}/farm-collections', [BatchController::class, 'attachFarmCollection'])->name('farm-collections.store');
     });
 
     // Harvest workspace routes.

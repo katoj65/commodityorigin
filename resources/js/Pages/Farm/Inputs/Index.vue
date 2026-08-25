@@ -9,6 +9,7 @@ import {
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import AddAgriculturalInputDialog from '@/Components/Modals/AddAgriculturalInputDialog.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     inputs: {
@@ -419,32 +420,17 @@ function onCreated() {
             </el-dialog>
 
             <!-- ── Delete dialog ─────────────────────────────────────────── -->
-            <el-dialog v-model="deleteOpen" width="420px" align-center class="ain-modal ain-modal--danger">
-                <template #header>
-                    <div class="ain-modal__head">
-                        <div class="ain-modal__head-icon ain-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
-                        <div class="ain-modal__head-text">
-                            <div class="ain-modal__eyebrow">Agricultural Inputs</div>
-                            <div class="ain-modal__title">Remove Input</div>
-                        </div>
-                    </div>
-                </template>
-
-                <div v-if="deletingInput" class="ain-modal__body">
-                    <p class="ain-modal__confirm-text">
-                        Are you sure you want to remove <strong>{{ deletingInput.name }}</strong> from the store? This action cannot be undone.
-                    </p>
-                </div>
-
-                <template #footer>
-                    <div class="ain-modal__footer">
-                        <button type="button" class="ain-btn-outline" @click="deleteOpen = false">Cancel</button>
-                        <button type="button" class="ain-btn-danger" :disabled="deleting" @click="confirmDelete">
-                            {{ deleting ? 'Removing…' : 'Remove Input' }}
-                        </button>
-                    </div>
-                </template>
-            </el-dialog>
+            <ConfirmDialog
+                v-model="deleteOpen"
+                eyebrow="Agricultural Inputs"
+                title="Remove Input"
+                :message="deletingInput ? `Are you sure you want to remove ${deletingInput.name} from the store? This action cannot be undone.` : ''"
+                confirm-text="Remove Input"
+                loading-text="Removing…"
+                :auto-close="false"
+                :loading="deleting"
+                @confirm="confirmDelete"
+            />
         </div>
 
         <AddAgriculturalInputDialog v-if="canManage" v-model="addOpen" @created="onCreated" />

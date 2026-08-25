@@ -18,6 +18,7 @@ class BatchFarmCollectionResource extends JsonResource
             'id' => $this->id,
             'batch_id' => $this->batch_id,
             'farm_collection_id' => $this->farm_collection_id,
+            'farm_collection_code' => $this->farm_collection_code,
             'user_id' => $this->user_id,
             'status' => $this->status,
             'batch' => $this->whenLoaded('batch', fn (): array => BatchResource::make($this->batch)->resolve()),

@@ -1,15 +1,15 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
-import { Link, router, useForm } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import StoreLayout from '@/Layouts/StoreLayout.vue';
 import AddFarmCollectionModal from '@/Components/Modals/AddFarmCollectionModal.vue';
 import AddBatchModal from '@/Components/Modals/AddBatchModal.vue';
 import AddLotModal from '@/Components/Modals/AddLotModal.vue';
 import {
-    ArrowDown, Box, Check, Checked, CircleCheck, Clock, Close, Coffee, Coin, EditPen, Files, Filter,
-    FolderOpened, Medal, MoreFilled, Odometer, OfficeBuilding, Operation, Plus, Promotion, RefreshRight,
-    Shop, Sort, Ticket, Top, UploadFilled, Van, View, Wallet, WarningFilled,
+    ArrowDown, ArrowRight, Check, Checked, Clock, Close, Coin, EditPen, Files, Filter,
+    FolderOpened, MoreFilled, Odometer, OfficeBuilding, Operation, Plus, Promotion, RefreshRight,
+    Shop, Sort, Ticket, UploadFilled, Wallet, WarningFilled,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -32,6 +32,17 @@ const props = defineProps({
 /* ── Uncommitted Inventory section tabs ──────────────────────────────── */
 const inventoryTab = ref('collections');
 
+/* ── KPI snapshot + Tokenised Lots tab — "tokenisation_ready" is the
+   real status LotService::resolveLotStatus() assigns lots created with
+   submission_intent "create_and_tokenise"; there's no separate on-chain
+   commit flag in this data model, so this status is the closest real
+   proxy for "committed on blockchain" (confirmed with the user). ────── */
+const tokenisedLots = computed(() => props.lots.filter((lot) => lot.status === 'tokenisation_ready'));
+const tokenisedPct = computed(() => props.lots.length ? Math.round((tokenisedLots.value.length / props.lots.length) * 100) : 0);
+const sourcedFarmsCount = computed(() => new Set(props.farmCollections.map((c) => c.farm_id).filter(Boolean)).size);
+const totalBatchWeightKg = computed(() => props.batches.reduce((sum, b) => sum + Number(b.net_weight_kg || 0), 0));
+const totalLotWeightKg = computed(() => props.lots.reduce((sum, l) => sum + Number(l.net_weight_kg || 0), 0));
+
 /* ── Hero "Register New ▾" dropdown — opens the matching independent
    modal component instead of navigating away. ────────────────────────── */
 const addCollectionOpen = ref(false);
@@ -45,6 +56,14 @@ function handleRegisterCommand(command) {
 }
 
 const quickTransfer = reactive({ sourceWarehouse: '', destinationStore: '', lotId: '', quantity: null });
+
+function goToCollection(row) {
+    router.visit(route('farm-collection.show', row.id));
+}
+
+function goToBatch(row) {
+    router.visit(route('batch.show', row.id));
+}
 
 function formatMoney(amount, currency) {
     const value = Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -223,37 +242,37 @@ function submitReject() {
                     <div class="st-kpi-grid">
                         <div class="st-kpi">
                             <div class="st-kpi__top">
-                                <div class="st-kpi__icon st-kpi__icon--a"><el-icon><Box /></el-icon></div>
-                                <span class="st-kpi__chip st-kpi__chip--up"><el-icon :size="12"><Top /></el-icon> +5.2%</span>
+                                <div class="st-kpi__icon st-kpi__icon--a"><el-icon><OfficeBuilding /></el-icon></div>
                             </div>
-                            <div class="st-kpi__label">Total Stock</div>
-                            <div class="st-kpi__value">12,450 <span class="st-kpi__unit">kg</span></div>
+                            <div class="st-kpi__label">Farm Collections</div>
+                            <div class="st-kpi__value">{{ farmCollections.length }}</div>
+                            <div class="st-kpi__sub">From {{ sourcedFarmsCount }} farm{{ sourcedFarmsCount === 1 ? '' : 's' }}</div>
                         </div>
                         <div class="st-kpi">
                             <div class="st-kpi__top">
-                                <div class="st-kpi__icon st-kpi__icon--b"><el-icon><Clock /></el-icon></div>
+                                <div class="st-kpi__icon st-kpi__icon--b"><el-icon><Files /></el-icon></div>
                             </div>
-                            <div class="st-kpi__label">Uncommitted</div>
-                            <div class="st-kpi__value">3,200 <span class="st-kpi__unit">kg</span></div>
-                            <div class="st-kpi__sub">Ready for market prep</div>
+                            <div class="st-kpi__label">Batches</div>
+                            <div class="st-kpi__value">{{ batches.length }}</div>
+                            <div class="st-kpi__sub">{{ totalBatchWeightKg.toLocaleString() }} kg total</div>
                         </div>
                         <div class="st-kpi">
                             <div class="st-kpi__top">
-                                <div class="st-kpi__icon st-kpi__icon--c"><el-icon><Van /></el-icon></div>
-                                <span class="st-kpi__chip">4 active</span>
+                                <div class="st-kpi__icon st-kpi__icon--c"><el-icon><Ticket /></el-icon></div>
                             </div>
-                            <div class="st-kpi__label">Active Transfers</div>
-                            <div class="st-kpi__value">4</div>
-                            <div class="st-kpi__sub"><el-icon :size="12"><Clock /></el-icon> 2 arriving today</div>
+                            <div class="st-kpi__label">Lots</div>
+                            <div class="st-kpi__value">{{ lots.length }}</div>
+                            <div class="st-kpi__sub">{{ totalLotWeightKg.toLocaleString() }} kg total</div>
                         </div>
                         <div class="st-kpi">
                             <div class="st-kpi__top">
-                                <div class="st-kpi__icon st-kpi__icon--d"><el-icon><CircleCheck /></el-icon></div>
-                                <el-icon :size="16" class="st-kpi__check"><CircleCheck /></el-icon>
+                                <div class="st-kpi__icon st-kpi__icon--d"><el-icon><Wallet /></el-icon></div>
+                                <span class="st-kpi__pct">{{ tokenisedPct }}%</span>
                             </div>
-                            <div class="st-kpi__label">Certified Lots</div>
-                            <div class="st-kpi__value">18</div>
-                            <div class="st-kpi__sub st-kpi__sub--green">100% blockchain verified</div>
+                            <div class="st-kpi__label">On Blockchain</div>
+                            <div class="st-kpi__value">{{ tokenisedLots.length }}</div>
+                            <div class="st-kpi__progress"><div class="st-kpi__progress-bar" :style="{ width: tokenisedPct + '%' }"></div></div>
+                            <div class="st-kpi__sub">of {{ lots.length }} lot{{ lots.length === 1 ? '' : 's' }} tokenised</div>
                         </div>
                     </div>
 
@@ -269,53 +288,39 @@ function submitReject() {
                                 <!-- ── Farm Collection (farm_collections) ───────────── -->
                                 <el-tab-pane label="Farm Collection" name="collections">
                                     <div class="st-table-card">
-                                        <div class="st-table-scroll"><el-table :data="farmCollections" class="st-el-table">
-                                            <el-table-column min-width="190">
-                                                <template #header><span class="st-th"><el-icon><OfficeBuilding /></el-icon> Farm</span></template>
-                                                <template #default="{ row }">
-                                                    <div class="st-cell">
-                                                        <span class="st-thumb"><el-icon :size="15"><OfficeBuilding /></el-icon></span>
-                                                        <div>
-                                                            <div class="st-name">{{ row.farm?.name || `Farm #${row.farm_id}` }}</div>
-                                                            <div class="st-muted st-caption">{{ row.collection_date ? formatDate(row.collection_date) : '—' }}</div>
-                                                        </div>
+                                        <div class="st-list">
+                                            <div
+                                                v-for="row in farmCollections"
+                                                :key="row.id"
+                                                class="st-list-row st-list-row--link"
+                                                tabindex="0"
+                                                role="button"
+                                                @click="goToCollection(row)"
+                                                @keydown.enter="goToCollection(row)"
+                                            >
+                                                <div class="st-list-row__icon"><el-icon><OfficeBuilding /></el-icon></div>
+                                                <div class="st-list-row__main">
+                                                    <div class="st-list-row__title">{{ row.farm?.name || `Farm #${row.farm_id}` }}</div>
+                                                    <div class="st-list-row__sub">
+                                                        {{ row.coffee_type || '—' }}<span v-if="row.variety"> · {{ row.variety }}</span>
+                                                        <span v-if="row.collection_date"> · {{ formatDate(row.collection_date) }}</span>
                                                     </div>
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column min-width="180">
-                                                <template #header><span class="st-th"><el-icon><Coffee /></el-icon> Coffee &amp; Variety</span></template>
-                                                <template #default="{ row }">
-                                                    <div class="st-cell">
-                                                        <span class="st-thumb"><el-icon :size="15"><Coffee /></el-icon></span>
-                                                        <span class="st-commodity">{{ row.coffee_type || '—' }}<span v-if="row.variety" class="st-muted"> · {{ row.variety }}</span></span>
-                                                    </div>
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column width="110" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Box /></el-icon> Quantity</span></template>
-                                                <template #default="{ row }">{{ Number(row.quantity || 0).toLocaleString() }} {{ row.unit || '' }}</template>
-                                            </el-table-column>
-                                            <el-table-column width="110" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Medal /></el-icon> Grade</span></template>
-                                                <template #default="{ row }"><span class="st-pill st-pill--a">{{ row.initial_grade || '—' }}</span></template>
-                                            </el-table-column>
-                                            <el-table-column width="130" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Coin /></el-icon> Price</span></template>
-                                                <template #default="{ row }"><span class="st-pill st-pill--b">{{ formatMoney(row.collection_price, row.currency) }}</span></template>
-                                            </el-table-column>
-                                            <el-table-column width="110" align="right">
-                                                <template #header><span class="st-th st-th--end">Actions</span></template>
-                                                <template #default="{ row }">
-                                                    <Link v-if="row.farm_id" :href="route('farm.show', row.farm_id)" class="st-link-action"><el-icon :size="13"><View /></el-icon> View Farm</Link>
-                                                </template>
-                                            </el-table-column>
-                                            <template #empty>
-                                                <div class="st-empty-cell">
-                                                    <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
-                                                    No farm collections recorded yet.
                                                 </div>
-                                            </template>
-                                        </el-table></div>
+                                                <div class="st-list-row__stats">
+                                                    <div class="st-list-stat">
+                                                        <span class="st-list-stat__value">{{ Number(row.quantity || 0).toLocaleString() }} {{ row.unit || '' }}</span>
+                                                        <span class="st-list-stat__label">Quantity</span>
+                                                    </div>
+                                                    <span class="st-pill st-pill--a">{{ row.initial_grade || '—' }}</span>
+                                                    <span class="st-pill st-pill--b">{{ formatMoney(row.collection_price, row.currency) }}</span>
+                                                </div>
+                                                <el-icon class="st-list-row__chevron"><ArrowRight /></el-icon>
+                                            </div>
+                                            <div v-if="!farmCollections.length" class="st-empty-cell">
+                                                <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
+                                                No farm collections recorded yet.
+                                            </div>
+                                        </div>
 
                                         <div class="st-pagination-foot">
                                             <span class="st-pagination-foot__text">Showing {{ farmCollections.length }} farm collection{{ farmCollections.length === 1 ? '' : 's' }}</span>
@@ -326,52 +331,38 @@ function submitReject() {
                                 <!-- ── Batches (batches) ─────────────────────────────── -->
                                 <el-tab-pane label="Batches" name="batches">
                                     <div class="st-table-card">
-                                        <div class="st-table-scroll"><el-table :data="batches" class="st-el-table">
-                                            <el-table-column min-width="190">
-                                                <template #header><span class="st-th"><el-icon><Files /></el-icon> Batch</span></template>
-                                                <template #default="{ row }">
-                                                    <div class="st-cell">
-                                                        <span class="st-thumb"><el-icon :size="15"><Files /></el-icon></span>
-                                                        <div>
-                                                            <div class="st-name">{{ row.batch_number || `Batch #${row.id}` }}</div>
-                                                            <div class="st-muted st-caption">{{ row.processing_date ? formatDate(row.processing_date) : '—' }}</div>
-                                                        </div>
+                                        <div class="st-list">
+                                            <div
+                                                v-for="row in batches"
+                                                :key="row.id"
+                                                class="st-list-row st-list-row--link"
+                                                tabindex="0"
+                                                role="button"
+                                                @click="goToBatch(row)"
+                                                @keydown.enter="goToBatch(row)"
+                                            >
+                                                <div class="st-list-row__icon"><el-icon><Files /></el-icon></div>
+                                                <div class="st-list-row__main">
+                                                    <div class="st-list-row__title">{{ row.batch_number || `Batch #${row.id}` }}</div>
+                                                    <div class="st-list-row__sub">
+                                                        {{ row.variety || '—' }}
+                                                        <span v-if="row.processing_date"> · {{ formatDate(row.processing_date) }}</span>
                                                     </div>
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column min-width="180">
-                                                <template #header><span class="st-th"><el-icon><Coffee /></el-icon> Variety</span></template>
-                                                <template #default="{ row }">
-                                                    <div class="st-cell">
-                                                        <span class="st-thumb"><el-icon :size="15"><Coffee /></el-icon></span>
-                                                        <span class="st-commodity">{{ row.variety || '—' }}</span>
-                                                    </div>
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column width="130" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Box /></el-icon> Quantity</span></template>
-                                                <template #default="{ row }">
-                                                    {{ row.quantity_bags ? `${Number(row.quantity_bags).toLocaleString()} bags` : '—' }}
-                                                    <div v-if="row.net_weight_kg" class="st-muted st-caption">{{ Number(row.net_weight_kg).toLocaleString() }} kg</div>
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column width="110" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Checked /></el-icon> Status</span></template>
-                                                <template #default="{ row }"><span class="st-pill st-pill--a">{{ row.status || '—' }}</span></template>
-                                            </el-table-column>
-                                            <el-table-column width="110" align="right">
-                                                <template #header><span class="st-th st-th--end">Actions</span></template>
-                                                <template #default="{ row }">
-                                                    <Link :href="route('batch.show', row.id)" class="st-link-action"><el-icon :size="13"><View /></el-icon> View Batch</Link>
-                                                </template>
-                                            </el-table-column>
-                                            <template #empty>
-                                                <div class="st-empty-cell">
-                                                    <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
-                                                    No batches created yet.
                                                 </div>
-                                            </template>
-                                        </el-table></div>
+                                                <div class="st-list-row__stats">
+                                                    <div class="st-list-stat">
+                                                        <span class="st-list-stat__value">{{ row.quantity_bags ? `${Number(row.quantity_bags).toLocaleString()} bags` : '—' }}</span>
+                                                        <span class="st-list-stat__label">{{ row.net_weight_kg ? `${Number(row.net_weight_kg).toLocaleString()} kg` : 'Quantity' }}</span>
+                                                    </div>
+                                                    <span class="st-pill st-pill--a">{{ row.status || '—' }}</span>
+                                                </div>
+                                                <el-icon class="st-list-row__chevron"><ArrowRight /></el-icon>
+                                            </div>
+                                            <div v-if="!batches.length" class="st-empty-cell">
+                                                <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
+                                                No batches created yet.
+                                            </div>
+                                        </div>
 
                                         <div class="st-pagination-foot">
                                             <span class="st-pagination-foot__text">Showing {{ batches.length }} batch{{ batches.length === 1 ? '' : 'es' }}</span>
@@ -387,7 +378,6 @@ function submitReject() {
                                                 <template #header><span class="st-th"><el-icon><Ticket /></el-icon> Lot</span></template>
                                                 <template #default="{ row }">
                                                     <div class="st-cell">
-                                                        <span class="st-thumb"><el-icon :size="15"><Ticket /></el-icon></span>
                                                         <div>
                                                             <div class="st-name">{{ row.lot_name || row.lot_number || `Lot #${row.id}` }}</div>
                                                             <div v-if="row.lot_name && row.lot_number" class="st-muted st-caption">{{ row.lot_number }}</div>
@@ -399,7 +389,6 @@ function submitReject() {
                                                 <template #header><span class="st-th"><el-icon><Operation /></el-icon> Process &amp; Grade</span></template>
                                                 <template #default="{ row }">
                                                     <div class="st-cell">
-                                                        <span class="st-thumb"><el-icon :size="15"><Operation /></el-icon></span>
                                                         <span class="st-commodity">{{ row.process || '—' }}<span v-if="row.grade" class="st-muted"> · {{ row.grade }}</span></span>
                                                     </div>
                                                 </template>
@@ -416,12 +405,6 @@ function submitReject() {
                                                 <template #header><span class="st-th st-th--end"><el-icon><Checked /></el-icon> Status</span></template>
                                                 <template #default="{ row }"><span class="st-pill st-pill--a">{{ row.status || '—' }}</span></template>
                                             </el-table-column>
-                                            <el-table-column width="110" align="right">
-                                                <template #header><span class="st-th st-th--end">Actions</span></template>
-                                                <template #default="{ row }">
-                                                    <Link :href="route('lot.show', row.id)" class="st-link-action"><el-icon :size="13"><View /></el-icon> View Lot</Link>
-                                                </template>
-                                            </el-table-column>
                                             <template #empty>
                                                 <div class="st-empty-cell">
                                                     <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
@@ -432,6 +415,55 @@ function submitReject() {
 
                                         <div class="st-pagination-foot">
                                             <span class="st-pagination-foot__text">Showing {{ lots.length }} lot{{ lots.length === 1 ? '' : 's' }}</span>
+                                        </div>
+                                    </div>
+                                </el-tab-pane>
+
+                                <!-- ── Tokenised Lots (lots with status "tokenisation_ready") ─ -->
+                                <el-tab-pane label="Tokenised Lots" name="tokenised">
+                                    <div class="st-table-card">
+                                        <div class="st-table-scroll"><el-table :data="tokenisedLots" class="st-el-table">
+                                            <el-table-column min-width="180">
+                                                <template #header><span class="st-th"><el-icon><Ticket /></el-icon> Lot</span></template>
+                                                <template #default="{ row }">
+                                                    <div class="st-cell">
+                                                        <div>
+                                                            <div class="st-name">{{ row.lot_name || row.lot_number || `Lot #${row.id}` }}</div>
+                                                            <div v-if="row.lot_name && row.lot_number" class="st-muted st-caption">{{ row.lot_number }}</div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column min-width="180">
+                                                <template #header><span class="st-th"><el-icon><Operation /></el-icon> Process &amp; Grade</span></template>
+                                                <template #default="{ row }">
+                                                    <div class="st-cell">
+                                                        <span class="st-commodity">{{ row.process || '—' }}<span v-if="row.grade" class="st-muted"> · {{ row.grade }}</span></span>
+                                                    </div>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column width="130" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Odometer /></el-icon> Weight</span></template>
+                                                <template #default="{ row }">{{ row.net_weight_kg ? `${Number(row.net_weight_kg).toLocaleString()} kg` : '—' }}</template>
+                                            </el-table-column>
+                                            <el-table-column width="130" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Coin /></el-icon> Price</span></template>
+                                                <template #default="{ row }"><span class="st-pill st-pill--b">{{ formatMoney(row.price, null) }}</span></template>
+                                            </el-table-column>
+                                            <el-table-column width="150" align="right">
+                                                <template #header><span class="st-th st-th--end"><el-icon><Checked /></el-icon> Status</span></template>
+                                                <template #default="{ row }"><span class="st-pill st-pill--a">{{ row.status || '—' }}</span></template>
+                                            </el-table-column>
+                                            <template #empty>
+                                                <div class="st-empty-cell">
+                                                    <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
+                                                    No lots committed on the blockchain yet.
+                                                </div>
+                                            </template>
+                                        </el-table></div>
+
+                                        <div class="st-pagination-foot">
+                                            <span class="st-pagination-foot__text">Showing {{ tokenisedLots.length }} tokenised lot{{ tokenisedLots.length === 1 ? '' : 's' }}</span>
                                         </div>
                                     </div>
                                 </el-tab-pane>
@@ -778,14 +810,20 @@ function submitReject() {
 .st-status-banner__title { font-size: 14px; font-weight: 700; color: var(--on-surface); }
 .st-status-banner__text { font-size: 13px; margin: 2px 0 0; line-height: 1.5; color: var(--on-surface-variant); }
 
-/* ── KPI snapshot ──────────────────────────────────────────────────────── */
-.st-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+/* ── KPI snapshot ─────────────────────────────────────────────────────────
+   Coffee-trading-flavored accent palette: green for origin/sourcing,
+   roast-amber for batches (processing), indigo for lots (market-ready),
+   violet for the blockchain metric (tech/ledger association) — literal
+   hex, distinct per card, with a matching top accent bar + icon tint. ── */
+.st-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .st-kpi {
     background: var(--surface-container-lowest);
     border: 1px solid var(--card-border);
     border-radius: var(--card-radius);
     padding: 22px;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
+.st-kpi:hover { border-color: color-mix(in srgb, var(--on-surface) 16%, var(--card-border)); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06); transform: translateY(-1px); }
 .st-kpi__top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
 .st-kpi__icon {
     width: 40px;
@@ -794,29 +832,18 @@ function submitReject() {
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 17px;
 }
-.st-kpi__icon--a { background: color-mix(in srgb, var(--primary) 6%, var(--surface-container-lowest)); color: var(--primary); }
-.st-kpi__icon--b { background: color-mix(in srgb, var(--secondary-container) 22%, var(--surface-container-lowest)); color: var(--on-secondary-container); }
-.st-kpi__icon--c { background: color-mix(in srgb, var(--tertiary-container) 12%, var(--surface-container-lowest)); color: var(--tertiary); }
-.st-kpi__icon--d { background: color-mix(in srgb, #88d982 22%, var(--surface-container-lowest)); color: var(--secondary); }
-.st-kpi__chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 9px;
-    border-radius: 999px;
-    background: var(--surface-container);
-    color: var(--on-surface-variant);
-}
-.st-kpi__chip--up { background: color-mix(in srgb, var(--secondary) 10%, transparent); color: var(--secondary); }
-.st-kpi__check { color: var(--secondary); }
+.st-kpi__icon--a { background: #ECFDF3; color: #16A34A; }
+.st-kpi__icon--b { background: #FDF1E4; color: #B4690E; }
+.st-kpi__icon--c { background: #EEF2FF; color: #4338CA; }
+.st-kpi__icon--d { background: #F4EEFF; color: #7C3AED; }
+.st-kpi__pct { font-size: 13px; font-weight: 800; color: #7C3AED; font-variant-numeric: tabular-nums; }
+.st-kpi__progress { height: 5px; border-radius: 999px; background: var(--surface-container); margin-top: 10px; overflow: hidden; }
+.st-kpi__progress-bar { height: 100%; border-radius: 999px; background: #7C3AED; transition: width .3s ease; }
 .st-kpi__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--on-surface-variant); margin-bottom: 4px; }
-.st-kpi__value { font-size: 24px; font-weight: 800; letter-spacing: -0.012em; color: var(--on-surface); line-height: 1.2; font-variant-numeric: tabular-nums; }
-.st-kpi__unit { font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--on-surface-variant); }
+.st-kpi__value { font-size: 28px; font-weight: 800; letter-spacing: -0.015em; color: var(--on-surface); line-height: 1.2; font-variant-numeric: tabular-nums; }
 .st-kpi__sub { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 12px; color: var(--on-surface-variant); }
-.st-kpi__sub--green { color: var(--secondary); font-weight: 600; }
 
 /* ── Two-column layout ─────────────────────────────────────────────────── */
 .st-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 28px; align-items: start; }
@@ -880,20 +907,19 @@ function submitReject() {
 }
 .st-el-table :deep(.el-table__inner-wrapper::before) { display: none; }
 .st-el-table :deep(.el-table__header-wrapper th.el-table__cell) {
-    padding: 14px 10px;
+    padding: 8px 8px;
     border-bottom: 1px solid var(--card-border);
 }
-.st-el-table :deep(.el-table__header-wrapper th.el-table__cell:first-child) { padding-left: 16px; }
-.st-el-table :deep(.el-table__header-wrapper th.el-table__cell:last-child) { padding-right: 16px; }
+.st-el-table :deep(.el-table__header-wrapper th.el-table__cell:first-child) { padding-left: 12px; }
+.st-el-table :deep(.el-table__header-wrapper th.el-table__cell:last-child) { padding-right: 12px; }
 .st-el-table :deep(.el-table__body-wrapper td.el-table__cell) {
-    padding: 18px 10px;
+    padding: 9px 8px;
     border-bottom: 1px solid var(--card-border);
 }
-.st-el-table :deep(.el-table__body-wrapper td.el-table__cell:first-child) { padding-left: 16px; }
-.st-el-table :deep(.el-table__body-wrapper td.el-table__cell:last-child) { padding-right: 16px; }
+.st-el-table :deep(.el-table__body-wrapper td.el-table__cell:first-child) { padding-left: 12px; }
+.st-el-table :deep(.el-table__body-wrapper td.el-table__cell:last-child) { padding-right: 12px; }
 .st-el-table :deep(.el-table__row:last-child td.el-table__cell) { border-bottom: none; }
 .st-el-table :deep(.el-table__row .cell) { line-height: 1.4; }
-.st-el-table :deep(.el-table__row:hover .st-link-action) { opacity: 1; }
 .st-el-table :deep(.el-table__empty-block) { min-height: 220px; }
 
 .st-th { display: inline-flex; align-items: flex-start; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.4; }
@@ -901,6 +927,51 @@ function submitReject() {
 .st-th--end { justify-content: flex-end; }
 
 .st-cell { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+
+/* ── Modern list rows (Farm Collection / Batches) ─────────────────────── */
+.st-list { display: flex; flex-direction: column; padding: 4px 20px; }
+.st-list-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--card-border);
+    transition: background .15s ease;
+}
+.st-list-row:last-child { border-bottom: none; }
+.st-list-row:hover { background: color-mix(in srgb, var(--surface-container-low) 60%, transparent); margin: 0 -12px; padding: 14px 16px; border-radius: 10px; }
+.st-list-row__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--surface-container-low);
+    color: var(--on-surface-variant);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+}
+.st-list-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.st-list-row__title { font-size: 14px; font-weight: 700; color: var(--on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-list-row__sub { font-size: 12.5px; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-list-row__stats { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
+.st-list-stat { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 76px; }
+.st-list-stat__value { font-size: 13.5px; font-weight: 700; color: var(--on-surface); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.st-list-stat__label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-variant); white-space: nowrap; }
+
+.st-list-row--link { cursor: pointer; }
+.st-list-row--link:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 10px; }
+.st-list-row__chevron { flex-shrink: 0; font-size: 14px; color: var(--on-surface-variant); opacity: 0; transform: translateX(-4px); transition: opacity .15s ease, transform .15s ease; }
+.st-list-row--link:hover .st-list-row__chevron,
+.st-list-row--link:focus-visible .st-list-row__chevron { opacity: 1; transform: translateX(0); }
+
+@media (max-width: 640px) {
+    .st-list { padding: 4px 12px; }
+    .st-list-row { flex-wrap: wrap; }
+    .st-list-row:hover { margin: 0; padding: 14px 4px; border-radius: 0; }
+    .st-list-row__stats { width: 100%; justify-content: flex-start; padding-left: 54px; gap: 16px; }
+}
 
 .st-empty-cell {
     display: flex;
@@ -922,17 +993,6 @@ function submitReject() {
     color: var(--on-surface-variant);
 }
 
-.st-thumb {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
-    background: var(--surface-container-high);
-    color: var(--on-surface-variant);
-    flex-shrink: 0;
-}
 .st-name { font-size: 13.5px; font-weight: 700; color: var(--on-surface); }
 .st-caption { font-size: 11.5px; margin-top: 2px; }
 .st-muted { color: var(--on-surface-variant); }
@@ -950,24 +1010,6 @@ function submitReject() {
 .st-pill--a { background: var(--surface-container); color: var(--on-surface-variant); border: 1px solid color-mix(in srgb, var(--outline-variant) 50%, transparent); }
 .st-pill--b { background: color-mix(in srgb, var(--secondary-container) 35%, transparent); color: var(--on-secondary-container); border: 1px solid color-mix(in srgb, var(--secondary-container) 60%, transparent); }
 
-.st-link-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    border: none;
-    background: none;
-    color: var(--primary);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    padding: 0;
-    opacity: 0;
-    transition: opacity .15s ease;
-}
-.st-link-action:hover { text-decoration: underline; }
-.st-link-action:focus-visible { opacity: 1; outline: 2px solid var(--primary); outline-offset: 2px; }
-.st-link-action--muted { color: var(--on-surface-variant); }
-.st-link-action--muted:hover { color: var(--on-surface); }
 
 .st-pagination-foot {
     display: flex;
@@ -1120,7 +1162,6 @@ function submitReject() {
     .st-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .st-kpi { padding: 16px; }
     .st-kpi__value { font-size: 22px; }
-    .st-link-action { opacity: 1; }
     .st-qt-grid { grid-template-columns: 1fr; }
 }
 </style>

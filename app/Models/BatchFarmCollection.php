@@ -25,6 +25,7 @@ class BatchFarmCollection extends Model
     protected $fillable = [
         'batch_id',
         'farm_collection_id',
+        'farm_collection_code',
         'user_id',
         'status',
     ];

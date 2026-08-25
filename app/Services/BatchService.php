@@ -4,13 +4,16 @@ namespace App\Services;
 
 use App\Models\Batch;
 use App\Models\BatchCompliance;
+use App\Models\BatchFarmCollection;
 use App\Models\BatchOwnership;
+use App\Models\FarmCollection;
 use App\Models\Harvest;
 use App\Models\Season;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class BatchService
 {
@@ -69,7 +72,7 @@ class BatchService
      */
     public function loadProfileRelations(Batch $batch): Batch
     {
-        return $batch->load(['compliances', 'ownerships']);
+        return $batch->load(['compliances', 'ownerships', 'lots', 'user', 'batchFarmCollections.farmCollection.farm']);
     }
 
     /**
@@ -240,5 +243,45 @@ class BatchService
             'user_id' => $userId,
             ...$validated,
         ]);
+    }
+
+    /**
+     * Link a farm collection to a batch, resolved by its collection_code,
+     * via the batch_farm_collection pivot table. Records batch_id,
+     * farm_collection_id, a denormalized copy of the collection's code,
+     * the linking user, and a default "pending" status — every column the
+     * pivot table has.
+     */
+    public function attachFarmCollection(Batch $batch, string $collectionCode, int $userId): BatchFarmCollection
+    {
+        $collection = FarmCollection::query()->where('collection_code', $collectionCode)->first();
+
+        if (! $collection) {
+            throw ValidationException::withMessages([
+                'collection_code' => 'No farm collection with that code was found.',
+            ]);
+        }
+
+        // A collection can only ever be used once, anywhere — once linked
+        // to a batch its status flips to "batched" and every later attempt
+        // (to this batch or any other) is rejected here, regardless of
+        // which batch already claimed it.
+        if ($collection->status !== 'pending') {
+            throw ValidationException::withMessages([
+                'collection_code' => "This farm collection has already been {$collection->status} and can't be used again.",
+            ]);
+        }
+
+        $link = BatchFarmCollection::query()->create([
+            'batch_id' => $batch->id,
+            'farm_collection_id' => $collection->id,
+            'farm_collection_code' => $collection->collection_code,
+            'user_id' => $userId,
+            'status' => 'pending',
+        ]);
+
+        $collection->update(['status' => 'batched']);
+
+        return $link;
     }
 }

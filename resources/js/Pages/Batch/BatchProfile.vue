@@ -1,1294 +1,761 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
-import {
-    Bell, Box, ChatDotRound, Check, CircleCheck, Clock,
-    CollectionTag, DataAnalysis, DataLine, Document,
-    Download, Files, Location, Opportunity, Promotion,
-    Star, TrendCharts, Van,
-} from '@element-plus/icons-vue';
+import { Link, router } from '@inertiajs/vue3';
+import { ElNotification } from 'element-plus';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import UpdateBatchModal from '@/Components/Modals/UpdateBatchModal.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import AttachFarmCollectionModal from '@/Components/Modals/AttachFarmCollectionModal.vue';
+import {
+    ArrowDown, Box, Calendar, Checked, CircleCheck, Coffee, Coin, Delete, Document, EditPen,
+    Files, FolderOpened, HotWater, Link as LinkIcon, Location, Medal, OfficeBuilding, Operation, PriceTag, Plus, Ticket, User, WarningFilled,
+} from '@element-plus/icons-vue';
 
 const props = defineProps({
-    batch:    { type: Object, required: true },
-    season:   { type: Object, default: null },
-    harvests: { type: Array,  default: () => [] },
+    batch: { type: Object, required: true },
+    season: { type: Object, default: null },
+    harvests: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
 });
 
-/* ── Modal ───────────────────────────────────────────────────── */
-const updateBatchModalOpen = ref(false);
-const chatOpen  = ref(false);
-const chatInput = ref('');
+/* ── Actions dropdown ──────────────────────────────────────────────────── */
+const editDialogOpen = ref(false);
+const deleteDialogOpen = ref(false);
+const deleting = ref(false);
+const attachModalOpen = ref(false);
 
-/* ── Formatters (preserved) ──────────────────────────────────── */
-const formatNumber = (value, digits = 0) =>
-    Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+function handleActionCommand(command) {
+    if (command === 'edit') editDialogOpen.value = true;
+    else if (command === 'delete') deleteDialogOpen.value = true;
+}
 
-const formatDate = (v) =>
-    v ? new Intl.DateTimeFormat('en-UG', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(v)) : 'Pending';
+function deleteBatch() {
+    deleting.value = true;
+    router.delete(route('batch.destroy', props.batch.id), {
+        onFinish: () => {
+            deleting.value = false;
+            deleteDialogOpen.value = false;
+        },
+    });
+}
 
-/* ── Computed (all preserved) ────────────────────────────────── */
-const batchCode       = computed(() => props.batch.batch_number || `BTH-${String(props.batch.id).padStart(4, '0')}`);
-const gradeLabel      = computed(() => props.batch.grade || 'G1');
-const batchTitle      = computed(() => props.batch.variety || 'Arabica — Specialty');
-const totalQuantity   = computed(() => Number(props.batch.net_weight_kg || props.season?.harvests_sum_weight || 4200));
-const commercialValue = computed(() => Number(props.batch.price || 32540));
-const cupScore        = computed(() => Number(props.batch.cup_score || 87.2));
-const moistureScore   = computed(() => Number(props.batch.moisture_content || 11.2));
-const densityValue    = computed(() => Math.max(720, Math.round(cupScore.value * 8.1)));
-const waterActivity   = computed(() => 0.58);
-const seasonTitle     = computed(() => props.season?.name || 'Main Harvest 2024/25');
-const seasonRegion    = computed(() => props.season?.region || 'Central Highlands Region');
-const seasonHealth    = computed(() => Number(props.batch.cup_score || 88.4));
-const activeFarms     = computed(() => props.harvests.length || props.season?.harvests_count || 12);
-const readinessScore  = computed(() => {
-    let score = 88;
-    if (props.season)             score += 1;
-    if (props.harvests.length > 0) score += 1;
-    if (cupScore.value >= 87)     score += 1;
-    if (moistureScore.value <= 12) score += 1;
-    return Math.min(score, 92);
-});
-const seasonHref    = computed(() => props.season?.id ? route('season.show', props.season.id) : route('batch.index'));
-const canManageBatch = computed(() => Boolean(props.batch.can_manage));
+/* ── Formatters ────────────────────────────────────────────────────────── */
+function formatDate(value) {
+    if (!value) return '—';
+    return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+}
 
-/* ── Table rows (preserved) ──────────────────────────────────── */
-const harvestRows = computed(() => {
-    if (props.harvests.length > 0) {
-        return props.harvests.map((h, idx) => ({
-            id: h.id,
-            code: h.harvest_number || `HV-${String(idx + 1).padStart(3, '0')}`,
-            farm: h.farm?.name || `Source Estate ${idx + 1}`,
-            date: formatDate(h.harvest_date),
-            qty: formatNumber(h.weight || 0),
-            score: h.cup_score ? Number(h.cup_score).toFixed(1) : '87.2',
-            moisture: h.moisture_content ? `${Number(h.moisture_content).toFixed(1)}%` : '11.2%',
-            status: h.status || 'Verified',
-        }));
-    }
-    return [
-        { id: 1, code: 'HV-24-001', farm: 'Sipi Plot A',    date: 'May 3, 2025', qty: '1,200', score: '88.4', moisture: '10.8%', status: 'Verified'  },
-        { id: 2, code: 'HV-24-005', farm: 'Elgon Block B',  date: 'May 5, 2025', qty: '850',   score: '87.1', moisture: '11.4%', status: 'Verified'  },
-        { id: 3, code: 'HV-24-012', farm: 'Rwenzori Upper', date: 'May 6, 2025', qty: '1,150', score: '86.9', moisture: '11.9%', status: 'Approved'  },
-    ];
+function formatDateTime(value) {
+    if (!value) return '—';
+    return new Date(value.replace(' ', 'T')).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function formatMoney(amount, currency) {
+    if (amount === null || amount === undefined) return '—';
+    const value = Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return currency ? `${currency} ${value}` : `$${value}`;
+}
+
+/* ── Computed ──────────────────────────────────────────────────────────── */
+const batchTitle = computed(() => props.batch.variety || 'Batch');
+const hasDefects = computed(() => Number(props.batch.defect_count || 0) > 0);
+const defectsKnown = computed(() => props.batch.defect_count !== null && props.batch.defect_count !== undefined);
+const cupScoreKnown = computed(() => props.batch.cup_score !== null && props.batch.cup_score !== undefined);
+
+const recorderInitials = computed(() => {
+    const parts = (props.batch.user?.name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    return parts.length === 1 ? parts[0][0].toUpperCase() : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 });
 
-const intelligenceBars = computed(() => [
-    { label: 'Moisture Content',  value: `${formatNumber(moistureScore.value, 1)}%`, pct: 81 },
-    { label: 'Water Activity',    value: `${waterActivity.value.toFixed(2)} AW`,     pct: 73 },
-    { label: 'Bean Density',      value: `${densityValue.value} G/L`,                pct: 89 },
-]);
+function collectionStatusTone(status) {
+    if (['approved', 'paid', 'active'].includes(status)) return 'good';
+    if (['rejected', 'cancelled', 'expired'].includes(status)) return 'bad';
+    return 'pending';
+}
 
-const processingItems = computed(() => [
-    { title: props.batch.processing_method || 'Washed Process',                                           sub: 'Processing Method' },
-    { title: props.batch.drying_duration   ? `${props.batch.drying_duration}h Fermentation` : '36h Fermentation', sub: 'Controlled Anaerobic' },
-    { title: props.batch.warehouse_location || 'Silo B-12 (Temp Controlled)',                             sub: 'Current Location'  },
-]);
+const deleteMessage = computed(() => `Are you sure you want to delete batch ${props.batch.batch_number}? This action cannot be undone.`);
 
-const readinessItems = computed(() => [
-    { label: 'Season Linkage Complete',   done: true  },
-    { label: 'Moisture Stabilised',       done: true  },
-    { label: 'Quality Grading Completed', done: true  },
-    { label: 'Contamination Check Passed',done: false },
-    { label: 'Ready for Lot Creation',    done: false },
-]);
-const completionPct = computed(() => {
-    const done = readinessItems.value.filter(s => s.done).length;
-    return Math.round((done / readinessItems.value.length) * 100);
-});
-
-/* ── Static mock data ────────────────────────────────────────── */
-const farmContributions = [
-    { farm: 'Sipi Plot A',    qty: '1,200 kg', pct: 42, score: 88.4 },
-    { farm: 'Elgon Block B',  qty: '850 kg',   pct: 30, score: 87.1 },
-    { farm: 'Rwenzori Upper', qty: '700 kg',   pct: 24, score: 86.9 },
-    { farm: 'Other Sources',  qty: '100 kg',   pct: 4,  score: 85.0 },
-];
-const qualityScores = [
-    { label: 'Avg Cupping Score',   value: 87, suffix: '/100' },
-    { label: 'Aroma',               value: 88, suffix: '/100' },
-    { label: 'Flavor',              value: 86, suffix: '/100' },
-    { label: 'Acidity',             value: 84, suffix: '/100' },
-    { label: 'Body',                value: 82, suffix: '/100' },
-    { label: 'Defect-Free Rate',    value: 94, suffix: '%'    },
-    { label: 'Moisture Consistency',value: 91, suffix: '%'    },
-];
-const pipelineStages = [
-    { label: 'Farm',    count: activeFarms.value,        sub: 'Sourced',  verify: 'UCDA Verified',   done: true,  current: false },
-    { label: 'Harvest', count: harvestRows.value.length, sub: 'Verified', verify: 'Quality Graded',  done: true,  current: false },
-    { label: 'Batch',   count: 1,                        sub: 'Active',   verify: 'In Processing',   done: false, current: true  },
-    { label: 'Lot',     count: 0,                        sub: 'Pending',  verify: 'Awaiting',        done: false, current: false },
-    { label: 'Market',  count: 0,                        sub: 'Pending',  verify: 'Awaiting',        done: false, current: false },
-];
-const activityLog = [
-    { label: `Batch ${batchCode.value} created`,          time: '2 h ago',   dot: 'success' },
-    { label: '3 harvests aggregated into this batch',     time: '3 h ago',   dot: 'success' },
-    { label: 'Quality grading passed — Score 87.2',       time: 'Yesterday', dot: 'success' },
-    { label: 'Moisture stabilisation confirmed — 11.2%',  time: '2 d ago',   dot: 'success' },
-    { label: 'Processing verification completed',         time: '3 d ago',   dot: 'info'    },
-    { label: 'Ready for lot creation',                    time: '3 d ago',   dot: 'success' },
-];
-const aiInsights = [
-    'This batch shows consistent specialty-grade performance across all sourced harvests.',
-    'High export demand expected for this quality range — EU and UAE buyers are active.',
-    'Moisture stability at 11.2% supports premium processing and extended shelf life.',
-];
-const alerts = [
-    { label: `Batch ${batchCode.value} is ready for lot creation`, type: 'success', time: '2h ago'  },
-    { label: 'Export readiness achieved — 92% eligibility',        type: 'success', time: '6h ago'  },
-    { label: 'Buyer demand spike detected — UAE market',            type: 'info',    time: '1d ago'  },
-];
-const targetMarkets = [
-    { label: 'UAE', pct: 38 },
-    { label: 'EU',  pct: 30 },
-    { label: 'USA', pct: 20 },
-    { label: 'Asia',pct: 12 },
-];
-const chatPrompts = [
-    'Is this batch ready for export?',
-    'Should I create a lot now?',
-    'Which farms contribute most?',
-    'What is the quality score trend?',
-];
-const fillPrompt = (p) => { chatInput.value = p; };
+const seasonLocation = computed(() => props.season?.region || '');
 </script>
 
 <template>
-
-    <DesignPreviewLayout title="Batch Profile">
-        <div class="bp-page">
-
-            <!--  Page Header ─────────────────────────────────────── -->
-            <div class="bp-header">
-                <div class="bp-header-left">
-                    <div class="bp-kicker">Batch Profile</div>
-                    <h1 class="bp-title mt-2 mb-2">{{ batchCode }}</h1>
-                    <p class="bp-subtitle mb-2">{{ batchTitle }} · aggregated from verified harvests, prepared for export lot creation.</p>
-                    <div class="bp-badge-row">
-                        <span class="bp-badge bp-badge--green">Verified Batch</span>
-                        <span class="bp-badge bp-badge--blue">Quality Controlled</span>
-                        <span class="bp-badge bp-badge--purple">Traceable</span>
-                        <span class="bp-badge bp-badge--amber">Export Ready Pipeline</span>
-                    </div>
+    <DesignPreviewLayout title="Batch">
+        <div class="btp-page">
+            <div class="btp-page-head">
+                <div class="btp-page-head__text">
+                    <h1 class="btp-page-title">Batch</h1>
+                    <p class="btp-page-subtitle">Everything recorded about this batch, from processing and quality grading to the harvests and lots linked to it.</p>
                 </div>
-                <div class="bp-header-actions">
-                    <Link :href="seasonHref" class="bp-btn bp-btn--outline">
-                        <el-icon><CollectionTag /></el-icon> View Harvests
-                    </Link>
-                    <Link :href="route('batch.create-lot', batch.id)" class="bp-btn bp-btn--primary">
-                        <el-icon><Files /></el-icon> Create Lot
-                    </Link>
-                    <button class="bp-btn bp-btn--outline">
-                        <el-icon><Download /></el-icon> Export Data
+                <el-dropdown v-if="batch.can_manage" trigger="click" @command="handleActionCommand">
+                    <button type="button" class="btp-btn-outline btp-actions-btn" :disabled="deleting">
+                        Actions <el-icon class="btp-caret"><ArrowDown /></el-icon>
                     </button>
-                    <button
-                        v-if="canManageBatch"
-                        class="bp-btn bp-btn--ghost"
-                        @click="updateBatchModalOpen = true"
-                    >
-                        Edit Batch
-                    </button>
-                    <button class="bp-btn bp-btn--ghost">
-                        <el-icon><ChatDotRound /></el-icon> Ask Advisor
-                    </button>
+                    <template #dropdown>
+                        <el-dropdown-menu class="btp-actions-menu">
+                            <el-dropdown-item command="edit"><el-icon><EditPen /></el-icon> Edit</el-dropdown-item>
+                            <el-dropdown-item command="delete" class="btp-actions-menu__danger"><el-icon><Delete /></el-icon> Delete</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
+            </div>
+
+            <div class="btp-hero">
+                <div class="btp-hero__icon"><el-icon :size="22"><Files /></el-icon></div>
+                <div class="btp-hero__text">
+                    <div class="btp-hero__title-row">
+                        <h1 class="btp-title">{{ batchTitle }}</h1>
+                        <span class="btp-hero__code"><el-icon :size="11"><Ticket /></el-icon>{{ batch.batch_number }}</span>
+                    </div>
+                    <p class="btp-subtitle">
+                        Processed {{ formatDate(batch.processing_date) }}
+                        <span v-if="batch.warehouse_location"> · {{ batch.warehouse_location }}</span>
+                    </p>
+                </div>
+                <div class="btp-hero__badges">
+                    <span v-if="batch.status" class="btp-pill btp-pill--status">{{ batch.status }}</span>
                 </div>
             </div>
 
-            <!-- ② Batch Overview Card ─────────────────────────────── -->
-            <div class="bp-overview">
-
-                <!-- Identity -->
-                <div class="bp-ov-block">
-                    <div class="bp-ov-label">Batch Identity</div>
-                    <div class="bp-ov-title">{{ batchCode }}</div>
-                    <div class="bp-ov-sub">{{ batchTitle }}</div>
-                    <div class="bp-ov-meta-grid">
-                        <div class="bp-meta-pair">
-                            <span class="bp-muted">Grade</span>
-                            <span class="bp-bold">{{ gradeLabel }}</span>
-                        </div>
-                        <div class="bp-meta-pair">
-                            <span class="bp-muted">Season</span>
-                            <span class="bp-bold">{{ seasonTitle }}</span>
-                        </div>
-                        <div class="bp-meta-pair">
-                            <span class="bp-muted">Region</span>
-                            <span class="bp-bold">{{ seasonRegion }}</span>
-                        </div>
-                        <div class="bp-meta-pair">
-                            <span class="bp-muted">Created</span>
-                            <span class="bp-bold">{{ formatDate(batch.created_at) }}</span>
-                        </div>
-                        <div class="bp-meta-pair">
-                            <span class="bp-muted">Warehouse</span>
-                            <span class="bp-bold">{{ batch.warehouse_location || '—' }}</span>
-                        </div>
-                        <div class="bp-meta-pair">
-                            <span class="bp-muted">Processing</span>
-                            <span class="bp-bold">{{ batch.processing_method || 'Washed' }}</span>
-                        </div>
-                    </div>
+            <div class="btp-stat-grid">
+                <div class="btp-stat">
+                    <div class="btp-stat__icon btp-stat__icon--a"><el-icon><Box /></el-icon></div>
+                    <div class="btp-stat__label">Quantity</div>
+                    <div class="btp-stat__value">{{ Number(batch.quantity_bags || 0).toLocaleString() }} <span class="btp-stat__unit">bags</span></div>
+                    <div class="btp-stat__sub">{{ Number(batch.net_weight_kg || 0).toLocaleString() }} kg total</div>
                 </div>
-
-                <!-- Composition -->
-                <div class="bp-ov-block">
-                    <div class="bp-ov-label">Batch Composition</div>
-                    <div class="bp-ov-stat-grid">
-                        <div class="bp-ov-stat">
-                            <div class="bp-ov-stat-val">{{ formatNumber(totalQuantity) }}</div>
-                            <div class="bp-muted">Total kg</div>
-                        </div>
-                        <div class="bp-ov-stat">
-                            <div class="bp-ov-stat-val">{{ harvestRows.length }}</div>
-                            <div class="bp-muted">Harvests</div>
-                        </div>
-                        <div class="bp-ov-stat">
-                            <div class="bp-ov-stat-val">{{ activeFarms }}</div>
-                            <div class="bp-muted">Farms</div>
-                        </div>
-                        <div class="bp-ov-stat">
-                            <div class="bp-ov-stat-val">{{ formatNumber(moistureScore, 1) }}%</div>
-                            <div class="bp-muted">Avg Moisture</div>
-                        </div>
-                    </div>
-                    <div class="bp-ov-insight">
-                        <el-icon style="color:#004532;"><TrendCharts /></el-icon>
-                        <span>Moisture within optimal export processing range.</span>
-                    </div>
+                <div class="btp-stat">
+                    <div class="btp-stat__icon btp-stat__icon--b"><el-icon><Coin /></el-icon></div>
+                    <div class="btp-stat__label">Price</div>
+                    <div class="btp-stat__value">{{ formatMoney(batch.price, batch.currency) }}</div>
                 </div>
-
-                <!-- Status & Traceability -->
-                <div class="bp-ov-block">
-                    <div class="bp-ov-label">Status &amp; Traceability</div>
-                    <div class="bp-ov-status-row">
-                        <span class="bp-status bp-status--received">{{ batch.status || 'Processing' }}</span>
-                        <div class="d-flex gap-2">
-                            <span class="bp-badge bp-badge--green" style="font-size:9px;">Premium Batch</span>
-                            <span class="bp-badge bp-badge--blue" style="font-size:9px;">Specialty Grade</span>
-                        </div>
-                    </div>
-                    <div class="bp-ov-score-row">
-                        <div class="bp-ov-score-item">
-                            <div class="bp-ov-score-val" style="color:#004532;">{{ formatNumber(cupScore, 1) }}</div>
-                            <div class="bp-muted">Cupping Score</div>
-                        </div>
-                        <div class="bp-ov-score-item">
-                            <div class="bp-ov-score-val">{{ readinessScore }}%</div>
-                            <div class="bp-muted">Export Readiness</div>
-                        </div>
-                        <div class="bp-ov-score-item">
-                            <div class="bp-ov-score-val" style="color:#2563eb;">94%</div>
-                            <div class="bp-muted">Traceability</div>
-                        </div>
-                    </div>
-                    <div class="bp-ov-progress">
-                        <div class="bp-muted" style="font-size:10px; margin-bottom:5px;">Processing readiness — {{ completionPct }}%</div>
-                        <div class="bp-progress-track"><div class="bp-progress-fill" :style="{ width: completionPct + '%' }" /></div>
-                    </div>
-                    <div style="margin-top:10px;">
-                        <span class="bp-badge bp-badge--green">Export Eligible</span>
-                    </div>
+                <div class="btp-stat">
+                    <div class="btp-stat__icon btp-stat__icon--c"><el-icon><Medal /></el-icon></div>
+                    <div class="btp-stat__label">Cup Score</div>
+                    <div class="btp-stat__value">{{ batch.cup_score ?? '—' }} <span v-if="cupScoreKnown" class="btp-stat__unit">/100</span></div>
                 </div>
-
-            </div>
-
-            <!-- Main two-column body ─────────────────────────────── -->
-            <div class="bp-body">
-
-                <!-- Left: Main content ───────────────────────────── -->
-                <div class="bp-main">
-
-                    <!-- ③ Harvest Composition Table ─────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><CollectionTag /></el-icon> Harvest Sources</div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="bp-muted" style="font-size:11px;">{{ harvestRows.length }} harvests included</span>
-                                <span class="bp-badge bp-badge--green" style="font-size:9px;">Verified</span>
-                            </div>
-                        </div>
-                        <div class="bp-table-wrap">
-                            <table class="bp-table">
-                                <thead>
-                                    <tr>
-                                        <th>Harvest ID</th>
-                                        <th>Farm</th>
-                                        <th>Date</th>
-                                        <th class="text-end">Qty (kg)</th>
-                                        <th class="text-end">Score</th>
-                                        <th class="text-end">Moisture</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="row in harvestRows" :key="row.id">
-                                        <td><span class="bp-code">{{ row.code }}</span></td>
-                                        <td><span class="bp-primary" style="font-size:12px;">{{ row.farm }}</span></td>
-                                        <td><span class="bp-muted">{{ row.date }}</span></td>
-                                        <td class="text-end"><span class="bp-primary" style="font-size:12px;">{{ row.qty }}</span></td>
-                                        <td class="text-end"><span class="bp-score">{{ row.score }}</span></td>
-                                        <td class="text-end"><span class="bp-muted">{{ row.moisture }}</span></td>
-                                        <td>
-                                            <span class="bp-status" :class="row.status === 'Verified' ? 'bp-status--received' : 'bp-status--ready'">
-                                                {{ row.status }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="bp-table-foot">
-                            <span class="bp-muted">{{ harvestRows.length }} harvest sources · {{ formatNumber(totalQuantity) }} kg total</span>
-                            <span class="bp-badge bp-badge--blue" style="font-size:9px;">Source Diversity: High</span>
-                        </div>
-                    </div>
-
-                    <!-- ④ Farm Contribution Breakdown ────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><Location /></el-icon> Farm Contribution</div>
-                            <span class="bp-muted" style="font-size:11px;">{{ farmContributions.length }} contributing farms</span>
-                        </div>
-                        <div class="bp-card-body">
-                            <div class="bp-farm-grid">
-                                <div v-for="f in farmContributions" :key="f.farm" class="bp-farm-card">
-                                    <div class="bp-farm-card-top">
-                                        <span class="bp-primary" style="font-size:12px; font-weight:700;">{{ f.farm }}</span>
-                                        <span class="bp-bold" style="font-size:11px; color:#004532;">{{ f.pct }}%</span>
-                                    </div>
-                                    <div class="bp-comp-bar-wrap" style="margin:6px 0;">
-                                        <div class="bp-comp-bar" :style="{ width: f.pct + '%' }" />
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <span class="bp-muted">{{ f.qty }}</span>
-                                        <span class="bp-muted">Score {{ f.score }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ⑤ Batch Quality Analysis ─────────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><Star /></el-icon> Quality Analysis</div>
-                            <div class="d-flex gap-2">
-                                <span class="bp-badge bp-badge--green" style="font-size:9px;">Specialty Grade</span>
-                                <span class="bp-badge bp-badge--blue" style="font-size:9px;">Export Standard</span>
-                            </div>
-                        </div>
-                        <div class="bp-card-body">
-                            <div class="bp-quality-layout">
-                                <!-- Score tile -->
-                                <div class="bp-score-tile">
-                                    <div class="bp-muted" style="font-size:9px; letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px;">SCA Cupping Score</div>
-                                    <div class="bp-score-big">{{ formatNumber(cupScore, 1) }}</div>
-                                    <div class="bp-muted" style="font-size:10px; margin-top:4px;">Specialty threshold: 80.0</div>
-                                    <div class="bp-score-stars">★ ★ ★ ★ ★</div>
-                                    <div style="margin-top:10px;">
-                                        <div class="bp-muted" style="font-size:10px; margin-bottom:4px;">Premium Batch</div>
-                                        <span class="bp-badge bp-badge--green" style="font-size:9px;">Specialty Grade</span>
-                                    </div>
-                                </div>
-                                <!-- Score bars -->
-                                <div class="bp-quality-bars">
-                                    <div v-for="m in qualityScores" :key="m.label" class="bp-quality-row">
-                                        <div class="bp-quality-label">
-                                            <span class="bp-muted" style="font-size:11px;">{{ m.label }}</span>
-                                            <span class="bp-bold" style="font-size:11px;">{{ m.value }}{{ m.suffix }}</span>
-                                        </div>
-                                        <div class="bp-bar-track">
-                                            <div class="bp-bar-fill" :style="{ width: m.value + '%' }" />
-                                        </div>
-                                    </div>
-                                    <!-- Intelligence bars -->
-                                    <div class="bp-intel-divider">Physical Analysis</div>
-                                    <div v-for="b in intelligenceBars" :key="b.label" class="bp-quality-row">
-                                        <div class="bp-quality-label">
-                                            <span class="bp-muted" style="font-size:11px;">{{ b.label }}</span>
-                                            <span class="bp-bold" style="font-size:11px;">{{ b.value }}</span>
-                                        </div>
-                                        <div class="bp-bar-track">
-                                            <div class="bp-bar-fill bp-bar-fill--blue" :style="{ width: b.pct + '%' }" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ⑥ Processing Status ──────────────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><CircleCheck /></el-icon> Processing Status</div>
-                            <div class="bp-completion-pill">{{ completionPct }}% Complete</div>
-                        </div>
-                        <div class="bp-card-body">
-                            <div class="bp-processing-layout">
-                                <div class="bp-steps">
-                                    <div v-for="step in readinessItems" :key="step.label" class="bp-step">
-                                        <div class="bp-step-dot" :class="step.done ? 'bp-step-dot--done' : 'bp-step-dot--todo'">
-                                            <el-icon v-if="step.done"><Check /></el-icon>
-                                        </div>
-                                        <div>
-                                            <div class="bp-step-label" :class="{ 'bp-step-label--done': step.done }">{{ step.label }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bp-processing-detail">
-                                    <div v-for="item in processingItems" :key="item.title" class="bp-proc-item">
-                                        <div class="bp-muted" style="font-size:10px; text-transform:uppercase; letter-spacing:.09em;">{{ item.sub }}</div>
-                                        <div class="bp-bold" style="font-size:12px; margin-top:2px;">{{ item.title }}</div>
-                                    </div>
-                                    <div class="bp-progress-wrap" style="margin-top:14px;">
-                                        <div class="bp-muted" style="font-size:10px; margin-bottom:5px;">Readiness: {{ completionPct }}%</div>
-                                        <div class="bp-progress-track"><div class="bp-progress-fill" :style="{ width: completionPct + '%' }" /></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ⑦ Traceability Pipeline ──────────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><Promotion /></el-icon> Traceability Pipeline</div>
-                            <span class="bp-badge bp-badge--amber">Current: Batch</span>
-                        </div>
-                        <div class="bp-card-body bp-card-body--pipe">
-                            <div class="bp-pipe">
-                                <div v-for="(stage, idx) in pipelineStages" :key="stage.label" class="bp-pipe-item">
-                                    <!-- count + sub above dot -->
-                                    <div class="bp-pipe-item__top">
-                                        <div class="bp-pipe-item__count" :class="{ 'bp-pipe-item__count--current': stage.current }">
-                                            {{ stage.count }}
-                                        </div>
-                                        <div class="bp-pipe-item__sub">{{ stage.sub }}</div>
-                                    </div>
-                                    <!-- connector-left · dot · connector-right -->
-                                    <div class="bp-pipe-item__mid">
-                                        <div
-                                            class="bp-pipe-item__seg"
-                                            :class="{
-                                                'bp-pipe-item__seg--done':    idx > 0 && pipelineStages[idx - 1].done,
-                                                'bp-pipe-item__seg--hidden':  idx === 0,
-                                            }"
-                                        />
-                                        <div
-                                            class="bp-pipe-item__dot"
-                                            :class="{
-                                                'bp-pipe-item__dot--done':    stage.done,
-                                                'bp-pipe-item__dot--current': stage.current,
-                                            }"
-                                        >
-                                            <el-icon v-if="stage.done" style="font-size:13px;"><Check /></el-icon>
-                                        </div>
-                                        <div
-                                            class="bp-pipe-item__seg"
-                                            :class="{
-                                                'bp-pipe-item__seg--done':   stage.done,
-                                                'bp-pipe-item__seg--hidden': idx === pipelineStages.length - 1,
-                                            }"
-                                        />
-                                    </div>
-                                    <!-- label + verify badge below dot -->
-                                    <div class="bp-pipe-item__bot">
-                                        <div class="bp-pipe-item__label" :class="{ 'bp-pipe-item__label--current': stage.current }">
-                                            {{ stage.label }}
-                                        </div>
-                                        <div class="bp-pipe-item__verify" :class="{ 'bp-pipe-item__verify--done': stage.done, 'bp-pipe-item__verify--current': stage.current }">
-                                            {{ stage.verify }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div><!-- /bp-main -->
-
-                <!-- Right rail ───────────────────────────────────── -->
-                <div class="bp-rail">
-
-                    <!-- ⑧ Season Context ─────────────────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><Clock /></el-icon> Season Context</div>
-                            <span class="bp-badge bp-badge--green" style="font-size:9px;">Active</span>
-                        </div>
-                        <div class="bp-card-body">
-                            <div class="bp-bold" style="font-size:13px; color:#003f2c;">{{ seasonTitle }}</div>
-                            <div class="bp-muted" style="margin-top:2px;">{{ seasonRegion }}</div>
-                            <div class="bp-progress-wrap" style="margin-top:10px;">
-                                <div class="bp-muted" style="font-size:10px; margin-bottom:4px;">Season progress — 68%</div>
-                                <div class="bp-progress-track"><div class="bp-progress-fill" style="width:68%;" /></div>
-                            </div>
-                            <div class="bp-season-stats">
-                                <div class="bp-season-stat">
-                                    <div class="bp-bold" style="font-size:16px; color:#004532;">{{ formatNumber(seasonHealth, 1) }}</div>
-                                    <div class="bp-muted">Health Score</div>
-                                </div>
-                                <div class="bp-season-stat">
-                                    <div class="bp-bold" style="font-size:16px;">{{ activeFarms }}</div>
-                                    <div class="bp-muted">Active Farms</div>
-                                </div>
-                            </div>
-                            <Link :href="seasonHref" class="bp-link-btn">View Season Details</Link>
-                        </div>
-                    </div>
-
-                    <!-- ⑨ Export Readiness ───────────────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><Van /></el-icon> Export Readiness</div>
-                            <span class="bp-badge bp-badge--green" style="font-size:9px;">Export Ready</span>
-                        </div>
-                        <div class="bp-card-body">
-                            <div class="bp-export-stats">
-                                <div class="bp-export-stat">
-                                    <div class="bp-bold" style="font-size:20px; color:#004532;">{{ readinessScore }}%</div>
-                                    <div class="bp-muted">Eligibility</div>
-                                </div>
-                                <div class="bp-export-stat">
-                                    <div class="bp-bold" style="font-size:20px; color:#d97706;">High</div>
-                                    <div class="bp-muted">Demand</div>
-                                </div>
-                                <div class="bp-export-stat">
-                                    <div class="bp-bold" style="font-size:18px;">$4.8–5.6</div>
-                                    <div class="bp-muted">Est. / kg</div>
-                                </div>
-                            </div>
-                            <div class="bp-muted" style="font-size:9px; text-transform:uppercase; letter-spacing:.12em; margin:10px 0 7px;">Target Markets</div>
-                            <div class="bp-markets">
-                                <div v-for="m in targetMarkets" :key="m.label" class="bp-market-row">
-                                    <span class="bp-bold" style="font-size:11px; min-width:30px;">{{ m.label }}</span>
-                                    <div class="bp-bar-track" style="flex:1;"><div class="bp-bar-fill bp-bar-fill--amber" :style="{ width: m.pct + '%' }" /></div>
-                                    <span class="bp-muted" style="font-size:10px; min-width:26px; text-align:right;">{{ m.pct }}%</span>
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2 mt-2 flex-wrap">
-                                <span class="bp-badge bp-badge--green" style="font-size:9px;">Premium Batch</span>
-                                <span class="bp-badge bp-badge--purple" style="font-size:9px;">Verified</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ⑩ Lot Creation Readiness ─────────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><Files /></el-icon> Lot Creation</div>
-                        </div>
-                        <div class="bp-card-body">
-                            <div class="bp-lot-stats">
-                                <div class="bp-meta-pair">
-                                    <span class="bp-muted">Eligible Qty</span>
-                                    <span class="bp-bold">{{ formatNumber(totalQuantity) }} kg</span>
-                                </div>
-                                <div class="bp-meta-pair">
-                                    <span class="bp-muted">Suggested Lots</span>
-                                    <span class="bp-bold">2 × 1,400 kg</span>
-                                </div>
-                                <div class="bp-meta-pair">
-                                    <span class="bp-muted">Quality Status</span>
-                                    <span class="bp-badge bp-badge--green" style="font-size:9px;">Eligible</span>
-                                </div>
-                            </div>
-                            <div class="bp-lot-actions">
-                                <Link :href="route('batch.create-lot', batch.id)" class="bp-btn bp-btn--primary bp-btn--full">
-                                    <el-icon><Files /></el-icon> Create Lot
-                                </Link>
-                                <div class="d-flex gap-2">
-                                    <button class="bp-btn bp-btn--outline" style="flex:1;">Split Batch</button>
-                                    <button class="bp-btn bp-btn--outline" style="flex:1;">Merge Batch</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ⑪ Activity Timeline ──────────────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><Clock /></el-icon> Activity Timeline</div>
-                        </div>
-                        <div class="bp-card-body">
-                            <div class="bp-timeline">
-                                <div v-for="entry in activityLog" :key="entry.label" class="bp-tl-item">
-                                    <div class="bp-tl-dot" :class="`bp-tl-dot--${entry.dot}`" />
-                                    <div>
-                                        <div class="bp-primary" style="font-size:11px;">{{ entry.label }}</div>
-                                        <div class="bp-muted">{{ entry.time }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ⑫ AI Batch Insights ──────────────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><Opportunity /></el-icon> AI Batch Insights</div>
-                        </div>
-                        <div class="bp-card-body">
-                            <div class="bp-insights">
-                                <div v-for="(insight, idx) in aiInsights" :key="idx" class="bp-insight">
-                                    <div class="bp-insight-dot" />
-                                    <p class="bp-insight-text">{{ insight }}</p>
-                                </div>
-                            </div>
-                            <div class="bp-insight-footer">
-                                <span class="bp-muted" style="font-size:9px; text-transform:uppercase; letter-spacing:.1em;">Powered by Bean Origin AI</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ⑬ Smart Alerts ───────────────────────────── -->
-                    <div class="bp-card">
-                        <div class="bp-card-head">
-                            <div class="bp-card-title"><el-icon><Bell /></el-icon> Smart Alerts</div>
-                            <span class="bp-badge bp-badge--amber" style="font-size:9px;">{{ alerts.length }} Active</span>
-                        </div>
-                        <div class="bp-card-body">
-                            <div class="bp-alerts">
-                                <div v-for="alert in alerts" :key="alert.label" class="bp-alert" :class="`bp-alert--${alert.type}`">
-                                    <div class="bp-alert-dot" />
-                                    <div>
-                                        <div class="bp-primary" style="font-size:11px;">{{ alert.label }}</div>
-                                        <div class="bp-muted">{{ alert.time }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div><!-- /bp-rail -->
-
-            </div><!-- /bp-body -->
-
-        </div><!-- /bp-page -->
-
-        <!-- ⑭ Floating AI Assistant ──────────────────────────────── -->
-        <div class="bp-float">
-            <div v-if="chatOpen" class="bp-chat-panel">
-                <div class="bp-chat-head">
-                    <div>
-                        <div class="bp-bold" style="font-size:12px;">Bean Origin Batch Advisor</div>
-                        <div class="bp-muted">Profile intelligence assistant</div>
-                    </div>
-                    <button class="bp-chat-close" @click="chatOpen = false">×</button>
-                </div>
-                <div class="bp-chat-prompts">
-                    <button v-for="p in chatPrompts" :key="p" class="bp-chat-prompt" @click="fillPrompt(p)">{{ p }}</button>
-                </div>
-                <div class="bp-chat-input-row">
-                    <input v-model="chatInput" class="bp-chat-input" placeholder="Ask about this batch…" />
-                    <button class="bp-chat-send"><el-icon><Promotion /></el-icon></button>
+                <div class="btp-stat">
+                    <div class="btp-stat__icon" :class="hasDefects ? 'btp-stat__icon--warn' : 'btp-stat__icon--good'"><el-icon><WarningFilled /></el-icon></div>
+                    <div class="btp-stat__label">Defects</div>
+                    <div class="btp-stat__value">{{ batch.defect_count ?? '—' }}</div>
+                    <span v-if="defectsKnown" class="btp-stat__pill" :class="hasDefects ? 'btp-stat__pill--warn' : 'btp-stat__pill--good'">
+                        {{ hasDefects ? 'Flagged' : 'Clean' }}
+                    </span>
                 </div>
             </div>
-            <button class="bp-float-btn" @click="chatOpen = !chatOpen">
-                <el-icon><ChatDotRound /></el-icon>
-            </button>
+
+            <div class="btp-layout">
+                <div class="btp-col-main">
+                    <div class="btp-card">
+                        <h2 class="btp-card__title"><el-icon><Files /></el-icon> Batch Details</h2>
+                        <dl class="btp-dl">
+                            <div class="btp-dl__row"><dt>Batch Number</dt><dd>{{ batch.batch_number || '—' }}</dd></div>
+                            <div class="btp-dl__row"><dt>Variety</dt><dd>{{ batch.variety || '—' }}</dd></div>
+                            <div class="btp-dl__row"><dt><el-icon :size="13"><Location /></el-icon> Warehouse Location</dt><dd>{{ batch.warehouse_location || '—' }}</dd></div>
+                            <div class="btp-dl__row"><dt>Processing Date</dt><dd>{{ formatDate(batch.processing_date) }}</dd></div>
+                            <div class="btp-dl__row"><dt>Status</dt><dd class="btp-dl__capitalize">{{ batch.status || '—' }}</dd></div>
+                        </dl>
+                    </div>
+
+                    <div class="btp-card">
+                        <h2 class="btp-card__title"><el-icon><Operation /></el-icon> Processing</h2>
+                        <dl class="btp-dl">
+                            <div class="btp-dl__row"><dt>Processing Method</dt><dd>{{ batch.processing_method || '—' }}</dd></div>
+                            <div class="btp-dl__row"><dt><el-icon :size="13"><HotWater /></el-icon> Drying Method</dt><dd>{{ batch.drying_method || '—' }}</dd></div>
+                            <div class="btp-dl__row"><dt>Drying Duration</dt><dd>{{ batch.drying_duration !== null && batch.drying_duration !== undefined ? `${batch.drying_duration} days` : '—' }}</dd></div>
+                            <div class="btp-dl__row"><dt>Milling Status</dt><dd>{{ batch.milling_status || '—' }}</dd></div>
+                        </dl>
+                    </div>
+
+                    <div class="btp-card">
+                        <h2 class="btp-card__title"><el-icon><WarningFilled /></el-icon> Quality Assessment</h2>
+                        <dl class="btp-dl">
+                            <div class="btp-dl__row"><dt><el-icon :size="13"><HotWater /></el-icon> Moisture Content</dt><dd>{{ batch.moisture_content !== null && batch.moisture_content !== undefined ? `${batch.moisture_content}%` : '—' }}</dd></div>
+                            <div class="btp-dl__row"><dt>Cup Score</dt><dd>{{ batch.cup_score ?? '—' }}</dd></div>
+                            <div class="btp-dl__row"><dt>Defect Count</dt><dd>{{ batch.defect_count ?? '—' }}</dd></div>
+                            <div class="btp-dl__row"><dt>Screen Size</dt><dd>{{ batch.screen_size || '—' }}</dd></div>
+                        </dl>
+                    </div>
+
+                    <div v-if="batch.notes" class="btp-card">
+                        <h2 class="btp-card__title"><el-icon><Document /></el-icon> Notes</h2>
+                        <p class="btp-notes">{{ batch.notes }}</p>
+                    </div>
+
+                    <div v-if="harvests.length" class="btp-card">
+                        <h2 class="btp-card__title"><el-icon><Coffee /></el-icon> Harvests in this Batch</h2>
+                        <div class="btp-list">
+                            <Link v-for="h in harvests" :key="h.id" :href="route('harvest.show', h.id)" class="btp-list-row">
+                                <div class="btp-list-row__icon"><el-icon><Coffee /></el-icon></div>
+                                <div class="btp-list-row__main">
+                                    <div class="btp-list-row__title">{{ h.farm?.name || `Farm #${h.farm_id}` }}</div>
+                                    <div class="btp-list-row__sub">{{ h.variety || '—' }} · {{ formatDate(h.harvest_date) }}</div>
+                                </div>
+                                <div class="btp-list-row__stats">
+                                    <div class="btp-list-stat">
+                                        <span class="btp-list-stat__value">{{ h.weight ? `${Number(h.weight).toLocaleString()} kg` : '—' }}</span>
+                                        <span class="btp-list-stat__label">Weight</span>
+                                    </div>
+                                    <span class="btp-pill btp-pill--grade">{{ h.status || '—' }}</span>
+                                </div>
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div v-if="batch.compliances && batch.compliances.length" class="btp-card">
+                        <h2 class="btp-card__title"><el-icon><CircleCheck /></el-icon> Compliance Records</h2>
+                        <div class="btp-list">
+                            <div v-for="c in batch.compliances" :key="c.id" class="btp-list-row btp-list-row--static">
+                                <div class="btp-list-row__icon"><el-icon><CircleCheck /></el-icon></div>
+                                <div class="btp-list-row__main">
+                                    <div class="btp-list-row__title">{{ c.compliance_type }}</div>
+                                    <div class="btp-list-row__sub">
+                                        <span v-if="c.certificate_number">{{ c.certificate_number }} · </span>{{ c.issued_by || 'Unknown issuer' }}
+                                    </div>
+                                </div>
+                                <div class="btp-list-row__stats">
+                                    <div class="btp-list-stat">
+                                        <span class="btp-list-stat__value">{{ formatDate(c.expires_at) }}</span>
+                                        <span class="btp-list-stat__label">Expires</span>
+                                    </div>
+                                    <span class="btp-pill btp-pill--grade">{{ c.status }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="batch.lots && batch.lots.length" class="btp-card">
+                        <h2 class="btp-card__title"><el-icon><Ticket /></el-icon> Lots from this Batch</h2>
+                        <div class="btp-list">
+                            <Link v-for="lot in batch.lots" :key="lot.id" :href="route('lot.show', lot.id)" class="btp-list-row">
+                                <div class="btp-list-row__icon"><el-icon><Ticket /></el-icon></div>
+                                <div class="btp-list-row__main">
+                                    <div class="btp-list-row__title">{{ lot.lot_name || lot.lot_number || `Lot #${lot.id}` }}</div>
+                                    <div class="btp-list-row__sub">{{ lot.process || '—' }}<span v-if="lot.grade"> · {{ lot.grade }}</span></div>
+                                </div>
+                                <div class="btp-list-row__stats">
+                                    <div class="btp-list-stat">
+                                        <span class="btp-list-stat__value">{{ lot.net_weight_kg ? `${Number(lot.net_weight_kg).toLocaleString()} kg` : '—' }}</span>
+                                        <span class="btp-list-stat__label">Weight</span>
+                                    </div>
+                                    <span class="btp-pill btp-pill--grade">{{ lot.status || '—' }}</span>
+                                </div>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btp-col-side">
+                    <div class="btp-side-card">
+                        <div class="btp-side-card__head">
+                            <span class="btp-side-card__head-icon"><el-icon><User /></el-icon></span>
+                            <h3 class="btp-side-card__eyebrow">Recorded By</h3>
+                        </div>
+                        <div class="btp-recorder">
+                            <div class="btp-recorder__avatar">{{ recorderInitials }}</div>
+                            <div class="btp-recorder__body">
+                                <div class="btp-recorder__name">{{ batch.user?.name || 'Unknown' }}</div>
+                                <div class="btp-recorder__meta"><el-icon :size="12"><Checked /></el-icon> {{ formatDateTime(batch.created_at) }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="season" class="btp-side-card">
+                        <div class="btp-side-card__head">
+                            <span class="btp-side-card__head-icon"><el-icon><Calendar /></el-icon></span>
+                            <h3 class="btp-side-card__eyebrow">Season</h3>
+                        </div>
+                        <div class="btp-season-summary">
+                            <div class="btp-season-summary__name">{{ season.name }}</div>
+                            <div v-if="seasonLocation" class="btp-season-loc"><el-icon :size="12"><Location /></el-icon> {{ seasonLocation }}</div>
+                            <div class="btp-season-stats">
+                                <span v-if="season.harvests_count !== null">{{ season.harvests_count }} harvest{{ season.harvests_count === 1 ? '' : 's' }}</span>
+                                <span v-if="season.harvests_sum_weight">{{ Number(season.harvests_sum_weight).toLocaleString() }} kg</span>
+                            </div>
+                        </div>
+                        <Link :href="route('season.show', season.id)" class="btp-season-link">
+                            View Season <el-icon class="btp-season-link__arrow"><ArrowDown class="btp-season-link__rotate" /></el-icon>
+                        </Link>
+                    </div>
+
+                    <div class="btp-side-card">
+                        <div class="btp-side-card__head">
+                            <span class="btp-side-card__head-icon"><el-icon><OfficeBuilding /></el-icon></span>
+                            <h3 class="btp-side-card__eyebrow btp-side-card__eyebrow--grow">Farm Collections</h3>
+                            <button v-if="batch.can_manage" type="button" class="btp-side-card__add" title="Attach a farm collection" @click="attachModalOpen = true">
+                                <el-icon :size="14"><Plus /></el-icon>
+                            </button>
+                        </div>
+
+                        <div v-if="batch.farm_collection_links && batch.farm_collection_links.length" class="btp-collection-list">
+                            <Link
+                                v-for="link in batch.farm_collection_links"
+                                :key="link.id"
+                                :href="route('farm-collection.show', link.farm_collection_id)"
+                                class="btp-collection-card"
+                            >
+                                <div class="btp-collection-card__icon"><el-icon><OfficeBuilding /></el-icon></div>
+                                <div class="btp-collection-card__body">
+                                    <div class="btp-collection-card__top">
+                                        <span class="btp-collection-card__farm">{{ link.farm_collection?.farm?.name || `Collection ${link.farm_collection_code}` }}</span>
+                                        <span class="btp-collection-card__status" :class="`btp-collection-card__status--${collectionStatusTone(link.status)}`">{{ link.status }}</span>
+                                    </div>
+                                    <div class="btp-collection-card__sub">
+                                        {{ link.farm_collection?.coffee_type || '—' }}<span v-if="link.farm_collection?.variety"> · {{ link.farm_collection.variety }}</span>
+                                    </div>
+                                    <div class="btp-collection-card__meta">
+                                        <span class="btp-collection-card__code"><el-icon :size="10"><PriceTag /></el-icon>{{ link.farm_collection_code }}</span>
+                                        <span v-if="link.farm_collection?.quantity" class="btp-collection-card__qty">{{ Number(link.farm_collection.quantity).toLocaleString() }} {{ link.farm_collection.unit || '' }}</span>
+                                    </div>
+                                </div>
+                            </Link>
+                        </div>
+                        <div v-else class="btp-collection-empty">
+                            <div class="btp-collection-empty__icon"><el-icon :size="18"><FolderOpened /></el-icon></div>
+                            <p class="btp-collection-empty__text">No farm collections linked yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <UpdateBatchModal
-            v-if="canManageBatch"
-            v-model="updateBatchModalOpen"
+            v-if="batch.can_manage"
+            v-model="editDialogOpen"
             :batch="batch"
             :currency-options="currencyOptions"
         />
 
+        <ConfirmDialog
+            v-model="deleteDialogOpen"
+            eyebrow="Batch"
+            title="Delete Batch"
+            :message="deleteMessage"
+            confirm-text="Delete Batch"
+            :auto-close="false"
+            :loading="deleting"
+            @confirm="deleteBatch"
+        />
+
+        <AttachFarmCollectionModal
+            v-if="batch.can_manage"
+            v-model="attachModalOpen"
+            :batch-id="batch.id"
+        />
     </DesignPreviewLayout>
 </template>
 
 <style scoped>
-/* ── Base ───────────────────────────────────────────────────────── */
-.bp-page {
-    min-height: calc(100vh - 48px);
-    background: var(--surface, #f7f9fb);
-    color: #1f2a2a;
-    padding: 0 0 48px;
-    font-family: 'Manrope', sans-serif;
-}
-
-/* ── Header ─────────────────────────────────────────────────────── */
-.bp-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 10px 24px;
-    border-bottom: 1px solid #e8ecec;
-    background: #fff;
-    flex-wrap: wrap;
-}
-.bp-kicker {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: #94a1b2;
-    margin-bottom: 2px;
-}
-.bp-title {
-    font-size: 18px;
-    font-weight: 800;
-    color: #003f2c;
-    margin: 0 0 2px;
-    line-height: 1.15;
-}
-.bp-subtitle {
-    font-size: 12px;
-    color: #657386;
-    margin: 0 0 7px;
-    line-height: 1.5;
-}
-.bp-badge-row { display: flex; gap: 5px; flex-wrap: wrap; }
-.bp-header-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-
-/* ── Buttons ─────────────────────────────────────────────────────── */
-.bp-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    padding: 0 12px;
-    height: 30px;
-    border-radius: 5px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .03em;
-    cursor: pointer;
-    border: 1px solid transparent;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background .14s, color .14s, border-color .14s;
-}
-.bp-btn--primary { background: #003f2c; color: #fff; border-color: #003f2c; }
-.bp-btn--primary:hover { background: #004532; }
-.bp-btn--outline { background: #fff; color: #263232; border-color: #d4d8d8; }
-.bp-btn--outline:hover { border-color: #003f2c; color: #003f2c; }
-.bp-btn--ghost { background: transparent; color: #657386; border-color: transparent; }
-.bp-btn--ghost:hover { background: #f3f4f4; }
-.bp-btn--full { width: 100%; }
-
-/* ── Badges ──────────────────────────────────────────────────────── */
-.bp-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 7px;
-    border-radius: 4px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-}
-.bp-badge--green  { background: #eef5f1; color: #004532; border: 1px solid #c3ddd2; }
-.bp-badge--blue   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-.bp-badge--amber  { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-.bp-badge--purple { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
-
-/* ── Overview Card ───────────────────────────────────────────────── */
-.bp-overview {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    border-bottom: 1px solid #e8ecec;
-}
-@media (max-width: 900px) { .bp-overview { grid-template-columns: 1fr; } }
-
-.bp-ov-block {
-    padding: 14px 20px;
-    border-right: 1px solid #e8ecec;
-}
-.bp-ov-block:last-child { border-right: none; }
-@media (max-width: 900px) { .bp-ov-block { border-right: none; border-bottom: 1px solid #e8ecec; } }
-
-.bp-ov-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: #94a1b2;
-    margin-bottom: 5px;
-}
-.bp-ov-title {
-    font-size: 15px;
-    font-weight: 800;
-    color: #003f2c;
-    line-height: 1.15;
-}
-.bp-ov-sub {
-    font-size: 11px;
-    color: #657386;
-    margin-top: 1px;
-    margin-bottom: 8px;
-}
-.bp-ov-meta-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px 16px;
-}
-.bp-meta-pair { display: flex; flex-direction: column; gap: 1px; }
-.bp-ov-stat-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin-bottom: 10px;
-}
-.bp-ov-stat { text-align: center; padding: 8px; border: 1px solid #e8ecec; border-radius: 5px; background: #fafbfb; }
-.bp-ov-stat-val { font-size: 18px; font-weight: 800; color: #1f2a2a; line-height: 1.1; }
-.bp-ov-insight {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 10px;
-    background: #eef5f1;
-    border: 1px solid #c3ddd2;
-    border-radius: 5px;
-    font-size: 11px;
-    color: #004532;
-}
-.bp-ov-status-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-.bp-ov-score-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 10px; }
-.bp-ov-score-item { text-align: center; padding: 8px 4px; }
-.bp-ov-score-val { font-size: 18px; font-weight: 800; color: #1f2a2a; line-height: 1.1; }
-.bp-ov-progress { margin-bottom: 8px; }
-
-/* ── Shared text helpers ─────────────────────────────────────────── */
-.bp-primary { font-size: 12px; font-weight: 600; color: #1f2a2a; }
-.bp-muted   { font-size: 11px; color: #94a1b2; }
-.bp-bold    { font-weight: 700; color: #1f2a2a; }
-
-/* ── Status dots ─────────────────────────────────────────────────── */
-.bp-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #657386;
-}
-.bp-status::before {
-    content: '';
-    display: inline-block;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: #cbd5df;
-}
-.bp-status--received::before { background: #16a05d; }
-.bp-status--ready::before    { background: #2563eb; }
-
-/* ── Progress ────────────────────────────────────────────────────── */
-.bp-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
-.bp-progress-fill  { height: 100%; background: #004532; border-radius: 3px; transition: width .4s; }
-
-/* ── Body layout ─────────────────────────────────────────────────── */
-.bp-body {
-    display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr);
-    gap: 16px;
-    padding: 16px 24px 0;
-}
-@media (max-width: 1100px) { .bp-body { grid-template-columns: 1fr; } }
-
-.bp-main { display: flex; flex-direction: column; gap: 12px; }
-.bp-rail { display: flex; flex-direction: column; gap: 12px; }
-
-/* ── Card ────────────────────────────────────────────────────────── */
-.bp-card {
-    border: 1px solid #eef2f0;
-    border-radius: 6px;
-    background: #fff;
-    overflow: hidden;
-}
-.bp-card-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 8px 14px;
-    border-bottom: 1px solid #e8ecec;
-    background: #f8f9f9;
-    border-radius: 6px 6px 0 0;
-    flex-wrap: wrap;
-}
-.bp-card-title {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    font-weight: 800;
-    color: #1f2a2a;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    font-family: 'IBM Plex Mono', monospace;
-}
-.bp-card-body { padding: 12px 14px; }
-
-/* ── Table ───────────────────────────────────────────────────────── */
-.bp-table-wrap { overflow-x: auto; }
-.bp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.bp-table thead th {
-    padding: 7px 12px;
-    background: #f6f8f8;
-    border-bottom: 1px solid #eef2f0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: #7b8796;
-    white-space: nowrap;
-}
-.bp-table tbody td {
-    padding: 8px 12px;
-    border-bottom: 1px solid #f0f2f2;
-    vertical-align: middle;
-}
-.bp-table tbody tr:last-child td { border-bottom: none; }
-.bp-table tbody tr:hover td { background: #f8fbf9; }
-.bp-table-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 14px;
-    border-top: 1px solid #e8ecec;
-    background: #fafbfb;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-.bp-code {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px 7px;
-    border-radius: 4px;
-    background: #eef5f1;
-    color: #003f2c;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 800;
-}
-.bp-score {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 38px;
-    padding: 2px 7px;
-    border-radius: 4px;
-    border: 1px solid #c3ddd2;
-    background: #eef5f1;
-    color: #004532;
-    font-size: 11px;
-    font-weight: 800;
-}
-
-/* ── Farm grid ───────────────────────────────────────────────────── */
-.bp-farm-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-}
-@media (max-width: 640px) { .bp-farm-grid { grid-template-columns: 1fr; } }
-.bp-farm-card {
-    border: 1px solid #eef2f0;
-    border-radius: 6px;
-    padding: 10px 12px;
-    background: #fafbfb;
-}
-.bp-farm-card-top { display: flex; justify-content: space-between; align-items: center; }
-.bp-comp-bar-wrap { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
-.bp-comp-bar { height: 100%; background: #004532; border-radius: 3px; }
-
-/* ── Quality layout ──────────────────────────────────────────────── */
-.bp-quality-layout { display: grid; grid-template-columns: 140px 1fr; gap: 16px; }
-@media (max-width: 640px) { .bp-quality-layout { grid-template-columns: 1fr; } }
-.bp-score-tile {
-    border: 1px solid #eef2f0;
-    border-radius: 6px;
-    padding: 12px;
-    background: #fafbfb;
-    text-align: center;
-}
-.bp-score-big {
-    font-size: 36px;
-    font-weight: 800;
-    color: #004532;
-    line-height: 1;
-    margin-bottom: 2px;
-}
-.bp-score-stars {
-    margin-top: 8px;
-    font-size: 12px;
-    letter-spacing: .16em;
-    color: #d97706;
-}
-.bp-quality-bars { display: flex; flex-direction: column; gap: 7px; }
-.bp-quality-row { display: flex; flex-direction: column; gap: 3px; }
-.bp-quality-label { display: flex; justify-content: space-between; gap: 8px; }
-.bp-bar-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
-.bp-bar-fill { height: 100%; background: #004532; border-radius: 3px; }
-.bp-bar-fill--blue  { background: #2563eb; }
-.bp-bar-fill--amber { background: #d97706; }
-.bp-intel-divider {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: #94a1b2;
-    padding-top: 4px;
-    border-top: 1px solid #f0f2f2;
-}
-
-/* ── Processing layout ───────────────────────────────────────────── */
-.bp-processing-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 640px) { .bp-processing-layout { grid-template-columns: 1fr; } }
-.bp-steps { display: flex; flex-direction: column; gap: 7px; }
-.bp-step { display: flex; align-items: center; gap: 8px; }
-.bp-step-dot {
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    border: 2px solid #d4d8d8;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    font-size: 10px;
-    color: #fff;
-    background: #fff;
-}
-.bp-step-dot--done { border-color: #004532; background: #004532; }
-.bp-step-label { font-size: 12px; color: #657386; }
-.bp-step-label--done { color: #1f2a2a; font-weight: 600; }
-.bp-completion-pill {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    font-weight: 800;
-    color: #004532;
-    background: #eef5f1;
-    border: 1px solid #c3ddd2;
-    padding: 3px 8px;
-    border-radius: 5px;
-}
-.bp-proc-item { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #f0f2f2; }
-.bp-proc-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-
-/* ── Pipeline ────────────────────────────────────────────────────── */
-.bp-card-body--pipe { padding: 16px 12px; }
-
-.bp-pipe {
-    display: flex;
-    align-items: stretch;
-    overflow-x: auto;
-}
-
-/* Each stage takes equal width */
-.bp-pipe-item {
-    flex: 1;
-    min-width: 72px;
+.btp-page {
+    --primary: #000000;
+    --primary-container: #262626;
+    --on-primary-container: #F1F2F3;
+    --secondary-container: #E5FAE7;
+    --on-secondary-container: #2F6B35;
+    --error: #F85149;
+    --error-container: #FEEDED;
+    --on-error-container: #C6413A;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #F5F6F7;
+    --surface-container: #F1F2F3;
+    --on-surface: #121516;
+    --on-surface-variant: #4B5457;
+    --card-border: #E5E7EB;
+    --card-radius: 6px;
+    --sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--sans);
+    color: var(--on-surface);
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 24px;
 }
 
-/* ── Top: count + sub ── */
-.bp-pipe-item__top {
-    text-align: center;
-    padding-bottom: 8px;
-    min-height: 38px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-}
-.bp-pipe-item__count {
-    font-size: 17px;
-    font-weight: 800;
-    color: #1f2a2a;
-    line-height: 1;
-}
-.bp-pipe-item__count--current { color: #d97706; }
-.bp-pipe-item__sub {
-    font-size: 9px;
-    color: #94a1b2;
-    margin-top: 2px;
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-}
+.btp-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.btp-page-head__text { display: flex; flex-direction: column; gap: 6px; }
+.btp-page-title { font-size: 1.5rem; line-height: 1.9rem; letter-spacing: -0.015em; font-weight: 800; color: var(--primary); margin: 0; }
+.btp-page-subtitle { font-size: .9375rem; line-height: 1.5rem; font-weight: 400; color: var(--on-surface-variant); margin: 0; max-width: 640px; }
 
-/* ── Middle: left-seg · dot · right-seg ── */
-.bp-pipe-item__mid {
+.btp-actions-btn { flex-shrink: 0; }
+.btp-actions-btn:disabled { opacity: .6; cursor: default; }
+.btp-caret { font-size: 11px; margin-left: -2px; }
+
+.btp-hero {
     display: flex;
     align-items: center;
-    width: 100%;
+    gap: 16px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    padding: 24px;
 }
-.bp-pipe-item__seg {
-    flex: 1;
-    height: 2px;
-    background: #eef2f0;
-    transition: background .2s;
-}
-.bp-pipe-item__seg--done   { background: #004532; }
-.bp-pipe-item__seg--hidden { background: transparent; }
-
-.bp-pipe-item__dot {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid #d4d8d8;
-    background: #fff;
+.btp-hero__icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: var(--surface-container-low);
+    color: var(--on-surface-variant);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: #fff;
-    position: relative;
-    z-index: 1;
-    transition: border-color .2s, background .2s;
 }
-.bp-pipe-item__dot--done {
-    border-color: #004532;
-    background: #004532;
-}
-.bp-pipe-item__dot--current {
-    border-color: #d97706;
-    background: #d97706;
-    outline: 4px solid rgba(217, 119, 6, 0.18);
-    outline-offset: 1px;
-}
-
-/* ── Bottom: label + verify ── */
-.bp-pipe-item__bot {
-    text-align: center;
-    padding-top: 8px;
-    display: flex;
-    flex-direction: column;
+.btp-hero__text { flex: 1; min-width: 0; }
+.btp-hero__title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0 0 4px; }
+.btp-title { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.012em; color: var(--primary); margin: 0; }
+.btp-hero__code {
+    display: inline-flex;
     align-items: center;
     gap: 4px;
-}
-.bp-pipe-item__label {
-    font-size: 10px;
-    font-weight: 800;
-    color: #1f2a2a;
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-}
-.bp-pipe-item__label--current { color: #d97706; }
-.bp-pipe-item__verify {
-    font-size: 9px;
-    color: #b8c0cc;
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: .04em;
-    padding: 2px 6px;
-    border-radius: 3px;
-    border: 1px solid #e8ecec;
-    background: #fafbfb;
-    white-space: nowrap;
-}
-.bp-pipe-item__verify--done    { color: #004532; border-color: #c3ddd2; background: #eef5f1; }
-.bp-pipe-item__verify--current { color: #92400e; border-color: #fde68a; background: #fffbeb; }
-
-/* ── Rail cards ──────────────────────────────────────────────────── */
-.bp-season-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 10px 0; }
-.bp-season-stat { text-align: center; padding: 8px 4px; }
-.bp-link-btn {
-    display: flex; align-items: center; justify-content: center;
-    height: 30px;
-    border: 1px solid #d4d8d8;
-    border-radius: 5px;
-    text-decoration: none;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
     font-size: 11px;
     font-weight: 700;
-    color: #263232;
-    margin-top: 10px;
-    transition: border-color .14s, color .14s;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: .01em;
 }
-.bp-link-btn:hover { border-color: #003f2c; color: #003f2c; }
+.btp-subtitle { font-size: .9375rem; color: var(--on-surface-variant); margin: 0; }
+.btp-hero__badges { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-.bp-export-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 8px; text-align: center; }
-.bp-export-stat { padding: 8px 4px; }
-.bp-markets { display: flex; flex-direction: column; gap: 6px; }
-.bp-market-row { display: flex; align-items: center; gap: 7px; }
+.btp-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-transform: capitalize;
+}
+.btp-pill--status { background: var(--secondary-container); color: var(--on-secondary-container); }
+.btp-pill--grade { background: var(--surface-container); color: var(--on-surface-variant); border: 1px solid color-mix(in srgb, var(--card-border) 80%, transparent); }
 
-.bp-lot-stats { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-.bp-lot-actions { display: flex; flex-direction: column; gap: 6px; }
+.btp-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.btp-stat {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    padding: 20px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.btp-stat:hover { border-color: color-mix(in srgb, var(--on-surface) 18%, var(--card-border)); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04); }
+.btp-stat__icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    font-size: 16px;
+}
+.btp-stat__icon--a { background: color-mix(in srgb, var(--primary) 7%, var(--surface-container-lowest)); color: var(--primary); }
+.btp-stat__icon--b { background: color-mix(in srgb, var(--secondary-container) 55%, var(--surface-container-lowest)); color: var(--on-secondary-container); }
+.btp-stat__icon--c { background: #EEF2FF; color: #4338CA; }
+.btp-stat__icon--good { background: color-mix(in srgb, var(--secondary-container) 55%, var(--surface-container-lowest)); color: var(--on-secondary-container); }
+.btp-stat__icon--warn { background: #fef3c7; color: #92400e; }
+.btp-stat__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-variant); margin-bottom: 6px; }
+.btp-stat__value { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; color: var(--on-surface); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.btp-stat__unit { font-size: 13px; font-weight: 600; color: var(--on-surface-variant); }
+.btp-stat__sub { font-size: 11.5px; color: var(--on-surface-variant); margin-top: 7px; }
+.btp-stat__pill {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin-top: 9px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.btp-stat__pill--good { background: color-mix(in srgb, var(--secondary-container) 55%, var(--surface-container-lowest)); color: var(--on-secondary-container); }
+.btp-stat__pill--warn { background: #fef3c7; color: #92400e; }
 
-/* ── Timeline ────────────────────────────────────────────────────── */
-.bp-timeline { display: flex; flex-direction: column; gap: 9px; }
-.bp-tl-item  { display: flex; align-items: flex-start; gap: 9px; }
-.bp-tl-dot {
-    width: 9px; height: 9px;
+.btp-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.btp-col-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.btp-col-side { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+
+.btp-card {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    padding: 20px 24px;
+}
+.btp-card__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--on-surface-variant);
+    margin: 0 0 14px;
+}
+
+.btp-dl { margin: 0; display: flex; flex-direction: column; }
+.btp-dl__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--card-border);
+    font-size: 13.5px;
+}
+.btp-dl__row:last-child { border-bottom: none; padding-bottom: 0; }
+.btp-dl__row dt { display: inline-flex; align-items: center; gap: 5px; color: var(--on-surface-variant); }
+.btp-dl__row dt .el-icon { color: var(--on-surface-variant); }
+.btp-dl__row dd { margin: 0; font-weight: 600; color: var(--on-surface); text-align: right; }
+.btp-dl__capitalize { text-transform: capitalize; }
+
+.btp-notes { font-size: 13.5px; line-height: 1.6; color: var(--on-surface); margin: 0; white-space: pre-wrap; }
+
+/* ── Related-record list rows (Harvests/Compliance/Lots) ────────────────── */
+.btp-list { display: flex; flex-direction: column; }
+.btp-list-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--card-border);
+    text-decoration: none;
+    color: inherit;
+    transition: background .15s ease;
+}
+.btp-list-row:last-child { border-bottom: none; }
+a.btp-list-row:hover { background: color-mix(in srgb, var(--surface-container-low) 60%, transparent); margin: 0 -12px; padding: 14px 16px; border-radius: 10px; cursor: pointer; }
+.btp-list-row--static { cursor: default; }
+.btp-list-row__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--surface-container-low);
+    color: var(--on-surface-variant);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+}
+.btp-list-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.btp-list-row__title { font-size: 13.5px; font-weight: 700; color: var(--on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btp-list-row__sub { font-size: 12px; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btp-list-row__stats { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.btp-list-stat { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 70px; }
+.btp-list-stat__value { font-size: 13px; font-weight: 700; color: var(--on-surface); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.btp-list-stat__label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-variant); white-space: nowrap; }
+
+.btp-side-card {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    padding: 20px;
+}
+.btp-side-card__head { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.btp-side-card__head-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--primary) 6%, var(--surface-container-lowest));
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+}
+.btp-side-card__eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--on-surface-variant); margin: 0; }
+.btp-side-card__eyebrow--grow { flex: 1; }
+.btp-side-card__add {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: none;
+    background: var(--surface-container);
+    color: var(--on-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s ease;
+}
+.btp-side-card__add:hover { background: color-mix(in srgb, var(--card-border) 60%, transparent); }
+
+.btp-recorder { display: flex; align-items: center; gap: 12px; }
+.btp-recorder__avatar {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    border: 2px solid #d4d8d8;
-    background: #fff;
-    flex-shrink: 0; margin-top: 2px;
+    background: linear-gradient(135deg, var(--primary), #3a3a3a);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .01em;
 }
-.bp-tl-dot--success { border-color: #004532; background: #004532; }
-.bp-tl-dot--info    { border-color: #2563eb; background: #2563eb; }
+.btp-recorder__body { min-width: 0; }
+.btp-recorder__name { font-size: 14px; font-weight: 700; color: var(--on-surface); }
+.btp-recorder__meta { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--on-surface-variant); margin-top: 3px; }
 
-/* ── AI Insights ─────────────────────────────────────────────────── */
-.bp-insights { display: flex; flex-direction: column; gap: 9px; }
-.bp-insight  { display: flex; align-items: flex-start; gap: 8px; }
-.bp-insight-dot { width: 7px; height: 7px; border-radius: 50%; background: #004532; flex-shrink: 0; margin-top: 4px; }
-.bp-insight-text { font-size: 12px; color: #1f2a2a; line-height: 1.55; margin: 0; }
-.bp-insight-footer { margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f2f2; }
+.btp-season-summary { margin-bottom: 16px; }
+.btp-season-summary__name { font-size: 15px; font-weight: 800; letter-spacing: -0.005em; color: var(--on-surface); }
+.btp-season-loc { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--on-surface-variant); margin-top: 6px; }
+.btp-season-stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 9px; font-size: 12px; color: var(--on-surface-variant); font-weight: 600; }
 
-/* ── Alerts ──────────────────────────────────────────────────────── */
-.bp-alerts { display: flex; flex-direction: column; gap: 6px; }
-.bp-alert {
-    display: flex; align-items: flex-start; gap: 8px;
-    padding: 8px 10px; border-radius: 5px; border: 1px solid #eef2f0;
+.btp-season-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 6px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: opacity .15s ease;
 }
-.bp-alert--info    { background: #eff6ff; border-color: #bfdbfe; }
-.bp-alert--warning { background: #fffbeb; border-color: #fde68a; }
-.bp-alert--success { background: #eef5f1; border-color: #c3ddd2; }
-.bp-alert-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; background: #94a1b2; }
-.bp-alert--info    .bp-alert-dot { background: #2563eb; }
-.bp-alert--warning .bp-alert-dot { background: #d97706; }
-.bp-alert--success .bp-alert-dot { background: #004532; }
+.btp-season-link:hover { opacity: .88; }
+.btp-season-link__rotate { transform: rotate(-90deg); font-size: 13px; }
 
-/* ── Floating Chat ───────────────────────────────────────────────── */
-.bp-float {
-    position: fixed; bottom: 24px; right: 24px; z-index: 200;
-    display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+/* ── Farm Collections linked via batch_farm_collection ───────────────────── */
+.btp-collection-list { display: flex; flex-direction: column; gap: 10px; }
+.btp-collection-card {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
-.bp-float-btn {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: #003f2c; color: #fff; border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
-    transition: background .14s;
+.btp-collection-card:hover { border-color: color-mix(in srgb, var(--on-surface) 18%, var(--card-border)); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05); transform: translateY(-1px); }
+.btp-collection-card__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    flex-shrink: 0;
+    background: color-mix(in srgb, var(--primary) 7%, var(--surface-container-lowest));
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
 }
-.bp-float-btn:hover { background: #004532; }
-.bp-chat-panel {
-    width: 290px; border: 1px solid #eef2f0; border-radius: 6px; background: #fff; overflow: hidden;
+.btp-collection-card__body { flex: 1; min-width: 0; }
+.btp-collection-card__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.btp-collection-card__farm { font-size: 13px; font-weight: 700; color: var(--on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btp-collection-card__status {
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 9.5px;
+    font-weight: 700;
 }
-.bp-chat-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 13px; border-bottom: 1px solid #e8ecec; background: #f8f9f9;
+.btp-collection-card__status--pending { background: #fef3c7; color: #92400e; }
+.btp-collection-card__status--good { background: var(--secondary-container); color: var(--on-secondary-container); }
+.btp-collection-card__status--bad { background: var(--error-container); color: var(--on-error-container); }
+.btp-collection-card__sub { font-size: 11.5px; color: var(--on-surface-variant); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btp-collection-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 9px;
+    padding-top: 9px;
+    border-top: 1px dashed var(--card-border);
 }
-.bp-chat-close { font-size: 18px; line-height: 1; background: none; border: none; color: #94a1b2; cursor: pointer; padding: 0; }
-.bp-chat-prompts { padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f0f2f2; }
-.bp-chat-prompt {
-    text-align: left; background: #f8f9f9; border: 1px solid #eef2f0;
-    border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer;
-    transition: background .14s;
+.btp-collection-card__code {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-.bp-chat-prompt:hover { background: #eef5f1; border-color: #c3ddd2; color: #004532; }
-.bp-chat-input-row { display: flex; align-items: center; padding: 8px 12px; gap: 6px; }
-.bp-chat-input {
-    flex: 1; height: 30px; padding: 0 9px; border: 1px solid #d4d8d8;
-    border-radius: 5px; font-size: 11px; outline: none;
+.btp-collection-card__qty { flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--on-surface); font-variant-numeric: tabular-nums; }
+
+.btp-collection-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 0 4px; }
+.btp-collection-empty__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.bp-chat-input:focus { border-color: #003f2c; }
-.bp-chat-send {
-    width: 30px; height: 30px; border-radius: 5px; background: #003f2c;
-    color: #fff; border: none; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; font-size: 13px;
+.btp-collection-empty__text { font-size: 12.5px; color: var(--on-surface-variant); margin: 0; text-align: center; }
+
+.btp-btn-outline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 6px;
+    background: var(--surface-container);
+    color: var(--on-surface);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s ease;
 }
+.btp-btn-outline:hover:not(:disabled) { background: color-mix(in srgb, var(--card-border) 60%, transparent); }
+
+@media (max-width: 1024px) {
+    .btp-layout { grid-template-columns: 1fr; }
+    .btp-stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+    .btp-page-title { font-size: 1.25rem; line-height: 1.6rem; }
+    .btp-hero { flex-direction: column; align-items: flex-start; }
+    .btp-hero__badges { flex-wrap: wrap; }
+    .btp-stat-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 575.98px) {
+    .btp-page-head { flex-direction: column; align-items: stretch; }
+}
+</style>
+
+<style>
+/* Dropdown teleports to <body>, outside scoped styles — literal hex
+   from the same UI.md palette, matching every other page's actions menu. */
+.btp-actions-menu.el-dropdown-menu { border-radius: 6px; border: 1px solid #E5E7EB; padding: 4px; }
+.btp-actions-menu .el-dropdown-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #121516;
+    padding: 8px 12px;
+}
+.btp-actions-menu .el-dropdown-menu__item:hover { background: #F5F6F7; color: #121516; }
+.btp-actions-menu .btp-actions-menu__danger { color: #F85149; }
+.btp-actions-menu .btp-actions-menu__danger:hover { background: #FEEDED; color: #C6413A; }
 </style>

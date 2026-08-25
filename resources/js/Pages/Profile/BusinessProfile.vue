@@ -8,6 +8,7 @@ import {
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditBusinessProfileDialog from '@/Components/Modals/EditBusinessProfileDialog.vue';
 import AddBusinessMemberDialog from '@/Components/Modals/AddBusinessMemberDialog.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     businessProfile: { type: Object, default: null },
@@ -303,52 +304,29 @@ function memberInitials(member) {
         <AddBusinessMemberDialog v-model="memberDialogOpen" :member="memberBeingEdited" />
 
         <!-- ── Delete Business Profile modal ──────────────────────────── -->
-        <el-dialog v-model="deleteBusinessOpen" width="min(440px, calc(100vw - 2rem))" align-center class="bp-modal bp-modal--danger">
-            <template #header>
-                <div class="bp-modal__head">
-                    <div class="bp-modal__head-icon bp-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
-                    <div class="bp-modal__head-text">
-                        <div class="bp-modal__eyebrow">Business Profile</div>
-                        <div class="bp-modal__title">Delete Business Profile</div>
-                    </div>
-                </div>
-            </template>
-            <div class="bp-modal__body">
-                <p class="bp-modal__confirm-text">Are you sure you want to delete your business profile? This removes all registered team members too, and cannot be undone.</p>
-            </div>
-            <template #footer>
-                <div class="bp-modal__footer">
-                    <button type="button" class="bp-btn bp-btn--outline" @click="deleteBusinessOpen = false">Cancel</button>
-                    <button type="button" class="bp-btn bp-btn--danger" :disabled="deletingBusiness" @click="deleteBusinessProfile">
-                        {{ deletingBusiness ? 'Deleting…' : 'Delete Business Profile' }}
-                    </button>
-                </div>
-            </template>
-        </el-dialog>
+        <ConfirmDialog
+            v-model="deleteBusinessOpen"
+            eyebrow="Business Profile"
+            title="Delete Business Profile"
+            message="Are you sure you want to delete your business profile? This removes all registered team members too, and cannot be undone."
+            confirm-text="Delete Business Profile"
+            :auto-close="false"
+            :loading="deletingBusiness"
+            @confirm="deleteBusinessProfile"
+        />
 
         <!-- ── Remove Member modal ────────────────────────────────────── -->
-        <el-dialog v-model="removeMemberOpen" width="min(440px, calc(100vw - 2rem))" align-center class="bp-modal bp-modal--danger">
-            <template #header>
-                <div class="bp-modal__head">
-                    <div class="bp-modal__head-icon bp-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
-                    <div class="bp-modal__head-text">
-                        <div class="bp-modal__eyebrow">Business Leadership</div>
-                        <div class="bp-modal__title">Remove Member</div>
-                    </div>
-                </div>
-            </template>
-            <div v-if="memberToRemove" class="bp-modal__body">
-                <p class="bp-modal__confirm-text">Remove {{ memberToRemove.name }} from your business? This can't be undone.</p>
-            </div>
-            <template #footer>
-                <div class="bp-modal__footer">
-                    <button type="button" class="bp-btn bp-btn--outline" @click="removeMemberOpen = false">Cancel</button>
-                    <button type="button" class="bp-btn bp-btn--danger" :disabled="removingMemberId === memberToRemove?.id" @click="removeMember">
-                        {{ removingMemberId === memberToRemove?.id ? 'Removing…' : 'Remove Member' }}
-                    </button>
-                </div>
-            </template>
-        </el-dialog>
+        <ConfirmDialog
+            v-model="removeMemberOpen"
+            eyebrow="Business Leadership"
+            title="Remove Member"
+            :message="memberToRemove ? `Remove ${memberToRemove.name} from your business? This can't be undone.` : ''"
+            confirm-text="Remove Member"
+            loading-text="Removing…"
+            :auto-close="false"
+            :loading="removingMemberId === memberToRemove?.id"
+            @confirm="removeMember"
+        />
     </DesignPreviewLayout>
 </template>
 

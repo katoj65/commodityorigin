@@ -5,6 +5,7 @@ import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import AddFarmHarvestDialog from '@/Components/Modals/AddFarmHarvestDialog.vue';
 import HarvestProfileDialog from '@/Components/Modals/HarvestProfileDialog.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     Box, House, Collection, Calendar, TrendCharts, Clock,
     View, Edit, Delete, CircleCheck, WarningFilled, Plus,
@@ -355,32 +356,16 @@ function openViewHarvestDialog(row) {
             </el-dialog>
 
             <!-- ── Delete Harvest modal — borrows the fp-modal design language ── -->
-            <el-dialog v-model="deleteDialogOpen" width="420px" align-center class="fp-modal fp-modal--danger">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon fp-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Farm Workspace</div>
-                            <div class="fp-modal__title">Delete Harvest</div>
-                        </div>
-                    </div>
-                </template>
-
-                <div v-if="harvestToDelete" class="fp-modal__body">
-                    <p class="fp-modal__confirm-text">
-                        Are you sure you want to delete the harvest recorded on <strong>{{ formatDate(harvestToDelete.harvest_date) }}</strong>
-                        for <strong>{{ farmName(harvestToDelete) }}</strong>? This action cannot be undone.
-                    </p>
-                </div>
-
-                <template #footer>
-                    <div class="fp-modal__footer">
-                        <button type="button" class="mh-btn-danger" :disabled="deletingHarvest" @click="deleteHarvest">
-                            {{ deletingHarvest ? 'Deleting…' : 'Delete Harvest' }}
-                        </button>
-                    </div>
-                </template>
-            </el-dialog>
+            <ConfirmDialog
+                v-model="deleteDialogOpen"
+                eyebrow="Farm Workspace"
+                title="Delete Harvest"
+                :message="harvestToDelete ? `Are you sure you want to delete the harvest recorded on ${formatDate(harvestToDelete.harvest_date)} for ${farmName(harvestToDelete)}? This action cannot be undone.` : ''"
+                confirm-text="Delete Harvest"
+                :auto-close="false"
+                :loading="deletingHarvest"
+                @confirm="deleteHarvest"
+            />
 
         </div>
 

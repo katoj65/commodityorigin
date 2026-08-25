@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ElMessageBox, ElNotification } from 'element-plus';
+import { ElNotification } from 'element-plus';
 import {
     ArrowDown, Box, ChatDotRound, Check, CircleCheckFilled,
     Clock, CollectionTag, Delete, Download,
@@ -10,6 +10,7 @@ import {
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditSeasonModal from '@/Components/Modals/EditSeasonModal.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     season:               { type: Object, required: true },
@@ -62,19 +63,25 @@ const seasonHarvests = computed(() => props.harvests.map((h) => ({
 })));
 
 /* ── Preserved actions ───────────────────────────────────────── */
+const deleteSeasonOpen = ref(false);
+const deletingSeason = ref(false);
+
 const handleOptionsCommand = (command) => {
     if (command === 'edit') { editModalOpen.value = true; return; }
     if (command === 'add-harvest') { router.get(route('season.create-harvest', props.season.id)); return; }
-    if (command === 'delete') {
-        ElMessageBox.confirm(
-            'This will permanently delete the current season. Continue?',
-            'Delete season',
-            { confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning' },
-        ).then(() => {
-            router.delete(route('season.destroy', props.season.id), { preserveScroll: true });
-        }).catch(() => {});
-    }
+    if (command === 'delete') { deleteSeasonOpen.value = true; }
 };
+
+function confirmDeleteSeason() {
+    deletingSeason.value = true;
+    router.delete(route('season.destroy', props.season.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingSeason.value = false;
+            deleteSeasonOpen.value = false;
+        },
+    });
+}
 
 const notifySeasonUpdateSuccess = (message) => {
     ElNotification({ title: 'Season Saved', message, type: 'success', duration: 3200, offset: 84 });
@@ -86,19 +93,30 @@ const notifyHarvestDeleteSuccess = (message) => {
 
 const openHarvestProfile = (row) => { if (row?.showUrl) router.get(row.showUrl); };
 
+const deleteHarvestOpen = ref(false);
+const deletingHarvest = ref(false);
+const harvestToDelete = ref(null);
+
 const deleteHarvest = (row) => {
-    ElMessageBox.confirm(
-        `This will permanently delete ${row.id}. Continue?`,
-        'Delete harvest',
-        { confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning' },
-    ).then(() => {
-        router.delete(route('season.harvest.destroy', [props.season.id, row.rawId]), {
-            preserveScroll: true,
-            onSuccess: (page) => {
-                notifyHarvestDeleteSuccess(page.props.flash?.success || `${row.id} deleted successfully.`);
-            },
-        });
-    }).catch(() => {});
+    harvestToDelete.value = row;
+    deleteHarvestOpen.value = true;
+};
+
+const confirmDeleteHarvest = () => {
+    if (!harvestToDelete.value) return;
+    const row = harvestToDelete.value;
+    deletingHarvest.value = true;
+    router.delete(route('season.harvest.destroy', [props.season.id, row.rawId]), {
+        preserveScroll: true,
+        onSuccess: (page) => {
+            notifyHarvestDeleteSuccess(page.props.flash?.success || `${row.id} deleted successfully.`);
+        },
+        onFinish: () => {
+            deletingHarvest.value = false;
+            deleteHarvestOpen.value = false;
+            harvestToDelete.value = null;
+        },
+    });
 };
 
 /* ── Static mock data ────────────────────────────────────────── */
@@ -684,6 +702,28 @@ const fillPrompt = (p) => { chatInput.value = p; };
             :region-options="regionOptions"
             :status-options="statusOptions"
             @success="notifySeasonUpdateSuccess"
+        />
+
+        <ConfirmDialog
+            v-model="deleteSeasonOpen"
+            eyebrow="Season"
+            title="Delete Season"
+            message="This will permanently delete the current season. Continue?"
+            confirm-text="Delete"
+            :auto-close="false"
+            :loading="deletingSeason"
+            @confirm="confirmDeleteSeason"
+        />
+
+        <ConfirmDialog
+            v-model="deleteHarvestOpen"
+            eyebrow="Season"
+            title="Delete Harvest"
+            :message="harvestToDelete ? `This will permanently delete ${harvestToDelete.id}. Continue?` : ''"
+            confirm-text="Delete"
+            :auto-close="false"
+            :loading="deletingHarvest"
+            @confirm="confirmDeleteHarvest"
         />
 
     </DesignPreviewLayout>

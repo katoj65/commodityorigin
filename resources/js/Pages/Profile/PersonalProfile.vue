@@ -7,6 +7,7 @@ import {
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditProfileDialog from '@/Components/Modals/EditProfileDialog.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { resolveIcon } from '@/utils/icon';
 
 const props = defineProps({
@@ -255,28 +256,18 @@ const extraSessionsCount = computed(() => Math.max(props.sessions.length - sessi
         <EditProfileDialog v-model="editProfileOpen" :user="user" :profile="profile" />
 
         <!-- ── Unsubscribe Agent modal ─────────────────────────────────── -->
-        <el-dialog v-model="unsubscribeOpen" width="min(440px, calc(100vw - 2rem))" align-center class="pp-modal pp-modal--danger">
-            <template #header>
-                <div class="pp-modal__head">
-                    <div class="pp-modal__head-icon pp-modal__head-icon--danger"><el-icon :size="18"><Close /></el-icon></div>
-                    <div class="pp-modal__head-text">
-                        <div class="pp-modal__eyebrow">Subscribed Agents</div>
-                        <div class="pp-modal__title">Unsubscribe Agent</div>
-                    </div>
-                </div>
-            </template>
-            <div v-if="agentToUnsubscribe" class="pp-modal__body">
-                <p class="pp-modal__confirm-text">Unsubscribe from <strong>{{ agentToUnsubscribe.name }}</strong>? You'll lose access to its functions until you subscribe again.</p>
-            </div>
-            <template #footer>
-                <div class="pp-modal__footer">
-                    <button type="button" class="pp-btn pp-btn--outline" @click="unsubscribeOpen = false">Cancel</button>
-                    <button type="button" class="pp-btn pp-btn--danger" :disabled="unsubscribingId === agentToUnsubscribe?.id" @click="confirmUnsubscribe">
-                        {{ unsubscribingId === agentToUnsubscribe?.id ? 'Unsubscribing…' : 'Unsubscribe' }}
-                    </button>
-                </div>
-            </template>
-        </el-dialog>
+        <ConfirmDialog
+            v-model="unsubscribeOpen"
+            eyebrow="Subscribed Agents"
+            title="Unsubscribe Agent"
+            icon="warning"
+            :message="agentToUnsubscribe ? `Unsubscribe from ${agentToUnsubscribe.name}? You'll lose access to its functions until you subscribe again.` : ''"
+            confirm-text="Unsubscribe"
+            loading-text="Unsubscribing…"
+            :auto-close="false"
+            :loading="unsubscribingId === agentToUnsubscribe?.id"
+            @confirm="confirmUnsubscribe"
+        />
     </DesignPreviewLayout>
 </template>
 

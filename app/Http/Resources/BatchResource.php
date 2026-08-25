@@ -16,6 +16,7 @@ class BatchResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id,
             'batch_number' => $this->batch_number,
             'variety' => $this->variety,
             'warehouse_location' => $this->warehouse_location,
@@ -36,6 +37,12 @@ class BatchResource extends JsonResource
             'notes' => $this->notes,
             'can_manage' => $request->user() ? $request->user()->can('update', $this->resource) : false,
             'compliances' => $this->whenLoaded('compliances', fn (): array => BatchComplianceResource::collection($this->compliances)->resolve()),
+            'lots' => $this->whenLoaded('lots', fn (): array => LotResource::collection($this->lots)->resolve()),
+            'farm_collection_links' => $this->whenLoaded('batchFarmCollections', fn (): array => BatchFarmCollectionResource::collection($this->batchFarmCollections)->resolve()),
+            'user' => $this->whenLoaded('user', fn (): ?array => $this->user ? [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+            ] : null),
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
         ];

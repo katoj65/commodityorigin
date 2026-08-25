@@ -16,6 +16,8 @@ class FarmCollection extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'collection_code',
+        'status',
         'farm_id',
         'user_id',
         'collection_date',

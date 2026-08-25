@@ -16,7 +16,10 @@ class FarmCollectionResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'collection_code' => $this->collection_code,
+            'status' => $this->status,
             'farm_id' => $this->farm_id,
+            'user_id' => $this->user_id,
             'collection_date' => optional($this->collection_date)?->toDateString(),
             'coffee_type' => $this->coffee_type,
             'variety' => $this->variety,
@@ -32,9 +35,14 @@ class FarmCollectionResource extends JsonResource
             'payment_status' => $this->payment_status,
             'reference' => $this->reference,
             'notes' => $this->notes,
+            'can_manage' => $request->user() ? $request->user()->can('update', $this->resource) : false,
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
             'farm' => $this->whenLoaded('farm', fn (): array => FarmResource::make($this->farm)->resolve()),
+            'user' => $this->whenLoaded('user', fn (): array => [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+            ]),
         ];
     }
 }

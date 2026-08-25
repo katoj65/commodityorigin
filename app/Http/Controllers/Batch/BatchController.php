@@ -160,6 +160,23 @@ class BatchController extends Controller
     }
 
     /**
+     * Link a farm collection to this batch, found by its collection_code,
+     * via the batch_farm_collection pivot table.
+     */
+    public function attachFarmCollection(Request $request, Batch $batch): RedirectResponse
+    {
+        Gate::authorize('update', $batch);
+
+        $validated = $request->validate([
+            'collection_code' => ['required', 'string', 'max:255'],
+        ]);
+
+        $this->batches->attachFarmCollection($batch, $validated['collection_code'], $request->user()->id);
+
+        return back()->with('success', 'Farm collection linked to this batch.');
+    }
+
+    /**
      * Validate batch create/update payloads.
      *
      * @return array<string, mixed>

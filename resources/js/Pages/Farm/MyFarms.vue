@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     Plus, View, Edit, Delete, Box,
     House, Location, TrendCharts, Collection, DataLine, Checked,
@@ -249,31 +250,16 @@ function deleteFarm() {
             </el-dialog>
 
             <!-- ── Delete Farm modal — borrows the fp-modal design language ── -->
-            <el-dialog v-model="deleteDialogOpen" width="420px" align-center class="fp-modal fp-modal--danger">
-                <template #header>
-                    <div class="fp-modal__head">
-                        <div class="fp-modal__head-icon fp-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
-                        <div class="fp-modal__head-text">
-                            <div class="fp-modal__eyebrow">Farm Workspace</div>
-                            <div class="fp-modal__title">Delete Farm</div>
-                        </div>
-                    </div>
-                </template>
-
-                <div v-if="farmToDelete" class="fp-modal__body">
-                    <p class="fp-modal__confirm-text">
-                        Are you sure you want to delete <strong>{{ farmToDelete.name }}</strong>? This action cannot be undone.
-                    </p>
-                </div>
-
-                <template #footer>
-                    <div class="fp-modal__footer">
-                        <button type="button" class="mf-btn-danger" :disabled="deletingFarm" @click="deleteFarm">
-                            {{ deletingFarm ? 'Deleting…' : 'Delete Farm' }}
-                        </button>
-                    </div>
-                </template>
-            </el-dialog>
+            <ConfirmDialog
+                v-model="deleteDialogOpen"
+                eyebrow="Farm Workspace"
+                title="Delete Farm"
+                :message="farmToDelete ? `Are you sure you want to delete ${farmToDelete.name}? This action cannot be undone.` : ''"
+                confirm-text="Delete Farm"
+                :auto-close="false"
+                :loading="deletingFarm"
+                @confirm="deleteFarm"
+            />
 
         </div>
     </DesignPreviewLayout>

@@ -6,6 +6,7 @@ use App\Models\Farm;
 use App\Models\FarmCollection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class FarmCollectionService
 {
@@ -31,13 +32,31 @@ class FarmCollectionService
     }
 
     /**
-     * Create a new farm collection record.
+     * Create a new farm collection record. A collection_code is always
+     * server-generated — never accepted from the caller.
      *
      * @param  array<string, mixed>  $data
      */
     public function create(array $data): FarmCollection
     {
-        return FarmCollection::query()->create($data);
+        return FarmCollection::query()->create([
+            ...$data,
+            'collection_code' => $this->generateCollectionCode(),
+        ]);
+    }
+
+    /**
+     * Generate a unique, human-readable collection code (e.g.
+     * COL-2026-AB12CD) — mirrors FarmService::generateFarmCode() /
+     * BatchService::generateBatchNumber() exactly.
+     */
+    protected function generateCollectionCode(): string
+    {
+        do {
+            $code = sprintf('COL-%d-%s', now()->year, strtoupper(Str::random(6)));
+        } while (FarmCollection::query()->where('collection_code', $code)->exists());
+
+        return $code;
     }
 
     /**

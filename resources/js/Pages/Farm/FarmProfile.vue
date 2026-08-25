@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { isGoogleMapsConfigured, renderMap } from '@/services/googleMaps';
 import {
     Box, CaretRight, ChatDotRound, CircleCheckFilled, Coffee, Delete, Document, Download, Edit, Files,
@@ -259,6 +260,14 @@ function openDeleteCollectionDialog(row) {
     viewCollectionDialogOpen.value = false;
     deleteCollectionDialogOpen.value = true;
 }
+
+const collectionDeleteMessage = computed(() => {
+    if (!collectionToDelete.value) return '';
+    const c = collectionToDelete.value;
+    const qty = (c.quantity !== null && c.quantity !== undefined) ? `${Number(c.quantity).toLocaleString()} ${c.unit || 'kg'}` : null;
+    const parts = [c.coffee_type, c.collection_date, qty].filter(Boolean);
+    return `Are you sure you want to delete this collection record${parts.length ? ` (${parts.join(' · ')})` : ''}? This action cannot be undone.`;
+});
 
 function deleteCollection() {
     if (!collectionToDelete.value) return;
@@ -980,28 +989,16 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
         </el-dialog>
 
         <!-- ── Delete Farm modal ────────────────────────────────────────── -->
-        <el-dialog v-model="deleteDialogOpen" width="min(420px, calc(100vw - 2rem))" align-center class="fp-modal fp-modal--danger">
-            <template #header>
-                <div class="fp-modal__head">
-                    <div class="fp-modal__head-icon fp-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
-                    <div class="fp-modal__head-text">
-                        <div class="fp-modal__eyebrow">Farm Profile</div>
-                        <div class="fp-modal__title">Delete Farm</div>
-                    </div>
-                </div>
-            </template>
-            <div class="fp-modal__body">
-                <p class="fp-modal__confirm-text">Are you sure you want to delete <strong>{{ farmName }}</strong>? This action cannot be undone.</p>
-            </div>
-            <template #footer>
-                <div class="fp-modal__footer">
-                    <button type="button" class="fp-btn fp-btn--outline" @click="deleteDialogOpen = false">Cancel</button>
-                    <button type="button" class="fp-btn fp-btn--danger" :disabled="deletingFarm" @click="deleteFarm">
-                        {{ deletingFarm ? 'Deleting…' : 'Delete Farm' }}
-                    </button>
-                </div>
-            </template>
-        </el-dialog>
+        <ConfirmDialog
+            v-model="deleteDialogOpen"
+            eyebrow="Farm Profile"
+            title="Delete Farm"
+            :message="`Are you sure you want to delete ${farmName}? This action cannot be undone.`"
+            confirm-text="Delete Farm"
+            :auto-close="false"
+            :loading="deletingFarm"
+            @confirm="deleteFarm"
+        />
 
         <!-- ── Add Collection modal ─────────────────────────────────────── -->
         <el-dialog v-model="collectionDialogOpen" width="min(600px, calc(100vw - 2rem))" align-center destroy-on-close :close-on-click-modal="false" class="fp-modal">
@@ -1187,33 +1184,16 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
         </el-dialog>
 
         <!-- ── Delete Collection modal ──────────────────────────────────── -->
-        <el-dialog v-model="deleteCollectionDialogOpen" width="min(440px, calc(100vw - 2rem))" align-center class="fp-modal fp-modal--danger">
-            <template #header>
-                <div class="fp-modal__head">
-                    <div class="fp-modal__head-icon fp-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
-                    <div class="fp-modal__head-text">
-                        <div class="fp-modal__eyebrow">Farm Collections</div>
-                        <div class="fp-modal__title">Delete Collection</div>
-                    </div>
-                </div>
-            </template>
-            <div v-if="collectionToDelete" class="fp-modal__body">
-                <p class="fp-modal__confirm-text">Are you sure you want to delete this collection record? This action cannot be undone.</p>
-                <dl class="fp-preview">
-                    <div class="fp-preview__row"><dt>Coffee Type</dt><dd>{{ collectionToDelete.coffee_type || '—' }}</dd></div>
-                    <div class="fp-preview__row"><dt>Date</dt><dd>{{ collectionToDelete.collection_date || '—' }}</dd></div>
-                    <div class="fp-preview__row"><dt>Quantity</dt><dd>{{ collectionToDelete.quantity !== null && collectionToDelete.quantity !== undefined ? `${Number(collectionToDelete.quantity).toLocaleString()} ${collectionToDelete.unit || 'kg'}` : '—' }}</dd></div>
-                </dl>
-            </div>
-            <template #footer>
-                <div class="fp-modal__footer">
-                    <button type="button" class="fp-btn fp-btn--outline" @click="deleteCollectionDialogOpen = false">Cancel</button>
-                    <button type="button" class="fp-btn fp-btn--danger" :disabled="deletingCollection" @click="deleteCollection">
-                        {{ deletingCollection ? 'Deleting…' : 'Delete Collection' }}
-                    </button>
-                </div>
-            </template>
-        </el-dialog>
+        <ConfirmDialog
+            v-model="deleteCollectionDialogOpen"
+            eyebrow="Farm Collections"
+            title="Delete Collection"
+            :message="collectionDeleteMessage"
+            confirm-text="Delete Collection"
+            :auto-close="false"
+            :loading="deletingCollection"
+            @confirm="deleteCollection"
+        />
 
         <!-- ── Upload Document modal ────────────────────────────────────── -->
         <el-dialog v-model="documentDialogOpen" width="min(480px, calc(100vw - 2rem))" align-center destroy-on-close :close-on-click-modal="false" class="fp-modal">
@@ -1263,28 +1243,16 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
         </el-dialog>
 
         <!-- ── Delete Document modal ────────────────────────────────────── -->
-        <el-dialog v-model="deleteDocumentDialogOpen" width="min(420px, calc(100vw - 2rem))" align-center class="fp-modal fp-modal--danger">
-            <template #header>
-                <div class="fp-modal__head">
-                    <div class="fp-modal__head-icon fp-modal__head-icon--danger"><el-icon :size="18"><Delete /></el-icon></div>
-                    <div class="fp-modal__head-text">
-                        <div class="fp-modal__eyebrow">Farm Profile</div>
-                        <div class="fp-modal__title">Delete Document</div>
-                    </div>
-                </div>
-            </template>
-            <div v-if="documentToDelete" class="fp-modal__body">
-                <p class="fp-modal__confirm-text">Are you sure you want to delete <strong>{{ documentToDelete.title }}</strong>? This action cannot be undone.</p>
-            </div>
-            <template #footer>
-                <div class="fp-modal__footer">
-                    <button type="button" class="fp-btn fp-btn--outline" @click="deleteDocumentDialogOpen = false">Cancel</button>
-                    <button type="button" class="fp-btn fp-btn--danger" :disabled="deletingDocument" @click="deleteDocument">
-                        {{ deletingDocument ? 'Deleting…' : 'Delete Document' }}
-                    </button>
-                </div>
-            </template>
-        </el-dialog>
+        <ConfirmDialog
+            v-model="deleteDocumentDialogOpen"
+            eyebrow="Farm Profile"
+            title="Delete Document"
+            :message="documentToDelete ? `Are you sure you want to delete ${documentToDelete.title}? This action cannot be undone.` : ''"
+            confirm-text="Delete Document"
+            :auto-close="false"
+            :loading="deletingDocument"
+            @confirm="deleteDocument"
+        />
     </DesignPreviewLayout>
 </template>
 

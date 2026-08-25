@@ -288,13 +288,15 @@ class FarmController extends Controller
     {
         $validated = $request->validate($this->collectionValidationRules());
 
-        $this->collections->create([
+        $collection = $this->collections->create([
             ...$validated,
             'farm_id' => $farm->id,
             'user_id' => $request->user()->id,
         ]);
 
-        return back()->with('success', 'Collection recorded successfully.');
+        return redirect()
+            ->route('farm-collection.show', $collection)
+            ->with('success', 'Collection recorded successfully.');
     }
 
     /**

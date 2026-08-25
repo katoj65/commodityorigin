@@ -3,23 +3,35 @@ import { Delete, WarningFilled } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
+    eyebrow: { type: String, default: '' },
     title: { type: String, default: 'Are you sure?' },
     message: { type: String, default: '' },
     confirmText: { type: String, default: 'Delete' },
     cancelText: { type: String, default: 'Cancel' },
     danger: { type: Boolean, default: true },
     icon: { type: String, default: 'delete' },
+    loading: { type: Boolean, default: false },
+    loadingText: { type: String, default: 'Deleting…' },
+    // Every existing caller fires-and-forgets: @confirm fires, the dialog
+    // closes immediately, the request runs in the background. Callers that
+    // need the dialog to stay open with a loading state (e.g. a delete that
+    // must finish before navigating away) pass :auto-close="false" and close
+    // the v-model themselves once their async work settles.
+    autoClose: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
 
 function close() {
+    if (props.loading) return;
     emit('update:modelValue', false);
     emit('cancel');
 }
 
 function confirm() {
-    emit('update:modelValue', false);
+    if (props.autoClose) {
+        emit('update:modelValue', false);
+    }
     emit('confirm');
 }
 </script>
@@ -30,17 +42,22 @@ function confirm() {
             <div v-if="props.modelValue" class="cfd-overlay" @click.self="close">
                 <Transition name="cfd-pop" appear>
                     <div v-if="props.modelValue" class="cfd-panel" role="alertdialog" aria-modal="true">
-                        <div class="cfd-icon" :class="danger ? 'cfd-icon--danger' : 'cfd-icon--warn'">
-                            <el-icon :size="24"><component :is="icon === 'warning' ? WarningFilled : Delete" /></el-icon>
+                        <div class="cfd-head">
+                            <div class="cfd-icon" :class="danger ? 'cfd-icon--danger' : 'cfd-icon--warn'">
+                                <el-icon :size="18"><component :is="icon === 'warning' ? WarningFilled : Delete" /></el-icon>
+                            </div>
+                            <div class="cfd-head-text">
+                                <div v-if="eyebrow" class="cfd-eyebrow">{{ eyebrow }}</div>
+                                <h3 class="cfd-title">{{ title }}</h3>
+                            </div>
                         </div>
 
-                        <h3 class="cfd-title">{{ title }}</h3>
                         <p v-if="message" class="cfd-message">{{ message }}</p>
 
                         <div class="cfd-actions">
-                            <button type="button" class="cfd-btn cfd-btn--ghost" @click="close">{{ cancelText }}</button>
-                            <button type="button" class="cfd-btn" :class="danger ? 'cfd-btn--danger' : 'cfd-btn--primary'" @click="confirm">
-                                {{ confirmText }}
+                            <button type="button" class="cfd-btn cfd-btn--ghost" :disabled="loading" @click="close">{{ cancelText }}</button>
+                            <button type="button" class="cfd-btn" :class="danger ? 'cfd-btn--danger' : 'cfd-btn--primary'" :disabled="loading" @click="confirm">
+                                {{ loading ? loadingText : confirmText }}
                             </button>
                         </div>
                     </div>
@@ -51,13 +68,15 @@ function confirm() {
 </template>
 
 <style scoped>
+/* Standing app-wide delete-confirmation style (2026-08-25) — icon-box +
+   eyebrow/title header row, confirm-text body, Cancel/Delete footer.
+   See reference_ui_md_design_system / feedback_inventory_creation_modals
+   memory: literal UI.md hex tokens, matching every other modal's chrome. */
 .cfd-overlay {
     position: fixed;
     inset: 0;
     z-index: 2000;
-    background: rgba(17, 24, 39, 0.55);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    background: rgba(17, 24, 39, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -66,106 +85,78 @@ function confirm() {
 
 .cfd-panel {
     width: 100%;
-    max-width: 380px;
+    max-width: 420px;
     background: #fff;
     border-radius: 6px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.08);
-    padding: 28px 28px 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    font-family: 'Manrope', system-ui, sans-serif;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    text-align: left;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
+.cfd-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    background: #fff;
+    border-bottom: 1px solid #E5E7EB;
+}
 .cfd-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 16px;
+    flex-shrink: 0;
 }
+.cfd-icon--danger { background: #FEEDED; color: #C6413A; }
+.cfd-icon--warn { background: #fef3c7; color: #92400e; }
+.cfd-head-text { flex: 1; min-width: 0; }
+.cfd-eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #6F7677;
+    margin-bottom: 1px;
+}
+.cfd-title { font-size: 1.0625rem; font-weight: 700; color: #121516; letter-spacing: -0.01em; margin: 0; }
 
-.cfd-icon--danger {
-    background: linear-gradient(135deg, #fee2e2, #fecaca);
-    color: #dc2626;
-    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.06);
-}
-
-.cfd-icon--warn {
-    background: linear-gradient(135deg, #fef3c7, #fde68a);
-    color: #b45309;
-    box-shadow: 0 0 0 6px rgba(180, 83, 9, 0.06);
-}
-
-.cfd-title {
-    font-size: 1.0625rem;
-    font-weight: 800;
-    color: #111827;
-    letter-spacing: -0.01em;
-    margin: 0 0 6px;
-}
-
-.cfd-message {
-    font-size: 0.8125rem;
-    color: #6b7280;
-    line-height: 1.55;
-    margin: 0;
-}
+.cfd-message { font-size: 0.875rem; color: #4B5457; line-height: 1.6; margin: 0; padding: 22px 24px; }
 
 .cfd-actions {
     display: flex;
+    justify-content: flex-end;
     gap: 10px;
-    margin-top: 24px;
-    width: 100%;
+    padding: 16px 24px;
+    background: #F5F6F7;
+    border-top: 1px solid #E5E7EB;
 }
-
 .cfd-btn {
-    flex: 1;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-size: 0.8125rem;
-    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     border: 1px solid transparent;
-    transition: transform 0.08s ease, background 0.12s ease, box-shadow 0.12s ease;
+    transition: opacity 0.15s ease, background 0.15s ease;
 }
+.cfd-btn:disabled { opacity: 0.5; cursor: default; }
 
-.cfd-btn:active {
-    transform: scale(0.97);
-}
+.cfd-btn--ghost { background: #fff; border-color: #E5E7EB; color: #121516; }
+.cfd-btn--ghost:hover:not(:disabled) { background: #F5F6F7; }
 
-.cfd-btn--ghost {
-    background: #f8fafc;
-    border-color: #e5e7eb;
-    color: #374151;
-}
+.cfd-btn--danger { background: #F85149; color: #fff; }
+.cfd-btn--danger:hover:not(:disabled) { opacity: 0.88; }
 
-.cfd-btn--ghost:hover {
-    background: #f1f5f9;
-}
-
-.cfd-btn--danger {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: #fff;
-    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
-}
-
-.cfd-btn--danger:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-}
-
-.cfd-btn--primary {
-    background: linear-gradient(135deg, #065f46, #004532);
-    color: #fff;
-    box-shadow: 0 6px 16px rgba(0, 69, 50, 0.3);
-}
-
-.cfd-btn--primary:hover {
-    background: linear-gradient(135deg, #004532, #002e20);
-}
+.cfd-btn--primary { background: #000000; color: #fff; }
+.cfd-btn--primary:hover:not(:disabled) { opacity: 0.88; }
 
 /* ── Transitions ──────────────────────────────────────────────────────── */
 .cfd-fade-enter-active,
@@ -189,6 +180,6 @@ function confirm() {
 .cfd-pop-enter-from,
 .cfd-pop-leave-to {
     opacity: 0;
-    transform: scale(0.92) translateY(6px);
+    transform: scale(0.96) translateY(4px);
 }
 </style>

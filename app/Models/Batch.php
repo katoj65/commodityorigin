@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Batch extends Model
@@ -53,6 +54,14 @@ class Batch extends Model
     ];
 
     /**
+     * Get the user who recorded this batch.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
      * Get the ownership records attached to the batch.
      */
     public function ownerships(): HasMany
@@ -74,5 +83,14 @@ class Batch extends Model
     public function lots(): HasMany
     {
         return $this->hasMany(Lot::class);
+    }
+
+    /**
+     * Get the farm collections linked to this batch, via the
+     * batch_farm_collection pivot table.
+     */
+    public function batchFarmCollections(): HasMany
+    {
+        return $this->hasMany(BatchFarmCollection::class);
     }
 }

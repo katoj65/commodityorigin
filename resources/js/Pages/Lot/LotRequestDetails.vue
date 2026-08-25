@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     Box, Checked, Clock, Collection, DataAnalysis,
     Document, Edit, Files, GoodsFilled, Histogram, Medal,
@@ -43,9 +44,15 @@ function submitEdit() {
     });
 }
 
+const deletingRequest = ref(false);
+
 function confirmDelete() {
+    deletingRequest.value = true;
     useForm({}).delete(route('lot.request.destroy', req.value.id), {
-        onSuccess: () => { deleteOpen.value = false; },
+        onFinish: () => {
+            deletingRequest.value = false;
+            deleteOpen.value = false;
+        },
     });
 }
 
@@ -508,22 +515,16 @@ const userInitials = computed(() => {
         </el-dialog>
 
         <!-- ── Delete Dialog ─────────────────────────────────────────────── -->
-        <el-dialog v-model="deleteOpen" title="Delete Lot Request" width="420px" :close-on-click-modal="false">
-            <div class="lr-delete-body">
-                <div class="lr-delete-icon">
-                    <el-icon><Delete /></el-icon>
-                </div>
-                <p class="lr-delete-title">Delete Request <span class="lr-mono">#{{ req.id }}</span>?</p>
-                <p class="lr-delete-sub">This will permanently remove the lot request. This action cannot be undone.</p>
-            </div>
-            <template #footer>
-                <div class="lr-dialog-footer">
-                    <button class="lr-btn lr-btn--delete" @click="confirmDelete">
-                        <el-icon><Delete /></el-icon> Delete Request
-                    </button>
-                </div>
-            </template>
-        </el-dialog>
+        <ConfirmDialog
+            v-model="deleteOpen"
+            eyebrow="Lot Requests"
+            title="Delete Request"
+            :message="`Delete Request #${req.id}? This will permanently remove the lot request. This action cannot be undone.`"
+            confirm-text="Delete Request"
+            :auto-close="false"
+            :loading="deletingRequest"
+            @confirm="confirmDelete"
+        />
 
     </DesignPreviewLayout>
 </template>
