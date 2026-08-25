@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Lot;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\LotResource;
 use App\Models\Batch;
 use App\Models\Lot;
 use App\Models\LotRequest;
+use App\Services\CoffeeGradeService;
 use App\Services\LotService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,8 +18,10 @@ use Inertia\Response;
 
 class LotController extends Controller
 {
-    public function __construct(private readonly LotService $lots)
-    {
+    public function __construct(
+        private readonly LotService $lots,
+        private readonly CoffeeGradeService $coffeeGrades,
+    ) {
     }
 
     /**
@@ -28,21 +32,21 @@ class LotController extends Controller
         Gate::authorize('create', Lot::class);
 
         return Inertia::render('Lot/Create', [
-            'batches' => $this->lots->batchSummaries(),
             'processOptions' => $this->lots->processingMethodOptions()->pluck('name')->all(),
+            'coffeeGradeOptions' => $this->coffeeGrades->activeOptions()->pluck('name')->all(),
         ]);
     }
 
     /**
-     * Store a newly created legacy lot.
+     * Store a newly created lot. The lot number is generated
+     * automatically; linking a batch happens afterward from the lot
+     * profile page.
      */
     public function store(Request $request): RedirectResponse
     {
         Gate::authorize('create', Lot::class);
 
         $validated = $request->validate([
-            'batch_id' => ['required', 'exists:batches,id'],
-            'lot_number' => ['required', 'string', 'max:100', 'unique:lots,lot_number'],
             'lot_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:4000'],
             'image' => ['nullable', 'image', 'max:5120'],
@@ -52,7 +56,12 @@ class LotController extends Controller
                 'max:100',
                 Rule::exists('processing_metadata', 'name')->where('is_active', true),
             ],
-            'grade' => ['required', 'string', 'max:100'],
+            'grade' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('coffee_grades', 'name')->where('is_active', true),
+            ],
             'quantity_bags' => ['required', 'integer', 'min:1'],
             'bag_weight_kg' => ['required', 'numeric', 'min:1'],
             'price' => ['nullable', 'numeric', 'min:0'],
@@ -63,7 +72,7 @@ class LotController extends Controller
         $lot = $this->lots->create($validated, $request->file('image'), $request->user()->id);
 
         return redirect()
-            ->route('batch.show', $lot->batch_id)
+            ->route('lot.show', $lot)
             ->with('success', 'Lot added successfully.');
     }
 
@@ -84,15 +93,6 @@ class LotController extends Controller
                 'slug' => $method->slug,
                 'name' => $method->name,
                 'description' => $method->description,
-            ])
-            ->all();
-
-        $targetMarkets = $this->lots->targetMarketOptions()
-            ->map(fn ($market): array => [
-                'id' => $market->id,
-                'slug' => $market->slug,
-                'name' => $market->name,
-                'description' => $market->description,
             ])
             ->all();
 
@@ -135,20 +135,13 @@ class LotController extends Controller
                 'bag_weight_kg' => '',
                 'grade' => '',
                 'process' => '',
-                'warehouse' => '',
                 'packaging_type' => '',
-                'screen_size' => '',
-                'aroma_score' => '',
-                'acidity_score' => '',
-                'body_score' => '',
-                'target_market' => '',
-                'price_per_kg' => '',
-                'tokenize' => false,
+                'quality_score' => $qualityScore,
+                'price' => '',
             ],
             'options' => [
                 'packaging_types' => ['GrainPro', 'Jute Only', 'Vacuum'],
                 'processing_methods' => $processingMethods,
-                'target_markets' => $targetMarkets,
             ],
             'canSubmit' => (bool) $sourceFarm,
             'submissionBlockedMessage' => $sourceFarm
@@ -179,23 +172,9 @@ class LotController extends Controller
                 'max:100',
                 Rule::exists('processing_metadata', 'name')->where('is_active', true),
             ],
-            'warehouse' => ['nullable', 'string', 'max:255'],
             'packaging_type' => ['required', 'string', Rule::in(['GrainPro', 'Jute Only', 'Vacuum'])],
-            'screen_size' => ['nullable', 'string', 'max:100'],
-            'aroma_score' => ['required', 'numeric', 'between:0,10'],
-            'acidity_score' => ['required', 'numeric', 'between:0,10'],
-            'body_score' => ['required', 'numeric', 'between:0,10'],
-            'target_market' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::when(
-                    fn ($input) => $input->target_market !== 'All',
-                    Rule::exists('market_metadata', 'name')->where('is_active', true),
-                ),
-            ],
-            'price_per_kg' => ['required', 'numeric', 'min:0'],
-            'tokenize' => ['nullable', 'boolean'],
+            'quality_score' => ['nullable', 'numeric', 'between:0,100'],
+            'price' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'submission_intent' => ['nullable', 'string', Rule::in(['draft', 'create', 'create_and_tokenise', 'create_and_list'])],
         ]);
@@ -216,11 +195,28 @@ class LotController extends Controller
      */
     public function show(Lot $lot): Response
     {
-        $lot->loadMissing('batch');
+        $lot->load('lotBatches.batch');
 
         return Inertia::render('Lot/LotProfile', [
-            'lot' => $lot,
+            'lot' => LotResource::make($lot)->resolve(),
         ]);
+    }
+
+    /**
+     * Link a batch to this lot, found by its batch_number, via the
+     * lot_batch pivot table.
+     */
+    public function attachBatch(Request $request, Lot $lot): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
+
+        $validated = $request->validate([
+            'batch_number' => ['required', 'string', 'max:255'],
+        ]);
+
+        $this->lots->attachBatchByNumber($lot, $validated['batch_number'], $request->user()->id);
+
+        return back()->with('success', 'Batch linked to this lot.');
     }
 
     /**

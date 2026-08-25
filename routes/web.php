@@ -213,6 +213,7 @@ Route::middleware([
         Route::get('/{lot}/traceability', [LotController::class, 'lotTraceability'])->name('traceability');
         Route::get('/{lot}', [LotController::class, 'show'])->name('show');
         Route::post('/{lot}/publish', [LotController::class, 'publish'])->name('publish');
+        Route::post('/{lot}/batches', [LotController::class, 'attachBatch'])->name('batches.store');
     });
 
     // Batch workspace routes.
@@ -230,6 +231,7 @@ Route::middleware([
     // batch's own owner needs to reach and edit it regardless of role.
     Route::prefix('batch')->name('batch.')->group(function () {
         Route::post('/', [BatchController::class, 'store'])->name('store');
+        Route::get('/find-by-number', [BatchController::class, 'findByNumber'])->name('find-by-number');
         Route::patch('/{batch}', [BatchController::class, 'update'])->name('update');
         Route::delete('/{batch}', [BatchController::class, 'destroy'])->name('destroy');
         Route::get('/{batch}', [BatchController::class, 'show'])->name('show');

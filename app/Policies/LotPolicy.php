@@ -10,6 +10,13 @@ class LotPolicy
 {
     /**
      * Determine whether the user can create a lot.
+     *
+     * When authorizing against a specific batch (the batch-scoped creation
+     * flow), the batch must be owned by the user. Otherwise — the
+     * standalone lot creation form, where a batch is linked afterward via
+     * the lot_batch pivot rather than at creation time — any authenticated
+     * user may create a lot, since the role:farmer,admin,buyer route
+     * middleware already restricts who reaches it.
      */
     public function create(User $user, ?Batch $batch = null): bool
     {
@@ -17,11 +24,11 @@ class LotPolicy
             return true;
         }
 
-        if (! $batch) {
-            return false;
+        if ($batch) {
+            return (int) $batch->user_id === (int) $user->id;
         }
 
-        return (int) $batch->user_id === (int) $user->id;
+        return true;
     }
 
     /**
@@ -57,10 +64,6 @@ class LotPolicy
             return true;
         }
 
-        if ((int) $lot->user_id === (int) $user->id) {
-            return true;
-        }
-
-        return (int) ($lot->batch?->user_id ?? 0) === (int) $user->id;
+        return (int) $lot->user_id === (int) $user->id;
     }
 }

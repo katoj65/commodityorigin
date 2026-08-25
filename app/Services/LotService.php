@@ -7,14 +7,15 @@ use App\Models\Batch;
 use App\Models\Farm;
 use App\Models\Harvest;
 use App\Models\Lot;
+use App\Models\LotBatch;
 use App\Models\LotRequest;
 use App\Models\Market;
-use App\Models\MarketMetadata;
 use App\Models\ProcessingMetadata;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class LotService
@@ -28,7 +29,9 @@ class LotService
     }
 
     /**
-     * Create a legacy, batch-picker lot.
+     * Create a lot from the simple creation form. The lot number is always
+     * generated server-side; linking to a batch happens afterward, from
+     * the lot profile page, via attachBatch().
      *
      * @param  array<string, mixed>  $data
      */
@@ -36,11 +39,68 @@ class LotService
     {
         return Lot::query()->create([
             ...$data,
+            'lot_number' => $this->generateLotNumber(),
             'image' => ImageUploadHelper::store($image, 'lots'),
             'net_weight_kg' => round((float) $data['quantity_bags'] * (float) $data['bag_weight_kg'], 2),
             'user_id' => $userId,
             'status' => 'draft',
         ]);
+    }
+
+    /**
+     * Generate a unique, human-readable lot number (e.g. LOT-2026-AB12CD).
+     */
+    private function generateLotNumber(): string
+    {
+        do {
+            $number = sprintf('LOT-%d-%s', now()->year, strtoupper(Str::random(6)));
+        } while (Lot::query()->where('lot_number', $number)->exists());
+
+        return $number;
+    }
+
+    /**
+     * Link a lot to a batch via the lot_batch pivot table, denormalizing
+     * the batch's number and snapshotting the lot's own net weight as the
+     * allocation drawn from that batch.
+     */
+    public function attachBatch(Lot $lot, Batch $batch, int $userId): LotBatch
+    {
+        return LotBatch::query()->create([
+            'lot_id' => $lot->id,
+            'batch_id' => $batch->id,
+            'batch_number' => $batch->batch_number,
+            'allocation_kg' => $lot->net_weight_kg,
+            'user_id' => $userId,
+        ]);
+    }
+
+    /**
+     * Resolve a batch by its batch_number and link it to a lot — used by
+     * the "Attach Batch" modal on the lot profile page.
+     */
+    public function attachBatchByNumber(Lot $lot, string $batchNumber, int $userId): LotBatch
+    {
+        $batch = Batch::query()->where('batch_number', $batchNumber)->first();
+
+        if (! $batch) {
+            throw ValidationException::withMessages([
+                'batch_number' => 'No batch with that number was found.',
+            ]);
+        }
+
+        $alreadyLinked = LotBatch::query()
+            ->where('lot_id', $lot->id)
+            ->where('batch_id', $batch->id)
+            ->exists();
+
+        if ($alreadyLinked) {
+            throw ValidationException::withMessages([
+                'batch_number' => 'This batch is already linked to this lot.',
+            ]);
+        }
+
+        return $this->attachBatch($lot, $batch, $userId);
     }
 
     /**
@@ -85,14 +145,7 @@ class LotService
             ]);
         }
 
-        $sensoryAverage = round(collect([
-            $data['aroma_score'],
-            $data['acidity_score'],
-            $data['body_score'],
-        ])->avg(), 2);
-
         $lot = Lot::query()->create([
-            'batch_id' => $batch->id,
             'user_id' => $userId,
             'lot_number' => $data['lot_number'],
             'lot_name' => $data['lot_name'] ?? null,
@@ -104,11 +157,13 @@ class LotService
             'bag_weight_kg' => $data['bag_weight_kg'],
             'packaging_type' => $data['packaging_type'],
             'net_weight_kg' => round((float) $data['allocation_kg'], 2),
-            'price' => $data['price_per_kg'],
-            'quality_score' => $batch->cup_score ?: $sensoryAverage,
+            'price' => $data['price'] ?? null,
+            'quality_score' => $data['quality_score'] ?? $batch->cup_score,
             'status' => $this->resolveLotStatus($data['submission_intent'] ?? 'create'),
             'notes' => $data['notes'] ?? null,
         ]);
+
+        $this->attachBatch($lot, $batch, $userId);
 
         return [
             'lot' => $lot,
@@ -123,7 +178,7 @@ class LotService
      */
     public function batchMetrics(Batch $batch): array
     {
-        $batch->loadMissing(['season', 'ownerships', 'lots']);
+        $batch->loadMissing(['season', 'ownerships', 'lotBatches']);
 
         $sourceFarm = $this->batchHarvests($batch)->first()?->farm;
         $allocatedQtyKg = $this->allocatedQuantityKg($batch);
@@ -162,21 +217,16 @@ class LotService
     }
 
     /**
-     * Calculate the quantity already allocated to lots from this batch.
+     * Calculate the quantity already allocated to lots from this batch,
+     * via the lot_batch pivot table's allocation_kg column.
      */
     private function allocatedQuantityKg(Batch $batch): float
     {
-        $lots = $batch->relationLoaded('lots')
-            ? $batch->lots
-            : $batch->lots()->get();
+        $lotBatches = $batch->relationLoaded('lotBatches')
+            ? $batch->lotBatches
+            : $batch->lotBatches()->get();
 
-        return round($lots->sum(function (Lot $lot): float {
-            if ($lot->allocation_kg !== null) {
-                return (float) $lot->allocation_kg;
-            }
-
-            return (float) $lot->quantity_bags * (float) $lot->bag_weight_kg;
-        }), 2);
+        return round((float) $lotBatches->sum('allocation_kg'), 2);
     }
 
     /**
@@ -191,45 +241,6 @@ class LotService
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
-    }
-
-    /**
-     * Fetch active coffee target market options from metadata.
-     *
-     * @return Collection<int, MarketMetadata>
-     */
-    public function targetMarketOptions(): Collection
-    {
-        return MarketMetadata::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-    }
-
-    /**
-     * Shape the batch list for the legacy lot creation form's picker.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public function batchSummaries(): array
-    {
-        return Batch::query()
-            ->orderBy('batch_number')
-            ->get()
-            ->map(fn (Batch $batch): array => [
-                'id' => $batch->id,
-                'batch_number' => $batch->batch_number,
-                'variety' => $batch->variety,
-                'warehouse_location' => $batch->warehouse_location,
-                'quantity_bags' => $batch->quantity,
-                'net_weight_kg' => (float) $batch->weight,
-                'quality_score' => $batch->cup_score ? (float) $batch->cup_score : null,
-                'processing_method' => $batch->processing_method,
-                'status' => $batch->status,
-            ])
-            ->values()
-            ->all();
     }
 
     /**
@@ -256,25 +267,34 @@ class LotService
             return false;
         }
 
-        $lot->loadMissing('batch');
+        $batch = $this->primaryBatch($lot);
 
         Market::create([
             'lot_id' => $lot->id,
             'user_id' => $userId,
             'lot_code' => $lot->lot_number,
             'name' => $lot->lot_name ?? $lot->lot_number,
-            'origin' => $lot->batch?->warehouse_location,
-            'type' => $lot->batch?->variety ?? 'Arabica',
+            'origin' => $batch?->warehouse_location,
+            'type' => $batch?->variety ?? 'Arabica',
             'process' => $lot->process,
             'quality_score' => $lot->quality_score,
             'quantity' => $lot->net_weight_kg,
             'price_per_kg' => $lot->price,
-            'target_market' => $lot->target_market,
             'status' => 'live',
             'image' => $lot->image,
         ]);
 
         return true;
+    }
+
+    /**
+     * Resolve the batch a lot was primarily sourced from, via the
+     * lot_batch pivot table (a lot may link to more than one batch; the
+     * first linked batch is treated as the primary source for display).
+     */
+    public function primaryBatch(Lot $lot): ?Batch
+    {
+        return $lot->lotBatches()->with('batch')->first()?->batch;
     }
 
     /**
@@ -285,9 +305,8 @@ class LotService
      */
     public function traceabilityData(Lot $lot): array
     {
-        $lot->loadMissing(['batch.season']);
-
-        $batch = $lot->batch;
+        $batch = $this->primaryBatch($lot);
+        $batch?->loadMissing('season');
         $season = $batch?->season;
 
         return [

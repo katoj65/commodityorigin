@@ -29,7 +29,7 @@ class AuctionService
     {
         return Lot::query()
             ->where('status', '!=', 'draft')
-            ->with(['batch.season.creator', 'user', 'bids.user', 'sensoryProfile'])
+            ->with(['lotBatches.batch.season.creator', 'user', 'bids.user', 'sensoryProfile'])
             ->latest()
             ->get();
     }
@@ -43,7 +43,7 @@ class AuctionService
     {
         return Lot::query()
             ->where('status', 'draft')
-            ->with(['batch.season', 'user'])
+            ->with(['lotBatches.batch.season', 'user'])
             ->latest()
             ->get();
     }
@@ -378,7 +378,7 @@ class AuctionService
      */
     public function lotDetail(int $lotId): ?array
     {
-        $lot = Lot::query()->with(['batch.season.creator', 'user', 'bids.user', 'sensoryProfile', 'storageProfile'])->find($lotId);
+        $lot = Lot::query()->with(['lotBatches.batch.season.creator', 'user', 'bids.user', 'sensoryProfile', 'storageProfile'])->find($lotId);
 
         if (! $lot) {
             return null;

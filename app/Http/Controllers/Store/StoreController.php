@@ -20,6 +20,7 @@ use App\Models\ProcessingMetadata;
 use App\Models\SeasonMetadata;
 use App\Models\Store;
 use App\Models\StoreItem;
+use App\Services\CoffeeGradeService;
 use App\Services\StoreService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,8 +31,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class StoreController extends Controller
 {
-    public function __construct(private readonly StoreService $stores)
-    {
+    public function __construct(
+        private readonly StoreService $stores,
+        private readonly CoffeeGradeService $coffeeGrades,
+    ) {
     }
 
     /**
@@ -59,7 +62,7 @@ class StoreController extends Controller
                 Batch::query()->where('user_id', $userId)->latest()->get()
             )->resolve() : [],
             'lots' => $verified ? LotResource::collection(
-                Lot::query()->where('user_id', $userId)->with('batch')->latest()->get()
+                Lot::query()->where('user_id', $userId)->with('lotBatches.batch')->latest()->get()
             )->resolve() : [],
             'processOptions' => $verified ? ProcessingMetadata::query()
                 ->where('is_active', true)
@@ -91,6 +94,7 @@ class StoreController extends Controller
                 ->orderBy('name')
                 ->pluck('name')
                 : [],
+            'coffeeGradeOptions' => $verified ? $this->coffeeGrades->activeOptions()->pluck('name')->all() : [],
             'currencyOptions' => $verified ? Currency::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')

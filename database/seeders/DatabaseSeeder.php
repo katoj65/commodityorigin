@@ -69,6 +69,7 @@ class DatabaseSeeder extends Seeder
             AuctionSeeder::class,
             OrderSeeder::class,
             CropGradeMetadataSeeder::class,
+            CoffeeGradeSeeder::class,
             AgentSeeder::class,
             AgentFunctionSeeder::class,
             ExchangeRateSeeder::class,

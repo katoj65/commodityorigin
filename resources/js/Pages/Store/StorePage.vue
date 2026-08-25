@@ -22,6 +22,7 @@ const props = defineProps({
     millingOptions: { type: Array, default: () => [] },
     coffeeTypeOptions: { type: Array, default: () => [] },
     harvestSeasonOptions: { type: Array, default: () => [] },
+    coffeeGradeOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
     statusOptions: { type: Array, default: () => [] },
     isAdmin: { type: Boolean, default: false },
@@ -286,7 +287,14 @@ function submitReject() {
                                 <el-tabs v-model="inventoryTab" class="st-el-tabs">
 
                                 <!-- ── Farm Collection (farm_collections) ───────────── -->
-                                <el-tab-pane label="Farm Collection" name="collections">
+                                <el-tab-pane name="collections">
+                                    <template #label>
+                                        <span class="st-tab-label">
+                                            <el-icon><OfficeBuilding /></el-icon>
+                                            Farm Collection
+                                            <span class="st-tab-count">{{ farmCollections.length }}</span>
+                                        </span>
+                                    </template>
                                     <div class="st-table-card">
                                         <div class="st-list">
                                             <div
@@ -329,7 +337,14 @@ function submitReject() {
                                 </el-tab-pane>
 
                                 <!-- ── Batches (batches) ─────────────────────────────── -->
-                                <el-tab-pane label="Batches" name="batches">
+                                <el-tab-pane name="batches">
+                                    <template #label>
+                                        <span class="st-tab-label">
+                                            <el-icon><Files /></el-icon>
+                                            Batches
+                                            <span class="st-tab-count">{{ batches.length }}</span>
+                                        </span>
+                                    </template>
                                     <div class="st-table-card">
                                         <div class="st-list">
                                             <div
@@ -371,7 +386,14 @@ function submitReject() {
                                 </el-tab-pane>
 
                                 <!-- ── Lots (lots) ───────────────────────────────────── -->
-                                <el-tab-pane label="Lots" name="lots">
+                                <el-tab-pane name="lots">
+                                    <template #label>
+                                        <span class="st-tab-label">
+                                            <el-icon><Ticket /></el-icon>
+                                            Lots
+                                            <span class="st-tab-count">{{ lots.length }}</span>
+                                        </span>
+                                    </template>
                                     <div class="st-table-card">
                                         <div class="st-table-scroll"><el-table :data="lots" class="st-el-table">
                                             <el-table-column min-width="180">
@@ -420,7 +442,14 @@ function submitReject() {
                                 </el-tab-pane>
 
                                 <!-- ── Tokenised Lots (lots with status "tokenisation_ready") ─ -->
-                                <el-tab-pane label="Tokenised Lots" name="tokenised">
+                                <el-tab-pane name="tokenised">
+                                    <template #label>
+                                        <span class="st-tab-label">
+                                            <el-icon><Wallet /></el-icon>
+                                            Tokenised Lots
+                                            <span class="st-tab-count">{{ tokenisedLots.length }}</span>
+                                        </span>
+                                    </template>
                                     <div class="st-table-card">
                                         <div class="st-table-scroll"><el-table :data="tokenisedLots" class="st-el-table">
                                             <el-table-column min-width="180">
@@ -557,7 +586,7 @@ function submitReject() {
             :currency-options="currencyOptions"
         />
         <AddBatchModal v-model="addBatchOpen" :process-options="processOptions" :variety-options="coffeeTypeOptions" :drying-method-options="dryingMethodOptions" :currency-options="currencyOptions" :milling-options="millingOptions" />
-        <AddLotModal v-model="addLotOpen" :batches="batches" :process-options="processOptions" />
+        <AddLotModal v-model="addLotOpen" :process-options="processOptions" :coffee-grade-options="coffeeGradeOptions" />
     </StoreLayout>
 </template>
 
@@ -851,23 +880,50 @@ function submitReject() {
 .st-col-side { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
 
 /* ── Uncommitted Inventory tabs (el-tabs) ─────────────────────────────── */
-/* This Element Plus version has no #extra slot on el-tabs, so the
-   filter/more icon buttons are positioned over the tab nav row instead. */
+/* Refined underline-tab bar (Linear/Stripe-dashboard style) — a single
+   hairline baseline under the whole nav, with a bold 2px indicator that
+   slides under the active tab only. The filter/more icon buttons sit on
+   the same baseline, right-aligned, since this Element Plus version has
+   no #extra slot on el-tabs. */
 .st-tabs-wrap { position: relative; }
-.st-section-actions { position: absolute; top: 0; right: 0; height: 40px; display: flex; align-items: center; gap: 4px; flex-shrink: 0; z-index: 1; }
-.st-el-tabs :deep(.el-tabs__header) { margin: 0 0 16px; }
+.st-section-actions { position: absolute; top: 2px; right: 0; height: 42px; display: flex; align-items: center; gap: 2px; flex-shrink: 0; z-index: 1; }
+.st-el-tabs :deep(.el-tabs__header) { margin: 0 0 20px; }
+.st-el-tabs :deep(.el-tabs__nav-wrap) { padding-right: 76px; }
 .st-el-tabs :deep(.el-tabs__nav-wrap::after) { background: var(--card-border); height: 1px; }
+.st-el-tabs :deep(.el-tabs__active-bar) { height: 2.5px; border-radius: 2px 2px 0 0; background: var(--on-surface); }
 .st-el-tabs :deep(.el-tabs__item) {
-    height: 40px;
-    padding: 0 16px;
-    font-size: 13px;
+    height: 42px;
+    line-height: 42px;
+    padding: 0 4px;
+    margin-right: 28px;
+    font-size: 13.5px;
     font-weight: 600;
     color: var(--on-surface-variant);
+    transition: color .15s ease;
 }
 .st-el-tabs :deep(.el-tabs__item:first-child) { padding-left: 0; }
 .st-el-tabs :deep(.el-tabs__item:hover) { color: var(--on-surface); }
-.st-el-tabs :deep(.el-tabs__item.is-active) { color: var(--primary); font-weight: 700; }
-.st-el-tabs :deep(.el-tabs__active-bar) { background-color: var(--primary); }
+.st-el-tabs :deep(.el-tabs__item.is-active) { color: var(--on-surface); font-weight: 700; }
+.st-tab-label { display: inline-flex; align-items: center; gap: 8px; }
+.st-tab-label .el-icon { font-size: 14.5px; color: var(--on-surface-variant); opacity: .75; transition: color .15s ease, opacity .15s ease; }
+.st-el-tabs :deep(.el-tabs__item.is-active) .st-tab-label .el-icon { color: var(--primary); opacity: 1; }
+.st-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 5px;
+    background: var(--surface-container-low);
+    border: 1px solid var(--card-border);
+    color: var(--on-surface-variant);
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.st-el-tabs :deep(.el-tabs__item.is-active) .st-tab-count { background: var(--on-surface); border-color: var(--on-surface); color: var(--surface-container-lowest); }
 .st-icon-btn {
     display: inline-flex;
     align-items: center;

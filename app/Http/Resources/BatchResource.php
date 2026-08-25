@@ -37,7 +37,9 @@ class BatchResource extends JsonResource
             'notes' => $this->notes,
             'can_manage' => $request->user() ? $request->user()->can('update', $this->resource) : false,
             'compliances' => $this->whenLoaded('compliances', fn (): array => BatchComplianceResource::collection($this->compliances)->resolve()),
-            'lots' => $this->whenLoaded('lots', fn (): array => LotResource::collection($this->lots)->resolve()),
+            'lots' => $this->whenLoaded('lotBatches', fn (): array => LotResource::collection(
+                $this->lotBatches->map(fn ($link) => $link->lot)->filter()->values()
+            )->resolve()),
             'farm_collection_links' => $this->whenLoaded('batchFarmCollections', fn (): array => BatchFarmCollectionResource::collection($this->batchFarmCollections)->resolve()),
             'user' => $this->whenLoaded('user', fn (): ?array => $this->user ? [
                 'id' => $this->user->id,

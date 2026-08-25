@@ -18,7 +18,6 @@ class Lot extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'batch_id',
         'user_id',
         'lot_number',
         'lot_name',
@@ -26,22 +25,12 @@ class Lot extends Model
         'image',
         'process',
         'grade',
-        'allocation_kg',
         'net_weight_kg',
         'quantity_bags',
         'bag_weight_kg',
         'price',
         'quality_score',
-        'warehouse',
         'packaging_type',
-        'screen_size',
-        'altitude',
-        'aroma_score',
-        'acidity_score',
-        'body_score',
-        'target_market',
-        'price_per_kg',
-        'tokenize',
         'status',
         'notes',
     ];
@@ -52,24 +41,34 @@ class Lot extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'allocation_kg' => 'decimal:2',
         'net_weight_kg' => 'decimal:2',
         'bag_weight_kg' => 'decimal:2',
         'price' => 'decimal:2',
         'quality_score' => 'decimal:2',
-        'aroma_score' => 'decimal:2',
-        'acidity_score' => 'decimal:2',
-        'body_score' => 'decimal:2',
-        'price_per_kg' => 'decimal:2',
-        'tokenize' => 'boolean',
     ];
 
     /**
-     * Get the batch this lot was created from.
+     * Get the batch links for this lot, via the lot_batch pivot table.
      */
-    public function batch(): BelongsTo
+    public function lotBatches(): HasMany
     {
-        return $this->belongsTo(Batch::class);
+        return $this->hasMany(LotBatch::class);
+    }
+
+    /**
+     * Convenience read accessor for the batch this lot was primarily
+     * sourced from — the first batch linked via the lot_batch pivot table.
+     * Uses the already eager-loaded `lotBatches` relation when available
+     * (including any of its own nested eager loads) to avoid N+1 queries;
+     * only falls back to a fresh query when lotBatches wasn't loaded.
+     */
+    public function getBatchAttribute(): ?Batch
+    {
+        if ($this->relationLoaded('lotBatches')) {
+            return $this->lotBatches->first()?->batch;
+        }
+
+        return $this->lotBatches()->with('batch')->first()?->batch;
     }
 
     /**

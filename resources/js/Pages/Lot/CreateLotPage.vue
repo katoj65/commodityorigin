@@ -24,7 +24,6 @@ const props = defineProps({
         default: () => ({
             packaging_types: [],
             processing_methods: [],
-            target_markets: [],
         }),
     },
     canSubmit: {
@@ -48,15 +47,9 @@ const form = useForm({
     bag_weight_kg: props.defaults.bag_weight_kg ?? '',
     grade: props.defaults.grade ?? '',
     process: props.defaults.process ?? '',
-    warehouse: props.defaults.warehouse ?? '',
     packaging_type: props.defaults.packaging_type ?? props.options.packaging_types[0] ?? 'GrainPro',
-    screen_size: props.defaults.screen_size ?? '',
-    aroma_score: props.defaults.aroma_score ?? 8.75,
-    acidity_score: props.defaults.acidity_score ?? 9.0,
-    body_score: props.defaults.body_score ?? 8.25,
-    target_market: props.defaults.target_market ?? 'All',
-    price_per_kg: props.defaults.price_per_kg ?? '',
-    tokenize: props.defaults.tokenize ?? true,
+    quality_score: props.defaults.quality_score ?? '',
+    price: props.defaults.price ?? '',
     notes: '',
     submission_intent: 'create',
 });
@@ -67,7 +60,6 @@ const formatNumber = (value, digits = 0) => Number(value || 0).toLocaleString('e
 });
 
 const formatCurrency = (value) => `Shs. ${formatNumber(value, 2)}`;
-const formatScore = (value) => (value === '' || value === null || value === undefined ? '—' : formatNumber(value, 2));
 
 const overviewBadges = [
     'BATCH REQUIRED',
@@ -93,8 +85,8 @@ const projectedAllocated = computed(() => (
     Number(props.sourceBatch.allocated_qty_kg || 0) + Number(form.allocation_kg || 0)
 ));
 
-const suggestedPriceLow = computed(() => Number(form.price_per_kg || 0) * 0.944);
-const suggestedPriceHigh = computed(() => Number(form.price_per_kg || 0) * 1.056);
+const suggestedPriceLow = computed(() => Number(form.price || 0) * 0.944);
+const suggestedPriceHigh = computed(() => Number(form.price || 0) * 1.056);
 const hasValue = (value) => String(value ?? '').trim().length > 0;
 const sourceMetaItems = computed(() => [
     { label: 'Season', value: props.sourceBatch.season || 'Pending' },
@@ -110,14 +102,8 @@ const requiredForSubmit = computed(() => ({
     bag_weight_kg: Number(form.bag_weight_kg || 0) >= 1,
     grade: hasValue(form.grade),
     process: hasValue(form.process),
-    warehouse: hasValue(form.warehouse),
     packaging_type: hasValue(form.packaging_type),
-    screen_size: hasValue(form.screen_size),
-    aroma_score: hasValue(form.aroma_score) && Number(form.aroma_score) >= 0 && Number(form.aroma_score) <= 10,
-    acidity_score: hasValue(form.acidity_score) && Number(form.acidity_score) >= 0 && Number(form.acidity_score) <= 10,
-    body_score: hasValue(form.body_score) && Number(form.body_score) >= 0 && Number(form.body_score) <= 10,
-    target_market: hasValue(form.target_market),
-    price_per_kg: Number(form.price_per_kg || 0) > 0,
+    price: Number(form.price || 0) > 0,
     within_batch_total: Number(form.allocation_kg || 0) <= Number(props.sourceBatch.batch_total_kg || 0),
 }));
 
@@ -125,7 +111,6 @@ const readinessItems = computed(() => [
     { label: 'Verified Batch Origin', complete: true },
     { label: 'Quantity within limits', complete: Number(form.allocation_kg || 0) > 0 },
     { label: 'Packaging specs confirmed', complete: Boolean(form.packaging_type) },
-    { label: 'Warehouse release document', complete: Boolean(form.warehouse) && props.canSubmit },
 ]);
 
 const validateForm = () => {
@@ -142,14 +127,8 @@ const validateForm = () => {
     if (!requiredForSubmit.value.bag_weight_kg) errors.bag_weight_kg = 'Bag weight must be at least 1 kg.';
     if (!requiredForSubmit.value.grade) errors.grade = 'Grade is required.';
     if (!requiredForSubmit.value.process) errors.process = 'Processing method is required.';
-    if (!requiredForSubmit.value.warehouse) errors.warehouse = 'Warehouse is required.';
     if (!requiredForSubmit.value.packaging_type) errors.packaging_type = 'Packaging type is required.';
-    if (!requiredForSubmit.value.screen_size) errors.screen_size = 'Screen size is required.';
-    if (!requiredForSubmit.value.aroma_score) errors.aroma_score = 'Aroma score must be between 0 and 10.';
-    if (!requiredForSubmit.value.acidity_score) errors.acidity_score = 'Acidity score must be between 0 and 10.';
-    if (!requiredForSubmit.value.body_score) errors.body_score = 'Body score must be between 0 and 10.';
-    if (!requiredForSubmit.value.target_market) errors.target_market = 'Target market is required.';
-    if (!requiredForSubmit.value.price_per_kg) errors.price_per_kg = 'Price per kg is required.';
+    if (!requiredForSubmit.value.price) errors.price = 'Price per kg is required.';
 
     if (!props.canSubmit) {
         errors.batch = props.submissionBlockedMessage || 'Batch must be linked before creating a lot.';
@@ -175,11 +154,7 @@ const submit = (intent = 'create') => {
 
     form.submission_intent = intent;
     form.net_weight_kg = Number(form.allocation_kg || 0);
-    form.price_per_kg = Number(form.price_per_kg || 0);
-
-    if (intent === 'create_and_tokenise') {
-        form.tokenize = true;
-    }
+    form.price = Number(form.price || 0);
 
     form.post(route('batch.store-lot', props.batch.id), {
         forceFormData: true,
@@ -371,12 +346,6 @@ const submit = (intent = 'create') => {
                         </div>
 
                         <div class="lot-field lot-field--span-all">
-                            <label for="warehouse">Warehouse</label>
-                            <el-input id="warehouse" v-model="form.warehouse" class="lot-form-control" placeholder="e.g. Kampala Dry Mill" />
-                            <InputError class="mt-2 text-sm" :message="form.errors.warehouse" />
-                        </div>
-
-                        <div class="lot-field lot-field--span-all">
                             <label for="description">Lot description</label>
                             <el-input
                                 id="description"
@@ -417,11 +386,6 @@ const submit = (intent = 'create') => {
                                     <InputError class="mt-2 text-sm" :message="form.errors.grade" />
                                 </div>
                                 <div class="lot-field">
-                                    <label for="screen_size">Screen size</label>
-                                    <el-input id="screen_size" v-model="form.screen_size" class="lot-form-control" placeholder="e.g. 17/18" />
-                                    <InputError class="mt-2 text-sm" :message="form.errors.screen_size" />
-                                </div>
-                                <div class="lot-field">
                                     <label for="process">Processing</label>
                                     <el-select id="process" v-model="form.process" class="lot-form-control" placeholder="Select lot processing method">
                                         <el-option
@@ -433,35 +397,10 @@ const submit = (intent = 'create') => {
                                     </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.process" />
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="lot-column">
-                            <div class="lot-column__title">SENSORY PROFILE</div>
-                            <div class="lot-slider-stack">
-                                <div class="lot-slider-field">
-                                    <div class="lot-slider-field__top">
-                                        <label for="aroma_score">Aroma</label>
-                                        <span>{{ formatScore(form.aroma_score) }}</span>
-                                    </div>
-                                    <el-input id="aroma_score" v-model="form.aroma_score" class="lot-form-control" type="number" placeholder="0.00 - 10.00" />
-                                    <InputError class="mt-2 text-sm" :message="form.errors.aroma_score" />
-                                </div>
-                                <div class="lot-slider-field">
-                                    <div class="lot-slider-field__top">
-                                        <label for="acidity_score">Acidity</label>
-                                        <span>{{ formatScore(form.acidity_score) }}</span>
-                                    </div>
-                                    <el-input id="acidity_score" v-model="form.acidity_score" class="lot-form-control" type="number" placeholder="0.00 - 10.00" />
-                                    <InputError class="mt-2 text-sm" :message="form.errors.acidity_score" />
-                                </div>
-                                <div class="lot-slider-field">
-                                    <div class="lot-slider-field__top">
-                                        <label for="body_score">Body</label>
-                                        <span>{{ formatScore(form.body_score) }}</span>
-                                    </div>
-                                    <el-input id="body_score" v-model="form.body_score" class="lot-form-control" type="number" placeholder="0.00 - 10.00" />
-                                    <InputError class="mt-2 text-sm" :message="form.errors.body_score" />
+                                <div class="lot-field">
+                                    <label for="quality_score">Quality score <small>(optional)</small></label>
+                                    <el-input id="quality_score" v-model="form.quality_score" class="lot-form-control" type="number" min="0" max="100" step="0.01" placeholder="e.g. 87.5" />
+                                    <InputError class="mt-2 text-sm" :message="form.errors.quality_score" />
                                 </div>
                             </div>
                         </div>
@@ -474,21 +413,12 @@ const submit = (intent = 'create') => {
                                 <span>Buyer-facing listing setup</span>
                             </div>
 
-                            <div class="lot-field-grid">
+                            <div class="lot-field-grid lot-field-grid--single">
                                 <div class="lot-field">
-                                    <label for="target_market">Target market</label>
-                                    <el-select id="target_market" v-model="form.target_market" class="lot-form-control" placeholder="Select target market">
-                                        <el-option label="All Markets" value="All" />
-                                        <el-option v-for="market in props.options.target_markets" :key="market.id" :label="market.name" :value="market.name" />
-                                    </el-select>
-                                    <InputError class="mt-2 text-sm" :message="form.errors.target_market" />
-                                </div>
-
-                                <div class="lot-field">
-                                    <label for="price_per_kg">Price per kg <span style="color:#c0392b">*</span></label>
+                                    <label for="price">Price per kg <span style="color:#c0392b">*</span></label>
                                     <el-input
-                                        id="price_per_kg"
-                                        v-model="form.price_per_kg"
+                                        id="price"
+                                        v-model="form.price"
                                         class="lot-form-control"
                                         type="number"
                                         min="0"
@@ -497,25 +427,7 @@ const submit = (intent = 'create') => {
                                     >
                                         <template #prefix>Shs.</template>
                                     </el-input>
-                                    <InputError class="mt-2 text-sm" :message="form.errors.price_per_kg" />
-                                </div>
-                            </div>
-                        </article>
-
-                        <article class="lot-bottom-card">
-                            <div class="lot-content-section__title lot-content-section__title--compact">
-                                <h2>Tokenisation Settings</h2>
-                                <el-switch v-model="form.tokenize" class="lot-switch" />
-                            </div>
-
-                            <div class="lot-token-grid">
-                                <div class="lot-token-card">
-                                    <span>Network</span>
-                                    <strong>Ethereum L2 (Arbitrum)</strong>
-                                </div>
-                                <div class="lot-token-card">
-                                    <span>Asset Class</span>
-                                    <strong>RWA / Physical Commodity</strong>
+                                    <InputError class="mt-2 text-sm" :message="form.errors.price" />
                                 </div>
                             </div>
                         </article>
@@ -858,8 +770,7 @@ const submit = (intent = 'create') => {
 }
 
 .lot-static-select,
-.lot-stat-card span,
-.lot-token-card span {
+.lot-stat-card span {
     color: #94a3b8;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
@@ -1231,45 +1142,16 @@ const submit = (intent = 'create') => {
     border-top: 1px solid #e1e6eb;
     display: grid;
     gap: 24px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     padding-top: 24px;
+}
+
+.lot-bottom-row .lot-field-grid--single {
+    max-width: 320px;
 }
 
 .lot-bottom-card {
     padding: 18px;
-}
-
-.lot-token-grid {
-    display: grid;
-    gap: 12px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: 18px;
-}
-
-.lot-token-card {
-    background: #f4f6f8;
-    border-radius: 6px;
-    display: grid;
-    gap: 6px;
-    padding: 14px;
-}
-
-.lot-token-card strong {
-    color: #13212f;
-    font-size: 14px;
-}
-
-.lot-switch {
-    align-items: center;
-    display: inline-flex;
-}
-
-.lot-switch :deep(.el-switch__core) {
-    --el-switch-on-color: #0f5c3a;
-    --el-switch-off-color: #d6dde4;
-    min-width: 46px;
-    height: 26px;
-    border: 0;
 }
 
 .lot-sidebar {
@@ -1510,8 +1392,6 @@ const submit = (intent = 'create') => {
     .lot-source-meta-grid,
     .lot-allocation-card,
     .lot-form-columns,
-    .lot-bottom-row,
-    .lot-token-grid,
     .lot-mini-news-grid,
     .lot-recommendation__actions {
         grid-template-columns: 1fr;

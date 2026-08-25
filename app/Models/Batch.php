@@ -78,11 +78,11 @@ class Batch extends Model
     }
 
     /**
-     * Get the lots created from this batch.
+     * Get the lots linked to this batch, via the lot_batch pivot table.
      */
-    public function lots(): HasMany
+    public function lotBatches(): HasMany
     {
-        return $this->hasMany(Lot::class);
+        return $this->hasMany(LotBatch::class);
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Http\Resources\SeasonResource;
 use App\Models\Batch;
 use App\Models\Currency;
 use App\Services\BatchService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -20,6 +21,27 @@ class BatchController extends Controller
 {
     public function __construct(private readonly BatchService $batches)
     {
+    }
+
+    /**
+     * Look up a batch by its batch_number — used by the "Attach Batch"
+     * modal on the lot profile page. Open to any authenticated user, same
+     * as the farm/collection code lookups; the mutating action that links
+     * it to a lot is what's policy-gated, not this lookup.
+     */
+    public function findByNumber(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'batch_number' => ['required', 'string', 'max:255'],
+        ]);
+
+        $batch = Batch::query()->where('batch_number', $validated['batch_number'])->first();
+
+        if (! $batch) {
+            return response()->json(['message' => 'No batch with that number was found.'], 404);
+        }
+
+        return response()->json(BatchResource::make($batch)->resolve());
     }
 
     /**
@@ -183,13 +205,7 @@ class BatchController extends Controller
      */
     private function validateBatchData(Request $request, ?Batch $batch = null): array
     {
-        $validated = $request->validate([
-            'batch_number' => [
-                $batch === null ? 'nullable' : 'required',
-                'string',
-                'max:100',
-                Rule::unique('batches', 'batch_number')->ignore($batch),
-            ],
+        $rules = [
             'variety' => ['required', 'string', 'max:255'],
             'warehouse_location' => ['required', 'string', 'max:255'],
             'quantity_bags' => ['required', 'integer', 'min:1'],
@@ -208,8 +224,20 @@ class BatchController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
             'harvest_ids' => ['nullable', 'array'],
             'harvest_ids.*' => ['integer', 'exists:harvests,id'],
-        ]);
+        ];
 
-        return $validated;
+        // batch_number is auto-generated on create and never accepted from
+        // the client there; on update it's carried through read-only by the
+        // edit form, so it's still validated to guard against tampering.
+        if ($batch !== null) {
+            $rules['batch_number'] = [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('batches', 'batch_number')->ignore($batch),
+            ];
+        }
+
+        return $request->validate($rules);
     }
 }

@@ -72,7 +72,7 @@ class BatchService
      */
     public function loadProfileRelations(Batch $batch): Batch
     {
-        return $batch->load(['compliances', 'ownerships', 'lots', 'user', 'batchFarmCollections.farmCollection.farm']);
+        return $batch->load(['compliances', 'ownerships', 'lotBatches.lot', 'user', 'batchFarmCollections.farmCollection.farm']);
     }
 
     /**
@@ -127,7 +127,7 @@ class BatchService
     {
         return Batch::query()->create([
             'user_id' => $userId,
-            'batch_number' => $validated['batch_number'] ?? $this->generateBatchNumber(),
+            'batch_number' => $this->generateBatchNumber(),
             'variety' => $validated['variety'] ?? null,
             'warehouse_location' => $validated['warehouse_location'],
             'quantity' => $validated['quantity_bags'],

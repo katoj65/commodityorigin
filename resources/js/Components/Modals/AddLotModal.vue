@@ -6,8 +6,8 @@ import { Close, Tickets } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
-    batches: { type: Array, default: () => [] },
     processOptions: { type: Array, default: () => [] },
+    coffeeGradeOptions: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -19,8 +19,6 @@ const dialogVisible = computed({
 
 function emptyForm() {
     return {
-        batch_id: '',
-        lot_number: '',
         lot_name: '',
         description: '',
         process: '',
@@ -40,7 +38,6 @@ watch(() => props.modelValue, (open) => {
     form.defaults(emptyForm());
     form.reset();
     form.clearErrors();
-    if (props.batches.length === 1) form.batch_id = props.batches[0].id;
 });
 
 function closeDialog() {
@@ -85,21 +82,8 @@ function submit() {
         </template>
 
         <div class="alm-modal__body">
-                <div class="alm-field alm-field--span2">
-                    <label class="alm-field__label">Batch</label>
-                    <el-select v-model="form.batch_id" placeholder="Select batch" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.batch_id }">
-                        <el-option v-for="batch in batches" :key="batch.id" :label="`${batch.batch_number} — ${batch.variety || 'Unspecified variety'}`" :value="batch.id" />
-                    </el-select>
-                    <span v-if="form.errors.batch_id" class="alm-field__error">{{ form.errors.batch_id }}</span>
-                </div>
-
                 <div class="alm-grid">
-                    <div class="alm-field">
-                        <label class="alm-field__label">Lot Number</label>
-                        <el-input v-model="form.lot_number" placeholder="e.g. LOT-2026-001" class="alm-input" :class="{ 'alm-input--error': form.errors.lot_number }" />
-                        <span v-if="form.errors.lot_number" class="alm-field__error">{{ form.errors.lot_number }}</span>
-                    </div>
-                    <div class="alm-field">
+                    <div class="alm-field alm-field--span2">
                         <label class="alm-field__label">Lot Name <small>(optional)</small></label>
                         <el-input v-model="form.lot_name" placeholder="e.g. Yirgacheffe Reserve" class="alm-input" :class="{ 'alm-input--error': form.errors.lot_name }" />
                         <span v-if="form.errors.lot_name" class="alm-field__error">{{ form.errors.lot_name }}</span>
@@ -113,7 +97,9 @@ function submit() {
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Grade</label>
-                        <el-input v-model="form.grade" placeholder="e.g. AA" class="alm-input" :class="{ 'alm-input--error': form.errors.grade }" />
+                        <el-select v-model="form.grade" placeholder="Select grade" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.grade }">
+                            <el-option v-for="option in coffeeGradeOptions" :key="option" :label="option" :value="option" />
+                        </el-select>
                         <span v-if="form.errors.grade" class="alm-field__error">{{ form.errors.grade }}</span>
                     </div>
                     <div class="alm-field">

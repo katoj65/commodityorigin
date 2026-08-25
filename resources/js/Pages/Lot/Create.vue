@@ -1,62 +1,32 @@
 <script setup>
-import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { Box, Document, OfficeBuilding, User } from '@element-plus/icons-vue';
+import { Files } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
 const props = defineProps({
-    batches: {
+    processOptions: {
         type: Array,
         default: () => [],
     },
-    processOptions: {
+    coffeeGradeOptions: {
         type: Array,
         default: () => [],
     },
 });
 
 const form = useForm({
-    batch_id: props.batches[0]?.id ?? '',
-    lot_number: '',
-    process: props.batches[0]?.processing_method ?? '',
+    process: '',
     grade: '',
     quantity_bags: '',
     bag_weight_kg: '',
     price: '',
-    quality_score: props.batches[0]?.quality_score ?? '',
+    quality_score: '',
     notes: '',
 });
 
-const selectedBatch = computed(() => props.batches.find((batch) => batch.id === form.batch_id) ?? null);
-
-const batchMeta = computed(() => [
-    {
-        label: 'Warehouse',
-        value: selectedBatch.value?.warehouse_location || 'Warehouse pending',
-    },
-    {
-        label: 'Variety',
-        value: selectedBatch.value?.variety || 'Not set',
-    },
-    {
-        label: 'Net Weight',
-        value: selectedBatch.value?.net_weight_kg
-            ? `${Number(selectedBatch.value.net_weight_kg).toLocaleString()} kg`
-            : 'Not set',
-    },
-]);
-
 const submit = () => {
-    if (!form.process && selectedBatch.value?.processing_method) {
-        form.process = selectedBatch.value.processing_method;
-    }
-
-    if (!form.quality_score && selectedBatch.value?.quality_score) {
-        form.quality_score = selectedBatch.value.quality_score;
-    }
-
     form.post(route('lot.store'));
 };
 </script>
@@ -79,25 +49,6 @@ const submit = () => {
                 <div class="rounded-xl border border-[#EEF2F0] bg-white px-4 py-4 sm:px-5 sm:py-5">
                     <form class="space-y-5" @submit.prevent="submit">
                         <div class="grid gap-4 md:grid-cols-2">
-                            <div class="md:col-span-2">
-                                <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Batch</label>
-                                <el-select v-model="form.batch_id" class="w-full" placeholder="Select batch">
-                                    <el-option
-                                        v-for="batch in props.batches"
-                                        :key="batch.id"
-                                        :label="`${batch.batch_number} · ${batch.variety || 'Unspecified variety'}`"
-                                        :value="batch.id"
-                                    />
-                                </el-select>
-                                <InputError class="mt-2 text-sm" :message="form.errors.batch_id" />
-                            </div>
-
-                            <div>
-                                <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Lot number</label>
-                                <el-input v-model="form.lot_number" placeholder="e.g. LOT-2026-001" />
-                                <InputError class="mt-2 text-sm" :message="form.errors.lot_number" />
-                            </div>
-
                             <div>
                                 <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Process</label>
                                 <el-select v-model="form.process" class="w-full" placeholder="Select process">
@@ -113,7 +64,14 @@ const submit = () => {
 
                             <div>
                                 <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Grade</label>
-                                <el-input v-model="form.grade" placeholder="e.g. AA, Screen 18, Specialty" />
+                                <el-select v-model="form.grade" class="w-full" placeholder="Select grade">
+                                    <el-option
+                                        v-for="option in props.coffeeGradeOptions"
+                                        :key="option"
+                                        :label="option"
+                                        :value="option"
+                                    />
+                                </el-select>
                                 <InputError class="mt-2 text-sm" :message="form.errors.grade" />
                             </div>
 
@@ -167,46 +125,16 @@ const submit = () => {
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
-                                        Selected Batch
+                                        Lot Number
                                     </p>
                                     <h2 class="mt-1 text-[18px] font-semibold leading-tight text-[#111827]">
-                                        {{ selectedBatch?.batch_number || 'Choose a batch' }}
+                                        Auto-generated on save
                                     </h2>
                                 </div>
 
                                 <div class="flex h-11 w-11 items-center justify-center rounded-full bg-[#0F5D3B] text-white">
-                                    <el-icon :size="18"><Box /></el-icon>
+                                    <el-icon :size="18"><Files /></el-icon>
                                 </div>
-                            </div>
-
-                            <div class="mt-3 flex items-center gap-2 text-[13px] text-[#4B5563]">
-                                <el-icon class="text-[#0F5D3B]"><User /></el-icon>
-                                <span>{{ selectedBatch?.variety || 'Variety not set' }}</span>
-                            </div>
-
-                            <div class="mt-2 flex items-center gap-2 text-[13px] text-[#4B5563]">
-                                <el-icon class="text-[#0F5D3B]"><OfficeBuilding /></el-icon>
-                                <span>{{ selectedBatch?.warehouse_location || 'Warehouse pending' }}</span>
-                            </div>
-                        </div>
-
-                        <div class="space-y-3">
-                            <div
-                                v-for="item in batchMeta"
-                                :key="item.label"
-                                class="rounded-lg border border-[#EEF2F0] px-3.5 py-3"
-                            >
-                                <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
-                                    <el-icon class="text-[#0F5D3B]">
-                                        <OfficeBuilding v-if="item.label === 'Warehouse'" />
-                                        <Document v-else-if="item.label === 'Variety'" />
-                                        <User v-else />
-                                    </el-icon>
-                                    <span>{{ item.label }}</span>
-                                </div>
-                                <p class="mt-1.5 text-[14px] font-semibold leading-6 text-[#111827]">
-                                    {{ item.value }}
-                                </p>
                             </div>
                         </div>
 
@@ -215,9 +143,8 @@ const submit = () => {
                                 Lot Intake Guide
                             </p>
                             <ul class="mt-2.5 space-y-2 text-[13px] leading-5 text-[#4B5563]">
-                                <li>Use a unique lot number that can be traced across auction, inventory, and settlement records.</li>
-                                <li>Attach every lot to the correct verified batch for clean traceability.</li>
                                 <li>Capture process, grade, and quantity clearly for downstream bidding and export workflows.</li>
+                                <li>Link this lot to the batch it was sourced from afterward, from the lot's own profile page.</li>
                             </ul>
                         </div>
                     </div>

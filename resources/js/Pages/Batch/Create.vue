@@ -9,7 +9,6 @@ import SubmitButton from '@/Components/Button/SubmitButton.vue';
 const page = usePage();
 
 const form = useForm({
-    batch_number: '',
     variety: '',
     warehouse_location: '',
     quantity_bags: '',
@@ -63,13 +62,7 @@ const submit = () => {
                 <div class="rounded-xl border border-[#EEF2F0] bg-white px-4 py-4 sm:px-5 sm:py-5">
                     <form class="batch-create-form space-y-5" @submit.prevent="submit">
                         <div class="grid gap-4 md:grid-cols-2">
-                            <div>
-                                <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Batch number</label>
-                                <el-input v-model="form.batch_number" placeholder="e.g. BATCH-2026-001" />
-                                <InputError class="batch-create-input-error" :message="form.errors.batch_number" />
-                            </div>
-
-                            <div>
+                            <div class="md:col-span-2">
                                 <label class="mb-2 block text-[12px] font-semibold text-[#374151]">Variety <span class="text-red-500">*</span></label>
                                 <el-input v-model="form.variety" placeholder="e.g. Bourbon, Geisha, SL-28" />
                                 <InputError class="batch-create-input-error" :message="form.errors.variety" />
@@ -241,7 +234,7 @@ const submit = () => {
 
                             <div class="mt-2 flex items-center gap-2 text-[13px] text-[#4B5563]">
                                 <el-icon class="text-[#0F5D3B]"><Document /></el-icon>
-                                <span>{{ form.batch_number || 'Batch number pending' }}</span>
+                                <span>Batch number auto-generated on save</span>
                             </div>
                         </div>
 

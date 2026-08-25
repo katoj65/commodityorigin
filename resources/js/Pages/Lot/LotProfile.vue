@@ -1,7 +1,8 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import { Link } from '@inertiajs/vue3';
+import AttachBatchModal from '@/Components/Modals/AttachBatchModal.vue';
 import {
     Box,
     Checked,
@@ -17,6 +18,7 @@ import {
     Location,
     Medal,
     Money,
+    Plus,
     Promotion,
     ShoppingCart,
     Star,
@@ -33,6 +35,9 @@ const props = defineProps({
     harvests: { type: Array, default: () => [] },
     relatedLots: { type: Array, default: () => [] },
 });
+
+const showAttachBatch = ref(false);
+const linkedBatches = computed(() => props.lot.lot_batches || []);
 
 const fmt = (v, d = 0) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -628,6 +633,25 @@ const timeline = [
                         <!-- RIGHT COLUMN -->
                         <div class="lp-side-col">
 
+                            <!-- Linked Batches -->
+                            <div class="lp-card">
+                                <div class="lp-card__head-row">
+                                    <h2 class="lp-card__title"><el-icon><Files /></el-icon> Linked Batches</h2>
+                                    <button type="button" class="lp-btn lp-btn--tertiary" style="font-size:11px;padding:5px 12px;" @click="showAttachBatch = true">
+                                        <el-icon><Plus /></el-icon> Attach
+                                    </button>
+                                </div>
+                                <div v-if="linkedBatches.length" class="lp-kv-stack lp-kv-stack--mt">
+                                    <div v-for="lb in linkedBatches" :key="lb.id" class="lp-kv-row">
+                                        <span>{{ lb.batch?.batch_number || lb.batch_number }}</span>
+                                        <strong>
+                                            {{ lb.batch?.variety || '—' }}<span v-if="lb.allocation_kg"> · {{ Number(lb.allocation_kg).toLocaleString() }} kg</span>
+                                        </strong>
+                                    </div>
+                                </div>
+                                <p v-else class="lp-empty-note">No batches linked to this lot yet.</p>
+                            </div>
+
                             <!-- Market Intelligence -->
                             <div class="lp-card">
                                 <h2 class="lp-card__title"><el-icon><TrendCharts /></el-icon> Market Intelligence</h2>
@@ -730,6 +754,8 @@ const timeline = [
                 <el-icon><ShoppingCart /></el-icon> Buy Now
             </Link>
         </div>
+
+        <AttachBatchModal v-model="showAttachBatch" :lot-id="lot.id" />
 
     </DesignPreviewLayout>
 </template>
@@ -1291,6 +1317,7 @@ const timeline = [
 /* ── KV stack ─────────────────────────────────────────────────────────────── */
 .lp-kv-stack { display: grid; gap: 0; }
 .lp-kv-stack--mt { margin-top: 1.25rem; }
+.lp-empty-note { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0.75rem 0 0; }
 .lp-kv-row {
     display: flex;
     justify-content: space-between;
