@@ -5,18 +5,12 @@ namespace App\Services;
 use App\Models\CertificationMetadata;
 use App\Models\CropVarietyMetadata;
 use App\Models\Farm;
-use App\Models\Farmer;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class FarmService
 {
-    public function __construct(private readonly FarmerService $farmers)
-    {
-    }
-
     /**
      * Get a base query builder for farms.
      */
@@ -26,12 +20,12 @@ class FarmService
     }
 
     /**
-     * Get every farm, with its farmer, newest first.
+     * Get every farm, with its owning user, newest first.
      */
     public function list(): Collection
     {
         return $this->query()
-            ->with('farmer')
+            ->with('user')
             ->latest()
             ->get();
     }
@@ -51,15 +45,12 @@ class FarmService
     }
 
     /**
-     * Get every farm belonging to the given user's farmer profile, with
-     * its farmer and harvest count, newest first.
+     * Get every farm owned by the given user, newest first.
      */
     public function listForUser(int $userId): Collection
     {
         return $this->query()
-            ->whereHas('farmer', fn (Builder $query) => $query->where('user_id', $userId))
-            ->with('farmer')
-            ->withCount('harvests')
+            ->where('user_id', $userId)
             ->latest()
             ->get();
     }
@@ -79,8 +70,8 @@ class FarmService
 
     /**
      * Get every active crop variety (id, name, description) — used for the
-     * farm-level "Varietals" multi-select, distinct from
-     * activeVarietyOptions() which only feeds the free-text Harvest form.
+     * farm-level "Varietals" multi-select, distinct from the plain name
+     * list returned by activeVarietyOptions().
      */
     public function activeVarietyMetadata(): Collection
     {
@@ -102,55 +93,6 @@ class FarmService
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get(['id', 'slug', 'name', 'description']);
-    }
-
-    /**
-     * Shape a farmer's details for the farm creation form.
-     *
-     * @return array<string, mixed>
-     */
-    public function farmerSummary(Farmer $farmer): array
-    {
-        return [
-            'id' => $farmer->id,
-            'first_name' => $farmer->first_name,
-            'last_name' => $farmer->last_name,
-            'district' => $farmer->district,
-            'subcounty' => $farmer->subcounty,
-            'tel' => $farmer->tel,
-        ];
-    }
-
-    /**
-     * Get the farmer record linked to a user, creating one from their
-     * account details if they don't have one yet.
-     */
-    public function farmerForUser(User $user): Farmer
-    {
-        return Farmer::query()->firstOrCreate(
-            ['user_id' => $user->id],
-            [
-                'farmer_number' => $this->farmers->generateFarmerNumber(),
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'tel' => $user->telephone,
-                'email' => $user->email,
-                // The users table has no equivalent for this required
-                // farmer column; the farmer can fill it in later.
-                'district' => 'Not specified',
-            ],
-        );
-    }
-
-    /**
-     * Register a new farmer on behalf of someone else (the person
-     * submitting the farm isn't the farmer).
-     *
-     * @param  array<string, mixed>  $data
-     */
-    public function registerFarmer(array $data): Farmer
-    {
-        return $this->farmers->create($data);
     }
 
     /**
@@ -195,12 +137,12 @@ class FarmService
     }
 
     /**
-     * Find a single farm by id, with its farmer and agronomy relations.
+     * Find a single farm by id, with its owning user and agronomy relations.
      */
     public function show(Farm $farm): Farm
     {
         $farm->load([
-            'farmer',
+            'user',
             'soil',
             'climateZone',
             'cropVarieties',

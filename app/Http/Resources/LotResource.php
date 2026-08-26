@@ -33,7 +33,12 @@ class LotResource extends JsonResource
             'notes' => $this->notes,
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
+            'can_manage' => $request->user() ? $request->user()->can('update', $this->resource) : false,
             'lot_batches' => $this->whenLoaded('lotBatches', fn (): array => LotBatchResource::collection($this->lotBatches)->resolve()),
+            'user' => $this->whenLoaded('user', fn (): ?array => $this->user ? [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+            ] : null),
         ];
     }
 }

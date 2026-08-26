@@ -26,17 +26,18 @@ class FarmPolicy
      */
     public function view(User $user, Farm $farm): bool
     {
-        return $user->isAdmin() || $farm->created_by_user_id === $user->id;
+        return $user->isAdmin() || $farm->user_id === $user->id;
     }
 
     /**
-     * Determine whether the user can create a farm. Any authenticated
-     * user can self-register a farm (the create form itself decides
-     * whether they're the farmer or are registering one).
+     * Determine whether the user can create a farm. Admins and anyone
+     * subscribed to the Farmer Agent may self-register a farm (the create
+     * form itself decides whether they're the farmer or are registering
+     * one).
      */
     public function create(User $user): bool
     {
-        return true;
+        return $this->allowed($user);
     }
 
     /**
@@ -44,7 +45,7 @@ class FarmPolicy
      */
     public function update(User $user, Farm $farm): bool
     {
-        return $user->isAdmin() || $farm->created_by_user_id === $user->id;
+        return $user->isAdmin() || $farm->user_id === $user->id;
     }
 
     /**
@@ -52,7 +53,7 @@ class FarmPolicy
      */
     public function delete(User $user, Farm $farm): bool
     {
-        return $user->isAdmin() || $farm->created_by_user_id === $user->id;
+        return $user->isAdmin() || $farm->user_id === $user->id;
     }
 
     /**

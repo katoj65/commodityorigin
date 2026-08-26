@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\DocumentMetadata;
 use App\Models\Farm;
 use App\Models\FarmDocument;
 use Illuminate\Database\Eloquent\Collection;
@@ -19,6 +20,21 @@ class FarmDocumentService
     public function all(): Collection
     {
         return FarmDocument::query()->with(['farm', 'uploader'])->latest()->get();
+    }
+
+    /**
+     * Active document type options for the farm document upload form.
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    public function documentTypeOptions(): \Illuminate\Support\Collection
+    {
+        return DocumentMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name')
+            ->values();
     }
 
     /**

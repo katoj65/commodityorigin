@@ -19,7 +19,6 @@ use App\Http\Controllers\Farm\GeocodeController;
 use App\Http\Controllers\FarmCollection\FarmCollectionController;
 use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Gallery\GalleryController;
-use App\Http\Controllers\Harvest\HarvestController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Farmer\FarmerController;
@@ -140,8 +139,9 @@ Route::middleware([
 
 
 
-    // Farmer workspace routes.
-    Route::prefix('farmer')->name('farmer.')->middleware('role:farmer,admin')->group(function () {
+    // Farmer workspace routes. Access is enforced by FarmerPolicy: open to
+    // every authenticated user; update/delete are admin-or-owner only.
+    Route::prefix('farmer')->name('farmer.')->group(function () {
         Route::get('/', [FarmerController::class, 'index'])->name('index');
         Route::get('/create', [FarmerController::class, 'create'])->name('create');
         Route::post('/', [FarmerController::class, 'store'])->name('store');
@@ -176,15 +176,10 @@ Route::middleware([
         Route::get('/', [FarmController::class, 'index'])->name('index');
         Route::get('/farm-list', [FarmController::class, 'myFarms'])->name('mine');
         Route::get('/find-by-code', [FarmController::class, 'findByCode'])->name('find-by-code');
-        Route::get('/harvest', [HarvestController::class, 'mine'])->name('harvest.mine');
-        Route::patch('/harvest/{harvest}', [HarvestController::class, 'update'])->name('harvest.update');
-        Route::delete('/harvest/{harvest}', [HarvestController::class, 'destroy'])->name('harvest.destroy');
         Route::get('/weather', [WeatherForecastController::class, 'index'])->name('weather');
         Route::post('/', [FarmController::class, 'store'])->name('store');
         Route::get('/{farm}', [FarmController::class, 'show'])->name('show');
         Route::patch('/{farm}', [FarmController::class, 'update'])->name('update');
-        Route::post('/{farm}/harvests', [FarmController::class, 'storeHarvest'])->name('harvests.store');
-        Route::delete('/{farm}/harvests/{harvest}', [FarmController::class, 'destroyHarvest'])->name('harvests.destroy');
         Route::post('/{farm}/collections', [FarmController::class, 'storeCollection'])->name('collections.store');
         Route::patch('/{farm}/collections/{collection}', [FarmController::class, 'updateCollection'])->name('collections.update');
         Route::delete('/{farm}/collections/{collection}', [FarmController::class, 'destroyCollection'])->name('collections.destroy');
@@ -204,12 +199,18 @@ Route::middleware([
     Route::prefix('lot')->name('lot.')->middleware('role:farmer,admin,buyer')->group(function () {
         Route::get('/', [LotController::class, 'index'])->name('index');
         Route::get('/create', [LotController::class, 'create'])->name('create');
-        Route::post('/', [LotController::class, 'store'])->name('store');
         Route::post('/request', [LotController::class, 'storeLotRequest'])->name('request.store')->middleware('role:farmer,admin,buyer');
         Route::get('/requests', [LotController::class, 'lotRequestIndex'])->name('requests.index')->middleware('role:farmer,admin,buyer');
         Route::get('/request/{lotRequest}', [LotController::class, 'showLotRequest'])->name('request.show')->middleware('role:farmer,admin,buyer');
         Route::put('/request/{lotRequest}', [LotController::class, 'updateLotRequest'])->name('request.update')->middleware('role:farmer,admin,buyer');
         Route::delete('/request/{lotRequest}', [LotController::class, 'destroyLotRequest'])->name('request.destroy')->middleware('role:farmer,admin,buyer');
+    });
+
+    // Lot create/view/publish/attach-batch: open to any authenticated
+    // user — anyone can create a lot; only its creator (or an admin) can
+    // edit or delete it, enforced by LotPolicy, not by role.
+    Route::prefix('lot')->name('lot.')->group(function () {
+        Route::post('/', [LotController::class, 'store'])->name('store');
         Route::get('/{lot}/traceability', [LotController::class, 'lotTraceability'])->name('traceability');
         Route::get('/{lot}', [LotController::class, 'show'])->name('show');
         Route::post('/{lot}/publish', [LotController::class, 'publish'])->name('publish');
@@ -220,7 +221,6 @@ Route::middleware([
     Route::prefix('batch')->name('batch.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [BatchController::class, 'index'])->name('index');
         Route::get('/create', [BatchController::class, 'create'])->name('create');
-        Route::get('/season/{season}/create', [SeasonController::class, 'createBatch'])->name('create-season');
         Route::get('/{batch}/create-lot', [LotController::class, 'createLot'])->name('create-lot');
         Route::post('/{batch}/create-lot', [LotController::class, 'storeFromBatch'])->name('store-lot');
         Route::post('/{batch}/compliance', [BatchController::class, 'storeCompliance'])->name('compliance.store');
@@ -238,25 +238,11 @@ Route::middleware([
         Route::post('/{batch}/farm-collections', [BatchController::class, 'attachFarmCollection'])->name('farm-collections.store');
     });
 
-    // Harvest workspace routes.
-    Route::prefix('harvest')->name('harvest.')->middleware('role:farmer,admin')->group(function () {
-        Route::get('/', [HarvestController::class, 'index'])->name('index');
-        Route::get('/create', [HarvestController::class, 'create'])->name('create');
-        Route::post('/', [HarvestController::class, 'store'])->name('store');
-        Route::post('/{harvest}/documents', [HarvestController::class, 'storeDocument'])->name('documents.store');
-        Route::post('/{harvest}/sustainability', [HarvestController::class, 'storeHarvestSustainability'])->name('sustainability.store');
-        Route::patch('/{harvest}', [HarvestController::class, 'update'])->name('update');
-        Route::get('/{harvest}', [HarvestController::class, 'show'])->name('show');
-    });
-
     // Season workspace routes.
     Route::prefix('season')->name('season.')->middleware('role:farmer,admin')->group(function () {
         Route::get('/', [SeasonController::class, 'index'])->name('index');
         Route::get('/create', [SeasonController::class, 'create'])->name('create');
         Route::post('/', [SeasonController::class, 'store'])->name('store');
-        Route::get('/{season}/create-harvest', [SeasonController::class, 'createHarvest'])->name('create-harvest');
-        Route::post('/{season}/create-harvest', [SeasonController::class, 'storeHarvest'])->name('store-harvest');
-        Route::delete('/{season}/harvest/{harvest}', [SeasonController::class, 'destroyHarvest'])->name('harvest.destroy');
         Route::patch('/{season}', [SeasonController::class, 'update'])->name('update');
         Route::delete('/{season}', [SeasonController::class, 'destroy'])->name('destroy');
         Route::get('/{season}', [SeasonController::class, 'show'])->name('show');

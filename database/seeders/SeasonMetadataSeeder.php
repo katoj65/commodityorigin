@@ -12,8 +12,9 @@ class SeasonMetadataSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Same four labels HarvestService::harvestSeasonOptions() has hardcoded
-     * up to now — moved into a real lookup table instead of a static array.
+     * Same four labels FarmCollectionService::harvestSeasonOptions() has
+     * hardcoded up to now — moved into a real lookup table instead of a
+     * static array.
      */
     public function run(): void
     {

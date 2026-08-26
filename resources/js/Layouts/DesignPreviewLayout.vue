@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
-    Bell, Box, Calendar, Close, Coffee, CoffeeCup, Coin, Compass, Document, FirstAidKit, Grid,
+    Bell, Box, Calendar, Close, CoffeeCup, Coin, Compass, Document, FirstAidKit, Grid,
     House, MagicStick, Menu, Message, Odometer, Picture, School, Search, Setting, Shop,
     ShoppingBag, ShoppingCart, Sunny, SwitchButton, Tickets, TrendCharts, Trophy, User, Wallet,
 } from '@element-plus/icons-vue';
@@ -64,13 +64,11 @@ const adminNavSections = computed(() => [
             { index: 'farmers', label: 'Farmers', icon: User, href: route('farmer.index'), active: route().current('farmer.index') },
             { index: 'farms', label: 'Coffee Farms', icon: House, href: route('farm.index'), active: route().current('farm.index') },
             { index: 'my-farms', label: 'My Farms', icon: House, href: route('farm.mine'), active: route().current('farm.mine') },
-            { index: 'my-harvests', label: 'My Harvests', icon: Coffee, href: route('farm.harvest.mine'), active: route().current('farm.harvest.mine') },
             { index: 'inputs', label: 'Agricultural Inputs', icon: FirstAidKit, href: route('farm.inputs.index'), active: route().current('farm.inputs.*') },
             { index: 'weather', label: 'Weather Forecast', icon: Sunny, href: route('farm.weather'), active: route().current('farm.weather') },
             { index: 'cooperatives', label: 'Cooperatives', icon: School, href: route('cooperative.index'), active: route().current('cooperative.*') },
             { index: 'season', label: 'Season', icon: Calendar, href: route('season.index'), active: route().current('season.*') },
             { index: 'lots', label: 'All Lots', icon: CoffeeCup, href: route('lot.index'), active: route().current('lot.index') },
-            { index: 'harvests', label: 'Harvests', icon: Coffee, href: route('harvest.index'), active: route().current('harvest.*') },
             { index: 'batches', label: 'Batches', icon: Box, href: route('batch.index'), active: route().current('batch.*') },
         ],
     },
@@ -148,6 +146,7 @@ const activeNavIndex = computed(() => {
 const accountMenuItems = [
     { label: 'Profile Settings', icon: User, href: route('profile.show') },
     { label: 'Overview', icon: Odometer, href: route('dashboard') },
+    { label: 'Apps', icon: Grid, href: route('apps.index') },
     { label: 'Settings', icon: Setting, href: route('profile.show') },
     { label: 'Documentation', icon: Document, href: route('documentation.index') },
 ];

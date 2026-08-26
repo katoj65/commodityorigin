@@ -8,13 +8,14 @@ import {
     Warning,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
-import AddFarmDialog from '@/Components/Modals/AddFarmDialog.vue';
+import AddFarmModal from '@/Components/Modals/AddFarmModal.vue';
 import EditFarmerDialog from '@/Components/Modals/EditFarmerDialog.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     farmer: { type: Object, required: true },
     cooperatives: { type: Array, default: () => [] },
+    canCreateFarm: { type: Boolean, default: false },
 });
 
 const page         = usePage();
@@ -142,7 +143,7 @@ function deleteFarmer() {
                             <a v-if="farmer.tel" :href="`tel:${farmer.tel}`" class="fpr-action-btn">
                                 <el-icon><Phone /></el-icon>
                             </a>
-                            <button class="fpr-action-btn" type="button" title="Add Farm" @click="addFarmOpen = true">
+                            <button v-if="canCreateFarm" class="fpr-action-btn" type="button" title="Add Farm" @click="addFarmOpen = true">
                                 <el-icon><CirclePlus /></el-icon>
                             </button>
                             <button class="fpr-action-btn" type="button" title="Edit Farmer" @click="editFarmerOpen = true">
@@ -220,8 +221,8 @@ function deleteFarmer() {
                         <div v-if="!farms.length" class="fpr-empty">
                             <div class="fpr-empty-icon"><el-icon><Warning /></el-icon></div>
                             <div class="fpr-empty-title">No farms registered yet</div>
-                            <p class="fpr-empty-text">Link this farmer's first farm to start tracking harvests, quality, and traceability.</p>
-                            <button class="fpr-btn fpr-btn--primary" type="button" @click="addFarmOpen = true">
+                            <p class="fpr-empty-text">Link this farmer's first farm to start tracking quality and traceability.</p>
+                            <button v-if="canCreateFarm" class="fpr-btn fpr-btn--primary" type="button" @click="addFarmOpen = true">
                                 <el-icon><CirclePlus /></el-icon> Add First Farm
                             </button>
                         </div>
@@ -239,7 +240,7 @@ function deleteFarmer() {
                                     </div>
                                     <div class="fpr-farm-info">
                                         <h3 class="fpr-farm-name">{{ farm.name || `Farm ${farm.id}` }}</h3>
-                                        <p class="fpr-farm-desc">{{ [farm.altitude || farm.variety, farm.location].filter(Boolean).join(' · ') || 'Location pending' }}</p>
+                                        <p class="fpr-farm-desc">{{ [farm.coffee_type, [farm.district, farm.region].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Location pending' }}</p>
                                     </div>
                                     <button class="fpr-farm-view" type="button" @click.stop="goToFarm(farm.id)">
                                         <el-icon><View /></el-icon>
@@ -254,12 +255,12 @@ function deleteFarmer() {
             </div>
         </div>
 
-        <AddFarmDialog v-model="addFarmOpen" :farmer-id="farmer.id" />
+        <AddFarmModal v-model="addFarmOpen" />
         <EditFarmerDialog v-model="editFarmerOpen" :farmer="farmer" :cooperatives="cooperatives" />
         <ConfirmDialog
             v-model="deleteConfirmOpen"
             title="Delete Farmer"
-            :message="`${fullName} will be permanently removed, along with any linked farms.`"
+            :message="`${fullName} will be permanently removed. Farms are not affected.`"
             confirm-text="Delete Farmer"
             @confirm="deleteFarmer"
         />

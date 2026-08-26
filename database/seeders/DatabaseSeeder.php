@@ -55,7 +55,6 @@ class DatabaseSeeder extends Seeder
             EnvironmentMetadataSeeder::class,
             LandMetadataSeeder::class,
             ClimateMetadataSeeder::class,
-            HarvestingMetadataSeeder::class,
             SeasonMetadataSeeder::class,
             SensoryMetadataSeeder::class,
             ProcessingMetadataSeeder::class,

@@ -111,8 +111,7 @@ class LotController extends Controller
             'sourceBatch' => [
                 'label' => '#'.($batch->batch_number ?: 'BTC-'.str_pad((string) $batch->id, 2, '0', STR_PAD_LEFT)),
                 'season' => $batch->season?->name ?: (optional($batch->processing_date)?->format('Y / m') ?: 'Pending'),
-                'origin' => $sourceFarm?->location
-                    ?: $sourceFarm?->farmer?->district
+                'origin' => $sourceFarm?->district
                     ?: 'Origin pending',
                 'type' => $batch->variety ?: 'Heirloom Arabica',
                 'available_qty_kg' => $metrics['remaining_kg'],
@@ -146,7 +145,7 @@ class LotController extends Controller
             'canSubmit' => (bool) $sourceFarm,
             'submissionBlockedMessage' => $sourceFarm
                 ? null
-                : 'Link a harvest with a source farm to this batch before creating a lot.',
+                : 'Link a farm collection with a source farm to this batch before creating a lot.',
         ]);
     }
 
@@ -195,7 +194,11 @@ class LotController extends Controller
      */
     public function show(Lot $lot): Response
     {
-        $lot->load('lotBatches.batch');
+        $lot->load([
+            'lotBatches.batch.user',
+            'lotBatches.batch.batchFarmCollections.farmCollection.farm',
+            'user',
+        ]);
 
         return Inertia::render('Lot/LotProfile', [
             'lot' => LotResource::make($lot)->resolve(),

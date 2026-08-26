@@ -5,18 +5,23 @@ namespace App\Services;
 use App\Models\Batch;
 use App\Models\BatchCompliance;
 use App\Models\BatchFarmCollection;
-use App\Models\BatchOwnership;
 use App\Models\FarmCollection;
-use App\Models\Harvest;
-use App\Models\Season;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class BatchService
 {
+    /**
+     * Look up a batch by its batch_number, returning its full details
+     * (or null if no batch has that number).
+     */
+    public function findByNumber(string $batchNumber): ?Batch
+    {
+        return Batch::query()->where('batch_number', $batchNumber)->first();
+    }
+
     /**
      * Paginate batches, optionally filtered by a search term.
      */
@@ -76,49 +81,6 @@ class BatchService
     }
 
     /**
-     * Resolve the season id associated with a batch, derived from whichever
-     * harvest is attached to it via a BatchOwnership record (batches no
-     * longer carry their own season_id column).
-     */
-    public function resolveSeasonId(Batch $batch): ?int
-    {
-        $harvestId = $batch->ownerships
-            ->firstWhere('owner_type', Harvest::class)
-            ?->owner_id;
-
-        if (!$harvestId) {
-            return null;
-        }
-
-        return Harvest::query()->find($harvestId)?->season_id;
-    }
-
-    /**
-     * Fetch a season with harvest aggregates for the batch profile.
-     */
-    public function findSeasonWithHarvestStats(int $seasonId): ?Season
-    {
-        return Season::query()
-            ->withCount('harvests')
-            ->withSum('harvests', 'weight')
-            ->withSum('harvests', 'price')
-            ->find($seasonId);
-    }
-
-    /**
-     * Fetch harvests belonging to a season, with their farm loaded.
-     *
-     * @return Collection<int, Harvest>
-     */
-    public function harvestsForSeason(?int $seasonId): Collection
-    {
-        return Harvest::query()
-            ->where('season_id', $seasonId)
-            ->with('farm')
-            ->get();
-    }
-
-    /**
      * Create a batch from validated payload data.
      *
      * @param  array<string, mixed>  $validated
@@ -159,30 +121,6 @@ class BatchService
         } while (Batch::query()->where('batch_number', $number)->exists());
 
         return $number;
-    }
-
-    /**
-     * Attach harvests to a batch via BatchOwnership records.
-     *
-     * @param  array<int, int>  $harvestIds
-     */
-    public function attachHarvests(Batch $batch, array $harvestIds, int $userId): void
-    {
-        if ($harvestIds === []) {
-            return;
-        }
-
-        Harvest::query()
-            ->whereKey($harvestIds)
-            ->get()
-            ->each(function (Harvest $harvest) use ($batch, $userId): void {
-                BatchOwnership::query()->create([
-                    'batch_id' => $batch->id,
-                    'user_id' => $userId,
-                    'owner_id' => $harvest->id,
-                    'owner_type' => Harvest::class,
-                ]);
-            });
     }
 
     /**

@@ -90,10 +90,11 @@ function placeOrder() {
 
 <template>
     <DesignPreviewLayout title="Checkout">
-        <div class="chk-page p-3">
+        <div class="chk-page">
             <section class="chk-header">
                 <div class="chk-header__inner">
-                    <h1 class="chk-title mb-3">Complete Checkout</h1>
+                    <h1 class="chk-title">Complete Checkout</h1>
+                    <p class="chk-subtitle">Confirm your delivery details and payment method to place the order.</p>
                 </div>
             </section>
 
@@ -193,7 +194,7 @@ function placeOrder() {
                                     </div>
                                     <div class="chk-summary__item-body">
                                         <h4 class="chk-summary__item-name">{{ item.name || item.lot_code }}</h4>
-                                        <p class="chk-summary__item-sub">{{ item.subtitle }}</p>
+                                        <p v-if="item.subtitle" class="chk-summary__item-sub">{{ item.subtitle }}</p>
                                         <div class="chk-summary__item-row">
                                             <span>Qty: {{ item.quantity }}{{ item.unit }}</span>
                                             <span>{{ formatCurrency(item.line_total) }}</span>
@@ -236,56 +237,56 @@ function placeOrder() {
 .chk-page {
     /* UI.md theme (2026-08-24): app-wide default. See
        reference_ui_md_design_system memory for the full spec. */
-    --green: #000000;
-    --green-dark: #262626;
+    --primary: #000000;
+    --on-primary: #ffffff;
     --border: #E5E7EB;
     --card-border: #E5E7EB;
     --card-radius: 6px;
+    --surface: #ffffff;
     --on-surface: #121516;
     --on-surface-var: #4B5457;
+    --on-surface-muted: #6F7677;
     --surface-low: #F5F6F7;
     --surface-container: #F1F2F3;
+    --error: #B91C1C;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color: var(--on-surface);
     min-height: 100%;
-    /* DesignPreviewLayout's .dp-main carries its own 48px/64px top+side
-       padding (shared by every page it wraps) — pulled back here so the
-       header sits flush under the app header and the side gutters are
-       controlled locally instead of leaving a wide dead margin, same
-       fix applied to MarketListings.vue's .mkt-page (top only). */
-    margin: -48px -64px 0;
 }
 
-.chk-body { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem 1rem; }
+/* No negative-margin/gutter override here — .dp-main's own 48px/64px
+   padding is left in place so this page's edges line up with the Cart
+   page's, which relies on the same padding without any override. */
+.chk-body { max-width: 1400px; margin: 25px auto 0; }
 
 /* ── Header ──────────────────────────────────────────────────────────── */
-.chk-header__inner { max-width: 1400px; margin: 0 auto; padding: .75rem 1.5rem .5rem; display: flex; align-items: center; gap: 16px; }
-.chk-title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.02em; color: var(--green); margin: 0; }
+.chk-header__inner { max-width: 1400px; margin: 0 auto; }
+.chk-title { font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--on-surface); margin: 0 0 6px; }
+.chk-subtitle { font-size: 13.5px; color: var(--on-surface-var); margin: 0; }
 
 .chk-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 1.5rem; align-items: start; }
 .chk-main { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
 
 /* ── Pay button (rendered into PaymentMethodSection's footer slot) ────── */
 .chk-pay-btn {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    width: 100%; margin-top: 1.5rem; padding: 18px; border: none; border-radius: 12px;
-    background: var(--green); color: #fff; font-size: 1.125rem; font-weight: 700;
-    cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
-    transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; margin-top: 1.5rem; height: 48px; border: none; border-radius: 6px;
+    background: var(--primary); color: var(--on-primary); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity 120ms ease;
 }
-.chk-pay-btn:hover:not(:disabled) { background: var(--green-dark); transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0, 0, 0, .28); }
-.chk-pay-btn:disabled { opacity: .5; cursor: default; transform: none; }
+.chk-pay-btn:hover:not(:disabled) { opacity: 0.88; }
+.chk-pay-btn:disabled { opacity: .5; cursor: default; }
 
 /* ── Billing address (compact summary + expandable form) ──────────────── */
 .chk-billing { display: flex; align-items: flex-start; gap: 16px; }
 .chk-billing__icon {
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    width: 48px; height: 48px; border-radius: 50%; background: var(--surface-container); color: var(--on-surface-var);
+    width: 40px; height: 40px; border-radius: 8px; background: var(--surface-container); color: var(--on-surface-var);
 }
 .chk-billing__summary, .chk-billing__form { flex: 1; min-width: 0; }
 .chk-billing__label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-var); margin: 0 0 4px; }
 .chk-billing__text { font-size: .9375rem; font-weight: 500; color: var(--on-surface); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chk-billing__edit { flex-shrink: 0; border: none; background: none; color: var(--green); font-size: .8125rem; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
+.chk-billing__edit { flex-shrink: 0; border: none; background: none; color: var(--primary); font-size: .8125rem; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
 
 .chk-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
 .chk-field { display: flex; flex-direction: column; gap: 5px; font-size: .75rem; font-weight: 700; color: var(--on-surface-var); }
@@ -293,23 +294,25 @@ function placeOrder() {
 .chk-field--full { grid-column: 1 / -1; }
 .chk-field input,
 .chk-field textarea {
-    border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px;
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    border: 1px solid var(--border); border-radius: 6px; padding: 9px 11px;
+    font-family: inherit;
     font-size: .8125rem; font-weight: 500; color: var(--on-surface);
-    background: #fff; resize: vertical;
+    background: var(--surface); resize: vertical;
 }
 .chk-field input:focus,
-.chk-field textarea:focus { outline: none; border-color: var(--green); }
-.chk-error { color: #dc2626; font-weight: 600; }
+.chk-field textarea:focus { outline: none; border-color: var(--primary); }
+.chk-error { color: var(--error); font-weight: 600; }
 
 /* ── Summary ─────────────────────────────────────────────────────────── */
 .chk-summary { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 5.5rem; }
-.chk-summary__card { border: 1px solid var(--card-border); border-radius: var(--card-radius); padding: 1.75rem; background: var(--surface-container); position: relative; overflow: hidden; }
-.chk-summary__title { font-size: 1.25rem; font-weight: 800; color: var(--green); margin: 0 0 1.25rem; }
-.chk-summary__items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; max-height: 320px; overflow-y: auto; }
-.chk-summary__item { display: flex; align-items: flex-start; gap: 12px; padding: 10px; background: #fff; border: 1px solid var(--card-border); border-radius: var(--card-radius); }
+.chk-summary__card { border: 1px solid var(--card-border); border-radius: var(--card-radius); padding: 20px; background: var(--surface); }
+.chk-summary__title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-surface); margin: 0 0 16px; }
+.chk-summary__items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; max-height: 320px; overflow-y: auto; }
+.chk-summary__item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--card-border); }
+.chk-summary__item:last-child { border-bottom: none; padding-bottom: 0; }
+.chk-summary__item:first-child { padding-top: 0; }
 .chk-summary__thumb {
-    width: 52px; height: 52px; border-radius: 6px; flex-shrink: 0; overflow: hidden;
+    width: 44px; height: 44px; border-radius: 6px; flex-shrink: 0; overflow: hidden;
     background: var(--surface-low); color: var(--on-surface-var);
     display: flex; align-items: center; justify-content: center;
 }
@@ -320,25 +323,15 @@ function placeOrder() {
 .chk-summary__item-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: .75rem; font-variant-numeric: tabular-nums; }
 .chk-summary__item-row span:last-child { font-weight: 700; color: var(--on-surface); }
 
-.chk-summary__divider { border-top: 1px solid rgba(0, 0, 0, .12); margin: 1.25rem 0; }
+.chk-summary__divider { border-top: 1px solid var(--card-border); margin: 16px 0; }
 .chk-summary__totals { display: flex; flex-direction: column; gap: 10px; }
 .chk-summary__row { display: flex; align-items: center; justify-content: space-between; font-size: .875rem; color: var(--on-surface-var); }
 .chk-summary__total { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-.chk-summary__total-label { display: block; font-size: 1.25rem; font-weight: 800; color: var(--on-surface); }
-.chk-summary__total-amount { font-family: ui-monospace, monospace; font-size: 2rem; font-weight: 800; color: var(--green); letter-spacing: -.01em; line-height: 1; }
+.chk-summary__total-label { display: block; font-size: 15px; font-weight: 700; color: var(--on-surface); }
+.chk-summary__total-amount { font-family: ui-monospace, monospace; font-size: 26px; font-weight: 800; color: var(--primary); letter-spacing: -.01em; line-height: 1; }
 
-.chk-support { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: .75rem; color: var(--on-surface-var); opacity: .8; }
-.chk-support :deep(a) { color: var(--green); text-decoration: underline; }
-
-/* Track .dp-main's own responsive side padding (64px → 24px → 16px) so the
-   .chk-page negative margin above keeps fully cancelling it at every width. */
-@media (max-width: 1279.98px) {
-    .chk-page { margin-left: -24px; margin-right: -24px; }
-}
-
-@media (max-width: 767.98px) {
-    .chk-page { margin-left: -16px; margin-right: -16px; }
-}
+.chk-support { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: .75rem; color: var(--on-surface-var); }
+.chk-support :deep(a) { color: var(--primary); text-decoration: underline; }
 
 @media (max-width: 991.98px) {
     .chk-grid { grid-template-columns: 1fr; }
@@ -346,9 +339,7 @@ function placeOrder() {
 }
 
 @media (max-width: 640px) {
-    .chk-header__inner { padding: .625rem .75rem .5rem; }
     .chk-title { font-size: 1.125rem; }
-    .chk-body { padding: 0 .75rem 1rem; }
     .chk-field-grid { grid-template-columns: 1fr; }
     .chk-billing { flex-direction: column; }
 }

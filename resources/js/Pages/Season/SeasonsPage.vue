@@ -64,27 +64,19 @@ const comparison = [
     { season: '2023 Fly Crop',production:  '3,400 kg', quality: 84.8, export: '1,800 kg', price: '$4.20/kg', demand: 'Medium', best: false },
 ];
 
-const harvestRows = [
-    { id: 'HV-001', farm: 'Sipi Plot A',   date: 'Mar 20', qty: '2,400 kg', score: 88.5, status: 'Processed',  tone: 'success' },
-    { id: 'HV-002', farm: 'Elgon Block B', date: 'Mar 15', qty: '1,800 kg', score: 87.2, status: 'In Process', tone: 'warning' },
-    { id: 'HV-003', farm: 'Rwenzori Farm', date: 'Feb 28', qty: '2,100 kg', score: 86.9, status: 'Processed',  tone: 'success' },
-    { id: 'HV-004', farm: 'Sipi Plot A',   date: 'Feb 10', qty: '1,400 kg', score: 87.8, status: 'Sold',       tone: 'primary' },
-];
-
 const prodBars  = [0, 0, 0, 42, 68, 84, 100, 88, 62, 28, 0, 0];
 const qualBars  = [0, 0, 0, 80, 84, 88,  92, 90, 87, 84, 0, 0];
 const months    = ['J','F','M','A','M','J','J','A','S','O','N','D'];
 
 const regions = [
-    { name: 'Mount Elgon',    prod: '4,200 kg', score: 88.5, harvests: 12, export: '92%' },
-    { name: 'Rwenzori',       prod: '3,800 kg', score: 87.1, harvests: 9,  export: '88%' },
-    { name: 'Central Uganda', prod: '2,900 kg', score: 84.6, harvests: 8,  export: '74%' },
-    { name: 'SW Uganda',      prod: '1,800 kg', score: 86.3, harvests: 6,  export: '80%' },
+    { name: 'Mount Elgon',    prod: '4,200 kg', score: 88.5, export: '92%' },
+    { name: 'Rwenzori',       prod: '3,800 kg', score: 87.1, export: '88%' },
+    { name: 'Central Uganda', prod: '2,900 kg', score: 84.6, export: '74%' },
+    { name: 'SW Uganda',      prod: '1,800 kg', score: 86.3, export: '80%' },
 ];
 
 const traceFlow = [
     { label: 'Season',  icon: Calendar,      qty: `${totalSeasons.value} seasons`, done: true  },
-    { label: 'Harvest', icon: Box,           qty: '28 harvests',                   done: true  },
     { label: 'Batch',   icon: CollectionTag, qty: '14 batches',                    done: false },
     { label: 'Lot',     icon: Star,          qty: '9 lots',                        done: false },
     { label: 'Market',  icon: ShoppingCart,  qty: '3 active',                      done: false },
@@ -185,13 +177,6 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                             <span class="sx-kpi__label">Completed</span>
                             <div class="sx-kpi__value">{{ completedCount }}</div>
                             <div class="sx-kpi__sub">Finished</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-sm-4 col-lg-2">
-                        <div class="sx-kpi h-100">
-                            <span class="sx-kpi__label">Total Harvests</span>
-                            <div class="sx-kpi__value">28</div>
-                            <div class="sx-kpi__sub">This cycle</div>
                         </div>
                     </div>
                     <div class="col-6 col-sm-4 col-lg-2">
@@ -378,52 +363,6 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                 </div>
                             </div>
 
-                            <!-- 6. Linked Harvests -->
-                            <div class="sx-section p-0 overflow-hidden">
-                                <div class="sx-section-head px-3">
-                                    <el-icon class="sx-section-icon"><Box /></el-icon>
-                                    Linked Harvests
-                                    <span class="sx-section-count">{{ harvestRows.length }} records</span>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table align-middle mb-0 sx-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Harvest ID</th>
-                                                <th>Farm</th>
-                                                <th>Date</th>
-                                                <th>Quantity</th>
-                                                <th>Quality Score</th>
-                                                <th>Status</th>
-                                                <th class="text-end">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-for="h in harvestRows" :key="h.id" class="sx-table-row">
-                                                <td class="sx-item-name">{{ h.id }}</td>
-                                                <td class="sx-muted">{{ h.farm }}</td>
-                                                <td class="sx-muted">{{ h.date }}</td>
-                                                <td class="fw-semibold">{{ h.qty }}</td>
-                                                <td>
-                                                    <span class="sx-score-pill" :class="h.score >= 88 ? 'sx-score-pill--high' : 'sx-score-pill--mid'">{{ h.score }}</span>
-                                                </td>
-                                                <td>
-                                                    <span class="badge rounded-pill" style="font-size:.65rem;"
-                                                        :class="h.tone === 'success' ? 'bg-success-subtle text-success-emphasis border border-success-subtle'
-                                                              : h.tone === 'warning' ? 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-                                                              : 'bg-primary-subtle text-primary-emphasis border border-primary-subtle'">
-                                                        {{ h.status }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-end">
-                                                    <button class="btn btn-sm sx-btn-outline sx-act-btn"><el-icon><Star /></el-icon> View</button>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
                             <!-- 7. Production Analytics -->
                             <div class="sx-section">
                                 <div class="sx-section-head">
@@ -548,7 +487,6 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                             <div class="row g-1">
                                                 <div class="col-6"><div class="sx-info-cell"><span>Production</span><strong>{{ reg.prod }}</strong></div></div>
                                                 <div class="col-6"><div class="sx-info-cell"><span>Quality</span><strong class="sx-green">{{ reg.score }}</strong></div></div>
-                                                <div class="col-6"><div class="sx-info-cell"><span>Harvests</span><strong>{{ reg.harvests }}</strong></div></div>
                                                 <div class="col-6"><div class="sx-info-cell"><span>Export Ready</span><strong class="sx-green">{{ reg.export }}</strong></div></div>
                                             </div>
                                         </div>

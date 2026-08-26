@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Farmer extends Model
 {
@@ -48,8 +48,13 @@ class Farmer extends Model
         return $this->belongsTo(Cooperative::class);
     }
 
-    public function farms(): HasMany
+    /**
+     * The farms linked to this farmer, via the farmers_farms pivot table.
+     */
+    public function farms(): BelongsToMany
     {
-        return $this->hasMany(Farm::class);
+        return $this->belongsToMany(Farm::class, 'farmers_farms')
+            ->withPivot(['farm_code', 'status'])
+            ->withTimestamps();
     }
 }

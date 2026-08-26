@@ -18,8 +18,7 @@ class Farm extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'farmer_id',
-        'created_by_user_id',
+        'user_id',
         'name',
         'farm_code',
         'country',
@@ -58,27 +57,11 @@ class Farm extends Model
     ];
 
     /**
-     * Get the farmer that owns the farm.
+     * Get the user who owns this farm.
      */
-    public function farmer(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Farmer::class);
-    }
-
-    /**
-     * Get the user who created this farm record.
-     */
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by_user_id');
-    }
-
-    /**
-     * Get the harvest records attached to this farm.
-     */
-    public function harvests(): HasMany
-    {
-        return $this->hasMany(Harvest::class);
+        return $this->belongsTo(User::class);
     }
 
     /**
@@ -127,5 +110,15 @@ class Farm extends Model
     public function certifications(): BelongsToMany
     {
         return $this->belongsToMany(CertificationMetadata::class, 'farm_certifications');
+    }
+
+    /**
+     * The farmers linked to this farm, via the farmers_farms pivot table.
+     */
+    public function farmers(): BelongsToMany
+    {
+        return $this->belongsToMany(Farmer::class, 'farmers_farms')
+            ->withPivot(['farm_code', 'status'])
+            ->withTimestamps();
     }
 }

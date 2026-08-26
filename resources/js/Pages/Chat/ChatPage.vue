@@ -253,17 +253,19 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
 
 <style scoped>
 .cpg-page {
-    --green: #004532;
-    --green-light: #0a7a52;
-    --border: #eef2f0;
-    --on-surface: #111827;
-    --on-surface-var: #6b7280;
-    --surface-low: #f8fafc;
+    --primary: #000000;
+    --on-primary: #ffffff;
+    --border: #E5E7EB;
+    --on-surface: #121516;
+    --on-surface-var: #4B5457;
+    --on-surface-muted: #6F7677;
+    --surface-low: #F5F6F7;
+    --success: #15803D;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 3.5rem);
+    height: 100%;
     background: #ffffff;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* ── Header ──────────────────────────────────────────────────────────── */
@@ -280,15 +282,14 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
 .cpg-header__avatar {
     width: 38px;
     height: 38px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--green), var(--green-light));
-    color: #fff;
+    border-radius: 10px;
+    background: var(--primary);
+    color: var(--on-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 17px;
     flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(0, 69, 50, 0.25);
 }
 
 .cpg-header__copy { min-width: 0; }
@@ -314,8 +315,8 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
     display: inline-block;
 }
 
@@ -351,13 +352,12 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
 .cpg-welcome__avatar {
     width: 56px;
     height: 56px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, var(--green), var(--green-light));
-    color: #fff;
+    border-radius: 14px;
+    background: var(--primary);
+    color: var(--on-primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 20px rgba(0, 69, 50, 0.22);
     margin-bottom: 16px;
 }
 
@@ -390,7 +390,7 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
     width: 100%;
     padding: 11px 14px;
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 10px;
     background: #fff;
     color: var(--on-surface);
     font-size: 0.8125rem;
@@ -401,12 +401,12 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
 }
 
 .cpg-suggestion:hover {
-    border-color: var(--green);
-    background: #f0f7f4;
+    border-color: var(--primary);
+    background: var(--surface-low);
     transform: translateY(-1px);
 }
 
-.cpg-suggestion :deep(.el-icon) { color: var(--green); flex-shrink: 0; }
+.cpg-suggestion :deep(.el-icon) { color: var(--on-surface-var); flex-shrink: 0; }
 
 /* ── Message rows ────────────────────────────────────────────────────── */
 .cpg-row {
@@ -432,8 +432,8 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
 }
 
 .cpg-avatar--bot {
-    background: linear-gradient(135deg, var(--green), var(--green-light));
-    color: #fff;
+    background: var(--primary);
+    color: var(--on-primary);
 }
 
 .cpg-msg-wrap {
@@ -461,11 +461,10 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
 }
 
 .cpg-msg--user {
-    background: linear-gradient(135deg, var(--green), var(--green-light));
-    color: #fff;
+    background: var(--primary);
+    color: var(--on-primary);
     padding: 11px 16px;
     border-radius: 16px 4px 16px 16px;
-    box-shadow: 0 4px 12px rgba(0, 69, 50, 0.18);
 }
 
 .cpg-msg-footer {
@@ -567,12 +566,12 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
 .cpg-icon-btn:hover { background: var(--surface-low); }
 
 .cpg-icon-btn--primary {
-    background: var(--green);
-    border-color: var(--green);
-    color: #fff;
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--on-primary);
 }
 
-.cpg-icon-btn--primary:hover { background: #002e20; }
+.cpg-icon-btn--primary:hover { opacity: 0.88; }
 
 /* ── Input bar ───────────────────────────────────────────────────────── */
 .cpg-input-bar {
@@ -591,13 +590,11 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
     background: #fff;
     border: 1.5px solid var(--border);
     border-radius: 22px;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color 0.15s ease;
 }
 
 .cpg-input:focus-within {
-    border-color: var(--green);
-    box-shadow: 0 4px 20px rgba(0, 69, 50, 0.12);
+    border-color: var(--primary);
 }
 
 .cpg-input textarea {
@@ -622,8 +619,8 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
     height: 36px;
     border-radius: 50%;
     border: none;
-    background: linear-gradient(135deg, var(--green), var(--green-light));
-    color: #fff;
+    background: var(--primary);
+    color: var(--on-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -654,5 +651,28 @@ watch(() => messages.value.length, scrollToBottom, { immediate: true });
     .cpg-messages { padding: 18px 14px 8px; }
     .cpg-input-bar { padding: 10px 14px 14px; }
     .cpg-msg-wrap { max-width: 88%; }
+}
+</style>
+
+<style>
+/* DesignPreviewLayout's .dp-main assumes a padded, scrolling content
+   page (48px/64px padding, natural document height) — wrong for a chat
+   UI, which needs to fill the viewport exactly below the 80px sticky
+   header with only its own message list scrolling. Scoped styles can't
+   reach an ancestor, so this unscoped override targets .dp-main only
+   when it's hosting this page. */
+.dp-main:has(> .cpg-page) {
+    padding: 0;
+    gap: 0;
+    height: calc(100vh - 80px);
+    overflow: hidden;
+}
+
+@media (max-width: 1279.98px) {
+    .dp-main:has(> .cpg-page) { height: calc(100vh - 80px); }
+}
+
+@media (max-width: 767.98px) {
+    .dp-main:has(> .cpg-page) { height: calc(100vh - 68px); }
 }
 </style>

@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class SeasonResource extends JsonResource
+class FarmerFarmResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,13 +16,12 @@ class SeasonResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user_id' => $this->user_id,
-            'name' => $this->name,
-            'region' => $this->region,
-            'start_date' => optional($this->start_date)?->toDateString(),
-            'end_date' => optional($this->end_date)?->toDateString(),
+            'farm_id' => $this->farm_id,
+            'farmer_id' => $this->farmer_id,
+            'farm_code' => $this->farm_code,
             'status' => $this->status,
-            'notes' => $this->notes,
+            'farm' => $this->whenLoaded('farm', fn (): array => FarmResource::make($this->farm)->resolve()),
+            'farmer' => $this->whenLoaded('farmer', fn (): array => FarmerResource::make($this->farmer)->resolve()),
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
         ];

@@ -52,20 +52,6 @@ const onFunctionClick = (fn, event) => {
     }
 };
 
-const statusLabel = (s) => ({
-    pending: 'Pending',
-    active: 'Active',
-    success: 'Success',
-    failed: 'Failed',
-}[s] ?? s ?? '—');
-
-const statusCls = (s) => ({
-    pending: 'ap-badge--yellow',
-    active: 'ap-badge--green',
-    success: 'ap-badge--green',
-    failed: 'ap-badge--red',
-}[s] ?? 'ap-badge--muted');
-
 const subscribing = ref(null);
 
 const isSubscribed = (agentId) => props.subscribedAgentIds.includes(agentId);
@@ -87,88 +73,69 @@ function toggleSubscription(agent) {
 
 <template>
     <DesignPreviewLayout title="Apps">
-        <Head title="Apps" />
-
         <div class="ap-page">
 
             <!-- ── Header ──────────────────────────────────────────────── -->
             <div class="ap-header">
-                <div class="container-fluid px-3 px-lg-4">
-                    <div class="py-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
-                        <div>
-                            <div class="ap-kicker">Automation</div>
-                            <h1 class="ap-title mb-0">Apps</h1>
-                            <p class="ap-subtitle mb-0">Browse available AI agents and add the ones you want to your subscription.</p>
+                <div class="ap-header__text">
+                    <h1 class="ap-title">Apps</h1>
+                    <p class="ap-subtitle">Browse available AI agents and add the ones you want to your subscription.</p>
+                </div>
+                <button v-if="props.canCreateAgent" type="button" class="ap-btn ap-btn--primary" @click="openCreateDialog">
+                    <el-icon><Plus /></el-icon> New Agent
+                </button>
+            </div>
+
+            <!-- ── Empty state ─────────────────────────────────────────── -->
+            <div v-if="!props.agents.length" class="ap-empty">
+                <el-icon :size="28" class="ap-empty__icon"><Setting /></el-icon>
+                <p class="ap-empty__text">No agents are available yet.</p>
+            </div>
+
+            <!-- ── Tile grid ───────────────────────────────────────────── -->
+            <div v-else class="ap-grid">
+                <div v-for="agent in props.agents" :key="agent.id" class="ap-tile">
+                    <div class="ap-tile__top">
+                        <div class="ap-tile__icon">
+                            <el-icon><component :is="iconOrFallback(agent.icon)" /></el-icon>
                         </div>
-                        <button v-if="props.canCreateAgent" type="button" class="btn btn-sm ap-btn-primary" @click="openCreateDialog">
-                            <el-icon><Plus /></el-icon> New Agent
+                        <Link v-if="props.canCreateAgent" :href="route('agent.show', agent.id)" class="ap-manage-link" title="Manage agent">
+                            <el-icon><Setting /></el-icon> Manage
+                        </Link>
+                    </div>
+                    <Link :href="route('agent.show', agent.id)" class="ap-tile__name">{{ agent.name }}</Link>
+
+                    <div v-if="agent.functions?.length" class="ap-tile__functions">
+                        <component
+                            :is="functionIsRoute(fn) ? Link : 'a'"
+                            v-for="fn in agent.functions"
+                            :key="fn.id"
+                            :href="functionHref(fn)"
+                            class="ap-fn-link"
+                            @click="onFunctionClick(fn, $event)"
+                        >
+                            <el-icon><component :is="iconOrFallback(fn.icon)" /></el-icon>
+                            {{ fn.name }}
+                        </component>
+                    </div>
+
+                    <p class="ap-tile__desc">{{ agent.description }}</p>
+                    <div class="ap-tile__footer">
+                        <button
+                            type="button"
+                            class="ap-btn ap-btn--full"
+                            :class="isSubscribed(agent.id) ? 'ap-btn--outline-danger' : 'ap-btn--primary'"
+                            :disabled="subscribing === agent.id"
+                            @click="toggleSubscription(agent)"
+                        >
+                            {{
+                                subscribing === agent.id
+                                    ? (isSubscribed(agent.id) ? 'Unsubscribing…' : 'Subscribing…')
+                                    : (isSubscribed(agent.id) ? 'Unsubscribe' : 'Add to Subscription')
+                            }}
                         </button>
                     </div>
                 </div>
-            </div>
-
-            <div class="container-fluid px-3 px-lg-4 py-3">
-
-                <!-- ── Empty state ─────────────────────────────────────── -->
-                <div v-if="!props.agents.length" class="ap-empty">
-                    <el-icon style="font-size:2rem;color:#d1d5db;"><Setting /></el-icon>
-                    <p class="ap-muted mt-2 mb-0">No agents are available yet.</p>
-                </div>
-
-                <!-- ── Tile grid ───────────────────────────────────────── -->
-                <div v-else class="row g-3">
-                    <div v-for="agent in props.agents" :key="agent.id" class="col-12 col-sm-6 col-lg-4 col-xl-3">
-                        <div class="ap-tile h-100">
-                            <div class="d-flex align-items-start justify-content-between">
-                                <div class="ap-tile__icon">
-                                    <el-icon><component :is="iconOrFallback(agent.icon)" /></el-icon>
-                                </div>
-                                <Link v-if="props.canCreateAgent" :href="route('agent.show', agent.id)" class="ap-manage-link" title="Manage agent">
-                                    <el-icon><Setting /></el-icon> Manage
-                                </Link>
-                            </div>
-                            <Link
-                                :href="route('agent.show', agent.id)"
-                                class="ap-tile__name ap-tile__name--link"
-                            >
-                                {{ agent.name }}
-                            </Link>
-
-                            <div v-if="agent.functions?.length" class="ap-tile__functions">
-                                <component
-                                    :is="functionIsRoute(fn) ? Link : 'a'"
-                                    v-for="fn in agent.functions"
-                                    :key="fn.id"
-                                    :href="functionHref(fn)"
-                                    class="ap-fn-link"
-                                    @click="onFunctionClick(fn, $event)"
-                                >
-                                    <el-icon><component :is="iconOrFallback(fn.icon)" /></el-icon>
-                                    {{ fn.name }}
-                                </component>
-                            </div>
-
-                            <p class="ap-tile__desc">{{ agent.description }}</p>
-                            <div class="ap-tile__footer mt-3">
-                                <!-- <span class="ap-badge" :class="statusCls(agent.status)">{{ statusLabel(agent.status) }}</span> -->
-                                <button
-                                    type="button"
-                                    class="btn btn-sm w-100"
-                                    :class="isSubscribed(agent.id) ? 'ap-btn-outline' : 'ap-btn-primary'"
-                                    :disabled="subscribing === agent.id"
-                                    @click="toggleSubscription(agent)"
-                                >
-                                    {{
-                                        subscribing === agent.id
-                                            ? (isSubscribed(agent.id) ? 'Unsubscribing…' : 'Subscribing…')
-                                            : (isSubscribed(agent.id) ? 'Unsubscribe' : 'Add to Subscription')
-                                    }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
             <!-- ── Create Agent modal (admin only) ────────────────────── -->
@@ -229,8 +196,8 @@ function toggleSubscription(agent) {
                     </div>
 
                     <div class="ap-modal__footer">
-                        <button type="button" class="btn btn-sm ap-btn-outline" @click="createDialogOpen = false">Cancel</button>
-                        <button type="submit" class="btn btn-sm ap-btn-primary" :disabled="createForm.processing">
+                        <button type="button" class="ap-btn ap-btn--outline" @click="createDialogOpen = false">Cancel</button>
+                        <button type="submit" class="ap-btn ap-btn--primary" :disabled="createForm.processing">
                             <el-icon v-if="!createForm.processing"><Plus /></el-icon>
                             {{ createForm.processing ? 'Creating…' : 'Create Agent' }}
                         </button>
@@ -247,94 +214,143 @@ function toggleSubscription(agent) {
     --border: #eef2f0;
     --on-surface: #111827;
     --on-surface-var: #6b7280;
-    --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
-    color: var(--on-surface);
+    --surface: #ffffff;
+    --surface-muted: #F5F6F7;
+    --surface-elevated: #F1F2F3;
+    --border: #E5E7EB;
+    --primary: #000000;
+    --on-primary: #ffffff;
+    --text: #121516;
+    --text-2: #4B5457;
+    --text-muted: #6F7677;
+    --error: #B91C1C;
+    --error-soft: #FEF2F2;
+    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
+    background: var(--surface);
+    color: var(--text);
     min-height: 100%;
 }
-.ap-muted { color: var(--on-surface-var); }
 
-.ap-header   { background: #fff; border-bottom: 1px solid var(--border); }
-.ap-kicker   { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
-.ap-title    { font-size: 1.125rem; font-weight: 800; letter-spacing: -.02em; }
-.ap-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
+/* ── Header ──────────────────────────────────────────────────────────── */
+.ap-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+.ap-header__text { min-width: 0; }
+.ap-title { font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
+.ap-subtitle { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; max-width: 60ch; }
 
-.ap-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 48px 20px; background: var(--surface-low); border: 1px solid var(--border); border-radius: 10px; text-align: center; }
+/* ── Empty state ─────────────────────────────────────────────────────── */
+.ap-empty {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 48px 20px; background: var(--surface-muted); border: 1px solid var(--border);
+    border-radius: 6px; text-align: center;
+}
+.ap-empty__icon { color: var(--text-muted); }
+.ap-empty__text { font-size: 13px; color: var(--text-muted); margin: 0; }
 
-.ap-tile { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); transition: box-shadow .15s, transform .15s; }
-.ap-tile:hover { box-shadow: 0 8px 24px rgba(0,0,0,.10); transform: translateY(-2px); border-color: rgba(0,69,50,0.2); }
-.ap-tile__icon { width: 44px; height: 44px; border-radius: 6px; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
-.ap-manage-link { display: inline-flex; align-items: center; gap: 4px; font-size: .6875rem; font-weight: 600; color: var(--on-surface-var); text-decoration: none; padding: 4px 8px; border-radius: 6px; }
-.ap-manage-link:hover { background: var(--surface-low); color: var(--green); }
-.ap-tile__name { font-size: .9375rem; font-weight: 700; color: var(--on-surface); margin-bottom: 6px; }
-.ap-tile__name--link { display: inline-block; text-decoration: none; cursor: pointer; }
-.ap-tile__name--link:hover { color: var(--green); }
-.ap-tile__functions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-.ap-fn-link { display: inline-flex; align-items: center; gap: 4px; font-size: .6875rem; font-weight: 600; color: var(--green); text-decoration: underline; text-decoration-color: rgba(0,69,50,0.35); text-underline-offset: 2px; }
-.ap-fn-link:hover { text-decoration-color: var(--green); }
-.ap-fn-link .el-icon { font-size: 11px; }
-.ap-tile__desc { font-size: .8125rem; color: var(--on-surface-var); line-height: 1.55; flex: 1; margin-bottom: 20px; }
-.ap-tile__footer { display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); }
+/* ── Tile grid ───────────────────────────────────────────────────────── */
+.ap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.ap-tile {
+    display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 20px; transition: border-color 120ms ease;
+}
+.ap-tile:hover { border-color: var(--text-muted); }
+.ap-tile__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.ap-tile__icon {
+    width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0;
+    background: var(--surface-elevated); color: var(--text-2);
+    display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 14px;
+}
+.ap-manage-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    text-decoration: none; padding: 4px 8px; border-radius: 6px;
+    transition: background 120ms ease, color 120ms ease;
+}
+.ap-manage-link:hover { background: var(--surface-muted); color: var(--text); }
+.ap-tile__name {
+    font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px;
+    display: inline-block; text-decoration: none;
+}
+.ap-tile__name:hover { text-decoration: underline; }
+.ap-tile__functions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.ap-fn-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 9px; border-radius: 999px;
+    background: var(--surface-muted); border: 1px solid var(--border);
+    font-size: 11px; font-weight: 600; color: var(--text-2);
+    text-decoration: none; transition: background 120ms ease, color 120ms ease;
+}
+.ap-fn-link:hover { background: var(--surface-elevated); color: var(--text); }
+.ap-fn-link .el-icon { font-size: 11px; color: var(--text-muted); }
+.ap-tile__desc { font-size: 13px; color: var(--text-2); line-height: 1.55; flex: 1; margin-bottom: 18px; }
+.ap-tile__footer { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); }
 
-.ap-badge { display: inline-flex; border-radius: 999px; font-size: .6rem; font-weight: 700; padding: 2px 8px; }
-.ap-badge--green  { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-.ap-badge--yellow { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-.ap-badge--red    { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-.ap-badge--muted  { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.ap-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 36px; padding: 0 16px; border-radius: 6px;
+    font-size: 13px; font-weight: 600; border: 1px solid transparent;
+    cursor: pointer; transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.ap-btn--full { width: 100%; }
+.ap-btn--primary { background: var(--primary); color: var(--on-primary); }
+.ap-btn--primary:hover:not(:disabled) { opacity: 0.88; }
+.ap-btn--primary:disabled { opacity: 0.5; cursor: default; }
+.ap-btn--outline { background: var(--surface); border-color: var(--border); color: var(--text); }
+.ap-btn--outline:hover:not(:disabled) { background: var(--surface-muted); }
+.ap-btn--outline-danger { background: var(--surface); border-color: var(--border); color: var(--text); }
+.ap-btn--outline-danger:hover:not(:disabled) { background: var(--error-soft); border-color: #FCA5A5; color: var(--error); }
+.ap-btn--outline-danger:disabled { opacity: 0.6; cursor: default; }
 
-.ap-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 6px; font-size: .75rem; font-weight: 600; padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
-.ap-btn-primary:hover { background: #065f46; }
-.ap-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: .75rem; font-weight: 600; padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
-.ap-btn-outline:hover { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
-
-/* ── Create Agent modal — same design language as other onboarding
-   dialogs in the app (rounded card, icon header, footer bar). ────────
+/* ── Create Agent modal — same design language as the app's other
+   onboarding dialogs (AttachBatchModal, AttachFarmCollectionModal):
+   icon header, footer bar, literal hex from the app's default palette.
    NOTE: <el-dialog> teleports to <body>, outside .ap-page, so CSS
-   custom properties like var(--green) do not cascade in — literal
-   hex values are used below on purpose. */
+   custom properties defined above do not cascade in. */
 :deep(.el-dialog.ap-modal) {
-    border-radius: 18px;
+    border-radius: 6px;
     padding: 0;
     overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 20, 15, .22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+    font-family: 'Inter', system-ui, sans-serif;
 }
 :deep(.el-dialog.ap-modal .el-dialog__header) { padding: 0; margin: 0; }
 :deep(.el-dialog.ap-modal .el-dialog__body) { padding: 0; }
 :deep(.el-dialog.ap-modal .el-dialog__footer) { padding: 0; }
 
-.ap-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #f3f4f6; }
-.ap-modal__head-icon { width: 38px; height: 38px; border-radius: 11px; background: rgba(0,69,50,.08); color: #004532; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ap-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #E5E7EB; }
+.ap-modal__head-icon { width: 36px; height: 36px; border-radius: 6px; background: #F1F2F3; color: #121516; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .ap-modal__head-text { flex: 1; min-width: 0; }
-.ap-modal__eyebrow { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #004532; margin-bottom: 1px; }
-.ap-modal__title { font-size: 1.0625rem; font-weight: 800; color: #111827; letter-spacing: -.01em; }
+.ap-modal__eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #6F7677; margin-bottom: 1px; }
+.ap-modal__title { font-size: 1.0625rem; font-weight: 700; color: #121516; letter-spacing: -0.01em; }
 
 .ap-modal__body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; max-height: 65vh; overflow-y: auto; }
 
 .ap-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .ap-field { display: flex; flex-direction: column; gap: 5px; }
-.ap-field__label { font-size: .75rem; font-weight: 600; color: #374151; }
-.ap-field__optional { font-weight: 400; color: #9ca3af; }
-.ap-field__error { font-size: .75rem; font-weight: 600; color: #dc2626; margin-top: 4px; display: block; }
+.ap-field__label { font-size: 12px; font-weight: 600; color: #121516; }
+.ap-field__optional { font-weight: 400; color: #6F7677; }
+.ap-field__error { font-size: 12px; font-weight: 500; color: #F85149; margin-top: 4px; display: block; }
 
 .ap-input--error :deep(.el-input__wrapper),
-.ap-input--error :deep(.el-textarea__inner) { box-shadow: 0 0 0 1.5px #dc2626 inset !important; }
+.ap-input--error :deep(.el-textarea__inner) { box-shadow: 0 0 0 1.5px #F85149 inset !important; }
 
 .ap-input :deep(.el-input__wrapper),
 .ap-input :deep(.el-textarea__inner),
-.ap-input :deep(.el-select__wrapper) { border-radius: 10px; box-shadow: 0 0 0 1px #e5e7eb inset; background: #f9fafb; transition: box-shadow .12s, background .12s; }
+.ap-input :deep(.el-select__wrapper) { border-radius: 6px; box-shadow: 0 0 0 1px #E5E7EB inset; background: #F5F6F7; transition: box-shadow 120ms ease, background 120ms ease; }
 .ap-input :deep(.el-input__wrapper:hover),
 .ap-input :deep(.el-textarea__inner:hover),
-.ap-input :deep(.el-select__wrapper:hover) { background: #fff; box-shadow: 0 0 0 1px #d1d5db inset; }
+.ap-input :deep(.el-select__wrapper:hover) { background: #fff; box-shadow: 0 0 0 1px #E5E7EB inset; }
 .ap-input :deep(.el-input__wrapper.is-focus),
 .ap-input :deep(.el-textarea__inner:focus),
-.ap-input :deep(.el-select__wrapper.is-focused) { background: #fff; box-shadow: 0 0 0 1.5px #004532 inset; }
+.ap-input :deep(.el-select__wrapper.is-focused) { background: #fff; box-shadow: 0 0 0 1.5px #000000 inset; }
 
-.ap-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #f9fafb; border-top: 1px solid #f3f4f6; }
+.ap-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #F5F6F7; border-top: 1px solid #E5E7EB; }
 
 @media (max-width: 767.98px) {
     .ap-field-row { grid-template-columns: 1fr; }
     :deep(.el-dialog.ap-modal) { width: 92vw !important; }
+    .ap-header { flex-direction: column; align-items: stretch; }
 }
 </style>

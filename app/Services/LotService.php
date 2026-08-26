@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Helpers\ImageUploadHelper;
 use App\Models\Batch;
 use App\Models\Farm;
-use App\Models\Harvest;
 use App\Models\Lot;
 use App\Models\LotBatch;
 use App\Models\LotRequest;
@@ -20,6 +19,10 @@ use Illuminate\Validation\ValidationException;
 
 class LotService
 {
+    public function __construct(private readonly BatchService $batches)
+    {
+    }
+
     /**
      * Get a base query builder for lots.
      */
@@ -81,7 +84,7 @@ class LotService
      */
     public function attachBatchByNumber(Lot $lot, string $batchNumber, int $userId): LotBatch
     {
-        $batch = Batch::query()->where('batch_number', $batchNumber)->first();
+        $batch = $this->batches->findByNumber($batchNumber);
 
         if (! $batch) {
             throw ValidationException::withMessages([
@@ -117,7 +120,7 @@ class LotService
 
         if (! $metrics['source_farm']) {
             throw ValidationException::withMessages([
-                'batch' => 'This batch must be linked to at least one harvest farm before a lot can be created.',
+                'batch' => 'This batch must be linked to at least one farm collection before a lot can be created.',
             ]);
         }
 
@@ -178,9 +181,9 @@ class LotService
      */
     public function batchMetrics(Batch $batch): array
     {
-        $batch->loadMissing(['season', 'ownerships', 'lotBatches']);
+        $batch->loadMissing(['batchFarmCollections.farmCollection.farm', 'lotBatches']);
 
-        $sourceFarm = $this->batchHarvests($batch)->first()?->farm;
+        $sourceFarm = $this->batchSourceFarm($batch);
         $allocatedQtyKg = $this->allocatedQuantityKg($batch);
         $remainingQtyKg = max(round((float) $batch->weight - $allocatedQtyKg, 2), 0.0);
 
@@ -192,28 +195,17 @@ class LotService
     }
 
     /**
-     * Resolve harvests linked to the batch.
-     *
-     * @return Collection<int, Harvest>
+     * Resolve the farm a batch was sourced from, via the
+     * batch_farm_collection pivot table (a batch may draw from more than
+     * one farm collection; the first linked collection's farm is treated
+     * as the primary source).
      */
-    private function batchHarvests(Batch $batch): Collection
+    private function batchSourceFarm(Batch $batch): ?Farm
     {
-        $harvestIds = $batch->ownerships
-            ->where('owner_type', Harvest::class)
-            ->pluck('owner_id')
-            ->filter()
-            ->map(fn (mixed $id): int => (int) $id)
-            ->values();
-
-        $query = Harvest::query()
-            ->with(['farm.farmer'])
-            ->orderBy('harvest_date');
-
-        if ($harvestIds->isNotEmpty()) {
-            return $query->whereKey($harvestIds)->get();
-        }
-
-        return collect();
+        return $batch->batchFarmCollections
+            ->first(fn ($link) => $link->farmCollection?->farm)
+            ?->farmCollection
+            ?->farm;
     }
 
     /**
@@ -298,16 +290,14 @@ class LotService
     }
 
     /**
-     * Shape a lot, its batch, and its season into the traceability
-     * timeline page's payload.
+     * Shape a lot and its batch into the traceability timeline page's
+     * payload.
      *
      * @return array<string, mixed>
      */
     public function traceabilityData(Lot $lot): array
     {
         $batch = $this->primaryBatch($lot);
-        $batch?->loadMissing('season');
-        $season = $batch?->season;
 
         return [
             'lot' => [
@@ -333,13 +323,6 @@ class LotService
                 'cup_score' => (float) ($batch->cup_score ?? 0),
                 'weight' => (float) ($batch->weight ?? 0),
                 'warehouse_location' => $batch->warehouse_location,
-            ] : null,
-            'season' => $season ? [
-                'id' => $season->id,
-                'name' => $season->name,
-                'start_date' => $season->start_date?->format('d M Y'),
-                'end_date' => $season->end_date?->format('d M Y'),
-                'status' => $season->status,
             ] : null,
         ];
     }

@@ -41,6 +41,9 @@ async function findByNumber() {
         const { data } = await axios.get(route('batch.find-by-number'), { params: { batch_number: number } });
         foundBatch.value = data;
         lookupStatus.value = 'found';
+        // Normalize the field to the trimmed value that was actually
+        // matched, so submit() posts the same string the lookup verified.
+        form.batch_number = number;
     } catch (error) {
         lookupStatus.value = 'not-found';
     }
@@ -65,6 +68,10 @@ function submit() {
         preserveScroll: true,
         onSuccess: () => {
             closeDialog();
+            form.reset();
+            form.clearErrors();
+            lookupStatus.value = 'idle';
+            foundBatch.value = null;
             ElNotification({ title: 'Batch Linked', message: 'The batch was linked to this lot.', type: 'success', duration: 3200, offset: 84 });
         },
     });

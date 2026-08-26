@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import {
     Plus, Search, Box, FirstAidKit, Goods, Coin, Edit, Delete,
@@ -185,31 +185,24 @@ function onCreated() {
 
 <template>
     <DesignPreviewLayout title="Agricultural Inputs">
-        <Head title="Agricultural Inputs" />
-
         <div class="ain-page">
             <!-- ── Header ────────────────────────────────────────────────── -->
             <div class="ain-header">
-                <div class="ain-header__inner">
-                    <div>
-                        <div class="ain-kicker">Farm Workspace</div>
-                        <h1 class="ain-title mb-0">Agricultural Inputs</h1>
-                        <p class="ain-subtitle mb-0">Medicine and fertilizer products available for your farm.</p>
-                    </div>
-                    <div class="ain-header__actions">
-                        <div class="ain-search">
-                            <el-icon><Search /></el-icon>
-                            <input v-model="searchTerm" type="text" placeholder="Search by name, tag, or manufacturer…">
-                        </div>
-                        <button v-if="canManage" type="button" class="ain-btn-primary" @click="addOpen = true">
-                            <el-icon><Plus /></el-icon> Add Input
-                        </button>
-                    </div>
+                <div class="ain-header__text">
+                    <h1 class="ain-title">Agricultural Inputs</h1>
+                    <p class="ain-subtitle">Medicine and fertilizer products available for your farm.</p>
                 </div>
+                <button v-if="canManage" type="button" class="ain-btn ain-btn--primary" @click="addOpen = true">
+                    <el-icon><Plus /></el-icon> Add Input
+                </button>
             </div>
 
             <!-- ── Toolbar ───────────────────────────────────────────────── -->
             <div class="ain-toolbar">
+                <div class="ain-search">
+                    <el-icon><Search /></el-icon>
+                    <input v-model="searchTerm" type="text" placeholder="Search by name, tag, or manufacturer…">
+                </div>
                 <div class="ain-tabs">
                     <button type="button" class="ain-tab" :class="{ 'is-active': !activeCategory }" @click="selectCategory('')">All</button>
                     <button type="button" class="ain-tab" :class="{ 'is-active': activeCategory === 'medicine' }" @click="selectCategory('medicine')">Medicine</button>
@@ -308,11 +301,11 @@ function onCreated() {
                     >
                     <p v-if="viewingInput.description" class="ain-view__desc">{{ viewingInput.description }}</p>
 
-                    <div class="row g-2">
-                        <div class="col-6"><div class="ain-spec-cell"><span>Price</span><strong>{{ formatPrice(viewingInput.price) }} / {{ viewingInput.unit }}</strong></div></div>
-                        <div class="col-6"><div class="ain-spec-cell"><span>Stock</span><strong>{{ viewingInput.stock_quantity }} {{ viewingInput.unit }}</strong></div></div>
-                        <div class="col-6"><div class="ain-spec-cell"><span>Manufacturer</span><strong>{{ viewingInput.manufacturer || '—' }}</strong></div></div>
-                        <div class="col-6"><div class="ain-spec-cell"><span>SKU</span><strong>{{ viewingInput.sku }}</strong></div></div>
+                    <div class="ain-spec-grid">
+                        <div class="ain-spec-cell"><span>Price</span><strong>{{ formatPrice(viewingInput.price) }} / {{ viewingInput.unit }}</strong></div>
+                        <div class="ain-spec-cell"><span>Stock</span><strong>{{ viewingInput.stock_quantity }} {{ viewingInput.unit }}</strong></div>
+                        <div class="ain-spec-cell"><span>Manufacturer</span><strong>{{ viewingInput.manufacturer || '—' }}</strong></div>
+                        <div class="ain-spec-cell"><span>SKU</span><strong>{{ viewingInput.sku }}</strong></div>
                     </div>
 
                     <div v-if="viewingInput.creator_name" class="ain-view__meta">
@@ -324,7 +317,7 @@ function onCreated() {
                     <div class="ain-modal__footer">
                         <button
                             type="button"
-                            class="ain-btn-primary"
+                            class="ain-btn ain-btn--primary"
                             :disabled="viewingInput.stock_quantity <= 0 || buyingId === viewingInput.id"
                             @click="addToCart(viewingInput)"
                         >
@@ -351,12 +344,12 @@ function onCreated() {
                     <div class="ain-field-row">
                         <div class="ain-field">
                             <label class="ain-field__label">Name</label>
-                            <el-input v-model="editForm.name" class="ain-field-input w-100" :class="{ 'ain-field-input--error': editForm.errors.name }" />
+                            <el-input v-model="editForm.name" class="ain-field-input" :class="{ 'ain-field-input--error': editForm.errors.name }" />
                             <InputError class="ain-field__error" :message="editForm.errors.name" />
                         </div>
                         <div class="ain-field">
                             <label class="ain-field__label">Category</label>
-                            <el-select v-model="editForm.category" class="ain-field-input w-100" :class="{ 'ain-field-input--error': editForm.errors.category }">
+                            <el-select v-model="editForm.category" class="ain-field-input" :class="{ 'ain-field-input--error': editForm.errors.category }">
                                 <el-option label="Medicine" value="medicine" />
                                 <el-option label="Fertilizer" value="fertilizer" />
                             </el-select>
@@ -367,24 +360,24 @@ function onCreated() {
                     <div class="ain-field-row">
                         <div class="ain-field">
                             <label class="ain-field__label">Tag</label>
-                            <el-input v-model="editForm.tag" class="ain-field-input w-100" :class="{ 'ain-field-input--error': editForm.errors.tag }" />
+                            <el-input v-model="editForm.tag" class="ain-field-input" :class="{ 'ain-field-input--error': editForm.errors.tag }" />
                             <InputError class="ain-field__error" :message="editForm.errors.tag" />
                         </div>
                         <div class="ain-field">
                             <label class="ain-field__label">Manufacturer</label>
-                            <el-input v-model="editForm.manufacturer" class="ain-field-input w-100" />
+                            <el-input v-model="editForm.manufacturer" class="ain-field-input" />
                         </div>
                     </div>
 
                     <div class="ain-field-row">
                         <div class="ain-field">
                             <label class="ain-field__label">Price</label>
-                            <el-input-number v-model="editForm.price" :min="0.01" :precision="2" class="ain-field-input w-100" :class="{ 'ain-field-input--error': editForm.errors.price }" />
+                            <el-input-number v-model="editForm.price" :min="0.01" :precision="2" class="ain-field-input" :class="{ 'ain-field-input--error': editForm.errors.price }" />
                             <InputError class="ain-field__error" :message="editForm.errors.price" />
                         </div>
                         <div class="ain-field">
                             <label class="ain-field__label">Stock Quantity</label>
-                            <el-input-number v-model="editForm.stock_quantity" :min="0" class="ain-field-input w-100" :class="{ 'ain-field-input--error': editForm.errors.stock_quantity }" />
+                            <el-input-number v-model="editForm.stock_quantity" :min="0" class="ain-field-input" :class="{ 'ain-field-input--error': editForm.errors.stock_quantity }" />
                             <InputError class="ain-field__error" :message="editForm.errors.stock_quantity" />
                         </div>
                     </div>
@@ -392,12 +385,12 @@ function onCreated() {
                     <div class="ain-field-row">
                         <div class="ain-field">
                             <label class="ain-field__label">Unit</label>
-                            <el-input v-model="editForm.unit" class="ain-field-input w-100" :class="{ 'ain-field-input--error': editForm.errors.unit }" />
+                            <el-input v-model="editForm.unit" class="ain-field-input" :class="{ 'ain-field-input--error': editForm.errors.unit }" />
                             <InputError class="ain-field__error" :message="editForm.errors.unit" />
                         </div>
                         <div class="ain-field">
                             <label class="ain-field__label">Status</label>
-                            <el-select v-model="editForm.status" class="ain-field-input w-100">
+                            <el-select v-model="editForm.status" class="ain-field-input">
                                 <el-option label="Active" value="active" />
                                 <el-option label="Inactive" value="inactive" />
                             </el-select>
@@ -406,13 +399,13 @@ function onCreated() {
 
                     <div class="ain-field">
                         <label class="ain-field__label">Description</label>
-                        <el-input v-model="editForm.description" type="textarea" :rows="3" class="ain-field-input w-100" />
+                        <el-input v-model="editForm.description" type="textarea" :rows="3" class="ain-field-input" />
                     </div>
                 </form>
 
                 <template #footer>
                     <div class="ain-modal__footer">
-                        <button type="submit" form="edit-input-form" class="ain-btn-primary" :disabled="editForm.processing">
+                        <button type="submit" form="edit-input-form" class="ain-btn ain-btn--primary" :disabled="editForm.processing">
                             {{ editForm.processing ? 'Saving…' : 'Save Changes' }}
                         </button>
                     </div>
@@ -438,13 +431,15 @@ function onCreated() {
 </template>
 
 <style>
-/* Unscoped on purpose: <el-dialog> teleports its root to <body>. */
+/* Unscoped on purpose: <el-dialog> teleports its root to <body>, so it
+   can't see .ain-page's scoped CSS vars — same convention as every
+   other modal in the app (AttachBatchModal, Apps' Create Agent dialog). */
 .el-dialog.ain-modal {
-    border-radius: 18px;
+    border-radius: 6px;
     padding: 0;
     overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+    font-family: 'Inter', system-ui, sans-serif;
 }
 .el-dialog.ain-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.ain-modal .el-dialog__body { padding: 0; }
@@ -453,142 +448,148 @@ function onCreated() {
 
 <style scoped>
 .ain-page {
-    --green: #004532;
-    --green-dark: #002e20;
-    --red: #dc2626;
-    --amber: #b45309;
-    --on-surface: #111827;
-    --on-surface-var: #6b7280;
-    --surface-white: #ffffff;
-    --surface-low: #f8fafc;
-    --surface-high: #eef2f0;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: #ffffff;
-    color: var(--on-surface);
+    --surface: #ffffff;
+    --surface-muted: #F5F6F7;
+    --surface-elevated: #F1F2F3;
+    --border: #E5E7EB;
+    --primary: #000000;
+    --on-primary: #ffffff;
+    --text: #121516;
+    --text-2: #4B5457;
+    --text-muted: #6F7677;
+    --success: #15803D;
+    --success-soft: #F0FDF4;
+    --warning: #B45309;
+    --warning-soft: #FEF3E2;
+    --error: #B91C1C;
+    --error-soft: #FEF2F2;
+    --info: #1D4ED8;
+    --info-soft: #EFF6FF;
+    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
+    background: var(--surface);
+    color: var(--text);
     min-height: 100%;
-    line-height: 1.5;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────── */
-.ain-header { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
-.ain-header__inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem clamp(1rem, 3vw, 2rem); }
-.ain-header__actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.ain-kicker { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 4px; }
-.ain-title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.02em; }
-.ain-subtitle { font-size: .8125rem; color: var(--on-surface-var); margin-top: 2px; }
+.ain-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+.ain-header__text { min-width: 0; }
+.ain-title { font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
+.ain-subtitle { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; max-width: 60ch; }
 
-.ain-btn-primary { background: #004532; border: none; color: #fff; border-radius: 8px; font-size: .8125rem; font-weight: 700; padding: 9px 16px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: background .15s ease; }
-.ain-btn-primary:hover { background: #002e20; }
-.ain-btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-.ain-btn-outline { background: #fff; border: 1px solid #e5e7eb; color: #111827; border-radius: 8px; font-size: .8125rem; font-weight: 700; padding: 9px 18px; cursor: pointer; transition: background .15s ease; }
-.ain-btn-outline:hover { background: #f8fafc; }
-.ain-btn-danger { background: #dc2626; border: none; color: #fff; border-radius: 8px; font-size: .8125rem; font-weight: 700; padding: 9px 16px; cursor: pointer; transition: background .15s ease; }
-.ain-btn-danger:hover { background: #b91c1c; }
-.ain-btn-danger:disabled { opacity: .6; cursor: not-allowed; }
+.ain-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 36px; padding: 0 16px; border-radius: 6px;
+    font-size: 13px; font-weight: 600; border: 1px solid transparent;
+    cursor: pointer; transition: opacity 120ms ease, background 120ms ease;
+}
+.ain-btn--primary { background: var(--primary); color: var(--on-primary); }
+.ain-btn--primary:hover:not(:disabled) { opacity: 0.88; }
+.ain-btn--primary:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Toolbar ───────────────────────────────────────────────────────────── */
-.ain-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 1rem clamp(1rem, 3vw, 2rem) 0; }
-.ain-search { display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 40px; border: 1px solid var(--surface-high); border-radius: 8px; background: #fff; min-width: 280px; flex: 1; max-width: 420px; }
-.ain-search .el-icon { color: #9ca3af; font-size: 15px; }
-.ain-search input { border: none; outline: none; font-size: .8125rem; flex: 1; background: transparent; }
-.ain-tabs { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface-low); border-radius: 8px; }
-.ain-tab { border: none; background: transparent; padding: 7px 14px; font-size: .8125rem; font-weight: 700; color: var(--on-surface-var); border-radius: 6px; cursor: pointer; transition: all .12s ease; }
-.ain-tab.is-active { background: #fff; color: var(--green); box-shadow: 0 1px 2px rgba(15,23,42,.08); }
+.ain-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.ain-search {
+    display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 38px;
+    border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
+    min-width: 260px; flex: 1; max-width: 420px;
+}
+.ain-search .el-icon { color: var(--text-muted); font-size: 15px; }
+.ain-search input { border: none; outline: none; font-size: 13px; flex: 1; background: transparent; color: var(--text); font-family: inherit; }
+.ain-search input::placeholder { color: var(--text-muted); }
+.ain-tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-muted); border-radius: 8px; }
+.ain-tab { border: none; background: transparent; padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--text-2); border-radius: 6px; cursor: pointer; transition: background 120ms ease, color 120ms ease; }
+.ain-tab.is-active { background: var(--surface); color: var(--text); }
 
 /* ── Grid ──────────────────────────────────────────────────────────────── */
-.ain-body { padding: 1.25rem clamp(1rem, 3vw, 2rem) 2rem; }
 .ain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-.ain-card { background: #fff; border: 1px solid var(--surface-high); border-radius: 6px; overflow: hidden; cursor: pointer; box-shadow: 0 1px 2px rgba(15,23,42,.03); transition: box-shadow .15s ease, transform .15s ease; }
-.ain-card:hover { box-shadow: 0 12px 28px -14px rgba(15,23,42,.22); transform: translateY(-2px); }
-.ain-card__media { position: relative; height: 140px; background: var(--surface-low); display: flex; align-items: center; justify-content: center; }
+.ain-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px; cursor: pointer; transition: border-color 120ms ease; }
+.ain-card:hover { border-color: var(--text-muted); }
+.ain-card__media { position: relative; height: 132px; background: var(--surface-muted); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
 .ain-card__img { width: 100%; height: 100%; object-fit: cover; }
-.ain-card__placeholder { color: #c3ccd3; }
-.ain-card__category { position: absolute; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 6px; font-size: .625rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; background: #fff; }
-.ain-card__category.is-medicine { color: #1d4ed8; }
-.ain-card__category.is-fertilizer { color: #047857; }
+.ain-card__placeholder { color: var(--text-muted); }
+.ain-card__category { position: absolute; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--surface); }
+.ain-card__category.is-medicine { color: var(--info); }
+.ain-card__category.is-fertilizer { color: var(--success); }
 .ain-card__actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; }
-.ain-card__icon-btn { width: 26px; height: 26px; border-radius: 6px; border: none; background: #fff; color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(15,23,42,.15); }
-.ain-card__icon-btn:hover { background: var(--surface-low); color: var(--on-surface); }
-.ain-card__icon-btn--danger:hover { background: #fef2f2; color: var(--red); }
-.ain-card__body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; }
-.ain-card__tag { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); }
-.ain-card__name { font-size: .875rem; font-weight: 700; margin: 0; line-height: 1.3; }
-.ain-card__price { display: flex; align-items: center; gap: 5px; font-size: .8125rem; font-weight: 800; color: var(--green); margin-top: 4px; }
-.ain-card__price .el-icon { font-size: 13px; }
-.ain-card__price small { color: var(--on-surface-var); font-weight: 600; }
-.ain-card__stock { display: flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 600; margin-top: 2px; }
+.ain-card__icon-btn { width: 26px; height: 26px; border-radius: 6px; border: none; background: var(--surface); color: var(--text-2); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.ain-card__icon-btn:hover { background: var(--surface-muted); color: var(--text); }
+.ain-card__icon-btn--danger:hover { background: var(--error-soft); color: var(--error); }
+.ain-card__body { padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ain-card__tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+.ain-card__name { font-size: 14px; font-weight: 700; margin: 0; line-height: 1.3; color: var(--text); }
+.ain-card__price { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.ain-card__price .el-icon { font-size: 13px; color: var(--text-muted); }
+.ain-card__price small { color: var(--text-muted); font-weight: 600; }
+.ain-card__stock { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; margin-top: 2px; }
 .ain-card__stock .el-icon { font-size: 13px; }
-.ain-card__stock.is-ok { color: #047857; }
-.ain-card__stock.is-low { color: var(--amber); }
-.ain-card__stock.is-out { color: var(--red); }
+.ain-card__stock.is-ok { color: var(--success); }
+.ain-card__stock.is-low { color: var(--warning); }
+.ain-card__stock.is-out { color: var(--error); }
 
 .ain-card__buy {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
-    margin-top: 10px;
-    padding: 8px 0;
-    border: none;
-    border-radius: 6px;
-    background: #004532;
-    color: #fff;
-    font-size: .75rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background .15s ease;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%; margin-top: 10px; padding: 8px 0;
+    border: none; border-radius: 6px;
+    background: var(--primary); color: var(--on-primary);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: opacity 120ms ease;
 }
-.ain-card__buy:hover:not(:disabled) { background: #002e20; }
-.ain-card__buy:disabled { background: var(--surface-high); color: var(--on-surface-var); cursor: default; }
+.ain-card__buy:hover:not(:disabled) { opacity: 0.88; }
+.ain-card__buy:disabled { background: var(--surface-elevated); color: var(--text-muted); cursor: default; }
 .ain-card__buy .el-icon { font-size: 13px; }
 
 /* ── Empty state ───────────────────────────────────────────────────────── */
-.ain-empty { text-align: center; padding: 3rem 1rem; }
-.ain-empty__icon { width: 52px; height: 52px; border-radius: 50%; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
-.ain-empty__title { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
-.ain-empty__text { font-size: .8125rem; color: var(--on-surface-var); }
+.ain-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 48px 20px; background: var(--surface-muted); border: 1px solid var(--border); border-radius: 6px; }
+.ain-empty__icon { color: var(--text-muted); }
+.ain-empty__title { font-size: 14px; font-weight: 700; color: var(--text); }
+.ain-empty__text { font-size: 13px; color: var(--text-muted); margin: 0; }
 
 /* ── Pagination ────────────────────────────────────────────────────────── */
 .ain-pagination { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 24px; }
-.ain-page-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--surface-high); background: #fff; color: var(--on-surface); font-size: .8125rem; font-weight: 700; text-decoration: none; }
+.ain-page-btn { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; text-decoration: none; transition: background 120ms ease; }
+.ain-page-btn:hover:not(.is-disabled) { background: var(--surface-muted); }
 .ain-page-btn.is-disabled { opacity: .4; pointer-events: none; }
-.ain-page-info { font-size: .8125rem; color: var(--on-surface-var); }
+.ain-page-info { font-size: 13px; color: var(--text-muted); }
 
-/* ── Modal — literal hex values (teleported to <body>, no CSS vars) ──────── */
-.ain-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #f3f4f6; }
-.ain-modal__head-icon { width: 38px; height: 38px; border-radius: 11px; background: rgba(0,69,50,.08); color: #004532; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.ain-modal__head-icon--danger { background: #fee2e2; color: #dc2626; }
+/* ── Modal — literal hex values (teleported to <body>, no CSS vars); same
+   palette as AttachBatchModal.vue / the Apps page's Create Agent dialog. ── */
+.ain-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #E5E7EB; }
+.ain-modal__head-icon { width: 36px; height: 36px; border-radius: 6px; background: #F1F2F3; color: #121516; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .ain-modal__head-text { flex: 1; min-width: 0; }
-.ain-modal__eyebrow { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #004532; margin-bottom: 1px; }
-.ain-modal__title { font-size: 1.0625rem; font-weight: 800; color: #111827; letter-spacing: -.01em; }
+.ain-modal__eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #6F7677; margin-bottom: 1px; }
+.ain-modal__title { font-size: 1.0625rem; font-weight: 700; color: #121516; letter-spacing: -0.01em; }
 
 .ain-modal__body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; max-height: 65vh; overflow-y: auto; }
-.ain-modal__confirm-text { font-size: 0.875rem; color: #374151; line-height: 1.5; margin: 0; }
 
 .ain-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .ain-field { display: flex; flex-direction: column; gap: 5px; }
-.ain-field__label { font-size: .75rem; font-weight: 600; color: #374151; }
-.ain-field__error { font-size: .75rem; font-weight: 600; color: #dc2626; margin-top: 4px; display: block; }
+.ain-field-input { width: 100%; }
+.ain-field__label { font-size: 12px; font-weight: 600; color: #121516; }
+.ain-field__error { font-size: 12px; font-weight: 500; color: #F85149; margin-top: 4px; display: block; }
 
-.ain-view__img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; }
-.ain-view__desc { font-size: .8125rem; color: #374151; line-height: 1.6; margin: 0; }
-.ain-view__meta { font-size: .75rem; color: #9ca3af; display: flex; align-items: center; gap: 6px; padding-top: 8px; border-top: 1px solid #f3f4f6; }
+.ain-view__img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 6px; }
+.ain-view__desc { font-size: 13px; color: #4B5457; line-height: 1.6; margin: 0; }
+.ain-view__meta { font-size: 12px; color: #6F7677; display: flex; align-items: center; gap: 6px; padding-top: 8px; border-top: 1px solid #F1F2F3; }
 
-.ain-spec-cell { background: #f8fafc; border-radius: 6px; padding: 7px 9px; }
-.ain-spec-cell span { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; display: block; margin-bottom: 3px; }
-.ain-spec-cell strong { font-size: 0.8125rem; font-weight: 700; color: #111827; display: block; }
+.ain-spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ain-spec-cell { background: #F5F6F7; border-radius: 6px; padding: 7px 9px; }
+.ain-spec-cell span { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6F7677; display: block; margin-bottom: 3px; }
+.ain-spec-cell strong { font-size: 13px; font-weight: 700; color: #121516; display: block; }
 
 :deep(.ain-field-input .el-input__wrapper),
-:deep(.ain-field-input .el-textarea__inner) { box-shadow: 0 0 0 1px #d1d5db inset; border-radius: 8px; }
+:deep(.ain-field-input .el-textarea__inner),
+:deep(.ain-field-input .el-select__wrapper) { box-shadow: 0 0 0 1px #E5E7EB inset; border-radius: 6px; background: #F5F6F7; }
 .ain-field-input--error :deep(.el-input__wrapper),
 .ain-field-input--error :deep(.el-textarea__inner),
-.ain-field-input--error :deep(.el-select__wrapper) { box-shadow: 0 0 0 1.5px #dc2626 inset !important; }
+.ain-field-input--error :deep(.el-select__wrapper) { box-shadow: 0 0 0 1.5px #F85149 inset !important; }
 
-.ain-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #f9fafb; border-top: 1px solid #f3f4f6; }
+.ain-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #F5F6F7; border-top: 1px solid #E5E7EB; }
 
 @media (max-width: 640px) {
-    .ain-field-row { grid-template-columns: 1fr; }
+    .ain-header { flex-direction: column; align-items: stretch; }
+    .ain-field-row, .ain-spec-grid { grid-template-columns: 1fr; }
     :deep(.el-dialog.ain-modal) { width: 92vw !important; }
 }
 </style>

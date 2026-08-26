@@ -16,7 +16,7 @@ class FarmResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'farmer_id' => $this->farmer_id,
+            'user_id' => $this->user_id,
             'name' => $this->name,
             'farm_code' => $this->farm_code,
             'country' => $this->country,
@@ -54,10 +54,16 @@ class FarmResource extends JsonResource
                 'name' => $c->name,
                 'description' => $c->description,
             ])->all()),
-            'harvests_count' => $this->when(isset($this->harvests_count), $this->harvests_count),
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
-            'farmer' => $this->whenLoaded('farmer', fn () => $this->farmer ? FarmerResource::make($this->farmer)->resolve() : null),
+            'user' => $this->whenLoaded('user', fn () => $this->user ? [
+                'id' => $this->user->id,
+                'first_name' => $this->user->first_name,
+                'last_name' => $this->user->last_name,
+                'full_name' => trim(collect([$this->user->first_name, $this->user->last_name])->filter()->implode(' ')),
+                'email' => $this->user->email,
+                'telephone' => $this->user->telephone,
+            ] : null),
         ];
     }
 }

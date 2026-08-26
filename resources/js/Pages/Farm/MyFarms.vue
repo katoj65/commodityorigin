@@ -1,29 +1,38 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import AddFarmModal from '@/Components/Modals/AddFarmModal.vue';
 import {
     Plus, View, Edit, Delete, Box,
-    House, Location, TrendCharts, Collection, DataLine, Checked,
+    House, Location, TrendCharts, Collection,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
     farms: { type: Array, default: () => [] },
     varietyOptions: { type: Array, default: () => [] },
+    canCreateFarm: { type: Boolean, default: false },
 });
 
 function isActive(farm) {
     return (farm.status || 'Active').toLowerCase() === 'active';
 }
 
-function statusTagType(farm) {
-    return isActive(farm) ? 'success' : 'info';
-}
-
 function goToFarm(farm) {
     router.visit(route('farm.show', farm.id));
+}
+
+function farmLocation(farm) {
+    return [farm.district, farm.region].filter(Boolean).join(', ') || farm.country || '—';
+}
+
+/* ── Add farm ──────────────────────────────────────────────────────── */
+const addDialogOpen = ref(false);
+
+function openAddDialog() {
+    addDialogOpen.value = true;
 }
 
 /* ── Edit farm ─────────────────────────────────────────────────────── */
@@ -32,22 +41,38 @@ const editingFarmId = ref(null);
 
 const editForm = useForm({
     name: '',
-    location: '',
-    size: '',
-    altitude: '',
-    variety: '',
-    notes: '',
+    coffee_type: '',
+    country: '',
+    region: '',
+    district: '',
+    county: '',
+    subcounty: '',
+    parish: '',
+    village: '',
+    latitude: '',
+    longitude: '',
+    elevation: '',
+    total_area: '',
+    coffee_area: '',
 });
 
 function openEditDialog(farm) {
     editingFarmId.value = farm.id;
     editForm.clearErrors();
-    editForm.name = farm.name;
-    editForm.location = farm.location;
-    editForm.size = farm.size;
-    editForm.altitude = farm.altitude;
-    editForm.variety = farm.variety;
-    editForm.notes = farm.notes;
+    editForm.name = farm.name || '';
+    editForm.coffee_type = farm.coffee_type || '';
+    editForm.country = farm.country || '';
+    editForm.region = farm.region || '';
+    editForm.district = farm.district || '';
+    editForm.county = farm.county || '';
+    editForm.subcounty = farm.subcounty || '';
+    editForm.parish = farm.parish || '';
+    editForm.village = farm.village || '';
+    editForm.latitude = farm.latitude ?? '';
+    editForm.longitude = farm.longitude ?? '';
+    editForm.elevation = farm.elevation ?? '';
+    editForm.total_area = farm.total_area ?? '';
+    editForm.coffee_area = farm.coffee_area ?? '';
     editDialogOpen.value = true;
 }
 
@@ -84,23 +109,17 @@ function deleteFarm() {
 
 <template>
     <DesignPreviewLayout title="My Farms">
-        <Head title="My Farms" />
-
         <div class="mf-page">
 
-            
             <!-- ── Header ────────────────────────────────────────────────── -->
             <div class="mf-header">
-                <div class="mf-header__inner">
-                    <div>
-                        <div class="mf-kicker">Farm Workspace</div>
-                        <h1 class="mf-title mb-0">My Farms</h1>
-                        <p class="mf-subtitle mb-0">Farms you've registered on Bean Origin</p>
-                    </div>
-                    <Link :href="route('farmer.index')" class="mf-btn-primary">
-                        <el-icon><Plus /></el-icon> Add Farm
-                    </Link>
+                <div class="mf-header__text">
+                    <h1 class="mf-title">My Farms</h1>
+                    <p class="mf-subtitle">Farms you've registered on Bean Origin.</p>
                 </div>
+                <button v-if="canCreateFarm" type="button" class="mf-btn mf-btn--primary" @click="openAddDialog">
+                    <el-icon><Plus /></el-icon> Add Farm
+                </button>
             </div>
 
             <!-- ── Toolbar ───────────────────────────────────────────────── -->
@@ -109,85 +128,65 @@ function deleteFarm() {
                 <span class="mf-toolbar__count">{{ farms.length }} total</span>
             </div>
 
-            <!-- ── Table (boxed card) ───────────────────────────────────── -->
+            <!-- ── List (boxed card) ────────────────────────────────────── -->
             <div class="mf-card">
-            <el-table
-                :data="farms"
-                class="mf-table"
-                row-key="id"
-                @row-click="goToFarm"
-            >
-                <el-table-column prop="name" min-width="200">
-                    <template #header><span class="mf-th"><el-icon><House /></el-icon> Farm</span></template>
-                    <template #default="{ row }">
-                        <span class="mf-cell-name">{{ row.name }}</span>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="location" min-width="170">
-                    <template #header><span class="mf-th"><el-icon><Location /></el-icon> Location</span></template>
-                    <template #default="{ row }">{{ row.location || '—' }}</template>
-                </el-table-column>
-                <el-table-column prop="size" min-width="110">
-                    <template #header><span class="mf-th"><el-icon><Box /></el-icon> Size</span></template>
-                    <template #default="{ row }">{{ row.size || '—' }}</template>
-                </el-table-column>
-                <el-table-column prop="altitude" min-width="110">
-                    <template #header><span class="mf-th"><el-icon><TrendCharts /></el-icon> Altitude</span></template>
-                    <template #default="{ row }">{{ row.altitude || '—' }}</template>
-                </el-table-column>
-                <el-table-column prop="variety" min-width="150">
-                    <template #header><span class="mf-th"><el-icon><Collection /></el-icon> Variety</span></template>
-                    <template #default="{ row }">{{ row.variety || '—' }}</template>
-                </el-table-column>
-                <el-table-column prop="harvests_count" min-width="100" align="center">
-                    <template #header><span class="mf-th mf-th--center"><el-icon><DataLine /></el-icon> Harvests</span></template>
-                    <template #default="{ row }">{{ row.harvests_count ?? 0 }}</template>
-                </el-table-column>
-                <el-table-column min-width="110">
-                    <template #header><span class="mf-th"><el-icon><Checked /></el-icon> Status</span></template>
-                    <template #default="{ row }">
-                        <el-tag :type="statusTagType(row)" size="small" effect="light" round>
-                            {{ row.status || 'Active' }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column label="" min-width="120" align="right">
-                    <template #default="{ row }">
-                        <div class="mf-row-actions">
+                <div v-if="farms.length" class="mf-list">
+                    <div v-for="farm in farms" :key="farm.id" class="mf-list-row" @click="goToFarm(farm)">
+                        <div class="mf-list-row__icon"><el-icon><House /></el-icon></div>
+                        <div class="mf-list-row__main">
+                            <div class="mf-list-row__title">{{ farm.name }}</div>
+                            <div class="mf-list-row__sub"><el-icon :size="11"><Location /></el-icon> {{ farmLocation(farm) }}</div>
+                        </div>
+                        <div class="mf-list-row__stats">
+                            <div class="mf-list-stat">
+                                <span class="mf-list-stat__value">{{ farm.total_area ? `${Number(farm.total_area).toLocaleString()} ha` : '—' }}</span>
+                                <span class="mf-list-stat__label">Size</span>
+                            </div>
+                            <div class="mf-list-stat">
+                                <span class="mf-list-stat__value">{{ farm.elevation ? `${Number(farm.elevation).toLocaleString()} m` : '—' }}</span>
+                                <span class="mf-list-stat__label">Altitude</span>
+                            </div>
+                            <div class="mf-list-stat mf-list-stat--wide">
+                                <span class="mf-list-stat__value">{{ farm.coffee_type || '—' }}</span>
+                                <span class="mf-list-stat__label">Variety</span>
+                            </div>
+                            <span class="mf-badge" :class="isActive(farm) ? 'mf-badge--good' : 'mf-badge--neutral'">{{ farm.status || 'Active' }}</span>
+                        </div>
+                        <div class="mf-row-actions" @click.stop>
                             <el-tooltip content="View" placement="top">
-                                <Link :href="route('farm.show', row.id)" class="mf-act-btn mf-act-btn--view" @click.stop>
+                                <Link :href="route('farm.show', farm.id)" class="mf-act-btn mf-act-btn--view">
                                     <el-icon><View /></el-icon>
                                 </Link>
                             </el-tooltip>
                             <el-tooltip content="Edit" placement="top">
-                                <button type="button" class="mf-act-btn mf-act-btn--edit" @click.stop="openEditDialog(row)">
+                                <button type="button" class="mf-act-btn mf-act-btn--edit" @click="openEditDialog(farm)">
                                     <el-icon><Edit /></el-icon>
                                 </button>
                             </el-tooltip>
                             <el-tooltip content="Delete" placement="top">
-                                <button type="button" class="mf-act-btn mf-act-btn--delete" @click.stop="openDeleteDialog(row)">
+                                <button type="button" class="mf-act-btn mf-act-btn--delete" @click="openDeleteDialog(farm)">
                                     <el-icon><Delete /></el-icon>
                                 </button>
                             </el-tooltip>
                         </div>
-                    </template>
-                </el-table-column>
-
-                <template #empty>
-                    <div class="mf-empty">
-                        <div class="mf-empty__icon"><el-icon :size="24"><Box /></el-icon></div>
-                        <div class="mf-empty__title">You haven't added any farms yet</div>
-                        <p class="mf-empty__text">Register your first farm to start tracking harvests, quality, and traceability.</p>
-                        <Link :href="route('farmer.index')" class="mf-btn-primary">
-                            <el-icon><Plus /></el-icon> Add Your First Farm
-                        </Link>
                     </div>
-                </template>
-            </el-table>
+                </div>
+
+                <div v-else class="mf-empty">
+                    <el-icon :size="24" class="mf-empty__icon"><Box /></el-icon>
+                    <div class="mf-empty__title">You haven't added any farms yet</div>
+                    <p class="mf-empty__text">Register your first farm to start tracking quality and traceability.</p>
+                    <button v-if="canCreateFarm" type="button" class="mf-btn mf-btn--primary" @click="openAddDialog">
+                        <el-icon><Plus /></el-icon> Add Your First Farm
+                    </button>
+                </div>
             </div>
 
+            <!-- ── Add Farm modal ───────────────────────────────────────── -->
+            <AddFarmModal v-model="addDialogOpen" />
+
             <!-- ── Edit Farm modal — borrows the fp-modal design language ── -->
-            <el-dialog v-model="editDialogOpen" width="560px" align-center class="fp-modal">
+            <el-dialog v-model="editDialogOpen" width="min(680px, calc(100vw - 2rem))" align-center class="fp-modal">
                 <template #header>
                     <div class="fp-modal__head">
                         <div class="fp-modal__head-icon"><el-icon :size="18"><Edit /></el-icon></div>
@@ -207,42 +206,53 @@ function deleteFarm() {
 
                     <div class="fp-field-row">
                         <div class="fp-field">
-                            <label class="fp-field__label">Location</label>
-                            <el-input v-model="editForm.location" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.location }" />
-                            <InputError class="fp-field__error" :message="editForm.errors.location" />
+                            <label class="fp-field__label">Coffee Type</label>
+                            <el-input v-model="editForm.coffee_type" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.coffee_type }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.coffee_type" />
                         </div>
                         <div class="fp-field">
-                            <label class="fp-field__label">Altitude</label>
-                            <el-input v-model="editForm.altitude" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.altitude }" />
-                            <InputError class="fp-field__error" :message="editForm.errors.altitude" />
+                            <label class="fp-field__label">Country</label>
+                            <el-input v-model="editForm.country" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.country }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.country" />
                         </div>
                     </div>
 
                     <div class="fp-field-row">
                         <div class="fp-field">
-                            <label class="fp-field__label">Farm Size</label>
-                            <el-input v-model="editForm.size" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.size }" />
-                            <InputError class="fp-field__error" :message="editForm.errors.size" />
+                            <label class="fp-field__label">Region</label>
+                            <el-input v-model="editForm.region" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.region }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.region" />
                         </div>
                         <div class="fp-field">
-                            <label class="fp-field__label">Variety</label>
-                            <el-select v-model="editForm.variety" placeholder="Select crop variety" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': editForm.errors.variety }">
-                                <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
-                            </el-select>
-                            <InputError class="fp-field__error" :message="editForm.errors.variety" />
+                            <label class="fp-field__label">District</label>
+                            <el-input v-model="editForm.district" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.district }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.district" />
+                        </div>
+                    </div>
+
+                    <div class="fp-field-row">
+                        <div class="fp-field">
+                            <label class="fp-field__label">Elevation (m)</label>
+                            <el-input v-model="editForm.elevation" type="number" step="0.01" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.elevation }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.elevation" />
+                        </div>
+                        <div class="fp-field">
+                            <label class="fp-field__label">Total Area (ha)</label>
+                            <el-input v-model="editForm.total_area" type="number" min="0" step="0.01" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.total_area }" />
+                            <InputError class="fp-field__error" :message="editForm.errors.total_area" />
                         </div>
                     </div>
 
                     <div class="fp-field">
-                        <label class="fp-field__label">Notes <span class="fp-field__optional">(optional)</span></label>
-                        <el-input v-model="editForm.notes" type="textarea" :rows="3" class="fp-field-input" />
-                        <InputError class="fp-field__error" :message="editForm.errors.notes" />
+                        <label class="fp-field__label">Coffee Area (ha) <span class="fp-field__optional">(optional)</span></label>
+                        <el-input v-model="editForm.coffee_area" type="number" min="0" step="0.01" class="fp-field-input" :class="{ 'fp-field-input--error': editForm.errors.coffee_area }" />
+                        <InputError class="fp-field__error" :message="editForm.errors.coffee_area" />
                     </div>
                 </form>
 
                 <template #footer>
                     <div class="fp-modal__footer">
-                        <button type="submit" form="edit-farm-form" class="mf-btn-primary" :disabled="editForm.processing">
+                        <button type="submit" form="edit-farm-form" class="mf-btn mf-btn--primary" :disabled="editForm.processing">
                             {{ editForm.processing ? 'Saving…' : 'Save Changes' }}
                         </button>
                     </div>
@@ -267,130 +277,164 @@ function deleteFarm() {
 
 <style scoped>
 .mf-page {
-    --green: #004532;
-    --green-dark: #002e20;
-    --red: #dc2626;
-    --red-dark: #b91c1c;
-    --on-surface: #111827;
-    --on-surface-var: #6b7280;
-    --surface-white: #ffffff;
-    --surface-low: #f8fafc;
-    --surface-high: #eef2f0;
-    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
-    color: var(--on-surface);
+    --primary: #000000;
+    --on-primary: #ffffff;
+    --surface: #ffffff;
+    --surface-muted: #F5F6F7;
+    --surface-elevated: #F1F2F3;
+    --border: #E5E7EB;
+    --text: #121516;
+    --text-2: #4B5457;
+    --text-muted: #6F7677;
+    --success: #15803D;
+    --success-soft: #F0FDF4;
+    --error: #B91C1C;
+    --error-soft: #FEF2F2;
+    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
+    background: var(--surface);
+    color: var(--text);
     min-height: 100%;
-    line-height: 1.5;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────── */
-.mf-header { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
-.mf-header__inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem clamp(1rem, 3vw, 2rem); }
-.mf-kicker { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 4px; line-height: 1.4; }
-.mf-title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; }
-.mf-subtitle { font-size: .8125rem; color: var(--on-surface-var); margin-top: 2px; line-height: 1.5; }
+.mf-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+.mf-header__text { min-width: 0; }
+.mf-title { font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
+.mf-subtitle { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; max-width: 60ch; }
 
 /* ── Toolbar ───────────────────────────────────────────────────────────── */
-.mf-toolbar { display: flex; align-items: center; justify-content: space-between; padding: .875rem clamp(1rem, 3vw, 2rem); }
-.mf-toolbar__title { font-size: .875rem; font-weight: 800; color: var(--on-surface); }
-.mf-toolbar__count { font-size: .75rem; font-weight: 600; color: var(--on-surface-var); }
+.mf-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.mf-toolbar__title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); }
+.mf-toolbar__count { font-size: 12px; font-weight: 600; color: var(--text-muted); }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────
-   NOTE: literal hex values on purpose, not var(--green)/var(--red) — these
-   classes are also used inside <el-dialog>, which teleports its content to
-   <body>, outside .mf-page's CSS custom-property cascade. */
-.mf-btn-primary { background: #004532; border: none; color: #fff; border-radius: 8px; font-size: .8125rem; font-weight: 700; padding: 9px 16px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); transition: background .15s ease; cursor: pointer; }
-.mf-btn-primary:hover { background: #002e20; color: #fff; }
-.mf-btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-.mf-btn-danger { background: #dc2626; border: none; color: #fff; border-radius: 8px; font-size: .8125rem; font-weight: 700; padding: 9px 16px; cursor: pointer; transition: background .15s ease; }
-.mf-btn-danger:hover { background: #b91c1c; }
-.mf-btn-danger:disabled { opacity: .6; cursor: not-allowed; }
+   NOTE: literal hex values on purpose, not var(--primary) — these classes
+   are also used inside <el-dialog>, which teleports its content to <body>,
+   outside .mf-page's CSS custom-property cascade. */
+.mf-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 36px; padding: 0 16px; border-radius: 6px;
+    font-size: 13px; font-weight: 600; border: 1px solid transparent;
+    text-decoration: none; cursor: pointer; transition: opacity 120ms ease;
+}
+.mf-btn--primary { background: #000000; color: #fff; }
+.mf-btn--primary:hover:not(:disabled) { opacity: 0.88; }
+.mf-btn--primary:disabled { opacity: .5; cursor: not-allowed; }
 
-/* ── Card — boxes the table exactly like .mkt-card on the market listing
-   page: floating, elevated, rounded, instead of an edge-to-edge table
-   sitting flat on the page background. ───────────────────────────────── */
+/* ── Card — flat, bordered, no shadow, matching the app's default card
+   convention (Lot/Batch/Apps/Weather/Inputs). ─────────────────────────── */
 .mf-card {
-    margin: 0 clamp(1rem, 3vw, 2rem);
-    border: 1px solid var(--surface-high);
+    border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14);
+    background: var(--surface);
 }
 
-/* ── Table (boxed) ─────────────────────────────────────────────────────── */
-.mf-table { width: 100%; }
-.mf-table :deep(.el-table__inner-wrapper::before) { display: none; }
-.mf-table :deep(.el-table__row) { cursor: pointer; }
-.mf-table :deep(th.el-table__cell) { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-var); padding: 12px 0; }
-.mf-table :deep(td.el-table__cell) { font-size: .8125rem; color: var(--on-surface); padding: 12px 0; }
-.mf-table :deep(.el-table__cell:first-child .cell) { padding-left: 1.25rem; }
-.mf-table :deep(.el-table__cell:last-child .cell) { padding-right: 1.25rem; }
-.mf-cell-name { font-weight: 700; }
+/* ── List rows ─────────────────────────────────────────────────────────── */
+.mf-list { display: flex; flex-direction: column; }
+.mf-list-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .15s ease;
+}
+.mf-list-row:last-child { border-bottom: none; }
+.mf-list-row:hover { background: var(--surface-muted); }
+.mf-list-row__icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: var(--surface-muted);
+    color: var(--text-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+}
+.mf-list-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.mf-list-row__title { font-size: 14px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-list-row__sub { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-list-row__stats { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
+.mf-list-stat { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 56px; }
+.mf-list-stat--wide { min-width: 84px; }
+.mf-list-stat__value { font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.mf-list-stat__label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); white-space: nowrap; }
 
-/* ── Table header icons ───────────────────────────────────────────────── */
-.mf-th { display: inline-flex; align-items: center; gap: 5px; }
-.mf-th--center { justify-content: center; }
+/* ── Status badge ──────────────────────────────────────────────────────── */
+.mf-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.mf-badge--good { background: var(--success-soft); color: var(--success); }
+.mf-badge--neutral { background: var(--surface-elevated); color: var(--text-2); }
 
 /* ── Row actions ───────────────────────────────────────────────────────── */
-.mf-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-.mf-act-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; text-decoration: none; border: none; background: transparent; cursor: pointer; transition: background .15s ease; }
-.mf-act-btn--view { color: var(--green); }
-.mf-act-btn--view:hover { background: rgba(0, 69, 50, .08); }
-.mf-act-btn--edit { color: var(--on-surface-var); }
-.mf-act-btn--edit:hover { background: var(--surface-low); color: var(--on-surface); }
-.mf-act-btn--delete { color: var(--red); }
-.mf-act-btn--delete:hover { background: #fef2f2; color: var(--red-dark); }
+.mf-row-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.mf-act-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; text-decoration: none; border: none; background: transparent; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.mf-act-btn--view { color: var(--text-2); }
+.mf-act-btn--view:hover { background: var(--surface-elevated); color: var(--text); }
+.mf-act-btn--edit { color: var(--text-2); }
+.mf-act-btn--edit:hover { background: var(--surface-elevated); color: var(--text); }
+.mf-act-btn--delete { color: var(--text-2); }
+.mf-act-btn--delete:hover { background: var(--error-soft); color: var(--error); }
 
 /* ── Empty state ───────────────────────────────────────────────────────── */
-.mf-empty { text-align: center; padding: 3rem 1rem; }
-.mf-empty__icon { width: 52px; height: 52px; border-radius: 50%; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
-.mf-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
-.mf-empty__text { font-size: .8125rem; color: var(--on-surface-var); margin-bottom: 16px; max-width: 360px; margin-left: auto; margin-right: auto; line-height: 1.5; }
-.mf-empty .mf-btn-primary { display: inline-flex; }
+.mf-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 20px; }
+.mf-empty__icon { color: var(--text-muted); margin-bottom: 12px; }
+.mf-empty__title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.mf-empty__text { font-size: 13px; color: var(--text-muted); margin: 0 0 16px; max-width: 360px; }
+.mf-empty .mf-btn--primary { display: inline-flex; }
 
-/* ── Modal — borrowed verbatim from FarmProfile.vue's fp-modal system ────
-   NOTE: <el-dialog> teleports to <body>, outside .mf-page, so CSS custom
-   properties like var(--green) do not cascade in — literal hex values
-   are used below on purpose. */
+/* ── Modal — same header/body/footer structure and literal hex palette as
+   every other modal in the app (AttachBatchModal, Apps' Create Agent
+   dialog). NOTE: <el-dialog> teleports to <body>, outside .mf-page, so
+   CSS custom properties don't cascade in — literal hex is used below. */
 :deep(.el-dialog.fp-modal) {
-    border-radius: 18px;
+    border-radius: 6px;
     padding: 0;
     overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 20, 15, .22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+    font-family: 'Inter', system-ui, sans-serif;
 }
 :deep(.el-dialog.fp-modal .el-dialog__header) { padding: 0; margin: 0; }
 :deep(.el-dialog.fp-modal .el-dialog__body) { padding: 0; }
 :deep(.el-dialog.fp-modal .el-dialog__footer) { padding: 0; }
 
-.fp-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #f3f4f6; }
-.fp-modal__head-icon { width: 38px; height: 38px; border-radius: 11px; background: rgba(0,69,50,.08); color: #004532; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fp-modal__head-icon--danger { background: #fee2e2; color: #dc2626; }
+.fp-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #E5E7EB; }
+.fp-modal__head-icon { width: 36px; height: 36px; border-radius: 6px; background: #F1F2F3; color: #121516; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fp-modal__head-text { flex: 1; min-width: 0; }
-.fp-modal__eyebrow { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #004532; margin-bottom: 1px; }
-.fp-modal__title { font-size: 1.0625rem; font-weight: 800; color: #111827; letter-spacing: -.01em; }
+.fp-modal__eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #6F7677; margin-bottom: 1px; }
+.fp-modal__title { font-size: 1.0625rem; font-weight: 700; color: #121516; letter-spacing: -0.01em; }
 
 .fp-modal__body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; max-height: 65vh; overflow-y: auto; }
-.fp-modal__confirm-text { font-size: 0.875rem; color: #374151; line-height: 1.5; margin: 0; }
 
 .fp-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fp-field { display: flex; flex-direction: column; gap: 5px; }
-.fp-field__label { font-size: .75rem; font-weight: 600; color: #374151; }
-.fp-field__optional { font-weight: 400; color: #9ca3af; }
-.fp-field__error { font-size: .75rem; font-weight: 600; color: #dc2626; margin-top: 4px; display: block; }
+.fp-field-input { width: 100%; }
+.fp-field__label { font-size: 12px; font-weight: 600; color: #121516; }
+.fp-field__optional { font-weight: 400; color: #6F7677; }
+.fp-field__error { font-size: 12px; font-weight: 500; color: #F85149; margin-top: 4px; display: block; }
 
 :deep(.fp-field-input .el-input__wrapper),
-:deep(.fp-field-input .el-textarea__inner) { box-shadow: 0 0 0 1px #d1d5db inset; border-radius: 8px; }
+:deep(.fp-field-input .el-textarea__inner),
+:deep(.fp-field-input .el-select__wrapper) { box-shadow: 0 0 0 1px #E5E7EB inset; border-radius: 6px; background: #F5F6F7; }
 .fp-field-input--error :deep(.el-input__wrapper),
 .fp-field-input--error :deep(.el-textarea__inner),
-.fp-field-input--error :deep(.el-select__wrapper) { box-shadow: 0 0 0 1.5px #dc2626 inset !important; }
+.fp-field-input--error :deep(.el-select__wrapper) { box-shadow: 0 0 0 1.5px #F85149 inset !important; }
 
 /* Footer has no Cancel button — the single action sits right-aligned. */
-.fp-modal__footer { display: flex; justify-content: flex-end; padding: 16px 24px; background: #f9fafb; border-top: 1px solid #f3f4f6; }
+.fp-modal__footer { display: flex; justify-content: flex-end; padding: 16px 24px; background: #F5F6F7; border-top: 1px solid #E5E7EB; }
+
+@media (max-width: 767.98px) {
+    .mf-list-row { flex-wrap: wrap; row-gap: 10px; }
+    .mf-list-row__stats { order: 3; width: 100%; justify-content: space-between; }
+    .mf-row-actions { order: 2; margin-left: auto; }
+}
 
 @media (max-width: 575.98px) {
+    .mf-header { flex-direction: column; align-items: stretch; }
     .fp-field-row { grid-template-columns: 1fr; }
     :deep(.el-dialog.fp-modal) { width: 92vw !important; }
 }

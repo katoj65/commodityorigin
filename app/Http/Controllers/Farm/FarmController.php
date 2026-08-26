@@ -12,12 +12,10 @@ use App\Http\Resources\WeatherForecastResource;
 use App\Models\Farm;
 use App\Models\FarmCollection;
 use App\Models\FarmDocument;
-use App\Models\Harvest;
 use App\Services\ClimateZoneMetadataService;
 use App\Services\FarmCollectionService;
 use App\Services\FarmDocumentService;
 use App\Services\FarmService;
-use App\Services\HarvestService;
 use App\Services\SoilMetadataService;
 use App\Services\WeatherForecastService;
 use Illuminate\Http\JsonResponse;
@@ -32,7 +30,6 @@ class FarmController extends Controller
 {
     public function __construct(
         private readonly FarmService $farms,
-        private readonly HarvestService $harvests,
         private readonly WeatherForecastService $weather,
         private readonly FarmDocumentService $documents,
         private readonly SoilMetadataService $soils,
@@ -61,6 +58,7 @@ class FarmController extends Controller
         return Inertia::render('Farm/MyFarms', [
             'farms' => FarmResource::collection($this->farms->listForUser($request->user()->id))->resolve(),
             'varietyOptions' => $this->farms->activeVarietyOptions(),
+            'canCreateFarm' => Gate::allows('create', Farm::class),
         ]);
     }
 
@@ -92,17 +90,14 @@ class FarmController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage. Always submitted for a
-     * specific, already-known farmer (see AddFarmDialog.vue on the
-     * farmer profile page) — no self-farmer or inline-registration
-     * branching needed here.
+     * Store a newly created resource in storage. The farm is owned directly
+     * by the authenticated user — no farmer profile is required.
      */
     public function store(Request $request): RedirectResponse
     {
         Gate::authorize('create', Farm::class);
 
         $validated = $request->validate([
-            'farmer_id' => ['required', 'integer', 'exists:farmers,id'],
             'name' => ['required', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:255'],
             'region' => ['nullable', 'string', 'max:255'],
@@ -134,7 +129,7 @@ class FarmController extends Controller
 
         $this->farms->create([
             ...$validated,
-            'created_by_user_id' => $request->user()->id,
+            'user_id' => $request->user()->id,
         ]);
 
         return back()->with('success', 'Farm added successfully.');
@@ -160,11 +155,11 @@ class FarmController extends Controller
             'certificationOptions' => $this->farms->activeCertificationOptions(),
             'soilTypeOptions' => SoilMetadataResource::collection($this->soils->active())->resolve(),
             'climaticZoneOptions' => ClimateZoneMetadataResource::collection($this->climateZones->active())->resolve(),
-            'harvestSeasonOptions' => $this->harvests->harvestSeasonOptions(),
+            'harvestSeasonOptions' => $this->collections->harvestSeasonOptions(),
             'weatherRegion' => $weatherRegion,
             'weatherOutlook' => WeatherForecastResource::collection($weatherOutlook)->resolve(),
             'documents' => FarmDocumentResource::collection($farm->documents)->resolve(),
-            'documentTypeOptions' => $this->harvests->documentTypeOptions(),
+            'documentTypeOptions' => $this->documents->documentTypeOptions(),
             'collections' => FarmCollectionResource::collection($farm->collections)->resolve(),
             'collectionUnitOptions' => $this->collections->unitOptions(),
             'collectionPaymentStatusOptions' => $this->collections->paymentStatusOptions(),
@@ -215,68 +210,6 @@ class FarmController extends Controller
         return back()->with('success', 'Farm updated successfully.');
     }
 
-    /**
-     * Record a new harvest for this farm. Creator only.
-     */
-    public function storeHarvest(Request $request, Farm $farm): RedirectResponse
-    {
-        Gate::authorize('update', $farm);
-
-        $pickMethodOptions = $this->harvests->pickMethodOptions()->all();
-        $harvestSeasonOptions = $this->harvests->harvestSeasonOptions();
-        $varietyOptions = $this->farms->activeVarietyOptions()->all();
-
-        $validated = $request->validate(
-            [
-                'variety' => ['required', 'string', 'max:255', Rule::in($varietyOptions)],
-                'date_planted' => ['required', 'date', 'before_or_equal:today'],
-                'harvest_date' => ['required', 'date', 'before_or_equal:today'],
-                'harvest_season' => ['required', 'string', 'max:255', Rule::in($harvestSeasonOptions)],
-                'pick_method' => ['required', 'string', 'max:255', Rule::in($pickMethodOptions)],
-                'price' => ['required', 'numeric', 'min:0.01'],
-                'weight' => ['required', 'numeric', 'min:0.01'],
-                'ripeness_percentage' => ['required', 'numeric', 'between:0,100'],
-                'foreign_matter_present' => ['required', 'boolean'],
-                'pest_damage' => ['required', 'boolean'],
-                'disease_signs' => ['required', 'boolean'],
-                'visible_defects' => ['required', 'boolean'],
-            ],
-            [
-                'date_planted.before_or_equal' => 'Date planted must not be greater than today.',
-                'harvest_date.before_or_equal' => 'Harvest date must not be greater than today.',
-                'foreign_matter_present.required' => 'Please confirm whether foreign matter is present.',
-                'pest_damage.required' => 'Please confirm whether pest damage is present.',
-                'disease_signs.required' => 'Please confirm whether disease signs are present.',
-                'visible_defects.required' => 'Please confirm whether visible defects are present.',
-            ],
-        );
-
-        $this->harvests->create([
-            ...$validated,
-            'farm_id' => $farm->id,
-            'user_id' => $request->user()->id,
-            'foreign_matter_present' => $request->boolean('foreign_matter_present'),
-            'pest_damage' => $request->boolean('pest_damage'),
-            'disease_signs' => $request->boolean('disease_signs'),
-            'visible_defects' => $request->boolean('visible_defects'),
-        ]);
-
-        return back()->with('success', 'Harvest recorded successfully.');
-    }
-
-    /**
-     * Delete a harvest recorded against this farm. Creator only.
-     */
-    public function destroyHarvest(Farm $farm, Harvest $harvest): RedirectResponse
-    {
-        Gate::authorize('update', $farm);
-
-        abort_unless($harvest->farm_id === $farm->id, 404);
-
-        $this->harvests->delete($harvest);
-
-        return back()->with('success', 'Harvest deleted successfully.');
-    }
 
     /**
      * Record a new coffee collection against this farm. A collection is
@@ -366,7 +299,7 @@ class FarmController extends Controller
     {
         Gate::authorize('update', $farm);
 
-        $documentTypeOptions = $this->harvests->documentTypeOptions()->all();
+        $documentTypeOptions = $this->documents->documentTypeOptions()->all();
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],

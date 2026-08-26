@@ -41,6 +41,9 @@ async function findByCode() {
         const { data } = await axios.get(route('farm-collection.find-by-code'), { params: { collection_code: code } });
         foundCollection.value = data;
         lookupStatus.value = 'found';
+        // Normalize the field to the trimmed value that was actually
+        // matched, so submit() posts the same string the lookup verified.
+        form.collection_code = code;
     } catch (error) {
         lookupStatus.value = 'not-found';
     }
@@ -73,6 +76,10 @@ function submit() {
         preserveScroll: true,
         onSuccess: () => {
             closeDialog();
+            form.reset();
+            form.clearErrors();
+            lookupStatus.value = 'idle';
+            foundCollection.value = null;
             ElNotification({ title: 'Collection Linked', message: 'The farm collection was linked to this batch.', type: 'success', duration: 3200, offset: 84 });
         },
     });

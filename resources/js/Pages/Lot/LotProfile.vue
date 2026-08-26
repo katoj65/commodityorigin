@@ -1,1683 +1,892 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import { ElNotification } from 'element-plus';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
-import { Link } from '@inertiajs/vue3';
 import AttachBatchModal from '@/Components/Modals/AttachBatchModal.vue';
 import {
+    ArrowDown,
+    ArrowRight,
     Box,
-    Checked,
     Clock,
-    Collection,
+    Coffee,
+    Coin,
     Connection,
-    DataAnalysis,
     Document,
-    Download,
+    EditPen,
     Files,
-    GoodsFilled,
-    Histogram,
+    HotWater,
     Location,
-    Medal,
-    Money,
+    Odometer,
+    OfficeBuilding,
+    Operation,
     Plus,
+    Position,
     Promotion,
-    ShoppingCart,
-    Star,
-    TrendCharts,
+    Ticket,
     Trophy,
     User,
-    WarningFilled,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
     lot: { type: Object, default: () => ({}) },
-    batch: { type: Object, default: () => ({}) },
-    season: { type: Object, default: () => ({}) },
-    harvests: { type: Array, default: () => [] },
-    relatedLots: { type: Array, default: () => [] },
 });
 
 const showAttachBatch = ref(false);
+
+function handleOptionsCommand(command) {
+    if (command === 'traceability') {
+        router.visit(route('lot.traceability', props.lot.id));
+        return;
+    }
+
+    if (command === 'publish') {
+        router.post(route('lot.publish', props.lot.id), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                const flash = usePage().props.flash || {};
+                if (flash.error) {
+                    ElNotification({ title: 'Already Published', message: flash.error, type: 'warning', duration: 3600, offset: 84 });
+                } else {
+                    ElNotification({ title: 'Published', message: flash.success || 'Lot published to market successfully.', type: 'success', duration: 3200, offset: 84 });
+                }
+            },
+        });
+    }
+}
+
 const linkedBatches = computed(() => props.lot.lot_batches || []);
 
-const fmt = (v, d = 0) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const statusMap = {
+    draft: { label: 'Draft', tone: 'warning' },
+    ready: { label: 'Ready', tone: 'info' },
+    listing_ready: { label: 'Listing Ready', tone: 'success' },
+    tokenisation_ready: { label: 'Tokenised', tone: 'success' },
+};
+const statusInfo = computed(() => statusMap[props.lot.status] || { label: props.lot.status || 'Unknown', tone: 'info' });
 
-const lotNumber    = computed(() => props.lot.lot_number   || 'LOT-2026-001');
-const lotName      = computed(() => props.lot.lot_name     || 'Bugisu Premium Export Lot');
-const lotStatus    = computed(() => props.lot.status       || 'Active');
-const coffeeType   = computed(() => props.batch.variety    || 'Arabica – Bourbon');
-const origin       = computed(() => props.batch.origin     || props.batch.region || 'Mbale, Uganda');
-const cooperative  = computed(() => props.batch.cooperative || 'Bugisu Cooperative Union');
-const process      = computed(() => props.lot.process      || 'Washed');
-const grade        = computed(() => props.lot.grade        || 'AA');
-const screenSize   = computed(() => props.lot.screen_size  || '17/18');
-const altitude     = computed(() => props.lot.altitude     || '1,800 – 2,100 m');
-const packaging    = computed(() => props.lot.packaging_type || 'GrainPro');
-const warehouse    = computed(() => props.lot.warehouse    || 'Kampala Dry Mill');
-const qtyBags      = computed(() => fmt(props.lot.quantity_bags));
-const bagWeight    = computed(() => fmt(props.lot.bag_weight_kg, 1));
-const netWeight    = computed(() => fmt(props.lot.net_weight_kg, 2));
-const grossWeight  = computed(() => fmt(Number(props.lot.net_weight_kg || 0) * 1.02, 2));
-const pricePerKg   = computed(() => fmt(props.lot.price_per_kg, 2));
-const totalValue   = computed(() => fmt(Number(props.lot.price_per_kg || 0) * Number(props.lot.net_weight_kg || 0), 2));
-const qualityScore = computed(() => Number(props.lot.quality_score || props.batch.cup_score || 87.5));
-const aromaScore      = computed(() => Number(props.lot.aroma_score      || 8.75));
-const acidityScore    = computed(() => Number(props.lot.acidity_score    || 9.0));
-const bodyScore       = computed(() => Number(props.lot.body_score       || 8.25));
-const balanceScore    = computed(() => Number(props.lot.balance_score    || 8.5));
-const aftertasteScore = computed(() => Number(props.lot.aftertaste_score || 8.5));
-const flavorScore     = computed(() => Number(props.lot.flavor_score     || 8.8));
-const sweetnessScore  = computed(() => Number(props.lot.sweetness_score  || 10.0));
-const uniformityScore = computed(() => Number(props.lot.uniformity_score || 10.0));
-const cleanCupScore   = computed(() => Number(props.lot.clean_cup_score  || 10.0));
-const overallScore    = computed(() => Number(props.lot.overall_score    || 8.75));
-
-const cuppingAttributes = computed(() => [
-    { label: 'Fragrance / Aroma', score: aromaScore.value },
-    { label: 'Flavor',            score: flavorScore.value },
-    { label: 'Aftertaste',        score: aftertasteScore.value },
-    { label: 'Acidity',           score: acidityScore.value },
-    { label: 'Body',              score: bodyScore.value },
-    { label: 'Balance',           score: balanceScore.value },
-    { label: 'Uniformity',        score: uniformityScore.value },
-    { label: 'Clean Cup',         score: cleanCupScore.value },
-    { label: 'Sweetness',         score: sweetnessScore.value },
-    { label: 'Overall',           score: overallScore.value },
-]);
-
-const isTokenised  = computed(() => props.lot.tokenize ?? true);
-const batchNumber  = computed(() => props.batch.batch_number || 'BCH-2025-042');
-const seasonName   = computed(() => props.season?.name || 'Main Harvest 2025/26');
-const moisture     = computed(() => fmt(props.batch.moisture_content || 11.2, 1));
-
-const scoreBar = (score) => Math.min(100, (score / 10) * 100);
-
-const exportChecklist = computed(() => [
-    { label: 'Quality report available',  done: true },
-    { label: 'Certificate of origin',     done: true },
-    { label: 'Phytosanitary certificate', done: props.lot.status === 'active' },
-    { label: 'Packing list',              done: true },
-    { label: 'Export permit',             done: false },
-    { label: 'Warehouse confirmation',    done: Boolean(props.lot.warehouse) },
-]);
-
-const exportScore = computed(() => {
-    const done = exportChecklist.value.filter(i => i.done).length;
-    return Math.round((done / exportChecklist.value.length) * 100);
+/* ── KPI sub-values ───────────────────────────────────────────────────── */
+const lotValueTotal = computed(() => {
+    if (!props.lot.price || !props.lot.net_weight_kg) return null;
+    return Number(props.lot.price) * Number(props.lot.net_weight_kg);
 });
 
-const complianceDocs = computed(() => [
-    { name: 'Certificate of Origin',     category: 'Trade',      date: '20 Feb 2026', available: true  },
-    { name: 'Cupping / Quality Report',  category: 'Quality',    date: '18 Feb 2026', available: true  },
-    { name: 'Packing List',              category: 'Logistics',  date: '20 Feb 2026', available: true  },
-    { name: 'Warehouse Receipt',         category: 'Logistics',  date: '15 Feb 2026', available: Boolean(props.lot.warehouse) },
-    { name: 'Organic Certificate',       category: 'Compliance', date: '01 Jan 2026', available: true  },
-    { name: 'Fair Trade Certificate',    category: 'Compliance', date: '01 Jan 2026', available: true  },
-    { name: 'Phytosanitary Certificate', category: 'Export',     date: null,          available: props.lot.status === 'active' },
-    { name: 'Export Permit',             category: 'Export',     date: null,          available: false },
-]);
-
-const complianceScore = computed(() => {
-    const done = complianceDocs.value.filter(d => d.available).length;
-    return Math.round((done / complianceDocs.value.length) * 100);
+const qualityKnown = computed(() => props.lot.quality_score !== null && props.lot.quality_score !== undefined);
+const qualityTone = computed(() => {
+    if (!qualityKnown.value) return 'neutral';
+    return Number(props.lot.quality_score) >= 80 ? 'good' : 'warn';
+});
+const qualityLabel = computed(() => {
+    if (!qualityKnown.value) return 'Not yet graded';
+    return Number(props.lot.quality_score) >= 80 ? 'Specialty grade' : 'Below specialty';
 });
 
-const timeline = [
-    { label: 'Batch created',      date: '12 Jan 2026', done: true },
-    { label: 'Lot created',        date: '15 Feb 2026', done: true },
-    { label: 'Quality tested',     date: '18 Feb 2026', done: true },
-    { label: 'Documents uploaded', date: '20 Feb 2026', done: true },
-    { label: 'Tokenised',          date: '22 Feb 2026', done: isTokenised.value },
-    { label: 'Listed on market',   date: '01 Mar 2026', done: Boolean(props.lot.price_per_kg) },
-    { label: 'Trade activity',     date: 'Pending',     done: false },
-];
+function batchStatusTone(status) {
+    const s = (status || '').toLowerCase();
+    if (['received', 'ready', 'completed', 'delivered', 'approved', 'batched'].includes(s)) return 'good';
+    if (['processing', 'pending', 'draft'].includes(s)) return 'warn';
+    if (['cancelled', 'rejected', 'expired'].includes(s)) return 'bad';
+    return 'neutral';
+}
 
+/* ── Origin trace: farms and farm collections behind the linked batches ── */
+const sourcedCollections = computed(() => {
+    const rows = [];
+    for (const lb of linkedBatches.value) {
+        const batch = lb.batch;
+        if (!batch) continue;
+        for (const link of batch.farm_collection_links || []) {
+            rows.push({ link, batch });
+        }
+    }
+    return rows;
+});
 
+const sourcedFarms = computed(() => {
+    const byFarm = new Map();
+    for (const row of sourcedCollections.value) {
+        const farm = row.link.farm_collection?.farm;
+        if (!farm) continue;
+        if (!byFarm.has(farm.id)) {
+            byFarm.set(farm.id, { farm, batchNumbers: new Set(), collectionCount: 0 });
+        }
+        const entry = byFarm.get(farm.id);
+        entry.batchNumbers.add(row.batch.batch_number);
+        entry.collectionCount += 1;
+    }
+    return Array.from(byFarm.values()).map((entry) => ({
+        farm: entry.farm,
+        collectionCount: entry.collectionCount,
+        batchLabel: Array.from(entry.batchNumbers).join(', '),
+    }));
+});
+
+const recorderInitials = computed(() => {
+    const name = (props.lot.user?.name || '').trim();
+    if (!name) return '?';
+    return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
+});
+
+const fmtNumber = (value, digits = 2) => {
+    if (value === null || value === undefined || value === '') return '—';
+    return Number(value).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+};
+
+const fmtDate = (value) => {
+    if (!value) return '—';
+    return new Date(value.replace(' ', 'T')).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+const fmtDateTime = (value) => {
+    if (!value) return '—';
+    return new Date(value.replace(' ', 'T')).toLocaleString('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+};
+
+/* ── Journey timeline: farm collection → batching → lotting ─────────────
+   Built from the eager-loaded chain (lot_batches.batch.batch_farm_collections
+   .farm_collection.farm) so every date shown is the record's own accurate
+   timestamp, not an estimate. */
+const toTimestamp = (value) => {
+    if (!value) return null;
+    const iso = value.includes(' ') ? value.replace(' ', 'T') : `${value}T00:00:00`;
+    const time = new Date(iso).getTime();
+    return Number.isNaN(time) ? null : time;
+};
+
+const fmtEventDate = (value) => (value && value.includes(':') ? fmtDateTime(value) : fmtDate(value));
+
+const fmtRelative = (value) => {
+    const ts = toTimestamp(value);
+    if (ts === null) return '';
+    const days = Math.round((Date.now() - ts) / 86400000);
+    if (days <= 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 30) return `${days}d ago`;
+    const months = Math.round(days / 30);
+    if (months < 12) return `${months}mo ago`;
+    return `${Math.round(months / 12)}y ago`;
+};
+
+const stageLabels = { collection: 'Sourced', batching: 'Batched', lotting: 'Lot' };
+
+const journeyEvents = computed(() => {
+    const events = [];
+
+    for (const lb of linkedBatches.value) {
+        const batch = lb.batch;
+        if (!batch) continue;
+
+        for (const link of batch.farm_collection_links || []) {
+            const fc = link.farm_collection;
+            events.push({
+                stage: 'collection',
+                date: fc?.collection_date || link.created_at,
+                title: fc?.farm?.name ? `Collected at ${fc.farm.name}` : `Farm collection ${link.farm_collection_code}`,
+                subtitle: [
+                    fc?.coffee_type,
+                    fc?.variety,
+                    fc?.quantity ? `${Number(fc.quantity).toLocaleString()} ${fc.unit || 'kg'}` : null,
+                ].filter(Boolean).join(' · '),
+                href: route('farm-collection.show', link.farm_collection_id),
+            });
+        }
+
+        events.push({
+            stage: 'batching',
+            date: batch.processing_date || batch.created_at,
+            title: `Batch ${batch.batch_number} processed`,
+            subtitle: [
+                batch.processing_method,
+                batch.net_weight_kg ? `${fmtNumber(batch.net_weight_kg)} kg` : null,
+                batch.warehouse_location || null,
+            ].filter(Boolean).join(' · '),
+            href: route('batch.show', batch.id),
+        });
+    }
+
+    events.push({
+        stage: 'lotting',
+        date: props.lot.created_at,
+        title: `Lot ${props.lot.lot_number} created`,
+        subtitle: [
+            props.lot.process ? `Process: ${props.lot.process}` : null,
+            props.lot.net_weight_kg ? `${fmtNumber(props.lot.net_weight_kg)} kg` : null,
+        ].filter(Boolean).join(' · '),
+    });
+
+    if (props.lot.updated_at && props.lot.updated_at !== props.lot.created_at) {
+        events.push({
+            stage: 'lotting',
+            date: props.lot.updated_at,
+            title: 'Lot details updated',
+            subtitle: props.lot.net_weight_kg ? `${fmtNumber(props.lot.net_weight_kg)} kg` : '',
+        });
+    }
+
+    return events
+        .filter((event) => toTimestamp(event.date) !== null)
+        .sort((a, b) => toTimestamp(a.date) - toTimestamp(b.date))
+        .map((event) => ({ ...event, stageLabel: stageLabels[event.stage] }));
+});
 </script>
 
 <template>
     <DesignPreviewLayout title="Lot Profile">
-
-        <div class="lp-root">
-
-            <!-- ── Hero ─────────────────────────────────────────────────────── -->
-            <section class="lp-hero">
-                <div class="lp-hero__inner">
-                    <div class="lp-hero__left">
-                        <div class="lp-tag-row mb-3">
-                            <span class="lp-hero-tag">
-                                <el-icon><Checked /></el-icon> Verified Lot
-                            </span>
-                            <span class="lp-hero-tag">
-                                <el-icon><Box /></el-icon> Export Ready
-                            </span>
-                            <span v-if="isTokenised" class="lp-hero-tag lp-hero-tag--warm">
-                                <el-icon><Promotion /></el-icon> Tokenised
-                            </span>
-                            <span class="lp-hero-tag lp-hero-tag--warm">
-                                <el-icon><Medal /></el-icon> Blockchain Verified
-                            </span>
-                        </div>
-                        <h1 class="lp-hero__title mb-1 mt-0">{{ lotName }}</h1>
-                        <p class="lp-hero__sub">
-                            <el-icon class="lp-sub-icon"><Files /></el-icon>{{ lotNumber }}
-                            <span class="lp-sub-sep">&middot;</span>
-                            <el-icon class="lp-sub-icon"><Location /></el-icon>{{ origin }}
-                            <span class="lp-sub-sep">&middot;</span>
-                            {{ process }}
-                        </p>
-                        <div class="lp-hero__actions mt-3">
-                            <Link href="/checkout" class="lp-btn lp-btn--hero-outline" style="border: 1px solid #bec9c2;">
-                                <el-icon><ShoppingCart /></el-icon> Buy
-                            </Link>
-                            <button class="lp-btn lp-btn--hero-ghost" style="border: 1px solid #bec9c2;">
-                                <el-icon><GoodsFilled /></el-icon> Request Sample
-                            </button>
-                            <button class="lp-btn lp-btn--hero-ghost" style="border: 1px solid #bec9c2;">
-                                <el-icon><Download /></el-icon> Report
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Coffee photo + trace QR -->
-                    <div class="lp-hero__media">
-                    <div class="lp-hero__photo">
-                        <img :src="lot.image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVNPRKcnvtgsayf1-HlE1xA92LWW1C56Io3VMreh4aujnZTgd7RVNEZOyEqFGcffC6O3JdFFEczJbLDdWYhY3SPZ_97Ep-mSdEA6EpSHOYxQ4YC-9rWllkkDGEgrkRhX8fdY9yD34FR8UBs42K4RgVHEi6OXDt4QvP-hJgG1uWAZlyFMQ7HCYg9NcS7oQW5HysDvCK3FiXBDRpfkupmdW5tIy7o5GV8ZL8feaXnYtU6ZpDEAJvS_XKRffdezzJJCSUQeF2AHlDDapn'" :alt="lotName" class="lp-hero__photo-img" />
-                    </div>
-
-                    <div class="lp-hero__right">
-                        <div class="lp-qr-block">
-                            <p class="lp-qr-label">Trace &amp; Verify</p>
-                            <svg class="lp-qr-svg" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" fill="#004532">
-                                <rect x="2" y="2" width="22" height="22" rx="2" fill="none" stroke="#004532" stroke-width="2.5"/>
-                                <rect x="7" y="7" width="12" height="12" rx="1"/>
-                                <rect x="56" y="2" width="22" height="22" rx="2" fill="none" stroke="#004532" stroke-width="2.5"/>
-                                <rect x="61" y="7" width="12" height="12" rx="1"/>
-                                <rect x="2" y="56" width="22" height="22" rx="2" fill="none" stroke="#004532" stroke-width="2.5"/>
-                                <rect x="7" y="61" width="12" height="12" rx="1"/>
-                                <rect x="28" y="2" width="4" height="4"/>
-                                <rect x="34" y="2" width="4" height="4"/>
-                                <rect x="46" y="2" width="4" height="4"/>
-                                <rect x="28" y="8" width="4" height="4"/>
-                                <rect x="40" y="8" width="4" height="4"/>
-                                <rect x="52" y="8" width="4" height="4"/>
-                                <rect x="34" y="14" width="4" height="4"/>
-                                <rect x="46" y="14" width="4" height="4"/>
-                                <rect x="28" y="20" width="4" height="4"/>
-                                <rect x="40" y="20" width="4" height="4"/>
-                                <rect x="28" y="30" width="4" height="4"/>
-                                <rect x="34" y="30" width="4" height="4"/>
-                                <rect x="46" y="30" width="4" height="4"/>
-                                <rect x="52" y="30" width="4" height="4"/>
-                                <rect x="28" y="36" width="4" height="4"/>
-                                <rect x="40" y="36" width="4" height="4"/>
-                                <rect x="52" y="36" width="4" height="4"/>
-                                <rect x="34" y="42" width="4" height="4"/>
-                                <rect x="40" y="42" width="4" height="4"/>
-                                <rect x="46" y="42" width="4" height="4"/>
-                                <rect x="28" y="48" width="4" height="4"/>
-                                <rect x="52" y="48" width="4" height="4"/>
-                                <rect x="34" y="56" width="4" height="4"/>
-                                <rect x="46" y="56" width="4" height="4"/>
-                                <rect x="52" y="56" width="4" height="4"/>
-                                <rect x="28" y="62" width="4" height="4"/>
-                                <rect x="40" y="62" width="4" height="4"/>
-                                <rect x="34" y="68" width="4" height="4"/>
-                                <rect x="46" y="68" width="4" height="4"/>
-                                <rect x="52" y="68" width="4" height="4"/>
-                                <rect x="28" y="74" width="4" height="4"/>
-                                <rect x="40" y="74" width="4" height="4"/>
-                            </svg>
-                            <p class="lp-qr-id">{{ lotNumber }}</p>
-                        </div>
-                    </div>
-                    </div>
+        <div class="lp-page">
+            <!-- ── Page header ──────────────────────────────────────────── -->
+            <div class="lp-page-header">
+                <div class="lp-page-header__text">
+                    <h1 class="lp-page-title">Lot Profile</h1>
+                    <p class="lp-page-description">Full specifications, linked batches, and activity history for this coffee lot.</p>
                 </div>
-
-                <!-- Hero data zones -->
-                <div class="lp-hero__zones">
-                    <!-- Zone 1: Lot Identity -->
-                    <div class="lp-hero-zone">
-                        <div class="lp-zone-eyebrow">
-                            <el-icon><Box /></el-icon> LOT IDENTITY
-                        </div>
-                        <div class="lp-zone-kv-list">
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Files /></el-icon> Lot ID</span>
-                                <strong>{{ lotNumber }}</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Collection /></el-icon> Type</span>
-                                <strong>{{ coffeeType }}</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><User /></el-icon> Cooperative</span>
-                                <strong>{{ cooperative }}</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Checked /></el-icon> Status</span>
-                                <span class="lp-status-pill">{{ lotStatus }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Zone 2: Quality -->
-                    <div class="lp-hero-zone">
-                        <div class="lp-zone-eyebrow">
-                            <el-icon><Trophy /></el-icon> QUALITY
-                        </div>
-                        <div class="lp-zone-kv-list">
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Medal /></el-icon> Grade</span>
-                                <strong>{{ grade }}</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Trophy /></el-icon> Cupping Score</span>
-                                <strong class="lp-accent">{{ qualityScore.toFixed(1) }} SCA</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><DataAnalysis /></el-icon> Moisture</span>
-                                <strong>{{ moisture }}%</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Histogram /></el-icon> Screen</span>
-                                <strong>{{ screenSize }}</strong>
-                            </div>
-                            <div class="lp-zone-kv lp-zone-kv--chips">
-                                <span class="lp-zone-kv__label"><el-icon><Star /></el-icon> Flavor</span>
-                                <div class="lp-zone-flavor-row">
-                                    <span class="lp-flavor-chip">Blackcurrant</span>
-                                    <span class="lp-flavor-chip">Citrus</span>
-                                    <span class="lp-flavor-chip">Floral</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Zone 3: Commercial -->
-                    <div class="lp-hero-zone">
-                        <div class="lp-zone-eyebrow">
-                            <el-icon><TrendCharts /></el-icon> COMMERCIAL
-                        </div>
-                        <div class="lp-zone-kv-list">
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Money /></el-icon> Price / kg</span>
-                                <strong>Shs. {{ pricePerKg }}</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><TrendCharts /></el-icon> Total Value</span>
-                                <strong class="lp-accent">Shs. {{ totalValue }}</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Box /></el-icon> Available</span>
-                                <strong>{{ netWeight }} kg</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Star /></el-icon> Demand</span>
-                                <span class="lp-demand-chip">HIGH</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Zone 4: Tokenisation -->
-                    <div class="lp-hero-zone">
-                        <div class="lp-zone-eyebrow">
-                            <el-icon><Promotion /></el-icon> TOKENISATION
-                        </div>
-                        <div class="lp-zone-kv-list">
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Promotion /></el-icon> Status</span>
-                                <strong :class="isTokenised ? 'lp-accent' : ''">{{ isTokenised ? 'Tokenised' : 'Pending' }}</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Connection /></el-icon> Network</span>
-                                <strong>Arbitrum L2</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Box /></el-icon> Units</span>
-                                <strong>{{ netWeight }} kg</strong>
-                            </div>
-                            <div class="lp-zone-kv">
-                                <span class="lp-zone-kv__label"><el-icon><Files /></el-icon> Ownership</span>
-                                <strong>Fractionable</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ── Traceability Chain ────────────────────────────────────────── -->
-            <section class="lp-section lp-section--white">
-                <div class="lp-section__inner">
-                    <p class="lp-eyebrow">TRACEABILITY CHAIN</p>
-                    <div class="lp-trace">
-                        <div class="lp-trace-step lp-trace-step--done">
-                            <div class="lp-trace-node">1</div>
-                            <div class="lp-trace-body">
-                                <div class="lp-trace-tag">SEASON</div>
-                                <strong>{{ seasonName }}</strong>
-                                <span>Verified</span>
-                            </div>
-                        </div>
-                        <div class="lp-trace-connector"></div>
-                        <div class="lp-trace-step lp-trace-step--done">
-                            <div class="lp-trace-node">2</div>
-                            <div class="lp-trace-body">
-                                <div class="lp-trace-tag">HARVESTS</div>
-                                <strong>{{ harvests.length || 4 }} Harvests</strong>
-                                <a href="#" class="lp-trace-link">View Harvests</a>
-                            </div>
-                        </div>
-                        <div class="lp-trace-connector"></div>
-                        <div class="lp-trace-step lp-trace-step--done">
-                            <div class="lp-trace-node">3</div>
-                            <div class="lp-trace-body">
-                                <div class="lp-trace-tag">BATCH</div>
-                                <strong>{{ batchNumber }}</strong>
-                                <a href="#" class="lp-trace-link">View Batch</a>
-                            </div>
-                        </div>
-                        <div class="lp-trace-connector"></div>
-                        <div class="lp-trace-step lp-trace-step--current">
-                            <div class="lp-trace-node lp-trace-node--active">4</div>
-                            <div class="lp-trace-body">
-                                <div class="lp-trace-tag">LOT</div>
-                                <strong>{{ lotNumber }}</strong>
-                                <span class="lp-origin-tag" style="font-size:9px;padding:2px 8px;">Current</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ── Main Grid ─────────────────────────────────────────────────── -->
-            <section class="lp-section lp-section--base">
-                <div class="lp-section__inner">
-                    <div class="lp-main-grid">
-
-                        <!-- LEFT COLUMN -->
-                        <div class="lp-main-col">
-
-                            <!-- Quality Intelligence -->
-                            <div class="lp-card">
-                                <div class="lp-card__head-row">
-                                    <h2 class="lp-card__title"><el-icon><DataAnalysis /></el-icon> Quality Intelligence</h2>
-                                    <div class="lp-qi-score">
-                                        <span class="lp-qi-score__num">{{ qualityScore.toFixed(1) }}</span>
-                                        <span class="lp-qi-score__label">SCA Cupping Score · Grade {{ grade }}</span>
-                                    </div>
-                                </div>
-                                <div class="lp-quality-layout">
-                                    <div class="lp-quality-bars">
-                                        <div v-for="item in [
-                                            { label: 'Aroma',      score: aromaScore },
-                                            { label: 'Acidity',    score: acidityScore },
-                                            { label: 'Body',       score: bodyScore },
-                                            { label: 'Balance',    score: balanceScore },
-                                            { label: 'Aftertaste', score: 8.5 },
-                                            { label: 'Flavor',     score: 8.8 },
-                                        ]" :key="item.label" class="lp-bar-row">
-                                            <div class="lp-bar-row__meta">
-                                                <span>{{ item.label }}</span>
-                                                <strong>{{ item.score.toFixed(2) }}</strong>
-                                            </div>
-                                            <div class="lp-bar-track">
-                                                <div class="lp-bar-fill" :style="{ width: scoreBar(item.score) + '%' }"></div>
-                                            </div>
-                                        </div>
-                                        <div class="lp-defect-note">
-                                            <span>Defect Count</span>
-                                            <span class="lp-defect-val">0 Cat. 1 &nbsp;&middot;&nbsp; 2 Cat. 2</span>
-                                        </div>
-                                    </div>
-                                    <div class="lp-radar-area">
-                                        <svg viewBox="0 0 200 200" class="lp-radar">
-                                            <polygon points="100,22 168,61 168,139 100,178 32,139 32,61" fill="none" stroke="#e0e3e5" stroke-width="1.5"/>
-                                            <polygon points="100,46 146,74 146,126 100,154 54,126 54,74"  fill="none" stroke="#e0e3e5" stroke-width="1"/>
-                                            <polygon points="100,70 124,84 124,116 100,130 76,116 76,84"  fill="none" stroke="#e0e3e5" stroke-width="1"/>
-                                            <polygon points="100,30 162,68 162,132 100,170 38,132 38,68"
-                                                fill="rgba(0,69,50,0.10)" stroke="#004532" stroke-width="1.8"/>
-                                            <circle cx="100" cy="30"  r="3.5" fill="#004532"/>
-                                            <circle cx="162" cy="68"  r="3.5" fill="#004532"/>
-                                            <circle cx="162" cy="132" r="3.5" fill="#004532"/>
-                                            <circle cx="100" cy="170" r="3.5" fill="#004532"/>
-                                            <circle cx="38"  cy="132" r="3.5" fill="#004532"/>
-                                            <circle cx="38"  cy="68"  r="3.5" fill="#004532"/>
-                                            <text x="100" y="13"  text-anchor="middle" class="lp-radar-lbl">Aroma</text>
-                                            <text x="180" y="68"  text-anchor="start"  class="lp-radar-lbl">Acidity</text>
-                                            <text x="180" y="136" text-anchor="start"  class="lp-radar-lbl">Body</text>
-                                            <text x="100" y="194" text-anchor="middle" class="lp-radar-lbl">Aftertaste</text>
-                                            <text x="20"  y="136" text-anchor="end"   class="lp-radar-lbl">Balance</text>
-                                            <text x="20"  y="68"  text-anchor="end"    class="lp-radar-lbl">Flavor</text>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Cupping Profile -->
-                            <div class="lp-card">
-                                <div class="lp-card__head-row">
-                                    <h2 class="lp-card__title"><el-icon><DataAnalysis /></el-icon> Cupping Profile</h2>
-                                    <span class="lp-origin-tag">SCA Protocol</span>
-                                </div>
-                                <div class="lp-cupping-grid">
-                                    <div class="lp-cupping-attrs">
-                                        <div v-for="attr in cuppingAttributes" :key="attr.label" class="lp-cupping-attr-row">
-                                            <div class="lp-cupping-attr-meta">
-                                                <span>{{ attr.label }}</span>
-                                                <strong>{{ attr.score.toFixed(2) }}</strong>
-                                            </div>
-                                            <div class="lp-bar-track">
-                                                <div class="lp-bar-fill" :style="{ width: (attr.score / 10 * 100) + '%' }"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="lp-cupping-aside">
-                                        <div class="lp-cupping-total">
-                                            <span class="lp-cupping-total__num">{{ qualityScore.toFixed(2) }}</span>
-                                            <span class="lp-cupping-total__label">SCA Total Score</span>
-                                            <span class="lp-origin-tag" style="margin-top:8px;">Grade {{ grade }}</span>
-                                        </div>
-                                        <div class="lp-kv-stack">
-                                            <div class="lp-kv-row"><span>Cupped by</span><strong>Q-Grader Certified</strong></div>
-                                            <div class="lp-kv-row"><span>Cupping date</span><strong>18 Feb 2026</strong></div>
-                                            <div class="lp-kv-row"><span>Cat. 1 Defects</span><strong>0</strong></div>
-                                            <div class="lp-kv-row"><span>Cat. 2 Defects</span><strong>2</strong></div>
-                                        </div>
-                                        <div class="lp-cupping-flavor-block">
-                                            <p class="lp-cupping-flavor-label">Flavor Notes</p>
-                                            <div class="lp-zone-flavor-row">
-                                                <span class="lp-flavor-chip">Blackcurrant</span>
-                                                <span class="lp-flavor-chip">Citrus</span>
-                                                <span class="lp-flavor-chip">Floral</span>
-                                                <span class="lp-flavor-chip">Dark Chocolate</span>
-                                                <span class="lp-flavor-chip">Stone Fruit</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Specifications + Packaging -->
-                            <div class="lp-two-col-cards">
-                                <div class="lp-card">
-                                    <h2 class="lp-card__title"><el-icon><Histogram /></el-icon> Specifications</h2>
-                                    <div class="lp-kv-stack">
-                                        <div class="lp-kv-row"><span>Variety</span><strong>{{ coffeeType }}</strong></div>
-                                        <div class="lp-kv-row"><span>Screen Size</span><strong>{{ screenSize }}</strong></div>
-                                        <div class="lp-kv-row"><span>Crop Year</span><strong>2025/26</strong></div>
-                                        <div class="lp-kv-row"><span>Altitude</span><strong>{{ altitude }}</strong></div>
-                                        <div class="lp-kv-row"><span>Processing</span><strong>{{ process }}</strong></div>
-                                        <div class="lp-kv-row"><span>Drying</span><strong>Raised Bed</strong></div>
-                                        <div class="lp-kv-row"><span>Packaging</span><strong>{{ packaging }}</strong></div>
-                                    </div>
-                                </div>
-                                <div class="lp-card">
-                                    <h2 class="lp-card__title"><el-icon><Box /></el-icon> Packaging &amp; Logistics</h2>
-                                    <div class="lp-kv-stack">
-                                        <div class="lp-kv-row"><span>No. of Bags</span><strong>{{ qtyBags }}</strong></div>
-                                        <div class="lp-kv-row"><span>Bag Weight</span><strong>{{ bagWeight }} kg</strong></div>
-                                        <div class="lp-kv-row"><span>Net Weight</span><strong>{{ netWeight }} kg</strong></div>
-                                        <div class="lp-kv-row"><span>Gross Weight</span><strong>{{ grossWeight }} kg</strong></div>
-                                        <div class="lp-kv-row"><span>Warehouse</span><strong>{{ warehouse }}</strong></div>
-                                        <div class="lp-kv-row"><span>Storage</span><strong>Controlled Humidity</strong></div>
-                                    </div>
-                                    <div class="lp-tag-row lp-tag-row--mt">
-                                        <span class="lp-origin-tag">Ready to Ship</span>
-                                        <span class="lp-origin-tag">Properly Stored</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Export Readiness -->
-                            <div class="lp-card">
-                                <div class="lp-card__head-row">
-                                    <h2 class="lp-card__title"><el-icon><Checked /></el-icon> Export Readiness</h2>
-                                    <div class="lp-ring-wrap">
-                                        <svg viewBox="0 0 36 36" class="lp-ring">
-                                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                                fill="none" stroke="#e0e3e5" stroke-width="3"/>
-                                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                                fill="none" stroke="#004532" stroke-width="3"
-                                                :stroke-dasharray="`${exportScore}, 100`" stroke-linecap="round"/>
-                                        </svg>
-                                        <span class="lp-ring-label">{{ exportScore }}%</span>
-                                    </div>
-                                </div>
-                                <div class="lp-checklist">
-                                    <div v-for="item in exportChecklist" :key="item.label"
-                                        class="lp-check-item"
-                                        :class="item.done ? 'lp-check-item--done' : 'lp-check-item--gap'">
-                                        <span class="lp-check-dot"></span>
-                                        <span>{{ item.label }}</span>
-                                        <span v-if="!item.done" class="lp-check-missing">Missing</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Compliance Documents -->
-                            <div class="lp-card">
-                                <div class="lp-card__head-row">
-                                    <h2 class="lp-card__title"><el-icon><Document /></el-icon> Compliance Documents</h2>
-                                    <div class="lp-doc-summary">
-                                        <div class="lp-ring-wrap">
-                                            <svg viewBox="0 0 36 36" class="lp-ring">
-                                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                                    fill="none" stroke="#e0e3e5" stroke-width="3"/>
-                                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                                    fill="none" stroke="#004532" stroke-width="3"
-                                                    :stroke-dasharray="`${complianceScore}, 100`" stroke-linecap="round"/>
-                                            </svg>
-                                            <span class="lp-ring-label">{{ complianceScore }}%</span>
-                                        </div>
-                                        <span class="lp-doc-summary__text">
-                                            {{ complianceDocs.filter(d => d.available).length }}/{{ complianceDocs.length }} docs
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="lp-doc-grid">
-                                    <div v-for="doc in complianceDocs" :key="doc.name"
-                                        class="lp-doc-item"
-                                        :class="doc.available ? 'lp-doc-item--ok' : 'lp-doc-item--missing'">
-                                        <el-icon class="lp-doc-icon" :class="doc.available ? 'lp-doc-icon--ok' : 'lp-doc-icon--gap'">
-                                            <Checked v-if="doc.available" />
-                                            <WarningFilled v-else />
-                                        </el-icon>
-                                        <div class="lp-doc-item__info">
-                                            <span class="lp-doc-item__label">{{ doc.name }}</span>
-                                            <span class="lp-doc-item__meta">
-                                                <span class="lp-doc-cat">{{ doc.category }}</span>
-                                                <span v-if="doc.date">· {{ doc.date }}</span>
-                                            </span>
-                                        </div>
-                                        <span class="lp-doc-badge" :class="doc.available ? 'lp-doc-badge--ok' : 'lp-doc-badge--gap'">
-                                            {{ doc.available ? 'Available' : 'Missing' }}
-                                        </span>
-                                        <div class="lp-doc-item__actions">
-                                            <button v-if="doc.available" class="lp-btn lp-btn--tertiary lp-doc-dl-btn" title="Download">
-                                                <el-icon><Download /></el-icon>
-                                            </button>
-                                            <button v-else class="lp-btn lp-btn--tertiary lp-doc-dl-btn lp-doc-dl-btn--upload" title="Upload">
-                                                <el-icon><Files /></el-icon>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Trading Options -->
-                            <div class="lp-card">
-                                <h2 class="lp-card__title mb-3"><el-icon><Money /></el-icon> Trading Options</h2>
-                                <div class="lp-trade-grid">
-                                    <div class="lp-trade-card lp-trade-card--primary">
-                                        <div class="lp-trade-card__eyebrow"><el-icon><ShoppingCart /></el-icon> BUY NOW</div>
-                                        <div class="lp-trade-card__price">Shs. {{ pricePerKg }}<small>/kg</small></div>
-                                        <div class="lp-trade-card__meta">Min. 60 kg · Fixed price</div>
-                                        <Link href="/checkout" class="lp-btn lp-btn--primary lp-btn--full">Buy Now</Link>
-                                    </div>
-                                    <div class="lp-trade-card">
-                                        <div class="lp-trade-card__eyebrow"><el-icon><Medal /></el-icon> PLACE BID</div>
-                                        <div class="lp-trade-card__price">Shs. {{ fmt(Number(props.lot.price_per_kg || 0) * 0.94, 2) }}<small>/kg</small></div>
-                                        <div class="lp-trade-card__meta">3 bids · Closes in 48h</div>
-                                        <Link :href="route('bid.place', lot.id)" class="lp-btn lp-btn--secondary lp-btn--full">Place Bid</Link>
-                                    </div>
-                                    <div class="lp-trade-card">
-                                        <div class="lp-trade-card__eyebrow"><el-icon><Trophy /></el-icon> AUCTION</div>
-                                        <div class="lp-trade-card__price">Shs. {{ fmt(props.lot.price || 0, 2) }}<small>/kg</small></div>
-                                        <div class="lp-trade-card__meta">Price</div>
-                                        <button class="lp-btn lp-btn--tertiary lp-btn--full">Join Auction</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <!-- RIGHT COLUMN -->
-                        <div class="lp-side-col">
-
-                            <!-- Linked Batches -->
-                            <div class="lp-card">
-                                <div class="lp-card__head-row">
-                                    <h2 class="lp-card__title"><el-icon><Files /></el-icon> Linked Batches</h2>
-                                    <button type="button" class="lp-btn lp-btn--tertiary" style="font-size:11px;padding:5px 12px;" @click="showAttachBatch = true">
-                                        <el-icon><Plus /></el-icon> Attach
-                                    </button>
-                                </div>
-                                <div v-if="linkedBatches.length" class="lp-kv-stack lp-kv-stack--mt">
-                                    <div v-for="lb in linkedBatches" :key="lb.id" class="lp-kv-row">
-                                        <span>{{ lb.batch?.batch_number || lb.batch_number }}</span>
-                                        <strong>
-                                            {{ lb.batch?.variety || '—' }}<span v-if="lb.allocation_kg"> · {{ Number(lb.allocation_kg).toLocaleString() }} kg</span>
-                                        </strong>
-                                    </div>
-                                </div>
-                                <p v-else class="lp-empty-note">No batches linked to this lot yet.</p>
-                            </div>
-
-                            <!-- Market Intelligence -->
-                            <div class="lp-card">
-                                <h2 class="lp-card__title"><el-icon><TrendCharts /></el-icon> Market Intelligence</h2>
-                                <div class="lp-market-hero">
-                                    <span>Current Market Price</span>
-                                    <strong>Shs. {{ pricePerKg }}/kg</strong>
-                                </div>
-                                <div class="lp-chart-wrap">
-                                    <svg viewBox="0 0 200 56" style="width:100%;display:block;">
-                                        <defs>
-                                            <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stop-color="#004532" stop-opacity="0.12"/>
-                                                <stop offset="100%" stop-color="#004532" stop-opacity="0"/>
-                                            </linearGradient>
-                                        </defs>
-                                        <polyline points="0,48 30,38 60,42 90,28 120,26 150,16 200,10"
-                                            fill="none" stroke="#004532" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-                                        <polygon points="0,48 30,38 60,42 90,28 120,26 150,16 200,10 200,56 0,56"
-                                            fill="url(#chartGrad)"/>
-                                    </svg>
-                                    <div class="lp-chart-labels">
-                                        <span>7 days ago</span><span>Today</span>
-                                    </div>
-                                </div>
-                                <div class="lp-mkt-kv-grid">
-                                    <div class="lp-mkt-kv"><span>7-day Trend</span><strong class="lp-accent">+5.6%</strong></div>
-                                    <div class="lp-mkt-kv"><span>Demand</span><strong>High</strong></div>
-                                    <div class="lp-mkt-kv"><span>Best Market</span><strong>UAE Specialty</strong></div>
-                                    <div class="lp-mkt-kv"><span>Opportunity</span><strong class="lp-accent">92 / 100</strong></div>
-                                </div>
-                                <div class="lp-ai-callout">
-                                    High demand in UAE market — strong selling opportunity right now.
-                                </div>
-                            </div>
-
-                            <!-- AI Insights -->
-                            <div class="lp-card lp-card--tinted">
-                                <h2 class="lp-card__title"><el-icon><Star /></el-icon> AI Lot Insights</h2>
-                                <ul class="lp-insight-list">
-                                    <li class="lp-insight-item lp-insight-item--ok">Lot meets export quality standards.</li>
-                                    <li class="lp-insight-item lp-insight-item--ok">Price is competitive for current demand.</li>
-                                    <li class="lp-insight-item lp-insight-item--ok">Suitable for UAE specialty buyers.</li>
-                                    <li class="lp-insight-item lp-insight-item--warn">Export permit not yet uploaded.</li>
-                                </ul>
-                            </div>
-
-                            <!-- Seller Profile -->
-                            <div class="lp-card">
-                                <h2 class="lp-card__title">Seller / Cooperative</h2>
-                                <div class="lp-seller">
-                                    <div class="lp-seller-avatar">{{ cooperative.charAt(0) }}</div>
-                                    <div>
-                                        <strong class="lp-seller-name">{{ cooperative }}</strong>
-                                        <span class="lp-seller-loc">{{ origin }}</span>
-                                    </div>
-                                </div>
-                                <div class="lp-kv-stack lp-kv-stack--mt">
-                                    <div class="lp-kv-row"><span>Rating</span><strong>★ 4.9 / 5.0</strong></div>
-                                    <div class="lp-kv-row"><span>Status</span><span class="lp-origin-tag" style="font-size:10px;">Verified</span></div>
-                                    <div class="lp-kv-row"><span>Certifications</span><strong>Organic · Fair Trade</strong></div>
-                                </div>
-                                <button class="lp-btn lp-btn--secondary lp-btn--full lp-btn--mt">Contact Seller</button>
-                            </div>
-
-                            <!-- Related Lots -->
-                            <div class="lp-card">
-                                <h2 class="lp-card__title">Related Lots</h2>
-                                <div class="lp-related-stack">
-                                    <div v-for="rl in (relatedLots.length ? relatedLots : [
-                                        { lot_number: 'LOT-2026-002', origin: 'Sipi Falls, Uganda', price_per_kg: 12.5, quality_score: 86.2 },
-                                        { lot_number: 'LOT-2026-003', origin: 'Mt. Elgon, Uganda',  price_per_kg: 11.8, quality_score: 85.5 },
-                                        { lot_number: 'LOT-2026-004', origin: 'Rwenzori, Uganda',   price_per_kg: 13.2, quality_score: 88.0 },
-                                    ])" :key="rl.lot_number" class="lp-related-row">
-                                        <div class="lp-related-row__info">
-                                            <strong>{{ rl.lot_number }}</strong>
-                                            <span>{{ rl.origin }}</span>
-                                        </div>
-                                        <div class="lp-related-row__data">
-                                            <strong class="lp-accent">Shs. {{ fmt(rl.price_per_kg, 2) }}/kg</strong>
-                                            <span>{{ rl.quality_score }} SCA</span>
-                                        </div>
-                                        <a href="#" class="lp-btn lp-btn--tertiary" style="font-size:11px;padding:5px 12px;white-space:nowrap;">View</a>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- ── Sticky mobile buy bar ────────────────────────────────────── -->
-        <div class="lp-mobile-cta">
-            <div class="lp-mobile-cta__price">
-                <span>Price / kg</span>
-                <strong>Shs. {{ pricePerKg }}</strong>
+                <el-dropdown trigger="click" @command="handleOptionsCommand">
+                    <button type="button" class="lp-btn lp-btn--outline">
+                        Options <el-icon class="lp-caret"><ArrowDown /></el-icon>
+                    </button>
+                    <template #dropdown>
+                        <el-dropdown-menu class="lp-options-menu">
+                            <el-dropdown-item command="traceability"><el-icon><Connection /></el-icon> View Traceability</el-dropdown-item>
+                            <el-dropdown-item v-if="lot.can_manage" command="publish"><el-icon><Promotion /></el-icon> Publish to Market</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
             </div>
-            <Link href="/checkout" class="lp-btn lp-btn--primary lp-mobile-cta__buy">
-                <el-icon><ShoppingCart /></el-icon> Buy Now
-            </Link>
+
+            <!-- ── Bento mosaic ─────────────────────────────────────────── -->
+            <div class="lp-bento">
+                <!-- Hero tile -->
+                <div class="lp-tile lp-tile--hero">
+                    <div class="lp-hero__top">
+                        <div class="lp-hero__photo">
+                            <img v-if="lot.image" :src="`/storage/${lot.image}`" :alt="lot.lot_name || lot.lot_number" />
+                            <el-icon v-else :size="30"><Ticket /></el-icon>
+                        </div>
+                        <div class="lp-hero__intro">
+                            <span class="lp-badge" :class="`lp-badge--${statusInfo.tone}`"><span class="lp-badge__dot"></span>{{ statusInfo.label }}</span>
+                            <h2 class="lp-hero__title">{{ lot.lot_name || lot.lot_number }}</h2>
+                        </div>
+                    </div>
+                    <div class="lp-hero__facts">
+                        <span class="lp-hero__fact"><el-icon><Ticket /></el-icon><span class="lp-mono">{{ lot.lot_number }}</span></span>
+                        <span class="lp-hero__fact"><el-icon><HotWater /></el-icon>{{ lot.process || 'Process pending' }}</span>
+                        <span class="lp-hero__fact"><el-icon><Clock /></el-icon>{{ fmtDate(lot.created_at) }}</span>
+                    </div>
+                </div>
+
+                <!-- Stat tiles -->
+                <div class="lp-tile lp-tile--stat">
+                    <div class="lp-kpi__top">
+                        <span class="lp-kpi__icon lp-kpi__icon--weight"><el-icon><Odometer /></el-icon></span>
+                        <span class="lp-tile__label">Net Weight</span>
+                    </div>
+                    <span class="lp-tile__value lp-mono">{{ fmtNumber(lot.net_weight_kg) }}<small>kg</small></span>
+                    <span class="lp-tile__sub">{{ lot.quantity_bags ? `${fmtNumber(lot.quantity_bags, 0)} bags total` : 'Bag count not recorded' }}</span>
+                </div>
+                <div class="lp-tile lp-tile--stat">
+                    <div class="lp-kpi__top">
+                        <span class="lp-kpi__icon lp-kpi__icon--bags"><el-icon><Box /></el-icon></span>
+                        <span class="lp-tile__label">Bags</span>
+                    </div>
+                    <span class="lp-tile__value lp-mono">{{ fmtNumber(lot.quantity_bags, 0) }}</span>
+                    <span class="lp-tile__sub">{{ lot.bag_weight_kg ? `${fmtNumber(lot.bag_weight_kg)} kg each` : 'Bag weight not recorded' }}</span>
+                </div>
+                <div class="lp-tile lp-tile--stat lp-tile--accent">
+                    <div class="lp-kpi__top">
+                        <span class="lp-kpi__icon lp-kpi__icon--price"><el-icon><Coin /></el-icon></span>
+                        <span class="lp-tile__label">Price / kg</span>
+                    </div>
+                    <span class="lp-tile__value lp-mono">{{ lot.price ? `$${fmtNumber(lot.price)}` : '—' }}</span>
+                    <span class="lp-tile__sub">{{ lotValueTotal !== null ? `$${fmtNumber(lotValueTotal)} total value` : 'Total value pending' }}</span>
+                </div>
+                <div class="lp-tile lp-tile--stat">
+                    <div class="lp-kpi__top">
+                        <span class="lp-kpi__icon" :class="`lp-kpi__icon--quality-${qualityTone}`"><el-icon><Trophy /></el-icon></span>
+                        <span class="lp-tile__label">Quality Score</span>
+                    </div>
+                    <span class="lp-tile__value lp-mono">{{ lot.quality_score ? fmtNumber(lot.quality_score) : '—' }}<small v-if="lot.quality_score">/100</small></span>
+                    <span class="lp-tile__sub">{{ qualityLabel }}</span>
+                </div>
+
+                <!-- Specifications -->
+                <div class="lp-tile lp-tile--specs">
+                    <h2 class="lp-tile__title"><el-icon><Operation /></el-icon> Specifications</h2>
+                    <div class="lp-spec-grid">
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><HotWater /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Process</span>
+                                <strong class="lp-spec__value">{{ lot.process || 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Coffee /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Grade</span>
+                                <strong class="lp-spec__value">{{ lot.grade || 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Box /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Packaging Type</span>
+                                <strong class="lp-spec__value">{{ lot.packaging_type || 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Odometer /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Bag Weight</span>
+                                <strong class="lp-spec__value lp-mono">{{ fmtNumber(lot.bag_weight_kg) }} kg</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recorded by -->
+                <div class="lp-tile lp-tile--recorder">
+                    <h2 class="lp-tile__title"><el-icon><User /></el-icon> Recorded By</h2>
+                    <div class="lp-recorder">
+                        <div class="lp-recorder__avatar">{{ recorderInitials }}</div>
+                        <div class="lp-recorder__body">
+                            <div class="lp-recorder__name">{{ lot.user?.name || 'Unknown' }}</div>
+                            <div class="lp-recorder__role">Lot Creator</div>
+                        </div>
+                    </div>
+                    <div class="lp-recorder__meta-row">
+                        <el-icon><Clock /></el-icon>
+                        <span class="lp-mono">{{ fmtDateTime(lot.created_at) }}</span>
+                    </div>
+                </div>
+
+                <!-- Batches count -->
+                <div class="lp-tile lp-tile--stat">
+                    <span class="lp-tile__label"><el-icon><Files /></el-icon> Batches Linked</span>
+                    <span class="lp-tile__value lp-mono">{{ linkedBatches.length }}</span>
+                </div>
+
+                <!-- Description -->
+                <div v-if="lot.description" class="lp-tile lp-tile--wide">
+                    <h2 class="lp-tile__title"><el-icon><Document /></el-icon> Description</h2>
+                    <p class="lp-prose">{{ lot.description }}</p>
+                </div>
+
+                <!-- Notes -->
+                <div v-if="lot.notes" class="lp-tile lp-tile--wide">
+                    <h2 class="lp-tile__title"><el-icon><EditPen /></el-icon> Notes</h2>
+                    <p class="lp-prose">{{ lot.notes }}</p>
+                </div>
+
+                <!-- Linked batches: full-width row, shown first -->
+                <div class="lp-tile lp-tile--full">
+                    <div class="lp-tile__head">
+                        <h2 class="lp-tile__title"><el-icon><Files /></el-icon> Linked Batches</h2>
+                        <button v-if="lot.can_manage" type="button" class="lp-btn lp-btn--primary" @click="showAttachBatch = true">
+                            <el-icon><Plus /></el-icon> Attach Batch
+                        </button>
+                    </div>
+                    <div v-if="linkedBatches.length" class="lp-batch-list">
+                        <Link
+                            v-for="lb in linkedBatches"
+                            :key="lb.id"
+                            :href="lb.batch ? route('batch.show', lb.batch.id) : '#'"
+                            class="lp-batch-row"
+                        >
+                            <span class="lp-batch-row__main">
+                                <span class="lp-batch-row__icon"><el-icon><Box /></el-icon></span>
+                                <span class="lp-batch-row__body">
+                                    <span class="lp-batch-row__number lp-mono">{{ lb.batch?.batch_number || lb.batch_number }}</span>
+                                    <span class="lp-batch-row__meta">
+                                        {{ lb.batch?.variety || '—' }}
+                                        <span v-if="lb.batch?.warehouse_location"> &middot; <el-icon class="lp-batch-row__meta-icon"><Location /></el-icon>{{ lb.batch.warehouse_location }}</span>
+                                    </span>
+                                </span>
+                            </span>
+                            <span v-if="lb.allocation_kg" class="lp-batch-row__stat">
+                                <span class="lp-batch-row__stat-value lp-mono">{{ fmtNumber(lb.allocation_kg) }} kg</span>
+                                <span class="lp-batch-row__stat-label">Drawn</span>
+                            </span>
+                            <span v-if="lb.batch?.status" class="lp-batch-row__status" :class="`lp-batch-row__status--${batchStatusTone(lb.batch.status)}`">{{ lb.batch.status }}</span>
+                            <el-icon class="lp-batch-row__chevron"><ArrowRight /></el-icon>
+                        </Link>
+                    </div>
+                    <p v-else class="lp-empty">No batches linked to this lot yet. Attach one by its batch number to record where this lot's coffee came from.</p>
+                </div>
+
+                <!-- Origin trace row: Farms and Farm Collections as columns -->
+                <div class="lp-tile-row lp-tile-row--2col lp-tile--full">
+                <!-- Farms: origin of the coffee behind this lot's batches -->
+                <div class="lp-tile">
+                    <div class="lp-tile__head">
+                        <h2 class="lp-tile__title"><el-icon><OfficeBuilding /></el-icon> Farms</h2>
+                        <span v-if="sourcedFarms.length" class="lp-tile__count">{{ sourcedFarms.length }}</span>
+                    </div>
+                    <div v-if="sourcedFarms.length" class="lp-batch-list">
+                        <div v-for="entry in sourcedFarms" :key="entry.farm.id" class="lp-batch-row lp-batch-row--static">
+                            <span class="lp-batch-row__main">
+                                <span class="lp-batch-row__icon lp-batch-row__icon--farm"><el-icon><OfficeBuilding /></el-icon></span>
+                                <span class="lp-batch-row__body">
+                                    <span class="lp-batch-row__number">
+                                        {{ entry.farm.name || `Farm #${entry.farm.id}` }}
+                                        <span v-if="entry.farm.farm_code" class="lp-inline-code">{{ entry.farm.farm_code }}</span>
+                                    </span>
+                                    <span class="lp-batch-row__meta">
+                                        {{ [entry.farm.district, entry.farm.region, entry.farm.country].filter(Boolean).join(', ') || 'Location not recorded' }}
+                                        <span> &middot; via {{ entry.batchLabel }}</span>
+                                    </span>
+                                    <span class="lp-farm-facts">
+                                        <span v-if="entry.farm.elevation !== null && entry.farm.elevation !== undefined" class="lp-farm-fact">
+                                            <el-icon><Position /></el-icon>{{ Math.round(entry.farm.elevation) }}m
+                                        </span>
+                                        <span v-if="entry.farm.coffee_type" class="lp-farm-fact">
+                                            <el-icon><Coffee /></el-icon>{{ entry.farm.coffee_type }}
+                                        </span>
+                                        <span v-if="entry.farm.coffee_area !== null && entry.farm.coffee_area !== undefined" class="lp-farm-fact">
+                                            <el-icon><Odometer /></el-icon>{{ entry.farm.coffee_area }} ha
+                                        </span>
+                                    </span>
+                                </span>
+                            </span>
+                            <span class="lp-batch-row__stat">
+                                <span class="lp-batch-row__stat-value lp-mono">{{ entry.collectionCount }}</span>
+                                <span class="lp-batch-row__stat-label">{{ entry.collectionCount === 1 ? 'Collection' : 'Collections' }}</span>
+                            </span>
+                        </div>
+                    </div>
+                    <p v-else class="lp-empty">No farm origin data available for the batches linked to this lot.</p>
+                </div>
+
+                <!-- Farm collections: the sourcing events behind this lot's batches -->
+                <div class="lp-tile">
+                    <div class="lp-tile__head">
+                        <h2 class="lp-tile__title"><el-icon><Coffee /></el-icon> Farm Collections</h2>
+                        <span v-if="sourcedCollections.length" class="lp-tile__count">{{ sourcedCollections.length }}</span>
+                    </div>
+                    <div v-if="sourcedCollections.length" class="lp-batch-list">
+                        <Link
+                            v-for="row in sourcedCollections"
+                            :key="row.link.id"
+                            :href="route('farm-collection.show', row.link.farm_collection_id)"
+                            class="lp-batch-row"
+                        >
+                            <span class="lp-batch-row__main">
+                                <span class="lp-batch-row__icon lp-batch-row__icon--collection"><el-icon><Coffee /></el-icon></span>
+                                <span class="lp-batch-row__body">
+                                    <span class="lp-batch-row__number lp-mono">
+                                        {{ row.link.farm_collection_code }}
+                                        <span v-if="row.link.farm_collection?.initial_grade" class="lp-grade-pill">{{ row.link.farm_collection.initial_grade }}</span>
+                                    </span>
+                                    <span class="lp-batch-row__meta">
+                                        {{ row.link.farm_collection?.farm?.name || 'Unknown farm' }}
+                                        <span> &middot; via {{ row.batch.batch_number }}</span>
+                                    </span>
+                                </span>
+                            </span>
+                            <span v-if="row.link.farm_collection?.quantity" class="lp-batch-row__stat">
+                                <span class="lp-batch-row__stat-value lp-mono">{{ Number(row.link.farm_collection.quantity).toLocaleString() }} {{ row.link.farm_collection.unit || '' }}</span>
+                                <span class="lp-batch-row__stat-label">Qty</span>
+                            </span>
+                            <span class="lp-batch-row__status" :class="`lp-batch-row__status--${batchStatusTone(row.link.farm_collection?.status)}`">{{ row.link.farm_collection?.status || row.link.status }}</span>
+                            <el-icon class="lp-batch-row__chevron"><ArrowRight /></el-icon>
+                        </Link>
+                    </div>
+                    <p v-else class="lp-empty">No farm collections linked via the batches attached to this lot.</p>
+                </div>
+                </div>
+
+                <!-- Activity: journey timeline (farm collection → batching → lotting) -->
+                <div class="lp-tile lp-tile--full">
+                    <div class="lp-tile__head">
+                        <h2 class="lp-tile__title"><el-icon><Clock /></el-icon> Activity</h2>
+                        <span v-if="journeyEvents.length" class="lp-tile__count">{{ journeyEvents.length }}</span>
+                    </div>
+                    <ol v-if="journeyEvents.length" class="lp-timeline">
+                        <li v-for="(event, index) in journeyEvents" :key="index" class="lp-timeline__item">
+                            <span class="lp-timeline__marker" :class="`lp-timeline__marker--${event.stage}`">
+                                <el-icon>
+                                    <Coffee v-if="event.stage === 'collection'" />
+                                    <Box v-else-if="event.stage === 'batching'" />
+                                    <Ticket v-else />
+                                </el-icon>
+                            </span>
+                            <span v-if="index !== journeyEvents.length - 1" class="lp-timeline__line" />
+                            <component
+                                :is="event.href ? Link : 'div'"
+                                :href="event.href"
+                                class="lp-timeline__body"
+                                :class="{ 'lp-timeline__body--link': event.href }"
+                            >
+                                <div class="lp-timeline__head">
+                                    <span class="lp-timeline__stage" :class="`lp-timeline__stage--${event.stage}`">{{ event.stageLabel }}</span>
+                                    <span class="lp-timeline__date">
+                                        <span class="lp-mono">{{ fmtEventDate(event.date) }}</span>
+                                        <span class="lp-timeline__relative">{{ fmtRelative(event.date) }}</span>
+                                    </span>
+                                </div>
+                                <div class="lp-timeline__title-row">
+                                    <span class="lp-timeline__title">{{ event.title }}</span>
+                                    <el-icon v-if="event.href" class="lp-timeline__chevron"><ArrowRight /></el-icon>
+                                </div>
+                                <p v-if="event.subtitle" class="lp-timeline__subtitle">{{ event.subtitle }}</p>
+                            </component>
+                        </li>
+                    </ol>
+                    <p v-else class="lp-empty">No activity recorded yet.</p>
+                </div>
+            </div>
         </div>
 
-        <AttachBatchModal v-model="showAttachBatch" :lot-id="lot.id" />
-
+        <AttachBatchModal v-if="lot.can_manage" v-model="showAttachBatch" :lot-id="lot.id" />
     </DesignPreviewLayout>
 </template>
 
 <style scoped>
-/* ── Design tokens ─────────────────────────────────────────────────────────── */
-.lp-root {
-    --primary:            #004532;
-    --primary-grad:       #065f46;
-    --secondary:          #725a42;
-    --on-primary:         #ffffff;
-    --on-surface:         #191c1e;
-    --on-surface-var:     #74777a;
-    --surface:            #f7f9fb;
-    --surface-low:        #f2f4f6;
-    --surface-high:       #eef2f0;
-    --surface-highest:    #e0e3e5;
-    --surface-white:      #ffffff;
-    --primary-fixed:      #a6f2d1;
-    --on-primary-fixed:   #002116;
-    --secondary-fixed:    #fedcbe;
-    --on-secondary-fixed: #291806;
-    --outline-variant:    #bec9c2;
-    --shadow-ambient:     0px 20px 40px rgba(25,28,30,0.04);
-    --inner-pad:          2rem;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface);
-    color: var(--on-surface);
+/* ── Tokens ───────────────────────────────────────────────────────────── */
+.lp-page {
+    --bg: #FFFFFF;
+    --surface: #FFFFFF;
+    --surface-muted: #FAFAFA;
+    --surface-elevated: #F4F4F5;
+    --border: #E4E4E7;
+    --primary: #000000;
+    --text: #18181B;
+    --text-2: #52525B;
+    --text-muted: #A1A1AA;
+    --accent: #EA580C;
+    --accent-soft: #FFF1E8;
+    --success: #15803D;
+    --success-soft: #F0FDF4;
+    --warning: #B45309;
+    --warning-soft: #FEF3E2;
+    --error: #B91C1C;
+    --info: #1D4ED8;
+    --font-sans: Inter, system-ui, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Consolas, monospace;
+
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
     min-height: 100%;
 }
+.lp-mono { font-family: var(--font-mono); }
 
-/* ── Hero ─────────────────────────────────────────────────────────────────── */
-.lp-hero {
-    background: #ffffff;
-    border-bottom: 1px solid var(--surface-high);
-    padding: 2.5rem 0 0;
+/* ── Page header ──────────────────────────────────────────────────────── */
+.lp-page-header {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
+    margin-bottom: 24px;
 }
-.lp-hero__inner {
-    padding: 0 var(--inner-pad) 2.25rem;
-    display: flex;
-    align-items: flex-start;
-    gap: 2.5rem;
+.lp-page-header__text { min-width: 0; }
+.lp-page-title {
+    font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px;
+    display: flex; align-items: center; gap: 9px;
 }
-.lp-hero__left { flex: 1; min-width: 0; }
-.lp-hero__media { flex-shrink: 0; display: flex; align-items: flex-start; gap: 1rem; }
-.lp-hero__right { flex-shrink: 0; display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+.lp-page-title .el-icon { font-size: 20px; color: currentColor; }
 
-/* Hero tags */
-.lp-tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
-.lp-tag-row--mt { margin-top: 1rem; }
+.lp-options-menu.el-dropdown-menu { border-radius: 6px; border: 1px solid var(--border); padding: 4px; }
+.lp-options-menu :deep(.el-dropdown-menu__item) {
+    display: flex; align-items: center; gap: 8px;
+    border-radius: 6px; font-size: 13px; color: var(--text);
+}
+.lp-options-menu :deep(.el-dropdown-menu__item) .el-icon { font-size: 14px; color: currentColor; }
+.lp-options-menu :deep(.el-dropdown-menu__item:hover) { background: var(--surface-elevated); color: var(--text); }
+.lp-page-description { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; max-width: 60ch; }
 
-.lp-hero-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: var(--surface-low);
-    color: var(--on-surface);
-    border: 1px solid var(--surface-high);
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    padding: 4px 12px;
-    text-transform: uppercase;
+.lp-btn--outline {
+    background: var(--surface-muted); color: var(--text); border-color: var(--border);
 }
-.lp-hero-tag--warm {
-    background: var(--secondary-fixed);
-    color: var(--on-secondary-fixed);
-    border-color: transparent;
-}
-.lp-hero-tag .el-icon { font-size: 11px; }
+.lp-btn--outline:hover { background: var(--surface-elevated); opacity: 1; }
+.lp-caret { font-size: 11px; margin-left: 2px; }
 
-/* Origin tags (on light bg, used in cards/trace) */
-.lp-origin-tag {
-    background: var(--primary-fixed);
-    color: var(--on-primary-fixed);
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    padding: 4px 12px;
-    text-transform: uppercase;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-.lp-origin-tag--warm    { background: var(--secondary-fixed); color: var(--on-secondary-fixed); }
-.lp-origin-tag--pending { background: var(--surface-high); color: var(--on-surface-var); }
-
-.lp-hero__title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    color: var(--on-surface);
-    margin: 0 0 0.75rem;
-}
-.lp-hero__sub {
-    font-size: 0.9rem;
-    color: var(--on-surface-var);
-    margin: 0 0 1.75rem;
-    line-height: 1.6;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-.lp-sub-icon { font-size: 13px; color: var(--on-surface-var); opacity: 0.65; }
-.lp-sub-sep  { color: var(--surface-highest); }
-.lp-hero__actions { display: flex; flex-wrap: wrap; gap: 10px; }
-
-/* Hero action buttons */
-.lp-btn--hero-outline {
-    background: transparent;
-    color: var(--on-surface);
-    border: 1px solid var(--outline-variant);
-    border-radius: 0.375rem;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    padding: 9px 18px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.15s ease;
-}
-.lp-btn--hero-outline:hover { background: var(--surface-low); }
-.lp-btn--hero-ghost {
-    background: transparent;
-    color: var(--on-surface-var);
-    border: 1px solid var(--outline-variant);
-    border-radius: 0.375rem;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    padding: 9px 18px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: color 0.15s ease, background 0.15s ease;
-}
-.lp-btn--hero-ghost:hover { color: var(--on-surface); background: var(--surface-low); }
-
-/* Score card */
-.lp-score-display {
-    background: var(--surface-low);
-    border: 1px solid var(--surface-high);
-    border-radius: 0.75rem;
-    padding: 1.75rem 2.25rem;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    min-width: 160px;
-}
-.lp-score-display__num {
-    font-size: 2rem;
-    font-weight: 900;
-    letter-spacing: -0.03em;
-    color: var(--primary);
-    line-height: 1;
-}
-.lp-score-display__label {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--on-surface-var);
-    text-transform: uppercase;
-}
-.lp-score-display__grade {
-    margin-top: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: var(--primary-fixed);
-    color: var(--on-primary-fixed);
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 12px;
-}
-
-/* Coffee photo */
-.lp-hero__photo {
-    width: 160px;
-    height: 160px;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    flex-shrink: 0;
-    border: 1px solid var(--surface-high);
-    background: var(--surface-low);
-}
-.lp-hero__photo-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-/* QR block */
-.lp-qr-block {
-    background: var(--surface-low);
-    border: 1px solid var(--surface-high);
-    border-radius: 0.75rem;
-    padding: 1rem;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    width: 160px;
-}
-.lp-qr-label {
-    font-size: 0.6875rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    color: var(--on-surface-var);
-    text-transform: uppercase;
-    margin: 0;
-}
-.lp-qr-svg {
-    width: 80px;
-    height: 80px;
-    display: block;
-}
-.lp-qr-id {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: var(--primary);
-    font-family: 'IBM Plex Mono', monospace;
-    margin: 0;
-    letter-spacing: 0.04em;
-}
-
-/* Hero zones strip */
-.lp-hero__zones {
-    padding: 0 var(--inner-pad);
+/* ── Bento grid ───────────────────────────────────────────────────────── */
+.lp-bento {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    background: var(--surface-white);
-    border-top: 1px solid var(--surface-high);
-}
-.lp-hero-zone {
-    padding: 1.5rem;
-    background: var(--surface-white);
-}
-.lp-hero-zone + .lp-hero-zone {
-    border-left: 1px solid var(--surface-high);
-}
-.lp-zone-eyebrow {
-    font-size: 0.6875rem;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    color: var(--primary);
-    text-transform: uppercase;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.lp-zone-eyebrow .el-icon { font-size: 13px; }
-
-.lp-zone-kv-list { display: grid; gap: 0; }
-
-.lp-zone-kv {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.8125rem;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--surface-low);
-}
-.lp-zone-kv:last-child { border-bottom: none; padding-bottom: 0; }
-.lp-zone-kv:first-child { padding-top: 0; }
-
-.lp-zone-kv--chips { align-items: flex-start; }
-
-.lp-zone-kv__label {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--on-surface-var);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-.lp-zone-kv__label .el-icon { font-size: 12px; opacity: 0.65; }
-
-.lp-zone-kv strong { color: var(--on-surface); font-weight: 600; text-align: right; }
-
-.lp-zone-flavor-row { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; }
-.lp-flavor-chip {
-    background: var(--surface-low);
-    color: var(--on-surface);
-    font-size: 10px;
-    font-weight: 600;
-    border-radius: 999px;
-    padding: 3px 10px;
+    grid-auto-rows: minmax(96px, auto);
+    grid-auto-flow: dense;
+    gap: 14px;
 }
 
-.lp-status-pill {
-    background: var(--primary-fixed);
-    color: var(--on-primary-fixed);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    border-radius: 999px;
-    padding: 2px 10px;
-    text-transform: uppercase;
-}
-.lp-demand-chip {
-    background: var(--secondary-fixed);
-    color: var(--on-secondary-fixed);
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    border-radius: 4px;
-    padding: 2px 8px;
-}
-.lp-accent { color: var(--primary) !important; }
-
-/* ── Buttons ──────────────────────────────────────────────────────────────── */
-.lp-btn {
-    font-family: 'Manrope', system-ui, sans-serif;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    border-radius: 0.375rem;
-    padding: 9px 18px;
-    border: none;
-    cursor: pointer;
-    transition: background 0.15s ease, opacity 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    text-decoration: none;
-}
-.lp-btn--primary {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-grad) 100%);
-    color: var(--on-primary);
-}
-.lp-btn--primary:hover { opacity: 0.9; }
-.lp-btn--secondary {
-    background: var(--secondary-fixed);
-    color: var(--on-secondary-fixed);
-}
-.lp-btn--secondary:hover { opacity: 0.88; }
-.lp-btn--tertiary {
-    background: transparent;
-    color: var(--primary);
-}
-.lp-btn--tertiary:hover { background: var(--surface-high); }
-.lp-btn--full { width: 100%; margin-top: 1rem; }
-.lp-btn--mt   { margin-top: 1.25rem; }
-
-/* ── Sections ─────────────────────────────────────────────────────────────── */
-.lp-section { padding: 2.5rem 0; }
-.lp-section--white { background: var(--surface-white); border-top: 1px solid var(--surface-high); }
-.lp-section--base  { background: var(--surface-white); border-top: 1px solid var(--surface-high); }
-.lp-section__inner { padding: 0 var(--inner-pad); }
-.lp-eyebrow {
-    font-size: 0.6875rem;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    color: var(--on-surface-var);
-    text-transform: uppercase;
-    margin: 0 0 1.75rem;
-}
-
-/* ── Traceability ─────────────────────────────────────────────────────────── */
-.lp-trace {
-    display: flex;
-    align-items: flex-start;
-    gap: 0;
-    overflow-x: auto;
-    padding-bottom: 4px;
-}
-.lp-trace-connector {
-    flex: 1;
-    height: 2px;
-    background: var(--surface-high);
-    align-self: center;
-    min-width: 32px;
-    margin: 0 -2px;
-    margin-top: -1.25rem;
-}
-.lp-trace-step { display: flex; align-items: flex-start; gap: 12px; min-width: 140px; }
-.lp-trace-node {
-    width: 32px; height: 32px; border-radius: 50%;
-    background: var(--surface-high);
-    color: var(--on-surface-var);
-    font-size: 12px; font-weight: 800;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-}
-.lp-trace-node--active {
-    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
-    color: var(--on-primary);
-}
-.lp-trace-body { display: grid; gap: 3px; }
-.lp-trace-tag {
-    font-size: 0.6875rem; font-weight: 800;
-    letter-spacing: 0.12em; color: var(--on-surface-var); text-transform: uppercase;
-}
-.lp-trace-body strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
-.lp-trace-body span   { font-size: 0.75rem; color: var(--on-surface-var); }
-.lp-trace-link { font-size: 0.75rem; font-weight: 600; color: var(--primary); text-decoration: none; }
-.lp-trace-link:hover { text-decoration: underline; }
-
-/* ── Main grid ────────────────────────────────────────────────────────────── */
-.lp-main-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
-    gap: 2rem;
-    align-items: start;
-}
-.lp-main-col  { display: grid; gap: 2rem; }
-.lp-side-col  { display: grid; gap: 2rem; }
-
-/* ── Cards ────────────────────────────────────────────────────────────────── */
-.lp-card {
-    background: #ffffff;
-    border: 1px solid var(--surface-high);
-    border-radius: 0.5rem;
-    padding: 1.75rem;
-}
-.lp-card--tinted { background: #f6fdf9; border-color: #c8e6d4; }
-.lp-card__title {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    letter-spacing: 0;
-    color: var(--on-surface);
-    margin: 0 0 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.lp-card__title .el-icon { font-size: 15px; color: var(--primary); }
-.lp-card__head-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
-}
-.lp-card__head-row .lp-card__title { margin-bottom: 0; }
-
-/* ── Quality bars ─────────────────────────────────────────────────────────── */
-.lp-quality-layout { display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: start; }
-.lp-quality-bars { display: grid; gap: 14px; }
-.lp-bar-row { display: grid; gap: 6px; }
-.lp-bar-row__meta { display: flex; justify-content: space-between; font-size: 0.8125rem; }
-.lp-bar-row__meta span   { color: var(--on-surface-var); }
-.lp-bar-row__meta strong { color: var(--primary); font-weight: 700; }
-.lp-bar-track {
-    height: 5px; background: var(--surface-high);
-    border-radius: 999px; overflow: hidden;
-}
-.lp-bar-fill {
-    height: 100%; border-radius: 999px;
-    background: linear-gradient(90deg, var(--primary), var(--primary-grad));
-    transition: width 0.4s ease;
-}
-.lp-defect-note {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-top: 6px; font-size: 0.8125rem;
-}
-.lp-defect-note span:first-child { color: var(--on-surface-var); }
-.lp-defect-val {
-    background: var(--surface-low);
-    color: var(--on-surface);
-    font-weight: 600;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 0.75rem;
-}
-.lp-radar-area { background: var(--surface-low); border-radius: 0.5rem; padding: 12px; width: 180px; }
-.lp-radar { width: 100%; }
-.lp-radar-lbl { fill: var(--on-surface-var); font-size: 9px; font-family: 'Manrope', sans-serif; }
-
-.lp-qi-score { text-align: right; flex-shrink: 0; }
-.lp-qi-score__num {
-    display: block;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 1.625rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    color: var(--primary);
-    line-height: 1;
-}
-.lp-qi-score__label {
-    display: block;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--on-surface-var);
-    margin-top: 3px;
-}
-
-/* ── Cupping profile ──────────────────────────────────────────────────────── */
-.lp-cupping-grid {
-    display: grid;
-    grid-template-columns: 1fr 220px;
-    gap: 2rem;
-    align-items: start;
-}
-.lp-cupping-attrs { display: grid; gap: 10px; }
-.lp-cupping-attr-row { display: grid; gap: 5px; }
-.lp-cupping-attr-meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.8125rem;
-}
-.lp-cupping-attr-meta span   { color: var(--on-surface-var); }
-.lp-cupping-attr-meta strong { color: var(--primary); font-weight: 700; }
-
-.lp-cupping-aside { display: flex; flex-direction: column; gap: 1.25rem; }
-.lp-cupping-total {
-    background: var(--surface-low);
-    border: 1px solid var(--surface-high);
-    border-radius: 0.75rem;
-    padding: 1.25rem;
-    text-align: center;
+.lp-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 2px;
+    min-width: 0;
 }
-.lp-cupping-total__num {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 2.25rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    color: var(--primary);
-    line-height: 1;
-}
-.lp-cupping-total__label {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--on-surface-var);
-    margin-bottom: 2px;
-}
-.lp-cupping-flavor-block { display: flex; flex-direction: column; gap: 8px; }
-.lp-cupping-flavor-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--on-surface-var);
-    margin: 0;
-}
+.lp-tile--hero { grid-column: span 2; grid-row: span 2; background: var(--surface-muted); justify-content: space-between; gap: 16px; }
+.lp-tile--stat { justify-content: center; gap: 6px; }
+.lp-tile--accent { background: var(--accent-soft); border-color: transparent; }
+.lp-tile--specs { grid-column: span 2; }
+.lp-tile--wide { grid-column: span 2; }
+.lp-tile--full { grid-column: span 4; }
 
-/* ── KV stack ─────────────────────────────────────────────────────────────── */
-.lp-kv-stack { display: grid; gap: 0; }
-.lp-kv-stack--mt { margin-top: 1.25rem; }
-.lp-empty-note { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0.75rem 0 0; }
-.lp-kv-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.8125rem;
-    padding: 10px 0;
-    background: linear-gradient(var(--surface-low) 0, var(--surface-low) 100%) no-repeat left bottom / 100% 1px;
+/* ── Origin trace row: Farms / Farm Collections columns ─────────────────── */
+.lp-tile-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
 }
-.lp-kv-row:last-child { background: none; }
-.lp-kv-row span   { color: var(--on-surface-var); }
-.lp-kv-row strong { color: var(--on-surface); font-weight: 600; text-align: right; }
+.lp-tile-row--2col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lp-tile-row .lp-tile__head { flex-wrap: wrap; row-gap: 10px; }
+/* Columns are narrow, so stack each row's stat/status below its icon+text
+   instead of squeezing everything onto one line. */
+.lp-tile-row .lp-batch-row { flex-wrap: wrap; row-gap: 8px; }
+.lp-tile-row .lp-batch-row__main { flex: 1 1 100%; }
+.lp-tile-row .lp-batch-row__stat { align-items: flex-start; }
+.lp-tile-row .lp-batch-row__chevron { display: none; }
 
-/* ── Two-col cards ────────────────────────────────────────────────────────── */
-.lp-two-col-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; }
-
-/* ── Ring ─────────────────────────────────────────────────────────────────── */
-.lp-ring-wrap { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
-.lp-ring { transform: rotate(-90deg); width: 48px; height: 48px; }
-.lp-ring-label {
-    position: absolute; inset: 0;
+/* ── Hero tile ────────────────────────────────────────────────────────── */
+.lp-hero__top { display: flex; align-items: center; gap: 16px; }
+.lp-hero__photo {
+    width: 72px; height: 72px; border-radius: 10px; flex-shrink: 0;
+    background: var(--surface-elevated); border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
-    font-size: 10px; font-weight: 800; color: var(--primary);
+    color: var(--text-muted); overflow: hidden;
+}
+.lp-hero__photo img { width: 100%; height: 100%; object-fit: cover; }
+.lp-hero__intro { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lp-hero__title { font-size: 25px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-hero__facts { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
+.lp-hero__fact {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 26px; padding: 0 10px; border-radius: 999px;
+    background: var(--surface-elevated); border: 1px solid var(--border);
+    font-size: 12px; font-weight: 600; color: var(--text-2);
+}
+.lp-hero__fact .el-icon { font-size: 12px; color: var(--text-muted); }
+
+/* ── Badges ───────────────────────────────────────────────────────────── */
+.lp-badge {
+    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+    height: 22px; padding: 0 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+    background: var(--surface-elevated); border: 1px solid var(--border); color: var(--text-2);
+}
+.lp-badge__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.lp-badge--success { color: var(--success); background: var(--success-soft); border-color: transparent; }
+.lp-badge--warning { color: var(--warning); background: var(--warning-soft); border-color: transparent; }
+.lp-badge--error { color: var(--error); background: #FEF2F2; border-color: transparent; }
+.lp-badge--info { color: var(--info); background: #EFF6FF; border-color: transparent; }
+
+/* ── Stat tiles ───────────────────────────────────────────────────────── */
+.lp-tile__label { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.lp-tile__label .el-icon { font-size: 12px; }
+.lp-tile__value { font-size: 22px; line-height: 28px; font-weight: 700; color: var(--text); display: flex; align-items: baseline; gap: 4px; }
+.lp-tile__value small { font-size: 11px; font-weight: 500; color: var(--text-muted); }
+.lp-tile__sub { font-size: 11px; color: var(--text-muted); }
+.lp-tile--accent .lp-tile__label { color: #C2410C; }
+.lp-tile--accent .lp-tile__value { color: #9A3412; }
+.lp-tile--accent .lp-tile__sub { color: #C2410C; }
+
+.lp-kpi__top { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.lp-kpi__icon {
+    width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-elevated); color: var(--text-muted); font-size: 13px;
+}
+.lp-kpi__icon--weight { background: #EFF6FF; color: var(--info); }
+.lp-kpi__icon--bags { background: var(--surface-elevated); color: var(--text-2); }
+.lp-kpi__icon--price { background: var(--accent-soft); color: #C2410C; }
+.lp-kpi__icon--quality-good { background: var(--success-soft); color: var(--success); }
+.lp-kpi__icon--quality-warn { background: var(--warning-soft); color: var(--warning); }
+.lp-kpi__icon--quality-neutral { background: var(--surface-elevated); color: var(--text-muted); }
+
+/* ── Tile headers ─────────────────────────────────────────────────────── */
+.lp-tile__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.lp-tile__head .lp-tile__title { margin: 0; }
+.lp-tile__title {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    margin: 0 0 14px; display: flex; align-items: center; gap: 6px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+}
+.lp-tile__title .el-icon { font-size: 13px; color: currentColor; }
+.lp-tile__count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 20px; height: 20px; padding: 0 6px; margin-top: -1px;
+    border-radius: 999px; background: var(--surface-elevated); color: var(--text-2);
+    font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
 
-/* ── Checklist ────────────────────────────────────────────────────────────── */
-.lp-checklist { display: grid; gap: 10px; }
-.lp-check-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.8125rem;
-    padding: 10px 14px;
-    border-radius: 6px;
-    background: var(--surface-low);
-    color: var(--on-surface);
+/* ── Specifications ───────────────────────────────────────────────────── */
+.lp-spec-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; flex: 1; align-content: start; }
+.lp-spec { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.lp-spec__icon {
+    width: 30px; height: 30px; border-radius: 6px; flex-shrink: 0;
+    background: var(--surface-elevated); color: var(--text-2);
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
 }
-.lp-check-item--gap { background: #fff9f5; }
-.lp-check-dot {
-    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-    background: var(--surface-highest);
+.lp-spec__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.lp-spec__label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.lp-spec__value { font-size: 13.5px; font-weight: 600; color: var(--text); }
+
+.lp-prose { font-size: 13.5px; line-height: 21px; color: var(--text-2); margin: 0; white-space: pre-line; flex: 1; }
+
+/* ── Recorded by ──────────────────────────────────────────────────────── */
+.lp-recorder { display: flex; align-items: center; gap: 12px; }
+.lp-recorder__avatar {
+    width: 40px; height: 40px; border-radius: 999px; flex-shrink: 0;
+    background: var(--accent-soft); color: #C2410C; border: 1px solid transparent;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
 }
-.lp-check-item--done .lp-check-dot {
-    background: var(--primary-fixed);
-    box-shadow: inset 0 0 0 2.5px var(--on-primary-fixed);
+.lp-recorder__body { min-width: 0; }
+.lp-recorder__name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.lp-recorder__role { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.lp-recorder__meta-row {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+    font-size: 11.5px; color: var(--text-2);
 }
-.lp-check-missing {
-    margin-left: auto;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--secondary);
-    background: var(--secondary-fixed);
-    border-radius: 4px;
-    padding: 2px 8px;
+.lp-recorder__meta-row .el-icon { font-size: 12px; color: var(--text-muted); }
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.lp-btn {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    height: 32px; padding: 0 13px; border-radius: 6px;
+    font-size: 12.5px; font-weight: 600; border: 1px solid transparent;
+    cursor: pointer; transition: opacity 120ms ease;
+}
+.lp-btn--primary { background: var(--primary); color: #fff; }
+.lp-btn--primary:hover { opacity: 0.88; }
+
+/* ── Linked batches ───────────────────────────────────────────────────── */
+.lp-batch-list { display: flex; flex-direction: column; }
+.lp-batch-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 13px 4px; border-bottom: 1px solid var(--border);
+    text-decoration: none; color: inherit;
+    transition: background 120ms ease;
+}
+.lp-batch-row:last-child { border-bottom: none; }
+.lp-batch-row:hover { background: var(--surface-muted); margin: 0 -12px; padding: 13px 16px; border-radius: 8px; }
+.lp-batch-row:hover .lp-batch-row__icon { background: var(--accent-soft); color: #C2410C; }
+.lp-batch-row:hover .lp-batch-row__chevron { opacity: 1; transform: translateX(0); }
+.lp-batch-row--static { cursor: default; align-items: flex-start; }
+.lp-batch-row--static:hover { background: none; margin: 0; padding: 13px 4px; border-radius: 0; }
+.lp-batch-row--static:hover .lp-batch-row__icon { background: var(--surface-elevated); color: var(--text-2); }
+.lp-batch-row--static .lp-batch-row__main { align-items: flex-start; }
+.lp-batch-row--static .lp-batch-row__icon { margin-top: 1px; }
+.lp-batch-row--static .lp-batch-row__stat { padding-top: 1px; }
+.lp-farm-facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.lp-farm-fact {
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 22px; padding: 0 8px; border-radius: 999px;
+    background: var(--surface-elevated); color: var(--text-2);
+    font-size: 11px; font-weight: 600;
+}
+.lp-farm-fact .el-icon { font-size: 11px; color: var(--text-muted); }
+.lp-batch-row__main { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+.lp-batch-row__icon {
+    width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+    background: var(--surface-elevated); color: var(--text-2);
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+    transition: background 120ms ease, color 120ms ease;
+}
+.lp-batch-row__icon--farm { background: var(--success-soft); color: var(--success); }
+.lp-batch-row--static:hover .lp-batch-row__icon--farm { background: var(--success-soft); color: var(--success); }
+.lp-batch-row__icon--collection { background: var(--warning-soft); color: var(--warning); }
+.lp-batch-row:hover .lp-batch-row__icon--collection { background: #FDE68A; color: #92400E; }
+.lp-batch-row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lp-batch-row__number { font-size: 13.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-inline-code {
+    display: inline-flex; align-items: center; vertical-align: middle; margin-left: 6px;
+    padding: 1px 6px; border-radius: 4px;
+    background: var(--surface-elevated); color: var(--text-muted);
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+}
+.lp-grade-pill {
+    display: inline-flex; align-items: center; vertical-align: middle; margin-left: 6px;
+    padding: 1px 7px; border-radius: 999px;
+    background: var(--accent-soft); color: #9A3412;
+    font-family: var(--font-sans); font-size: 10px; font-weight: 700;
+}
+.lp-batch-row__meta { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-batch-row__meta-icon { font-size: 11px; margin-left: 2px; }
+.lp-batch-row__stat { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+.lp-batch-row__stat-value { font-size: 12.5px; font-weight: 700; color: var(--text); white-space: nowrap; }
+.lp-batch-row__stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+.lp-batch-row__status {
+    flex-shrink: 0; text-transform: capitalize;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--surface-elevated); color: var(--text-2);
+    font-size: 11px; font-weight: 600;
+}
+.lp-batch-row__status--good { background: var(--success-soft); color: var(--success); }
+.lp-batch-row__status--warn { background: var(--warning-soft); color: var(--warning); }
+.lp-batch-row__status--bad { background: #FEF2F2; color: var(--error); }
+.lp-batch-row__chevron {
+    flex-shrink: 0; font-size: 13px; color: var(--text-muted);
+    opacity: 0; transform: translateX(-3px);
+    transition: opacity 120ms ease, transform 120ms ease;
 }
 
-/* ── Trade grid ───────────────────────────────────────────────────────────── */
-.lp-trade-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.lp-trade-card {
-    background: var(--surface-low);
-    border-radius: 0.5rem;
-    padding: 1.25rem;
-    text-align: center;
-}
-.lp-trade-card--primary { background: #f0faf5; }
-.lp-trade-card__eyebrow {
-    font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.12em;
-    color: var(--on-surface-var); text-transform: uppercase; margin-bottom: 0.75rem;
-}
-.lp-trade-card__price {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 1.125rem; font-weight: 700; color: var(--on-surface); letter-spacing: -0.01em;
-}
-.lp-trade-card__price small { font-size: 0.75rem; font-weight: 500; color: var(--on-surface-var); }
-.lp-trade-card__meta { font-size: 0.75rem; color: var(--on-surface-var); margin-top: 4px; }
+.lp-empty { font-size: 13px; color: var(--text-muted); margin: 0; }
 
-/* ── Documents ────────────────────────────────────────────────────────────── */
-.lp-doc-grid { display: grid; gap: 8px; }
-.lp-doc-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-radius: 6px;
-    padding: 11px 14px;
-    font-size: 0.8125rem;
-    border: 1px solid transparent;
+/* ── Activity: journey timeline ──────────────────────────────────────── */
+.lp-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lp-timeline__item { position: relative; display: flex; gap: 14px; padding-bottom: 22px; }
+.lp-timeline__item:last-child { padding-bottom: 0; }
+.lp-timeline__marker {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-elevated); color: var(--text-2);
+    font-size: 13px; z-index: 1;
 }
-.lp-doc-item--ok      { background: var(--surface-low); }
-.lp-doc-item--missing { background: #fffbf5; border-color: #fde8cc; }
-
-.lp-doc-icon          { font-size: 15px; flex-shrink: 0; }
-.lp-doc-icon--ok      { color: var(--primary); }
-.lp-doc-icon--gap     { color: #d97706; }
-
-.lp-doc-item__info    { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.lp-doc-item__label   { color: var(--on-surface); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lp-doc-item__meta    { font-size: 0.6875rem; color: var(--on-surface-var); display: flex; gap: 4px; }
-.lp-doc-cat           { background: var(--surface-high); border-radius: 4px; padding: 1px 6px; font-weight: 700; font-size: 0.625rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--on-surface-var); }
-
-.lp-doc-badge         { font-size: 0.625rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 4px; padding: 2px 8px; white-space: nowrap; flex-shrink: 0; }
-.lp-doc-badge--ok     { background: var(--primary-fixed); color: var(--on-primary-fixed); }
-.lp-doc-badge--gap    { background: #fde8cc; color: #92400e; }
-
-.lp-doc-item__actions { display: flex; gap: 6px; flex-shrink: 0; }
-.lp-doc-dl-btn        { padding: 5px 8px !important; font-size: 13px !important; color: var(--on-surface-var) !important; }
-.lp-doc-dl-btn:hover  { background: var(--surface-high) !important; color: var(--primary) !important; }
-.lp-doc-dl-btn--upload:hover { color: #d97706 !important; }
-
-.lp-doc-summary       { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.lp-doc-summary__text { font-size: 0.75rem; font-weight: 700; color: var(--on-surface-var); }
-
-/* ── Timeline ─────────────────────────────────────────────────────────────── */
-.lp-timeline { display: grid; gap: 0; position: relative; }
-.lp-tl-item {
-    display: flex; align-items: flex-start; gap: 16px;
-    padding-bottom: 1.5rem; position: relative;
+.lp-timeline__marker--collection { background: var(--success-soft); color: var(--success); }
+.lp-timeline__marker--batching { background: var(--accent-soft); color: #C2410C; }
+.lp-timeline__marker--lotting { background: #EFF6FF; color: var(--info); }
+.lp-timeline__line { position: absolute; left: 14.5px; top: 30px; bottom: 0; width: 1px; background: var(--border); }
+.lp-timeline__body { flex: 1; min-width: 0; padding-top: 4px; display: block; text-decoration: none; color: inherit; }
+.lp-timeline__body--link { cursor: pointer; }
+.lp-timeline__body--link:hover .lp-timeline__title { color: var(--accent); }
+.lp-timeline__body--link:hover .lp-timeline__chevron { opacity: 1; transform: translateX(0); }
+.lp-timeline__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.lp-timeline__stage {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 999px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    background: var(--surface-elevated); color: var(--text-2);
 }
-.lp-tl-item:last-child { padding-bottom: 0; }
-.lp-tl-dot {
-    width: 14px; height: 14px; border-radius: 50%;
-    background: var(--surface-high);
-    flex-shrink: 0; z-index: 1; margin-top: 2px;
+.lp-timeline__stage--collection { background: var(--success-soft); color: var(--success); }
+.lp-timeline__stage--batching { background: var(--accent-soft); color: #C2410C; }
+.lp-timeline__stage--lotting { background: #EFF6FF; color: var(--info); }
+.lp-timeline__date { display: flex; align-items: baseline; gap: 6px; flex-shrink: 0; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.lp-timeline__relative { color: var(--text-muted); }
+.lp-timeline__title-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.lp-timeline__title { font-size: 13.5px; font-weight: 700; color: var(--text); transition: color 120ms ease; }
+.lp-timeline__chevron {
+    font-size: 12px; color: var(--text-muted);
+    opacity: 0; transform: translateX(-3px);
+    transition: opacity 120ms ease, transform 120ms ease;
 }
-.lp-tl-item--done .lp-tl-dot {
-    background: var(--primary-fixed);
-    box-shadow: inset 0 0 0 3px var(--surface-white);
-    outline: 2px solid var(--primary);
-}
-.lp-tl-spine {
-    position: absolute;
-    left: 6px; top: 16px; bottom: 0;
-    width: 2px;
-    background: var(--surface-high);
-}
-.lp-tl-item--done .lp-tl-spine { background: var(--primary-fixed); }
-.lp-tl-body strong { display: block; font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
-.lp-tl-body span   { font-size: 0.75rem; color: var(--on-surface-var); }
-.lp-tl-item--pending .lp-tl-body strong { color: var(--on-surface-var); }
+.lp-timeline__subtitle { font-size: 12px; color: var(--text-2); margin: 3px 0 0; }
 
-/* ── Market ───────────────────────────────────────────────────────────────── */
-.lp-market-hero { margin-bottom: 1rem; }
-.lp-market-hero span   { display: block; font-size: 0.75rem; color: var(--on-surface-var); margin-bottom: 4px; }
-.lp-market-hero strong { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; color: var(--on-surface); }
-.lp-chart-wrap { background: var(--surface-low); border-radius: 0.5rem; padding: 12px 8px 6px; margin-bottom: 1.25rem; }
-.lp-chart-labels {
-    display: flex; justify-content: space-between;
-    font-size: 0.6875rem; color: var(--on-surface-var); padding: 0 4px;
-}
-.lp-mkt-kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
-.lp-mkt-kv {
-    background: var(--surface-low); border-radius: 6px;
-    padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;
-}
-.lp-mkt-kv span   { font-size: 0.6875rem; color: var(--on-surface-var); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
-.lp-mkt-kv strong { font-size: 0.9375rem; font-weight: 800; color: var(--on-surface); }
-.lp-ai-callout {
-    background: var(--primary-fixed);
-    color: var(--on-primary-fixed);
-    border-radius: 6px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    line-height: 1.6;
-    padding: 12px 14px;
-}
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 1100px) { .lp-page { padding: 0 24px; } }
 
-/* ── Insights ─────────────────────────────────────────────────────────────── */
-.lp-insight-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.lp-insight-item {
-    font-size: 0.8125rem;
-    line-height: 1.6;
-    padding: 10px 14px 10px 36px;
-    border-radius: 6px;
-    position: relative;
-    color: var(--on-surface);
-}
-.lp-insight-item::before {
-    content: '';
-    position: absolute;
-    left: 14px; top: 50%; transform: translateY(-50%);
-    width: 10px; height: 10px; border-radius: 50%;
-}
-.lp-insight-item--ok   { background: var(--surface-low); }
-.lp-insight-item--ok::before   { background: var(--primary-fixed); }
-.lp-insight-item--warn { background: #fffbf0; }
-.lp-insight-item--warn::before { background: var(--secondary-fixed); }
-
-/* ── Seller ───────────────────────────────────────────────────────────────── */
-.lp-seller { display: flex; align-items: center; gap: 14px; margin-bottom: 1rem; }
-.lp-seller-avatar {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--primary-grad));
-    color: var(--on-primary);
-    font-size: 18px; font-weight: 800;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.lp-seller-name { display: block; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
-.lp-seller-loc  { display: block; font-size: 0.75rem; color: var(--on-surface-var); margin-top: 2px; }
-
-/* ── Related lots ─────────────────────────────────────────────────────────── */
-.lp-related-stack { display: grid; gap: 10px; }
-.lp-related-row {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--surface-low); border-radius: 6px; padding: 12px 14px;
-}
-.lp-related-row__info { flex: 1; }
-.lp-related-row__info strong { display: block; font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
-.lp-related-row__info span   { display: block; font-size: 0.75rem; color: var(--on-surface-var); }
-.lp-related-row__data { text-align: right; }
-.lp-related-row__data strong { display: block; font-size: 0.8125rem; font-weight: 700; }
-.lp-related-row__data span   { display: block; font-size: 0.6875rem; color: var(--on-surface-var); }
-
-/* ── Sticky mobile buy bar (hidden above the mobile breakpoint) ──────────── */
-.lp-mobile-cta { display: none; }
-
-/* ── Responsive ───────────────────────────────────────────────────────────── */
-
-/* Tablet landscape */
-@media (max-width: 1200px) {
-    .lp-hero__zones { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* Tablet portrait */
 @media (max-width: 900px) {
-    .lp-root { --inner-pad: 1.25rem; }
-
-    /* Hero */
-    .lp-hero { padding: 1.75rem 0 0; }
-    .lp-hero__inner { flex-direction: row; align-items: center; gap: 1.25rem; padding-bottom: 1.5rem; }
-    .lp-hero__title { font-size: 1.25rem; }
-    .lp-hero__sub { font-size: 0.8125rem; }
-    .lp-hero__actions { gap: 8px; }
-    .lp-hero__photo { width: 120px; height: 120px; }
-    .lp-score-display { padding: 1.25rem 1.5rem; min-width: 130px; }
-    .lp-score-display__num { font-size: 1.75rem; }
-    .lp-qr-block { width: 130px; }
-    .lp-qr-svg { width: 64px; height: 64px; }
-
-    /* Layout */
-    .lp-main-grid { grid-template-columns: 1fr; }
-    .lp-two-col-cards { grid-template-columns: 1fr; }
-    .lp-trade-grid { grid-template-columns: 1fr; }
-    .lp-quality-layout { grid-template-columns: 1fr; }
-    .lp-radar-area { width: 100%; }
-    .lp-cupping-grid { grid-template-columns: 1fr; }
-
-    /* Sections */
-    .lp-section { padding: 2rem 0; }
-
-    /* Trace */
-    .lp-trace { overflow-x: auto; padding-bottom: 4px; }
+    .lp-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .lp-tile--hero { grid-column: span 2; }
+    .lp-tile--specs, .lp-tile--wide { grid-column: span 2; }
+    .lp-tile--full { grid-column: span 2; }
+    .lp-tile-row { grid-template-columns: 1fr; }
 }
 
-/* Mobile */
-@media (max-width: 640px) {
-    .lp-root { --inner-pad: 1rem; }
-
-    /* Hero — stack vertically; photo + QR shrink into a compact row instead of disappearing */
-    .lp-hero { padding: 1.25rem 0 0; }
-    .lp-hero__inner { flex-direction: column; gap: 1rem; padding-bottom: 1.25rem; }
-    .lp-hero__media { width: 100%; }
-    .lp-hero__photo { width: 84px; height: 84px; }
-    .lp-hero__right { align-items: flex-start; }
-    .lp-qr-block { flex-direction: row; width: auto; padding: 0.625rem 0.875rem; gap: 10px; }
-    .lp-qr-svg { width: 44px; height: 44px; }
-    .lp-qr-label { display: none; }
-    .lp-hero__title { font-size: 1.5rem; margin-bottom: 0.5rem; }
-    .lp-hero__sub { font-size: 0.8125rem; gap: 4px; }
-    .lp-hero__actions {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        padding-bottom: 4px;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
-    .lp-hero__actions::-webkit-scrollbar { display: none; }
-    .lp-btn { white-space: nowrap; flex-shrink: 0; }
-
-    /* Hero zones — 1 col */
-    .lp-hero__zones { grid-template-columns: 1fr; }
-    .lp-hero-zone + .lp-hero-zone { border-left: none; border-top: 1px solid var(--surface-high); }
-    .lp-hero-zone:nth-child(3),
-    .lp-hero-zone:nth-child(4) { border-top: 1px solid var(--surface-high); }
-    .lp-hero-zone { padding: 1rem; }
-
-    /* Tag row — scroll */
-    .lp-tag-row {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: none;
-        padding-bottom: 2px;
-    }
-    .lp-tag-row::-webkit-scrollbar { display: none; }
-    .lp-hero-tag { flex-shrink: 0; }
-
-    /* Sections */
-    .lp-section { padding: 1.5rem 0; }
-
-    /* Cards */
-    .lp-card { padding: 1.25rem; }
-    .lp-card__title { margin-bottom: 1rem; }
-
-    /* Traceability — vertical */
-    .lp-trace { flex-direction: column; gap: 0; }
-    .lp-trace-step { padding: 0.75rem 0; }
-    .lp-trace-connector { width: 2px; height: 20px; margin: 0 0 0 15px; min-width: unset; align-self: flex-start; }
-
-    /* Quality bars */
-    .lp-radar-area { display: none; }
-
-    /* Trade cards */
-    .lp-trade-grid { grid-template-columns: 1fr; gap: 0.75rem; }
-    .lp-trade-card { padding: 1rem; }
-    .lp-btn--full { margin-top: 0.75rem; }
-
-    /* KV rows — shrink text */
-    .lp-kv-row { font-size: 0.8125rem; }
-    .lp-kv-row strong { font-size: 0.8125rem; max-width: 55%; text-align: right; word-break: break-word; }
-
-    /* Market grid — 2 col stays */
-    .lp-mkt-kv-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-    .lp-mkt-kv { padding: 8px 10px; }
-
-    /* Docs */
-    .lp-doc-item { flex-wrap: wrap; gap: 8px; }
-    .lp-doc-item__actions { width: 100%; }
-
-    /* Timeline */
-    .lp-tl-item { padding-bottom: 1.25rem; }
-
-    /* Related lots */
-    .lp-related-row { flex-wrap: wrap; gap: 6px; }
-    .lp-related-row__data { text-align: left; }
-
-    /* Sticky mobile buy bar */
-    .lp-root { padding-bottom: 4.5rem; }
-    .lp-mobile-cta {
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        position: fixed; left: 0; right: 0; bottom: 0; z-index: 250;
-        background: var(--surface-white);
-        border-top: 1px solid var(--surface-high);
-        padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-        box-shadow: 0 -4px 16px rgba(25, 28, 30, 0.08);
-    }
-    .lp-mobile-cta__price { display: flex; flex-direction: column; line-height: 1.25; }
-    .lp-mobile-cta__price span { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-var); }
-    .lp-mobile-cta__price strong { font-family: 'IBM Plex Mono', monospace; font-size: 1rem; font-weight: 700; color: var(--on-surface); }
-    .lp-mobile-cta__buy { flex-shrink: 0; margin: 0; }
-}
-
-/* Small mobile */
-@media (max-width: 420px) {
-    .lp-root { --inner-pad: 0.875rem; }
-    .lp-hero__title { font-size: 1.25rem; }
-    .lp-hero-zone { padding: 0.875rem; }
-    .lp-card { padding: 1rem; }
-    .lp-zone-eyebrow { font-size: 0.625rem; }
-    .lp-two-col-cards { gap: 1rem; }
-    .lp-main-grid { gap: 1rem; }
-    .lp-main-col { gap: 1rem; }
-    .lp-side-col { gap: 1rem; }
+@media (max-width: 639.98px) {
+    .lp-page { padding: 0 16px; }
+    .lp-bento { grid-template-columns: 1fr; }
+    .lp-tile--hero, .lp-tile--specs, .lp-tile--wide, .lp-tile--full { grid-column: span 1; }
+    .lp-tile--hero { grid-row: span 1; }
+    .lp-hero__title { font-size: 20px; line-height: 26px; }
+    .lp-spec-grid { grid-template-columns: 1fr; }
+    .lp-batch-row { flex-wrap: wrap; }
+    .lp-batch-row__chevron { display: none; }
+    .lp-tile__head { flex-direction: column; align-items: stretch; }
 }
 </style>

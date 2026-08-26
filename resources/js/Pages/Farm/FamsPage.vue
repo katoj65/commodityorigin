@@ -25,7 +25,7 @@ const exportF     = ref('All');
 const viewMode    = ref('table');
 
 const regionOptions = computed(() =>
-    ['All', ...new Set(props.farms.map(f => f.farmer?.district).filter(Boolean))].sort(),
+    ['All', ...new Set(props.farms.map(f => f.district).filter(Boolean))].sort(),
 );
 
 /* ── Derived rows from real data ───────────────────────────────── */
@@ -36,10 +36,10 @@ const directoryRows = computed(() =>
         const sizeText = farm.size || '—';
         const score = 84 + (i % 8);
         const sustainability = 80 + ((i * 7) % 16);
-        const proprietor = [farm.farmer?.first_name, farm.farmer?.last_name].filter(Boolean).join(' ')
-            || farm.farmer?.cooperative || 'Estate proprietor';
+        const proprietor = [farm.user?.first_name, farm.user?.last_name].filter(Boolean).join(' ')
+            || 'Estate proprietor';
         const origin = farm.location
-            || [farm.farmer?.district, 'Uganda'].filter(Boolean).join(', ')
+            || [farm.district, 'Uganda'].filter(Boolean).join(', ')
             || 'Origin pending';
         return {
             ...farm,
@@ -67,10 +67,10 @@ const directoryRows = computed(() =>
 const filteredRows = computed(() => {
     const term = search.value.trim().toLowerCase();
     return directoryRows.value.filter(farm => {
-        const haystack = [farm.name, farm.origin, farm.coffeeType, farm.proprietor, farm.farmer?.district]
+        const haystack = [farm.name, farm.origin, farm.coffeeType, farm.proprietor, farm.district]
             .filter(Boolean).join(' ').toLowerCase();
         const mSearch  = !term || haystack.includes(term);
-        const mRegion  = regionF.value === 'All' || farm.farmer?.district === regionF.value;
+        const mRegion  = regionF.value === 'All' || farm.district === regionF.value;
         const mExport  = exportF.value === 'All' || (exportF.value === 'Yes' ? farm.exportReady : !farm.exportReady);
         const mType    = farmTypeF.value === 'All' || farm.farmType === farmTypeF.value;
         const mAlt     = altitudeF.value === 'All'
@@ -198,7 +198,6 @@ const badgeClass = (b) => {
                             <p class="fm-subtitle mb-0">Explore verified coffee farms and estates with traceable production data</p>
                         </div>
                         <div class="d-flex flex-wrap gap-2">
-                            <Link :href="route('farmer.index')" class="btn fm-btn-primary btn-sm"><el-icon><Star /></el-icon> Add Farm / Estate</Link>
                             <button class="btn fm-btn-outline btn-sm"><el-icon><Download /></el-icon> Export Directory</button>
                             <button class="btn fm-btn-ghost btn-sm"><el-icon><ChatDotRound /></el-icon> Ask Advisor</button>
                         </div>

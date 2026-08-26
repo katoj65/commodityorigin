@@ -60,7 +60,7 @@ class DocumentationController extends Controller
                 'source' => 'farm',
                 'farm_id' => $document->farm_id,
                 'farm_name' => $document->farm?->name,
-                'can_delete' => $isAdmin || (int) $document->farm?->created_by_user_id === $authUserId,
+                'can_delete' => $isAdmin || (int) $document->farm?->user_id === $authUserId,
             ])
             ->all();
 

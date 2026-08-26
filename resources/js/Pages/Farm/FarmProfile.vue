@@ -6,7 +6,7 @@ import InputError from '@/Components/InputError.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { isGoogleMapsConfigured, renderMap } from '@/services/googleMaps';
 import {
-    Box, CaretRight, ChatDotRound, CircleCheckFilled, Coffee, Delete, Document, Download, Edit, Files,
+    Box, ChatDotRound, CircleCheckFilled, Coffee, Delete, Document, Download, Edit, Files,
     Location, MapLocation, Plus, Promotion, User,
     Sunny, PartlyCloudy, Cloudy, Umbrella, Lightning, Grid,
     Upload, Warning,
@@ -57,7 +57,7 @@ const elevationLabel = computed(() => (props.farm.elevation !== null && props.fa
 
 const locationTrail = computed(() => [props.farm.country, props.farm.region, props.farm.district, props.farm.county].filter(Boolean).join(' › '));
 
-const farmerName = computed(() => [props.farm.farmer?.first_name, props.farm.farmer?.last_name].filter(Boolean).join(' '));
+const farmerName = computed(() => props.farm.user?.full_name || [props.farm.user?.first_name, props.farm.user?.last_name].filter(Boolean).join(' '));
 
 /* ── Agronomy — real, linked via soil_metadata_id / climate_zone_metadata_id
    / the farm_crop_varieties & farm_certifications pivots. Composed into
@@ -685,7 +685,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 
                 <!-- ── Farm Owner + Weather ──────────────────────────────── -->
                 <div class="fp-pair">
-                    <div v-if="farm.farmer" class="fp-card">
+                    <div v-if="farm.user" class="fp-card">
                         <div class="fp-card-head">
                             <h2 class="fp-card-title"><el-icon><User /></el-icon> Farm Owner</h2>
                         </div>
@@ -693,42 +693,24 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                         <div class="fp-owner">
                             <div class="fp-owner__avatar-wrap">
                                 <div class="fp-owner__avatar">
-                                    {{ (farm.farmer.first_name?.[0] || '') + (farm.farmer.last_name?.[0] || '') || '?' }}
+                                    {{ (farm.user.first_name?.[0] || '') + (farm.user.last_name?.[0] || '') || '?' }}
                                 </div>
-                                <span v-if="farm.farmer.verification_status === 'verified'" class="fp-owner__badge">
-                                    <el-icon :size="11"><CircleCheckFilled /></el-icon>
-                                </span>
                             </div>
                             <div class="fp-owner__body">
                                 <div class="fp-owner__name">{{ farmerName }}</div>
-                                <span v-if="farm.farmer.verification_status" class="fp-status-pill" :class="`fp-status-pill--${farm.farmer.verification_status === 'verified' ? 'green' : 'amber'}`">
-                                    {{ farm.farmer.verification_status }}
-                                </span>
                             </div>
                         </div>
 
                         <div class="fp-owner__contacts">
-                            <div v-if="farm.farmer.district || farm.farmer.subcounty" class="fp-owner__contact">
-                                <span class="fp-owner__contact-icon"><el-icon :size="14"><Location /></el-icon></span>
-                                <span>{{ [farm.farmer.subcounty, farm.farmer.district].filter(Boolean).join(', ') }}</span>
-                            </div>
-                            <a v-if="farm.farmer.tel" :href="`tel:${farm.farmer.tel}`" class="fp-owner__contact fp-owner__contact--link">
+                            <a v-if="farm.user.telephone" :href="`tel:${farm.user.telephone}`" class="fp-owner__contact fp-owner__contact--link">
                                 <span class="fp-owner__contact-icon"><el-icon :size="14"><ChatDotRound /></el-icon></span>
-                                <span>{{ farm.farmer.tel }}</span>
+                                <span>{{ farm.user.telephone }}</span>
                             </a>
-                            <a v-if="farm.farmer.email" :href="`mailto:${farm.farmer.email}`" class="fp-owner__contact fp-owner__contact--link">
+                            <a v-if="farm.user.email" :href="`mailto:${farm.user.email}`" class="fp-owner__contact fp-owner__contact--link">
                                 <span class="fp-owner__contact-icon"><el-icon :size="14"><Promotion /></el-icon></span>
-                                <span class="fp-truncate">{{ farm.farmer.email }}</span>
+                                <span class="fp-truncate">{{ farm.user.email }}</span>
                             </a>
-                            <div v-if="farm.farmer.cooperative" class="fp-owner__contact">
-                                <span class="fp-owner__contact-icon"><el-icon :size="14"><MapLocation /></el-icon></span>
-                                <span>{{ farm.farmer.cooperative.name }}</span>
-                            </div>
                         </div>
-
-                        <Link :href="route('farmer.show', farm.farmer.id)" class="fp-owner__cta">
-                            View Farmer Profile <el-icon :size="14"><CaretRight /></el-icon>
-                        </Link>
                     </div>
 
                     <div class="fp-card">
@@ -1279,23 +1261,23 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     gap: 6px;
     height: 36px;
     padding: 0 16px;
-    border: none;
+    border: 1px solid transparent;
     border-radius: 6px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    transition: opacity 0.15s ease, background 0.15s ease;
 }
-.fp-btn--outline { background: var(--dp-surface-container-lowest); color: var(--dp-on-surface); box-shadow: var(--dp-card-shadow); }
+.fp-btn--outline { background: var(--dp-surface-container-lowest); color: var(--dp-on-surface); border-color: var(--dp-outline-variant); }
 .fp-btn--outline:hover { background: var(--dp-surface-container-low); }
 .fp-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
-.fp-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
-.fp-btn--primary:disabled { opacity: 0.6; cursor: default; transform: none; box-shadow: none; }
+.fp-btn--primary:hover:not(:disabled) { opacity: 0.88; }
+.fp-btn--primary:disabled { opacity: 0.6; cursor: default; }
 .fp-btn--danger { background: var(--dp-error); color: var(--dp-on-error); }
 .fp-btn--danger:disabled { opacity: 0.6; cursor: default; }
-.fp-btn--danger-outline { background: var(--dp-surface-container-lowest); color: var(--dp-error); box-shadow: var(--dp-card-shadow); }
-.fp-btn--danger-outline:hover { background: var(--dp-error-container); }
+.fp-btn--danger-outline { background: var(--dp-surface-container-lowest); color: var(--dp-error); border-color: var(--dp-outline-variant); }
+.fp-btn--danger-outline:hover { background: var(--dp-error-container); border-color: var(--dp-error-container); }
 .fp-btn--block { width: 100%; }
 .fp-btn:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 .fp-mt { margin-top: 14px; }
@@ -1321,8 +1303,8 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 /* ── Layout ──────────────────────────────────────────────────────────── */
 .fp-card {
     background: var(--dp-surface-container-lowest);
+    border: 1px solid var(--dp-outline-variant);
     border-radius: var(--dp-card-radius);
-    box-shadow: var(--dp-card-shadow);
     padding: 22px;
 }
 .fp-card-title {
@@ -1333,7 +1315,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--dp-primary);
+    color: var(--dp-on-surface-variant);
     margin: 0 0 16px;
 }
 .fp-card-title .el-icon { color: var(--dp-outline); font-size: 15px; }
@@ -1424,31 +1406,17 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--dp-secondary-container), var(--dp-secondary-fixed));
-    color: var(--dp-on-secondary-container);
+    background: linear-gradient(135deg, var(--dp-primary), #3a3a3a);
+    color: var(--dp-on-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 16px;
     font-weight: 800;
 }
-.fp-owner__badge {
-    position: absolute;
-    right: -2px;
-    bottom: -2px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--dp-secondary);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid var(--dp-surface-container-lowest);
-}
 .fp-owner__name { font-size: 15px; font-weight: 700; color: var(--dp-on-surface); margin-bottom: 5px; }
 
-.fp-owner__contacts { display: flex; flex-direction: column; gap: 4px; margin-bottom: 18px; }
+.fp-owner__contacts { display: flex; flex-direction: column; gap: 4px; }
 .fp-owner__contact {
     display: flex;
     align-items: center;
@@ -1474,25 +1442,6 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     color: var(--dp-outline);
     flex-shrink: 0;
 }
-
-.fp-owner__cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
-    height: 38px;
-    margin-top: auto;
-    border-radius: 999px;
-    background: var(--dp-surface-container-low);
-    color: var(--dp-primary);
-    font-size: 12.5px;
-    font-weight: 700;
-    text-decoration: none;
-    transition: background 0.15s ease, gap 0.15s ease;
-}
-.fp-owner__cta:hover { background: var(--dp-surface-container-high); gap: 9px; }
-.fp-owner__cta:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: 2px; }
 
 /* ── General information card ────────────────────────────────────────── */
 .fp-info-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
@@ -1674,8 +1623,8 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     width: 34px;
     height: 34px;
     border-radius: 9px;
-    background: var(--dp-primary-container);
-    color: var(--dp-on-primary-container);
+    background: var(--dp-surface-container-low);
+    color: var(--dp-outline);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1724,38 +1673,34 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 </style>
 
 <style>
-.el-dialog.fp-modal { border-radius: 18px; padding: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+/* Modals teleport to <body>, outside .dp-shell, so --dp-* custom
+   properties don't cascade in — literal hex from the same UI.md palette
+   is used here, matching this app's other teleported dialogs. */
+.el-dialog.fp-modal { border-radius: 6px; padding: 0; overflow: hidden; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
 .el-dialog.fp-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.fp-modal .el-dialog__body { padding: 0; }
 .el-dialog.fp-modal .el-dialog__footer { padding: 0; }
 
-.fp-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #f3f4f6; }
-.fp-modal__head-icon { width: 38px; height: 38px; border-radius: 11px; background: rgba(39, 19, 16, 0.08); color: #271310; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fp-modal__head-icon--danger { background: #fee2e2; color: #b91c1c; }
+.fp-modal__head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #E5E7EB; }
+.fp-modal__head-icon { width: 36px; height: 36px; border-radius: 6px; background: #F1F2F3; color: #121516; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fp-modal__head-text { flex: 1; min-width: 0; }
-.fp-modal__eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #271310; margin-bottom: 1px; }
-.fp-modal__title { font-size: 1.0625rem; font-weight: 800; color: #111827; letter-spacing: -0.01em; }
+.fp-modal__eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #6F7677; margin-bottom: 1px; }
+.fp-modal__title { font-size: 1.0625rem; font-weight: 700; color: #121516; letter-spacing: -0.01em; }
 
 .fp-modal__body { padding: 22px 24px 6px; max-height: 70vh; overflow-y: auto; }
-.fp-modal__confirm-text { font-size: 0.875rem; color: #374151; line-height: 1.6; margin: 0 0 4px; }
-.fp-modal__section { margin-top: 20px; padding-top: 18px; border-top: 1px solid #f3f4f6; }
+.fp-modal__section { margin-top: 20px; padding-top: 18px; border-top: 1px solid #E5E7EB; }
 .fp-modal__section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.fp-modal__section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; }
+.fp-modal__section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6F7677; }
 
 .fp-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.fp-field__label { font-size: 0.8125rem; font-weight: 700; color: #111827; }
-.fp-field__optional { color: #9ca3af; font-weight: 500; }
-.fp-req { color: #dc2626; }
-.fp-field__error { font-size: 0.75rem; font-weight: 600; color: #dc2626; line-height: 1.4; }
+.fp-field__label { font-size: 0.8125rem; font-weight: 600; color: #121516; }
+.fp-field__optional { color: #6F7677; font-weight: 400; }
+.fp-req { color: #B91C1C; }
+.fp-field__error { font-size: 0.75rem; font-weight: 500; color: #B91C1C; line-height: 1.4; }
 .fp-field-input { width: 100%; }
 .fp-field-input--error :deep(.el-input__wrapper),
 .fp-field-input--error :deep(.el-select__wrapper),
-.fp-field-input--error.el-input .el-input__wrapper { box-shadow: 0 0 0 1.5px #dc2626 inset !important; }
-
-.fp-preview { margin: 14px 0 0; display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 10px; background: #f9fafb; }
-.fp-preview__row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8125rem; }
-.fp-preview__row dt { color: #6b7280; margin: 0; }
-.fp-preview__row dd { color: #111827; font-weight: 700; margin: 0; }
+.fp-field-input--error.el-input .el-input__wrapper { box-shadow: 0 0 0 1.5px #B91C1C inset !important; }
 
 /* ── View Collection modal ──────────────────────────────────────────────── */
 .fp-view-section { margin-bottom: 18px; }
@@ -1768,12 +1713,12 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #6b7280;
+    color: #6F7677;
     margin-bottom: 10px;
     padding-bottom: 8px;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid #E5E7EB;
 }
-.fp-view-section__title .el-icon { color: #9ca3af; }
+.fp-view-section__title .el-icon { color: #6F7677; }
 
 .fp-collection-hero {
     display: flex;
@@ -1782,15 +1727,14 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     gap: 12px;
     padding: 16px 18px;
     margin-bottom: 20px;
-    border-radius: 12px;
-    background: #f9fafb;
+    border-radius: 6px;
+    background: #F5F6F7;
 }
-.fp-collection-hero__label { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin-bottom: 4px; }
-.fp-collection-hero__label .el-icon { color: #9ca3af; }
-.fp-collection-hero__value { font-size: 26px; font-weight: 800; color: #111827; line-height: 1; }
-.fp-collection-hero__unit { font-size: 13px; font-weight: 700; color: #6b7280; margin-left: 4px; }
-.fp-collection-notes { margin: 0; padding: 12px 14px; border-radius: 10px; background: #f9fafb; font-size: 13px; line-height: 1.55; color: #374151; white-space: pre-wrap; }
-
+.fp-collection-hero__label { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6F7677; margin-bottom: 4px; }
+.fp-collection-hero__label .el-icon { color: #6F7677; }
+.fp-collection-hero__value { font-size: 26px; font-weight: 800; color: #121516; line-height: 1; }
+.fp-collection-hero__unit { font-size: 13px; font-weight: 700; color: #6F7677; margin-left: 4px; }
+.fp-collection-notes { margin: 0; padding: 12px 14px; border-radius: 6px; background: #F5F6F7; font-size: 13px; line-height: 1.55; color: #4B5457; white-space: pre-wrap; }
 
 .fp-dropzone {
     display: flex;
@@ -1799,21 +1743,21 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     justify-content: center;
     gap: 6px;
     padding: 24px 16px;
-    border: 1.5px dashed #d1d5db;
-    border-radius: 12px;
-    background: #f9fafb;
-    color: #6b7280;
+    border: 1.5px dashed #E5E7EB;
+    border-radius: 6px;
+    background: #F5F6F7;
+    color: #6F7677;
     cursor: pointer;
     text-align: center;
     transition: border-color 0.15s ease, background 0.15s ease;
 }
-.fp-dropzone:hover { border-color: #271310; background: #f3f4f6; }
-.fp-dropzone--error { border-color: #dc2626; }
+.fp-dropzone:hover { border-color: #121516; background: #F1F2F3; }
+.fp-dropzone--error { border-color: #B91C1C; }
 .fp-dropzone__input { display: none; }
 .fp-dropzone__hint { font-size: 0.75rem; }
-.fp-dropzone__filename { font-size: 0.8125rem; font-weight: 700; color: #111827; }
+.fp-dropzone__filename { font-size: 0.8125rem; font-weight: 700; color: #121516; }
 
-.fp-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #f9fafb; border-top: 1px solid #f3f4f6; }
+.fp-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #F5F6F7; border-top: 1px solid #E5E7EB; }
 
 @media (max-width: 640px) {
     .fp-grid-2,

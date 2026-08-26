@@ -6,7 +6,6 @@ import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 const props = defineProps({
     lot:    { type: Object, default: () => ({}) },
     batch:  { type: Object, default: () => ({}) },
-    season: { type: Object, default: () => ({}) },
 });
 
 const fmt = (v, d = 0) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -20,38 +19,9 @@ const grade         = computed(() => props.lot.grade         || 'AA');
 const netWeight     = computed(() => fmt(props.lot.net_weight_kg, 2));
 const qualityScore  = computed(() => Number(props.lot.quality_score || 87.5));
 const batchNumber   = computed(() => props.batch?.batch_number || 'BCH-2025-042');
-const seasonName    = computed(() => props.season?.name      || 'Main Harvest 2025/26');
 const warehouse     = computed(() => props.batch?.warehouse_location || 'Kampala Dry Mill');
 
 const timeline = computed(() => [
-    {
-        stage: 'Season',
-        icon: '🌱',
-        color: 'green',
-        done: true,
-        title: seasonName.value,
-        code: 'SZN-2025-01',
-        fields: [
-            { label: 'Season Code',   value: 'SZN-2025-01' },
-            { label: 'Start Date',    value: props.season?.start_date || '01 Mar 2025' },
-            { label: 'End Date',      value: props.season?.end_date   || '30 Nov 2025' },
-            { label: 'Status',        value: props.season?.status     || 'Completed' },
-        ],
-    },
-    {
-        stage: 'Harvest',
-        icon: '🌾',
-        color: 'amber',
-        done: true,
-        title: 'Main Harvest Cycle',
-        code: 'HRV-2025-011',
-        fields: [
-            { label: 'Harvest ID',       value: 'HRV-2025-011' },
-            { label: 'Harvest Date',     value: '15 Aug 2025' },
-            { label: 'Quantity',         value: '4,200 kg' },
-            { label: 'Harvest Quality',  value: '87.2 SCA' },
-        ],
-    },
     {
         stage: 'Batch',
         icon: '⚙️',
@@ -108,7 +78,7 @@ const ownershipHistory = [
 ];
 
 const documents = [
-    { name: 'Harvest Report',       icon: '📋', available: true  },
+    { name: 'Collection Report',    icon: '📋', available: true  },
     { name: 'Batch Report',         icon: '📄', available: true  },
     { name: 'Lot Report',           icon: '📑', available: true  },
     { name: 'Sustainability Report', icon: '🌿', available: true  },
@@ -186,7 +156,7 @@ const stageColor = (c) => ({
                                             <div v-for="kpi in [
                                                 { label: 'Farmers',       value: '24' },
                                                 { label: 'Farms',         value: '8'  },
-                                                { label: 'Harvests',      value: '4'  },
+                                                { label: 'Collections',   value: '4'  },
                                                 { label: 'Batches',       value: '1'  },
                                                 { label: 'Quantity',      value: netWeight + ' kg' },
                                                 { label: 'Quality Score', value: qualityScore.toFixed(1) + ' SCA' },
@@ -285,7 +255,7 @@ const stageColor = (c) => ({
                             <div class="lt-card-body">
                                 <div class="lt-quality-chain">
                                     <div v-for="(stage, idx) in [
-                                        { label: 'Harvest Score', value: 85.8, sub: 'Raw cherry' },
+                                        { label: 'Collection Score', value: 85.8, sub: 'Raw cherry' },
                                         { label: 'Batch Score',   value: 86.5, sub: 'Post-processing' },
                                         { label: 'Lot Score',     value: qualityScore, sub: 'Final grade' },
                                     ]" :key="stage.label" class="lt-qj-step">
@@ -311,7 +281,7 @@ const stageColor = (c) => ({
                                         <polygon points="0,38 100,28 200,22 300,12 300,48 0,48" fill="url(#ltGrad)"/>
                                     </svg>
                                     <div class="d-flex justify-content-between px-1 mt-1" style="font-size:0.6875rem;color:#6b7280;">
-                                        <span>Harvest</span><span>Batch</span><span>Lot</span>
+                                        <span>Collection</span><span>Batch</span><span>Lot</span>
                                     </div>
                                 </div>
                             </div>
@@ -357,7 +327,7 @@ const stageColor = (c) => ({
                             </div>
                             <div class="lt-card-body">
                                 <div class="row g-3">
-                                    <div v-for="label in ['Farm', 'Harvest', 'Processing', 'Lot']" :key="label" class="col-6 col-md-3">
+                                    <div v-for="label in ['Farm', 'Collection', 'Processing', 'Lot']" :key="label" class="col-6 col-md-3">
                                         <div class="lt-gallery-card">
                                             <div class="lt-gallery-thumb">☕</div>
                                             <div class="lt-gallery-label">{{ label }} Images</div>
@@ -375,7 +345,7 @@ const stageColor = (c) => ({
                             <div class="lt-card-body">
                                 <div class="row g-3">
                                     <div v-for="rec in [
-                                        { label: 'Related Harvest', code: 'HRV-2025-011', icon: '🌾' },
+                                        { label: 'Related Collection', code: 'COL-2025-011', icon: '🌾' },
                                         { label: 'Related Batch',   code: batchNumber,    icon: '⚙️' },
                                         { label: 'Related Lot',     code: lotNumber,      icon: '📦' },
                                     ]" :key="rec.label" class="col-12 col-md-4">

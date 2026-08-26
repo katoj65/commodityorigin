@@ -90,7 +90,6 @@ const mobileNavSections = computed(() => [
             { label: 'Coffee Farms', href: route('farm.index'), active: route().current('farm.*') },
             { label: 'Cooperatives', href: route('cooperative.index'), active: route().current('cooperative.*') },
             { label: 'Season', href: route('season.index'), active: route().current('season.*') },
-            { label: 'Harvests', href: route('harvest.index'), active: route().current('harvest.*') },
             { label: 'Batches', href: route('batch.index'), active: route().current('batch.*') },
         ],
     },

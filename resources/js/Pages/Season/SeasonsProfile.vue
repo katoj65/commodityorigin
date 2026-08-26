@@ -6,7 +6,7 @@ import {
     ArrowDown, Box, ChatDotRound, Check, CircleCheckFilled,
     Clock, CollectionTag, Delete, Download,
     EditPen, Files, Location,
-    Opportunity, Plus, Promotion, Star, Tickets, TrendCharts,
+    Opportunity, Promotion, Star, TrendCharts,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditSeasonModal from '@/Components/Modals/EditSeasonModal.vue';
@@ -14,11 +14,7 @@ import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     season:               { type: Object, required: true },
-    harvests:             { type: Array,  default: () => [] },
     regionOptions:        { type: Array,  default: () => [] },
-    farmOptions:          { type: Array,  default: () => [] },
-    pickMethodOptions:    { type: Array,  default: () => [] },
-    harvestSeasonOptions: { type: Array,  default: () => [] },
     statusOptions:        { type: Array,  default: () => [] },
 });
 
@@ -45,30 +41,12 @@ const seasonTimeline = computed(() => {
     const end   = props.season.end_date   ? new Date(props.season.end_date)   : new Date('2026-06-20');
     return `${formatShort(start)} – ${formatShort(end)}`;
 });
-const totalHarvests      = computed(() => props.season.harvests_count    ?? props.harvests.length);
-const totalQuantity      = computed(() => props.season.harvests_sum_weight ?? 0);
-const totalHarvestValue  = computed(() => props.season.harvests_sum_price  ?? 0);
-
-const seasonHarvests = computed(() => props.harvests.map((h) => ({
-    rawId:    h.id,
-    id:       `HV-${String(h.id).padStart(3, '0')}`,
-    farm:     h.farm?.name  || 'Unassigned',
-    region:   h.farm?.location || h.variety || '—',
-    date:     formatDate(h.harvest_date),
-    quantity: h.weight  ? `${Number(h.weight).toLocaleString()} kg` : '—',
-    score:    h.cup_score    ? Number(h.cup_score).toFixed(1)      : '—',
-    moisture: h.moisture_content ? `${Number(h.moisture_content).toFixed(1)}%` : '—',
-    status:   (h.status || 'pending').toUpperCase(),
-    showUrl:  route('harvest.show', h.id),
-})));
-
 /* ── Preserved actions ───────────────────────────────────────── */
 const deleteSeasonOpen = ref(false);
 const deletingSeason = ref(false);
 
 const handleOptionsCommand = (command) => {
     if (command === 'edit') { editModalOpen.value = true; return; }
-    if (command === 'add-harvest') { router.get(route('season.create-harvest', props.season.id)); return; }
     if (command === 'delete') { deleteSeasonOpen.value = true; }
 };
 
@@ -85,38 +63,6 @@ function confirmDeleteSeason() {
 
 const notifySeasonUpdateSuccess = (message) => {
     ElNotification({ title: 'Season Saved', message, type: 'success', duration: 3200, offset: 84 });
-};
-
-const notifyHarvestDeleteSuccess = (message) => {
-    ElNotification({ title: 'Harvest Deleted', message, type: 'success', duration: 3200, offset: 84 });
-};
-
-const openHarvestProfile = (row) => { if (row?.showUrl) router.get(row.showUrl); };
-
-const deleteHarvestOpen = ref(false);
-const deletingHarvest = ref(false);
-const harvestToDelete = ref(null);
-
-const deleteHarvest = (row) => {
-    harvestToDelete.value = row;
-    deleteHarvestOpen.value = true;
-};
-
-const confirmDeleteHarvest = () => {
-    if (!harvestToDelete.value) return;
-    const row = harvestToDelete.value;
-    deletingHarvest.value = true;
-    router.delete(route('season.harvest.destroy', [props.season.id, row.rawId]), {
-        preserveScroll: true,
-        onSuccess: (page) => {
-            notifyHarvestDeleteSuccess(page.props.flash?.success || `${row.id} deleted successfully.`);
-        },
-        onFinish: () => {
-            deletingHarvest.value = false;
-            deleteHarvestOpen.value = false;
-            harvestToDelete.value = null;
-        },
-    });
 };
 
 /* ── Static mock data ────────────────────────────────────────── */
@@ -149,7 +95,6 @@ const lotRows = [
 
 const pipelineStages = [
     { label: 'Farm',    count: props.season.farms_count   || 23, sub: 'Sourced',  verify: 'UCDA Verified', done: true,  current: false },
-    { label: 'Harvest', count: totalHarvests.value        || 0,  sub: 'Verified', verify: 'Quality Graded',done: true,  current: false },
     { label: 'Batch',   count: props.season.batches_count || 3,  sub: 'Active',   verify: 'Processing',   done: false, current: true  },
     { label: 'Lot',     count: props.season.lots_count    || 2,  sub: 'Created',  verify: 'Pending',      done: false, current: false },
     { label: 'Market',  count: 0,                                sub: 'Pending',  verify: 'Awaiting',     done: false, current: false },
@@ -217,14 +162,8 @@ const fillPrompt = (p) => { chatInput.value = p; };
                     </div>
                 </div>
                 <div class="sp-header-actions">
-                    <button class="sp-btn sp-btn--primary" @click="router.get(route('harvest.index'))">
-                        <el-icon><Tickets /></el-icon> View Harvests
-                    </button>
                     <button class="sp-btn sp-btn--outline" @click="router.get(route('batch.index'))">
                         <el-icon><Box /></el-icon> View Batches
-                    </button>
-                    <button class="sp-btn sp-btn--outline" @click="router.get(route('batch.create-season', season.id))">
-                        <el-icon><Plus /></el-icon> Create Batch
                     </button>
                     <button class="sp-btn sp-btn--outline">
                         <el-icon><Download /></el-icon> Export Data
@@ -236,7 +175,6 @@ const fillPrompt = (p) => { chatInput.value = p; };
                         <template #dropdown>
                             <el-dropdown-menu>
                                 <el-dropdown-item command="edit"><el-icon><EditPen /></el-icon> Edit Season</el-dropdown-item>
-                                <el-dropdown-item command="add-harvest"><el-icon><Plus /></el-icon> Add Harvest</el-dropdown-item>
                                 <el-dropdown-item command="delete" class="sp-dropdown-danger"><el-icon><Delete /></el-icon> Delete Season</el-dropdown-item>
                             </el-dropdown-menu>
                         </template>
@@ -282,14 +220,10 @@ const fillPrompt = (p) => { chatInput.value = p; };
                 <!-- Production Summary -->
                 <div class="sp-ov-block">
                     <div class="sp-ov-label">Production Summary</div>
-                    <div class="sp-ov-stat-grid">
+                    <div class="sp-ov-stat-grid sp-ov-stat-grid--3">
                         <div class="sp-ov-stat">
                             <div class="sp-ov-stat-val">{{ season.farms_count || 23 }}</div>
                             <div class="sp-muted">Farms</div>
-                        </div>
-                        <div class="sp-ov-stat">
-                            <div class="sp-ov-stat-val">{{ totalHarvests }}</div>
-                            <div class="sp-muted">Harvests</div>
                         </div>
                         <div class="sp-ov-stat">
                             <div class="sp-ov-stat-val">{{ batchRows.length }}</div>
@@ -299,10 +233,6 @@ const fillPrompt = (p) => { chatInput.value = p; };
                             <div class="sp-ov-stat-val">{{ lotRows.length }}</div>
                             <div class="sp-muted">Lots</div>
                         </div>
-                    </div>
-                    <div class="sp-ov-total">
-                        <div class="sp-ov-total-val">{{ Number(totalQuantity).toLocaleString() }} kg</div>
-                        <div class="sp-muted">Total Production</div>
                     </div>
                 </div>
 
@@ -370,69 +300,6 @@ const fillPrompt = (p) => { chatInput.value = p; };
                         </div>
                     </div>
 
-                    <!-- ⑤ Harvests Table ─────────────────────────── -->
-                    <div class="sp-card">
-                        <div class="sp-card-head">
-                            <div class="sp-card-title"><el-icon><Tickets /></el-icon> Harvest Overview</div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="sp-muted" style="font-size:11px;">{{ totalHarvests }} total</span>
-                                <button class="sp-btn sp-btn--primary sp-btn--sm" @click="router.get(route('season.create-harvest', season.id))">
-                                    <el-icon><Plus /></el-icon> Add Harvest
-                                </button>
-                            </div>
-                        </div>
-                        <div class="sp-table-wrap">
-                            <table class="sp-table">
-                                <thead>
-                                    <tr>
-                                        <th>Harvest ID</th>
-                                        <th>Farm</th>
-                                        <th>Region</th>
-                                        <th>Date</th>
-                                        <th class="text-end">Qty (kg)</th>
-                                        <th class="text-end">Score</th>
-                                        <th class="text-end">Moisture</th>
-                                        <th>Status</th>
-                                        <th class="text-end">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-if="seasonHarvests.length === 0">
-                                        <td colspan="9" class="sp-empty">No harvests attached to this season yet.</td>
-                                    </tr>
-                                    <tr
-                                        v-for="row in seasonHarvests"
-                                        :key="row.rawId"
-                                        class="sp-table-row--clickable"
-                                        @click="openHarvestProfile(row)"
-                                    >
-                                        <td><span class="sp-code">{{ row.id }}</span></td>
-                                        <td><span class="sp-primary" style="font-size:12px;">{{ row.farm }}</span></td>
-                                        <td><span class="sp-muted">{{ row.region }}</span></td>
-                                        <td><span class="sp-muted">{{ row.date }}</span></td>
-                                        <td class="text-end"><span class="sp-primary" style="font-size:12px;">{{ row.quantity }}</span></td>
-                                        <td class="text-end"><span class="sp-score">{{ row.score }}</span></td>
-                                        <td class="text-end"><span class="sp-muted">{{ row.moisture }}</span></td>
-                                        <td>
-                                            <span class="sp-status" :class="row.status === 'VERIFIED' ? 'sp-status--received' : 'sp-status--ready'">
-                                                {{ row.status }}
-                                            </span>
-                                        </td>
-                                        <td class="text-end" @click.stop>
-                                            <button class="sp-del-btn" title="Delete harvest" @click="deleteHarvest(row)">
-                                                <el-icon><Delete /></el-icon>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="sp-table-foot">
-                            <span class="sp-muted">{{ totalHarvests }} harvests · {{ Number(totalQuantity).toLocaleString() }} kg total</span>
-                            <span class="sp-badge sp-badge--green" style="font-size:9px;">Average quality trend: ↑</span>
-                        </div>
-                    </div>
-
                     <!-- ④ Regional Breakdown ─────────────────────── -->
                     <div class="sp-card">
                         <div class="sp-card-head">
@@ -460,9 +327,6 @@ const fillPrompt = (p) => { chatInput.value = p; };
                     <div class="sp-card">
                         <div class="sp-card-head">
                             <div class="sp-card-title"><el-icon><CollectionTag /></el-icon> Batch Overview</div>
-                            <button class="sp-btn sp-btn--outline sp-btn--sm" @click="router.get(route('batch.create-season', season.id))">
-                                <el-icon><Plus /></el-icon> Create Batch
-                            </button>
                         </div>
                         <div class="sp-table-wrap">
                             <table class="sp-table">
@@ -715,17 +579,6 @@ const fillPrompt = (p) => { chatInput.value = p; };
             @confirm="confirmDeleteSeason"
         />
 
-        <ConfirmDialog
-            v-model="deleteHarvestOpen"
-            eyebrow="Season"
-            title="Delete Harvest"
-            :message="harvestToDelete ? `This will permanently delete ${harvestToDelete.id}. Continue?` : ''"
-            confirm-text="Delete"
-            :auto-close="false"
-            :loading="deletingHarvest"
-            @confirm="confirmDeleteHarvest"
-        />
-
     </DesignPreviewLayout>
 </template>
 
@@ -816,6 +669,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-meta-pair--full { grid-column: 1 / -1; }
 
 .sp-ov-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 10px; }
+.sp-ov-stat-grid--3 { grid-template-columns: repeat(3, 1fr); margin-bottom: 0; }
 .sp-ov-stat { text-align: center; padding: 7px; border: 1px solid #e8ecec; border-radius: 5px; background: #fafbfb; }
 .sp-ov-stat-val { font-size: 18px; font-weight: 800; color: #1f2a2a; line-height: 1.1; }
 .sp-ov-total { text-align: center; padding: 8px; border: 1px solid #c3ddd2; border-radius: 5px; background: #eef5f1; }

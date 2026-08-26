@@ -7,8 +7,8 @@ import AddFarmCollectionModal from '@/Components/Modals/AddFarmCollectionModal.v
 import AddBatchModal from '@/Components/Modals/AddBatchModal.vue';
 import AddLotModal from '@/Components/Modals/AddLotModal.vue';
 import {
-    ArrowDown, ArrowRight, Check, Checked, Clock, Close, Coin, EditPen, Files, Filter,
-    FolderOpened, MoreFilled, Odometer, OfficeBuilding, Operation, Plus, Promotion, RefreshRight,
+    ArrowDown, ArrowRight, Check, Clock, Close, EditPen, Files, Filter,
+    FolderOpened, MoreFilled, OfficeBuilding, Plus, Promotion, RefreshRight,
     Shop, Sort, Ticket, UploadFilled, Wallet, WarningFilled,
 } from '@element-plus/icons-vue';
 
@@ -64,6 +64,10 @@ function goToCollection(row) {
 
 function goToBatch(row) {
     router.visit(route('batch.show', row.id));
+}
+
+function goToLot(row) {
+    router.visit(route('lot.show', row.id));
 }
 
 function formatMoney(amount, currency) {
@@ -395,45 +399,39 @@ function submitReject() {
                                         </span>
                                     </template>
                                     <div class="st-table-card">
-                                        <div class="st-table-scroll"><el-table :data="lots" class="st-el-table">
-                                            <el-table-column min-width="180">
-                                                <template #header><span class="st-th"><el-icon><Ticket /></el-icon> Lot</span></template>
-                                                <template #default="{ row }">
-                                                    <div class="st-cell">
-                                                        <div>
-                                                            <div class="st-name">{{ row.lot_name || row.lot_number || `Lot #${row.id}` }}</div>
-                                                            <div v-if="row.lot_name && row.lot_number" class="st-muted st-caption">{{ row.lot_number }}</div>
-                                                        </div>
+                                        <div class="st-list">
+                                            <div
+                                                v-for="row in lots"
+                                                :key="row.id"
+                                                class="st-list-row st-list-row--link"
+                                                tabindex="0"
+                                                role="button"
+                                                @click="goToLot(row)"
+                                                @keydown.enter="goToLot(row)"
+                                            >
+                                                <div class="st-list-row__icon"><el-icon><Ticket /></el-icon></div>
+                                                <div class="st-list-row__main">
+                                                    <div class="st-list-row__title">{{ row.lot_name || row.lot_number || `Lot #${row.id}` }}</div>
+                                                    <div class="st-list-row__sub">
+                                                        {{ row.process || '—' }}<span v-if="row.grade"> · {{ row.grade }}</span>
+                                                        <span v-if="row.lot_name && row.lot_number"> · {{ row.lot_number }}</span>
                                                     </div>
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column min-width="180">
-                                                <template #header><span class="st-th"><el-icon><Operation /></el-icon> Process &amp; Grade</span></template>
-                                                <template #default="{ row }">
-                                                    <div class="st-cell">
-                                                        <span class="st-commodity">{{ row.process || '—' }}<span v-if="row.grade" class="st-muted"> · {{ row.grade }}</span></span>
-                                                    </div>
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column width="130" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Odometer /></el-icon> Weight</span></template>
-                                                <template #default="{ row }">{{ row.net_weight_kg ? `${Number(row.net_weight_kg).toLocaleString()} kg` : '—' }}</template>
-                                            </el-table-column>
-                                            <el-table-column width="130" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Coin /></el-icon> Price</span></template>
-                                                <template #default="{ row }"><span class="st-pill st-pill--b">{{ formatMoney(row.price, null) }}</span></template>
-                                            </el-table-column>
-                                            <el-table-column width="110" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Checked /></el-icon> Status</span></template>
-                                                <template #default="{ row }"><span class="st-pill st-pill--a">{{ row.status || '—' }}</span></template>
-                                            </el-table-column>
-                                            <template #empty>
-                                                <div class="st-empty-cell">
-                                                    <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
-                                                    No lots created yet.
                                                 </div>
-                                            </template>
-                                        </el-table></div>
+                                                <div class="st-list-row__stats">
+                                                    <div class="st-list-stat">
+                                                        <span class="st-list-stat__value">{{ row.net_weight_kg ? `${Number(row.net_weight_kg).toLocaleString()} kg` : '—' }}</span>
+                                                        <span class="st-list-stat__label">Weight</span>
+                                                    </div>
+                                                    <span class="st-pill st-pill--b">{{ formatMoney(row.price, null) }}</span>
+                                                    <span class="st-pill st-pill--a">{{ row.status || '—' }}</span>
+                                                </div>
+                                                <el-icon class="st-list-row__chevron"><ArrowRight /></el-icon>
+                                            </div>
+                                            <div v-if="!lots.length" class="st-empty-cell">
+                                                <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
+                                                No lots created yet.
+                                            </div>
+                                        </div>
 
                                         <div class="st-pagination-foot">
                                             <span class="st-pagination-foot__text">Showing {{ lots.length }} lot{{ lots.length === 1 ? '' : 's' }}</span>
@@ -451,45 +449,39 @@ function submitReject() {
                                         </span>
                                     </template>
                                     <div class="st-table-card">
-                                        <div class="st-table-scroll"><el-table :data="tokenisedLots" class="st-el-table">
-                                            <el-table-column min-width="180">
-                                                <template #header><span class="st-th"><el-icon><Ticket /></el-icon> Lot</span></template>
-                                                <template #default="{ row }">
-                                                    <div class="st-cell">
-                                                        <div>
-                                                            <div class="st-name">{{ row.lot_name || row.lot_number || `Lot #${row.id}` }}</div>
-                                                            <div v-if="row.lot_name && row.lot_number" class="st-muted st-caption">{{ row.lot_number }}</div>
-                                                        </div>
+                                        <div class="st-list">
+                                            <div
+                                                v-for="row in tokenisedLots"
+                                                :key="row.id"
+                                                class="st-list-row st-list-row--link"
+                                                tabindex="0"
+                                                role="button"
+                                                @click="goToLot(row)"
+                                                @keydown.enter="goToLot(row)"
+                                            >
+                                                <div class="st-list-row__icon"><el-icon><Ticket /></el-icon></div>
+                                                <div class="st-list-row__main">
+                                                    <div class="st-list-row__title">{{ row.lot_name || row.lot_number || `Lot #${row.id}` }}</div>
+                                                    <div class="st-list-row__sub">
+                                                        {{ row.process || '—' }}<span v-if="row.grade"> · {{ row.grade }}</span>
+                                                        <span v-if="row.lot_name && row.lot_number"> · {{ row.lot_number }}</span>
                                                     </div>
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column min-width="180">
-                                                <template #header><span class="st-th"><el-icon><Operation /></el-icon> Process &amp; Grade</span></template>
-                                                <template #default="{ row }">
-                                                    <div class="st-cell">
-                                                        <span class="st-commodity">{{ row.process || '—' }}<span v-if="row.grade" class="st-muted"> · {{ row.grade }}</span></span>
-                                                    </div>
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column width="130" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Odometer /></el-icon> Weight</span></template>
-                                                <template #default="{ row }">{{ row.net_weight_kg ? `${Number(row.net_weight_kg).toLocaleString()} kg` : '—' }}</template>
-                                            </el-table-column>
-                                            <el-table-column width="130" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Coin /></el-icon> Price</span></template>
-                                                <template #default="{ row }"><span class="st-pill st-pill--b">{{ formatMoney(row.price, null) }}</span></template>
-                                            </el-table-column>
-                                            <el-table-column width="150" align="right">
-                                                <template #header><span class="st-th st-th--end"><el-icon><Checked /></el-icon> Status</span></template>
-                                                <template #default="{ row }"><span class="st-pill st-pill--a">{{ row.status || '—' }}</span></template>
-                                            </el-table-column>
-                                            <template #empty>
-                                                <div class="st-empty-cell">
-                                                    <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
-                                                    No lots committed on the blockchain yet.
                                                 </div>
-                                            </template>
-                                        </el-table></div>
+                                                <div class="st-list-row__stats">
+                                                    <div class="st-list-stat">
+                                                        <span class="st-list-stat__value">{{ row.net_weight_kg ? `${Number(row.net_weight_kg).toLocaleString()} kg` : '—' }}</span>
+                                                        <span class="st-list-stat__label">Weight</span>
+                                                    </div>
+                                                    <span class="st-pill st-pill--b">{{ formatMoney(row.price, null) }}</span>
+                                                    <span class="st-pill st-pill--a">{{ row.status || '—' }}</span>
+                                                </div>
+                                                <el-icon class="st-list-row__chevron"><ArrowRight /></el-icon>
+                                            </div>
+                                            <div v-if="!tokenisedLots.length" class="st-empty-cell">
+                                                <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
+                                                No lots committed on the blockchain yet.
+                                            </div>
+                                        </div>
 
                                         <div class="st-pagination-foot">
                                             <span class="st-pagination-foot__text">Showing {{ tokenisedLots.length }} tokenised lot{{ tokenisedLots.length === 1 ? '' : 's' }}</span>
@@ -948,43 +940,7 @@ function submitReject() {
     overflow: hidden;
 }
 
-/* ── Element Plus table theming ───────────────────────────────────────── */
-.st-table-scroll { overflow-x: auto; }
-.st-el-table {
-    --el-table-bg-color: var(--surface-container-lowest);
-    --el-table-tr-bg-color: var(--surface-container-lowest);
-    --el-table-border-color: var(--card-border);
-    --el-table-header-bg-color: var(--surface-container-low);
-    --el-table-header-text-color: var(--on-surface-variant);
-    --el-table-text-color: var(--on-surface);
-    --el-table-row-hover-bg-color: color-mix(in srgb, var(--surface-container-low) 50%, transparent);
-    font-family: var(--sans);
-    width: 100%;
-}
-.st-el-table :deep(.el-table__inner-wrapper::before) { display: none; }
-.st-el-table :deep(.el-table__header-wrapper th.el-table__cell) {
-    padding: 8px 8px;
-    border-bottom: 1px solid var(--card-border);
-}
-.st-el-table :deep(.el-table__header-wrapper th.el-table__cell:first-child) { padding-left: 12px; }
-.st-el-table :deep(.el-table__header-wrapper th.el-table__cell:last-child) { padding-right: 12px; }
-.st-el-table :deep(.el-table__body-wrapper td.el-table__cell) {
-    padding: 9px 8px;
-    border-bottom: 1px solid var(--card-border);
-}
-.st-el-table :deep(.el-table__body-wrapper td.el-table__cell:first-child) { padding-left: 12px; }
-.st-el-table :deep(.el-table__body-wrapper td.el-table__cell:last-child) { padding-right: 12px; }
-.st-el-table :deep(.el-table__row:last-child td.el-table__cell) { border-bottom: none; }
-.st-el-table :deep(.el-table__row .cell) { line-height: 1.4; }
-.st-el-table :deep(.el-table__empty-block) { min-height: 220px; }
-
-.st-th { display: inline-flex; align-items: flex-start; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.4; }
-.st-th .el-icon { margin-top: 1px; flex-shrink: 0; font-size: 13px; color: var(--on-surface-variant); }
-.st-th--end { justify-content: flex-end; }
-
-.st-cell { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
-
-/* ── Modern list rows (Farm Collection / Batches) ─────────────────────── */
+/* ── Modern list rows (all four inventory tabs) ───────────────────────── */
 .st-list { display: flex; flex-direction: column; padding: 4px 20px; }
 .st-list-row {
     display: flex;
@@ -1048,11 +1004,6 @@ function submitReject() {
     background: var(--surface-container);
     color: var(--on-surface-variant);
 }
-
-.st-name { font-size: 13.5px; font-weight: 700; color: var(--on-surface); }
-.st-caption { font-size: 11.5px; margin-top: 2px; }
-.st-muted { color: var(--on-surface-variant); }
-.st-commodity { font-size: 13.5px; color: var(--on-surface); }
 
 .st-pill {
     display: inline-flex;

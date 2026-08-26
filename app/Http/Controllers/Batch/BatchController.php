@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Batch;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BatchResource;
-use App\Http\Resources\HarvestResource;
-use App\Http\Resources\SeasonResource;
 use App\Models\Batch;
 use App\Models\Currency;
 use App\Services\BatchService;
@@ -35,7 +33,7 @@ class BatchController extends Controller
             'batch_number' => ['required', 'string', 'max:255'],
         ]);
 
-        $batch = Batch::query()->where('batch_number', $validated['batch_number'])->first();
+        $batch = $this->batches->findByNumber($validated['batch_number']);
 
         if (! $batch) {
             return response()->json(['message' => 'No batch with that number was found.'], 404);
@@ -93,18 +91,8 @@ class BatchController extends Controller
         Gate::authorize('view', $batch);
         $this->batches->loadProfileRelations($batch);
 
-        $seasonId = $this->batches->resolveSeasonId($batch);
-
-        $season = $seasonId
-            ? $this->batches->findSeasonWithHarvestStats($seasonId)
-            : null;
-
-        $harvests = $this->batches->harvestsForSeason($seasonId);
-
         return Inertia::render('Batch/BatchProfile', [
             'batch' => BatchResource::make($batch)->resolve(),
-            'season' => $season ? SeasonResource::make($season)->resolve() : null,
-            'harvests' => HarvestResource::collection($harvests)->resolve(),
             'currencyOptions' => Currency::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')
@@ -121,10 +109,6 @@ class BatchController extends Controller
         $validated = $this->validateBatchData($request);
 
         $batch = $this->batches->create($validated, $request->user()->id);
-
-        $harvestIds = collect($validated['harvest_ids'] ?? [])->map(fn ($id): int => (int) $id)->all();
-
-        $this->batches->attachHarvests($batch, $harvestIds, $request->user()->id);
 
         return redirect()
             ->route('batch.show', $batch)
@@ -222,8 +206,6 @@ class BatchController extends Controller
             'defect_count' => ['nullable', 'integer', 'min:0'],
             'cup_score' => ['nullable', 'numeric', 'between:0,100'],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'harvest_ids' => ['nullable', 'array'],
-            'harvest_ids.*' => ['integer', 'exists:harvests,id'],
         ];
 
         // batch_number is auto-generated on create and never accepted from

@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Farmer;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FarmerResource;
 use App\Models\Cooperative;
+use App\Models\Farm;
 use App\Models\Farmer;
 use App\Services\FarmerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,6 +25,8 @@ class FarmerController extends Controller
      */
     public function index(): Response
     {
+        Gate::authorize('viewAny', Farmer::class);
+
         return Inertia::render('Farmer/FarmersPage', [
             'farmers' => FarmerResource::collection($this->farmers->all())->resolve(),
         ]);
@@ -33,6 +37,8 @@ class FarmerController extends Controller
      */
     public function create(): Response
     {
+        Gate::authorize('create', Farmer::class);
+
         return Inertia::render('Farmer/Create', [
             'cooperatives' => Cooperative::query()->orderBy('name')->get(['id', 'name']),
         ]);
@@ -43,6 +49,8 @@ class FarmerController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        Gate::authorize('create', Farmer::class);
+
         $validated = $this->validated($request);
 
         $farmer = $this->farmers->create([
@@ -60,11 +68,14 @@ class FarmerController extends Controller
      */
     public function show(Farmer $farmer): Response
     {
+        Gate::authorize('view', $farmer);
+
         $farmer->load(['farms', 'cooperative']);
 
         return Inertia::render('Farmer/FarmerProfile', [
             'farmer' => FarmerResource::make($farmer)->resolve(),
             'cooperatives' => Cooperative::query()->orderBy('name')->get(['id', 'name']),
+            'canCreateFarm' => Gate::allows('create', Farm::class),
         ]);
     }
 
@@ -73,6 +84,8 @@ class FarmerController extends Controller
      */
     public function update(Request $request, Farmer $farmer): RedirectResponse
     {
+        Gate::authorize('update', $farmer);
+
         $validated = $this->validated($request, $farmer);
 
         $this->farmers->update($farmer, $validated);
@@ -87,6 +100,8 @@ class FarmerController extends Controller
      */
     public function destroy(Farmer $farmer): RedirectResponse
     {
+        Gate::authorize('delete', $farmer);
+
         $this->farmers->delete($farmer);
 
         return redirect()

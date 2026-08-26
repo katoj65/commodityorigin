@@ -107,4 +107,19 @@ class FarmCollectionService
             'cancelled',
         ];
     }
+
+    /**
+     * Harvest season label options for the collection form.
+     *
+     * @return array<int, string>
+     */
+    public function harvestSeasonOptions(): array
+    {
+        return [
+            'Main Crop',
+            'Fly Crop',
+            'Early Harvest',
+            'Late Harvest',
+        ];
+    }
 }
