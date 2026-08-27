@@ -267,19 +267,16 @@ function openOrder(order) {
             <!-- ── Page Header ───────────────────────────────────────────── -->
             <div class="ord-page-header">
                 <div class="ord-page-header__left">
-                    <div class="ord-kicker">Trade · Bean Origin</div>
                     <h1 class="ord-title">Orders</h1>
                     <p class="ord-subtitle">Track every coffee order you've placed or received, from confirmation through delivery.</p>
                 </div>
                 <div class="ord-page-header__actions">
-                    <el-button-group class="ord-create-group">
-                        <el-button class="ord-create-group__btn" @click="openCreateDialog('request')">
-                            <el-icon><ShoppingCart /></el-icon> Request
-                        </el-button>
-                        <el-button class="ord-create-group__btn ord-create-group__btn--offer" @click="openCreateDialog('offer')">
-                            <el-icon><Box /></el-icon> Offer
-                        </el-button>
-                    </el-button-group>
+                    <button type="button" class="ord-btn ord-btn--outline" @click="openCreateDialog('offer')">
+                        <el-icon><Box /></el-icon> Post Offer
+                    </button>
+                    <button type="button" class="ord-btn ord-btn--primary" @click="openCreateDialog('request')">
+                        <el-icon><Plus /></el-icon> New Request
+                    </button>
                 </div>
             </div>
 
@@ -327,21 +324,27 @@ function openOrder(order) {
             <div class="ord-body">
                 <div class="ord-section">
                     <div class="ord-toolbar">
-                        <el-tabs v-model="activeFilter" class="ord-tabs">
-                            <el-tab-pane v-for="f in filters" :key="f.key" :name="f.key">
-                                <template #label>
-                                    <span class="ord-tab-label">
-                                        {{ f.label }}
-                                        <span v-if="tabCount(f.key)" class="ord-tab-count">{{ tabCount(f.key) }}</span>
-                                    </span>
-                                </template>
-                            </el-tab-pane>
-                        </el-tabs>
-
-                        <div class="ord-search-wrap">
-                            <el-icon class="ord-search-icon"><Search /></el-icon>
-                            <input v-model="search" class="ord-search-input" placeholder="Search order #, crop, counterparty…">
+                        <div class="ord-filters">
+                            <button
+                                v-for="f in filters"
+                                :key="f.key"
+                                type="button"
+                                class="ord-filter"
+                                :class="{ 'ord-filter--active': activeFilter === f.key }"
+                                @click="activeFilter = f.key"
+                            >
+                                {{ f.label }}
+                                <span class="ord-filter__count">{{ tabCount(f.key) }}</span>
+                            </button>
                         </div>
+
+                        <el-input
+                            v-model="search"
+                            class="ord-search"
+                            :prefix-icon="Search"
+                            placeholder="Search order #, crop, counterparty…"
+                            clearable
+                        />
                     </div>
 
                     <div class="ord-card">
@@ -520,17 +523,28 @@ function openOrder(order) {
 </template>
 
 <style scoped>
+/* Orders — app-wide theme. Tokens come from the shared DesignPreviewLayout
+   --dp-* palette (defined on .dp-shell); literal hex fallbacks are the same
+   values so the page reads correctly on its own. Uses the same icon-tile
+   KPI + section-card language as Calendar, Contacts, and Notifications. */
 .ord-page {
-    --green: #004532;
-    --green-dark: #002e20;
-    --border: #eef2f0;
-    --on-surface: #111827;
-    --on-surface-var: #6b7280;
-    --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: var(--surface, #f7f9fb);
-    color: var(--on-surface);
-    min-height: 100%;
+    --card-border: var(--dp-outline-variant, #E5E7EB);
+    --surface: var(--dp-surface-container-lowest, #ffffff);
+    --surface-muted: var(--dp-surface-container-low, #F5F6F7);
+    --surface-elevated: var(--dp-surface-container, #F1F2F3);
+    --border: var(--dp-outline-variant, #E5E7EB);
+    --primary: var(--dp-primary, #000000);
+    --on-primary: var(--dp-on-primary, #ffffff);
+    --text: var(--dp-on-surface, #121516);
+    --text-2: var(--dp-on-surface-variant, #4B5457);
+    --text-muted: var(--dp-outline, #6F7677);
+    --success: #15803D;
+    --error: var(--dp-error, #F85149);
+    font-family: var(--dp-font-sans, 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 /* ── Page header ─────────────────────────────────────────────────────── */
@@ -539,248 +553,195 @@ function openOrder(order) {
     align-items: flex-start;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 1rem;
-    padding: 1.75rem 1.5rem 0;
+    gap: 16px;
 }
-
-.ord-page-header__left {
-    max-width: 560px;
-}
-
-.ord-kicker {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--green);
-    margin-bottom: 4px;
-}
+.ord-page-header__left { max-width: 640px; }
+.ord-page-header__actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .ord-title {
     font-size: 1.5rem;
+    line-height: 1.9rem;
+    letter-spacing: -0.015em;
     font-weight: 800;
-    letter-spacing: -0.02em;
-    margin: 0 0 0.25rem;
+    margin: 0 0 6px;
 }
-
 .ord-subtitle {
-    font-size: 0.875rem;
-    color: var(--on-surface-var);
+    font-size: 0.9375rem;
+    line-height: 1.5rem;
+    color: var(--text-muted);
     margin: 0;
-    line-height: 1.6;
+    max-width: 64ch;
+    text-wrap: pretty;
 }
 
-.ord-page-header__actions {
-    display: flex;
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.ord-btn {
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
-    padding-top: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 120ms ease, background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
+.ord-btn--primary {
+    background: var(--primary);
+    border: 1px solid transparent;
+    color: var(--on-primary);
+}
+.ord-btn--primary:hover:not(:disabled) { opacity: 0.88; }
+.ord-btn--primary:disabled { opacity: 0.5; cursor: default; }
+.ord-btn--outline {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+.ord-btn--outline:hover { background: var(--surface-muted); }
 
-/* ── Overview tiles — individual elevated cards, matching the market
-   listing page's floating-card language instead of a flat bordered
-   strip. ─────────────────────────────────────────────────────────────── */
+/* ── Overview / KPI strip ────────────────────────────────────────────── */
 .ord-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px;
-    margin: 1.25rem 1.5rem 0;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
 }
-
 .ord-kpi {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, .03);
-    transition: box-shadow .15s ease, transform .15s ease;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--dp-card-radius, 6px);
+    box-shadow: var(--dp-card-shadow, none);
+    padding: 16px 18px;
+    transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
-
 .ord-kpi:hover {
-    box-shadow: 0 12px 28px -18px rgba(15, 23, 42, .18);
+    box-shadow: 0 12px 28px -18px rgba(15, 23, 42, 0.18);
     transform: translateY(-1px);
+    border-color: var(--primary);
 }
-
 .ord-kpi__icon {
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
     border-radius: 10px;
-    background: var(--surface-low);
-    color: var(--on-surface-var);
+    background: var(--surface-muted);
+    color: var(--text-2);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
-
-.ord-kpi__icon--green { background: rgba(0, 69, 50, .08); color: var(--green); }
-
-.ord-kpi__body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-
+.ord-kpi__icon--green { background: var(--dp-secondary-container, #E5FAE7); color: var(--dp-on-secondary-container, #2F6B35); }
+.ord-kpi__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ord-kpi__label {
     font-size: 0.6875rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--on-surface-var);
+    color: var(--text-muted);
     white-space: nowrap;
 }
-
 .ord-kpi__val {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
+    line-height: 2rem;
     font-weight: 800;
-    color: var(--on-surface);
+    color: var(--text);
     letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
 }
+.ord-text-green { color: var(--success); }
 
-.ord-text-green { color: #166534; }
-
-/* ── Body ────────────────────────────────────────────────────────────── */
-.ord-body {
-    padding: 1.5rem 0 3rem;
-}
-
-/* ── Section ─────────────────────────────────────────────────────────── */
+/* ── Body / section card ─────────────────────────────────────────────── */
+.ord-body { display: flex; flex-direction: column; }
 .ord-section {
-    background: transparent;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--dp-card-radius, 6px);
+    box-shadow: var(--dp-card-shadow, none);
+    overflow: hidden;
 }
 
-/* ── Create button group (page header) ────────────────────────────────── */
-.ord-create-group {
-    display: inline-flex;
-    flex-shrink: 0;
-}
-
-.ord-create-group__btn {
-    font-weight: 700 !important;
-    font-size: 0.8125rem !important;
-    border-color: var(--green) !important;
-    color: var(--green) !important;
-}
-
-.ord-create-group__btn :deep(.el-icon) {
-    margin-right: 5px;
-}
-
-.ord-create-group__btn:hover {
-    background: rgba(0, 69, 50, 0.08) !important;
-    color: var(--green) !important;
-}
-
-.ord-create-group__btn--offer {
-    background: var(--green) !important;
-    color: #fff !important;
-}
-
-.ord-create-group__btn--offer:hover {
-    opacity: 0.9;
-    color: #fff !important;
-}
-
-/* ── Toolbar: tabs + search ───────────────────────────────────────────── */
+/* ── Toolbar: filters + search ───────────────────────────────────────── */
 .ord-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
     flex-wrap: wrap;
-    padding: 0 1.5rem;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
 }
-
-.ord-search-wrap { position: relative; display: flex; align-items: center; flex-shrink: 0; margin: 10px 0; }
-.ord-search-icon { position: absolute; left: 10px; font-size: 13px; color: #9ca3af; pointer-events: none; }
-.ord-search-input { height: 34px; width: 240px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px 0 30px; font-size: 0.8125rem; font-family: inherit; outline: none; color: var(--on-surface); background: #fff; transition: border-color .15s ease; }
-.ord-search-input:focus { border-color: var(--green); }
-
-/* ── Category tabs ───────────────────────────────────────────────────── */
-.ord-tabs {
-    padding: 0;
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-.ord-tabs :deep(.el-tabs__header) {
-    margin: 0;
-}
-
-.ord-tabs :deep(.el-tabs__nav-wrap::after) {
-    background-color: var(--border);
-}
-
-.ord-tabs :deep(.el-tabs__item) {
-    font-weight: 700;
-    font-size: 0.8125rem;
-    color: var(--on-surface-var);
-    height: 44px;
-}
-
-.ord-tabs :deep(.el-tabs__item.is-active) {
-    color: var(--green);
-}
-
-.ord-tabs :deep(.el-tabs__active-bar) {
-    background-color: var(--green);
-}
-
-.ord-tab-label {
+.ord-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.ord-filter {
+    height: 32px;
+    padding: 0 12px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-}
-
-.ord-tab-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 999px;
-    background: rgba(0, 69, 50, 0.08);
-    color: var(--green);
-    font-size: 0.625rem;
-    font-weight: 800;
-}
-
-/* ── Card — boxes the table exactly like .mkt-card on the market listing
-   page: floating, elevated, rounded, instead of an edge-to-edge table
-   sitting flat on the page background. ───────────────────────────────── */
-.ord-card {
-    margin: 0 1.5rem;
+    background: transparent;
     border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(17, 24, 39, .03), 0 12px 28px -18px rgba(17, 24, 39, .14);
+    border-radius: 999px;
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
+.ord-filter:hover { background: var(--surface-muted); color: var(--text); }
+.ord-filter--active { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.ord-filter__count {
+    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--text-muted);
+}
+.ord-filter--active .ord-filter__count { color: var(--on-primary); opacity: 0.78; }
+
+/* ── Toolbar search — compact on-theme input. The app's global 48px input
+      height is deliberately overridden so the toolbar stays tight while
+      the input otherwise inherits the standard on-theme look. */
+.ord-search { width: 260px; max-width: 100%; }
+.ord-search :deep(.el-input__wrapper) {
+    height: 36px;
+    min-height: 36px !important;
+    background: var(--surface);
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px var(--border) inset !important;
+    transition: box-shadow 120ms ease;
+}
+.ord-search :deep(.el-input__inner) { font-size: 13px; color: var(--text); }
+.ord-search :deep(.el-input__inner::placeholder) { color: var(--text-muted); }
+.ord-search :deep(.el-input__prefix .el-icon) { color: var(--text-muted); }
+.ord-search :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px var(--primary) inset !important; }
+
+/* ── Card — holds the table; corners clip through .ord-section. ───────── */
+.ord-card { overflow: hidden; }
 
 /* ── Order table ─────────────────────────────────────────────────────── */
 .ord-table {
     --el-table-border-color: var(--border);
-    --el-table-header-bg-color: var(--surface-low);
-    --el-table-header-text-color: var(--on-surface-var);
-    font-family: 'Manrope', system-ui, sans-serif;
+    --el-table-bg-color: transparent;
+    --el-table-tr-bg-color: transparent;
+    --el-table-header-bg-color: var(--surface-muted);
+    --el-table-header-text-color: var(--text-muted);
+    --el-table-text-color: var(--text-2);
+    --el-table-row-hover-bg-color: var(--surface-muted);
+    font-family: var(--dp-font-sans, 'Inter', system-ui, sans-serif);
 }
-
 .ord-table :deep(.el-table__header) th {
-    font-size: 0.6875rem;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
 }
-
-.ord-table :deep(.el-table__row) {
-    cursor: pointer;
-}
-
-.ord-table :deep(.el-table__inner-wrapper::before) {
-    display: none;
-}
-
+.ord-table :deep(.el-table__row) { cursor: pointer; }
+.ord-table :deep(.el-table__inner-wrapper::before) { display: none; }
 .ord-table :deep(.el-table__header-wrapper th:first-child .cell),
 .ord-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1.25rem; }
 .ord-table :deep(.el-table__header-wrapper th:last-child .cell),
@@ -788,7 +749,7 @@ function openOrder(order) {
 
 /* ── Table header icons ───────────────────────────────────────────────── */
 .ord-th { display: inline-flex; align-items: center; gap: 6px; }
-.ord-th :deep(.el-icon) { font-size: 13px; color: #9ca3af; }
+.ord-th :deep(.el-icon) { font-size: 13px; color: var(--text-muted); }
 .ord-th--right { justify-content: flex-end; }
 
 .ord-cell-order {
@@ -797,18 +758,13 @@ function openOrder(order) {
     gap: 3px;
     align-items: flex-start;
 }
-
 .ord-cell-order__num {
-    font-size: 0.8125rem;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--on-surface);
-    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
 }
-
-.ord-muted-cell {
-    color: var(--on-surface-var);
-    font-style: italic;
-}
+.ord-muted-cell { color: var(--text-muted); font-style: italic; }
 
 /* ── Party identity ────────────────────────────────────────────────────── */
 .ord-cell-party { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -826,29 +782,25 @@ function openOrder(order) {
 
 /* ── Numeric columns — right-aligned, tabular figures ─────────────────── */
 .ord-num { font-variant-numeric: tabular-nums; }
-.ord-amount {
-    font-weight: 600;
-    color: var(--on-surface);
-}
+.ord-amount { font-weight: 600; color: var(--text); }
 
 /* ── Status cell ───────────────────────────────────────────────────────── */
 .ord-cell-status { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-.ord-status-date { font-size: 0.6875rem; color: var(--on-surface-var); }
+.ord-status-date { font-size: 11px; color: var(--text-muted); }
 
 /* ── Empty state ───────────────────────────────────────────────────────── */
 .ord-empty { text-align: center; padding: 3rem 1rem; }
-.ord-empty__icon { width: 52px; height: 52px; border-radius: 50%; background: var(--surface-low); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
-.ord-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
-.ord-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin-bottom: 16px; max-width: 340px; margin-left: auto; margin-right: auto; line-height: 1.5; }
+.ord-empty__icon { width: 52px; height: 52px; border-radius: 12px; background: var(--surface-muted); color: var(--text-muted); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+.ord-empty__title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.ord-empty__text { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; max-width: 340px; margin-left: auto; margin-right: auto; line-height: 1.5; }
 
 .ord-row__perspective {
-    font-family: 'Manrope', system-ui, sans-serif;
-    font-size: 0.625rem;
-    font-weight: 600;
+    font-size: 10px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--green);
-    background: rgba(0, 69, 50, 0.08);
+    color: var(--dp-on-secondary-container, #2F6B35);
+    background: var(--dp-secondary-container, #E5FAE7);
     border-radius: 999px;
     padding: 2px 8px;
     align-self: flex-start;
@@ -857,67 +809,72 @@ function openOrder(order) {
 .ord-badge {
     display: inline-flex;
     border-radius: 999px;
-    font-size: 0.6875rem;
+    font-size: 11px;
     font-weight: 600;
     padding: 4px 10px;
     flex-shrink: 0;
     white-space: nowrap;
 }
-
-.ord-badge--green { background: #dcfce7; color: #166534; }
+.ord-badge--green { background: var(--dp-secondary-container, #E5FAE7); color: var(--dp-on-secondary-container, #2F6B35); }
 .ord-badge--amber { background: #fef3c7; color: #92400e; }
-.ord-badge--red { background: #fee2e2; color: #991b1b; }
+.ord-badge--red { background: var(--dp-error-container, #FEEDED); color: #991b1b; }
 .ord-badge--blue { background: #dbeafe; color: #1e40af; }
-.ord-badge--muted { background: #f3f4f6; color: #6b7280; }
+.ord-badge--muted { background: var(--dp-surface-container-high, #E5E7EB); color: var(--dp-on-surface-variant, #4B5457); }
 
-.ord-muted { color: var(--on-surface-var); font-size: 0.8125rem; }
+.ord-muted { color: var(--text-muted); font-size: 13px; }
 
-/* ── Buttons ─────────────────────────────────────────────────────────── */
+/* ── Buttons (modal footer + empty-state reset) ──────────────────────── */
+
 .ord-btn-primary {
-    background: linear-gradient(135deg, #004532, #065f46);
+    height: 36px;
+    padding: 0 16px;
+    background: var(--primary);
     border: 1px solid transparent;
-    color: #fff;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--on-primary);
     display: inline-flex;
     align-items: center;
     gap: 6px;
     cursor: pointer;
-    transition: opacity 0.15s ease;
+    transition: opacity 120ms ease;
 }
-
-.ord-btn-primary:hover { opacity: 0.9; }
-.ord-btn-primary:disabled { opacity: 0.6; cursor: default; }
+.ord-btn-primary:hover:not(:disabled) { opacity: 0.88; }
+.ord-btn-primary:disabled { opacity: 0.5; cursor: default; }
 
 .ord-btn-outline {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    color: #111827;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    padding: 8px 16px;
+    height: 36px;
+    padding: 0 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
     display: inline-flex;
     align-items: center;
     gap: 6px;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
-
-.ord-btn-outline:hover { background: #f8fafc; }
+.ord-btn-outline:hover { background: var(--surface-muted); }
 
 /* ── New/Edit modal ────────────────────────────────────────────────────
-   NOTE: <el-dialog> teleports its content to <body>, outside .ord-page's
-   DOM subtree, so CSS custom properties defined on .ord-page do NOT
-   cascade in. All colors below are literal hex values on purpose. */
+   <el-dialog> teleports to <body>, outside .ord-page's DOM subtree, so
+   the page's --dp-* tokens don't cascade in — app-standard literal hex
+   from the same token set is used instead (same approach as every other
+   app modal). */
 :deep(.el-dialog.ord-modal) {
-    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid #E5E7EB;
+    border-radius: var(--el-border-radius-base, 6px);
     padding: 0;
     overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    box-shadow: var(--el-box-shadow-dark, 0 8px 28px rgba(0, 0, 0, 0.08));
+    font-family: var(--dp-font-sans, 'Inter', system-ui, sans-serif);
 }
 
 :deep(.el-dialog.ord-modal .el-dialog__header) {
@@ -939,15 +896,16 @@ function openOrder(order) {
     gap: 12px;
     padding: 20px 24px;
     background: #fff;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid #E5E7EB;
 }
 
 .ord-modal__head-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 11px;
-    background: rgba(0, 69, 50, 0.08);
-    color: #004532;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: #F1F2F3;
+    border: 1px solid #E5E7EB;
+    color: #121516;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -960,38 +918,39 @@ function openOrder(order) {
 }
 
 .ord-modal__eyebrow {
-    font-size: 0.625rem;
+    font-size: 11px;
+    line-height: 16px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #004532;
-    margin-bottom: 1px;
+    letter-spacing: 0.08em;
+    color: #6F7677;
+    margin-bottom: 2px;
 }
 
 .ord-modal__title {
-    font-size: 1.0625rem;
-    font-weight: 800;
-    color: #111827;
-    letter-spacing: -0.01em;
-    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    line-height: 20px;
+    font-weight: 700;
+    color: #121516;
+    font-family: var(--dp-font-sans, 'Inter', system-ui, sans-serif);
 }
 
 .ord-modal__close {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
     border: none;
-    background: #f3f4f6;
-    color: #6b7280;
+    background: transparent;
+    color: #6F7677;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
-    transition: background 0.12s;
+    transition: background 120ms, color 120ms;
 }
 
-.ord-modal__close:hover { background: #e5e7eb; color: #111827; }
+.ord-modal__close:hover { background: #F1F2F3; color: #121516; }
 
 .ord-modal__body {
     padding: 22px 24px 6px;
@@ -1018,49 +977,49 @@ function openOrder(order) {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-size: 0.8125rem;
+    font-size: 12px;
     font-weight: 600;
-    color: #374151;
+    color: #121516;
 }
 
 .ord-field__error {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #dc2626;
+    font-size: 12px;
+    font-weight: 500;
+    color: #F85149;
     line-height: 1.4;
 }
 
 .ord-input--error :deep(.el-input__wrapper),
 .ord-input--error :deep(.el-textarea__inner),
 .ord-input--error :deep(.el-select__wrapper) {
-    box-shadow: 0 0 0 1.5px #dc2626 inset !important;
+    box-shadow: 0 0 0 1.5px #F85149 inset !important;
 }
 
 .ord-desc {
-    font-size: 0.8125rem;
-    color: #374151;
+    font-size: 12px;
+    color: #4B5457;
     line-height: 1.5;
     margin: 0;
 }
 
 .ord-input :deep(.el-input__wrapper),
 .ord-input :deep(.el-textarea__inner) {
-    border-radius: 10px;
-    box-shadow: 0 0 0 1px #e5e7eb inset;
-    background: #f9fafb;
-    transition: box-shadow 0.12s, background 0.12s;
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px #E5E7EB inset;
+    background: #F5F6F7;
+    transition: box-shadow 120ms, background 120ms;
 }
 
 .ord-input :deep(.el-input__wrapper:hover),
 .ord-input :deep(.el-textarea__inner:hover) {
     background: #fff;
-    box-shadow: 0 0 0 1px #d1d5db inset;
+    box-shadow: 0 0 0 1px #E5E7EB inset;
 }
 
 .ord-input :deep(.el-input__wrapper.is-focus),
 .ord-input :deep(.el-textarea__inner:focus) {
     background: #fff;
-    box-shadow: 0 0 0 1.5px #004532 inset;
+    box-shadow: 0 0 0 1.5px #000000 inset;
 }
 
 .ord-input--number :deep(input[type='number']::-webkit-outer-spin-button),
@@ -1077,43 +1036,61 @@ function openOrder(order) {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #f9fafb;
-    border: 1px solid #f3f4f6;
-    border-radius: 10px;
+    background: #F5F6F7;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
     padding: 10px 12px;
-    font-size: 0.8125rem;
-    color: #6b7280;
+    font-size: 12px;
+    color: #6F7677;
 }
 
 .ord-estimate strong {
-    font-size: 0.9375rem;
-    color: #111827;
+    font-size: 14px;
+    color: #121516;
     font-weight: 800;
 }
 
 .ord-modal__footer {
+    /* Button tokens are defined here (not on .ord-page) because the
+       <el-dialog> teleports to <body> — the page's custom properties
+       don't cascade into it, so the primary save button would otherwise
+       render with no background. */
+    --primary: #000000;
+    --on-primary: #ffffff;
+    --surface: #ffffff;
+    --surface-muted: #F5F6F7;
+    --border: #E5E7EB;
+    --text: #121516;
+    --text-muted: #6F7677;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 10px;
     padding: 16px 24px;
-    background: #f9fafb;
-    border-top: 1px solid #f3f4f6;
+    background: #F5F6F7;
+    border-top: 1px solid #E5E7EB;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 1199.98px) {
+    .ord-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 767.98px) {
-    .ord-page-header { padding: 1.25rem 1.25rem 0; }
-    .ord-kpi-grid { margin: 1.25rem 1.25rem 0; }
-    .ord-body { padding: 1.25rem 0 3rem; }
-    .ord-toolbar { padding: 0 1.25rem; align-items: stretch; }
-    .ord-search-wrap { width: 100%; }
-    .ord-search-input { width: 100%; }
-    .ord-card { margin: 0 1.25rem; border-radius: 6px; }
-    .ord-table :deep(.el-table__header-wrapper th:first-child .cell),
-    .ord-table :deep(.el-table__body-wrapper td:first-child .cell) { padding-left: 1rem; }
-    .ord-table :deep(.el-table__header-wrapper th:last-child .cell),
-    .ord-table :deep(.el-table__body-wrapper td:last-child .cell) { padding-right: 1rem; }
+    .ord-page-header { flex-direction: column; align-items: stretch; }
+    .ord-kpi-grid { grid-template-columns: 1fr; }
+    .ord-toolbar { flex-direction: column; align-items: stretch; }
+    .ord-search { width: 100%; }
     .ord-field-row { grid-template-columns: 1fr; }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .ord-kpi,
+    .ord-btn,
+    .ord-filter,
+    .ord-modal__close {
+        transition: none;
+    }
 }
 </style>

@@ -652,56 +652,46 @@ const noActionsMessage = computed(() => {
 </template>
 
 <style scoped>
+/* Order profile — app-wide theme. Tokens come from the shared
+   DesignPreviewLayout --dp-* palette (defined on .dp-shell); literal hex
+   fallbacks are the same values so the page reads correctly on its own.
+   Black is the page's single accent: the total figure, the primary
+   button, and active stepper indicators — everything else is grayscale. */
 .osh-page {
-    /* One accent color for the whole page — everything else is grayscale.
-       Used only for: the total-amount figure, the primary button, active/
-       current-step indicators, and link-like hovers. Nothing else gets
-       colored surfaces. */
-    --accent: #004532;
-    --accent-dark: #002e20;
-    --accent-soft: rgba(0, 69, 50, .08);
-    --border: #eef2f0;
-    --on-surface: #16181d;
-    --on-surface-var: #71717a;
-    --surface-low: #f6f6f7;
-    font-family: 'Manrope', system-ui, sans-serif;
-    background: #fafafa;
-    color: var(--on-surface);
-    min-height: 100%;
-    padding: 1.25rem 1rem 3rem;
+    --card-border: var(--dp-outline-variant, #E5E7EB);
+    --surface: var(--dp-surface-container-lowest, #ffffff);
+    --surface-muted: var(--dp-surface-container-low, #F5F6F7);
+    --surface-elevated: var(--dp-surface-container, #F1F2F3);
+    --border: var(--dp-outline-variant, #E5E7EB);
+    --primary: var(--dp-primary, #000000);
+    --on-primary: var(--dp-on-primary, #ffffff);
+    --text: var(--dp-on-surface, #121516);
+    --text-2: var(--dp-on-surface-variant, #4B5457);
+    --text-muted: var(--dp-outline, #6F7677);
+    --secondary-container: var(--dp-secondary-container, #E5FAE7);
+    --on-secondary-container: var(--dp-on-secondary-container, #2F6B35);
+    font-family: var(--dp-font-sans, 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .osh-container {
-    max-width: 1160px;
-    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 20px;
 }
-
-.osh-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--on-surface-var);
-    text-decoration: none;
-    transition: color 0.12s;
-    align-self: flex-start;
-}
-
-.osh-back:hover { color: var(--on-surface); }
 
 /* ══════════════════════════════════════════════════════════════════════
    ORDER TICKET — plain bordered document header, no gradients.
    ══════════════════════════════════════════════════════════════════════ */
 .osh-ticket {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--dp-card-radius, 6px);
     padding: 20px 24px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14);
+    box-shadow: var(--dp-card-shadow, none);
 }
 
 .osh-ticket__top {
@@ -725,7 +715,7 @@ const noActionsMessage = computed(() => {
     gap: 6px;
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--on-surface-var);
+    color: var(--text-2);
     white-space: nowrap;
 }
 
@@ -738,27 +728,27 @@ const noActionsMessage = computed(() => {
     background: var(--dot, #9ca3af);
 }
 
-.osh-badge--green { --dot: #16a34a; color: var(--on-surface); }
-.osh-badge--amber { --dot: #f59e0b; color: var(--on-surface); }
-.osh-badge--red   { --dot: #ef4444; color: var(--on-surface); }
-.osh-badge--blue  { --dot: #3b82f6; color: var(--on-surface); }
-.osh-badge--muted { --dot: #9ca3af; }
+.osh-badge--green { --dot: #16a34a; color: var(--text); }
+.osh-badge--amber { --dot: #d97706; color: var(--text); }
+.osh-badge--red   { --dot: var(--error, #F85149); color: var(--text); }
+.osh-badge--blue  { --dot: #2563eb; color: var(--text); }
+.osh-badge--muted { --dot: var(--text-muted); }
 
 .osh-ticket__number {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
     font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.01em;
     line-height: 1.2;
-    color: var(--on-surface);
+    color: var(--text);
 }
 
 .osh-ticket__subtitle {
     font-size: 0.8125rem;
-    color: var(--on-surface-var);
+    color: var(--text-muted);
     margin: 5px 0 0;
     line-height: 1.6;
 }
@@ -771,15 +761,15 @@ const noActionsMessage = computed(() => {
     height: 24px;
     border-radius: 6px;
     border: 1px solid var(--border);
-    background: #fff;
-    color: var(--on-surface-var);
+    background: var(--surface);
+    color: var(--text-2);
     cursor: pointer;
     flex-shrink: 0;
     transition: background .15s ease, border-color .15s ease, color .15s ease;
 }
 
-.osh-copy-btn:hover { background: var(--surface-low); color: var(--on-surface); }
-.osh-copy-btn--done { background: #dcfce7; border-color: #86efac; color: #166534; }
+.osh-copy-btn:hover { background: var(--surface-muted); color: var(--text); }
+.osh-copy-btn--done { background: var(--secondary-container); border-color: var(--secondary-container); color: var(--on-secondary-container); }
 
 .osh-ticket__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
 
@@ -789,9 +779,9 @@ const noActionsMessage = computed(() => {
     gap: 6px;
     font-size: 0.8125rem;
     font-weight: 700;
-    color: var(--on-surface-var);
-    background: var(--surface-low);
-    border-radius: 8px;
+    color: var(--text-2);
+    background: var(--surface-muted);
+    border-radius: 6px;
     padding: 8px 14px;
 }
 
@@ -802,26 +792,26 @@ const noActionsMessage = computed(() => {
     gap: 18px;
     margin-top: 18px;
     padding-top: 16px;
-    border-top: 1px solid var(--surface-low);
+    border-top: 1px solid var(--surface-muted);
 }
 
 .osh-ticket__term { display: flex; flex-direction: column; gap: 2px; }
-.osh-ticket__term-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; }
-.osh-ticket__term-value { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); font-variant-numeric: tabular-nums; }
-.osh-ticket__op { font-size: 0.875rem; font-weight: 700; color: #d1d5db; }
+.osh-ticket__term-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.osh-ticket__term-value { font-size: 0.9375rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.osh-ticket__op { font-size: 0.875rem; font-weight: 700; color: var(--text-muted); }
 
-.osh-ticket__term--total .osh-ticket__term-value { font-size: 1.125rem; font-weight: 800; color: var(--accent); }
+.osh-ticket__term--total .osh-ticket__term-value { font-size: 1.125rem; font-weight: 800; color: var(--primary); }
 
 /* ══════════════════════════════════════════════════════════════════════
    CARDS — every section below the ticket header is a distinct, elevated
    module instead of a hairline-divided strip of the page.
    ══════════════════════════════════════════════════════════════════════ */
 .osh-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--dp-card-radius, 6px);
     padding: 22px 24px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 28px -18px rgba(15, 23, 42, .14);
+    box-shadow: var(--dp-card-shadow, none);
     transition: box-shadow .15s ease;
 }
 
@@ -834,40 +824,44 @@ const noActionsMessage = computed(() => {
     font-size: 1.0625rem;
     font-weight: 800;
     letter-spacing: -0.01em;
-    color: var(--on-surface);
+    color: var(--text);
     margin: 0 0 4px;
 }
 
+.osh-card__title :deep(.el-icon) { color: var(--text-muted); }
+
 .osh-card__subtitle {
     font-size: 0.8125rem;
-    color: var(--on-surface-var);
+    color: var(--text-muted);
     line-height: 1.55;
     margin: 0;
 }
 
-.osh-muted { font-size: 0.8125rem; color: var(--on-surface-var); }
+.osh-muted { font-size: 0.8125rem; color: var(--text-muted); }
 
 /* ── Buttons (in-page, not hero) ───────────────────────────────────────── */
 .osh-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 0 16px;
+    height: 36px;
     cursor: pointer;
     border: 1px solid transparent;
-    transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    font-family: inherit;
+    transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.osh-btn--outline { background: #fff; border-color: var(--border); color: var(--on-surface); }
-.osh-btn--outline:hover { background: var(--surface-low); }
+.osh-btn--outline { background: var(--surface); border-color: var(--border); color: var(--text); }
+.osh-btn--outline:hover { background: var(--surface-muted); }
 
-.osh-btn--primary { background: var(--accent); color: #fff; }
-.osh-btn--primary:hover { background: var(--accent-dark); }
+.osh-btn--primary { background: var(--primary); color: var(--on-primary); }
+.osh-btn--primary:hover { opacity: 0.88; }
 
-.osh-btn--danger.osh-btn--outline:hover { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+.osh-btn--danger.osh-btn--outline:hover { background: var(--dp-error-container, #FEEDED); border-color: var(--dp-error-container, #FEEDED); color: var(--dp-on-error-container, #C6413A); }
 
 /* ── Alert (terminal state) ─────────────────────────────────────────── */
 .osh-alert {
@@ -875,13 +869,13 @@ const noActionsMessage = computed(() => {
     align-items: center;
     gap: 10px;
     padding: 14px 18px;
-    border-radius: 10px;
+    border-radius: 6px;
     font-size: 0.8437rem;
     font-weight: 600;
 }
 
-.osh-alert--red { background: #fef2f2; color: #991b1b; }
-.osh-alert--muted { background: var(--surface-low); color: var(--on-surface-var); }
+.osh-alert--red { background: var(--dp-error-container, #FEEDED); color: var(--dp-on-error-container, #C6413A); }
+.osh-alert--muted { background: var(--surface-muted); color: var(--text-2); }
 
 /* ── Stepper ─────────────────────────────────────────────────────────── */
 .osh-stepper { display: flex; align-items: flex-start; }
@@ -911,7 +905,7 @@ const noActionsMessage = computed(() => {
     z-index: 0;
 }
 
-.osh-step--done:not(:last-child) .osh-step__indicator::after { background: var(--accent); }
+.osh-step--done:not(:last-child) .osh-step__indicator::after { background: var(--primary); }
 
 .osh-step__dot {
     width: 30px;
@@ -922,32 +916,32 @@ const noActionsMessage = computed(() => {
     justify-content: center;
     font-size: 0.6875rem;
     font-weight: 800;
-    background: #fff;
+    background: var(--surface);
     border: 2px solid var(--border);
-    color: var(--on-surface-var);
+    color: var(--text-2);
     position: relative;
     z-index: 1;
     flex-shrink: 0;
 }
 
-.osh-step--done .osh-step__dot { background: var(--accent); border-color: var(--accent); color: #fff; }
+.osh-step--done .osh-step__dot { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 
 .osh-step--current .osh-step__dot {
-    border-color: var(--accent);
-    color: var(--accent);
-    box-shadow: 0 0 0 4px var(--accent-soft);
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 0 0 4px var(--dp-surface-container, #F1F2F3);
 }
 
 .osh-step__body { display: flex; flex-direction: column; gap: 4px; max-width: 200px; }
-.osh-step__label { font-size: 0.8125rem; font-weight: 800; color: var(--on-surface-var); letter-spacing: -0.005em; }
+.osh-step__label { font-size: 0.8125rem; font-weight: 800; color: var(--text-2); letter-spacing: -0.005em; }
 .osh-step--done .osh-step__label,
-.osh-step--current .osh-step__label { color: var(--on-surface); }
-.osh-step__desc { font-size: 0.75rem; line-height: 1.45; color: var(--on-surface-var); }
-.osh-step--done .osh-step__desc { color: var(--accent); font-weight: 700; }
-.osh-step--current .osh-step__desc { color: var(--on-surface-var); }
+.osh-step--current .osh-step__label { color: var(--text); }
+.osh-step__desc { font-size: 0.75rem; line-height: 1.45; color: var(--text-muted); }
+.osh-step--done .osh-step__desc { color: var(--on-secondary-container); font-weight: 700; }
+.osh-step--current .osh-step__desc { color: var(--text-muted); }
 
 /* ── Needs-your-review card ────────────────────────────────────────────── */
-.osh-card--review { border-left: 3px solid #f59e0b; }
+.osh-card--review { border-left: 3px solid #d97706; }
 
 .osh-review-flag {
     display: inline-flex;
@@ -957,7 +951,7 @@ const noActionsMessage = computed(() => {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #b45309;
+    color: #92400e;
     margin-bottom: 14px;
 }
 
@@ -965,22 +959,22 @@ const noActionsMessage = computed(() => {
    modern chip grid, matching the tile language used on the market listing
    page instead of reading like a static invoice line-item table. ──────── */
 .osh-specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-.osh-spec { display: flex; flex-direction: column; gap: 3px; background: var(--surface-low); border-radius: 10px; padding: 10px 12px; }
-.osh-spec__label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; }
-.osh-spec__value { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
+.osh-spec { display: flex; flex-direction: column; gap: 3px; background: var(--surface-muted); border-radius: 6px; padding: 10px 12px; }
+.osh-spec__label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.osh-spec__value { font-size: 0.875rem; font-weight: 700; color: var(--text); }
 
 .osh-notes-card {
     position: relative;
     width: 100%;
-    background: var(--surface-low);
-    border-left: 3px solid var(--accent);
+    background: var(--surface-muted);
+    border-left: 3px solid var(--primary);
     border-radius: 6px;
     padding: 1.1rem 3rem 1.1rem 1.25rem;
     overflow: hidden;
 }
 
-.osh-notes-card__icon { position: absolute; top: 10px; right: 12px; color: rgba(0, 69, 50, 0.1); }
-.osh-notes-card__text { position: relative; font-size: 0.875rem; color: var(--on-surface); line-height: 1.65; margin: 0; white-space: pre-line; }
+.osh-notes-card__icon { position: absolute; top: 10px; right: 12px; color: var(--surface-elevated); }
+.osh-notes-card__text { position: relative; font-size: 0.875rem; color: var(--text); line-height: 1.65; margin: 0; white-space: pre-line; }
 
 /* ── Interested parties ────────────────────────────────────────────────── */
 .osh-intent-list { display: flex; flex-direction: column; gap: 10px; }
@@ -991,17 +985,17 @@ const noActionsMessage = computed(() => {
     gap: 14px;
     padding: 12px 14px;
     border: 1px solid var(--border);
-    background: #fff;
-    border-radius: 10px;
+    background: var(--surface);
+    border-radius: 6px;
     transition: border-color .15s ease, box-shadow .15s ease;
 }
 
-.osh-intent-row:hover { border-color: #d4d4d8; box-shadow: 0 4px 12px -6px rgba(15, 23, 42, .12); }
+.osh-intent-row:hover { border-color: var(--dp-outline, #6F7677); box-shadow: 0 4px 12px -6px rgba(15, 23, 42, .12); }
 
 .osh-intent-row__identity { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-.osh-intent-row__name { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
-.osh-intent-row__role { font-size: 0.75rem; color: var(--on-surface-var); }
-.osh-intent-row__stats { display: flex; gap: 12px; font-size: 0.75rem; color: var(--on-surface-var); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.osh-intent-row__name { font-size: 0.875rem; font-weight: 700; color: var(--text); }
+.osh-intent-row__role { font-size: 0.75rem; color: var(--text-muted); }
+.osh-intent-row__stats { display: flex; gap: 12px; font-size: 0.75rem; color: var(--text-muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
 /* ── Coffee details / buyer & seller row ─────────────────────────────── */
 .osh-row { display: grid; grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr); gap: 2.5rem; }
@@ -1016,14 +1010,14 @@ const noActionsMessage = computed(() => {
     flex-direction: column;
     gap: 8px;
     min-width: 0;
-    background: var(--surface-low);
+    background: var(--surface-muted);
     border-radius: 6px;
     padding: 12px 14px;
 }
 
 .osh-party-card__head { display: flex; align-items: center; gap: 8px; }
-.osh-party__role { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; }
-.osh-party__name { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); }
+.osh-party__role { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+.osh-party__name { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9375rem; font-weight: 700; color: var(--text); }
 
 /* ── Shared avatar (parties, intents, review modal) ───────────────────── */
 .osh-avatar {
@@ -1038,26 +1032,26 @@ const noActionsMessage = computed(() => {
     font-weight: 800;
 }
 
-.osh-avatar--lg { width: 38px; height: 38px; border-radius: 11px; font-size: 0.875rem; }
+.osh-avatar--lg { width: 38px; height: 38px; border-radius: 6px; font-size: 0.875rem; }
 
 .osh-you-tag {
     font-size: 0.5625rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--accent);
-    background: rgba(0, 69, 50, 0.1);
+    color: var(--on-secondary-container);
+    background: var(--secondary-container);
     border-radius: 999px;
     padding: 1px 6px;
 }
 
 .osh-contact { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
-.osh-contact__row { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--on-surface-var); }
+.osh-contact__row { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted); }
 
-.osh-meta { display: flex; flex-wrap: wrap; gap: 2.5rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--surface-low); }
+.osh-meta { display: flex; flex-wrap: wrap; gap: 2.5rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--surface-muted); }
 .osh-meta__item { display: flex; flex-direction: column; gap: 3px; }
-.osh-meta__label { display: inline-flex; align-items: center; gap: 4px; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; }
-.osh-meta__value { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
+.osh-meta__label { display: inline-flex; align-items: center; gap: 4px; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+.osh-meta__value { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
 
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
@@ -1077,12 +1071,11 @@ const noActionsMessage = computed(() => {
         height: calc(100% + 1.1rem - 30px);
         background: var(--border);
     }
-    .osh-step--done:not(:last-child) .osh-step__indicator::after { background: var(--accent); }
+    .osh-step--done:not(:last-child) .osh-step__indicator::after { background: var(--primary); }
     .osh-step__body { max-width: none; padding-top: 3px; }
 }
 
 @media (max-width: 640px) {
-    .osh-page { padding: 1rem 0.75rem 3rem; }
     .osh-ticket { padding: 16px 18px; }
     .osh-ticket__number { font-size: 1.25rem; }
     .osh-ticket__terms { flex-wrap: wrap; row-gap: 12px; }
@@ -1090,47 +1083,67 @@ const noActionsMessage = computed(() => {
 }
 
 /* ── Interested-party review modal ─────────────────────────────────────────
-   NOTE: <el-dialog> teleports its content to <body>, outside .osh-page's
-   DOM subtree, so CSS custom properties defined on .osh-page do NOT
-   cascade in. All colors below are literal hex values on purpose. */
+   <el-dialog> teleports to <body>, outside .osh-page's DOM subtree, so the
+   page's --dp-* tokens don't cascade in — app-standard literal hex from the
+   same token set is used instead (same approach as every other app modal). */
 :deep(.el-dialog.osh-review-modal) {
-    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid #E5E7EB;
+    border-radius: var(--el-border-radius-base, 6px);
     padding: 0;
     overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    box-shadow: var(--el-box-shadow-dark, 0 8px 28px rgba(0, 0, 0, 0.08));
+    font-family: var(--dp-font-sans, 'Inter', system-ui, sans-serif);
 }
 
 :deep(.el-dialog.osh-review-modal .el-dialog__header) { padding: 0; margin: 0; }
 :deep(.el-dialog.osh-review-modal .el-dialog__body) { padding: 0; }
 :deep(.el-dialog.osh-review-modal .el-dialog__footer) { padding: 0; }
 
-.osh-review-head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #f3f4f6; }
-.osh-review-eyebrow { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #004532; margin-bottom: 1px; }
-.osh-review-title { font-size: 1.0625rem; font-weight: 800; color: #111827; letter-spacing: -0.01em; }
+.osh-review-head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: #fff; border-bottom: 1px solid #E5E7EB; }
+.osh-review-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6F7677; margin-bottom: 2px; }
+.osh-review-title { font-size: 15px; font-weight: 700; color: #121516; }
 
 .osh-review-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; max-height: 60vh; overflow-y: auto; }
-.osh-review-section__title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin: 0 0 10px; }
+.osh-review-section__title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6F7677; margin: 0 0 10px; }
 
-.osh-review-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; font-size: 0.8125rem; border-bottom: 1px solid #f3f4f6; }
+.osh-review-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; font-size: 13px; border-bottom: 1px solid #F1F2F3; }
 .osh-review-row:last-child { border-bottom: none; }
-.osh-review-row__label { color: #6b7280; font-weight: 600; }
-.osh-review-row__value { color: #111827; font-weight: 600; }
+.osh-review-row__label { color: #6F7677; font-weight: 600; }
+.osh-review-row__value { color: #121516; font-weight: 600; }
 
-.osh-review-verified { display: inline-flex; border-radius: 999px; padding: 2px 8px; font-size: 0.6875rem; font-weight: 700; background: #f3f4f6; color: #6b7280; }
-.osh-review-verified--yes { background: #dcfce7; color: #166534; }
+.osh-review-verified { display: inline-flex; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 700; background: var(--dp-surface-container-high, #E5E7EB); color: var(--dp-on-surface-variant, #4B5457); }
+.osh-review-verified--yes { background: var(--dp-secondary-container, #E5FAE7); color: var(--dp-on-secondary-container, #2F6B35); }
 
-.osh-review-bio { font-size: 0.8125rem; color: #374151; line-height: 1.6; margin: 0 0 10px; }
+.osh-review-bio { font-size: 13px; color: #4B5457; line-height: 1.6; margin: 0 0 10px; }
 
 .osh-review-stats { display: flex; gap: 10px; }
-.osh-review-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px; border-radius: 10px; background: #f9fafb; }
-.osh-review-stat strong { font-size: 1.125rem; font-weight: 800; color: #111827; font-variant-numeric: tabular-nums; }
-.osh-review-stat span { font-size: 0.6875rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; }
+.osh-review-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px; border-radius: 6px; background: #F5F6F7; }
+.osh-review-stat strong { font-size: 1.125rem; font-weight: 800; color: #121516; font-variant-numeric: tabular-nums; }
+.osh-review-stat span { font-size: 11px; font-weight: 600; color: #6F7677; text-transform: uppercase; letter-spacing: 0.04em; }
 
-.osh-review-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #f9fafb; border-top: 1px solid #f3f4f6; }
-.osh-review-btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 8px 16px; cursor: pointer; border: 1px solid transparent; transition: opacity 0.15s ease, background 0.15s ease; }
-.osh-review-btn--outline { background: #fff; border-color: #e5e7eb; color: #111827; }
-.osh-review-btn--outline:hover { background: #f9fafb; }
-.osh-review-btn--primary { background: #004532; color: #fff; }
-.osh-review-btn--primary:hover { background: #002e20; }
+.osh-review-footer {
+    /* Button tokens are defined here (not on .osh-page) because the
+       <el-dialog> teleports to <body> — the page's custom properties don't
+       cascade into it, so the primary confirm button would otherwise render
+       with no background. */
+    --primary: #000000;
+    --on-primary: #ffffff;
+    --surface: #ffffff;
+    --surface-muted: #F5F6F7;
+    --border: #E5E7EB;
+    --text: #121516;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    background: #F5F6F7;
+    border-top: 1px solid #E5E7EB;
+}
+.osh-review-btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; font-size: 13px; font-weight: 600; padding: 0 16px; height: 36px; cursor: pointer; border: 1px solid transparent; font-family: inherit; transition: opacity 120ms ease, background 120ms ease; }
+.osh-review-btn--outline { background: var(--surface); border-color: var(--border); color: var(--text); }
+.osh-review-btn--outline:hover { background: var(--surface-muted); }
+.osh-review-btn--primary { background: var(--primary); color: var(--on-primary); }
+.osh-review-btn--primary:hover { opacity: 0.88; }
 </style>

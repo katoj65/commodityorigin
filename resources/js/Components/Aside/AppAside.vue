@@ -13,6 +13,7 @@ import {
     House,
     MagicStick,
     Picture,
+    Postcard,
     School,
     Shop,
     ShoppingBag,
@@ -64,6 +65,7 @@ const sideSections = computed(() => [
         title: 'Operations',
         items: [
             { label: 'Calendar', href: route('calendar.index'), active: route().current('calendar.*'), icon: Calendar },
+            { label: 'Contacts', href: route('contact.index'), active: route().current('contact.*'), icon: Postcard },
             { label: 'My Orders', href: route('orders.index'), active: route().current('orders.*'), icon: ShoppingBag },
             { label: 'Farmers', href: route('farmer.index'), active: route().current('farmer.index'), icon: User },
             { label: 'Coffee Farms', href: route('farm.index'), active: route().current('farm.index'), icon: House },
@@ -164,6 +166,14 @@ function go(item) {
                 >
                     <el-icon :size="18"><Calendar /></el-icon>
                     <span class="app-nav-item__label">Calendar</span>
+                </div>
+                <div
+                    class="app-nav-item"
+                    :class="{ 'app-nav-item--active': route().current('contact.*') }"
+                    @click="router.visit(route('contact.index'))"
+                >
+                    <el-icon :size="18"><Postcard /></el-icon>
+                    <span class="app-nav-item__label">Contacts</span>
                 </div>
 
                 <template v-if="subscribedAgents.length">

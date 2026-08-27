@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Bell, Box, Calendar, Close, CoffeeCup, Coin, Compass, Document, FirstAidKit, Grid,
-    House, MagicStick, Menu, Message, Odometer, Picture, School, Search, Setting, Shop,
+    House, MagicStick, Menu, Message, Odometer, Picture, Postcard, School, Search, Setting, Shop,
     ShoppingBag, ShoppingCart, Sunny, SwitchButton, Tickets, TrendCharts, Trophy, User, Wallet,
 } from '@element-plus/icons-vue';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
@@ -60,6 +60,7 @@ const adminNavSections = computed(() => [
         label: 'Operations',
         items: [
             { index: 'calendar', label: 'Calendar', icon: Calendar, href: route('calendar.index'), active: route().current('calendar.*') },
+            { index: 'contacts', label: 'Contacts', icon: Postcard, href: route('contact.index'), active: route().current('contact.*') },
             { index: 'orders', label: 'My Orders', icon: ShoppingBag, href: route('orders.index'), active: route().current('orders.*') },
             { index: 'farmers', label: 'Farmers', icon: User, href: route('farmer.index'), active: route().current('farmer.index') },
             { index: 'farms', label: 'Coffee Farms', icon: House, href: route('farm.index'), active: route().current('farm.index') },
@@ -104,6 +105,7 @@ const nonAdminNavSections = computed(() => {
                 { index: 'market', label: 'Market', icon: Compass, href: route('market.index'), active: route().current('market.*') },
                 { index: 'store', label: 'My Store', icon: Shop, href: route('store.show'), active: route().current('store.*') },
                 { index: 'calendar', label: 'Calendar', icon: Calendar, href: route('calendar.index'), active: route().current('calendar.*') },
+                { index: 'contacts', label: 'Contacts', icon: Postcard, href: route('contact.index'), active: route().current('contact.*') },
             ],
         },
     ];

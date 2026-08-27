@@ -3,26 +3,27 @@
 use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\AI\AiChatController;
 use App\Http\Controllers\Analysis\AnalysisController;
-use App\Http\Controllers\Bid\BidController;
-use App\Http\Controllers\Business\BusinessController;
 use App\Http\Controllers\Auction\AuctionController;
 use App\Http\Controllers\Batch\BatchController;
+use App\Http\Controllers\Bid\BidController;
+use App\Http\Controllers\Business\BusinessController;
 use App\Http\Controllers\Buy\BuyController;
 use App\Http\Controllers\Calendar\CalendarController;
 use App\Http\Controllers\Checkout\CheckoutController;
+use App\Http\Controllers\Contact\ContactController;
 use App\Http\Controllers\Cooperative\CooperativeController;
 use App\Http\Controllers\Country\CountryController;
 use App\Http\Controllers\Currency\CurrencyController;
 use App\Http\Controllers\Documentation\DocumentationController;
+use App\Http\Controllers\Escrow\EscrowController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Farm\GeocodeController;
 use App\Http\Controllers\FarmCollection\FarmCollectionController;
+use App\Http\Controllers\Farmer\FarmerController;
 use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Gallery\GalleryController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
-use App\Http\Controllers\Farmer\FarmerController;
-use App\Http\Controllers\Escrow\EscrowController;
 use App\Http\Controllers\Input\AgriculturalInputController;
 use App\Http\Controllers\Inspection\InspectionController;
 use App\Http\Controllers\Lot\LotController;
@@ -40,6 +41,7 @@ use App\Http\Controllers\Task\TaskController;
 use App\Http\Controllers\Wallet\WalletController;
 use App\Http\Controllers\Weather\WeatherForecastController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // Public landing page.
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -47,14 +49,10 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Design preview — a literal port of a Stitch mockup, kept isolated from
 // the real app shell so it can be inspected without touching production
 // pages. Not linked from anywhere; visit directly.
-Route::get('/test/design', fn () => \Inertia\Inertia::render('Test/DesignPreview'))->name('test.design');
+Route::get('/test/design', fn () => Inertia::render('Test/DesignPreview'))->name('test.design');
 Route::get('/news', [MarketController::class, 'marketIntelligence'])->name('market.news');
 Route::get('/live-market', [MarketController::class, 'liveMarket'])->name('market.live');
 Route::get('/origins', [OriginController::class, 'index'])->name('origin.index');
-
-
-
-
 
 // Authenticated application routes.
 Route::middleware([
@@ -108,6 +106,15 @@ Route::middleware([
         Route::delete('/{task}', [TaskController::class, 'destroy'])->name('destroy');
     });
 
+    // Contacts — every user's personal address book.
+    Route::prefix('contact')->name('contact.')->group(function () {
+        Route::get('/', [ContactController::class, 'index'])->name('index');
+        Route::post('/', [ContactController::class, 'store'])->name('store');
+        Route::get('/{contact}', [ContactController::class, 'show'])->name('show');
+        Route::patch('/{contact}', [ContactController::class, 'update'])->name('update');
+        Route::delete('/{contact}', [ContactController::class, 'destroy'])->name('destroy');
+    });
+
     // Market forecast.
     Route::prefix('forecast')->name('forecast.')->group(function () {
         Route::get('/', [ForecastController::class, 'index'])->name('index');
@@ -136,8 +143,6 @@ Route::middleware([
     Route::delete('/profile/business', [ProfileController::class, 'destroyBusiness'])->name('profile.business.destroy');
     Route::post('/profile/role', [ProfileController::class, 'updateRole'])->name('profile.role');
     Route::post('/profile/currency', [ProfileController::class, 'updateCurrency'])->name('profile.currency');
-
-
 
     // Farmer workspace routes. Access is enforced by FarmerPolicy: open to
     // every authenticated user; update/delete are admin-or-owner only.
