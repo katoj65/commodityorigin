@@ -322,8 +322,10 @@ onBeforeUnmount(() => {
                 <div class="row g-4">
                     <div v-for="kpi in marketKpis" :key="kpi.label" class="col-6 col-md-3">
                         <div class="cp-kpi h-100">
-                            <div class="cp-kpi__icon"><el-icon><component :is="kpi.icon" /></el-icon></div>
-                            <span class="cp-kpi__label">{{ kpi.label }}</span>
+                            <div class="cp-kpi__head">
+                                <div class="cp-kpi__icon"><el-icon><component :is="kpi.icon" /></el-icon></div>
+                                <span class="cp-kpi__label">{{ kpi.label }}</span>
+                            </div>
                             <div class="cp-kpi__value">{{ kpi.value }}<small v-if="kpi.unit">{{ ' ' + kpi.unit }}</small></div>
                             <div class="cp-kpi__change" :class="kpi.up ? 'cp-up' : 'cp-down'">{{ kpi.change }}</div>
                         </div>
@@ -946,8 +948,9 @@ onBeforeUnmount(() => {
 /* ── KPI tiles ────────────────────────────────────────────────────────── */
 .cp-kpi { background: #fff; border: 1px solid var(--card-border) !important; border-radius: var(--card-radius); padding: 1.25rem; box-shadow: var(--card-shadow); transition: box-shadow .15s ease, transform .15s ease; }
 .cp-kpi:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-.cp-kpi__icon { width: 28px; height: 28px; border-radius: 50%; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; margin-bottom: 8px; }
-.cp-kpi__label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); display: block; }
+.cp-kpi__head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cp-kpi__icon { width: 28px; height: 28px; border-radius: 50%; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.cp-kpi__label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cp-kpi__value { font-size: 1.5rem; font-weight: 700; color: var(--on-surface); line-height: 1.2; margin: 6px 0 2px; letter-spacing: -.01em; }
 .cp-kpi__value small { font-size: .625rem; font-weight: 600; color: var(--on-surface-var); }
 .cp-kpi__change { font-size: .6875rem; font-weight: 700; }

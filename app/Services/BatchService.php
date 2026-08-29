@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Batch;
-use App\Models\BatchCompliance;
 use App\Models\BatchFarmCollection;
 use App\Models\FarmCollection;
 use Illuminate\Database\Eloquent\Builder;
@@ -77,7 +76,7 @@ class BatchService
      */
     public function loadProfileRelations(Batch $batch): Batch
     {
-        return $batch->load(['compliances', 'ownerships', 'lotBatches.lot', 'user', 'batchFarmCollections.farmCollection.farm']);
+        return $batch->load(['lotBatches.lot', 'user', 'batchFarmCollections.farmCollection.farm']);
     }
 
     /**
@@ -167,20 +166,6 @@ class BatchService
     public function destroyById(int $id): void
     {
         Batch::query()->findOrFail($id)->delete();
-    }
-
-    /**
-     * Create a compliance record for a batch.
-     *
-     * @param  array<string, mixed>  $validated
-     */
-    public function createCompliance(Batch $batch, int $userId, array $validated): BatchCompliance
-    {
-        return BatchCompliance::query()->create([
-            'batch_id' => $batch->id,
-            'user_id' => $userId,
-            ...$validated,
-        ]);
     }
 
     /**

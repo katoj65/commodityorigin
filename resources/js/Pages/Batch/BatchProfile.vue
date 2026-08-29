@@ -7,7 +7,7 @@ import UpdateBatchModal from '@/Components/Modals/UpdateBatchModal.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import AttachFarmCollectionModal from '@/Components/Modals/AttachFarmCollectionModal.vue';
 import {
-    ArrowDown, Box, Checked, CircleCheck, Coffee, Coin, Delete, EditPen, Files,
+    ArrowDown, Box, Checked, Coffee, Coin, Delete, EditPen, Files,
     FolderOpened, HotWater, Link as LinkIcon, Location, Medal, OfficeBuilding, Operation, PriceTag, Plus, Ticket, User, WarningFilled,
 } from '@element-plus/icons-vue';
 
@@ -247,28 +247,6 @@ const deleteMessage = computed(() => `Are you sure you want to delete batch ${pr
                     </div>
                 </section>
 
-                <section v-if="batch.compliances && batch.compliances.length" class="btp-tile btp-tile--wide">
-                    <h2 class="btp-tile__title"><el-icon><CircleCheck /></el-icon> Compliance</h2>
-                    <div class="btp-list">
-                        <div v-for="c in batch.compliances" :key="c.id" class="btp-list-row btp-list-row--static">
-                            <div class="btp-list-row__icon"><el-icon><CircleCheck /></el-icon></div>
-                            <div class="btp-list-row__main">
-                                <div class="btp-list-row__title">{{ c.compliance_type }}</div>
-                                <div class="btp-list-row__sub">
-                                    <span v-if="c.certificate_number">{{ c.certificate_number }} · </span>{{ c.issued_by || 'Unknown issuer' }}
-                                </div>
-                            </div>
-                            <div class="btp-list-row__stats">
-                                <div class="btp-list-stat">
-                                    <span class="btp-list-stat__value">{{ formatDate(c.expires_at) }}</span>
-                                    <span class="btp-list-stat__label">Expires</span>
-                                </div>
-                                <span class="btp-pill btp-pill--grade">{{ c.status }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
                 <section class="btp-tile btp-tile--wide btp-tile--footer">
                     <div class="btp-recorder">
                         <h2 class="btp-tile__title"><el-icon><User /></el-icon> Recorded By</h2>
@@ -489,7 +467,7 @@ const deleteMessage = computed(() => `Are you sure you want to delete batch ${pr
 
 .btp-notes { font-size: 13.5px; line-height: 1.6; color: var(--on-surface); margin: 0; white-space: pre-wrap; }
 
-/* ── Related-record list rows (Farm Collections/Compliance/Lots) ────────── */
+/* ── Related-record list rows (Farm Collections/Lots) ─────────────────── */
 .btp-list { display: flex; flex-direction: column; }
 .btp-list-row {
     display: flex;

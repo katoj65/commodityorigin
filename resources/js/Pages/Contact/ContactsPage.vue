@@ -1,36 +1,24 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watchEffect } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     Plus, Delete, Edit, Star, StarFilled, Search, User, Message, Phone,
-    OfficeBuilding, Location, Close, Clock,
+    OfficeBuilding, Location, Close,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
     contacts: { type: Array, default: () => [] },
 });
 
-/* ── KPIs ────────────────────────────────────────────────────────────── */
-function daysAgoIso(days) {
-    return new Date(Date.now() - days * 86400000).toISOString();
+/* ── Master–detail selection ─────────────────────────────────────────── */
+const selectedId = ref(null);
+const selectedContact = computed(() => props.contacts.find((c) => c.id === selectedId.value) || null);
+
+function selectContact(contact) {
+    selectedId.value = contact.id;
 }
-
-const kpis = computed(() => {
-    const total = props.contacts.length;
-    const favorites = props.contacts.filter((c) => c.is_favorite).length;
-    const companies = new Set(props.contacts.map((c) => c.company).filter(Boolean)).size;
-    const recent = props.contacts.filter((c) => c.created_at && new Date(c.created_at.replace(' ', 'T')) >= new Date(daysAgoIso(7))).length;
-
-    return {
-        total,
-        favorites,
-        companies,
-        recent,
-        recentPct: total ? Math.round((recent / total) * 100) : 0,
-    };
-});
 
 /* ── Search + filters ────────────────────────────────────────────────── */
 const activeFilter = ref('all');
@@ -54,11 +42,22 @@ function matchesFilter(key, c) {
     return true;
 }
 
-const filteredContacts = computed(() => props.contacts.filter((c) => matchesFilter(activeFilter.value, c) && matchesSearch(c)));
+const filteredContacts = computed(() => props.contacts
+    .filter((c) => matchesFilter(activeFilter.value, c) && matchesSearch(c))
+    .slice()
+    .sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite) || String(a.name ?? '').localeCompare(String(b.name ?? ''))));
 
 function tabCount(key) {
     return props.contacts.filter((c) => matchesFilter(key, c)).length;
 }
+
+/* Keep a selection available: auto-pick the first listed contact on load
+   and after a delete so the detail panel never goes stale. */
+watchEffect(() => {
+    if (!selectedContact.value && filteredContacts.value.length) {
+        selectedId.value = filteredContacts.value[0].id;
+    }
+});
 
 /* ── Display helpers ─────────────────────────────────────────────────── */
 function initials(name) {
@@ -163,11 +162,9 @@ function confirmDeleteContact() {
                     <h1 class="cp-title">Contacts</h1>
                     <p class="cp-subtitle">Your personal address book for the farmers, exporters, buyers, and partners you work with every day, always one click away.</p>
                     <div class="cp-page-header__summary">
-                        <span class="cp-page-header__summary-item">{{ kpis.total }} contacts</span>
+                        <span class="cp-page-header__summary-item">{{ contacts.length }} contacts</span>
                         <span class="cp-page-header__summary-dot" />
-                        <span class="cp-page-header__summary-item">{{ kpis.companies }} companies</span>
-                        <span class="cp-page-header__summary-dot" />
-                        <span class="cp-page-header__summary-item">{{ kpis.favorites }} favorites</span>
+                        <span class="cp-page-header__summary-item">{{ tabCount('favorites') }} favorites</span>
                     </div>
                 </div>
                 <div class="cp-page-header__actions">
@@ -177,43 +174,9 @@ function confirmDeleteContact() {
                 </div>
             </div>
 
-            <!-- ── Overview KPIs live inside the table section ── -->
-            <div class="cp-body">
-                <div class="cp-section">
-                    <!-- KPI cards -->
-                    <div class="cp-kpi-strip">
-                        <div class="cp-kpi">
-                            <div class="cp-kpi__icon"><el-icon :size="17"><User /></el-icon></div>
-                            <div class="cp-kpi__body">
-                                <strong class="cp-kpi__value">{{ kpis.total }}</strong>
-                                <span class="cp-kpi__label">Total Contacts</span>
-                            </div>
-                        </div>
-                        <div class="cp-kpi">
-                            <div class="cp-kpi__icon cp-kpi__icon--amber"><el-icon :size="17"><StarFilled /></el-icon></div>
-                            <div class="cp-kpi__body">
-                                <strong class="cp-kpi__value">{{ kpis.favorites }}</strong>
-                                <span class="cp-kpi__label">Favorites</span>
-                            </div>
-                        </div>
-                        <div class="cp-kpi">
-                            <div class="cp-kpi__icon cp-kpi__icon--blue"><el-icon :size="17"><OfficeBuilding /></el-icon></div>
-                            <div class="cp-kpi__body">
-                                <strong class="cp-kpi__value">{{ kpis.companies }}</strong>
-                                <span class="cp-kpi__label">Companies</span>
-                            </div>
-                        </div>
-                        <div class="cp-kpi">
-                            <div class="cp-kpi__icon cp-kpi__icon--green"><el-icon :size="17"><Clock /></el-icon></div>
-                            <div class="cp-kpi__body">
-                                <div class="cp-kpi__value-row">
-                                    <strong class="cp-kpi__value">{{ kpis.recent }}</strong>
-                                    <span v-if="kpis.total" class="cp-kpi__pct">{{ kpis.recentPct }}%</span>
-                                </div>
-                                <span class="cp-kpi__label">Added This Week</span>
-                            </div>
-                        </div>
-                    </div>
+            <!-- ── Master–detail layout ────────────────────────────────── -->
+            <div class="cp-layout">
+                <div class="cp-list-card">
 
                     <div class="cp-panel__toolbar">
                         <div class="cp-filters">
@@ -239,76 +202,103 @@ function confirmDeleteContact() {
                         />
                     </div>
 
-                    <el-table :data="filteredContacts" class="cp-table" empty-text="No contacts yet. Add your first one.">
-                        <el-table-column label="" width="50" align="center">
-                            <template #default="{ row }">
-                                <button
-                                    type="button"
-                                    class="cp-row__star"
-                                    :class="{ 'cp-row__star--on': row.is_favorite }"
-                                    :aria-label="row.is_favorite ? 'Remove from favorites' : 'Add to favorites'"
-                                    :title="row.is_favorite ? 'Remove from favorites' : 'Add to favorites'"
-                                    @click.stop="toggleFavorite(row)"
-                                >
-                                    <el-icon :size="15"><component :is="row.is_favorite ? StarFilled : Star" /></el-icon>
-                                </button>
-                            </template>
-                        </el-table-column>
-                        <el-table-column min-width="240">
-                            <template #header>
-                                <span class="cp-th"><el-icon :size="13"><User /></el-icon> Contact</span>
-                            </template>
-                            <template #default="{ row }">
-                                <div class="cp-cell-contact">
-                                    <el-avatar :size="34" class="cp-cell-contact__avatar">{{ initials(row.name) }}</el-avatar>
-                                    <div class="cp-cell-contact__text">
-                                        <span class="cp-cell-contact__name">{{ row.name }}</span>
-                                        <span v-if="detailFor(row)" class="cp-cell-contact__detail">{{ detailFor(row) }}</span>
-                                    </div>
-                                </div>
-                            </template>
-                        </el-table-column>
-                        <el-table-column min-width="190">
-                            <template #header>
-                                <span class="cp-th"><el-icon :size="13"><Message /></el-icon> Email</span>
-                            </template>
-                            <template #default="{ row }">
-                                <a v-if="row.email" :href="`mailto:${row.email}`" class="cp-cell-link">{{ row.email }}</a>
-                                <span v-else class="cp-muted">—</span>
-                            </template>
-                        </el-table-column>
-                        <el-table-column width="160">
-                            <template #header>
-                                <span class="cp-th"><el-icon :size="13"><Phone /></el-icon> Phone</span>
-                            </template>
-                            <template #default="{ row }">
-                                <a v-if="row.phone" :href="`tel:${row.phone}`" class="cp-cell-link">{{ row.phone }}</a>
-                                <span v-else class="cp-muted">—</span>
-                            </template>
-                        </el-table-column>
-                        <el-table-column min-width="180">
-                            <template #header>
-                                <span class="cp-th"><el-icon :size="13"><Location /></el-icon> Address</span>
-                            </template>
-                            <template #default="{ row }">
-                                <span v-if="row.address" class="cp-cell-address"><el-icon :size="12"><Location /></el-icon>{{ row.address }}</span>
-                                <span v-else class="cp-muted">—</span>
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="" width="100" align="right">
-                            <template #default="{ row }">
-                                <div class="cp-row__actions">
-                                    <button type="button" class="cp-row__edit" aria-label="Edit contact" title="Edit contact" @click.stop="openEditDialog(row)">
-                                        <el-icon><Edit /></el-icon>
-                                    </button>
-                                    <button type="button" class="cp-row__delete" aria-label="Delete contact" title="Delete contact" @click.stop="deleteContact(row)">
-                                        <el-icon><Delete /></el-icon>
-                                    </button>
-                                </div>
-                            </template>
-                        </el-table-column>
-                    </el-table>
+                        <div class="cp-list">
+                            <button
+                                v-for="c in filteredContacts"
+                                :key="c.id"
+                                type="button"
+                                class="cp-list-row"
+                                :class="{ 'cp-list-row--active': c.id === selectedId }"
+                                @click="selectContact(c)"
+                            >
+                                <el-avatar :size="36" class="cp-list-row__avatar">{{ initials(c.name) }}</el-avatar>
+                                <span class="cp-list-row__text">
+                                    <span class="cp-list-row__name">{{ c.name }}</span>
+                                    <span v-if="detailFor(c)" class="cp-list-row__detail">{{ detailFor(c) }}</span>
+                                </span>
+                                <el-icon v-if="c.is_favorite" class="cp-list-row__star" :size="14"><StarFilled /></el-icon>
+                            </button>
+
+                            <div v-if="!filteredContacts.length" class="cp-list-empty">
+                                <el-icon :size="22"><User /></el-icon>
+                                <p>{{ search || activeFilter !== 'all' ? 'No contacts match your search.' : 'No contacts yet. Add your first one.' }}</p>
+                            </div>
+                        </div>
+
+                        <div class="cp-list-foot">
+                            Showing <strong>{{ filteredContacts.length }}</strong> of {{ contacts.length }}
+                        </div>
                 </div>
+                <!-- ── Detail panel ────────────────────────────────────── -->
+                <aside class="cp-detail-card">
+                    <template v-if="selectedContact">
+                        <div class="cp-detail__head">
+                            <el-avatar :size="52" class="cp-detail__avatar">{{ initials(selectedContact.name) }}</el-avatar>
+                            <div class="cp-detail__identity">
+                                <h2 class="cp-detail__name">{{ selectedContact.name }}</h2>
+                                <p v-if="detailFor(selectedContact)" class="cp-detail__role">{{ detailFor(selectedContact) }}</p>
+                            </div>
+                            <button
+                                type="button"
+                                class="cp-detail__star"
+                                :class="{ 'cp-detail__star--on': selectedContact.is_favorite }"
+                                :aria-label="selectedContact.is_favorite ? 'Remove from favorites' : 'Add to favorites'"
+                                :title="selectedContact.is_favorite ? 'Remove from favorites' : 'Add to favorites'"
+                                @click="toggleFavorite(selectedContact)"
+                            >
+                                <el-icon :size="16"><component :is="selectedContact.is_favorite ? StarFilled : Star" /></el-icon>
+                            </button>
+                        </div>
+
+                        <div class="cp-detail__info">
+                            <div v-if="selectedContact.email" class="cp-info-row">
+                                <span class="cp-info-row__icon"><el-icon :size="14"><Message /></el-icon></span>
+                                <span class="cp-info-row__label">Email</span>
+                                <a :href="`mailto:${selectedContact.email}`" class="cp-info-row__value cp-info-row__value--link">{{ selectedContact.email }}</a>
+                            </div>
+                            <div v-if="selectedContact.phone" class="cp-info-row">
+                                <span class="cp-info-row__icon"><el-icon :size="14"><Phone /></el-icon></span>
+                                <span class="cp-info-row__label">Phone</span>
+                                <a :href="`tel:${selectedContact.phone}`" class="cp-info-row__value cp-info-row__value--link">{{ selectedContact.phone }}</a>
+                            </div>
+                            <div v-if="selectedContact.company" class="cp-info-row">
+                                <span class="cp-info-row__icon"><el-icon :size="14"><OfficeBuilding /></el-icon></span>
+                                <span class="cp-info-row__label">Company</span>
+                                <span class="cp-info-row__value">{{ selectedContact.company }}</span>
+                            </div>
+                            <div v-if="selectedContact.job_title" class="cp-info-row">
+                                <span class="cp-info-row__icon"><el-icon :size="14"><User /></el-icon></span>
+                                <span class="cp-info-row__label">Role</span>
+                                <span class="cp-info-row__value">{{ selectedContact.job_title }}</span>
+                            </div>
+                            <div v-if="selectedContact.address" class="cp-info-row">
+                                <span class="cp-info-row__icon"><el-icon :size="14"><Location /></el-icon></span>
+                                <span class="cp-info-row__label">Address</span>
+                                <span class="cp-info-row__value">{{ selectedContact.address }}</span>
+                            </div>
+                        </div>
+
+                        <div v-if="selectedContact.notes" class="cp-detail__notes">
+                            <div class="cp-detail__notes-label">Notes</div>
+                            <p class="cp-detail__notes-text">{{ selectedContact.notes }}</p>
+                        </div>
+
+                        <div class="cp-detail__actions">
+                            <button type="button" class="cp-btn-primary" @click="openEditDialog(selectedContact)">
+                                <el-icon><Edit /></el-icon> Edit Contact
+                            </button>
+                            <button type="button" class="cp-btn-outline cp-btn-danger" @click="deleteContact(selectedContact)">
+                                <el-icon><Delete /></el-icon> Delete
+                            </button>
+                        </div>
+                    </template>
+
+                    <div v-else class="cp-detail-empty">
+                        <div class="cp-detail-empty__icon"><el-icon :size="22"><User /></el-icon></div>
+                        <p class="cp-detail-empty__title">No contact selected</p>
+                        <p class="cp-detail-empty__hint">Pick someone from the list to see their details here.</p>
+                    </div>
+                </aside>
             </div>
         </div>
 
@@ -527,85 +517,255 @@ function confirmDeleteContact() {
 }
 .cp-btn-outline:hover { background: var(--surface-muted); }
 
-/* ── Metric / KPI strip — modern icon-tile cards. Same elevated
-      floating-card language as the Order/Auction pages, bound to the
-      app-wide --dp-* token set. ──────────────────────────────────────── */
-.cp-kpi-strip {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-.cp-kpi {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--surface);
-    border: 1px solid var(--card-border);
-    border-radius: 50px;
-    box-shadow: var(--dp-card-shadow, none);
-    padding: 8px 14px;
-    transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
-}
-.cp-kpi:hover {
-    box-shadow: 0 8px 20px -18px rgba(15, 23, 42, 0.18);
-    transform: translateY(-1px);
-    border-color: var(--dp-primary, #000000);
-}
-.cp-kpi__icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    background: var(--dp-surface-container-low, #F5F6F7);
-    color: var(--dp-on-surface-variant, #4B5457);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.cp-kpi__icon--amber { background: #fef3c7; color: #92400e; }
-.cp-kpi__icon--blue { background: #dbeafe; color: #1e40af; }
-.cp-kpi__icon--green { background: var(--dp-secondary-container, #E5FAE7); color: var(--dp-on-secondary-container, #2F6B35); }
-.cp-kpi__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.cp-kpi__value-row { display: flex; align-items: baseline; gap: 5px; }
-.cp-kpi__value {
-    font-size: 1.25rem;
-    line-height: 1.5rem;
-    font-weight: 700;
-    color: var(--text);
-    letter-spacing: -0.01em;
-    font-variant-numeric: tabular-nums;
-}
-.cp-kpi__label {
-    font-size: 0.625rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-.cp-kpi__pct {
-    display: inline-flex;
-    align-items: center;
-    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
-    font-size: 0.5625rem;
-    font-weight: 600;
-    line-height: 1;
-    color: var(--dp-on-secondary-container, #2F6B35);
-    background: var(--dp-secondary-container, #E5FAE7);
-    border-radius: 999px;
-    padding: 2px 6px;
+/* ── Master–detail layout ────────────────────────────────────────────── */
+.cp-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 20px;
+    align-items: start;
 }
 
-/* ── Body / section card ─────────────────────────────────────────────── */
-.cp-body { display: flex; flex-direction: column; }
-.cp-section {
+.cp-list-card,
+.cp-detail-card {
     background: var(--surface);
     border: 1px solid var(--card-border);
     border-radius: var(--dp-card-radius, 6px);
     box-shadow: var(--dp-card-shadow, none);
     overflow: hidden;
 }
+
+/* ── Contact list (master) ───────────────────────────────────────────── */
+.cp-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 560px;
+    overflow-y: auto;
+}
+.cp-list-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 120ms ease;
+}
+.cp-list-row:last-child { border-bottom: none; }
+.cp-list-row:hover { background: var(--surface-muted); }
+.cp-list-row--active,
+.cp-list-row--active:hover {
+    background: var(--surface-muted);
+    box-shadow: inset 3px 0 0 var(--primary);
+}
+.cp-list-row__avatar {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+.cp-list-row__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.cp-list-row__name {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cp-list-row__detail {
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cp-list-row__star { color: #B45309; flex-shrink: 0; }
+
+.cp-list-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 16px;
+    color: var(--text-muted);
+    text-align: center;
+}
+.cp-list-empty p { margin: 0; font-size: 12.5px; line-height: 18px; }
+
+.cp-list-foot {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--surface-muted);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.cp-list-foot strong {
+    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
+    font-weight: 600;
+    color: var(--text-2);
+}
+
+/* ── Detail panel ────────────────────────────────────────────────────── */
+.cp-detail-card { position: sticky; top: 16px; }
+.cp-detail__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+}
+.cp-detail__avatar {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.cp-detail__identity { flex: 1; min-width: 0; }
+.cp-detail__name {
+    margin: 0 0 2px;
+    font-size: 16px;
+    line-height: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+}
+.cp-detail__role { margin: 0; font-size: 12.5px; line-height: 18px; color: var(--text-muted); }
+.cp-detail__star {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 120ms ease, background 120ms ease;
+}
+.cp-detail__star:hover { color: #B45309; background: var(--surface-elevated); }
+.cp-detail__star--on { color: #B45309; }
+
+.cp-detail__info { padding: 8px 20px; }
+.cp-info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+.cp-info-row:last-child { border-bottom: none; }
+.cp-info-row__icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--surface-muted);
+    color: var(--text-2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.cp-info-row__label {
+    width: 64px;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+.cp-info-row__value {
+    color: var(--text);
+    font-weight: 500;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.cp-info-row__value--link {
+    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
+    font-size: 12.5px;
+    color: var(--text-2);
+    text-decoration: none;
+}
+.cp-info-row__value--link:hover { color: var(--primary); text-decoration: underline; }
+
+.cp-detail__notes {
+    margin: 8px 20px;
+    background: var(--surface-muted);
+    border-left: 3px solid var(--primary);
+    border-radius: 6px;
+    padding: 12px 14px;
+}
+.cp-detail__notes-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+.cp-detail__notes-text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-line;
+}
+
+.cp-detail__actions {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface-muted);
+}
+.cp-detail__actions .cp-btn-primary,
+.cp-detail__actions .cp-btn-outline { flex: 1; justify-content: center; }
+.cp-btn-danger:hover {
+    background: var(--dp-error-container, #FEEDED);
+    border-color: var(--dp-error-container, #FEEDED);
+    color: var(--error);
+}
+
+.cp-detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 280px;
+    padding: 32px;
+    text-align: center;
+}
+.cp-detail-empty__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--surface-muted);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+}
+.cp-detail-empty__title { margin: 0; font-size: 14px; font-weight: 600; color: var(--text); }
+.cp-detail-empty__hint { margin: 0; font-size: 12.5px; color: var(--text-muted); }
 
 /* ── Panel toolbar ───────────────────────────────────────────────────── */
 .cp-panel__toolbar {
@@ -661,124 +821,18 @@ function confirmDeleteContact() {
 .cp-search :deep(.el-input__prefix .el-icon) { color: var(--text-muted); }
 .cp-search :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px var(--primary) inset !important; }
 
-/* ── Table ───────────────────────────────────────────────────────────── */
-.cp-table {
-    --el-table-border-color: var(--border);
-    --el-table-bg-color: transparent;
-    --el-table-tr-bg-color: transparent;
-    --el-table-header-bg-color: var(--surface-muted);
-    --el-table-header-text-color: var(--text-muted);
-    --el-table-text-color: var(--text-2);
-    --el-table-row-hover-bg-color: var(--surface-muted);
-    font-family: var(--dp-font-sans, 'Inter', system-ui, sans-serif);
-}
-.cp-table :deep(.el-table__header) th {
-    font-size: 12px;
-    line-height: 16px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-}
-.cp-th {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: inherit;
-}
-.cp-th :deep(.el-icon) { color: var(--text-muted); }
-.cp-table :deep(th.el-table__cell) { height: 40px; padding: 10px 12px; background: var(--surface-muted); }
-.cp-table :deep(td.el-table__cell) { padding: 10px 12px; }
-.cp-table :deep(.el-table__row) { height: 44px; }
-.cp-table :deep(.el-table__row:hover) { background: var(--surface-muted); }
-.cp-table :deep(.el-table__row:hover .cp-row__actions) { opacity: 1; transform: translateX(0); }
-.cp-table :deep(.el-table__inner-wrapper::before) { display: none; }
-.cp-table :deep(.el-table__empty-text) { color: var(--text-muted); font-size: 12px; line-height: 18px; }
-
-/* Favorite toggle — 32px icon button, warning tone only */
-.cp-row__star {
-    width: 32px;
-    height: 32px;
-    border-radius: 999px;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    cursor: pointer;
-    transition: color 120ms ease, background 120ms ease, color 0.15s ease;
-}
-.cp-row__star:hover { color: #B45309; background: var(--surface-elevated); }
-.cp-row__star--on { color: #B45309; }
-
-/* Contact cell */
-.cp-cell-contact { display: flex; align-items: center; gap: 12px; }
-.cp-cell-contact__avatar {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border);
-    color: var(--text-2);
-    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
-    font-size: 11px;
-    font-weight: 500;
-    flex-shrink: 0;
-}
-.cp-cell-contact__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.cp-cell-contact__name { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text); }
-.cp-cell-contact__detail { font-size: 12px; line-height: 16px; color: var(--text-muted); }
-
-/* Technical data columns — 12px monospace */
-.cp-cell-link {
-    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
-    font-size: 12px;
-    line-height: 16px;
-    color: var(--text-2);
-    text-decoration: none;
-}
-.cp-cell-link:hover { color: var(--primary); text-decoration: underline; }
-.cp-cell-address {
-    font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
-    font-size: 12px;
-    line-height: 16px;
-    color: var(--text-muted);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* Row actions — 32px icon buttons */
-.cp-row__actions {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    opacity: 0.5;
-    transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.cp-row__actions:hover { opacity: 1; }
-.cp-row__edit,
-.cp-row__delete {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    cursor: pointer;
-    transition: color 120ms ease, background 120ms ease;
-}
-.cp-row__edit:hover { background: var(--surface-muted); color: var(--text); }
-.cp-row__delete:hover { background: var(--dp-error-container, #FEEDED); color: var(--error); }
-
 /* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1099.98px) {
+    .cp-layout { grid-template-columns: 1fr; }
+    .cp-detail-card { position: static; }
+}
+
 @media (max-width: 767.98px) {
     .cp-panel__toolbar { flex-direction: column; align-items: stretch; }
     .cp-search { width: 100%; }
     .cp-grid { grid-template-columns: 1fr; }
     .cp-page-header__left::after { display: none; }
+    .cp-detail__actions { flex-direction: column; }
 }
 
 /* ── Contact modal ─────────────────────────────────────────────────────
@@ -974,13 +1028,11 @@ function confirmDeleteContact() {
 
 /* ── Reduced motion ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-    .cp-kpi,
+    .cp-list-row,
+    .cp-detail__star,
     .cp-btn-primary,
     .cp-btn-outline,
     .cp-filter,
-    .cp-row__star,
-    .cp-row__edit,
-    .cp-row__delete,
     .cp-modal__close {
         transition: none;
     }

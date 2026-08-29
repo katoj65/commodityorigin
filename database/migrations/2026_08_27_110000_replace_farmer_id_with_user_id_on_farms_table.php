@@ -21,7 +21,15 @@ return new class extends Migration
         });
 
         DB::statement('UPDATE farms SET user_id = created_by_user_id WHERE user_id IS NULL AND created_by_user_id IS NOT NULL');
-        DB::statement('UPDATE farms JOIN farmers ON farmers.id = farms.farmer_id SET farms.user_id = farmers.user_id WHERE farms.user_id IS NULL AND farmers.user_id IS NOT NULL');
+
+        // A correlated-subquery UPDATE (rather than UPDATE ... JOIN, which
+        // MySQL supports but SQLite doesn't) so this runs on both.
+        DB::statement(
+            'UPDATE farms
+             SET user_id = (SELECT farmers.user_id FROM farmers WHERE farmers.id = farms.farmer_id)
+             WHERE farms.user_id IS NULL
+             AND EXISTS (SELECT 1 FROM farmers WHERE farmers.id = farms.farmer_id AND farmers.user_id IS NOT NULL)'
+        );
 
         Schema::table('farms', function (Blueprint $table): void {
             $table->unsignedBigInteger('user_id')->nullable(false)->change();

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Lot;
 
+use App\Helpers\QrCodeHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LotResource;
 use App\Models\Batch;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LotController extends Controller
 {
@@ -62,6 +64,25 @@ class LotController extends Controller
                 'max:100',
                 Rule::exists('coffee_grades', 'name')->where('is_active', true),
             ],
+            'variety' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('crop_variety_metadata', 'name')->where('is_active', true),
+            ],
+            'origin' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('countries', 'name')->where('is_coffee_producer', true),
+            ],
+            'region' => ['required', 'string', 'max:100'],
+            'altitude' => ['nullable', 'numeric', 'between:0,5000'],
+            'year_of_harvest' => ['required', 'integer', 'digits:4'],
+            'moisture' => ['required', 'numeric', 'between:0,100'],
+            'defects_percentage' => ['nullable', 'numeric', 'between:0,100'],
+            'screen' => ['required', 'string', 'max:50'],
+            'packaging_type' => ['nullable', 'string', Rule::in(['GrainPro', 'Jute Only', 'Vacuum'])],
             'quantity_bags' => ['required', 'integer', 'min:1'],
             'bag_weight_kg' => ['required', 'numeric', 'min:1'],
             'price' => ['nullable', 'numeric', 'min:0'],
@@ -194,6 +215,8 @@ class LotController extends Controller
      */
     public function show(Lot $lot): Response
     {
+        $this->lots->ensureQrCode($lot);
+
         $lot->load([
             'lotBatches.batch.user',
             'lotBatches.batch.batchFarmCollections.farmCollection.farm',
@@ -242,11 +265,34 @@ class LotController extends Controller
     public function publishLot(): void {}
 
     /**
-     * Show the lot traceability timeline page.
+     * Show the lot traceability page. Eager-loads the full origin chain —
+     * batches, their farm collections, each collection's farm, and that
+     * farm's farmers — plus the users who recorded each step.
      */
     public function lotTraceability(Lot $lot): Response
     {
+        $lot->load([
+            'lotBatches.batch.batchFarmCollections.farmCollection.farm.farmers',
+            'lotBatches.batch.batchFarmCollections.farmCollection.user',
+            'lotBatches.batch.user',
+            'user',
+        ]);
+
         return Inertia::render('Lot/LotTraceability', $this->lots->traceabilityData($lot));
+    }
+
+    /**
+     * Download the lot's traceability QR code as a standalone SVG file.
+     */
+    public function downloadQr(Lot $lot): StreamedResponse
+    {
+        return response()->streamDownload(
+            function () use ($lot): void {
+                echo QrCodeHelper::forLotFile($lot);
+            },
+            ($lot->lot_number ?: 'lot').'-qr.svg',
+            ['Content-Type' => 'image/svg+xml']
+        );
     }
 
     /**

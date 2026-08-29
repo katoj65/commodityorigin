@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\QrCodeHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,6 +26,14 @@ class Lot extends Model
         'image',
         'process',
         'grade',
+        'variety',
+        'origin',
+        'region',
+        'altitude',
+        'year_of_harvest',
+        'moisture',
+        'defects_percentage',
+        'screen',
         'net_weight_kg',
         'quantity_bags',
         'bag_weight_kg',
@@ -33,7 +42,22 @@ class Lot extends Model
         'packaging_type',
         'status',
         'notes',
+        'qr_code',
     ];
+
+    /**
+     * Bootstrap model event hooks.
+     */
+    protected static function booted(): void
+    {
+        // Every new lot gets its traceability QR code as soon as it exists —
+        // the code encodes the lot's traceability URL, which needs the id
+        // assigned by the insert, so it runs on `created` and is saved
+        // quietly to avoid re-firing model events.
+        static::created(function (Lot $lot): void {
+            $lot->forceFill(['qr_code' => QrCodeHelper::forLot($lot)])->saveQuietly();
+        });
+    }
 
     /**
      * The attributes that should be cast.
@@ -45,6 +69,10 @@ class Lot extends Model
         'bag_weight_kg' => 'decimal:2',
         'price' => 'decimal:2',
         'quality_score' => 'decimal:2',
+        'year_of_harvest' => 'integer',
+        'moisture' => 'decimal:2',
+        'defects_percentage' => 'decimal:2',
+        'altitude' => 'decimal:2',
     ];
 
     /**
@@ -98,5 +126,21 @@ class Lot extends Model
     public function storageProfile(): HasOne
     {
         return $this->hasOne(LotStorageProfile::class);
+    }
+
+    /**
+     * Get the blockchain block this lot was committed under, if any.
+     */
+    public function blockchain(): HasOne
+    {
+        return $this->hasOne(Blockchain::class);
+    }
+
+    /**
+     * Get this lot's activity log.
+     */
+    public function activities(): HasMany
+    {
+        return $this->hasMany(LotActivity::class);
     }
 }

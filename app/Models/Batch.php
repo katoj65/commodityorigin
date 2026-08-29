@@ -62,22 +62,6 @@ class Batch extends Model
     }
 
     /**
-     * Get the ownership records attached to the batch.
-     */
-    public function ownerships(): HasMany
-    {
-        return $this->hasMany(BatchOwnership::class);
-    }
-
-    /**
-     * Get the compliance records attached to the batch.
-     */
-    public function compliances(): HasMany
-    {
-        return $this->hasMany(BatchCompliance::class);
-    }
-
-    /**
      * Get the lots linked to this batch, via the lot_batch pivot table.
      */
     public function lotBatches(): HasMany
@@ -92,5 +76,13 @@ class Batch extends Model
     public function batchFarmCollections(): HasMany
     {
         return $this->hasMany(BatchFarmCollection::class);
+    }
+
+    /**
+     * Get this batch's activity log, via BatchActivityService.
+     */
+    public function activities(): HasMany
+    {
+        return $this->hasMany(BatchActivity::class);
     }
 }

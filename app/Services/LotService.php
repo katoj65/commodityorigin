@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Helpers\ImageUploadHelper;
+use App\Helpers\QrCodeHelper;
 use App\Models\Batch;
 use App\Models\Farm;
+use App\Models\Farmer;
 use App\Models\Lot;
 use App\Models\LotBatch;
 use App\Models\LotRequest;
@@ -19,8 +21,10 @@ use Illuminate\Validation\ValidationException;
 
 class LotService
 {
-    public function __construct(private readonly BatchService $batches)
-    {
+    public function __construct(
+        private readonly BatchService $batches,
+        private readonly BlockchainService $blockchain,
+    ) {
     }
 
     /**
@@ -34,13 +38,14 @@ class LotService
     /**
      * Create a lot from the simple creation form. The lot number is always
      * generated server-side; linking to a batch happens afterward, from
-     * the lot profile page, via attachBatch().
+     * the lot profile page, via attachBatch(). Every lot created here gets
+     * its traceability QR code and its blockchain commit before returning.
      *
      * @param  array<string, mixed>  $data
      */
     public function create(array $data, ?UploadedFile $image, int $userId): Lot
     {
-        return Lot::query()->create([
+        $lot = Lot::query()->create([
             ...$data,
             'lot_number' => $this->generateLotNumber(),
             'image' => ImageUploadHelper::store($image, 'lots'),
@@ -48,6 +53,25 @@ class LotService
             'user_id' => $userId,
             'status' => 'draft',
         ]);
+
+        $this->blockchain->commitLot($lot, $userId);
+
+        return $this->ensureQrCode($lot);
+    }
+
+    /**
+     * Ensure a lot has a traceability QR code, generating and persisting
+     * one when it is missing. Lots created before QR support existed (or
+     * with model events bypassed) get backfilled the first time they are
+     * viewed.
+     */
+    public function ensureQrCode(Lot $lot): Lot
+    {
+        if (! $lot->qr_code) {
+            $lot->forceFill(['qr_code' => QrCodeHelper::forLot($lot)])->saveQuietly();
+        }
+
+        return $lot;
     }
 
     /**
@@ -156,6 +180,13 @@ class LotService
             'image' => ImageUploadHelper::store($image, 'lots'),
             'process' => $data['process'],
             'grade' => $data['grade'],
+            'variety' => $data['variety'] ?? null,
+            'origin' => $data['origin'] ?? null,
+            'region' => $data['region'] ?? null,
+            'year_of_harvest' => $data['year_of_harvest'] ?? null,
+            'moisture' => $data['moisture'] ?? null,
+            'defects_percentage' => $data['defects_percentage'] ?? null,
+            'screen' => $data['screen'] ?? null,
             'quantity_bags' => $data['quantity_bags'],
             'bag_weight_kg' => $data['bag_weight_kg'],
             'packaging_type' => $data['packaging_type'],
@@ -167,6 +198,11 @@ class LotService
         ]);
 
         $this->attachBatch($lot, $batch, $userId);
+
+        $this->blockchain->commitLot($lot, $userId);
+
+        // Guarantee the traceability QR code link is stored on the lot row.
+        $this->ensureQrCode($lot);
 
         return [
             'lot' => $lot,
@@ -290,41 +326,234 @@ class LotService
     }
 
     /**
-     * Shape a lot and its batch into the traceability timeline page's
-     * payload.
+     * Shape the full traceability payload for a lot: the lot itself, every
+     * batch it draws from, and for each batch the farm collections, farms,
+     * and farmers behind it, plus the users who recorded each step. A
+     * chronological `timeline` is assembled for the journey visualisation,
+     * alongside aggregate `stats` for the summary strip.
+     *
+     * Expects the lot to be loaded with:
+     * lotBatches.batch.batchFarmCollections.farmCollection.farm.farmers,
+     * lotBatches.batch.user, user.
      *
      * @return array<string, mixed>
      */
     public function traceabilityData(Lot $lot): array
     {
-        $batch = $this->primaryBatch($lot);
+        $this->ensureQrCode($lot);
+
+        $timeline = [];
+        $allCollections = collect();
+        $allFarmers = collect();
+        $farmIds = [];
+
+        $batches = $lot->lotBatches
+            ->map(function (LotBatch $lotBatch) use (&$timeline, &$allCollections, &$allFarmers, &$farmIds): ?array {
+                $batch = $lotBatch->batch;
+
+                if (! $batch) {
+                    return null;
+                }
+
+                $collections = $batch->batchFarmCollections
+                    ->map(fn ($link) => $this->formatCollection($link, $batch))
+                    ->filter()
+                    ->values();
+
+                $farms = $collections->pluck('farm')->filter()->unique('id')->values()->all();
+                $farmers = $collections->flatMap(fn ($c) => $c['farm']['farmers'] ?? [])->unique('id')->values()->all();
+
+                foreach ($collections as $collection) {
+                    $allCollections->push($collection);
+                    if ($collection['farm']) {
+                        $farmIds[$collection['farm']['id']] = true;
+                        foreach ($collection['farm']['farmers'] ?? [] as $farmer) {
+                            $allFarmers->push($farmer);
+                        }
+                    }
+                    $timeline[] = [
+                        'stage' => 'collection',
+                        'date' => $collection['collection_date'] ?? $collection['created_at'],
+                        'title' => $collection['farm'] ? 'Collected at '.$collection['farm']['name'] : 'Farm collection '.$collection['collection_code'],
+                        'subtitle' => $collection['collection_code'],
+                        'href' => route('farm-collection.show', $collection['id']),
+                    ];
+                }
+
+                $timeline[] = [
+                    'stage' => 'batching',
+                    'date' => $batch->processing_date?->toDateString() ?? $batch->created_at?->toDateString(),
+                    'title' => 'Batch '.$batch->batch_number.' processed',
+                    'subtitle' => $batch->processing_method,
+                    'href' => route('batch.show', $batch->id),
+                ];
+
+                return [
+                    'id' => $batch->id,
+                    'batch_number' => $batch->batch_number,
+                    'variety' => $batch->variety,
+                    'processing_method' => $batch->processing_method,
+                    'drying_method' => $batch->drying_method,
+                    'moisture_content' => $this->toFloat($batch->moisture_content),
+                    'cup_score' => $this->toFloat($batch->cup_score),
+                    'weight_kg' => $this->toFloat($batch->weight),
+                    'screen_size' => $batch->screen_size,
+                    'warehouse_location' => $batch->warehouse_location,
+                    'processing_date' => $batch->processing_date?->format('d M Y'),
+                    'status' => $batch->status,
+                    'recorded_by' => $this->person($batch->user),
+                    'allocation_kg' => $this->toFloat($lotBatch->allocation_kg),
+                    'collections' => $collections->all(),
+                    'farms' => $farms,
+                    'farmers' => $farmers,
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $timeline[] = [
+            'stage' => 'lotting',
+            'date' => $lot->created_at?->toDateString(),
+            'title' => 'Lot '.$lot->lot_number.' created',
+            'subtitle' => $lot->process,
+            'href' => route('lot.show', $lot->id),
+        ];
+
+        // Order the journey oldest → newest so it reads as a forward trace.
+        $timeline = collect($timeline)
+            ->filter(fn ($e) => ! empty($e['date']))
+            ->sortBy(fn ($e) => strtotime((string) $e['date']) ?: 0)
+            ->values()
+            ->all();
 
         return [
             'lot' => [
                 'id' => $lot->id,
                 'lot_number' => $lot->lot_number,
                 'lot_name' => $lot->lot_name,
+                'description' => $lot->description,
                 'status' => $lot->status,
                 'process' => $lot->process,
                 'grade' => $lot->grade,
-                'net_weight_kg' => (float) ($lot->net_weight_kg ?? 0),
-                'quality_score' => (float) ($lot->quality_score ?? 0),
-                'price_per_kg' => (float) ($lot->price ?? 0),
+                'net_weight_kg' => $this->toFloat($lot->net_weight_kg),
+                'quantity_bags' => $lot->quantity_bags,
+                'bag_weight_kg' => $this->toFloat($lot->bag_weight_kg),
+                'quality_score' => $this->toFloat($lot->quality_score),
+                'price' => $this->toFloat($lot->price),
                 'packaging_type' => $lot->packaging_type,
-                'created_at' => $lot->created_at?->format('d M Y'),
                 'image' => $lot->image,
+                'created_at' => $lot->created_at?->format('d M Y'),
+                'qr_code' => $lot->qr_code,
+                'qr_url' => QrCodeHelper::lotUrl($lot),
+                'recorded_by' => $this->person($lot->user),
             ],
-            'batch' => $batch ? [
-                'id' => $batch->id,
-                'batch_number' => $batch->batch_number,
-                'variety' => $batch->variety,
-                'processing_method' => $batch->processing_method,
-                'moisture_content' => (float) ($batch->moisture_content ?? 0),
-                'cup_score' => (float) ($batch->cup_score ?? 0),
-                'weight' => (float) ($batch->weight ?? 0),
-                'warehouse_location' => $batch->warehouse_location,
-            ] : null,
+            'batches' => $batches->all(),
+            'timeline' => $timeline,
+            'stats' => [
+                'batches' => $batches->count(),
+                'collections' => $allCollections->count(),
+                'farms' => count($farmIds),
+                'farmers' => $allFarmers->unique('id')->count(),
+            ],
         ];
+    }
+
+    /**
+     * Format a single farm-collection link (from the batch_farm_collection
+     * pivot) together with its farm and that farm's farmers.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function formatCollection($link, Batch $batch): ?array
+    {
+        $collection = $link->farmCollection;
+
+        if (! $collection) {
+            return null;
+        }
+
+        return [
+            'id' => $collection->id,
+            'collection_code' => $collection->collection_code,
+            'collection_date' => $collection->collection_date?->format('d M Y'),
+            'coffee_type' => $collection->coffee_type,
+            'variety' => $collection->variety,
+            'harvest_season' => $collection->harvest_season,
+            'quantity' => $this->toFloat($collection->quantity),
+            'unit' => $collection->unit,
+            'initial_grade' => $collection->initial_grade,
+            'initial_moisture' => $this->toFloat($collection->initial_moisture),
+            'initial_quality_score' => $this->toFloat($collection->initial_quality_score),
+            'status' => $collection->status,
+            'recorded_by' => $this->person($collection->user),
+            'created_at' => $collection->created_at?->toDateString(),
+            'batch_number' => $batch->batch_number,
+            'farm' => $this->formatFarm($collection->farm),
+        ];
+    }
+
+    /**
+     * Format a farm with its location, agronomy metadata, and farmers.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function formatFarm(?Farm $farm): ?array
+    {
+        if (! $farm) {
+            return null;
+        }
+
+        return [
+            'id' => $farm->id,
+            'name' => $farm->name,
+            'farm_code' => $farm->farm_code,
+            'country' => $farm->country,
+            'region' => $farm->region,
+            'district' => $farm->district,
+            'village' => $farm->village,
+            'location' => $this->farmLocation($farm),
+            'latitude' => $farm->latitude,
+            'longitude' => $farm->longitude,
+            'elevation_m' => $farm->elevation !== null ? (int) round($farm->elevation) : null,
+            'coffee_area_ha' => $farm->coffee_area,
+            'coffee_type' => $farm->coffee_type,
+            'soil_type' => $farm->soil_type,
+            'farmers' => $farm->farmers->map(fn (Farmer $farmer): array => [
+                'id' => $farmer->id,
+                'name' => trim($farmer->first_name.' '.$farmer->last_name),
+                'farmer_number' => $farmer->farmer_number,
+                'district' => $farmer->district,
+                'tel' => $farmer->tel,
+            ])->all(),
+        ];
+    }
+
+    /**
+     * Build a human-readable "District, Region, Country" location string.
+     */
+    private function farmLocation(Farm $farm): string
+    {
+        return collect([$farm->district, $farm->region, $farm->country])
+            ->filter()
+            ->implode(', ');
+    }
+
+    /**
+     * Format a user as a simple {id, name} recorder reference.
+     *
+     * @return array{id: int, name: string}|null
+     */
+    private function person($user): ?array
+    {
+        return $user ? ['id' => $user->id, 'name' => $user->name] : null;
+    }
+
+    /**
+     * Cast a nullable decimal-ish value to a float (or null).
+     */
+    private function toFloat($value): ?float
+    {
+        return $value === null ? null : (float) $value;
     }
 
     /**

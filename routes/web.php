@@ -217,6 +217,7 @@ Route::middleware([
     Route::prefix('lot')->name('lot.')->group(function () {
         Route::post('/', [LotController::class, 'store'])->name('store');
         Route::get('/{lot}/traceability', [LotController::class, 'lotTraceability'])->name('traceability');
+        Route::get('/{lot}/qr-code', [LotController::class, 'downloadQr'])->name('qr.download');
         Route::get('/{lot}', [LotController::class, 'show'])->name('show');
         Route::post('/{lot}/publish', [LotController::class, 'publish'])->name('publish');
         Route::post('/{lot}/batches', [LotController::class, 'attachBatch'])->name('batches.store');
@@ -228,7 +229,6 @@ Route::middleware([
         Route::get('/create', [BatchController::class, 'create'])->name('create');
         Route::get('/{batch}/create-lot', [LotController::class, 'createLot'])->name('create-lot');
         Route::post('/{batch}/create-lot', [LotController::class, 'storeFromBatch'])->name('store-lot');
-        Route::post('/{batch}/compliance', [BatchController::class, 'storeCompliance'])->name('compliance.store');
     });
 
     // Batch create/view/update/delete: open to any authenticated user —

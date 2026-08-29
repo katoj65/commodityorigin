@@ -13,10 +13,13 @@ return new class extends Migration
             $table->decimal('unit_price', 10, 2)->nullable()->after('quantity');
         });
 
+        // A correlated-subquery UPDATE (rather than UPDATE ... INNER JOIN,
+        // which MySQL supports but SQLite doesn't) so this runs on both.
         DB::statement(
-            'UPDATE cart_items INNER JOIN markets ON markets.id = cart_items.market_id
-             SET cart_items.unit_price = markets.price_per_kg
-             WHERE cart_items.unit_price IS NULL'
+            'UPDATE cart_items
+             SET unit_price = (SELECT markets.price_per_kg FROM markets WHERE markets.id = cart_items.market_id)
+             WHERE unit_price IS NULL
+             AND EXISTS (SELECT 1 FROM markets WHERE markets.id = cart_items.market_id)'
         );
 
         Schema::table('cart_items', function (Blueprint $table): void {

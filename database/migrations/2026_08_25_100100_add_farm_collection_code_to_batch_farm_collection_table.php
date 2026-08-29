@@ -21,9 +21,14 @@ return new class extends Migration
             $table->string('farm_collection_code', 50)->nullable()->after('farm_collection_id');
         });
 
-        DB::table('batch_farm_collection')
-            ->join('farm_collections', 'farm_collections.id', '=', 'batch_farm_collection.farm_collection_id')
-            ->update(['batch_farm_collection.farm_collection_code' => DB::raw('farm_collections.collection_code')]);
+        // A correlated-subquery UPDATE (rather than a joined update, whose
+        // SET clause can't reach the joined table's columns on SQLite) so
+        // this runs the same on MySQL and SQLite.
+        DB::statement(
+            'UPDATE batch_farm_collection
+             SET farm_collection_code = (SELECT farm_collections.collection_code FROM farm_collections WHERE farm_collections.id = batch_farm_collection.farm_collection_id)
+             WHERE EXISTS (SELECT 1 FROM farm_collections WHERE farm_collections.id = batch_farm_collection.farm_collection_id)'
+        );
     }
 
     /**

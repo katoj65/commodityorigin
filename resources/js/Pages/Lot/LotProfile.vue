@@ -13,8 +13,10 @@ import {
     Coin,
     Connection,
     Document,
+    Download,
     EditPen,
     Files,
+    FullScreen,
     HotWater,
     Location,
     Odometer,
@@ -56,6 +58,24 @@ function handleOptionsCommand(command) {
 }
 
 const linkedBatches = computed(() => props.lot.lot_batches || []);
+
+/* ── Traceability QR code ─────────────────────────────────────────────── */
+// The QR encodes the traceability URL; keep a visible copy next to the code.
+const traceabilityUrl = computed(() => (props.lot.id ? route('lot.traceability', props.lot.id) : ''));
+
+function downloadQrCode() {
+    if (!props.lot.qr_code) return;
+
+    const blob = new Blob([props.lot.qr_code], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${props.lot.lot_number || 'lot'}-qr.svg`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
 
 const statusMap = {
     draft: { label: 'Draft', tone: 'warning' },
@@ -143,93 +163,6 @@ const fmtDateTime = (value) => {
         year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
     });
 };
-
-/* ── Journey timeline: farm collection → batching → lotting ─────────────
-   Built from the eager-loaded chain (lot_batches.batch.batch_farm_collections
-   .farm_collection.farm) so every date shown is the record's own accurate
-   timestamp, not an estimate. */
-const toTimestamp = (value) => {
-    if (!value) return null;
-    const iso = value.includes(' ') ? value.replace(' ', 'T') : `${value}T00:00:00`;
-    const time = new Date(iso).getTime();
-    return Number.isNaN(time) ? null : time;
-};
-
-const fmtEventDate = (value) => (value && value.includes(':') ? fmtDateTime(value) : fmtDate(value));
-
-const fmtRelative = (value) => {
-    const ts = toTimestamp(value);
-    if (ts === null) return '';
-    const days = Math.round((Date.now() - ts) / 86400000);
-    if (days <= 0) return 'Today';
-    if (days === 1) return 'Yesterday';
-    if (days < 30) return `${days}d ago`;
-    const months = Math.round(days / 30);
-    if (months < 12) return `${months}mo ago`;
-    return `${Math.round(months / 12)}y ago`;
-};
-
-const stageLabels = { collection: 'Sourced', batching: 'Batched', lotting: 'Lot' };
-
-const journeyEvents = computed(() => {
-    const events = [];
-
-    for (const lb of linkedBatches.value) {
-        const batch = lb.batch;
-        if (!batch) continue;
-
-        for (const link of batch.farm_collection_links || []) {
-            const fc = link.farm_collection;
-            events.push({
-                stage: 'collection',
-                date: fc?.collection_date || link.created_at,
-                title: fc?.farm?.name ? `Collected at ${fc.farm.name}` : `Farm collection ${link.farm_collection_code}`,
-                subtitle: [
-                    fc?.coffee_type,
-                    fc?.variety,
-                    fc?.quantity ? `${Number(fc.quantity).toLocaleString()} ${fc.unit || 'kg'}` : null,
-                ].filter(Boolean).join(' · '),
-                href: route('farm-collection.show', link.farm_collection_id),
-            });
-        }
-
-        events.push({
-            stage: 'batching',
-            date: batch.processing_date || batch.created_at,
-            title: `Batch ${batch.batch_number} processed`,
-            subtitle: [
-                batch.processing_method,
-                batch.net_weight_kg ? `${fmtNumber(batch.net_weight_kg)} kg` : null,
-                batch.warehouse_location || null,
-            ].filter(Boolean).join(' · '),
-            href: route('batch.show', batch.id),
-        });
-    }
-
-    events.push({
-        stage: 'lotting',
-        date: props.lot.created_at,
-        title: `Lot ${props.lot.lot_number} created`,
-        subtitle: [
-            props.lot.process ? `Process: ${props.lot.process}` : null,
-            props.lot.net_weight_kg ? `${fmtNumber(props.lot.net_weight_kg)} kg` : null,
-        ].filter(Boolean).join(' · '),
-    });
-
-    if (props.lot.updated_at && props.lot.updated_at !== props.lot.created_at) {
-        events.push({
-            stage: 'lotting',
-            date: props.lot.updated_at,
-            title: 'Lot details updated',
-            subtitle: props.lot.net_weight_kg ? `${fmtNumber(props.lot.net_weight_kg)} kg` : '',
-        });
-    }
-
-    return events
-        .filter((event) => toTimestamp(event.date) !== null)
-        .sort((a, b) => toTimestamp(a.date) - toTimestamp(b.date))
-        .map((event) => ({ ...event, stageLabel: stageLabels[event.stage] }));
-});
 </script>
 
 <template>
@@ -378,8 +311,37 @@ const journeyEvents = computed(() => {
                     <p class="lp-prose">{{ lot.notes }}</p>
                 </div>
 
-                <!-- Linked batches: full-width row, shown first -->
-                <div class="lp-tile lp-tile--full">
+                <!-- Traceability row: QR code card + Linked Batches share one even row -->
+                <div class="lp-tile-row lp-tile-row--2col lp-tile--full">
+                <!-- Traceability QR code -->
+                <div class="lp-tile lp-tile--qr">
+                    <div class="lp-qr-card">
+                        <div class="lp-qr-card__code-wrap">
+                            <div v-if="lot.qr_code" class="lp-qr-card__code" v-html="lot.qr_code"></div>
+                            <div v-else class="lp-qr-card__code lp-qr-card__code--empty"><el-icon :size="30"><FullScreen /></el-icon></div>
+                            <span class="lp-qr-card__scan-ring" aria-hidden="true"></span>
+                        </div>
+                        <div class="lp-qr-card__info">
+                            <span class="lp-qr-card__eyebrow"><el-icon><FullScreen /></el-icon> Traceability QR</span>
+                            <h3 class="lp-qr-card__title">Scan to trace this lot</h3>
+                            <p class="lp-qr-card__hint">
+                                Point a phone camera at the code to open this lot's traceability timeline — origin, batches, and processing history.
+                            </p>
+                            <a :href="traceabilityUrl" class="lp-qr-card__url lp-mono">{{ traceabilityUrl }}</a>
+                            <div class="lp-qr-card__actions">
+                                <button v-if="lot.qr_code" type="button" class="lp-btn lp-btn--primary lp-btn--sm" @click="downloadQrCode">
+                                    <el-icon><Download /></el-icon> Download SVG
+                                </button>
+                                <Link :href="traceabilityUrl" class="lp-btn lp-btn--outline lp-btn--sm">
+                                    <el-icon><Connection /></el-icon> View Timeline
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Linked batches -->
+                <div class="lp-tile">
                     <div class="lp-tile__head">
                         <h2 class="lp-tile__title"><el-icon><Files /></el-icon> Linked Batches</h2>
                         <button v-if="lot.can_manage" type="button" class="lp-btn lp-btn--primary" @click="showAttachBatch = true">
@@ -412,6 +374,7 @@ const journeyEvents = computed(() => {
                         </Link>
                     </div>
                     <p v-else class="lp-empty">No batches linked to this lot yet. Attach one by its batch number to record where this lot's coffee came from.</p>
+                </div>
                 </div>
 
                 <!-- Origin trace row: Farms and Farm Collections as columns -->
@@ -493,46 +456,6 @@ const journeyEvents = computed(() => {
                     </div>
                     <p v-else class="lp-empty">No farm collections linked via the batches attached to this lot.</p>
                 </div>
-                </div>
-
-                <!-- Activity: journey timeline (farm collection → batching → lotting) -->
-                <div class="lp-tile lp-tile--full">
-                    <div class="lp-tile__head">
-                        <h2 class="lp-tile__title"><el-icon><Clock /></el-icon> Activity</h2>
-                        <span v-if="journeyEvents.length" class="lp-tile__count">{{ journeyEvents.length }}</span>
-                    </div>
-                    <ol v-if="journeyEvents.length" class="lp-timeline">
-                        <li v-for="(event, index) in journeyEvents" :key="index" class="lp-timeline__item">
-                            <span class="lp-timeline__marker" :class="`lp-timeline__marker--${event.stage}`">
-                                <el-icon>
-                                    <Coffee v-if="event.stage === 'collection'" />
-                                    <Box v-else-if="event.stage === 'batching'" />
-                                    <Ticket v-else />
-                                </el-icon>
-                            </span>
-                            <span v-if="index !== journeyEvents.length - 1" class="lp-timeline__line" />
-                            <component
-                                :is="event.href ? Link : 'div'"
-                                :href="event.href"
-                                class="lp-timeline__body"
-                                :class="{ 'lp-timeline__body--link': event.href }"
-                            >
-                                <div class="lp-timeline__head">
-                                    <span class="lp-timeline__stage" :class="`lp-timeline__stage--${event.stage}`">{{ event.stageLabel }}</span>
-                                    <span class="lp-timeline__date">
-                                        <span class="lp-mono">{{ fmtEventDate(event.date) }}</span>
-                                        <span class="lp-timeline__relative">{{ fmtRelative(event.date) }}</span>
-                                    </span>
-                                </div>
-                                <div class="lp-timeline__title-row">
-                                    <span class="lp-timeline__title">{{ event.title }}</span>
-                                    <el-icon v-if="event.href" class="lp-timeline__chevron"><ArrowRight /></el-icon>
-                                </div>
-                                <p v-if="event.subtitle" class="lp-timeline__subtitle">{{ event.subtitle }}</p>
-                            </component>
-                        </li>
-                    </ol>
-                    <p v-else class="lp-empty">No activity recorded yet.</p>
                 </div>
             </div>
         </div>
@@ -745,6 +668,47 @@ const journeyEvents = computed(() => {
 }
 .lp-recorder__meta-row .el-icon { font-size: 12px; color: var(--text-muted); }
 
+/* ── Traceability QR card ─────────────────────────────────────────────── */
+/* A polished, gradient-panelled card: code on the left on a soft accent
+   backdrop, description + actions on the right. */
+.lp-tile--qr {
+    background: linear-gradient(135deg, var(--surface-muted) 0%, var(--surface) 55%);
+    overflow: hidden;
+}
+.lp-qr-card { display: flex; align-items: center; gap: 22px; flex: 1; }
+.lp-qr-card__code-wrap {
+    position: relative; flex-shrink: 0;
+    width: 168px; height: 168px; border-radius: 14px;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+}
+.lp-qr-card__scan-ring {
+    position: absolute; inset: -1px; border-radius: inherit;
+    border: 1.5px dashed rgba(194, 65, 12, 0.35);
+    pointer-events: none;
+}
+.lp-qr-card__code {
+    width: 132px; height: 132px;
+    padding: 10px; border-radius: 10px;
+    background: #fff; border: 1px solid var(--border);
+    box-shadow: 0 8px 20px rgba(17, 24, 39, 0.10);
+    display: flex; align-items: center; justify-content: center;
+}
+.lp-qr-card__code :deep(svg) { width: 100%; height: 100%; display: block; }
+.lp-qr-card__code--empty { color: var(--text-muted); background: var(--surface-elevated); box-shadow: none; }
+.lp-qr-card__info { min-width: 0; display: flex; flex-direction: column; gap: 9px; }
+.lp-qr-card__eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #C2410C;
+}
+.lp-qr-card__eyebrow .el-icon { font-size: 12px; }
+.lp-qr-card__title { font-size: 17px; line-height: 22px; font-weight: 700; letter-spacing: -0.01em; color: var(--text); margin: 0; }
+.lp-qr-card__hint { font-size: 12.5px; line-height: 18px; color: var(--text-2); margin: 0; }
+.lp-qr-card__url { font-size: 11px; color: var(--text-muted); word-break: break-all; text-decoration: none; }
+.lp-qr-card__url:hover { color: var(--text); text-decoration: underline; }
+.lp-qr-card__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
 /* ── Buttons ──────────────────────────────────────────────────────────── */
 .lp-btn {
     display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
@@ -752,6 +716,8 @@ const journeyEvents = computed(() => {
     font-size: 12.5px; font-weight: 600; border: 1px solid transparent;
     cursor: pointer; transition: opacity 120ms ease;
 }
+.lp-btn--sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.lp-btn--sm .el-icon { font-size: 13px; }
 .lp-btn--primary { background: var(--primary); color: #fff; }
 .lp-btn--primary:hover { opacity: 0.88; }
 
@@ -827,45 +793,6 @@ const journeyEvents = computed(() => {
 }
 
 .lp-empty { font-size: 13px; color: var(--text-muted); margin: 0; }
-
-/* ── Activity: journey timeline ──────────────────────────────────────── */
-.lp-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.lp-timeline__item { position: relative; display: flex; gap: 14px; padding-bottom: 22px; }
-.lp-timeline__item:last-child { padding-bottom: 0; }
-.lp-timeline__marker {
-    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--surface-elevated); color: var(--text-2);
-    font-size: 13px; z-index: 1;
-}
-.lp-timeline__marker--collection { background: var(--success-soft); color: var(--success); }
-.lp-timeline__marker--batching { background: var(--accent-soft); color: #C2410C; }
-.lp-timeline__marker--lotting { background: #EFF6FF; color: var(--info); }
-.lp-timeline__line { position: absolute; left: 14.5px; top: 30px; bottom: 0; width: 1px; background: var(--border); }
-.lp-timeline__body { flex: 1; min-width: 0; padding-top: 4px; display: block; text-decoration: none; color: inherit; }
-.lp-timeline__body--link { cursor: pointer; }
-.lp-timeline__body--link:hover .lp-timeline__title { color: var(--accent); }
-.lp-timeline__body--link:hover .lp-timeline__chevron { opacity: 1; transform: translateX(0); }
-.lp-timeline__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.lp-timeline__stage {
-    display: inline-flex; align-items: center;
-    padding: 2px 8px; border-radius: 999px;
-    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-    background: var(--surface-elevated); color: var(--text-2);
-}
-.lp-timeline__stage--collection { background: var(--success-soft); color: var(--success); }
-.lp-timeline__stage--batching { background: var(--accent-soft); color: #C2410C; }
-.lp-timeline__stage--lotting { background: #EFF6FF; color: var(--info); }
-.lp-timeline__date { display: flex; align-items: baseline; gap: 6px; flex-shrink: 0; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
-.lp-timeline__relative { color: var(--text-muted); }
-.lp-timeline__title-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
-.lp-timeline__title { font-size: 13.5px; font-weight: 700; color: var(--text); transition: color 120ms ease; }
-.lp-timeline__chevron {
-    font-size: 12px; color: var(--text-muted);
-    opacity: 0; transform: translateX(-3px);
-    transition: opacity 120ms ease, transform 120ms ease;
-}
-.lp-timeline__subtitle { font-size: 12px; color: var(--text-2); margin: 3px 0 0; }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 1100px) { .lp-page { padding: 0 24px; } }

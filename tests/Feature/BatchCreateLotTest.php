@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Batch;
-use App\Models\BatchOwnership;
 use App\Models\Farm;
 use App\Models\Farmer;
 use App\Models\Harvest;
@@ -186,13 +185,6 @@ class BatchCreateLotTest extends TestCase
             'screen_size' => '17/18',
             'cup_score' => 87.2,
             'status' => 'received',
-        ]);
-
-        BatchOwnership::query()->create([
-            'batch_id' => $batch->id,
-            'user_id' => $user->id,
-            'owner_id' => $harvest->id,
-            'owner_type' => Harvest::class,
         ]);
 
         return compact('user', 'batch', 'farm', 'harvest');

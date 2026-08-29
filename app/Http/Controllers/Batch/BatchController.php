@@ -144,28 +144,6 @@ class BatchController extends Controller
     }
 
     /**
-     * Store compliance metadata for the specified batch.
-     */
-    public function storeCompliance(Request $request, Batch $batch): RedirectResponse
-    {
-        Gate::authorize('update', $batch);
-
-        $validated = $request->validate([
-            'compliance_type' => ['required', 'string', 'max:255'],
-            'status' => ['required', 'string', Rule::in(['pending', 'approved', 'rejected', 'expired'])],
-            'certificate_number' => ['nullable', 'string', 'max:255'],
-            'issued_by' => ['nullable', 'string', 'max:255'],
-            'issued_at' => ['nullable', 'date'],
-            'expires_at' => ['nullable', 'date', 'after_or_equal:issued_at'],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        $this->batches->createCompliance($batch, $request->user()->id, $validated);
-
-        return back()->with('success', 'Batch compliance saved successfully.');
-    }
-
-    /**
      * Link a farm collection to this batch, found by its collection_code,
      * via the batch_farm_collection pivot table.
      */

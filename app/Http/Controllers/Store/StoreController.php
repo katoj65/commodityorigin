@@ -21,6 +21,7 @@ use App\Models\SeasonMetadata;
 use App\Models\Store;
 use App\Models\StoreItem;
 use App\Services\CoffeeGradeService;
+use App\Services\CountryService;
 use App\Services\StoreService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,6 +35,7 @@ class StoreController extends Controller
     public function __construct(
         private readonly StoreService $stores,
         private readonly CoffeeGradeService $coffeeGrades,
+        private readonly CountryService $countries,
     ) {
     }
 
@@ -95,6 +97,8 @@ class StoreController extends Controller
                 ->pluck('name')
                 : [],
             'coffeeGradeOptions' => $verified ? $this->coffeeGrades->activeOptions()->pluck('name')->all() : [],
+            'packagingTypeOptions' => $verified ? ['GrainPro', 'Jute Only', 'Vacuum'] : [],
+            'originOptions' => $verified ? $this->countries->coffeeProducers()->pluck('name')->all() : [],
             'currencyOptions' => $verified ? Currency::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')

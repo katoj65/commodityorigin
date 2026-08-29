@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Batch;
-use App\Models\BatchCompliance;
-use App\Models\BatchOwnership;
 use App\Models\Farm;
 use App\Models\Farmer;
 use App\Models\Harvest;
@@ -196,8 +194,6 @@ class BatchStoreTest extends TestCase
             'id' => $batch->id,
             'season_id' => $season->id,
         ]);
-
-        $this->assertSame(2, BatchOwnership::query()->where('batch_id', $batch->id)->count());
     }
 
     public function test_only_the_creator_can_view_the_batch_profile(): void
@@ -298,55 +294,12 @@ class BatchStoreTest extends TestCase
             'status' => 'verified',
         ]);
 
-        BatchOwnership::query()->create([
-            'batch_id' => $batch->id,
-            'user_id' => $creator->id,
-            'owner_id' => $harvest->id,
-            'owner_type' => Harvest::class,
-        ]);
-
         $response = $this->actingAs($creator)->get(route('batch.show', $batch));
 
         $response->assertOk();
         $response->assertSee('Batch/BatchProfile');
         $response->assertSee('Main Crop 2026');
         $response->assertSee('Mount Elgon Heights');
-    }
-
-    public function test_the_creator_can_store_batch_compliance(): void
-    {
-        $creator = User::factory()->create();
-
-        $batch = Batch::query()->create([
-            'user_id' => $creator->id,
-            'batch_number' => 'BATCH-2026-003',
-            'warehouse_location' => 'Kampala Warehouse',
-            'quantity' => 10,
-            'weight' => 600,
-            'status' => 'received',
-        ]);
-
-        $response = $this->actingAs($creator)->post(route('batch.compliance.store', $batch), [
-            'compliance_type' => 'Organic certificate',
-            'status' => 'approved',
-            'certificate_number' => 'ORG-2026-009',
-            'issued_by' => 'Commodity Origin Lab',
-            'issued_at' => '2026-04-20',
-            'expires_at' => '2027-04-20',
-            'notes' => 'Approved after document review.',
-        ]);
-
-        $response->assertSessionHasNoErrors();
-        $response->assertRedirect();
-
-        $this->assertDatabaseHas('batch_compliances', [
-            'batch_id' => $batch->id,
-            'user_id' => $creator->id,
-            'compliance_type' => 'Organic certificate',
-            'status' => 'approved',
-            'certificate_number' => 'ORG-2026-009',
-            'issued_by' => 'Commodity Origin Lab',
-        ]);
     }
 
     public function test_the_creator_can_update_batch_data(): void
@@ -442,27 +395,4 @@ class BatchStoreTest extends TestCase
         ]);
     }
 
-    public function test_non_creators_cannot_store_batch_compliance(): void
-    {
-        $creator = User::factory()->create();
-        $otherUser = User::factory()->create();
-
-        $batch = Batch::query()->create([
-            'user_id' => $creator->id,
-            'batch_number' => 'BATCH-2026-004',
-            'warehouse_location' => 'Kampala Warehouse',
-            'quantity' => 10,
-            'weight' => 600,
-            'status' => 'received',
-        ]);
-
-        $this->actingAs($otherUser)
-            ->post(route('batch.compliance.store', $batch), [
-                'compliance_type' => 'Organic certificate',
-                'status' => 'approved',
-            ])
-            ->assertForbidden();
-
-        $this->assertSame(0, BatchCompliance::query()->count());
-    }
 }

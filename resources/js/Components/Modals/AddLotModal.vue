@@ -8,6 +8,9 @@ const props = defineProps({
     modelValue: { type: Boolean, default: false },
     processOptions: { type: Array, default: () => [] },
     coffeeGradeOptions: { type: Array, default: () => [] },
+    packagingTypeOptions: { type: Array, default: () => [] },
+    varietyOptions: { type: Array, default: () => [] },
+    originOptions: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -21,8 +24,18 @@ function emptyForm() {
     return {
         lot_name: '',
         description: '',
+        image: null,
         process: '',
         grade: '',
+        variety: '',
+        origin: '',
+        region: '',
+        altitude: '',
+        year_of_harvest: new Date().getFullYear(),
+        moisture: '',
+        defects_percentage: '',
+        screen: '',
+        packaging_type: '',
         quantity_bags: '',
         bag_weight_kg: '',
         price: '',
@@ -42,6 +55,11 @@ watch(() => props.modelValue, (open) => {
 
 function closeDialog() {
     dialogVisible.value = false;
+}
+
+function onImageChange(event) {
+    const [file] = event.target.files ?? [];
+    form.image = file ?? null;
 }
 
 function submit() {
@@ -89,11 +107,11 @@ function submit() {
                         <span v-if="form.errors.lot_name" class="alm-field__error">{{ form.errors.lot_name }}</span>
                     </div>
                     <div class="alm-field">
-                        <label class="alm-field__label">Process</label>
-                        <el-select v-model="form.process" placeholder="Select process" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.process }">
-                            <el-option v-for="option in processOptions" :key="option" :label="option" :value="option" />
+                        <label class="alm-field__label">Variety</label>
+                        <el-select v-model="form.variety" placeholder="Select variety" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.variety }">
+                            <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
                         </el-select>
-                        <span v-if="form.errors.process" class="alm-field__error">{{ form.errors.process }}</span>
+                        <span v-if="form.errors.variety" class="alm-field__error">{{ form.errors.variety }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Grade</label>
@@ -101,6 +119,57 @@ function submit() {
                             <el-option v-for="option in coffeeGradeOptions" :key="option" :label="option" :value="option" />
                         </el-select>
                         <span v-if="form.errors.grade" class="alm-field__error">{{ form.errors.grade }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Screen</label>
+                        <el-input v-model="form.screen" placeholder="e.g. 16/18" class="alm-input" :class="{ 'alm-input--error': form.errors.screen }" />
+                        <span v-if="form.errors.screen" class="alm-field__error">{{ form.errors.screen }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Origin</label>
+                        <el-select v-model="form.origin" placeholder="Select origin country" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.origin }">
+                            <el-option v-for="option in originOptions" :key="option" :label="option" :value="option" />
+                        </el-select>
+                        <span v-if="form.errors.origin" class="alm-field__error">{{ form.errors.origin }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Year of Harvest</label>
+                        <el-input-number v-model="form.year_of_harvest" :min="2000" :max="2100" :controls="false" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.year_of_harvest }" />
+                        <span v-if="form.errors.year_of_harvest" class="alm-field__error">{{ form.errors.year_of_harvest }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Region</label>
+                        <el-input v-model="form.region" placeholder="e.g. Sidama" class="alm-input" :class="{ 'alm-input--error': form.errors.region }" />
+                        <span v-if="form.errors.region" class="alm-field__error">{{ form.errors.region }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Altitude (m) <small>(optional)</small></label>
+                        <el-input-number v-model="form.altitude" :min="0" :max="5000" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.altitude }" />
+                        <span v-if="form.errors.altitude" class="alm-field__error">{{ form.errors.altitude }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Process</label>
+                        <el-select v-model="form.process" placeholder="Select process" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.process }">
+                            <el-option v-for="option in processOptions" :key="option" :label="option" :value="option" />
+                        </el-select>
+                        <span v-if="form.errors.process" class="alm-field__error">{{ form.errors.process }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Moisture %</label>
+                        <el-input-number v-model="form.moisture" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.moisture }" />
+                        <span v-if="form.errors.moisture" class="alm-field__error">{{ form.errors.moisture }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Defects % <small>(optional)</small></label>
+                        <el-input-number v-model="form.defects_percentage" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.defects_percentage }" />
+                        <span v-if="form.errors.defects_percentage" class="alm-field__error">{{ form.errors.defects_percentage }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Packaging Type <small>(optional)</small></label>
+                        <el-select v-model="form.packaging_type" placeholder="Select packaging type" clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.packaging_type }">
+                            <el-option v-for="option in packagingTypeOptions" :key="option" :label="option" :value="option" />
+                        </el-select>
+                        <span v-if="form.errors.packaging_type" class="alm-field__error">{{ form.errors.packaging_type }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Quantity (bags)</label>
@@ -117,7 +186,7 @@ function submit() {
                         <el-input-number v-model="form.price" :min="0" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.price }" />
                         <span v-if="form.errors.price" class="alm-field__error">{{ form.errors.price }}</span>
                     </div>
-                    <div class="alm-field">
+                    <div class="alm-field alm-field--span2">
                         <label class="alm-field__label">Quality Score <small>(optional)</small></label>
                         <el-input-number v-model="form.quality_score" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.quality_score }" />
                         <span v-if="form.errors.quality_score" class="alm-field__error">{{ form.errors.quality_score }}</span>
@@ -131,6 +200,12 @@ function submit() {
                         <label class="alm-field__label">Notes <small>(optional)</small></label>
                         <el-input v-model="form.notes" type="textarea" :rows="2" class="alm-input" :class="{ 'alm-input--error': form.errors.notes }" />
                         <span v-if="form.errors.notes" class="alm-field__error">{{ form.errors.notes }}</span>
+                    </div>
+                    <div class="alm-field alm-field--span2">
+                        <label class="alm-field__label">Image <small>(optional)</small></label>
+                        <input type="file" accept="image/*" class="alm-file-input" @change="onImageChange">
+                        <small v-if="form.image" class="alm-file-name">{{ form.image.name }}</small>
+                        <span v-if="form.errors.image" class="alm-field__error">{{ form.errors.image }}</span>
                     </div>
                 </div>
         </div>
@@ -223,6 +298,18 @@ function submit() {
 .alm-input--error :deep(.el-input__wrapper),
 .alm-input--error :deep(.el-select__wrapper),
 .alm-input--error :deep(.el-textarea__inner) { box-shadow: 0 0 0 1.5px #F85149 inset !important; }
+
+.alm-file-input {
+    width: 100%;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #121516;
+    background: #fff;
+    cursor: pointer;
+}
+.alm-file-name { font-size: 12px; color: #6F7677; }
 
 .alm-modal__footer {
     display: flex;

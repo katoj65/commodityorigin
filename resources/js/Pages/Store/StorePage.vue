@@ -23,6 +23,8 @@ const props = defineProps({
     coffeeTypeOptions: { type: Array, default: () => [] },
     harvestSeasonOptions: { type: Array, default: () => [] },
     coffeeGradeOptions: { type: Array, default: () => [] },
+    packagingTypeOptions: { type: Array, default: () => [] },
+    originOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
     statusOptions: { type: Array, default: () => [] },
     isAdmin: { type: Boolean, default: false },
@@ -243,41 +245,41 @@ function submitReject() {
                         </div>
                     </div>
 
-                    <!-- ── KPI snapshot ──────────────────────────────────── -->
+                    <!-- ── KPI snapshot — icon/label/value/change layout mirrors
+                         GeneralDashboard.vue's .cp-kpi tile (2026-08-29). ── -->
                     <div class="st-kpi-grid">
                         <div class="st-kpi">
                             <div class="st-kpi__top">
                                 <div class="st-kpi__icon st-kpi__icon--a"><el-icon><OfficeBuilding /></el-icon></div>
+                                <span class="st-kpi__label">Farm Collections</span>
                             </div>
-                            <div class="st-kpi__label">Farm Collections</div>
                             <div class="st-kpi__value">{{ farmCollections.length }}</div>
                             <div class="st-kpi__sub">From {{ sourcedFarmsCount }} farm{{ sourcedFarmsCount === 1 ? '' : 's' }}</div>
                         </div>
                         <div class="st-kpi">
                             <div class="st-kpi__top">
                                 <div class="st-kpi__icon st-kpi__icon--b"><el-icon><Files /></el-icon></div>
+                                <span class="st-kpi__label">Batches</span>
                             </div>
-                            <div class="st-kpi__label">Batches</div>
                             <div class="st-kpi__value">{{ batches.length }}</div>
                             <div class="st-kpi__sub">{{ totalBatchWeightKg.toLocaleString() }} kg total</div>
                         </div>
                         <div class="st-kpi">
                             <div class="st-kpi__top">
                                 <div class="st-kpi__icon st-kpi__icon--c"><el-icon><Ticket /></el-icon></div>
+                                <span class="st-kpi__label">Lots</span>
                             </div>
-                            <div class="st-kpi__label">Lots</div>
                             <div class="st-kpi__value">{{ lots.length }}</div>
                             <div class="st-kpi__sub">{{ totalLotWeightKg.toLocaleString() }} kg total</div>
                         </div>
                         <div class="st-kpi">
                             <div class="st-kpi__top">
                                 <div class="st-kpi__icon st-kpi__icon--d"><el-icon><Wallet /></el-icon></div>
-                                <span class="st-kpi__pct">{{ tokenisedPct }}%</span>
+                                <span class="st-kpi__label">On Blockchain</span>
                             </div>
-                            <div class="st-kpi__label">On Blockchain</div>
                             <div class="st-kpi__value">{{ tokenisedLots.length }}</div>
                             <div class="st-kpi__progress"><div class="st-kpi__progress-bar" :style="{ width: tokenisedPct + '%' }"></div></div>
-                            <div class="st-kpi__sub">of {{ lots.length }} lot{{ lots.length === 1 ? '' : 's' }} tokenised</div>
+                            <div class="st-kpi__sub"><span class="st-up">{{ tokenisedPct }}%</span> of {{ lots.length }} lot{{ lots.length === 1 ? '' : 's' }} tokenised</div>
                         </div>
                     </div>
 
@@ -578,7 +580,14 @@ function submitReject() {
             :currency-options="currencyOptions"
         />
         <AddBatchModal v-model="addBatchOpen" :process-options="processOptions" :variety-options="coffeeTypeOptions" :drying-method-options="dryingMethodOptions" :currency-options="currencyOptions" :milling-options="millingOptions" />
-        <AddLotModal v-model="addLotOpen" :process-options="processOptions" :coffee-grade-options="coffeeGradeOptions" />
+        <AddLotModal
+            v-model="addLotOpen"
+            :process-options="processOptions"
+            :coffee-grade-options="coffeeGradeOptions"
+            :packaging-type-options="packagingTypeOptions"
+            :variety-options="coffeeTypeOptions"
+            :origin-options="originOptions"
+        />
     </StoreLayout>
 </template>
 
@@ -832,44 +841,55 @@ function submitReject() {
 .st-status-banner__text { font-size: 13px; margin: 2px 0 0; line-height: 1.5; color: var(--on-surface-variant); }
 
 /* ── KPI snapshot ─────────────────────────────────────────────────────────
-   Coffee-trading-flavored accent palette: green for origin/sourcing,
-   roast-amber for batches (processing), indigo for lots (market-ready),
-   violet for the blockchain metric (tech/ledger association) — literal
-   hex, distinct per card, with a matching top accent bar + icon tint. ── */
+   Icon/label/value/change layout mirrors GeneralDashboard.vue's .cp-kpi
+   tile exactly (2026-08-29): a small circular tinted icon beside an
+   uppercase label on one row, a large value below it, then a compact
+   secondary line. Only the per-card accent color is kept distinct —
+   green for origin/sourcing, roast-amber for batches (processing), indigo
+   for lots (market-ready), violet for the blockchain metric. ── */
 .st-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .st-kpi {
     background: var(--surface-container-lowest);
     border: 1px solid var(--card-border);
     border-radius: var(--card-radius);
-    padding: 22px;
+    padding: 1.25rem;
     transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
 .st-kpi:hover { border-color: color-mix(in srgb, var(--on-surface) 16%, var(--card-border)); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06); transform: translateY(-1px); }
-.st-kpi__top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.st-kpi__top { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .st-kpi__icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 17px;
+    font-size: 13px;
+    flex-shrink: 0;
 }
 .st-kpi__icon--a { background: #ECFDF3; color: #16A34A; }
 .st-kpi__icon--b { background: #FDF1E4; color: #B4690E; }
 .st-kpi__icon--c { background: #EEF2FF; color: #4338CA; }
 .st-kpi__icon--d { background: #F4EEFF; color: #7C3AED; }
-.st-kpi__pct { font-size: 13px; font-weight: 800; color: #7C3AED; font-variant-numeric: tabular-nums; }
-.st-kpi__progress { height: 5px; border-radius: 999px; background: var(--surface-container); margin-top: 10px; overflow: hidden; }
+.st-kpi__progress { height: 5px; border-radius: 999px; background: var(--surface-container); margin: 6px 0 0; overflow: hidden; }
 .st-kpi__progress-bar { height: 100%; border-radius: 999px; background: #7C3AED; transition: width .3s ease; }
-.st-kpi__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--on-surface-variant); margin-bottom: 4px; }
-.st-kpi__value { font-size: 28px; font-weight: 800; letter-spacing: -0.015em; color: var(--on-surface); line-height: 1.2; font-variant-numeric: tabular-nums; }
-.st-kpi__sub { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 12px; color: var(--on-surface-variant); }
+.st-kpi__label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-variant); display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-kpi__value { font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em; color: var(--on-surface); line-height: 1.2; margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+.st-kpi__sub { font-size: .6875rem; font-weight: 700; color: var(--on-surface-variant); }
+.st-up { color: #166534; }
 
 /* ── Two-column layout ─────────────────────────────────────────────────── */
-.st-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.st-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 28px; }
 .st-col-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 .st-col-side { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+/* Stretch the last rail card so its bottom edge lines up with the main
+   stats column instead of stopping short. */
+.st-col-side > .st-side-card:last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.st-col-side > .st-side-card:last-child .st-chain-list { flex: 1; justify-content: center; }
 
 /* ── Uncommitted Inventory tabs (el-tabs) ─────────────────────────────── */
 /* Refined underline-tab bar (Linear/Stripe-dashboard style) — a single

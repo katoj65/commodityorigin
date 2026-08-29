@@ -5,9 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class BatchOwnership extends Model
+class BatchActivity extends Model
 {
     use HasFactory;
 
@@ -19,12 +18,12 @@ class BatchOwnership extends Model
     protected $fillable = [
         'batch_id',
         'user_id',
-        'owner_id',
-        'owner_type',
+        'event',
+        'description',
     ];
 
     /**
-     * Get the batch for this ownership record.
+     * Get the batch this activity was recorded for.
      */
     public function batch(): BelongsTo
     {
@@ -32,10 +31,10 @@ class BatchOwnership extends Model
     }
 
     /**
-     * Get the polymorphic owner model.
+     * Get the user who performed this activity, if known.
      */
-    public function owner(): MorphTo
+    public function user(): BelongsTo
     {
-        return $this->morphTo();
+        return $this->belongsTo(User::class);
     }
 }

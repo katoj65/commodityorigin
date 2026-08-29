@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FarmCollection extends Model
 {
@@ -65,5 +66,13 @@ class FarmCollection extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get this farm collection's activity log.
+     */
+    public function activities(): HasMany
+    {
+        return $this->hasMany(FarmCollectionActivity::class);
     }
 }
