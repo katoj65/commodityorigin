@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Input;
 
+use App\Helpers\ImageUploadHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AgriculturalInputResource;
 use App\Models\AgriculturalInput;
@@ -67,7 +68,7 @@ class AgriculturalInputController extends Controller
             'unit' => ['required', 'string', 'max:50'],
             'manufacturer' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'string', Rule::in(['active', 'inactive'])],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'image' => ImageUploadHelper::rules(),
         ]);
 
         $image = $request->file('image');
@@ -95,7 +96,7 @@ class AgriculturalInputController extends Controller
             'unit' => ['required', 'string', 'max:50'],
             'manufacturer' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'string', Rule::in(['active', 'inactive'])],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'image' => ImageUploadHelper::rules(),
         ]);
 
         $image = $request->file('image');

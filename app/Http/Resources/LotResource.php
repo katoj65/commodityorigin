@@ -35,6 +35,7 @@ class LotResource extends JsonResource
             'quantity_bags' => $this->quantity_bags,
             'bag_weight_kg' => $this->bag_weight_kg,
             'price' => $this->price,
+            'currency' => $this->currency,
             'quality_score' => $this->quality_score,
             'packaging_type' => $this->packaging_type,
             'status' => $this->status,
@@ -43,7 +44,9 @@ class LotResource extends JsonResource
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
             'can_manage' => $request->user() ? $request->user()->can('update', $this->resource) : false,
+            'is_published' => $this->when($this->relationLoaded('market'), fn (): bool => $this->market !== null, false),
             'lot_batches' => $this->whenLoaded('lotBatches', fn (): array => LotBatchResource::collection($this->lotBatches)->resolve()),
+            'images' => $this->whenLoaded('images', fn (): array => LotImageResource::collection($this->images)->resolve()),
             'blockchain' => $this->whenLoaded('blockchain', fn (): ?array => $this->blockchain ? BlockchainResource::make($this->blockchain)->resolve() : null),
             'user' => $this->whenLoaded('user', fn (): ?array => $this->user ? [
                 'id' => $this->user->id,

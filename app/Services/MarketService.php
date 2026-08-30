@@ -41,17 +41,22 @@ class MarketService
             ->map(fn (Market $market): array => [
                 'id' => $market->id,
                 'lot_code' => $market->lot_code,
-                'name' => $market->name,
+                'name' => $market->title,
                 'origin' => $market->origin,
                 'type' => $market->type,
                 'process' => $market->process,
                 'quality_score' => (float) ($market->quality_score ?? 0),
                 'quantity' => (float) ($market->quantity ?? 0),
-                'price_per_kg' => (float) ($market->price_per_kg ?? 0),
+                'available_quantity' => (float) ($market->available_quantity ?? 0),
+                'unit' => $market->unit,
+                'currency' => $market->currency,
+                'price_per_kg' => (float) ($market->price_per_unit ?? 0),
+                'pricing_type' => $market->pricing_type,
                 'demand' => $market->demand,
                 'badges' => $market->badges ?? [],
                 'target_market' => $market->target_market,
                 'status' => $market->status,
+                'is_featured' => (bool) $market->is_featured,
                 'image' => $market->image,
             ])
             ->all();
@@ -60,6 +65,8 @@ class MarketService
     /**
      * Query live markets narrowed down by the buyer's filter criteria —
      * coffee type, origin, process, price range, and minimum quality.
+     * Type/origin/process/quality_score live in `metadata` now, not
+     * dedicated columns, so they're filtered via JSON path queries.
      *
      * @param  array<string, mixed>  $filters
      * @return Collection<int, Market>
@@ -68,12 +75,12 @@ class MarketService
     {
         return $this->query()
             ->where('status', 'live')
-            ->when($filters['type'] ?? null, fn (Builder $q, string $type) => $q->where('type', $type))
-            ->when($filters['origin'] ?? null, fn (Builder $q, string $origin) => $q->where('origin', $origin))
-            ->when($filters['process'] ?? null, fn (Builder $q, string $process) => $q->where('process', $process))
-            ->when($filters['min_price'] ?? null, fn (Builder $q, $min) => $q->where('price_per_kg', '>=', $min))
-            ->when($filters['max_price'] ?? null, fn (Builder $q, $max) => $q->where('price_per_kg', '<=', $max))
-            ->when($filters['min_quality'] ?? null, fn (Builder $q, $min) => $q->where('quality_score', '>=', $min))
+            ->when($filters['type'] ?? null, fn (Builder $q, string $type) => $q->where('metadata->type', $type))
+            ->when($filters['origin'] ?? null, fn (Builder $q, string $origin) => $q->where('metadata->origin', $origin))
+            ->when($filters['process'] ?? null, fn (Builder $q, string $process) => $q->where('metadata->process', $process))
+            ->when($filters['min_price'] ?? null, fn (Builder $q, $min) => $q->where('price_per_unit', '>=', $min))
+            ->when($filters['max_price'] ?? null, fn (Builder $q, $max) => $q->where('price_per_unit', '<=', $max))
+            ->when($filters['min_quality'] ?? null, fn (Builder $q, $min) => $q->where('metadata->quality_score', '>=', $min))
             ->orderByDesc('created_at')
             ->get();
     }
@@ -104,7 +111,7 @@ class MarketService
      */
     public function show(Market $market): array
     {
-        $market->loadMissing(['user', 'lot.batch', 'lot.sensoryProfile', 'lot.storageProfile', 'images']);
+        $market->loadMissing(['user', 'lot.lotBatches.batch', 'lot.sensoryProfile', 'lot.storageProfile', 'images']);
 
         $lot = $market->lot;
         $batch = $lot?->batch;
@@ -139,12 +146,12 @@ class MarketService
 
         $marketAvgPrice = Market::query()
             ->where('status', 'live')
-            ->where('type', $market->type)
+            ->where('metadata->type', $market->type)
             ->where('id', '!=', $market->id)
-            ->avg('price_per_kg');
+            ->avg('price_per_unit');
 
         $priceDeltaPct = $marketAvgPrice
-            ? round((((float) $market->price_per_kg - $marketAvgPrice) / $marketAvgPrice) * 100, 1)
+            ? round((((float) $market->price_per_unit - $marketAvgPrice) / $marketAvgPrice) * 100, 1)
             : null;
 
         $sellerActiveListings = $market->user_id
@@ -155,18 +162,28 @@ class MarketService
             'id' => $market->id,
             'lot_id' => $market->lot_id,
             'lot_code' => $market->lot_code,
-            'name' => $market->name,
+            'name' => $market->title,
             'origin' => $market->origin,
             'type' => $market->type,
             'process' => $market->process ?? $batch?->processing_method,
             'quality_score' => (float) ($market->quality_score ?? 0),
             'quantity' => (float) ($market->quantity ?? 0),
-            'price_per_kg' => (float) ($market->price_per_kg ?? 0),
+            'available_quantity' => (float) ($market->available_quantity ?? 0),
+            'unit' => $market->unit,
+            'currency' => $market->currency,
+            'price_per_kg' => (float) ($market->price_per_unit ?? 0),
+            'pricing_type' => $market->pricing_type,
+            'minimum_order_quantity' => $this->toFloatOrNull($market->minimum_order_quantity),
+            'payment_terms' => $market->payment_terms,
+            'delivery_terms' => $market->delivery_terms,
+            'delivery_location' => $market->delivery_location,
             'demand' => $market->demand,
             'badges' => $market->badges ?? [],
             'target_market' => $market->target_market,
             'status' => $market->status,
-            'notes' => $market->notes ?: $lot?->description,
+            'is_featured' => (bool) $market->is_featured,
+            'is_public' => (bool) $market->is_public,
+            'notes' => $market->description ?: $lot?->description,
             'image' => $market->image,
             'images' => MarketImageResource::collection($market->images)->resolve(),
             'seller_name' => $market->user?->name,
@@ -200,10 +217,10 @@ class MarketService
             ->map(fn (Market $market): array => [
                 'id' => $market->id,
                 'lot_code' => $market->lot_code,
-                'name' => $market->name,
+                'name' => $market->title,
                 'origin' => $market->origin,
                 'type' => $market->type,
-                'price_per_kg' => (float) ($market->price_per_kg ?? 0),
+                'price_per_kg' => (float) ($market->price_per_unit ?? 0),
                 'quantity' => (float) ($market->quantity ?? 0),
                 'demand' => $market->demand,
                 'badges' => $market->badges ?? [],
@@ -223,12 +240,12 @@ class MarketService
             ->map(fn (Market $market): array => [
                 'id' => $market->id,
                 'code' => $market->lot_code,
-                'name' => $market->name,
+                'name' => $market->title,
                 'origin' => $market->origin,
                 'type' => $market->type,
                 'qty' => number_format((float) ($market->quantity ?? 0)) . ' kg',
                 'score' => (float) ($market->quality_score ?? 0),
-                'price' => 'Shs. ' . number_format((float) ($market->price_per_kg ?? 0), 2),
+                'price' => 'Shs. ' . number_format((float) ($market->price_per_unit ?? 0), 2),
                 'demand' => $market->demand,
                 'seller' => $market->seller ?? '—',
                 'status' => $market->status,
@@ -266,7 +283,7 @@ class MarketService
         }
 
         $totalVolume = (float) $listings->sum('quantity');
-        $averagePrice = (float) $listings->avg('price_per_kg');
+        $averagePrice = (float) $listings->avg('price_per_unit');
         $averageQuality = (float) $listings->avg('quality_score');
 
         $types = $listings->groupBy(fn (Market $m) => ucfirst($m->type ?? 'Unspecified'))
@@ -274,7 +291,7 @@ class MarketService
                 'label' => $type,
                 'count' => $group->count(),
                 'share' => round(($group->count() / $totalListings) * 100, 1),
-                'average_price' => round((float) $group->avg('price_per_kg'), 2),
+                'average_price' => round((float) $group->avg('price_per_unit'), 2),
                 'total_volume_kg' => (float) $group->sum('quantity'),
             ])
             ->sortByDesc('count')
@@ -286,7 +303,7 @@ class MarketService
                 'label' => $origin,
                 'count' => $group->count(),
                 'total_volume_kg' => (float) $group->sum('quantity'),
-                'average_price' => round((float) $group->avg('price_per_kg'), 2),
+                'average_price' => round((float) $group->avg('price_per_unit'), 2),
             ])
             ->sortByDesc('total_volume_kg')
             ->take(5)
@@ -318,8 +335,8 @@ class MarketService
             'total_listings' => $totalListings,
             'total_volume_kg' => $totalVolume,
             'average_price_per_kg' => round($averagePrice, 2),
-            'min_price_per_kg' => (float) $listings->min('price_per_kg'),
-            'max_price_per_kg' => (float) $listings->max('price_per_kg'),
+            'min_price_per_kg' => (float) $listings->min('price_per_unit'),
+            'max_price_per_kg' => (float) $listings->max('price_per_unit'),
             'average_quality_score' => $averageQuality > 0 ? round($averageQuality, 1) : null,
             'types' => $types,
             'origins' => $origins,
@@ -357,7 +374,7 @@ class MarketService
                     'share' => round($share * 100, 1),
                     'high_demand_share' => round($highDemandShare * 100, 1),
                     'gap_score' => round(($highDemandShare - $share) * 100, 1),
-                    'average_price' => round((float) $group->avg('price_per_kg'), 2),
+                    'average_price' => round((float) $group->avg('price_per_unit'), 2),
                 ];
             })
             ->filter(fn (array $row) => $row['gap_score'] > 0)
@@ -386,7 +403,7 @@ class MarketService
                     'destination' => $first->target_market,
                     'listings' => $group->count(),
                     'volume_kg' => (float) $group->sum('quantity'),
-                    'average_price' => round((float) $group->avg('price_per_kg'), 2),
+                    'average_price' => round((float) $group->avg('price_per_unit'), 2),
                 ];
             })
             ->sortByDesc('volume_kg')
@@ -422,7 +439,7 @@ class MarketService
                     'listings' => $group->count(),
                     'volume_kg' => (float) $group->sum('quantity'),
                     'average_quality' => round((float) $group->avg('quality_score'), 1),
-                    'average_price' => round((float) $group->avg('price_per_kg'), 2),
+                    'average_price' => round((float) $group->avg('price_per_unit'), 2),
                 ];
             })
             ->sortByDesc('volume_kg')

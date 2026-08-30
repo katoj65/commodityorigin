@@ -16,6 +16,14 @@ class MarketSeeder extends Seeder
      */
     public function run(): void
     {
+        // Idempotent by count rather than a unique key — lot_code (the old
+        // natural key) no longer exists as a real column now that markets
+        // is a general commodity-listing shape; these seeded listings
+        // never have a real lot_id to key off either.
+        if (Market::query()->count() >= 100) {
+            return;
+        }
+
         $origins = [
             'Bugisu, Uganda', 'Rwenzori, Uganda', 'Mount Elgon, Uganda', 'Kapchorwa, Uganda',
             'West Nile, Uganda', 'Mubende, Uganda', 'Sidamo, Ethiopia', 'Yirgacheffe, Ethiopia',
@@ -35,25 +43,31 @@ class MarketSeeder extends Seeder
         for ($i = 1; $i <= 100; $i++) {
             $origin = fake()->randomElement($origins);
             $type = fake()->randomElement($types);
+            $quantity = fake()->randomFloat(2, 200, 5000);
 
-            Market::query()->updateOrCreate(
-                ['lot_code' => 'MKT-' . now()->format('Y') . '-' . str_pad((string) $i, 4, '0', STR_PAD_LEFT)],
-                [
-                    'user_id' => $userIds ? fake()->randomElement($userIds) : null,
-                    'name' => ucfirst($type) . ' ' . explode(',', $origin)[0] . ' ' . fake()->randomElement($grades),
+            Market::query()->create([
+                'user_id' => $userIds ? fake()->randomElement($userIds) : null,
+                'title' => ucfirst($type) . ' ' . explode(',', $origin)[0] . ' ' . fake()->randomElement($grades),
+                'description' => fake()->boolean(40) ? fake()->sentence(10) : null,
+                'quantity' => $quantity,
+                'available_quantity' => $quantity,
+                'unit' => 'kg',
+                'currency' => 'USD',
+                'price_per_unit' => fake()->randomFloat(2, 2.5, 9.5),
+                'pricing_type' => 'fixed',
+                'status' => fake()->randomElement($statuses),
+                'is_featured' => fake()->boolean(15),
+                'is_public' => true,
+                'metadata' => [
                     'origin' => $origin,
                     'type' => $type,
                     'process' => fake()->randomElement($processes),
                     'quality_score' => fake()->randomFloat(2, 72, 92),
-                    'quantity' => fake()->randomFloat(2, 200, 5000),
-                    'price_per_kg' => fake()->randomFloat(2, 2.5, 9.5),
                     'demand' => fake()->randomElement($demands),
                     'badges' => fake()->randomElements($badgePool, fake()->numberBetween(0, 3)),
                     'target_market' => fake()->randomElement($targetMarkets),
-                    'status' => fake()->randomElement($statuses),
-                    'notes' => fake()->boolean(40) ? fake()->sentence(10) : null,
                 ],
-            );
+            ]);
         }
     }
 }

@@ -66,7 +66,7 @@ class ProfileController extends Controller
             'country' => ['required', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:255'],
             'bio' => ['nullable', 'string', 'max:1000'],
-            'photo' => ['nullable', 'image', 'max:5120'],
+            'photo' => ImageUploadHelper::rules(),
         ]);
 
         unset($validated['profile_type']);
@@ -235,7 +235,7 @@ class ProfileController extends Controller
             'country' => ['required', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:255'],
             'bio' => ['nullable', 'string', 'max:1000'],
-            'photo' => ['nullable', 'image', 'max:5120'],
+            'photo' => ImageUploadHelper::rules(),
         ]);
 
         $request->user()->update([
@@ -279,7 +279,7 @@ class ProfileController extends Controller
             'state' => ['required', 'string', 'max:255'],
             'country' => ['required', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:255'],
-            'logo' => ['nullable', 'image', 'max:5120'],
+            'logo' => ImageUploadHelper::rules(),
         ]);
 
         $logoPath = ImageUploadHelper::store($request->file('logo'), 'business-logos');

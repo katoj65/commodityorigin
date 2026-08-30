@@ -11,7 +11,14 @@ const props = defineProps({
     packagingTypeOptions: { type: Array, default: () => [] },
     varietyOptions: { type: Array, default: () => [] },
     originOptions: { type: Array, default: () => [] },
+    currencyOptions: { type: Array, default: () => [] },
+    currencyCountries: { type: Object, default: () => ({}) },
 });
+
+function currencyLabel(code) {
+    const country = props.currencyCountries[code];
+    return country ? `${code} — ${country}` : code;
+}
 
 const emit = defineEmits(['update:modelValue']);
 
@@ -39,6 +46,7 @@ function emptyForm() {
         quantity_bags: '',
         bag_weight_kg: '',
         price: '',
+        currency: 'USD',
         quality_score: '',
         notes: '',
     };
@@ -185,6 +193,13 @@ function submit() {
                         <label class="alm-field__label">Price <small>(optional)</small></label>
                         <el-input-number v-model="form.price" :min="0" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.price }" />
                         <span v-if="form.errors.price" class="alm-field__error">{{ form.errors.price }}</span>
+                    </div>
+                    <div class="alm-field alm-field--span2">
+                        <label class="alm-field__label">Currency</label>
+                        <el-select v-model="form.currency" placeholder="Select currency" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.currency }">
+                            <el-option v-for="option in currencyOptions" :key="option" :label="currencyLabel(option)" :value="option" />
+                        </el-select>
+                        <span v-if="form.errors.currency" class="alm-field__error">{{ form.errors.currency }}</span>
                     </div>
                     <div class="alm-field alm-field--span2">
                         <label class="alm-field__label">Quality Score <small>(optional)</small></label>

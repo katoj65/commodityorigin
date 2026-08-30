@@ -89,6 +89,34 @@ class LotStoreValidationTest extends TestCase
         $this->assertDatabaseHas('lots', ['altitude' => null]);
     }
 
+    public function test_currency_defaults_to_the_column_default_when_omitted(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('lot.store'), $this->validPayload())
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('lots', ['currency' => 'USD']);
+    }
+
+    public function test_currency_persists_when_given(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('lot.store'), $this->validPayload(['currency' => 'KES']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('lots', ['currency' => 'KES']);
+    }
+
+    public function test_currency_must_be_a_3_letter_code(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('lot.store'), $this->validPayload(['currency' => 'US']))
+            ->assertSessionHasErrors(['currency']);
+    }
+
     /**
      * A full, valid lot.store payload, seeding whatever metadata it needs.
      * Individual fields can be overridden to trigger a specific failure.

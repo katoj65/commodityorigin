@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,5 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // The upload-size check in ValidatePostSize fires before routing —
+        // and therefore before any field-level `max:` validation rule runs
+        // — so an oversized file (or set of files) would otherwise surface
+        // as a raw, unstyled exception page instead of a normal flashed
+        // form error.
+        $exceptions->render(function (PostTooLargeException $e) {
+            return back()->with('error', 'One or more files are too large. Images must be under 2 MB — please resize and try again.');
+        });
     })->create();

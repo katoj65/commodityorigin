@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers\Lot;
 
+use App\Helpers\ImageUploadHelper;
 use App\Helpers\QrCodeHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LotResource;
 use App\Models\Batch;
+use App\Models\Currency;
 use App\Models\Lot;
+use App\Models\LotImage;
 use App\Models\LotRequest;
 use App\Services\CoffeeGradeService;
+use App\Services\CountryService;
+use App\Services\LotImageService;
 use App\Services\LotService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,6 +28,8 @@ class LotController extends Controller
     public function __construct(
         private readonly LotService $lots,
         private readonly CoffeeGradeService $coffeeGrades,
+        private readonly CountryService $countries,
+        private readonly LotImageService $lotImages,
     ) {
     }
 
@@ -51,7 +58,7 @@ class LotController extends Controller
         $validated = $request->validate([
             'lot_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:4000'],
-            'image' => ['nullable', 'image', 'max:5120'],
+            'image' => ImageUploadHelper::rules(),
             'process' => [
                 'required',
                 'string',
@@ -86,6 +93,7 @@ class LotController extends Controller
             'quantity_bags' => ['required', 'integer', 'min:1'],
             'bag_weight_kg' => ['required', 'numeric', 'min:1'],
             'price' => ['nullable', 'numeric', 'min:0'],
+            'currency' => ['nullable', 'string', 'size:3'],
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
@@ -181,7 +189,7 @@ class LotController extends Controller
             'lot_number' => ['required', 'string', 'max:100', 'unique:lots,lot_number'],
             'lot_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:4000'],
-            'image' => ['nullable', 'image', 'max:5120'],
+            'image' => ImageUploadHelper::rules(),
             'allocation_kg' => ['required', 'numeric', 'gt:0'],
             'quantity_bags' => ['required', 'integer', 'min:1'],
             'bag_weight_kg' => ['required', 'numeric', 'min:1'],
@@ -221,11 +229,91 @@ class LotController extends Controller
             'lotBatches.batch.user',
             'lotBatches.batch.batchFarmCollections.farmCollection.farm',
             'user',
+            'market',
+            'images',
         ]);
 
         return Inertia::render('Lot/LotProfile', [
             'lot' => LotResource::make($lot)->resolve(),
+            'processOptions' => $this->lots->processingMethodOptions()->pluck('name')->all(),
+            'coffeeGradeOptions' => $this->coffeeGrades->activeOptions()->pluck('name')->all(),
+            'varietyOptions' => $this->lots->varietyOptions()->pluck('name')->all(),
+            'originOptions' => $this->countries->coffeeProducers()->pluck('name')->all(),
+            'packagingTypeOptions' => ['GrainPro', 'Jute Only', 'Vacuum'],
+            'currencyOptions' => Currency::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('code')
+                ->pluck('code'),
+            'currencyCountries' => Currency::query()->pluck('country', 'code'),
         ]);
+    }
+
+    /**
+     * Update the specified lot.
+     */
+    public function update(Request $request, Lot $lot): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
+
+        $validated = $request->validate([
+            'lot_name' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:4000'],
+            'image' => ImageUploadHelper::rules(),
+            'process' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('processing_metadata', 'name')->where('is_active', true),
+            ],
+            'grade' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('coffee_grades', 'name')->where('is_active', true),
+            ],
+            'variety' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('crop_variety_metadata', 'name')->where('is_active', true),
+            ],
+            'origin' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('countries', 'name')->where('is_coffee_producer', true),
+            ],
+            'region' => ['required', 'string', 'max:100'],
+            'altitude' => ['nullable', 'numeric', 'between:0,5000'],
+            'year_of_harvest' => ['required', 'integer', 'digits:4'],
+            'moisture' => ['required', 'numeric', 'between:0,100'],
+            'defects_percentage' => ['nullable', 'numeric', 'between:0,100'],
+            'screen' => ['required', 'string', 'max:50'],
+            'packaging_type' => ['nullable', 'string', Rule::in(['GrainPro', 'Jute Only', 'Vacuum'])],
+            'quantity_bags' => ['required', 'integer', 'min:1'],
+            'bag_weight_kg' => ['required', 'numeric', 'min:1'],
+            'price' => ['nullable', 'numeric', 'min:0'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'quality_score' => ['nullable', 'numeric', 'between:0,100'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $this->lots->update($lot, $validated, $request->file('image'));
+
+        return back()->with('success', 'Lot updated successfully.');
+    }
+
+    /**
+     * Delete the specified lot.
+     */
+    public function destroy(Lot $lot): RedirectResponse
+    {
+        Gate::authorize('delete', $lot);
+
+        $this->lots->destroy($lot);
+
+        return redirect()->route('store.show')->with('success', 'Lot deleted successfully.');
     }
 
     /**
@@ -248,15 +336,76 @@ class LotController extends Controller
     /**
      * Publish a lot to the live market.
      */
-    public function publish(Lot $lot): RedirectResponse
+    public function publish(Request $request, Lot $lot): RedirectResponse
     {
         Gate::authorize('update', $lot);
 
-        if (! $this->lots->publish($lot, auth()->id())) {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'quantity' => ['required', 'numeric', 'min:0.01'],
+            'available_quantity' => ['nullable', 'numeric', 'min:0', 'lte:quantity'],
+            'unit' => ['nullable', 'string', 'max:20'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'price_per_unit' => ['required', 'numeric', 'min:0'],
+            'pricing_type' => ['nullable', 'string', Rule::in(['fixed', 'negotiable', 'auction'])],
+            'minimum_order_quantity' => ['nullable', 'numeric', 'min:0'],
+            'payment_terms' => ['nullable', 'string', 'max:255'],
+            'delivery_terms' => ['nullable', 'string', 'max:255'],
+            'delivery_location' => ['nullable', 'string', 'max:255'],
+            'is_featured' => ['nullable', 'boolean'],
+            'is_public' => ['nullable', 'boolean'],
+        ]);
+
+        if (! $this->lots->publish($lot, $request->user(), $validated)) {
             return back()->with('error', 'This lot is already published to the market.');
         }
 
         return back()->with('success', 'Lot published to market successfully.');
+    }
+
+    /**
+     * Add up to LotImageService::MAX_IMAGES gallery photos to a lot —
+     * owner only. Extra files beyond the remaining slots are silently
+     * dropped rather than erroring.
+     */
+    public function storeImages(Request $request, Lot $lot): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
+
+        $validated = $request->validate([
+            'images' => ['required', 'array', 'min:1'],
+            'images.*' => ImageUploadHelper::itemRules(),
+        ]);
+
+        $this->lotImages->store($lot, $validated['images']);
+
+        return back();
+    }
+
+    /**
+     * Remove one gallery photo from a lot — owner only.
+     */
+    public function destroyImage(Lot $lot, LotImage $image): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
+        abort_unless($image->lot_id === $lot->id, 404);
+
+        $this->lotImages->delete($image);
+
+        return back();
+    }
+
+    /**
+     * Remove a lot's live market listing.
+     */
+    public function unpublish(Lot $lot): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
+
+        $this->lots->unpublish($lot);
+
+        return back()->with('success', 'Lot removed from the market.');
     }
 
     /**
@@ -276,6 +425,7 @@ class LotController extends Controller
             'lotBatches.batch.batchFarmCollections.farmCollection.user',
             'lotBatches.batch.user',
             'user',
+            'blockchain',
         ]);
 
         return Inertia::render('Lot/LotTraceability', $this->lots->traceabilityData($lot));

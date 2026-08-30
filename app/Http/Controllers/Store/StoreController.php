@@ -105,6 +105,10 @@ class StoreController extends Controller
                 ->orderBy('code')
                 ->pluck('code')
                 : [],
+            // The currency's own real-world country/union, for a "USD —
+            // United States" style label on the New Lot form's currency
+            // dropdown.
+            'currencyCountries' => $verified ? Currency::query()->pluck('country', 'code') : [],
             'isAdmin' => $request->user()->isAdmin(),
             'pendingStores' => $request->user()->isAdmin()
                 ? StoreResource::collection($this->stores->pending())->resolve()

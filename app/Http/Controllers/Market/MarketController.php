@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Market;
 
+use App\Helpers\ImageUploadHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CalendarResource;
 use App\Http\Resources\ExchangeRateResource;
@@ -185,7 +186,21 @@ class MarketController extends Controller
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
-        $market->update($validated);
+        // origin/type/process live in `metadata` now, not dedicated columns
+        // — merge them in rather than overwrite, so other metadata keys
+        // (demand, badges, target_market, image) survive this simple edit.
+        $market->update([
+            'title' => $validated['name'],
+            'price_per_unit' => $validated['price_per_kg'],
+            'quantity' => $validated['quantity'],
+            'description' => $validated['notes'] ?? null,
+            'metadata' => array_filter([
+                ...($market->metadata ?? []),
+                'origin' => $validated['origin'] ?? null,
+                'type' => $validated['type'] ?? null,
+                'process' => $validated['process'] ?? null,
+            ], fn ($value) => $value !== null),
+        ]);
 
         return back();
     }
@@ -220,7 +235,7 @@ class MarketController extends Controller
 
         $validated = $request->validate([
             'images' => ['required', 'array', 'min:1'],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'images.*' => ImageUploadHelper::itemRules(),
         ]);
 
         $this->marketImages->store($market, $validated['images']);

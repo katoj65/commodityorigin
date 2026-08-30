@@ -219,7 +219,12 @@ Route::middleware([
         Route::get('/{lot}/traceability', [LotController::class, 'lotTraceability'])->name('traceability');
         Route::get('/{lot}/qr-code', [LotController::class, 'downloadQr'])->name('qr.download');
         Route::get('/{lot}', [LotController::class, 'show'])->name('show');
+        Route::patch('/{lot}', [LotController::class, 'update'])->name('update');
+        Route::delete('/{lot}', [LotController::class, 'destroy'])->name('destroy');
         Route::post('/{lot}/publish', [LotController::class, 'publish'])->name('publish');
+        Route::delete('/{lot}/publish', [LotController::class, 'unpublish'])->name('unpublish');
+        Route::post('/{lot}/images', [LotController::class, 'storeImages'])->name('images.store');
+        Route::delete('/{lot}/images/{image}', [LotController::class, 'destroyImage'])->name('images.destroy');
         Route::post('/{lot}/batches', [LotController::class, 'attachBatch'])->name('batches.store');
     });
 

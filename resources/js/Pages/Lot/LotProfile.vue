@@ -1,17 +1,24 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
-import { ElNotification } from 'element-plus';
+import { Link, router } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import AttachBatchModal from '@/Components/Modals/AttachBatchModal.vue';
+import EditLotModal from '@/Components/Modals/EditLotModal.vue';
+import PublishLotModal from '@/Components/Modals/PublishLotModal.vue';
+import AddLotImagesDialog from '@/Components/Modals/AddLotImagesDialog.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import ImageViewer from '@/Components/ImageViewer.vue';
 import {
     ArrowDown,
     ArrowRight,
     Box,
+    CameraFilled,
     Clock,
+    Close,
     Coffee,
     Coin,
     Connection,
+    Delete,
     Document,
     Download,
     EditPen,
@@ -25,6 +32,7 @@ import {
     Plus,
     Position,
     Promotion,
+    SoldOut,
     Ticket,
     Trophy,
     User,
@@ -32,9 +40,48 @@ import {
 
 const props = defineProps({
     lot: { type: Object, default: () => ({}) },
+    processOptions: { type: Array, default: () => [] },
+    coffeeGradeOptions: { type: Array, default: () => [] },
+    varietyOptions: { type: Array, default: () => [] },
+    originOptions: { type: Array, default: () => [] },
+    packagingTypeOptions: { type: Array, default: () => [] },
+    currencyOptions: { type: Array, default: () => [] },
+    currencyCountries: { type: Object, default: () => ({}) },
 });
 
 const showAttachBatch = ref(false);
+const showEditLot = ref(false);
+const showPublishLot = ref(false);
+const deleteDialogOpen = ref(false);
+const deleting = ref(false);
+const unpublishDialogOpen = ref(false);
+const unpublishing = ref(false);
+const showAddImages = ref(false);
+const MAX_LOT_IMAGES = 3;
+const remainingImageSlots = computed(() => Math.max(0, MAX_LOT_IMAGES - (props.lot.images?.length || 0)));
+
+function removeLotImage(imageId) {
+    router.delete(route('lot.images.destroy', [props.lot.id, imageId]), { preserveScroll: true });
+}
+
+/* ── Image viewer: main photo + gallery form one browsable sequence ─────── */
+const viewerOpen = ref(false);
+const viewerIndex = ref(0);
+const viewerImages = computed(() => {
+    const list = [];
+    if (props.lot.image) {
+        list.push({ url: `/storage/${props.lot.image}`, alt: props.lot.lot_name || props.lot.lot_number });
+    }
+    for (const img of props.lot.images || []) {
+        list.push({ url: img.image_url, alt: props.lot.lot_name || props.lot.lot_number || 'Lot photo' });
+    }
+    return list;
+});
+
+function openViewer(index) {
+    viewerIndex.value = index;
+    viewerOpen.value = true;
+}
 
 function handleOptionsCommand(command) {
     if (command === 'traceability') {
@@ -42,19 +89,45 @@ function handleOptionsCommand(command) {
         return;
     }
 
-    if (command === 'publish') {
-        router.post(route('lot.publish', props.lot.id), {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                const flash = usePage().props.flash || {};
-                if (flash.error) {
-                    ElNotification({ title: 'Already Published', message: flash.error, type: 'warning', duration: 3600, offset: 84 });
-                } else {
-                    ElNotification({ title: 'Published', message: flash.success || 'Lot published to market successfully.', type: 'success', duration: 3200, offset: 84 });
-                }
-            },
-        });
+    if (command === 'edit') {
+        showEditLot.value = true;
+        return;
     }
+
+    if (command === 'publish') {
+        showPublishLot.value = true;
+        return;
+    }
+
+    if (command === 'unpublish') {
+        unpublishDialogOpen.value = true;
+        return;
+    }
+
+    if (command === 'delete') {
+        deleteDialogOpen.value = true;
+    }
+}
+
+function confirmDeleteLot() {
+    deleting.value = true;
+    router.delete(route('lot.destroy', props.lot.id), {
+        onFinish: () => {
+            deleting.value = false;
+            deleteDialogOpen.value = false;
+        },
+    });
+}
+
+function confirmUnpublishLot() {
+    unpublishing.value = true;
+    router.delete(route('lot.unpublish', props.lot.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            unpublishing.value = false;
+            unpublishDialogOpen.value = false;
+        },
+    });
 }
 
 const linkedBatches = computed(() => props.lot.lot_batches || []);
@@ -175,13 +248,16 @@ const fmtDateTime = (value) => {
                     <p class="lp-page-description">Full specifications, linked batches, and activity history for this coffee lot.</p>
                 </div>
                 <el-dropdown trigger="click" @command="handleOptionsCommand">
-                    <button type="button" class="lp-btn lp-btn--outline">
+                    <button type="button" class="lp-btn lp-btn--primary">
                         Options <el-icon class="lp-caret"><ArrowDown /></el-icon>
                     </button>
                     <template #dropdown>
                         <el-dropdown-menu class="lp-options-menu">
                             <el-dropdown-item command="traceability"><el-icon><Connection /></el-icon> View Traceability</el-dropdown-item>
-                            <el-dropdown-item v-if="lot.can_manage" command="publish"><el-icon><Promotion /></el-icon> Publish to Market</el-dropdown-item>
+                            <el-dropdown-item v-if="lot.can_manage" command="edit"><el-icon><EditPen /></el-icon> Edit Lot</el-dropdown-item>
+                            <el-dropdown-item v-if="lot.can_manage && !lot.is_published" command="publish"><el-icon><Promotion /></el-icon> Publish to Market</el-dropdown-item>
+                            <el-dropdown-item v-if="lot.can_manage && lot.is_published" command="unpublish"><el-icon><SoldOut /></el-icon> Unpublish from Market</el-dropdown-item>
+                            <el-dropdown-item v-if="lot.can_manage" command="delete" divided class="lp-options-menu__item--danger"><el-icon><Delete /></el-icon> Delete Lot</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
@@ -192,14 +268,51 @@ const fmtDateTime = (value) => {
                 <!-- Hero tile -->
                 <div class="lp-tile lp-tile--hero">
                     <div class="lp-hero__top">
-                        <div class="lp-hero__photo">
-                            <img v-if="lot.image" :src="`/storage/${lot.image}`" :alt="lot.lot_name || lot.lot_number" />
-                            <el-icon v-else :size="30"><Ticket /></el-icon>
+                        <div class="lp-hero__top-main">
+                            <div class="lp-hero__photo-col">
+                                <div class="lp-hero__photo" :class="{ 'lp-hero__photo--clickable': lot.image }" @click="lot.image && openViewer(0)">
+                                    <img v-if="lot.image" :src="`/storage/${lot.image}`" :alt="lot.lot_name || lot.lot_number" />
+                                    <el-icon v-else :size="46"><Ticket /></el-icon>
+                                </div>
+                                <div v-if="lot.images?.length" class="lp-hero__gallery-panel">
+                                    <span class="lp-hero__gallery-label">
+                                        Gallery
+                                        <span class="lp-mono">{{ lot.images.length }}/3</span>
+                                    </span>
+                                    <div class="lp-hero__gallery">
+                                        <div
+                                            v-for="(img, idx) in lot.images"
+                                            :key="img.id"
+                                            class="lp-hero__gallery-item"
+                                            @click="openViewer((lot.image ? 1 : 0) + idx)"
+                                        >
+                                            <img :src="img.image_url" alt="Lot photo" />
+                                            <button v-if="lot.can_manage" type="button" class="lp-hero__gallery-remove" @click.stop="removeLotImage(img.id)">
+                                                <el-icon :size="10"><Close /></el-icon>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="lp-hero__intro">
+                                <span class="lp-badge" :class="`lp-badge--${statusInfo.tone}`"><span class="lp-badge__dot"></span>{{ statusInfo.label }}</span>
+                                <h2 class="lp-hero__title">{{ lot.lot_name || lot.lot_number }}</h2>
+                            </div>
                         </div>
-                        <div class="lp-hero__intro">
-                            <span class="lp-badge" :class="`lp-badge--${statusInfo.tone}`"><span class="lp-badge__dot"></span>{{ statusInfo.label }}</span>
-                            <h2 class="lp-hero__title">{{ lot.lot_name || lot.lot_number }}</h2>
-                        </div>
+                        <el-tooltip
+                            v-if="lot.can_manage"
+                            :content="remainingImageSlots > 0 ? 'Upload photos' : 'Photo limit reached'"
+                            placement="top"
+                        >
+                            <button
+                                type="button"
+                                class="lp-btn lp-btn--outline lp-btn--icon lp-hero__upload"
+                                :disabled="remainingImageSlots <= 0"
+                                @click="showAddImages = true"
+                            >
+                                <el-icon><CameraFilled /></el-icon>
+                            </button>
+                        </el-tooltip>
                     </div>
                     <div class="lp-hero__facts">
                         <span class="lp-hero__fact"><el-icon><Ticket /></el-icon><span class="lp-mono">{{ lot.lot_number }}</span></span>
@@ -230,8 +343,8 @@ const fmtDateTime = (value) => {
                         <span class="lp-kpi__icon lp-kpi__icon--price"><el-icon><Coin /></el-icon></span>
                         <span class="lp-tile__label">Price / kg</span>
                     </div>
-                    <span class="lp-tile__value lp-mono">{{ lot.price ? `$${fmtNumber(lot.price)}` : '—' }}</span>
-                    <span class="lp-tile__sub">{{ lotValueTotal !== null ? `$${fmtNumber(lotValueTotal)} total value` : 'Total value pending' }}</span>
+                    <span class="lp-tile__value lp-mono">{{ lot.price ? `${lot.currency || 'USD'} ${fmtNumber(lot.price)}` : '—' }}</span>
+                    <span class="lp-tile__sub">{{ lotValueTotal !== null ? `${lot.currency || 'USD'} ${fmtNumber(lotValueTotal)} total value` : 'Total value pending' }}</span>
                 </div>
                 <div class="lp-tile lp-tile--stat">
                     <div class="lp-kpi__top">
@@ -461,6 +574,52 @@ const fmtDateTime = (value) => {
         </div>
 
         <AttachBatchModal v-if="lot.can_manage" v-model="showAttachBatch" :lot-id="lot.id" />
+        <EditLotModal
+            v-if="lot.can_manage"
+            v-model="showEditLot"
+            :lot="lot"
+            :process-options="processOptions"
+            :coffee-grade-options="coffeeGradeOptions"
+            :variety-options="varietyOptions"
+            :origin-options="originOptions"
+            :packaging-type-options="packagingTypeOptions"
+            :currency-options="currencyOptions"
+            :currency-countries="currencyCountries"
+        />
+        <PublishLotModal
+            v-if="lot.can_manage && !lot.is_published"
+            v-model="showPublishLot"
+            :lot="lot"
+            :currency-options="currencyOptions"
+            :currency-countries="currencyCountries"
+        />
+        <ConfirmDialog
+            v-model="deleteDialogOpen"
+            eyebrow="Lot"
+            title="Delete Lot"
+            :message="`Are you sure you want to delete lot ${lot.lot_number}? This action cannot be undone.`"
+            confirm-text="Delete Lot"
+            :auto-close="false"
+            :loading="deleting"
+            @confirm="confirmDeleteLot"
+        />
+        <AddLotImagesDialog
+            v-if="lot.can_manage"
+            v-model="showAddImages"
+            :lot-id="lot.id"
+            :remaining-slots="remainingImageSlots"
+        />
+        <ConfirmDialog
+            v-model="unpublishDialogOpen"
+            eyebrow="Lot"
+            title="Unpublish from Market"
+            :message="`Remove lot ${lot.lot_number} from the market? Buyers will no longer be able to find or order it.`"
+            confirm-text="Unpublish"
+            :auto-close="false"
+            :loading="unpublishing"
+            @confirm="confirmUnpublishLot"
+        />
+        <ImageViewer v-model="viewerOpen" :images="viewerImages" :index="viewerIndex" />
     </DesignPreviewLayout>
 </template>
 
@@ -515,6 +674,8 @@ const fmtDateTime = (value) => {
 }
 .lp-options-menu :deep(.el-dropdown-menu__item) .el-icon { font-size: 14px; color: currentColor; }
 .lp-options-menu :deep(.el-dropdown-menu__item:hover) { background: var(--surface-elevated); color: var(--text); }
+.lp-options-menu :deep(.lp-options-menu__item--danger) { color: var(--error); }
+.lp-options-menu :deep(.lp-options-menu__item--danger:hover) { background: #FEF2F2; color: var(--error); }
 .lp-page-description { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; max-width: 60ch; }
 
 .lp-btn--outline {
@@ -565,14 +726,64 @@ const fmtDateTime = (value) => {
 .lp-tile-row .lp-batch-row__chevron { display: none; }
 
 /* ── Hero tile ────────────────────────────────────────────────────────── */
-.lp-hero__top { display: flex; align-items: center; gap: 16px; }
+.lp-hero__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.lp-hero__top-main { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
+.lp-btn--icon { width: 36px; height: 36px; padding: 0; justify-content: center; }
+.lp-btn--icon .el-icon { font-size: 19px; }
+.lp-hero__upload { flex-shrink: 0; }
+.lp-hero__upload:disabled { opacity: 0.5; cursor: default; }
+.lp-hero__upload:disabled:hover { opacity: 0.5; }
+
+/* Main lot photo sits above its own uploaded-gallery strip, both in one
+   column, so the gallery reads as "below the main image" and stays
+   visibly smaller than it. */
+.lp-hero__photo-col { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+
+.lp-hero__gallery-panel {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 7px 8px 8px; border-radius: 10px;
+    background: linear-gradient(180deg, var(--surface) 0%, var(--surface-muted) 100%);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.lp-hero__gallery-label {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--text-muted); padding: 0 1px;
+}
+.lp-hero__gallery-label .lp-mono { font-size: 9px; font-weight: 700; color: var(--text-2); letter-spacing: 0; text-transform: none; }
+
+.lp-hero__gallery { display: flex; gap: 5px; }
+.lp-hero__gallery-item {
+    position: relative; width: 46px; height: 46px; border-radius: 8px; overflow: hidden;
+    background: var(--surface-elevated); border: 1px solid var(--border); flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(24, 24, 27, 0.06); cursor: pointer;
+    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+.lp-hero__gallery-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(24, 24, 27, 0.18);
+    border-color: var(--accent);
+    z-index: 1;
+}
+.lp-hero__gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lp-hero__gallery-remove {
+    position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%;
+    border: none; background: rgba(0, 0, 0, 0.7); color: #fff;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    opacity: 0; transition: opacity 120ms ease;
+}
+.lp-hero__gallery-item:hover .lp-hero__gallery-remove { opacity: 1; }
+
 .lp-hero__photo {
-    width: 72px; height: 72px; border-radius: 10px; flex-shrink: 0;
+    width: 148px; height: 148px; border-radius: 12px; flex-shrink: 0;
     background: var(--surface-elevated); border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
     color: var(--text-muted); overflow: hidden;
 }
 .lp-hero__photo img { width: 100%; height: 100%; object-fit: cover; }
+.lp-hero__photo--clickable { cursor: pointer; transition: opacity 120ms ease; }
+.lp-hero__photo--clickable:hover { opacity: 0.9; }
 .lp-hero__intro { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .lp-hero__title { font-size: 25px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lp-hero__facts { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); }

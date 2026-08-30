@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Helpers\ImageUploadHelper;
 use App\Helpers\QrCodeHelper;
+use App\Http\Resources\BlockchainResource;
 use App\Models\Batch;
+use App\Models\CropVarietyMetadata;
 use App\Models\Farm;
 use App\Models\Farmer;
 use App\Models\Lot;
@@ -12,6 +14,7 @@ use App\Models\LotBatch;
 use App\Models\LotRequest;
 use App\Models\Market;
 use App\Models\ProcessingMetadata;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -24,6 +27,7 @@ class LotService
     public function __construct(
         private readonly BatchService $batches,
         private readonly BlockchainService $blockchain,
+        private readonly MarketImageService $marketImages,
     ) {
     }
 
@@ -72,6 +76,30 @@ class LotService
         }
 
         return $lot;
+    }
+
+    /**
+     * Update a lot from validated payload data. A new image replaces the
+     * existing one; omitting it leaves the current image untouched.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    public function update(Lot $lot, array $validated, ?UploadedFile $image = null): Lot
+    {
+        $lot->update([
+            ...$validated,
+            'image' => $image ? ImageUploadHelper::store($image, 'lots') : $lot->image,
+        ]);
+
+        return $lot;
+    }
+
+    /**
+     * Delete a lot.
+     */
+    public function destroy(Lot $lot): void
+    {
+        $lot->delete();
     }
 
     /**
@@ -272,6 +300,20 @@ class LotService
     }
 
     /**
+     * Fetch active crop varieties from metadata.
+     *
+     * @return Collection<int, CropVarietyMetadata>
+     */
+    public function varietyOptions(): Collection
+    {
+        return CropVarietyMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
      * Resolve the lot status from the submission intent.
      */
     private function resolveLotStatus(string $intent): string
@@ -285,34 +327,73 @@ class LotService
     }
 
     /**
-     * Publish a lot to the live market. Returns false if it's already
-     * published rather than throwing, so the controller can surface a
-     * plain "already published" message.
+     * Publish a lot to the live market. The listing's sellable fields
+     * (title, quantity, price, etc.) come from the validated form data —
+     * the caller pre-fills it from the lot, but may adjust it before
+     * publishing (e.g. listing less than the lot's full net weight).
+     * Returns false if it's already published rather than throwing, so
+     * the controller can surface a plain "already published" message.
+     *
+     * @param  array<string, mixed>  $data
      */
-    public function publish(Lot $lot, int $userId): bool
+    public function publish(Lot $lot, User $user, array $data): bool
     {
         if (Market::where('lot_id', $lot->id)->exists()) {
             return false;
         }
 
-        $batch = $this->primaryBatch($lot);
-
         Market::create([
             'lot_id' => $lot->id,
-            'user_id' => $userId,
-            'lot_code' => $lot->lot_number,
-            'name' => $lot->lot_name ?? $lot->lot_number,
-            'origin' => $batch?->warehouse_location,
-            'type' => $batch?->variety ?? 'Arabica',
-            'process' => $lot->process,
-            'quality_score' => $lot->quality_score,
-            'quantity' => $lot->net_weight_kg,
-            'price_per_kg' => $lot->price,
+            'user_id' => $user->id,
+            'title' => $data['title'],
+            'description' => $data['description'] ?? null,
+            'quantity' => $data['quantity'],
+            'available_quantity' => $data['available_quantity'] ?? $data['quantity'],
+            'unit' => $data['unit'] ?? 'kg',
+            'currency' => $data['currency'] ?? 'USD',
+            'price_per_unit' => $data['price_per_unit'],
+            'pricing_type' => $data['pricing_type'] ?? 'fixed',
+            'minimum_order_quantity' => $data['minimum_order_quantity'] ?? null,
+            'payment_terms' => $data['payment_terms'] ?? null,
+            'delivery_terms' => $data['delivery_terms'] ?? null,
+            'delivery_location' => $data['delivery_location'] ?? null,
             'status' => 'live',
-            'image' => $lot->image,
+            'is_featured' => $data['is_featured'] ?? false,
+            'is_public' => $data['is_public'] ?? true,
+            // origin/type/process/quality_score/image have no dedicated
+            // column on this general-purpose listing shape — kept in
+            // metadata; Market's accessors read them back out under their
+            // old names for MarketService's filtering/analytics.
+            'metadata' => array_filter([
+                'origin' => $lot->origin,
+                'type' => $lot->variety ?: 'Arabica',
+                'process' => $lot->process,
+                'quality_score' => $lot->quality_score,
+                'image' => $lot->image,
+            ], fn ($value) => $value !== null),
         ]);
 
         return true;
+    }
+
+    /**
+     * Remove a lot's live market listing. Gallery photos are deleted first
+     * (mirroring MarketController::destroy()) so nothing orphans in
+     * storage; a lot with no listing is a no-op.
+     */
+    public function unpublish(Lot $lot): void
+    {
+        $market = Market::where('lot_id', $lot->id)->first();
+
+        if (! $market) {
+            return;
+        }
+
+        foreach ($market->images as $image) {
+            $this->marketImages->delete($image);
+        }
+
+        $market->delete();
     }
 
     /**
@@ -419,6 +500,16 @@ class LotService
             'href' => route('lot.show', $lot->id),
         ];
 
+        if ($lot->blockchain) {
+            $timeline[] = [
+                'stage' => 'blockchain',
+                'date' => $lot->blockchain->committed_at?->toDateString() ?? $lot->blockchain->created_at?->toDateString(),
+                'title' => 'Committed to the blockchain',
+                'subtitle' => 'Block #'.$lot->blockchain->block_number,
+                'href' => null,
+            ];
+        }
+
         // Order the journey oldest → newest so it reads as a forward trace.
         $timeline = collect($timeline)
             ->filter(fn ($e) => ! empty($e['date']))
@@ -435,11 +526,20 @@ class LotService
                 'status' => $lot->status,
                 'process' => $lot->process,
                 'grade' => $lot->grade,
+                'variety' => $lot->variety,
+                'origin' => $lot->origin,
+                'region' => $lot->region,
+                'altitude' => $this->toFloat($lot->altitude),
+                'year_of_harvest' => $lot->year_of_harvest,
+                'moisture' => $this->toFloat($lot->moisture),
+                'defects_percentage' => $this->toFloat($lot->defects_percentage),
+                'screen' => $lot->screen,
                 'net_weight_kg' => $this->toFloat($lot->net_weight_kg),
                 'quantity_bags' => $lot->quantity_bags,
                 'bag_weight_kg' => $this->toFloat($lot->bag_weight_kg),
                 'quality_score' => $this->toFloat($lot->quality_score),
                 'price' => $this->toFloat($lot->price),
+                'currency' => $lot->currency,
                 'packaging_type' => $lot->packaging_type,
                 'image' => $lot->image,
                 'created_at' => $lot->created_at?->format('d M Y'),
@@ -447,6 +547,7 @@ class LotService
                 'qr_url' => QrCodeHelper::lotUrl($lot),
                 'recorded_by' => $this->person($lot->user),
             ],
+            'blockchain' => $lot->blockchain ? BlockchainResource::make($lot->blockchain)->resolve() : null,
             'batches' => $batches->all(),
             'timeline' => $timeline,
             'stats' => [

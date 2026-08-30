@@ -146,7 +146,7 @@ class BusinessController extends Controller
     {
         $validated = $request->validate([
             ...$this->members->rules(),
-            'photo' => ['nullable', 'image', 'max:5120'],
+            'photo' => ImageUploadHelper::rules(),
         ]);
 
         $photoPath = ImageUploadHelper::store($request->file('photo'), 'business-member-photos');

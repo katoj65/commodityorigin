@@ -26,6 +26,7 @@ const props = defineProps({
     packagingTypeOptions: { type: Array, default: () => [] },
     originOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
+    currencyCountries: { type: Object, default: () => ({}) },
     statusOptions: { type: Array, default: () => [] },
     isAdmin: { type: Boolean, default: false },
     pendingStores: { type: Array, default: () => [] },
@@ -587,6 +588,8 @@ function submitReject() {
             :packaging-type-options="packagingTypeOptions"
             :variety-options="coffeeTypeOptions"
             :origin-options="originOptions"
+            :currency-options="currencyOptions"
+            :currency-countries="currencyCountries"
         />
     </StoreLayout>
 </template>

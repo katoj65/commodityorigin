@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gallery;
 
+use App\Helpers\ImageUploadHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\GalleryImageResource;
 use App\Models\GalleryImage;
@@ -40,7 +41,7 @@ class GalleryController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:10240'],
+            'image' => ImageUploadHelper::rules(required: true),
         ]);
 
         $this->gallery->store($request->file('image'), $validated, $request->user()->id);

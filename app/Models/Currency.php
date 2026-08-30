@@ -18,6 +18,7 @@ class Currency extends Model
     protected $fillable = [
         'code',
         'name',
+        'country',
         'symbol',
         'sort_order',
         'is_active',

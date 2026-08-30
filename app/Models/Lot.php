@@ -38,6 +38,7 @@ class Lot extends Model
         'quantity_bags',
         'bag_weight_kg',
         'price',
+        'currency',
         'quality_score',
         'packaging_type',
         'status',
@@ -142,5 +143,21 @@ class Lot extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(LotActivity::class);
+    }
+
+    /**
+     * Get the market listing this lot is published under, if any.
+     */
+    public function market(): HasOne
+    {
+        return $this->hasOne(Market::class);
+    }
+
+    /**
+     * Get this lot's gallery photos, up to LotImageService::MAX_IMAGES.
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(LotImage::class)->orderBy('position');
     }
 }
