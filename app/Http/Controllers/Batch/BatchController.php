@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Batch;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BatchActivityResource;
 use App\Http\Resources\BatchResource;
 use App\Models\Batch;
+use App\Models\BatchActivity;
+use App\Models\BatchActivityMetadata;
 use App\Models\Currency;
+use App\Services\BatchActivityService;
 use App\Services\BatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -17,8 +21,10 @@ use Inertia\Response;
 
 class BatchController extends Controller
 {
-    public function __construct(private readonly BatchService $batches)
-    {
+    public function __construct(
+        private readonly BatchService $batches,
+        private readonly BatchActivityService $activities,
+    ) {
     }
 
     /**
@@ -98,6 +104,16 @@ class BatchController extends Controller
                 ->orderBy('sort_order')
                 ->orderBy('code')
                 ->pluck('code'),
+            'activities' => BatchActivityResource::collection($this->activities->forBatch($batch))->resolve(),
+            'activityOptions' => BatchActivityMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name'])
+                ->map(fn (BatchActivityMetadata $option): array => [
+                    'slug' => $option->slug,
+                    'name' => $option->name,
+                ]),
         ]);
     }
 
@@ -158,6 +174,41 @@ class BatchController extends Controller
         $this->batches->attachFarmCollection($batch, $validated['collection_code'], $request->user()->id);
 
         return back()->with('success', 'Farm collection linked to this batch.');
+    }
+
+    /**
+     * Record a manual activity-log entry for this batch — `event` must be
+     * an active slug in batch_activity_metadata.
+     */
+    public function storeActivity(Request $request, Batch $batch): RedirectResponse
+    {
+        Gate::authorize('update', $batch);
+
+        $validated = $request->validate([
+            'event' => [
+                'required',
+                'string',
+                Rule::exists('batch_activity_metadata', 'slug')->where('is_active', true),
+            ],
+            'description' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $this->activities->record($batch, $validated['event'], $validated['description'] ?? null, $request->user()->id);
+
+        return back()->with('success', 'Activity recorded.');
+    }
+
+    /**
+     * Remove one activity-log entry from this batch.
+     */
+    public function destroyActivity(Batch $batch, BatchActivity $activity): RedirectResponse
+    {
+        Gate::authorize('update', $batch);
+        abort_unless((int) $activity->batch_id === (int) $batch->id, 404);
+
+        $this->activities->delete($activity);
+
+        return back()->with('success', 'Activity removed.');
     }
 
     /**

@@ -6,14 +6,17 @@ import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import UpdateBatchModal from '@/Components/Modals/UpdateBatchModal.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import AttachFarmCollectionModal from '@/Components/Modals/AttachFarmCollectionModal.vue';
+import AddBatchActivityModal from '@/Components/Modals/AddBatchActivityModal.vue';
 import {
-    ArrowDown, Box, Checked, Coffee, Coin, Delete, EditPen, Files,
+    ArrowDown, Box, Checked, Clock, Coffee, Coin, Delete, EditPen, Files,
     FolderOpened, HotWater, Link as LinkIcon, Location, Medal, OfficeBuilding, Operation, PriceTag, Plus, Ticket, User, WarningFilled,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
     batch: { type: Object, required: true },
     currencyOptions: { type: Array, default: () => [] },
+    activities: { type: Array, default: () => [] },
+    activityOptions: { type: Array, default: () => [] },
 });
 
 /* ── Actions dropdown ──────────────────────────────────────────────────── */
@@ -21,10 +24,12 @@ const editDialogOpen = ref(false);
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);
 const attachModalOpen = ref(false);
+const addActivityOpen = ref(false);
 
 function handleActionCommand(command) {
     if (command === 'edit') editDialogOpen.value = true;
     else if (command === 'delete') deleteDialogOpen.value = true;
+    else if (command === 'add-activity') addActivityOpen.value = true;
 }
 
 function deleteBatch() {
@@ -72,6 +77,39 @@ function collectionStatusTone(status) {
     return 'pending';
 }
 
+/* ── Batch Activity — event slugs are resolved to their metadata display
+   name; anything not found (a retired slug) falls back to a titleized
+   version of the slug itself rather than disappearing. ────────────────── */
+function eventLabel(slug) {
+    const match = props.activityOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const deleteActivityDialogOpen = ref(false);
+const pendingActivity = ref(null);
+const deletingActivity = ref(false);
+
+function requestDeleteActivity(activity) {
+    pendingActivity.value = activity;
+    deleteActivityDialogOpen.value = true;
+}
+
+function confirmDeleteActivity() {
+    if (!pendingActivity.value) return;
+    deletingActivity.value = true;
+    router.delete(route('batch.activities.destroy', [props.batch.id, pendingActivity.value.id]), {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingActivity.value = false;
+            deleteActivityDialogOpen.value = false;
+            pendingActivity.value = null;
+        },
+    });
+}
+
+const deleteActivityMessage = computed(() => `Remove the "${pendingActivity.value ? eventLabel(pendingActivity.value.event) : ''}" activity from this batch's log? This action cannot be undone.`);
+
 const deleteMessage = computed(() => `Are you sure you want to delete batch ${props.batch.batch_number}? This action cannot be undone.`);
 </script>
 
@@ -90,6 +128,7 @@ const deleteMessage = computed(() => `Are you sure you want to delete batch ${pr
                     <template #dropdown>
                         <el-dropdown-menu class="btp-actions-menu">
                             <el-dropdown-item command="edit"><el-icon><EditPen /></el-icon> Edit</el-dropdown-item>
+                            <el-dropdown-item command="add-activity"><el-icon><Clock /></el-icon> Add Activity</el-dropdown-item>
                             <el-dropdown-item command="delete" class="btp-actions-menu__danger"><el-icon><Delete /></el-icon> Delete</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
@@ -247,19 +286,59 @@ const deleteMessage = computed(() => `Are you sure you want to delete batch ${pr
                     </div>
                 </section>
 
-                <section class="btp-tile btp-tile--wide btp-tile--footer">
-                    <div class="btp-recorder">
-                        <h2 class="btp-tile__title"><el-icon><User /></el-icon> Recorded By</h2>
-                        <div class="btp-recorder__row">
-                            <div class="btp-recorder__avatar">{{ recorderInitials }}</div>
-                            <div class="btp-recorder__body">
-                                <div class="btp-recorder__name">{{ batch.user?.name || 'Unknown' }}</div>
-                                <div class="btp-recorder__meta"><el-icon :size="12"><Checked /></el-icon> {{ formatDateTime(batch.created_at) }}</div>
-                            </div>
+            </div>
+
+            <!-- ── Batch Activity ────────────────────────────────────────────── -->
+            <section class="btp-activity-section">
+                <div class="btp-tile">
+                    <h2 class="btp-tile__title"><el-icon><Clock /></el-icon> Batch Activity</h2>
+
+                    <div v-if="activities.length" class="btp-activity-table-wrap">
+                        <table class="btp-activity-table">
+                            <thead>
+                                <tr>
+                                    <th>Event</th>
+                                    <th>Description</th>
+                                    <th>Recorded By</th>
+                                    <th>Date</th>
+                                    <th v-if="batch.can_manage" class="btp-activity-table__actions-head" />
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="activity in activities" :key="activity.id">
+                                    <td><span class="btp-pill btp-pill--event">{{ eventLabel(activity.event) }}</span></td>
+                                    <td class="btp-activity-table__desc">{{ activity.description || '—' }}</td>
+                                    <td>{{ activity.recorded_by?.name || 'System' }}</td>
+                                    <td class="btp-activity-table__date">{{ formatDateTime(activity.created_at) }}</td>
+                                    <td v-if="batch.can_manage" class="btp-activity-table__actions">
+                                        <button type="button" class="btp-activity-delete" aria-label="Delete activity" @click="requestDeleteActivity(activity)">
+                                            <el-icon :size="14"><Delete /></el-icon>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-else class="btp-collection-empty">
+                        <div class="btp-collection-empty__icon"><el-icon :size="18"><Clock /></el-icon></div>
+                        <p class="btp-collection-empty__text">No activity recorded for this batch yet.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Recorded By ───────────────────────────────────────────────── -->
+            <section class="btp-tile">
+                <div class="btp-recorder">
+                    <h2 class="btp-tile__title"><el-icon><User /></el-icon> Recorded By</h2>
+                    <div class="btp-recorder__row">
+                        <div class="btp-recorder__avatar">{{ recorderInitials }}</div>
+                        <div class="btp-recorder__body">
+                            <div class="btp-recorder__name">{{ batch.user?.name || 'Unknown' }}</div>
+                            <div class="btp-recorder__meta"><el-icon :size="12"><Checked /></el-icon> {{ formatDateTime(batch.created_at) }}</div>
                         </div>
                     </div>
-                </section>
-            </div>
+                </div>
+            </section>
         </div>
 
         <UpdateBatchModal
@@ -284,6 +363,24 @@ const deleteMessage = computed(() => `Are you sure you want to delete batch ${pr
             v-if="batch.can_manage"
             v-model="attachModalOpen"
             :batch-id="batch.id"
+        />
+
+        <AddBatchActivityModal
+            v-if="batch.can_manage"
+            v-model="addActivityOpen"
+            :batch-id="batch.id"
+            :activity-options="activityOptions"
+        />
+
+        <ConfirmDialog
+            v-model="deleteActivityDialogOpen"
+            eyebrow="Batch Activity"
+            title="Delete Activity"
+            :message="deleteActivityMessage"
+            confirm-text="Delete Activity"
+            :auto-close="false"
+            :loading="deletingActivity"
+            @confirm="confirmDeleteActivity"
         />
     </DesignPreviewLayout>
 </template>
@@ -375,6 +472,7 @@ const deleteMessage = computed(() => `Are you sure you want to delete batch ${pr
 .btp-pill--good { background: var(--secondary-container); color: var(--on-secondary-container); }
 .btp-pill--bad { background: var(--error-container); color: var(--on-error-container); }
 .btp-pill--pending { background: #fef3c7; color: #92400e; }
+.btp-pill--event { background: var(--surface-container); color: var(--on-surface); border: 1px solid color-mix(in srgb, var(--card-border) 80%, transparent); text-transform: none; }
 
 /* ── KPI section ─────────────────────────────────────────────────────── */
 .btp-stat-row {
@@ -502,6 +600,51 @@ a.btp-list-row:hover { background: color-mix(in srgb, var(--surface-container-lo
 .btp-list-stat { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 70px; }
 .btp-list-stat__value { font-size: 13px; font-weight: 700; color: var(--on-surface); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .btp-list-stat__label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-variant); white-space: nowrap; }
+
+/* ── Batch Activity ────────────────────────────────────────────────────── */
+.btp-activity-section { padding-top: 8px; border-top: 1px solid var(--card-border); }
+
+.btp-activity-table-wrap { overflow-x: auto; }
+.btp-activity-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.btp-activity-table thead th {
+    text-align: left;
+    padding: 0 0 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--on-surface-variant);
+    border-bottom: 1px solid var(--card-border);
+    white-space: nowrap;
+}
+.btp-activity-table thead th:not(:first-child) { padding-left: 20px; }
+.btp-activity-table tbody td {
+    padding: 13px 0;
+    border-bottom: 1px dashed var(--card-border);
+    color: var(--on-surface);
+    vertical-align: top;
+}
+.btp-activity-table tbody td:not(:first-child) { padding-left: 20px; }
+.btp-activity-table tbody tr:last-child td { border-bottom: none; padding-bottom: 0; }
+.btp-activity-table__desc { color: var(--on-surface-variant); max-width: 360px; }
+.btp-activity-table__date { color: var(--on-surface-variant); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.btp-activity-table__actions-head { width: 1%; }
+.btp-activity-table__actions { width: 1%; text-align: right; }
+.btp-activity-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.btp-activity-delete:hover { background: var(--error-container); color: var(--error); }
+.btp-activity-delete:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* ── Footer tile: recorder ─────────────────────────────────────────────── */
 .btp-recorder { flex: 1; min-width: 0; }

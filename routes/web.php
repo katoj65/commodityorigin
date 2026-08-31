@@ -226,6 +226,8 @@ Route::middleware([
         Route::post('/{lot}/images', [LotController::class, 'storeImages'])->name('images.store');
         Route::delete('/{lot}/images/{image}', [LotController::class, 'destroyImage'])->name('images.destroy');
         Route::post('/{lot}/batches', [LotController::class, 'attachBatch'])->name('batches.store');
+        Route::post('/{lot}/activities', [LotController::class, 'storeActivity'])->name('activities.store');
+        Route::delete('/{lot}/activities/{activity}', [LotController::class, 'destroyActivity'])->name('activities.destroy');
     });
 
     // Batch workspace routes.
@@ -246,6 +248,8 @@ Route::middleware([
         Route::delete('/{batch}', [BatchController::class, 'destroy'])->name('destroy');
         Route::get('/{batch}', [BatchController::class, 'show'])->name('show');
         Route::post('/{batch}/farm-collections', [BatchController::class, 'attachFarmCollection'])->name('farm-collections.store');
+        Route::post('/{batch}/activities', [BatchController::class, 'storeActivity'])->name('activities.store');
+        Route::delete('/{batch}/activities/{activity}', [BatchController::class, 'destroyActivity'])->name('activities.destroy');
     });
 
     // Season workspace routes.

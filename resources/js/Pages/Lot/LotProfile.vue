@@ -6,6 +6,7 @@ import AttachBatchModal from '@/Components/Modals/AttachBatchModal.vue';
 import EditLotModal from '@/Components/Modals/EditLotModal.vue';
 import PublishLotModal from '@/Components/Modals/PublishLotModal.vue';
 import AddLotImagesDialog from '@/Components/Modals/AddLotImagesDialog.vue';
+import AddLotActivityModal from '@/Components/Modals/AddLotActivityModal.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import ImageViewer from '@/Components/ImageViewer.vue';
 import {
@@ -47,6 +48,8 @@ const props = defineProps({
     packagingTypeOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
+    activities: { type: Array, default: () => [] },
+    activityOptions: { type: Array, default: () => [] },
 });
 
 const showAttachBatch = ref(false);
@@ -57,6 +60,10 @@ const deleting = ref(false);
 const unpublishDialogOpen = ref(false);
 const unpublishing = ref(false);
 const showAddImages = ref(false);
+const showAddActivity = ref(false);
+const deleteActivityDialogOpen = ref(false);
+const pendingActivity = ref(null);
+const deletingActivity = ref(false);
 const MAX_LOT_IMAGES = 3;
 const remainingImageSlots = computed(() => Math.max(0, MAX_LOT_IMAGES - (props.lot.images?.length || 0)));
 
@@ -104,10 +111,44 @@ function handleOptionsCommand(command) {
         return;
     }
 
+    if (command === 'add-activity') {
+        showAddActivity.value = true;
+        return;
+    }
+
     if (command === 'delete') {
         deleteDialogOpen.value = true;
     }
 }
+
+/* ── Lot Activity — event slugs are resolved to their metadata display
+   name; anything not found (a retired slug) falls back to a titleized
+   version of the slug itself rather than disappearing. ────────────────── */
+function eventLabel(slug) {
+    const match = props.activityOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function requestDeleteActivity(activity) {
+    pendingActivity.value = activity;
+    deleteActivityDialogOpen.value = true;
+}
+
+function confirmDeleteActivity() {
+    if (!pendingActivity.value) return;
+    deletingActivity.value = true;
+    router.delete(route('lot.activities.destroy', [props.lot.id, pendingActivity.value.id]), {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingActivity.value = false;
+            deleteActivityDialogOpen.value = false;
+            pendingActivity.value = null;
+        },
+    });
+}
+
+const deleteActivityMessage = computed(() => `Remove the "${pendingActivity.value ? eventLabel(pendingActivity.value.event) : ''}" activity from this lot's log? This action cannot be undone.`);
 
 function confirmDeleteLot() {
     deleting.value = true;
@@ -257,6 +298,7 @@ const fmtDateTime = (value) => {
                             <el-dropdown-item v-if="lot.can_manage" command="edit"><el-icon><EditPen /></el-icon> Edit Lot</el-dropdown-item>
                             <el-dropdown-item v-if="lot.can_manage && !lot.is_published" command="publish"><el-icon><Promotion /></el-icon> Publish to Market</el-dropdown-item>
                             <el-dropdown-item v-if="lot.can_manage && lot.is_published" command="unpublish"><el-icon><SoldOut /></el-icon> Unpublish from Market</el-dropdown-item>
+                            <el-dropdown-item v-if="lot.can_manage" command="add-activity"><el-icon><Clock /></el-icon> Add Activity</el-dropdown-item>
                             <el-dropdown-item v-if="lot.can_manage" command="delete" divided class="lp-options-menu__item--danger"><el-icon><Delete /></el-icon> Delete Lot</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
@@ -570,6 +612,38 @@ const fmtDateTime = (value) => {
                     <p v-else class="lp-empty">No farm collections linked via the batches attached to this lot.</p>
                 </div>
                 </div>
+
+                <!-- Lot Activity — always the last section on the page -->
+                <div class="lp-tile lp-tile--full">
+                    <h2 class="lp-tile__title"><el-icon><Clock /></el-icon> Lot Activity</h2>
+                    <div v-if="activities.length" class="lp-activity-table-wrap">
+                        <table class="lp-activity-table">
+                            <thead>
+                                <tr>
+                                    <th>Event</th>
+                                    <th>Description</th>
+                                    <th>Recorded By</th>
+                                    <th>Date</th>
+                                    <th v-if="lot.can_manage" class="lp-activity-table__actions-head" />
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="activity in activities" :key="activity.id">
+                                    <td><span class="lp-event-pill">{{ eventLabel(activity.event) }}</span></td>
+                                    <td class="lp-activity-table__desc">{{ activity.description || '—' }}</td>
+                                    <td>{{ activity.recorded_by?.name || 'System' }}</td>
+                                    <td class="lp-mono lp-activity-table__date">{{ fmtDateTime(activity.created_at) }}</td>
+                                    <td v-if="lot.can_manage" class="lp-activity-table__actions">
+                                        <button type="button" class="lp-activity-delete" aria-label="Delete activity" @click="requestDeleteActivity(activity)">
+                                            <el-icon :size="14"><Delete /></el-icon>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p v-else class="lp-empty">No activity recorded for this lot yet.</p>
+                </div>
             </div>
         </div>
 
@@ -620,6 +694,23 @@ const fmtDateTime = (value) => {
             @confirm="confirmUnpublishLot"
         />
         <ImageViewer v-model="viewerOpen" :images="viewerImages" :index="viewerIndex" />
+
+        <AddLotActivityModal
+            v-if="lot.can_manage"
+            v-model="showAddActivity"
+            :lot-id="lot.id"
+            :activity-options="activityOptions"
+        />
+        <ConfirmDialog
+            v-model="deleteActivityDialogOpen"
+            eyebrow="Lot Activity"
+            title="Delete Activity"
+            :message="deleteActivityMessage"
+            confirm-text="Delete Activity"
+            :auto-close="false"
+            :loading="deletingActivity"
+            @confirm="confirmDeleteActivity"
+        />
     </DesignPreviewLayout>
 </template>
 
@@ -1004,6 +1095,52 @@ const fmtDateTime = (value) => {
 }
 
 .lp-empty { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+/* ── Lot Activity ─────────────────────────────────────────────────────── */
+.lp-activity-table-wrap { overflow-x: auto; }
+.lp-activity-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lp-activity-table thead th {
+    text-align: left;
+    padding: 0 0 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.lp-activity-table thead th:not(:first-child) { padding-left: 20px; }
+.lp-activity-table tbody td {
+    padding: 13px 0;
+    border-bottom: 1px dashed var(--border);
+    color: var(--text);
+    vertical-align: top;
+}
+.lp-activity-table tbody td:not(:first-child) { padding-left: 20px; }
+.lp-activity-table tbody tr:last-child td { border-bottom: none; padding-bottom: 0; }
+.lp-activity-table__desc { color: var(--text-2); max-width: 360px; }
+.lp-activity-table__date { color: var(--text-2); white-space: nowrap; }
+.lp-activity-table__actions-head { width: 1%; }
+.lp-activity-table__actions { width: 1%; text-align: right; }
+
+.lp-event-pill {
+    display: inline-flex; align-items: center;
+    padding: 4px 11px; border-radius: 999px;
+    background: var(--surface-elevated); color: var(--text-2);
+    border: 1px solid var(--border);
+    font-size: 11.5px; font-weight: 700;
+    white-space: nowrap;
+}
+
+.lp-activity-delete {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border: none; border-radius: 6px;
+    background: transparent; color: var(--text-muted); cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+.lp-activity-delete:hover { background: #FEF2F2; color: var(--error); }
+.lp-activity-delete:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 1100px) { .lp-page { padding: 0 24px; } }

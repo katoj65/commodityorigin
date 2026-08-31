@@ -5,14 +5,18 @@ namespace App\Http\Controllers\Lot;
 use App\Helpers\ImageUploadHelper;
 use App\Helpers\QrCodeHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\LotActivityResource;
 use App\Http\Resources\LotResource;
 use App\Models\Batch;
 use App\Models\Currency;
 use App\Models\Lot;
+use App\Models\LotActivity;
+use App\Models\LotActivityMetadata;
 use App\Models\LotImage;
 use App\Models\LotRequest;
 use App\Services\CoffeeGradeService;
 use App\Services\CountryService;
+use App\Services\LotActivityService;
 use App\Services\LotImageService;
 use App\Services\LotService;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +34,7 @@ class LotController extends Controller
         private readonly CoffeeGradeService $coffeeGrades,
         private readonly CountryService $countries,
         private readonly LotImageService $lotImages,
+        private readonly LotActivityService $activities,
     ) {
     }
 
@@ -246,6 +251,16 @@ class LotController extends Controller
                 ->orderBy('code')
                 ->pluck('code'),
             'currencyCountries' => Currency::query()->pluck('country', 'code'),
+            'activities' => LotActivityResource::collection($this->activities->forLot($lot))->resolve(),
+            'activityOptions' => LotActivityMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name'])
+                ->map(fn (LotActivityMetadata $option): array => [
+                    'slug' => $option->slug,
+                    'name' => $option->name,
+                ]),
         ]);
     }
 
@@ -331,6 +346,41 @@ class LotController extends Controller
         $this->lots->attachBatchByNumber($lot, $validated['batch_number'], $request->user()->id);
 
         return back()->with('success', 'Batch linked to this lot.');
+    }
+
+    /**
+     * Record a manual activity-log entry for this lot — `event` must be
+     * an active slug in lot_activity_metadata.
+     */
+    public function storeActivity(Request $request, Lot $lot): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
+
+        $validated = $request->validate([
+            'event' => [
+                'required',
+                'string',
+                Rule::exists('lot_activity_metadata', 'slug')->where('is_active', true),
+            ],
+            'description' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $this->activities->record($lot, $validated['event'], $validated['description'] ?? null, $request->user()->id);
+
+        return back()->with('success', 'Activity recorded.');
+    }
+
+    /**
+     * Remove one activity-log entry from this lot.
+     */
+    public function destroyActivity(Lot $lot, LotActivity $activity): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
+        abort_unless((int) $activity->lot_id === (int) $lot->id, 404);
+
+        $this->activities->delete($activity);
+
+        return back()->with('success', 'Activity removed.');
     }
 
     /**

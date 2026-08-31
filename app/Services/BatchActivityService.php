@@ -46,4 +46,12 @@ class BatchActivityService
             ->orderByDesc('id')
             ->get();
     }
+
+    /**
+     * Remove a mistaken or duplicate activity-log entry.
+     */
+    public function delete(BatchActivity $activity): void
+    {
+        $activity->delete();
+    }
 }

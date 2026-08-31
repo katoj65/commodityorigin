@@ -45,4 +45,12 @@ class LotActivityService
             ->orderByDesc('id')
             ->get();
     }
+
+    /**
+     * Remove a mistaken or duplicate activity-log entry.
+     */
+    public function delete(LotActivity $activity): void
+    {
+        $activity->delete();
+    }
 }

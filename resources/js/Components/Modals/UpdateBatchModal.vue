@@ -146,19 +146,19 @@ const submit = () => {
             <div class="afc-section">
                 <h3 class="afc-section__title"><el-icon><Files /></el-icon> Batch Details</h3>
                 <div class="afc-grid">
-                    <div class="afc-field afc-field--span2">
+                    <div class="afc-field">
                         <label class="afc-field__label">Variety</label>
                         <el-input v-model="form.variety" placeholder="e.g. Bourbon, Geisha, SL-28" class="afc-input" :class="{ 'afc-input--error': form.errors.variety }" />
                         <span v-if="form.errors.variety" class="afc-field__error">{{ form.errors.variety }}</span>
                     </div>
 
-                    <div class="afc-field afc-field--span2">
+                    <div class="afc-field">
                         <label class="afc-field__label">Warehouse Location</label>
                         <el-input v-model="form.warehouse_location" placeholder="Warehouse or collection point" class="afc-input" :class="{ 'afc-input--error': form.errors.warehouse_location }" />
                         <span v-if="form.errors.warehouse_location" class="afc-field__error">{{ form.errors.warehouse_location }}</span>
                     </div>
 
-                    <div class="afc-field">
+                    <div class="afc-field afc-field--span2">
                         <label class="afc-field__label">Processing Date</label>
                         <el-date-picker v-model="form.processing_date" type="date" value-format="YYYY-MM-DD" placeholder="Select date" class="afc-input w-100" :class="{ 'afc-input--error': form.errors.processing_date }" />
                         <span v-if="form.errors.processing_date" class="afc-field__error">{{ form.errors.processing_date }}</span>
@@ -248,7 +248,7 @@ const submit = () => {
                         <span v-if="form.errors.defect_count" class="afc-field__error">{{ form.errors.defect_count }}</span>
                     </div>
 
-                    <div class="afc-field afc-field--span2">
+                    <div class="afc-field">
                         <label class="afc-field__label">Cup Score</label>
                         <el-input-number v-model="form.cup_score" :min="0" :max="100" :precision="2" class="afc-input w-100" :class="{ 'afc-input--error': form.errors.cup_score }" />
                         <span v-if="form.errors.cup_score" class="afc-field__error">{{ form.errors.cup_score }}</span>
