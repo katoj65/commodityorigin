@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElNotification } from 'element-plus';
 import { ArrowRight, Delete, Lock, Minus, Plus, ShoppingTrolley, WarningFilled } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -56,7 +56,13 @@ function confirmRemove() {
     pendingId.value = item.id;
     router.delete(route('checkout.items.destroy', item.id), {
         preserveScroll: true,
-        onSuccess: () => ElMessage.success(`Removed ${item.name || item.lot_code} from your cart.`),
+        onSuccess: () => ElNotification({
+            title: 'Removed from Cart',
+            message: `${item.name || item.lot_code || 'Item'} was removed from your cart.`,
+            type: 'success',
+            duration: 3200,
+            offset: 84,
+        }),
         onFinish: () => { pendingId.value = null; },
         onError: () => ElMessage.error('Could not remove this item.'),
     });

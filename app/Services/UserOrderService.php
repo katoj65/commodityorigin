@@ -155,7 +155,7 @@ class UserOrderService
     private function nameFor(mixed $cartable): string
     {
         return match (true) {
-            $cartable instanceof Market => $cartable->name ?? $cartable->lot_code ?? 'Lot',
+            $cartable instanceof Market => $cartable->title ?? $cartable->lot_code ?? 'Lot',
             $cartable instanceof AgriculturalInput => $cartable->name,
             default => 'Item',
         };
@@ -164,7 +164,7 @@ class UserOrderService
     private function unitFor(mixed $cartable): string
     {
         return match (true) {
-            $cartable instanceof Market => 'kg',
+            $cartable instanceof Market => $cartable->unit ?? 'kg',
             $cartable instanceof AgriculturalInput => $cartable->unit,
             default => 'unit',
         };

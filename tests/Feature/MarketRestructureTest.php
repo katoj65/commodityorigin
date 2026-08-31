@@ -2,9 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Http\Resources\CartItemResource;
+use App\Models\Batch;
+use App\Models\BatchFarmCollection;
+use App\Models\Farm;
+use App\Models\Farmer;
+use App\Models\FarmCollection;
 use App\Models\Lot;
+use App\Models\LotBatch;
 use App\Models\Market;
 use App\Models\User;
+use App\Services\CartService;
 use App\Services\MarketService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -153,6 +161,177 @@ class MarketRestructureTest extends TestCase
         $this->assertSame('Uganda', $listing[0]['origin']);
         $this->assertSame('Robusta', $listing[0]['type']);
         $this->assertTrue($listing[0]['is_featured']);
+    }
+
+    public function test_show_joins_the_farm_chain_for_a_lot_backed_listing(): void
+    {
+        $user = User::factory()->create();
+
+        $farm = Farm::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Sipi Falls Farm',
+            'district' => 'Kapchorwa',
+            'region' => 'Eastern',
+            'country' => 'Uganda',
+            'latitude' => 1.4021,
+            'longitude' => 34.4694,
+        ]);
+        $farmer = Farmer::query()->create([
+            'user_id' => $user->id,
+            'farmer_number' => 'FRM-TEST-01',
+            'first_name' => 'Grace',
+            'last_name' => 'Chebet',
+            'tel' => '+256700000000',
+            'district' => 'Kapchorwa',
+        ]);
+        $farm->farmers()->attach($farmer->id, ['farm_code' => $farm->farm_code, 'status' => 'active']);
+
+        $collection = FarmCollection::query()->create([
+            'user_id' => $user->id,
+            'farm_id' => $farm->id,
+            'collection_code' => 'COL-TEST-01',
+            'status' => 'verified',
+            'collection_date' => '2026-06-01',
+            'harvest_season' => 'June - August',
+            'coffee_type' => 'Arabica',
+            'quantity' => 500,
+        ]);
+
+        $batch = Batch::query()->create([
+            'user_id' => $user->id,
+            'batch_number' => 'BTC-TEST-01',
+            'warehouse_location' => 'Kampala Warehouse',
+            'quantity' => 10,
+            'weight' => 600,
+            'processing_date' => '2026-06-10',
+        ]);
+        BatchFarmCollection::query()->create([
+            'batch_id' => $batch->id,
+            'farm_collection_id' => $collection->id,
+            'farm_collection_code' => $collection->collection_code,
+            'user_id' => $user->id,
+        ]);
+
+        $lot = Lot::query()->create([
+            'user_id' => $user->id,
+            'lot_number' => 'LOT-TEST-'.strtoupper(Str::random(6)),
+            'process' => 'Washed',
+            'grade' => 'A1',
+            'quantity_bags' => 10,
+            'bag_weight_kg' => 60,
+        ]);
+        LotBatch::query()->create([
+            'lot_id' => $lot->id,
+            'batch_id' => $batch->id,
+            'batch_number' => $batch->batch_number,
+            'allocation_kg' => 600,
+            'user_id' => $user->id,
+        ]);
+
+        $market = Market::query()->create([
+            'lot_id' => $lot->id,
+            'user_id' => $user->id,
+            'title' => 'Sipi Falls AA',
+            'quantity' => 500,
+            'price_per_unit' => 6,
+            'status' => 'live',
+        ]);
+
+        $result = app(MarketService::class)->show($market);
+
+        $this->assertSame('Sipi Falls Farm', $result['farm']['name']);
+        $this->assertSame('Kapchorwa', $result['farm']['district']);
+        $this->assertSame(1, $result['farmer_count']);
+        $this->assertSame('June - August', $result['harvest_season']);
+        $this->assertNotNull($result['supply_chain']);
+        $this->assertTrue(collect($result['supply_chain'])->contains(fn ($step) => $step['label'] === 'Harvest'));
+        $this->assertTrue(collect($result['supply_chain'])->contains(fn ($step) => $step['label'] === 'Processing'));
+    }
+
+    public function test_show_degrades_to_nulls_when_the_listing_has_no_lot(): void
+    {
+        $market = Market::query()->create([
+            'title' => 'Standalone Listing',
+            'quantity' => 200,
+            'price_per_unit' => 4,
+            'status' => 'live',
+        ]);
+
+        $result = app(MarketService::class)->show($market);
+
+        $this->assertNull($result['farm']);
+        $this->assertNull($result['farmer_count']);
+        $this->assertNull($result['harvest_season']);
+        $this->assertSame([], $result['lot_images']);
+        $this->assertNull($result['lot_image']);
+    }
+
+    public function test_adding_a_listing_to_the_cart_from_its_product_page_is_reflected_back(): void
+    {
+        $buyer = User::factory()->create();
+        $market = Market::query()->create([
+            'title' => 'Cart Test Listing',
+            'quantity' => 200,
+            'price_per_unit' => 6,
+            'status' => 'live',
+        ]);
+
+        $this->actingAs($buyer)
+            ->get(route('market.show', $market))
+            ->assertInertia(fn ($page) => $page->where('item.id', $market->id));
+
+        $this->assertDatabaseMissing('cart_items', [
+            'user_id' => $buyer->id,
+            'cartable_id' => $market->id,
+        ]);
+
+        // The product page's "Add to Cart" button always sends quantity 1,
+        // matching the market listings grid — clicking it twice
+        // accumulates rather than replacing the quantity.
+        $this->actingAs($buyer)->post(route('checkout.items.store'), [
+            'cartable_type' => 'market',
+            'cartable_id' => $market->id,
+            'quantity' => 1,
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($buyer)->post(route('checkout.items.store'), [
+            'cartable_type' => 'market',
+            'cartable_id' => $market->id,
+            'quantity' => 1,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('cart_items', [
+            'user_id' => $buyer->id,
+            'cartable_id' => $market->id,
+            'cartable_type' => Market::class,
+            'quantity' => 2,
+        ]);
+    }
+
+    public function test_adding_a_listing_to_the_cart_locks_in_its_real_price_and_name(): void
+    {
+        $buyer = User::factory()->create();
+        $market = Market::query()->create([
+            'title' => 'Bugisu AA Premium',
+            'quantity' => 300,
+            'available_quantity' => 250,
+            'unit' => 'kg',
+            'price_per_unit' => 7.25,
+            'status' => 'live',
+        ]);
+
+        $item = app(CartService::class)->addItem($buyer->id, 'market', $market->id, 2);
+
+        $this->assertSame('7.25', (string) $item->unit_price);
+
+        $item->load('cartable');
+        $resolved = CartItemResource::make($item)->resolve();
+
+        $this->assertSame('Bugisu AA Premium', $resolved['name']);
+        $this->assertSame(7.25, $resolved['current_price']);
+        $this->assertSame(14.5, $resolved['line_total']);
+        $this->assertSame('kg', $resolved['unit']);
+        $this->assertSame(250.0, $resolved['available_quantity']);
     }
 
     public function test_filtered_listing_filters_by_metadata_backed_type_and_price(): void

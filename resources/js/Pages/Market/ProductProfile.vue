@@ -1,72 +1,136 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import {
-    Minus, Plus, ShoppingBag, LocationFilled, ArrowLeft,
+    LocationFilled, ArrowLeft,
     Grape, Pouring, Connection, UserFilled,
     Star, TrendCharts, Setting, Collection, MapLocation, ChatLineSquare, House, Calendar,
-    MoreFilled, Edit, Picture, Delete,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
-import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import EditMarketListingDialog from '@/Components/Modals/EditMarketListingDialog.vue';
-import AddMarketImagesDialog from '@/Components/Modals/AddMarketImagesDialog.vue';
+import ImageViewer from '@/Components/ImageViewer.vue';
+import AddToCartForm from '@/Components/AddToCartForm.vue';
 
 const props = defineProps({
     item: { type: Object, default: () => ({}) },
-    cartQuantity: { type: Number, default: 0 },
-    canManage: { type: Boolean, default: false },
-    maxImages: { type: Number, default: 3 },
 });
 
-/* ── Hard-coded showcase content — ported 1:1 from the "Sumatra
-   Mandheling" reference mockup (code.html) per explicit request to
-   redesign this page's content area to match it exactly. This app has
-   no backing data model yet for a multi-image gallery, trader notes,
-   farm-profile copy, or sustainability programs, so all of it below is
-   placeholder content, not derived from the real `item` prop. The
-   quantity stepper is local-only and "Add to Cart" is presentational
-   until a real listing is wired up to this layout. ─────────────────── */
-const product = {
+/* ── Fallback showcase content — ported 1:1 from the original "Sumatra
+   Mandheling" reference mockup (code.html). Every section below now binds
+   to the real `item` payload first; a field only falls back to one of
+   these values when the payload genuinely has nothing for it (no
+   sustainability-programs or trader-note data model exists yet, so those
+   two stay fully hard-coded). The quantity stepper is local-only and
+   "Add to Cart" is presentational until a real listing is wired up. ───── */
+const FALLBACK = {
     origin: 'Indonesia',
     name: 'Sumatra Mandheling',
     description: 'Full-bodied, low-acidity profile with intense earthy and herbaceous notes.',
     price: 24.00,
     unit: '250g bag',
-};
-
-const stats = [
-    { label: 'SCA Score', value: '88.0', accent: true, icon: Star },
-    { label: 'Altitude', value: '1,400 - 1,600m', icon: TrendCharts },
-    { label: 'Process', value: 'Giling Basah', icon: Setting },
-    { label: 'Varietals', value: 'Typica, Catimor', icon: Collection },
-];
-
-const sensoryChips = [
-    { label: 'Earthy', dot: 'var(--dp-surface-tint)' },
-    { label: 'Spicy', dot: 'var(--dp-error-container)' },
-    { label: 'Dark Chocolate', dot: '#191818' },
-];
-
-const traderNote = 'High demand lot. Consistent cup quality across previous 3 harvests. Recommended for specialty espresso programs.';
-
-const origin = {
-    description: 'Grown on the slopes of Mount Leuser, this Mandheling lot benefits from rich volcanic andisols and a unique microclimate.',
-    stats: [
-        { label: 'Farm Group', value: 'Lintong Nihuta', icon: House },
-        { label: 'Harvest Season', value: 'Sept - Dec', icon: Calendar },
+    badge: 'Single Origin',
+    scaScore: '88.0',
+    altitude: '1,400 - 1,600m',
+    process: 'Giling Basah',
+    varietals: 'Typica, Catimor',
+    sensoryChips: [
+        { label: 'Earthy', dot: 'var(--dp-surface-tint)' },
+        { label: 'Spicy', dot: 'var(--dp-error-container)' },
+        { label: 'Dark Chocolate', dot: '#191818' },
+    ],
+    traderNote: 'High demand lot. Consistent cup quality across previous 3 harvests. Recommended for specialty espresso programs.',
+    originDescription: 'Grown on the slopes of Mount Leuser, this Mandheling lot benefits from rich volcanic andisols and a unique microclimate.',
+    farmGroup: 'Lintong Nihuta',
+    harvestSeason: 'Sept - Dec',
+    farmerProfileText: 'The Lintong Nihuta cooperative represents 150 smallholders preserving traditional Giling Basah methods for over three generations.',
+    farmerImpact: 'Community Impact: 100% Fair Trade',
+    mapLabel: 'Mount Leuser, Sumatra',
+    // Real public coordinates for Mount Leuser National Park, Sumatra (~3.70°N, 97.15°E).
+    mapEmbedSrc: 'https://www.openstreetmap.org/export/embed.html?bbox=96.95%2C3.50%2C97.35%2C3.90&layer=mapnik&marker=3.70%2C97.15',
+    supplyChain: [
+        { label: 'Harvest', date: 'Oct 12' },
+        { label: 'Processing', date: 'Oct 15' },
+        { label: 'Export', date: 'Nov 02' },
     ],
 };
 
-const farmerProfile = {
-    text: 'The Lintong Nihuta cooperative represents 150 smallholders preserving traditional Giling Basah methods for over three generations.',
-    impact: 'Community Impact: 100% Fair Trade',
-};
+const PLACEHOLDER_IMAGE = '/images/coffee_image.jpg';
 
-const mapLocationLabel = 'Mount Leuser, Sumatra';
-// Real public coordinates for Mount Leuser National Park, Sumatra (~3.70°N, 97.15°E) —
-// a live OpenStreetMap embed (no API key needed) instead of a static photo standing in for a map.
-const mapEmbedSrc = 'https://www.openstreetmap.org/export/embed.html?bbox=96.95%2C3.50%2C97.35%2C3.90&layer=mapnik&marker=3.70%2C97.15';
+const product = computed(() => ({
+    origin: props.item.origin || FALLBACK.origin,
+    name: props.item.name || FALLBACK.name,
+    description: props.item.notes || FALLBACK.description,
+    price: props.item.price_per_kg ?? FALLBACK.price,
+    unit: props.item.unit || FALLBACK.unit,
+}));
+
+const heroBadge = computed(() => (props.item.badges && props.item.badges[0]) || FALLBACK.badge);
+
+const stats = computed(() => [
+    {
+        label: 'SCA Score',
+        value: props.item.quality_score != null ? Number(props.item.quality_score).toFixed(1) : FALLBACK.scaScore,
+        accent: true,
+        icon: Star,
+    },
+    {
+        label: 'Altitude',
+        value: props.item.specs?.altitude != null ? `${Math.round(props.item.specs.altitude)}m` : FALLBACK.altitude,
+        icon: TrendCharts,
+    },
+    { label: 'Process', value: props.item.process || FALLBACK.process, icon: Setting },
+    { label: 'Variety', value: props.item.specs?.variety || FALLBACK.varietals, icon: Collection },
+]);
+
+const sensoryChips = computed(() => {
+    const notes = props.item.cupping?.flavor_notes;
+    if (!notes) return FALLBACK.sensoryChips;
+    const dots = ['var(--dp-surface-tint)', 'var(--dp-error-container)', '#191818'];
+    const chips = notes.split(',').map((label, i) => ({ label: label.trim(), dot: dots[i % dots.length] })).filter((c) => c.label);
+    return chips.length ? chips : FALLBACK.sensoryChips;
+});
+
+const traderNote = computed(() => {
+    if (!props.item.demand) return FALLBACK.traderNote;
+    const listings = props.item.seller_active_listings;
+    const listingsClause = listings
+        ? ` The seller currently has ${listings} other active listing${listings === 1 ? '' : 's'}.`
+        : '';
+    return `This lot is in ${props.item.demand} demand.${listingsClause}`;
+});
+
+const origin = computed(() => ({
+    description: FALLBACK.originDescription,
+    stats: [
+        { label: 'Farm Group', value: props.item.farm?.name || FALLBACK.farmGroup, icon: House },
+        { label: 'Harvest Season', value: props.item.harvest_season || FALLBACK.harvestSeason, icon: Calendar },
+    ],
+}));
+
+const farmerProfile = computed(() => {
+    if (props.item.farm?.name && props.item.farmer_count) {
+        const count = props.item.farmer_count;
+        return {
+            text: `The ${props.item.farm.name} cooperative represents ${count} smallholder${count === 1 ? '' : 's'} behind this lot.`,
+            impact: FALLBACK.farmerImpact,
+        };
+    }
+    return { text: FALLBACK.farmerProfileText, impact: FALLBACK.farmerImpact };
+});
+
+const mapLocationLabel = computed(() => {
+    const farm = props.item.farm;
+    const label = farm ? [farm.district, farm.region, farm.country].filter(Boolean).join(', ') : '';
+    return label || FALLBACK.mapLabel;
+});
+
+const mapEmbedSrc = computed(() => {
+    const farm = props.item.farm;
+    if (!farm?.latitude || !farm?.longitude) return FALLBACK.mapEmbedSrc;
+    const lat = Number(farm.latitude);
+    const lng = Number(farm.longitude);
+    const d = 0.2;
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${(lng - d).toFixed(2)}%2C${(lat - d).toFixed(2)}%2C${(lng + d).toFixed(2)}%2C${(lat + d).toFixed(2)}&layer=mapnik&marker=${lat.toFixed(2)}%2C${lng.toFixed(2)}`;
+});
 
 const sustainabilityPillars = [
     {
@@ -81,36 +145,52 @@ const sustainabilityPillars = [
     },
 ];
 
-const supplyChainSteps = [
-    { label: 'Harvest', date: 'Oct 12' },
-    { label: 'Processing', date: 'Oct 15' },
-    { label: 'Export', date: 'Nov 02' },
-];
+const supplyChainSteps = computed(() => (props.item.supply_chain?.length ? props.item.supply_chain : FALLBACK.supplyChain));
 
-const PLACEHOLDER_IMAGE = '/images/coffee_image.jpg';
+/* ── Images: the main photo and the 3 thumbnails come from the lot's own
+   photos (its cover image, then its uploaded gallery) — falling back to
+   the listing's own image/gallery, then to the static placeholder only
+   when a slot has no real photo at all. ─────────────────────────────── */
+const hasRealMainImage = computed(() => Boolean(props.item.lot_image || props.item.image));
+const mainImageUrl = computed(() => props.item.lot_image || (props.item.image ? `/storage/${props.item.image}` : null) || PLACEHOLDER_IMAGE);
 
-const quantity = ref(1);
-function decrementQuantity() { if (quantity.value > 1) quantity.value -= 1; }
-function incrementQuantity() { quantity.value += 1; }
+const galleryImageUrls = computed(() => {
+    if (props.item.lot_images?.length) return props.item.lot_images.map((img) => img.image_url);
+    if (props.item.images?.length) return props.item.images.map((img) => img.image_url);
+    return [];
+});
+const galleryThumbs = computed(() => {
+    const thumbs = [...galleryImageUrls.value];
+    while (thumbs.length < 3) thumbs.push(null);
+    return thumbs.slice(0, 3);
+});
 
-/* ── Owner management — Edit / Add Images / Delete dropdown, visible only
-   when canManage is true (the authenticated user listed this lot). This
-   is the one real, backend-wired piece on this page — it acts on the
-   real `item` regardless of the placeholder content shown above. ─────── */
-const editDialogOpen = ref(false);
-const addImagesDialogOpen = ref(false);
-const deleteConfirmOpen = ref(false);
-const remainingImageSlots = computed(() => Math.max(0, props.maxImages - (props.item.images?.length || 0)));
+/* ── Image viewer — main photo + gallery form one browsable sequence of
+   real photos only (placeholder tiles aren't worth zooming into). ────── */
+const viewerOpen = ref(false);
+const viewerIndex = ref(0);
+const viewerImages = computed(() => {
+    const list = [];
+    if (hasRealMainImage.value) list.push({ url: mainImageUrl.value, alt: product.value.name });
+    for (const url of galleryImageUrls.value) list.push({ url, alt: product.value.name });
+    return list;
+});
 
-function onManageCommand(command) {
-    if (command === 'edit') editDialogOpen.value = true;
-    else if (command === 'add-images') addImagesDialogOpen.value = true;
-    else if (command === 'delete') deleteConfirmOpen.value = true;
+function openViewer(index) {
+    if (!viewerImages.value.length) return;
+    viewerIndex.value = Math.min(index, viewerImages.value.length - 1);
+    viewerOpen.value = true;
 }
 
-function confirmDeleteListing() {
-    router.delete(route('market.destroy', props.item.id));
+function openGalleryThumb(index) {
+    if (!galleryThumbs.value[index]) return;
+    openViewer((hasRealMainImage.value ? 1 : 0) + index);
 }
+
+const cartMaxQuantity = computed(() => {
+    const available = props.item.available_quantity;
+    return available != null && available > 0 ? Math.floor(available) : null;
+});
 </script>
 
 <template>
@@ -122,14 +202,20 @@ function confirmDeleteListing() {
             <!-- ── Hero — image gallery / specs / purchase widget ─────────── -->
             <section class="mp-hero">
                 <div class="mp-hero__gallery">
-                    <div class="mp-hero__main-img">
-                        <img :src="PLACEHOLDER_IMAGE" :alt="product.name">
-                        <span class="mp-hero__badge">Single Origin</span>
+                    <div class="mp-hero__main-img" :class="{ 'mp-hero__main-img--clickable': hasRealMainImage }" @click="hasRealMainImage && openViewer(0)">
+                        <img :src="mainImageUrl" :alt="product.name">
+                        <span class="mp-hero__badge">{{ heroBadge }}</span>
                     </div>
                     <div class="mp-hero__thumbs">
-                        <div class="mp-hero__thumb"><img :src="PLACEHOLDER_IMAGE" :alt="product.name"></div>
-                        <div class="mp-hero__thumb"><img :src="PLACEHOLDER_IMAGE" :alt="product.name"></div>
-                        <div class="mp-hero__thumb"><img :src="PLACEHOLDER_IMAGE" :alt="product.name"></div>
+                        <div
+                            v-for="(thumb, i) in galleryThumbs"
+                            :key="i"
+                            class="mp-hero__thumb"
+                            :class="{ 'mp-hero__thumb--clickable': thumb }"
+                            @click="openGalleryThumb(i)"
+                        >
+                            <img :src="thumb || PLACEHOLDER_IMAGE" :alt="product.name">
+                        </div>
                     </div>
                 </div>
 
@@ -159,39 +245,18 @@ function confirmDeleteListing() {
 
                 <div class="mp-hero__buy">
                     <div class="mp-buy-card">
-                        <div v-if="canManage" class="mp-manage">
-                            <el-dropdown trigger="click" placement="bottom-end" popper-class="mp-manage-menu" @command="onManageCommand">
-                                <button type="button" class="mp-manage__btn">
-                                    <el-icon :size="16"><MoreFilled /></el-icon> Manage Listing
-                                </button>
-                                <template #dropdown>
-                                    <el-dropdown-menu>
-                                        <el-dropdown-item command="edit"><el-icon><Edit /></el-icon> Edit</el-dropdown-item>
-                                        <el-dropdown-item command="add-images" :disabled="remainingImageSlots <= 0"><el-icon><Picture /></el-icon> Add Images</el-dropdown-item>
-                                        <el-dropdown-item command="delete" divided><el-icon><Delete /></el-icon> Delete</el-dropdown-item>
-                                    </el-dropdown-menu>
-                                </template>
-                            </el-dropdown>
-                        </div>
-
                         <div class="mp-buy-card__price-row">
                             <span class="mp-buy-card__price">${{ product.price.toFixed(2) }}</span>
                             <span class="mp-buy-card__unit">/ {{ product.unit }}</span>
                         </div>
 
-                        <div class="mp-qty">
-                            <button type="button" class="mp-qty__btn" :disabled="quantity <= 1" @click="decrementQuantity">
-                                <el-icon><Minus /></el-icon>
-                            </button>
-                            <span class="mp-qty__value">{{ quantity }}</span>
-                            <button type="button" class="mp-qty__btn" @click="incrementQuantity">
-                                <el-icon><Plus /></el-icon>
-                            </button>
-                        </div>
-
-                        <button type="button" class="mp-cart-btn">
-                            <el-icon><ShoppingBag /></el-icon> Add to Cart
-                        </button>
+                        <AddToCartForm
+                            cartable-type="market"
+                            :cartable-id="item.id"
+                            :item-name="product.name"
+                            :unit="product.unit"
+                            :max="cartMaxQuantity"
+                        />
                     </div>
 
                     <div class="mp-trader-note">
@@ -256,15 +321,7 @@ function confirmDeleteListing() {
             </section>
         </div>
 
-        <EditMarketListingDialog v-model="editDialogOpen" :item="item" />
-        <AddMarketImagesDialog v-model="addImagesDialogOpen" :market-id="item.id" :remaining-slots="remainingImageSlots" />
-        <ConfirmDialog
-            v-model="deleteConfirmOpen"
-            title="Delete Listing"
-            :message="`${item.name || item.lot_code} will be permanently removed from the marketplace, along with its photos.`"
-            confirm-text="Delete Listing"
-            @confirm="confirmDeleteListing"
-        />
+        <ImageViewer v-model="viewerOpen" :images="viewerImages" :index="viewerIndex" />
     </DesignPreviewLayout>
 </template>
 
@@ -299,6 +356,9 @@ function confirmDeleteListing() {
 .mp-hero__gallery { display: flex; flex-direction: column; gap: 20px; }
 .mp-hero__main-img { position: relative; aspect-ratio: 1 / 1; border-radius: var(--dp-card-radius); overflow: hidden; background: var(--dp-surface-container-high); box-shadow: var(--dp-card-shadow); }
 .mp-hero__main-img img { width: 100%; height: 100%; object-fit: cover; }
+.mp-hero__main-img--clickable { cursor: pointer; }
+.mp-hero__main-img--clickable:hover img { transform: scale(1.03); }
+.mp-hero__main-img img { transition: transform .25s ease; }
 .mp-hero__badge {
     position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 4px;
     padding: 4px 10px; border-radius: 5px;
@@ -308,7 +368,9 @@ function confirmDeleteListing() {
 }
 .mp-hero__thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .mp-hero__thumb { aspect-ratio: 1 / 1; border-radius: var(--dp-card-radius); overflow: hidden; background: var(--dp-surface-container); box-shadow: var(--dp-card-shadow); }
-.mp-hero__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.mp-hero__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s ease; }
+.mp-hero__thumb--clickable { cursor: pointer; }
+.mp-hero__thumb--clickable:hover img { transform: scale(1.06); }
 
 .mp-hero__specs { display: flex; flex-direction: column; gap: 22px; }
 .mp-hero__eyebrow {
@@ -335,32 +397,9 @@ function confirmDeleteListing() {
 .mp-buy-card { padding: 22px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); transition: box-shadow .2s ease; }
 .mp-buy-card:hover { box-shadow: 0 1px 2px rgba(39, 19, 16, .04), 0 14px 28px -14px rgba(39, 19, 16, .18); }
 
-.mp-manage { margin-bottom: 14px; }
-.mp-manage__btn {
-    width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 9px; border: 1px solid var(--dp-outline-variant); border-radius: 8px; background: var(--dp-surface-container-lowest);
-    color: var(--dp-on-surface-variant); font-size: .8125rem; font-weight: 700; cursor: pointer; transition: background .12s ease;
-}
-.mp-manage__btn:hover { background: var(--dp-surface-container-low); color: var(--dp-on-surface); }
-
-.mp-buy-card__price-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; }
+.mp-buy-card__price-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 18px; }
 .mp-buy-card__price { font-family: var(--dp-font-sans); font-size: 1.75rem; font-weight: 800; letter-spacing: -.01em; color: var(--dp-on-surface); }
 .mp-buy-card__unit { font-size: .75rem; color: var(--dp-on-surface-variant); }
-
-.mp-qty { display: flex; align-items: center; justify-content: space-between; background: var(--dp-surface-container-low); border-radius: 8px; padding: 4px; margin-bottom: 10px; }
-.mp-qty__btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: none; border-radius: 6px; background: transparent; color: var(--dp-on-surface); cursor: pointer; transition: background .12s ease; }
-.mp-qty__btn:hover:not(:disabled) { background: var(--dp-surface-container-high); }
-.mp-qty__btn:disabled { opacity: .4; cursor: default; }
-.mp-qty__value { font-size: .9375rem; font-weight: 700; }
-
-.mp-cart-btn {
-    width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 14px; border: none; border-radius: 8px; background: var(--dp-primary); color: var(--dp-on-primary);
-    font-size: .9375rem; font-weight: 700; cursor: pointer;
-    box-shadow: 0 6px 16px -8px rgba(39, 19, 16, .45);
-    transition: opacity .15s ease, transform .15s ease;
-}
-.mp-cart-btn:hover { opacity: .92; transform: translateY(-1px); }
 
 .mp-trader-note { padding: 20px; border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); background: rgba(62, 39, 35, .06); box-shadow: var(--dp-card-shadow); }
 .mp-trader-note__label { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--dp-primary); margin-bottom: 6px; }
@@ -412,29 +451,4 @@ function confirmDeleteListing() {
     .mp-sustainability__grid { grid-template-columns: 1fr; }
     .mp-hero__stat-grid { grid-template-columns: 1fr 1fr; }
 }
-</style>
-
-<style>
-/* Unscoped on purpose: the dropdown popper teleports to <body>, outside
-   this component's own scope, so a scoped selector can never reach it.
-   Literal dp-palette hex is used here for the same reason. */
-.mp-manage-menu.el-dropdown__popper {
-    border-radius: 10px;
-    border: 1px solid #e2e2e2;
-    box-shadow: 0 12px 32px rgba(39, 19, 16, 0.16);
-    min-width: 180px;
-}
-.mp-manage-menu .el-dropdown-menu { padding: 6px; }
-.mp-manage-menu .el-dropdown-menu__item {
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #504442;
-    padding: 9px 10px;
-    gap: 10px;
-}
-.mp-manage-menu .el-dropdown-menu__item:hover { background: #f3f3f3; color: #1a1c1c; }
-.mp-manage-menu .el-dropdown-menu__item.is-disabled { color: #c4bab8; }
-.mp-manage-menu .el-dropdown-menu__item.is-divided { border-top-color: #eeeeee; }
-.mp-manage-menu .el-dropdown-menu__item.is-divided:hover { color: #ba1a1a; background: #ffdad6; }
 </style>

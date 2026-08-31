@@ -152,6 +152,6 @@ class CartService
      */
     private function unitPriceFor(Model $cartable): float
     {
-        return (float) ($cartable instanceof Market ? $cartable->price_per_kg : $cartable->price);
+        return (float) ($cartable instanceof Market ? $cartable->price_per_unit : $cartable->price);
     }
 }

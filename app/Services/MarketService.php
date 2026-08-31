@@ -2,13 +2,19 @@
 
 namespace App\Services;
 
+use App\Http\Resources\LotImageResource;
 use App\Http\Resources\MarketImageResource;
 use App\Models\Market;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class MarketService
 {
+    public function __construct(private readonly LotService $lots)
+    {
+    }
+
     /**
      * Get a base query builder for markets.
      */
@@ -111,12 +117,44 @@ class MarketService
      */
     public function show(Market $market): array
     {
-        $market->loadMissing(['user', 'lot.lotBatches.batch', 'lot.sensoryProfile', 'lot.storageProfile', 'images']);
+        $market->loadMissing([
+            'user',
+            'lot.user',
+            'lot.lotBatches.batch.user',
+            'lot.lotBatches.batch.batchFarmCollections.farmCollection.farm.farmers',
+            'lot.sensoryProfile',
+            'lot.storageProfile',
+            'lot.blockchain',
+            'lot.images',
+            'images',
+        ]);
 
         $lot = $market->lot;
         $batch = $lot?->batch;
         $sensory = $lot?->sensoryProfile;
         $storage = $lot?->storageProfile;
+
+        // Reuse the traceability aggregation (already joins batches → farm
+        // collections → farms → farmers) instead of re-walking the same
+        // relations here, to surface real farm/harvest/supply-chain facts
+        // for the product profile page.
+        $trace = $lot ? $this->lots->traceabilityData($lot) : null;
+        $primaryBatch = $trace['batches'][0] ?? null;
+        $primaryFarm = $primaryBatch['farms'][0] ?? null;
+        $primaryCollection = $primaryBatch['collections'][0] ?? null;
+        $farmerCount = $trace['stats']['farmers'] ?? 0;
+
+        $supplyChain = array_values(array_filter([
+            ($primaryCollection['collection_date'] ?? null)
+                ? ['label' => 'Harvest', 'date' => $primaryCollection['collection_date']]
+                : null,
+            ($primaryBatch['processing_date'] ?? null)
+                ? ['label' => 'Processing', 'date' => $primaryBatch['processing_date']]
+                : null,
+            $market->created_at
+                ? ['label' => 'Listed', 'date' => $market->created_at->format('d M Y')]
+                : null,
+        ]));
 
         $specs = array_filter([
             'grade' => $lot?->grade,
@@ -166,7 +204,7 @@ class MarketService
             'origin' => $market->origin,
             'type' => $market->type,
             'process' => $market->process ?? $batch?->processing_method,
-            'quality_score' => (float) ($market->quality_score ?? 0),
+            'quality_score' => $this->toFloatOrNull($market->quality_score),
             'quantity' => (float) ($market->quantity ?? 0),
             'available_quantity' => (float) ($market->available_quantity ?? 0),
             'unit' => $market->unit,
@@ -186,6 +224,8 @@ class MarketService
             'notes' => $market->description ?: $lot?->description,
             'image' => $market->image,
             'images' => MarketImageResource::collection($market->images)->resolve(),
+            'lot_image' => $lot?->image ? Storage::disk('public')->url($lot->image) : null,
+            'lot_images' => $lot ? LotImageResource::collection($lot->images)->resolve() : [],
             'seller_name' => $market->user?->name,
             'created_at' => optional($market->created_at)?->toDateTimeString(),
             'specs' => $specs,
@@ -194,6 +234,17 @@ class MarketService
             'price_delta_pct' => $priceDeltaPct,
             'seller_active_listings' => $sellerActiveListings,
             'is_traceable' => $market->lot_id !== null,
+            'farm' => $primaryFarm ? [
+                'name' => $primaryFarm['name'],
+                'district' => $primaryFarm['district'],
+                'region' => $primaryFarm['region'],
+                'country' => $primaryFarm['country'],
+                'latitude' => $primaryFarm['latitude'],
+                'longitude' => $primaryFarm['longitude'],
+            ] : null,
+            'farmer_count' => $farmerCount ?: null,
+            'harvest_season' => $primaryCollection['harvest_season'] ?? null,
+            'supply_chain' => $supplyChain ?: null,
         ];
     }
 

@@ -116,12 +116,12 @@ class CheckoutService
         if ($cartable instanceof Market) {
             return [
                 'seller_id' => $cartable->user_id,
-                'name' => $cartable->name ?? $cartable->lot_code,
-                'crop_type' => $cartable->type,
-                'variety' => $cartable->name,
+                'name' => $cartable->title ?? $cartable->lot_code,
+                'crop_type' => $cartable->type ?: 'Coffee',
+                'variety' => $cartable->title ?? $cartable->lot_code,
                 'grade' => $cartable->process,
-                'available_quantity' => (float) $cartable->quantity,
-                'unit' => 'kg',
+                'available_quantity' => (float) $cartable->available_quantity,
+                'unit' => $cartable->unit ?? 'kg',
             ];
         }
 
@@ -145,9 +145,9 @@ class CheckoutService
     private function decrementStock(Market|AgriculturalInput $cartable, int $quantity): void
     {
         if ($cartable instanceof Market) {
-            $cartable->decrement('quantity', $quantity);
+            $cartable->decrement('available_quantity', $quantity);
 
-            if ($cartable->fresh()->quantity <= 0) {
+            if ($cartable->fresh()->available_quantity <= 0) {
                 $cartable->update(['status' => 'sold']);
             }
 

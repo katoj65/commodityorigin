@@ -14,7 +14,6 @@ use App\Models\Market;
 use App\Models\MarketImage;
 use App\Services\BuyService;
 use App\Services\CalendarService;
-use App\Services\CartService;
 use App\Services\CountryService;
 use App\Services\ExchangeRateService;
 use App\Services\ForecastService;
@@ -38,7 +37,6 @@ class MarketController extends Controller
         private readonly OrderService $orders,
         private readonly ForecastService $forecasts,
         private readonly CountryService $countries,
-        private readonly CartService $cart,
         private readonly MarketImageService $marketImages,
     ) {
     }
@@ -159,13 +157,10 @@ class MarketController extends Controller
     /**
      * Display a market listing's product profile.
      */
-    public function show(Request $request, Market $market): Response
+    public function show(Market $market): Response
     {
         return Inertia::render('Market/ProductProfile', [
             'item' => $this->market->show($market),
-            'cartQuantity' => $this->cart->quantityFor($request->user()->id, 'market', $market->id),
-            'canManage' => Gate::allows('update', $market),
-            'maxImages' => MarketImageService::MAX_IMAGES,
         ]);
     }
 
