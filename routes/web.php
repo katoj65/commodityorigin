@@ -370,6 +370,10 @@ Route::middleware([
     Route::prefix('store')->name('store.')->group(function () {
         Route::get('/', [StoreController::class, 'show'])->name('show');
         Route::get('/market', [StoreController::class, 'market'])->name('market');
+        Route::get('/collections', [StoreController::class, 'collections'])->name('collections');
+        Route::get('/batches', [StoreController::class, 'batches'])->name('batches');
+        Route::get('/lots', [StoreController::class, 'lots'])->name('lots');
+        Route::get('/tokenised', [StoreController::class, 'tokenised'])->name('tokenised');
         // Re-checks the caller's own account password, so it's throttled
         // the same way the real login form is.
         Route::post('/', [StoreController::class, 'save'])->middleware('throttle:6,1')->name('save');

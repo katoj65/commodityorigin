@@ -41,79 +41,132 @@ class StoreController extends Controller
 
     /**
      * Display the authenticated user's store — a registration prompt if
-     * they don't have one, a pending/rejected notice while awaiting admin
-     * verification, or its item inventory once verified. Admins also see
-     * every store awaiting review here.
+     * they don't have one, or a pending/rejected notice while awaiting
+     * admin verification. Once verified, there's nothing left for this
+     * gate page to show, so it hands off straight to the inventory's
+     * default tab (Farm Collections). Admins also see every store
+     * awaiting review here, regardless of their own store's status.
      */
-    public function show(Request $request): Response
+    public function show(Request $request): Response|RedirectResponse
     {
         $store = $this->stores->forUser($request->user()->id);
-        $userId = $request->user()->id;
-        $verified = (bool) $store?->isVerified();
+
+        if ($store?->isVerified()) {
+            return redirect()->route('store.collections');
+        }
 
         return Inertia::render('Store/StorePage', [
             ...$this->headerContext($request, $store),
-            'farmCollections' => $verified ? FarmCollectionResource::collection(
-                FarmCollection::query()
-                    ->where('user_id', $userId)
-                    ->with('farm')
-                    ->latest('collection_date')
-                    ->get()
-            )->resolve() : [],
-            'batches' => $verified ? BatchResource::collection(
-                Batch::query()->where('user_id', $userId)->latest()->get()
-            )->resolve() : [],
-            'lots' => $verified ? LotResource::collection(
-                Lot::query()->where('user_id', $userId)->with('lotBatches.batch')->latest()->get()
-            )->resolve() : [],
-            'processOptions' => $verified ? ProcessingMetadata::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->pluck('name')
-                : [],
-            'dryingMethodOptions' => $verified ? DryingMethodMetadata::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->pluck('name')
-                : [],
-            'millingOptions' => $verified ? MillingMetadata::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->pluck('name')
-                : [],
-            'coffeeTypeOptions' => $verified ? CropVarietyMetadata::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->pluck('name')
-                : [],
-            'harvestSeasonOptions' => $verified ? SeasonMetadata::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->pluck('name')
-                : [],
-            'coffeeGradeOptions' => $verified ? $this->coffeeGrades->activeOptions()->pluck('name')->all() : [],
-            'packagingTypeOptions' => $verified ? ['GrainPro', 'Jute Only', 'Vacuum'] : [],
-            'originOptions' => $verified ? $this->countries->coffeeProducers()->pluck('name')->all() : [],
-            'currencyOptions' => $verified ? Currency::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('code')
-                ->pluck('code')
-                : [],
-            // The currency's own real-world country/union, for a "USD —
-            // United States" style label on the New Lot form's currency
-            // dropdown.
-            'currencyCountries' => $verified ? Currency::query()->pluck('country', 'code') : [],
             'isAdmin' => $request->user()->isAdmin(),
             'pendingStores' => $request->user()->isAdmin()
                 ? StoreResource::collection($this->stores->pending())->resolve()
                 : [],
         ]);
+    }
+
+    /**
+     * The four inventory tabs, now split into their own full pages —
+     * Farm Collections, Batches, Lots, and Tokenised Lots — all sharing
+     * the same StoreInventoryLayout shell (hero, KPI snapshot, tab nav,
+     * quick-transfer rail) and therefore the same full dataset, since the
+     * KPI snapshot on every tab summarizes all four collections at once.
+     */
+    public function collections(Request $request): Response|RedirectResponse
+    {
+        return $this->renderInventoryTab($request, 'Store/FarmCollections');
+    }
+
+    public function batches(Request $request): Response|RedirectResponse
+    {
+        return $this->renderInventoryTab($request, 'Store/Batches');
+    }
+
+    public function lots(Request $request): Response|RedirectResponse
+    {
+        return $this->renderInventoryTab($request, 'Store/Lots');
+    }
+
+    public function tokenised(Request $request): Response|RedirectResponse
+    {
+        return $this->renderInventoryTab($request, 'Store/TokenisedLots');
+    }
+
+    private function renderInventoryTab(Request $request, string $component): Response|RedirectResponse
+    {
+        $store = $this->stores->forUser($request->user()->id);
+
+        if (! $store?->isVerified()) {
+            return redirect()->route('store.show');
+        }
+
+        return Inertia::render($component, [
+            ...$this->headerContext($request, $store),
+            ...$this->inventoryContext($request->user()->id),
+        ]);
+    }
+
+    /**
+     * The data every inventory tab page needs — the three collections
+     * themselves (each tab lists one, but the shared KPI snapshot totals
+     * all three) plus every option list the "Register New ▾" modals need,
+     * since that dropdown lives in the shared layout, not any one tab.
+     *
+     * @return array<string, mixed>
+     */
+    private function inventoryContext(int $userId): array
+    {
+        return [
+            'farmCollections' => FarmCollectionResource::collection(
+                FarmCollection::query()
+                    ->where('user_id', $userId)
+                    ->with('farm')
+                    ->latest('collection_date')
+                    ->get()
+            )->resolve(),
+            'batches' => BatchResource::collection(
+                Batch::query()->where('user_id', $userId)->latest()->get()
+            )->resolve(),
+            'lots' => LotResource::collection(
+                Lot::query()->where('user_id', $userId)->with(['lotBatches.batch', 'blockchain'])->latest()->get()
+            )->resolve(),
+            'processOptions' => ProcessingMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'dryingMethodOptions' => DryingMethodMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'millingOptions' => MillingMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'coffeeTypeOptions' => CropVarietyMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'harvestSeasonOptions' => SeasonMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'coffeeGradeOptions' => $this->coffeeGrades->activeOptions()->pluck('name')->all(),
+            'packagingTypeOptions' => ['GrainPro', 'Jute Only', 'Vacuum'],
+            'originOptions' => $this->countries->coffeeProducers()->pluck('name')->all(),
+            'currencyOptions' => Currency::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('code')
+                ->pluck('code'),
+            // The currency's own real-world country/union, for a "USD —
+            // United States" style label on the New Lot form's currency
+            // dropdown.
+            'currencyCountries' => Currency::query()->pluck('country', 'code'),
+        ];
     }
 
     /**

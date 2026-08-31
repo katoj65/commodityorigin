@@ -58,7 +58,7 @@ function deleteCollection() {
             if (response.type !== 'opaqueredirect' && !response.ok) {
                 throw new Error(`Unexpected response: ${response.status}`);
             }
-            router.visit(route('store.show'));
+            router.visit(route('store.collections'));
             ElNotification({ title: 'Collection Deleted', message: 'The farm collection was removed.', type: 'success', duration: 3200, offset: 84 });
         })
         .catch(() => {
@@ -151,28 +151,36 @@ const deleteMessage = computed(() => `Are you sure you want to delete this colle
 
             <div class="fcp-stat-grid">
                 <div class="fcp-stat">
-                    <div class="fcp-stat__icon fcp-stat__icon--a"><el-icon><Box /></el-icon></div>
-                    <div class="fcp-stat__label">Quantity</div>
+                    <div class="fcp-stat__head">
+                        <div class="fcp-stat__icon fcp-stat__icon--a"><el-icon><Box /></el-icon></div>
+                        <div class="fcp-stat__label">Quantity</div>
+                    </div>
                     <div class="fcp-stat__value">{{ Number(collection.quantity || 0).toLocaleString() }} <span class="fcp-stat__unit">{{ collection.unit || '' }}</span></div>
                     <div class="fcp-stat__caption">Recorded at intake</div>
                 </div>
                 <div class="fcp-stat">
-                    <div class="fcp-stat__icon fcp-stat__icon--b"><el-icon><Coin /></el-icon></div>
-                    <div class="fcp-stat__label">Price / Unit</div>
+                    <div class="fcp-stat__head">
+                        <div class="fcp-stat__icon fcp-stat__icon--b"><el-icon><Coin /></el-icon></div>
+                        <div class="fcp-stat__label">Price / Unit</div>
+                    </div>
                     <div class="fcp-stat__value">{{ formatMoney(collection.collection_price, collection.currency) }}</div>
                     <div v-if="collection.unit" class="fcp-stat__caption">per {{ collection.unit }}</div>
                 </div>
                 <div class="fcp-stat">
-                    <div class="fcp-stat__icon" :class="hasDefects ? 'fcp-stat__icon--warn' : 'fcp-stat__icon--good'"><el-icon><WarningFilled /></el-icon></div>
-                    <div class="fcp-stat__label">Defects</div>
+                    <div class="fcp-stat__head">
+                        <div class="fcp-stat__icon" :class="hasDefects ? 'fcp-stat__icon--warn' : 'fcp-stat__icon--good'"><el-icon><WarningFilled /></el-icon></div>
+                        <div class="fcp-stat__label">Defects</div>
+                    </div>
                     <div class="fcp-stat__value">{{ collection.initial_defects ?? '—' }}</div>
                     <span v-if="defectsKnown" class="fcp-stat__pill" :class="hasDefects ? 'fcp-stat__pill--warn' : 'fcp-stat__pill--good'">
                         {{ hasDefects ? 'Flagged' : 'Clean' }}
                     </span>
                 </div>
                 <div class="fcp-stat">
-                    <div class="fcp-stat__icon fcp-stat__icon--c"><el-icon><Medal /></el-icon></div>
-                    <div class="fcp-stat__label">Quality Score</div>
+                    <div class="fcp-stat__head">
+                        <div class="fcp-stat__icon fcp-stat__icon--c"><el-icon><Medal /></el-icon></div>
+                        <div class="fcp-stat__label">Quality Score</div>
+                    </div>
                     <div class="fcp-stat__value">{{ collection.initial_quality_score ?? '—' }} <span v-if="qualityScoreKnown" class="fcp-stat__unit">/100</span></div>
                 </div>
             </div>
@@ -413,22 +421,23 @@ const deleteMessage = computed(() => `Are you sure you want to delete this colle
     transition: border-color .15s ease, box-shadow .15s ease;
 }
 .fcp-stat:hover { border-color: color-mix(in srgb, var(--on-surface) 18%, var(--card-border)); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04); }
+.fcp-stat__head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .fcp-stat__icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 14px;
-    font-size: 16px;
+    flex-shrink: 0;
+    font-size: 13px;
 }
 .fcp-stat__icon--a { background: color-mix(in srgb, var(--primary) 7%, var(--surface-container-lowest)); color: var(--primary); }
 .fcp-stat__icon--b { background: color-mix(in srgb, var(--secondary-container) 55%, var(--surface-container-lowest)); color: var(--on-secondary-container); }
 .fcp-stat__icon--c { background: #EEF2FF; color: #4338CA; }
 .fcp-stat__icon--good { background: color-mix(in srgb, var(--secondary-container) 55%, var(--surface-container-lowest)); color: var(--on-secondary-container); }
 .fcp-stat__icon--warn { background: #fef3c7; color: #92400e; }
-.fcp-stat__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-variant); margin-bottom: 6px; }
+.fcp-stat__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-variant); }
 .fcp-stat__value { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; color: var(--on-surface); font-variant-numeric: tabular-nums; line-height: 1.2; }
 .fcp-stat__unit { font-size: 13px; font-weight: 600; color: var(--on-surface-variant); }
 .fcp-stat__caption { font-size: 11.5px; color: var(--on-surface-variant); margin-top: 7px; }
