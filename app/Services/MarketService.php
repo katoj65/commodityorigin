@@ -32,6 +32,9 @@ class MarketService
     {
         return Market::query()
             ->where('status', 'live')
+            // Market::getImageAttribute() reads through to the lot's own
+            // cover/gallery photo — eager-load both so that doesn't N+1.
+            ->with('lot.images')
             ->orderByDesc('created_at')
             ->get();
     }
@@ -81,6 +84,7 @@ class MarketService
     {
         return $this->query()
             ->where('status', 'live')
+            ->with('lot.images')
             ->when($filters['type'] ?? null, fn (Builder $q, string $type) => $q->where('metadata->type', $type))
             ->when($filters['origin'] ?? null, fn (Builder $q, string $origin) => $q->where('metadata->origin', $origin))
             ->when($filters['process'] ?? null, fn (Builder $q, string $process) => $q->where('metadata->process', $process))

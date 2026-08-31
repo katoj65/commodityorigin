@@ -71,6 +71,77 @@ class MarketRestructureTest extends TestCase
         $this->assertSame($lot->lot_number, $market->lot_code);
     }
 
+    public function test_image_accessor_prefers_the_lots_own_photo_over_the_metadata_placeholder(): void
+    {
+        $user = User::factory()->create();
+
+        // A lot with its own cover photo — the market's image must be
+        // that real photo, not the metadata placeholder.
+        $lotWithCover = Lot::query()->create([
+            'user_id' => $user->id,
+            'lot_number' => 'LOT-TEST-'.strtoupper(Str::random(6)),
+            'process' => 'Washed',
+            'grade' => 'A1',
+            'quantity_bags' => 10,
+            'bag_weight_kg' => 60,
+            'image' => 'lot-images/cover.jpg',
+        ]);
+        $marketWithCover = Market::query()->create([
+            'lot_id' => $lotWithCover->id,
+            'title' => 'Real Photo Listing',
+            'quantity' => 100,
+            'price_per_unit' => 5,
+            'metadata' => ['image' => 'markets/placeholder.jpg'],
+        ]);
+        $this->assertSame('lot-images/cover.jpg', $marketWithCover->image);
+
+        // A lot with no cover but a gallery photo — falls back to the
+        // first gallery photo, still real, still not the placeholder.
+        $lotWithGallery = Lot::query()->create([
+            'user_id' => $user->id,
+            'lot_number' => 'LOT-TEST-'.strtoupper(Str::random(6)),
+            'process' => 'Washed',
+            'grade' => 'A1',
+            'quantity_bags' => 10,
+            'bag_weight_kg' => 60,
+        ]);
+        $lotWithGallery->images()->create(['image' => 'lot-images/gallery-1.jpg', 'position' => 0]);
+        $marketWithGallery = Market::query()->create([
+            'lot_id' => $lotWithGallery->id,
+            'title' => 'Gallery Photo Listing',
+            'quantity' => 100,
+            'price_per_unit' => 5,
+            'metadata' => ['image' => 'markets/placeholder.jpg'],
+        ]);
+        $this->assertSame('lot-images/gallery-1.jpg', $marketWithGallery->image);
+
+        // A lot with no photos of its own — falls back to the metadata
+        // placeholder, same as before.
+        $lotWithNoPhoto = Lot::query()->create([
+            'user_id' => $user->id,
+            'lot_number' => 'LOT-TEST-'.strtoupper(Str::random(6)),
+            'process' => 'Washed',
+            'grade' => 'A1',
+            'quantity_bags' => 10,
+            'bag_weight_kg' => 60,
+        ]);
+        $marketWithNoPhoto = Market::query()->create([
+            'lot_id' => $lotWithNoPhoto->id,
+            'title' => 'Placeholder Listing',
+            'quantity' => 100,
+            'price_per_unit' => 5,
+            'metadata' => ['image' => 'markets/placeholder.jpg'],
+        ]);
+        $this->assertSame('markets/placeholder.jpg', $marketWithNoPhoto->image);
+
+        // The market grid / filtered results shape their output the same
+        // way, and both eager-load lot.images to avoid N+1s.
+        $gridImages = collect(app(MarketService::class)->marketPageListing())->pluck('image', 'name');
+        $this->assertSame('lot-images/cover.jpg', $gridImages['Real Photo Listing']);
+        $this->assertSame('lot-images/gallery-1.jpg', $gridImages['Gallery Photo Listing']);
+        $this->assertSame('markets/placeholder.jpg', $gridImages['Placeholder Listing']);
+    }
+
     public function test_publishing_a_lot_creates_a_market_with_the_new_schema(): void
     {
         $creator = User::factory()->create();

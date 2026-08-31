@@ -127,8 +127,18 @@ class Market extends Model
         return $this->metadata['target_market'] ?? null;
     }
 
+    /**
+     * The listing's cover photo — the real lot's own cover image (or, if
+     * it has none of those but does have gallery photos, the first one)
+     * takes priority, so a lot-backed listing shows a real coffee photo
+     * instead of the old generic metadata placeholder. Falls back to
+     * metadata['image'] only when there's no lot, or the lot has no
+     * photos of its own at all.
+     */
     public function getImageAttribute(): ?string
     {
-        return $this->metadata['image'] ?? null;
+        return $this->lot?->image
+            ?? $this->lot?->images?->first()?->image
+            ?? $this->metadata['image'] ?? null;
     }
 }

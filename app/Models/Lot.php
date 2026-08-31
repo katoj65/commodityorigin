@@ -73,7 +73,6 @@ class Lot extends Model
         'year_of_harvest' => 'integer',
         'moisture' => 'decimal:2',
         'defects_percentage' => 'decimal:2',
-        'altitude' => 'decimal:2',
     ];
 
     /**
