@@ -7,15 +7,19 @@ use App\Http\Resources\ClimateZoneMetadataResource;
 use App\Http\Resources\FarmCollectionResource;
 use App\Http\Resources\FarmDocumentResource;
 use App\Http\Resources\FarmResource;
+use App\Http\Resources\FarmSustainabilityPracticeResource;
 use App\Http\Resources\SoilMetadataResource;
 use App\Http\Resources\WeatherForecastResource;
 use App\Models\Farm;
 use App\Models\FarmCollection;
 use App\Models\FarmDocument;
+use App\Models\FarmSustainabilityPractice;
+use App\Models\SustainabilityPracticesMetadata;
 use App\Services\ClimateZoneMetadataService;
 use App\Services\FarmCollectionService;
 use App\Services\FarmDocumentService;
 use App\Services\FarmService;
+use App\Services\FarmSustainabilityPracticeService;
 use App\Services\SoilMetadataService;
 use App\Services\WeatherForecastService;
 use Illuminate\Http\JsonResponse;
@@ -35,6 +39,7 @@ class FarmController extends Controller
         private readonly SoilMetadataService $soils,
         private readonly ClimateZoneMetadataService $climateZones,
         private readonly FarmCollectionService $collections,
+        private readonly FarmSustainabilityPracticeService $sustainabilityPractices,
     ) {
     }
 
@@ -163,6 +168,16 @@ class FarmController extends Controller
             'collections' => FarmCollectionResource::collection($farm->collections)->resolve(),
             'collectionUnitOptions' => $this->collections->unitOptions(),
             'collectionPaymentStatusOptions' => $this->collections->paymentStatusOptions(),
+            'sustainabilityPractices' => FarmSustainabilityPracticeResource::collection($this->sustainabilityPractices->forFarm($farm))->resolve(),
+            'sustainabilityPracticeOptions' => SustainabilityPracticesMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name'])
+                ->map(fn (SustainabilityPracticesMetadata $option): array => [
+                    'slug' => $option->slug,
+                    'name' => $option->name,
+                ]),
         ]);
     }
 
@@ -324,6 +339,41 @@ class FarmController extends Controller
         $this->documents->delete($document);
 
         return back()->with('success', 'Document deleted successfully.');
+    }
+
+    /**
+     * Record a sustainability practice against this farm. Creator only.
+     */
+    public function storeSustainabilityPractice(Request $request, Farm $farm): RedirectResponse
+    {
+        Gate::authorize('update', $farm);
+
+        $validated = $request->validate([
+            'practice' => [
+                'required',
+                'string',
+                Rule::exists('sustainability_practices_metadata', 'slug')->where('is_active', true),
+            ],
+            'description' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $this->sustainabilityPractices->store($farm, $validated['practice'], $validated['description'] ?? null, $request->user()->id);
+
+        return back()->with('success', 'Sustainability practice recorded.');
+    }
+
+    /**
+     * Remove a sustainability practice recorded against this farm.
+     * Creator only.
+     */
+    public function destroySustainabilityPractice(Farm $farm, FarmSustainabilityPractice $practice): RedirectResponse
+    {
+        Gate::authorize('update', $farm);
+        abort_unless((int) $practice->farm_id === (int) $farm->id, 404);
+
+        $this->sustainabilityPractices->delete($practice);
+
+        return back()->with('success', 'Sustainability practice removed.');
     }
 
     /**

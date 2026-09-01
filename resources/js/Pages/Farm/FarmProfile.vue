@@ -4,6 +4,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import AddFarmSustainabilityPracticeModal from '@/Components/Modals/AddFarmSustainabilityPracticeModal.vue';
 import { isGoogleMapsConfigured, renderMap } from '@/services/googleMaps';
 import {
     Box, ChatDotRound, CircleCheckFilled, Coffee, Delete, Document, Download, Edit, Files,
@@ -30,6 +31,8 @@ const props = defineProps({
     collections: { type: Array, default: () => [] },
     collectionUnitOptions: { type: Array, default: () => [] },
     collectionPaymentStatusOptions: { type: Array, default: () => [] },
+    sustainabilityPractices: { type: Array, default: () => [] },
+    sustainabilityPracticeOptions: { type: Array, default: () => [] },
 });
 
 /* ── Real display computed — every value below comes straight from a
@@ -64,6 +67,41 @@ const farmerName = computed(() => props.farm.user?.full_name || [props.farm.user
    readable copy from the linked records' own real fields; nothing here
    is invented per-farm. ───────────────────────────────────────────────── */
 const certificationList = computed(() => props.farm.certifications || []);
+
+/* ── Sustainability practices — slugs resolved to their metadata display
+   name; anything not found (a retired slug) falls back to a titleized
+   version of the slug itself rather than disappearing. ────────────────── */
+const practiceDialogOpen = ref(false);
+
+function practiceLabel(slug) {
+    const match = props.sustainabilityPracticeOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const deletePracticeDialogOpen = ref(false);
+const pendingPractice = ref(null);
+const deletingPractice = ref(false);
+
+function requestDeletePractice(practice) {
+    pendingPractice.value = practice;
+    deletePracticeDialogOpen.value = true;
+}
+
+function confirmDeletePractice() {
+    if (!pendingPractice.value) return;
+    deletingPractice.value = true;
+    router.delete(route('farm.sustainability-practices.destroy', [props.farm.id, pendingPractice.value.id]), {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingPractice.value = false;
+            deletePracticeDialogOpen.value = false;
+            pendingPractice.value = null;
+        },
+    });
+}
+
+const deletePracticeMessage = computed(() => `Remove "${pendingPractice.value ? practiceLabel(pendingPractice.value.practice) : ''}" from this farm's sustainability practices?`);
 
 const waterConservationPercent = computed(() => Math.min(100, props.farm.water_conservation_percentage || 0));
 const carbonSequestrationPercent = computed(() => Math.min(100, ((props.farm.carbon_sequestration || 0) / 20) * 100));
@@ -622,7 +660,25 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                         </div>
 
                         <div class="fp-metric-footer">
-                            <div>
+                            <div class="fp-metric-block">
+                                <div class="fp-metric-block__head">
+                                    <span class="fp-stat-cell__label">Sustainability Practices</span>
+                                    <button v-if="canEdit" type="button" class="fp-chip-add-btn" @click="practiceDialogOpen = true">
+                                        <el-icon :size="12"><Plus /></el-icon> Add
+                                    </button>
+                                </div>
+                                <div v-if="sustainabilityPractices.length" class="fp-chip-row">
+                                    <span v-for="practice in sustainabilityPractices" :key="practice.id" class="fp-chip" :class="{ 'fp-chip--removable': canEdit }" :title="practice.description || ''">
+                                        {{ practiceLabel(practice.practice) }}
+                                        <button v-if="canEdit" type="button" class="fp-chip__remove" aria-label="Remove practice" @click="requestDeletePractice(practice)">
+                                            <el-icon :size="10"><Delete /></el-icon>
+                                        </button>
+                                    </span>
+                                </div>
+                                <span v-else class="fp-muted">None recorded</span>
+                            </div>
+
+                            <div class="fp-metric-block">
                                 <span class="fp-stat-cell__label">Certifications</span>
                                 <div v-if="certificationList.length" class="fp-chip-row">
                                     <span v-for="cert in certificationList" :key="cert.id" class="fp-chip" :title="cert.description || ''">{{ cert.name }}</span>
@@ -1235,6 +1291,24 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
             :loading="deletingDocument"
             @confirm="deleteDocument"
         />
+
+        <AddFarmSustainabilityPracticeModal
+            v-if="canEdit"
+            v-model="practiceDialogOpen"
+            :farm-id="farm.id"
+            :practice-options="sustainabilityPracticeOptions"
+        />
+
+        <ConfirmDialog
+            v-model="deletePracticeDialogOpen"
+            eyebrow="Farm Profile"
+            title="Remove Practice"
+            :message="deletePracticeMessage"
+            confirm-text="Remove Practice"
+            :auto-close="false"
+            :loading="deletingPractice"
+            @confirm="confirmDeletePractice"
+        />
     </DesignPreviewLayout>
 </template>
 
@@ -1367,11 +1441,32 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     margin-top: 18px;
     padding-top: 18px;
     border-top: 1px solid color-mix(in srgb, var(--dp-outline-variant) 25%, transparent);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
+.fp-metric-block__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.fp-metric-block__head .fp-stat-cell__label { margin-bottom: 0; }
+.fp-chip-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border: none;
+    border-radius: 999px;
+    background: var(--dp-surface-container-high);
+    color: var(--dp-on-surface-variant);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.fp-chip-add-btn:hover { background: var(--dp-primary); color: var(--dp-on-primary); }
 .fp-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .fp-chip {
     display: inline-flex;
     align-items: center;
+    gap: 5px;
     padding: 4px 11px;
     border-radius: 999px;
     background: var(--dp-surface-container-high);
@@ -1379,6 +1474,22 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     font-size: 11.5px;
     font-weight: 700;
 }
+.fp-chip--removable { padding-right: 6px; }
+.fp-chip__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: none;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--dp-on-surface-variant) 15%, transparent);
+    color: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s ease, color .15s ease;
+}
+.fp-chip__remove:hover { background: var(--dp-error); color: var(--dp-on-error); }
 
 /* ── Flush-padding table card (Farm Collections) ──────────────────────── */
 .fp-card--flush { padding: 0; overflow: hidden; }

@@ -72,6 +72,8 @@ class DatabaseSeeder extends Seeder
             BatchActivityMetadataSeeder::class,
             FarmCollectionActivityMetadataSeeder::class,
             LotActivityMetadataSeeder::class,
+            SustainabilityPracticesMetadataSeeder::class,
+            FlavorMetadataSeeder::class,
             AgentSeeder::class,
             AgentFunctionSeeder::class,
             ExchangeRateSeeder::class,
