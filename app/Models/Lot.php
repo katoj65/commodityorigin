@@ -6,6 +6,7 @@ use App\Helpers\QrCodeHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -40,6 +41,12 @@ class Lot extends Model
         'price',
         'currency',
         'quality_score',
+        'acidity',
+        'body',
+        'flavor',
+        'aroma',
+        'balance',
+        'aftertaste',
         'packaging_type',
         'status',
         'notes',
@@ -70,6 +77,12 @@ class Lot extends Model
         'bag_weight_kg' => 'decimal:2',
         'price' => 'decimal:2',
         'quality_score' => 'decimal:2',
+        'acidity' => 'decimal:2',
+        'body' => 'decimal:2',
+        'flavor' => 'decimal:2',
+        'aroma' => 'decimal:2',
+        'balance' => 'decimal:2',
+        'aftertaste' => 'decimal:2',
         'year_of_harvest' => 'integer',
         'moisture' => 'decimal:2',
         'defects_percentage' => 'decimal:2',
@@ -158,5 +171,13 @@ class Lot extends Model
     public function images(): HasMany
     {
         return $this->hasMany(LotImage::class)->orderBy('position');
+    }
+
+    /**
+     * Get the cupping flavor notes tagged against this lot.
+     */
+    public function flavors(): BelongsToMany
+    {
+        return $this->belongsToMany(FlavorMetadata::class, 'lot_flavors');
     }
 }

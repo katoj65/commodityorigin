@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CoffeeGrade;
 use App\Models\Country;
 use App\Models\CropVarietyMetadata;
+use App\Models\FlavorMetadata;
 use App\Models\Lot;
 use App\Models\LotImage;
 use App\Models\Market;
@@ -40,6 +41,71 @@ class LotProfileActionsTest extends TestCase
             'notes' => 'Updated after re-grading.',
             'currency' => 'KES',
         ]);
+    }
+
+    public function test_the_creator_can_update_the_lots_cupping_profile(): void
+    {
+        $creator = User::factory()->create();
+        $lot = $this->makeLot($creator);
+
+        $response = $this->actingAs($creator)->patch(route('lot.update', $lot), $this->validPayload([
+            'acidity' => 8.5,
+            'body' => 8.0,
+            'flavor' => 8.25,
+            'aroma' => 8.5,
+            'balance' => 8.0,
+            'aftertaste' => 7.75,
+        ]));
+
+        $response->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('lots', [
+            'id' => $lot->id,
+            'acidity' => 8.5,
+            'body' => 8.0,
+            'flavor' => 8.25,
+            'aroma' => 8.5,
+            'balance' => 8.0,
+            'aftertaste' => 7.75,
+        ]);
+    }
+
+    public function test_the_creator_can_tag_and_retag_the_lots_flavor_notes(): void
+    {
+        $creator = User::factory()->create();
+        $lot = $this->makeLot($creator);
+        $chocolate = FlavorMetadata::query()->create(['slug' => 'chocolate', 'name' => 'Chocolate', 'sort_order' => 1, 'is_active' => true]);
+        $citrus = FlavorMetadata::query()->create(['slug' => 'citrus', 'name' => 'Citrus', 'sort_order' => 2, 'is_active' => true]);
+        $floral = FlavorMetadata::query()->create(['slug' => 'floral', 'name' => 'Floral', 'sort_order' => 3, 'is_active' => true]);
+
+        $this->actingAs($creator)->patch(route('lot.update', $lot), $this->validPayload([
+            'flavor_ids' => [$chocolate->id, $citrus->id],
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertSame([$chocolate->id, $citrus->id], $lot->flavors()->pluck('flavor_metadata.id')->sort()->values()->all());
+
+        // Updating again replaces the set rather than appending to it.
+        $this->actingAs($creator)->patch(route('lot.update', $lot), $this->validPayload([
+            'flavor_ids' => [$floral->id],
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertSame([$floral->id], $lot->flavors()->pluck('flavor_metadata.id')->all());
+    }
+
+    public function test_the_lot_profile_page_exposes_tagged_flavor_notes(): void
+    {
+        $creator = User::factory()->create();
+        $lot = $this->makeLot($creator);
+        $chocolate = FlavorMetadata::query()->create(['slug' => 'chocolate', 'name' => 'Chocolate', 'sort_order' => 1, 'is_active' => true]);
+        $lot->flavors()->sync([$chocolate->id]);
+
+        $this->actingAs($creator)->get(route('lot.show', $lot))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Lot/LotProfile')
+                ->where('lot.flavors.0.name', 'Chocolate')
+                ->has('flavorOptions')
+            );
     }
 
     public function test_a_non_creator_cannot_update_the_lot(): void

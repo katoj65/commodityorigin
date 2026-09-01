@@ -20,6 +20,7 @@ const props = defineProps({
     originOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
+    flavorOptions: { type: Array, default: () => [] },
 });
 
 function goToLot(row) {
@@ -51,6 +52,7 @@ function formatMoney(amount, currency) {
         :origin-options="originOptions"
         :currency-options="currencyOptions"
         :currency-countries="currencyCountries"
+        :flavor-options="flavorOptions"
     >
         <div class="st-table-card">
             <div class="st-list">

@@ -13,6 +13,7 @@ const props = defineProps({
     originOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
+    flavorOptions: { type: Array, default: () => [] },
 });
 
 function currencyLabel(code) {
@@ -48,6 +49,13 @@ function emptyForm() {
         price: '',
         currency: 'USD',
         quality_score: '',
+        acidity: '',
+        body: '',
+        flavor: '',
+        aroma: '',
+        balance: '',
+        aftertaste: '',
+        flavor_ids: [],
         notes: '',
     };
 }
@@ -205,6 +213,43 @@ function submit() {
                         <label class="alm-field__label">Quality Score <small>(optional)</small></label>
                         <el-input-number v-model="form.quality_score" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.quality_score }" />
                         <span v-if="form.errors.quality_score" class="alm-field__error">{{ form.errors.quality_score }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Acidity <small>(optional)</small></label>
+                        <el-input-number v-model="form.acidity" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.acidity }" />
+                        <span v-if="form.errors.acidity" class="alm-field__error">{{ form.errors.acidity }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Body <small>(optional)</small></label>
+                        <el-input-number v-model="form.body" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.body }" />
+                        <span v-if="form.errors.body" class="alm-field__error">{{ form.errors.body }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Flavor <small>(optional)</small></label>
+                        <el-input-number v-model="form.flavor" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.flavor }" />
+                        <span v-if="form.errors.flavor" class="alm-field__error">{{ form.errors.flavor }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Aroma <small>(optional)</small></label>
+                        <el-input-number v-model="form.aroma" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aroma }" />
+                        <span v-if="form.errors.aroma" class="alm-field__error">{{ form.errors.aroma }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Balance <small>(optional)</small></label>
+                        <el-input-number v-model="form.balance" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.balance }" />
+                        <span v-if="form.errors.balance" class="alm-field__error">{{ form.errors.balance }}</span>
+                    </div>
+                    <div class="alm-field">
+                        <label class="alm-field__label">Aftertaste <small>(optional)</small></label>
+                        <el-input-number v-model="form.aftertaste" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aftertaste }" />
+                        <span v-if="form.errors.aftertaste" class="alm-field__error">{{ form.errors.aftertaste }}</span>
+                    </div>
+                    <div class="alm-field alm-field--span2">
+                        <label class="alm-field__label">Flavor Notes <small>(optional)</small></label>
+                        <el-select v-model="form.flavor_ids" multiple filterable placeholder="Select flavor notes" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.flavor_ids }">
+                            <el-option v-for="option in flavorOptions" :key="option.id" :label="option.name" :value="option.id" />
+                        </el-select>
+                        <span v-if="form.errors.flavor_ids" class="alm-field__error">{{ form.errors.flavor_ids }}</span>
                     </div>
                     <div class="alm-field alm-field--span2">
                         <label class="alm-field__label">Description <small>(optional)</small></label>

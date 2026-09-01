@@ -49,6 +49,13 @@ const form = useForm({
     process: props.defaults.process ?? '',
     packaging_type: props.defaults.packaging_type ?? props.options.packaging_types[0] ?? 'GrainPro',
     quality_score: props.defaults.quality_score ?? '',
+    acidity: props.defaults.acidity ?? '',
+    body: props.defaults.body ?? '',
+    flavor: props.defaults.flavor ?? '',
+    aroma: props.defaults.aroma ?? '',
+    balance: props.defaults.balance ?? '',
+    aftertaste: props.defaults.aftertaste ?? '',
+    flavor_ids: props.defaults.flavor_ids ?? [],
     price: props.defaults.price ?? '',
     notes: '',
     submission_intent: 'create',
@@ -401,6 +408,53 @@ const submit = (intent = 'create') => {
                                     <label for="quality_score">Quality score <small>(optional)</small></label>
                                     <el-input id="quality_score" v-model="form.quality_score" class="lot-form-control" type="number" min="0" max="100" step="0.01" placeholder="e.g. 87.5" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.quality_score" />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="lot-form-columns lot-form-columns--spacious">
+                        <div class="lot-column">
+                            <div class="lot-column__title">Cupping Profile <small>(optional)</small></div>
+                            <div class="lot-field-grid">
+                                <div class="lot-field">
+                                    <label for="acidity">Acidity</label>
+                                    <el-input id="acidity" v-model="form.acidity" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.5" />
+                                    <InputError class="mt-2 text-sm" :message="form.errors.acidity" />
+                                </div>
+                                <div class="lot-field">
+                                    <label for="body">Body</label>
+                                    <el-input id="body" v-model="form.body" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.0" />
+                                    <InputError class="mt-2 text-sm" :message="form.errors.body" />
+                                </div>
+                                <div class="lot-field">
+                                    <label for="flavor">Flavor</label>
+                                    <el-input id="flavor" v-model="form.flavor" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.25" />
+                                    <InputError class="mt-2 text-sm" :message="form.errors.flavor" />
+                                </div>
+                                <div class="lot-field">
+                                    <label for="aroma">Aroma</label>
+                                    <el-input id="aroma" v-model="form.aroma" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.5" />
+                                    <InputError class="mt-2 text-sm" :message="form.errors.aroma" />
+                                </div>
+                                <div class="lot-field">
+                                    <label for="balance">Balance</label>
+                                    <el-input id="balance" v-model="form.balance" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.0" />
+                                    <InputError class="mt-2 text-sm" :message="form.errors.balance" />
+                                </div>
+                                <div class="lot-field">
+                                    <label for="aftertaste">Aftertaste</label>
+                                    <el-input id="aftertaste" v-model="form.aftertaste" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 7.75" />
+                                    <InputError class="mt-2 text-sm" :message="form.errors.aftertaste" />
+                                </div>
+                            </div>
+                            <div class="lot-field-grid lot-field-grid--single">
+                                <div class="lot-field">
+                                    <label for="flavor_ids">Flavor Notes <small>(optional)</small></label>
+                                    <el-select id="flavor_ids" v-model="form.flavor_ids" multiple filterable class="lot-form-control" placeholder="Select flavor notes">
+                                        <el-option v-for="option in props.options.flavors" :key="option.id" :label="option.name" :value="option.id" />
+                                    </el-select>
+                                    <InputError class="mt-2 text-sm" :message="form.errors.flavor_ids" />
                                 </div>
                             </div>
                         </div>

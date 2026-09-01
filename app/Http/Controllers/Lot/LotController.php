@@ -9,6 +9,7 @@ use App\Http\Resources\LotActivityResource;
 use App\Http\Resources\LotResource;
 use App\Models\Batch;
 use App\Models\Currency;
+use App\Models\FlavorMetadata;
 use App\Models\Lot;
 use App\Models\LotActivity;
 use App\Models\LotActivityMetadata;
@@ -100,6 +101,14 @@ class LotController extends Controller
             'price' => ['nullable', 'numeric', 'min:0'],
             'currency' => ['nullable', 'string', 'size:3'],
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
+            'acidity' => ['nullable', 'numeric', 'between:0,10'],
+            'body' => ['nullable', 'numeric', 'between:0,10'],
+            'flavor' => ['nullable', 'numeric', 'between:0,10'],
+            'aroma' => ['nullable', 'numeric', 'between:0,10'],
+            'balance' => ['nullable', 'numeric', 'between:0,10'],
+            'aftertaste' => ['nullable', 'numeric', 'between:0,10'],
+            'flavor_ids' => ['nullable', 'array'],
+            'flavor_ids.*' => ['integer', 'exists:flavor_metadata,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -170,11 +179,22 @@ class LotController extends Controller
                 'process' => '',
                 'packaging_type' => '',
                 'quality_score' => $qualityScore,
+                'acidity' => '',
+                'body' => '',
+                'flavor' => '',
+                'aroma' => '',
+                'balance' => '',
+                'aftertaste' => '',
+                'flavor_ids' => [],
                 'price' => '',
             ],
             'options' => [
                 'packaging_types' => ['GrainPro', 'Jute Only', 'Vacuum'],
                 'processing_methods' => $processingMethods,
+                'flavors' => $this->lots->activeFlavorOptions()->map(fn (FlavorMetadata $flavor): array => [
+                    'id' => $flavor->id,
+                    'name' => $flavor->name,
+                ]),
             ],
             'canSubmit' => (bool) $sourceFarm,
             'submissionBlockedMessage' => $sourceFarm
@@ -207,6 +227,14 @@ class LotController extends Controller
             ],
             'packaging_type' => ['required', 'string', Rule::in(['GrainPro', 'Jute Only', 'Vacuum'])],
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
+            'acidity' => ['nullable', 'numeric', 'between:0,10'],
+            'body' => ['nullable', 'numeric', 'between:0,10'],
+            'flavor' => ['nullable', 'numeric', 'between:0,10'],
+            'aroma' => ['nullable', 'numeric', 'between:0,10'],
+            'balance' => ['nullable', 'numeric', 'between:0,10'],
+            'aftertaste' => ['nullable', 'numeric', 'between:0,10'],
+            'flavor_ids' => ['nullable', 'array'],
+            'flavor_ids.*' => ['integer', 'exists:flavor_metadata,id'],
             'price' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'submission_intent' => ['nullable', 'string', Rule::in(['draft', 'create', 'create_and_tokenise', 'create_and_list'])],
@@ -236,6 +264,7 @@ class LotController extends Controller
             'user',
             'market',
             'images',
+            'flavors',
         ]);
 
         return Inertia::render('Lot/LotProfile', [
@@ -245,6 +274,10 @@ class LotController extends Controller
             'varietyOptions' => $this->lots->varietyOptions()->pluck('name')->all(),
             'originOptions' => $this->countries->coffeeProducers()->pluck('name')->all(),
             'packagingTypeOptions' => ['GrainPro', 'Jute Only', 'Vacuum'],
+            'flavorOptions' => $this->lots->activeFlavorOptions()->map(fn (FlavorMetadata $flavor): array => [
+                'id' => $flavor->id,
+                'name' => $flavor->name,
+            ]),
             'currencyOptions' => Currency::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')
@@ -311,6 +344,14 @@ class LotController extends Controller
             'price' => ['nullable', 'numeric', 'min:0'],
             'currency' => ['nullable', 'string', 'size:3'],
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
+            'acidity' => ['nullable', 'numeric', 'between:0,10'],
+            'body' => ['nullable', 'numeric', 'between:0,10'],
+            'flavor' => ['nullable', 'numeric', 'between:0,10'],
+            'aroma' => ['nullable', 'numeric', 'between:0,10'],
+            'balance' => ['nullable', 'numeric', 'between:0,10'],
+            'aftertaste' => ['nullable', 'numeric', 'between:0,10'],
+            'flavor_ids' => ['nullable', 'array'],
+            'flavor_ids.*' => ['integer', 'exists:flavor_metadata,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -476,6 +517,7 @@ class LotController extends Controller
             'lotBatches.batch.user',
             'user',
             'blockchain',
+            'flavors',
         ]);
 
         return Inertia::render('Lot/LotTraceability', $this->lots->traceabilityData($lot));

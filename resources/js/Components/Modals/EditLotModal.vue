@@ -2,7 +2,7 @@
 import { computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import { Close, Document, Ticket, WarningFilled } from '@element-plus/icons-vue';
+import { Close, Document, Star, Ticket, WarningFilled } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -14,6 +14,7 @@ const props = defineProps({
     packagingTypeOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
+    flavorOptions: { type: Array, default: () => [] },
 });
 
 function currencyLabel(code) {
@@ -48,6 +49,13 @@ const form = useForm({
     price: '',
     currency: 'USD',
     quality_score: '',
+    acidity: '',
+    body: '',
+    flavor: '',
+    aroma: '',
+    balance: '',
+    aftertaste: '',
+    flavor_ids: [],
     notes: '',
 });
 
@@ -72,6 +80,13 @@ const hydrateForm = () => {
         price: props.lot.price ?? '',
         currency: props.lot.currency ?? 'USD',
         quality_score: props.lot.quality_score ?? '',
+        acidity: props.lot.acidity ?? '',
+        body: props.lot.body ?? '',
+        flavor: props.lot.flavor ?? '',
+        aroma: props.lot.aroma ?? '',
+        balance: props.lot.balance ?? '',
+        aftertaste: props.lot.aftertaste ?? '',
+        flavor_ids: (props.lot.flavors || []).map((f) => f.id),
         notes: props.lot.notes ?? '',
     });
 
@@ -212,6 +227,49 @@ function submit() {
                         <label class="elm-field__label">Quality Score <small>(optional)</small></label>
                         <el-input-number v-model="form.quality_score" :min="0" :max="100" :precision="2" class="elm-input w-100" :class="{ 'elm-input--error': form.errors.quality_score }" />
                         <span v-if="form.errors.quality_score" class="elm-field__error">{{ form.errors.quality_score }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="elm-section">
+                <h3 class="elm-section__title"><el-icon><Star /></el-icon> Cupping Profile</h3>
+                <div class="elm-grid">
+                    <div class="elm-field">
+                        <label class="elm-field__label">Acidity <small>(optional)</small></label>
+                        <el-input-number v-model="form.acidity" :min="0" :max="10" :precision="2" class="elm-input w-100" :class="{ 'elm-input--error': form.errors.acidity }" />
+                        <span v-if="form.errors.acidity" class="elm-field__error">{{ form.errors.acidity }}</span>
+                    </div>
+                    <div class="elm-field">
+                        <label class="elm-field__label">Body <small>(optional)</small></label>
+                        <el-input-number v-model="form.body" :min="0" :max="10" :precision="2" class="elm-input w-100" :class="{ 'elm-input--error': form.errors.body }" />
+                        <span v-if="form.errors.body" class="elm-field__error">{{ form.errors.body }}</span>
+                    </div>
+                    <div class="elm-field">
+                        <label class="elm-field__label">Flavor <small>(optional)</small></label>
+                        <el-input-number v-model="form.flavor" :min="0" :max="10" :precision="2" class="elm-input w-100" :class="{ 'elm-input--error': form.errors.flavor }" />
+                        <span v-if="form.errors.flavor" class="elm-field__error">{{ form.errors.flavor }}</span>
+                    </div>
+                    <div class="elm-field">
+                        <label class="elm-field__label">Aroma <small>(optional)</small></label>
+                        <el-input-number v-model="form.aroma" :min="0" :max="10" :precision="2" class="elm-input w-100" :class="{ 'elm-input--error': form.errors.aroma }" />
+                        <span v-if="form.errors.aroma" class="elm-field__error">{{ form.errors.aroma }}</span>
+                    </div>
+                    <div class="elm-field">
+                        <label class="elm-field__label">Balance <small>(optional)</small></label>
+                        <el-input-number v-model="form.balance" :min="0" :max="10" :precision="2" class="elm-input w-100" :class="{ 'elm-input--error': form.errors.balance }" />
+                        <span v-if="form.errors.balance" class="elm-field__error">{{ form.errors.balance }}</span>
+                    </div>
+                    <div class="elm-field">
+                        <label class="elm-field__label">Aftertaste <small>(optional)</small></label>
+                        <el-input-number v-model="form.aftertaste" :min="0" :max="10" :precision="2" class="elm-input w-100" :class="{ 'elm-input--error': form.errors.aftertaste }" />
+                        <span v-if="form.errors.aftertaste" class="elm-field__error">{{ form.errors.aftertaste }}</span>
+                    </div>
+                    <div class="elm-field elm-field--span2">
+                        <label class="elm-field__label">Flavor Notes <small>(optional)</small></label>
+                        <el-select v-model="form.flavor_ids" multiple filterable placeholder="Select flavor notes" class="elm-input w-100" :class="{ 'elm-input--error': form.errors.flavor_ids }">
+                            <el-option v-for="option in flavorOptions" :key="option.id" :label="option.name" :value="option.id" />
+                        </el-select>
+                        <span v-if="form.errors.flavor_ids" class="elm-field__error">{{ form.errors.flavor_ids }}</span>
                     </div>
                 </div>
             </div>

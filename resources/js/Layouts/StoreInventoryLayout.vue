@@ -36,6 +36,7 @@ const props = defineProps({
     originOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
+    flavorOptions: { type: Array, default: () => [] },
 });
 
 const tokenisedLots = computed(() => props.lots.filter((lot) => lot.blockchain));
@@ -215,6 +216,7 @@ const importResultVisible = ref(Boolean(props.importResult));
             :origin-options="originOptions"
             :currency-options="currencyOptions"
             :currency-countries="currencyCountries"
+            :flavor-options="flavorOptions"
         />
     </StoreLayout>
 </template>

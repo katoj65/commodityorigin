@@ -9,6 +9,7 @@ use App\Models\Batch;
 use App\Models\CropVarietyMetadata;
 use App\Models\Farm;
 use App\Models\Farmer;
+use App\Models\FlavorMetadata;
 use App\Models\Lot;
 use App\Models\LotBatch;
 use App\Models\LotRequest;
@@ -44,11 +45,16 @@ class LotService
      * generated server-side; linking to a batch happens afterward, from
      * the lot profile page, via attachBatch(). Every lot created here gets
      * its traceability QR code and its blockchain commit before returning.
+     * `flavor_ids`, if present, is synced onto the lot's flavor-notes
+     * many-to-many relation rather than mass-assigned as a plain column.
      *
      * @param  array<string, mixed>  $data
      */
     public function create(array $data, ?UploadedFile $image, int $userId): Lot
     {
+        $flavorIds = $data['flavor_ids'] ?? null;
+        unset($data['flavor_ids']);
+
         $lot = Lot::query()->create([
             ...$data,
             'lot_number' => $this->generateLotNumber(),
@@ -57,6 +63,10 @@ class LotService
             'user_id' => $userId,
             'status' => 'draft',
         ]);
+
+        if ($flavorIds !== null) {
+            $lot->flavors()->sync($flavorIds);
+        }
 
         $this->blockchain->commitLot($lot, $userId);
 
@@ -81,15 +91,24 @@ class LotService
     /**
      * Update a lot from validated payload data. A new image replaces the
      * existing one; omitting it leaves the current image untouched.
+     * `flavor_ids`, if present, is synced onto the lot's flavor-notes
+     * many-to-many relation rather than mass-assigned as a plain column.
      *
      * @param  array<string, mixed>  $validated
      */
     public function update(Lot $lot, array $validated, ?UploadedFile $image = null): Lot
     {
+        $flavorIds = $validated['flavor_ids'] ?? null;
+        unset($validated['flavor_ids']);
+
         $lot->update([
             ...$validated,
             'image' => $image ? ImageUploadHelper::store($image, 'lots') : $lot->image,
         ]);
+
+        if ($flavorIds !== null) {
+            $lot->flavors()->sync($flavorIds);
+        }
 
         return $lot;
     }
@@ -221,9 +240,19 @@ class LotService
             'net_weight_kg' => round((float) $data['allocation_kg'], 2),
             'price' => $data['price'] ?? null,
             'quality_score' => $data['quality_score'] ?? $batch->cup_score,
+            'acidity' => $data['acidity'] ?? null,
+            'body' => $data['body'] ?? null,
+            'flavor' => $data['flavor'] ?? null,
+            'aroma' => $data['aroma'] ?? null,
+            'balance' => $data['balance'] ?? null,
+            'aftertaste' => $data['aftertaste'] ?? null,
             'status' => $this->resolveLotStatus($data['submission_intent'] ?? 'create'),
             'notes' => $data['notes'] ?? null,
         ]);
+
+        if (! empty($data['flavor_ids'])) {
+            $lot->flavors()->sync($data['flavor_ids']);
+        }
 
         $this->attachBatch($lot, $batch, $userId);
 
@@ -311,6 +340,18 @@ class LotService
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Active flavor-note options for the lot cupping-profile forms.
+     */
+    public function activeFlavorOptions(): Collection
+    {
+        return FlavorMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'slug', 'name']);
     }
 
     /**
@@ -538,6 +579,13 @@ class LotService
                 'quantity_bags' => $lot->quantity_bags,
                 'bag_weight_kg' => $this->toFloat($lot->bag_weight_kg),
                 'quality_score' => $this->toFloat($lot->quality_score),
+                'acidity' => $this->toFloat($lot->acidity),
+                'body' => $this->toFloat($lot->body),
+                'flavor' => $this->toFloat($lot->flavor),
+                'aroma' => $this->toFloat($lot->aroma),
+                'balance' => $this->toFloat($lot->balance),
+                'aftertaste' => $this->toFloat($lot->aftertaste),
+                'flavors' => $lot->relationLoaded('flavors') ? $lot->flavors->pluck('name')->all() : [],
                 'price' => $this->toFloat($lot->price),
                 'currency' => $lot->currency,
                 'packaging_type' => $lot->packaging_type,

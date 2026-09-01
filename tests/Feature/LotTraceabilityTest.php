@@ -27,6 +27,12 @@ class LotTraceabilityTest extends TestCase
             'defects_percentage' => 2.5,
             'screen' => '16/18',
             'currency' => 'USD',
+            'acidity' => 8.5,
+            'body' => 8.0,
+            'flavor' => 8.25,
+            'aroma' => 8.5,
+            'balance' => 8.0,
+            'aftertaste' => 7.75,
         ]);
 
         $this->actingAs($user)
@@ -42,6 +48,12 @@ class LotTraceabilityTest extends TestCase
                 ->where('lot.defects_percentage', 2.5)
                 ->where('lot.screen', '16/18')
                 ->where('lot.currency', 'USD')
+                ->where('lot.acidity', 8.5)
+                ->where('lot.body', 8)
+                ->where('lot.flavor', 8.25)
+                ->where('lot.aroma', 8.5)
+                ->where('lot.balance', 8)
+                ->where('lot.aftertaste', 7.75)
                 ->where('blockchain', null)
             );
     }

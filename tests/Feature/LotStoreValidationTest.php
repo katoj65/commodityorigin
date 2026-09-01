@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CoffeeGrade;
 use App\Models\Country;
 use App\Models\CropVarietyMetadata;
+use App\Models\FlavorMetadata;
 use App\Models\ProcessingMetadata;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -87,6 +88,67 @@ class LotStoreValidationTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('lots', ['altitude' => null]);
+    }
+
+    public function test_cupping_attributes_are_optional_and_persist_when_given(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('lot.store'), $this->validPayload([
+            'acidity' => 8.5,
+            'body' => 8.0,
+            'flavor' => 8.25,
+            'aroma' => 8.5,
+            'balance' => 8.0,
+            'aftertaste' => 7.75,
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('lots', [
+            'acidity' => 8.5,
+            'body' => 8.0,
+            'flavor' => 8.25,
+            'aroma' => 8.5,
+            'balance' => 8.0,
+            'aftertaste' => 7.75,
+        ]);
+    }
+
+    public function test_cupping_attributes_must_be_within_the_zero_to_ten_scale(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('lot.store'), $this->validPayload(['acidity' => 10.5]));
+
+        $response->assertSessionHasErrors(['acidity']);
+        $this->assertDatabaseCount('lots', 0);
+    }
+
+    public function test_flavor_notes_are_optional_and_persist_when_given(): void
+    {
+        $user = User::factory()->create();
+        $chocolate = FlavorMetadata::query()->create(['slug' => 'chocolate', 'name' => 'Chocolate', 'sort_order' => 1, 'is_active' => true]);
+        $citrus = FlavorMetadata::query()->create(['slug' => 'citrus', 'name' => 'Citrus', 'sort_order' => 2, 'is_active' => true]);
+
+        $response = $this->actingAs($user)->post(route('lot.store'), $this->validPayload([
+            'flavor_ids' => [$chocolate->id, $citrus->id],
+        ]));
+
+        $response->assertSessionHasNoErrors();
+
+        $lot = \App\Models\Lot::query()->firstOrFail();
+        $this->assertSame([$chocolate->id, $citrus->id], $lot->flavors()->pluck('flavor_metadata.id')->sort()->values()->all());
+    }
+
+    public function test_flavor_ids_must_reference_real_flavor_metadata(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('lot.store'), $this->validPayload([
+            'flavor_ids' => [999999],
+        ]));
+
+        $response->assertSessionHasErrors(['flavor_ids.0']);
+        $this->assertDatabaseCount('lots', 0);
     }
 
     public function test_currency_defaults_to_the_column_default_when_omitted(): void

@@ -15,6 +15,7 @@ use App\Models\Lot;
 use App\Models\CropVarietyMetadata;
 use App\Models\Currency;
 use App\Models\DryingMethodMetadata;
+use App\Models\FlavorMetadata;
 use App\Models\MillingMetadata;
 use App\Models\ProcessingMetadata;
 use App\Models\SeasonMetadata;
@@ -166,6 +167,15 @@ class StoreController extends Controller
             // United States" style label on the New Lot form's currency
             // dropdown.
             'currencyCountries' => Currency::query()->pluck('country', 'code'),
+            'flavorOptions' => FlavorMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (FlavorMetadata $flavor): array => [
+                    'id' => $flavor->id,
+                    'name' => $flavor->name,
+                ]),
         ];
     }
 

@@ -34,6 +34,7 @@ import {
     Position,
     Promotion,
     SoldOut,
+    Star,
     Ticket,
     Trophy,
     User,
@@ -48,6 +49,7 @@ const props = defineProps({
     packagingTypeOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
+    flavorOptions: { type: Array, default: () => [] },
     activities: { type: Array, default: () => [] },
     activityOptions: { type: Array, default: () => [] },
 });
@@ -214,6 +216,12 @@ const qualityLabel = computed(() => {
     if (!qualityKnown.value) return 'Not yet graded';
     return Number(props.lot.quality_score) >= 80 ? 'Specialty grade' : 'Below specialty';
 });
+
+/* ── Cupping Profile tile only renders once at least one SCA attribute
+   or flavor note has been recorded, rather than showing six "Not
+   recorded" rows on every lot. ─────────────────────────────────────── */
+const hasCuppingProfile = computed(() => ['acidity', 'body', 'flavor', 'aroma', 'balance', 'aftertaste']
+    .some((key) => props.lot[key] !== null && props.lot[key] !== undefined) || (props.lot.flavors?.length > 0));
 
 function batchStatusTone(status) {
     const s = (status || '').toLowerCase();
@@ -428,6 +436,61 @@ const fmtDateTime = (value) => {
                                 <span class="lp-spec__label">Bag Weight</span>
                                 <strong class="lp-spec__value lp-mono">{{ fmtNumber(lot.bag_weight_kg) }} kg</strong>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cupping Profile -->
+                <div v-if="hasCuppingProfile" class="lp-tile lp-tile--specs">
+                    <h2 class="lp-tile__title"><el-icon><Star /></el-icon> Cupping Profile</h2>
+                    <div class="lp-spec-grid">
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Acidity</span>
+                                <strong class="lp-spec__value lp-mono">{{ lot.acidity !== null && lot.acidity !== undefined ? fmtNumber(lot.acidity) : 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Body</span>
+                                <strong class="lp-spec__value lp-mono">{{ lot.body !== null && lot.body !== undefined ? fmtNumber(lot.body) : 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Flavor</span>
+                                <strong class="lp-spec__value lp-mono">{{ lot.flavor !== null && lot.flavor !== undefined ? fmtNumber(lot.flavor) : 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Aroma</span>
+                                <strong class="lp-spec__value lp-mono">{{ lot.aroma !== null && lot.aroma !== undefined ? fmtNumber(lot.aroma) : 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Balance</span>
+                                <strong class="lp-spec__value lp-mono">{{ lot.balance !== null && lot.balance !== undefined ? fmtNumber(lot.balance) : 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Aftertaste</span>
+                                <strong class="lp-spec__value lp-mono">{{ lot.aftertaste !== null && lot.aftertaste !== undefined ? fmtNumber(lot.aftertaste) : 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="lot.flavors?.length" class="lp-flavor-notes">
+                        <span class="lp-spec__label">Flavor Notes</span>
+                        <div class="lp-flavor-notes__chips">
+                            <span v-for="flavor in lot.flavors" :key="flavor.id" class="lp-event-pill">{{ flavor.name }}</span>
                         </div>
                     </div>
                 </div>
@@ -659,6 +722,7 @@ const fmtDateTime = (value) => {
             :packaging-type-options="packagingTypeOptions"
             :currency-options="currencyOptions"
             :currency-countries="currencyCountries"
+            :flavor-options="flavorOptions"
         />
         <PublishLotModal
             v-if="lot.can_manage && !lot.is_published"
@@ -1132,6 +1196,9 @@ const fmtDateTime = (value) => {
     font-size: 11.5px; font-weight: 700;
     white-space: nowrap;
 }
+
+.lp-flavor-notes { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border); }
+.lp-flavor-notes__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
 .lp-activity-delete {
     display: inline-flex; align-items: center; justify-content: center;

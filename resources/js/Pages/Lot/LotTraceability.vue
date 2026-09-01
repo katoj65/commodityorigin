@@ -24,6 +24,7 @@ import {
     Position,
     Printer,
     Share,
+    Star,
     Ticket,
     Trophy,
     User,
@@ -77,6 +78,12 @@ const specs = computed(() => [
     { label: 'Moisture', value: pct(props.lot.moisture), icon: WarningFilled },
     { label: 'Defects', value: pct(props.lot.defects_percentage), icon: WarningFilled },
     { label: 'Packaging', value: props.lot.packaging_type, icon: Box },
+    { label: 'Acidity', value: props.lot.acidity !== null && props.lot.acidity !== undefined ? fmt(props.lot.acidity) : null, icon: Star },
+    { label: 'Body', value: props.lot.body !== null && props.lot.body !== undefined ? fmt(props.lot.body) : null, icon: Star },
+    { label: 'Flavor', value: props.lot.flavor !== null && props.lot.flavor !== undefined ? fmt(props.lot.flavor) : null, icon: Star },
+    { label: 'Aroma', value: props.lot.aroma !== null && props.lot.aroma !== undefined ? fmt(props.lot.aroma) : null, icon: Star },
+    { label: 'Balance', value: props.lot.balance !== null && props.lot.balance !== undefined ? fmt(props.lot.balance) : null, icon: Star },
+    { label: 'Aftertaste', value: props.lot.aftertaste !== null && props.lot.aftertaste !== undefined ? fmt(props.lot.aftertaste) : null, icon: Star },
 ].filter((s) => s.value !== null && s.value !== undefined && s.value !== '—'));
 
 /* ── Journey timeline ───────────────────────────────────────────────────── */
@@ -192,6 +199,12 @@ function printPage() {
                         </div>
                     </div>
                     <p v-else class="lt-empty">No specification data recorded for this lot yet.</p>
+                    <div v-if="props.lot.flavors?.length" class="lt-flavor-notes">
+                        <span class="lt-spec__label">Flavor Notes</span>
+                        <div class="lt-flavor-notes__chips">
+                            <span v-for="name in props.lot.flavors" :key="name" class="lt-chip">{{ name }}</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="lt-tile">
@@ -467,6 +480,8 @@ function printPage() {
 }
 .lt-spec__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .lt-spec__label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.lt-flavor-notes { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border); }
+.lt-flavor-notes__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .lt-spec__value { font-size: 13px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Verify (QR + blockchain) ─────────────────────────────────────────── */
