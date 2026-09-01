@@ -355,6 +355,14 @@ class LotService
     }
 
     /**
+     * Resolve a flavor_metadata slug to its display name, if it still exists.
+     */
+    private function flavorNameFor(string $slug): ?string
+    {
+        return FlavorMetadata::query()->where('slug', $slug)->value('name');
+    }
+
+    /**
      * Resolve the lot status from the submission intent.
      */
     private function resolveLotStatus(string $intent): string
@@ -581,7 +589,7 @@ class LotService
                 'quality_score' => $this->toFloat($lot->quality_score),
                 'acidity' => $this->toFloat($lot->acidity),
                 'body' => $this->toFloat($lot->body),
-                'flavor' => $this->toFloat($lot->flavor),
+                'flavor' => $lot->flavor ? ($this->flavorNameFor($lot->flavor) ?? $lot->flavor) : null,
                 'aroma' => $this->toFloat($lot->aroma),
                 'balance' => $this->toFloat($lot->balance),
                 'aftertaste' => $this->toFloat($lot->aftertaste),

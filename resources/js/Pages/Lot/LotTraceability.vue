@@ -80,7 +80,7 @@ const specs = computed(() => [
     { label: 'Packaging', value: props.lot.packaging_type, icon: Box },
     { label: 'Acidity', value: props.lot.acidity !== null && props.lot.acidity !== undefined ? fmt(props.lot.acidity) : null, icon: Star },
     { label: 'Body', value: props.lot.body !== null && props.lot.body !== undefined ? fmt(props.lot.body) : null, icon: Star },
-    { label: 'Flavor', value: props.lot.flavor !== null && props.lot.flavor !== undefined ? fmt(props.lot.flavor) : null, icon: Star },
+    { label: 'Flavor', value: props.lot.flavor || null, icon: Star },
     { label: 'Aroma', value: props.lot.aroma !== null && props.lot.aroma !== undefined ? fmt(props.lot.aroma) : null, icon: Star },
     { label: 'Balance', value: props.lot.balance !== null && props.lot.balance !== undefined ? fmt(props.lot.balance) : null, icon: Star },
     { label: 'Aftertaste', value: props.lot.aftertaste !== null && props.lot.aftertaste !== undefined ? fmt(props.lot.aftertaste) : null, icon: Star },

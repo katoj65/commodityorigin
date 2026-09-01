@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\FlavorMetadata;
 use App\Models\Lot;
 use App\Models\User;
 use App\Services\BlockchainService;
@@ -16,6 +17,8 @@ class LotTraceabilityTest extends TestCase
 
     public function test_the_traceability_page_exposes_the_lots_provenance_fields(): void
     {
+        FlavorMetadata::query()->create(['slug' => 'chocolate', 'name' => 'Chocolate', 'sort_order' => 1, 'is_active' => true]);
+
         $user = User::factory()->create();
         $lot = $this->makeLot($user, [
             'variety' => 'Arabica',
@@ -29,7 +32,7 @@ class LotTraceabilityTest extends TestCase
             'currency' => 'USD',
             'acidity' => 8.5,
             'body' => 8.0,
-            'flavor' => 8.25,
+            'flavor' => 'chocolate',
             'aroma' => 8.5,
             'balance' => 8.0,
             'aftertaste' => 7.75,
@@ -50,7 +53,7 @@ class LotTraceabilityTest extends TestCase
                 ->where('lot.currency', 'USD')
                 ->where('lot.acidity', 8.5)
                 ->where('lot.body', 8)
-                ->where('lot.flavor', 8.25)
+                ->where('lot.flavor', 'Chocolate')
                 ->where('lot.aroma', 8.5)
                 ->where('lot.balance', 8)
                 ->where('lot.aftertaste', 7.75)

@@ -79,7 +79,6 @@ class Lot extends Model
         'quality_score' => 'decimal:2',
         'acidity' => 'decimal:2',
         'body' => 'decimal:2',
-        'flavor' => 'decimal:2',
         'aroma' => 'decimal:2',
         'balance' => 'decimal:2',
         'aftertaste' => 'decimal:2',

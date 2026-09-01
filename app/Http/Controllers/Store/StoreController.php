@@ -171,9 +171,10 @@ class StoreController extends Controller
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->get(['id', 'name'])
+                ->get(['id', 'slug', 'name'])
                 ->map(fn (FlavorMetadata $flavor): array => [
                     'id' => $flavor->id,
+                    'slug' => $flavor->slug,
                     'name' => $flavor->name,
                 ]),
         ];

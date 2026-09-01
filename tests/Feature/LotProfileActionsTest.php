@@ -48,10 +48,12 @@ class LotProfileActionsTest extends TestCase
         $creator = User::factory()->create();
         $lot = $this->makeLot($creator);
 
+        FlavorMetadata::query()->create(['slug' => 'chocolate', 'name' => 'Chocolate', 'sort_order' => 1, 'is_active' => true]);
+
         $response = $this->actingAs($creator)->patch(route('lot.update', $lot), $this->validPayload([
             'acidity' => 8.5,
             'body' => 8.0,
-            'flavor' => 8.25,
+            'flavor' => 'chocolate',
             'aroma' => 8.5,
             'balance' => 8.0,
             'aftertaste' => 7.75,
@@ -63,7 +65,7 @@ class LotProfileActionsTest extends TestCase
             'id' => $lot->id,
             'acidity' => 8.5,
             'body' => 8.0,
-            'flavor' => 8.25,
+            'flavor' => 'chocolate',
             'aroma' => 8.5,
             'balance' => 8.0,
             'aftertaste' => 7.75,

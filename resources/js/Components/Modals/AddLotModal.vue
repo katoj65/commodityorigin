@@ -55,7 +55,6 @@ function emptyForm() {
         aroma: '',
         balance: '',
         aftertaste: '',
-        flavor_ids: [],
         notes: '',
     };
 }
@@ -226,7 +225,9 @@ function submit() {
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Flavor <small>(optional)</small></label>
-                        <el-input-number v-model="form.flavor" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.flavor }" />
+                        <el-select v-model="form.flavor" placeholder="Select a flavor" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.flavor }">
+                            <el-option v-for="option in flavorOptions" :key="option.slug" :label="option.name" :value="option.slug" />
+                        </el-select>
                         <span v-if="form.errors.flavor" class="alm-field__error">{{ form.errors.flavor }}</span>
                     </div>
                     <div class="alm-field">
@@ -243,13 +244,6 @@ function submit() {
                         <label class="alm-field__label">Aftertaste <small>(optional)</small></label>
                         <el-input-number v-model="form.aftertaste" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aftertaste }" />
                         <span v-if="form.errors.aftertaste" class="alm-field__error">{{ form.errors.aftertaste }}</span>
-                    </div>
-                    <div class="alm-field alm-field--span2">
-                        <label class="alm-field__label">Flavor Notes <small>(optional)</small></label>
-                        <el-select v-model="form.flavor_ids" multiple filterable placeholder="Select flavor notes" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.flavor_ids }">
-                            <el-option v-for="option in flavorOptions" :key="option.id" :label="option.name" :value="option.id" />
-                        </el-select>
-                        <span v-if="form.errors.flavor_ids" class="alm-field__error">{{ form.errors.flavor_ids }}</span>
                     </div>
                     <div class="alm-field alm-field--span2">
                         <label class="alm-field__label">Description <small>(optional)</small></label>

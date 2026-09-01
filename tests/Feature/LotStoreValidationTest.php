@@ -97,7 +97,6 @@ class LotStoreValidationTest extends TestCase
         $this->actingAs($user)->post(route('lot.store'), $this->validPayload([
             'acidity' => 8.5,
             'body' => 8.0,
-            'flavor' => 8.25,
             'aroma' => 8.5,
             'balance' => 8.0,
             'aftertaste' => 7.75,
@@ -106,11 +105,31 @@ class LotStoreValidationTest extends TestCase
         $this->assertDatabaseHas('lots', [
             'acidity' => 8.5,
             'body' => 8.0,
-            'flavor' => 8.25,
             'aroma' => 8.5,
             'balance' => 8.0,
             'aftertaste' => 7.75,
         ]);
+    }
+
+    public function test_flavor_is_optional_and_persists_as_a_flavor_metadata_slug(): void
+    {
+        $user = User::factory()->create();
+        $slug = $this->flavorSlug();
+
+        $response = $this->actingAs($user)->post(route('lot.store'), $this->validPayload(['flavor' => $slug]));
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('lots', ['flavor' => $slug]);
+    }
+
+    public function test_flavor_must_reference_real_flavor_metadata(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('lot.store'), $this->validPayload(['flavor' => 'not-a-real-flavor']));
+
+        $response->assertSessionHasErrors(['flavor']);
+        $this->assertDatabaseCount('lots', 0);
     }
 
     public function test_cupping_attributes_must_be_within_the_zero_to_ten_scale(): void
@@ -243,6 +262,16 @@ class LotStoreValidationTest extends TestCase
         ]);
 
         return 'Arabica';
+    }
+
+    /**
+     * Seed an active flavor and return its slug.
+     */
+    private function flavorSlug(): string
+    {
+        FlavorMetadata::query()->create(['slug' => 'chocolate', 'name' => 'Chocolate', 'sort_order' => 1, 'is_active' => true]);
+
+        return 'chocolate';
     }
 
     /**

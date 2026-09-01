@@ -55,7 +55,6 @@ const form = useForm({
     aroma: props.defaults.aroma ?? '',
     balance: props.defaults.balance ?? '',
     aftertaste: props.defaults.aftertaste ?? '',
-    flavor_ids: props.defaults.flavor_ids ?? [],
     price: props.defaults.price ?? '',
     notes: '',
     submission_intent: 'create',
@@ -429,7 +428,9 @@ const submit = (intent = 'create') => {
                                 </div>
                                 <div class="lot-field">
                                     <label for="flavor">Flavor</label>
-                                    <el-input id="flavor" v-model="form.flavor" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.25" />
+                                    <el-select id="flavor" v-model="form.flavor" class="lot-form-control" filterable clearable placeholder="Select a flavor">
+                                        <el-option v-for="option in props.options.flavors" :key="option.slug" :label="option.name" :value="option.slug" />
+                                    </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.flavor" />
                                 </div>
                                 <div class="lot-field">
@@ -446,15 +447,6 @@ const submit = (intent = 'create') => {
                                     <label for="aftertaste">Aftertaste</label>
                                     <el-input id="aftertaste" v-model="form.aftertaste" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 7.75" />
                                     <InputError class="mt-2 text-sm" :message="form.errors.aftertaste" />
-                                </div>
-                            </div>
-                            <div class="lot-field-grid lot-field-grid--single">
-                                <div class="lot-field">
-                                    <label for="flavor_ids">Flavor Notes <small>(optional)</small></label>
-                                    <el-select id="flavor_ids" v-model="form.flavor_ids" multiple filterable class="lot-form-control" placeholder="Select flavor notes">
-                                        <el-option v-for="option in props.options.flavors" :key="option.id" :label="option.name" :value="option.id" />
-                                    </el-select>
-                                    <InputError class="mt-2 text-sm" :message="form.errors.flavor_ids" />
                                 </div>
                             </div>
                         </div>

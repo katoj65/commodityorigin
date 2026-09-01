@@ -223,6 +223,12 @@ const qualityLabel = computed(() => {
 const hasCuppingProfile = computed(() => ['acidity', 'body', 'flavor', 'aroma', 'balance', 'aftertaste']
     .some((key) => props.lot[key] !== null && props.lot[key] !== undefined) || (props.lot.flavors?.length > 0));
 
+function flavorLabel(slug) {
+    const match = props.flavorOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function batchStatusTone(status) {
     const s = (status || '').toLowerCase();
     if (['received', 'ready', 'completed', 'delivered', 'approved', 'batched'].includes(s)) return 'good';
@@ -462,7 +468,7 @@ const fmtDateTime = (value) => {
                             <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
                             <div class="lp-spec__body">
                                 <span class="lp-spec__label">Flavor</span>
-                                <strong class="lp-spec__value lp-mono">{{ lot.flavor !== null && lot.flavor !== undefined ? fmtNumber(lot.flavor) : 'Not recorded' }}</strong>
+                                <strong class="lp-spec__value">{{ lot.flavor ? flavorLabel(lot.flavor) : 'Not recorded' }}</strong>
                             </div>
                         </div>
                         <div class="lp-spec">
@@ -524,7 +530,7 @@ const fmtDateTime = (value) => {
                 </div>
 
                 <!-- Notes -->
-                <div v-if="lot.notes" class="lp-tile lp-tile--wide">
+                <div v-if="lot.notes" class="lp-tile lp-tile--full">
                     <h2 class="lp-tile__title"><el-icon><EditPen /></el-icon> Notes</h2>
                     <p class="lp-prose">{{ lot.notes }}</p>
                 </div>

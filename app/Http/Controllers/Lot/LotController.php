@@ -103,7 +103,7 @@ class LotController extends Controller
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
             'acidity' => ['nullable', 'numeric', 'between:0,10'],
             'body' => ['nullable', 'numeric', 'between:0,10'],
-            'flavor' => ['nullable', 'numeric', 'between:0,10'],
+            'flavor' => ['nullable', 'string', Rule::exists('flavor_metadata', 'slug')->where('is_active', true)],
             'aroma' => ['nullable', 'numeric', 'between:0,10'],
             'balance' => ['nullable', 'numeric', 'between:0,10'],
             'aftertaste' => ['nullable', 'numeric', 'between:0,10'],
@@ -193,6 +193,7 @@ class LotController extends Controller
                 'processing_methods' => $processingMethods,
                 'flavors' => $this->lots->activeFlavorOptions()->map(fn (FlavorMetadata $flavor): array => [
                     'id' => $flavor->id,
+                    'slug' => $flavor->slug,
                     'name' => $flavor->name,
                 ]),
             ],
@@ -229,7 +230,7 @@ class LotController extends Controller
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
             'acidity' => ['nullable', 'numeric', 'between:0,10'],
             'body' => ['nullable', 'numeric', 'between:0,10'],
-            'flavor' => ['nullable', 'numeric', 'between:0,10'],
+            'flavor' => ['nullable', 'string', Rule::exists('flavor_metadata', 'slug')->where('is_active', true)],
             'aroma' => ['nullable', 'numeric', 'between:0,10'],
             'balance' => ['nullable', 'numeric', 'between:0,10'],
             'aftertaste' => ['nullable', 'numeric', 'between:0,10'],
@@ -276,6 +277,7 @@ class LotController extends Controller
             'packagingTypeOptions' => ['GrainPro', 'Jute Only', 'Vacuum'],
             'flavorOptions' => $this->lots->activeFlavorOptions()->map(fn (FlavorMetadata $flavor): array => [
                 'id' => $flavor->id,
+                'slug' => $flavor->slug,
                 'name' => $flavor->name,
             ]),
             'currencyOptions' => Currency::query()
@@ -346,7 +348,7 @@ class LotController extends Controller
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
             'acidity' => ['nullable', 'numeric', 'between:0,10'],
             'body' => ['nullable', 'numeric', 'between:0,10'],
-            'flavor' => ['nullable', 'numeric', 'between:0,10'],
+            'flavor' => ['nullable', 'string', Rule::exists('flavor_metadata', 'slug')->where('is_active', true)],
             'aroma' => ['nullable', 'numeric', 'between:0,10'],
             'balance' => ['nullable', 'numeric', 'between:0,10'],
             'aftertaste' => ['nullable', 'numeric', 'between:0,10'],
