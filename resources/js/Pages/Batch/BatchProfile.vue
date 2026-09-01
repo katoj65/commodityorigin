@@ -602,7 +602,6 @@ a.btp-list-row:hover { background: color-mix(in srgb, var(--surface-container-lo
 .btp-list-stat__label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-variant); white-space: nowrap; }
 
 /* ── Batch Activity ────────────────────────────────────────────────────── */
-.btp-activity-section { padding-top: 8px; border-top: 1px solid var(--card-border); }
 
 .btp-activity-table-wrap { overflow-x: auto; }
 .btp-activity-table { width: 100%; border-collapse: collapse; font-size: 13px; }

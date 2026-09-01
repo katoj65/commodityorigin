@@ -45,4 +45,12 @@ class FarmCollectionActivityService
             ->orderByDesc('id')
             ->get();
     }
+
+    /**
+     * Remove a mistaken or duplicate activity-log entry.
+     */
+    public function delete(FarmCollectionActivity $activity): void
+    {
+        $activity->delete();
+    }
 }

@@ -4,6 +4,7 @@ import { router } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditFarmCollectionModal from '@/Components/Modals/EditFarmCollectionModal.vue';
+import AddFarmCollectionActivityModal from '@/Components/Modals/AddFarmCollectionActivityModal.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     ArrowDown, ArrowRight, Box, Clock, Close, Coffee, Coin, Delete, Document, EditPen, Location, Medal, Message, OfficeBuilding, Phone, PriceTag, Ticket, User, WarningFilled,
@@ -14,17 +15,53 @@ const props = defineProps({
     coffeeTypeOptions: { type: Array, default: () => [] },
     harvestSeasonOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
+    activities: { type: Array, default: () => [] },
+    activityOptions: { type: Array, default: () => [] },
 });
 
 const editDialogOpen = ref(false);
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);
 const farmModalOpen = ref(false);
+const addActivityOpen = ref(false);
+const deleteActivityDialogOpen = ref(false);
+const pendingActivity = ref(null);
+const deletingActivity = ref(false);
 
 function handleActionCommand(command) {
     if (command === 'edit') editDialogOpen.value = true;
+    else if (command === 'add-activity') addActivityOpen.value = true;
     else if (command === 'delete') deleteDialogOpen.value = true;
 }
+
+/* ── Farm Collection Activity — event slugs are resolved to their
+   metadata display name; anything not found (a retired slug) falls back
+   to a titleized version of the slug itself rather than disappearing. ── */
+function eventLabel(slug) {
+    const match = props.activityOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function requestDeleteActivity(activity) {
+    pendingActivity.value = activity;
+    deleteActivityDialogOpen.value = true;
+}
+
+function confirmDeleteActivity() {
+    if (!pendingActivity.value) return;
+    deletingActivity.value = true;
+    router.delete(route('farm-collection.activities.destroy', [props.collection.id, pendingActivity.value.id]), {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingActivity.value = false;
+            deleteActivityDialogOpen.value = false;
+            pendingActivity.value = null;
+        },
+    });
+}
+
+const deleteActivityMessage = computed(() => `Remove the "${pendingActivity.value ? eventLabel(pendingActivity.value.event) : ''}" activity from this collection's log? This action cannot be undone.`);
 
 function readCookie(name) {
     const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
@@ -122,6 +159,7 @@ const deleteMessage = computed(() => `Are you sure you want to delete this colle
                     <template #dropdown>
                         <el-dropdown-menu class="fcp-actions-menu">
                             <el-dropdown-item command="edit"><el-icon><EditPen /></el-icon> Edit</el-dropdown-item>
+                            <el-dropdown-item command="add-activity"><el-icon><Clock /></el-icon> Add Activity</el-dropdown-item>
                             <el-dropdown-item command="delete" class="fcp-actions-menu__danger"><el-icon><Delete /></el-icon> Delete</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
@@ -262,6 +300,38 @@ const deleteMessage = computed(() => `Are you sure you want to delete this colle
                     </div>
                 </div>
             </div>
+
+            <!-- ── Farm Collection Activity ─────────────────────────────── -->
+            <div class="fcp-card">
+                <h2 class="fcp-card__title"><el-icon><Clock /></el-icon> Farm Collection Activity</h2>
+                <div v-if="activities.length" class="fcp-activity-table-wrap">
+                    <table class="fcp-activity-table">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Description</th>
+                                <th>Recorded By</th>
+                                <th>Date</th>
+                                <th v-if="collection.can_manage" class="fcp-activity-table__actions-head" />
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="activity in activities" :key="activity.id">
+                                <td><span class="fcp-event-pill">{{ eventLabel(activity.event) }}</span></td>
+                                <td class="fcp-activity-table__desc">{{ activity.description || '—' }}</td>
+                                <td>{{ activity.recorded_by?.name || 'System' }}</td>
+                                <td class="fcp-activity-table__date">{{ formatDateTime(activity.created_at) }}</td>
+                                <td v-if="collection.can_manage" class="fcp-activity-table__actions">
+                                    <button type="button" class="fcp-activity-delete" aria-label="Delete activity" @click="requestDeleteActivity(activity)">
+                                        <el-icon :size="14"><Delete /></el-icon>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p v-else class="fcp-empty">No activity recorded for this collection yet.</p>
+            </div>
         </div>
 
         <EditFarmCollectionModal
@@ -282,6 +352,24 @@ const deleteMessage = computed(() => `Are you sure you want to delete this colle
             :auto-close="false"
             :loading="deleting"
             @confirm="deleteCollection"
+        />
+
+        <AddFarmCollectionActivityModal
+            v-if="collection.can_manage"
+            v-model="addActivityOpen"
+            :collection-id="collection.id"
+            :activity-options="activityOptions"
+        />
+
+        <ConfirmDialog
+            v-model="deleteActivityDialogOpen"
+            eyebrow="Farm Collection Activity"
+            title="Delete Activity"
+            :message="deleteActivityMessage"
+            confirm-text="Delete Activity"
+            :auto-close="false"
+            :loading="deletingActivity"
+            @confirm="confirmDeleteActivity"
         />
 
         <el-dialog v-model="farmModalOpen" width="min(460px, calc(100vw - 2rem))" align-center :show-close="false" class="fcp-farm-modal">
@@ -496,6 +584,65 @@ const deleteMessage = computed(() => `Are you sure you want to delete this colle
 .fcp-dl__capitalize { text-transform: capitalize; }
 
 .fcp-notes { font-size: 13.5px; line-height: 1.6; color: var(--on-surface); margin: 0; white-space: pre-wrap; }
+
+.fcp-empty { font-size: 13px; color: var(--on-surface-variant); margin: 0; }
+
+/* ── Farm Collection Activity ─────────────────────────────────────────── */
+.fcp-activity-table-wrap { overflow-x: auto; }
+.fcp-activity-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fcp-activity-table thead th {
+    text-align: left;
+    padding: 0 0 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--on-surface-variant);
+    border-bottom: 1px solid var(--card-border);
+    white-space: nowrap;
+}
+.fcp-activity-table thead th:not(:first-child) { padding-left: 20px; }
+.fcp-activity-table tbody td {
+    padding: 13px 0;
+    border-bottom: 1px dashed var(--card-border);
+    color: var(--on-surface);
+    vertical-align: top;
+}
+.fcp-activity-table tbody td:not(:first-child) { padding-left: 20px; }
+.fcp-activity-table tbody tr:last-child td { border-bottom: none; padding-bottom: 0; }
+.fcp-activity-table__desc { color: var(--on-surface-variant); max-width: 360px; }
+.fcp-activity-table__date { color: var(--on-surface-variant); white-space: nowrap; }
+.fcp-activity-table__actions-head { width: 1%; }
+.fcp-activity-table__actions { width: 1%; text-align: right; }
+
+.fcp-event-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
+    border: 1px solid color-mix(in srgb, var(--card-border) 80%, transparent);
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.fcp-activity-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.fcp-activity-delete:hover { background: var(--error-container); color: var(--error); }
+.fcp-activity-delete:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .fcp-side-card {
     background: var(--surface-container-lowest);

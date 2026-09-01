@@ -198,6 +198,8 @@ Route::middleware([
     Route::prefix('farm-collection')->name('farm-collection.')->group(function () {
         Route::get('/find-by-code', [FarmCollectionController::class, 'findByCode'])->name('find-by-code');
         Route::get('/{collection}', [FarmCollectionController::class, 'show'])->name('show');
+        Route::post('/{collection}/activities', [FarmCollectionController::class, 'storeActivity'])->name('activities.store');
+        Route::delete('/{collection}/activities/{activity}', [FarmCollectionController::class, 'destroyActivity'])->name('activities.destroy');
     });
 
     // Lot workspace routes.
