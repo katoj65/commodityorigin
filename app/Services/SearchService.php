@@ -29,19 +29,25 @@ class SearchService
 
         return Market::query()
             ->where('status', 'live')
+            // title/description are real columns; origin/type/process/
+            // target_market/demand/lot_code live in `metadata` (or, for
+            // lot_code, on the linked lot itself) since the markets table
+            // restructure — see Market's metadata-backed accessors.
             ->when($keyword !== '', fn (Builder $q) => $q->where(fn (Builder $q) => $q
-                ->where('name', 'like', "%{$keyword}%")
-                ->orWhere('lot_code', 'like', "%{$keyword}%")
-                ->orWhere('origin', 'like', "%{$keyword}%")
-                ->orWhere('type', 'like', "%{$keyword}%")
-                ->orWhere('process', 'like', "%{$keyword}%")
-                ->orWhere('target_market', 'like', "%{$keyword}%")
-                ->orWhere('notes', 'like', "%{$keyword}%")))
-            ->when($filters['type'] ?? null, fn (Builder $q, string $type) => $q->where('type', $type))
-            ->when($filters['origin'] ?? null, fn (Builder $q, string $origin) => $q->where('origin', $origin))
-            ->when($filters['demand'] ?? null, fn (Builder $q, string $demand) => $q->where('demand', $demand))
-            ->when($filters['min_price'] ?? null, fn (Builder $q, $min) => $q->where('price_per_kg', '>=', $min))
-            ->when($filters['max_price'] ?? null, fn (Builder $q, $max) => $q->where('price_per_kg', '<=', $max))
+                ->where('title', 'like', "%{$keyword}%")
+                ->orWhere('description', 'like', "%{$keyword}%")
+                ->orWhere('metadata->origin', 'like', "%{$keyword}%")
+                ->orWhere('metadata->type', 'like', "%{$keyword}%")
+                ->orWhere('metadata->process', 'like', "%{$keyword}%")
+                ->orWhere('metadata->target_market', 'like', "%{$keyword}%")
+                ->orWhere('metadata->lot_code', 'like', "%{$keyword}%")
+                ->orWhereHas('lot', fn (Builder $lotQuery) => $lotQuery->where('lot_number', 'like', "%{$keyword}%"))))
+            ->when($filters['type'] ?? null, fn (Builder $q, string $type) => $q->where('metadata->type', $type))
+            ->when($filters['origin'] ?? null, fn (Builder $q, string $origin) => $q->where('metadata->origin', $origin))
+            ->when($filters['demand'] ?? null, fn (Builder $q, string $demand) => $q->where('metadata->demand', $demand))
+            ->when($filters['min_price'] ?? null, fn (Builder $q, $min) => $q->where('price_per_unit', '>=', $min))
+            ->when($filters['max_price'] ?? null, fn (Builder $q, $max) => $q->where('price_per_unit', '<=', $max))
+            ->with('lot.images')
             ->orderByDesc('created_at')
             ->get();
     }

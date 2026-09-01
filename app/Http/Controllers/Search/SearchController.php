@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Search;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\MarketListingResource;
 use App\Http\Resources\SearchLogResource;
 use App\Models\Market;
 use App\Models\SearchLog;
@@ -46,7 +47,7 @@ class SearchController extends Controller
         return Inertia::render('Search/SearchPage', [
             'query' => $keyword,
             'filters' => $filters,
-            'results' => $results->values()->all(),
+            'results' => MarketListingResource::collection($results)->resolve(),
             'recentSearches' => SearchLogResource::collection($this->search->recentForUser($request->user()->id))->resolve(),
         ]);
     }
@@ -65,11 +66,11 @@ class SearchController extends Controller
 
         $results = $this->search->suggest($keyword)->map(fn (Market $market) => [
             'id' => $market->id,
-            'name' => $market->name,
+            'name' => $market->title,
             'lot_code' => $market->lot_code,
             'origin' => $market->origin,
             'type' => $market->type,
-            'price_per_kg' => (float) $market->price_per_kg,
+            'price_per_kg' => (float) $market->price_per_unit,
             'demand' => $market->demand,
         ])->values();
 
