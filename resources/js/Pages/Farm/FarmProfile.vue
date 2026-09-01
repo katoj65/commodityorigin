@@ -5,6 +5,7 @@ import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import AddFarmSustainabilityPracticeModal from '@/Components/Modals/AddFarmSustainabilityPracticeModal.vue';
+import AddFarmSoilProfileModal from '@/Components/Modals/AddFarmSoilProfileModal.vue';
 import { isGoogleMapsConfigured, renderMap } from '@/services/googleMaps';
 import {
     Box, ChatDotRound, CircleCheckFilled, Coffee, Delete, Document, Download, Edit, Files,
@@ -33,6 +34,8 @@ const props = defineProps({
     collectionPaymentStatusOptions: { type: Array, default: () => [] },
     sustainabilityPractices: { type: Array, default: () => [] },
     sustainabilityPracticeOptions: { type: Array, default: () => [] },
+    soilProfiles: { type: Array, default: () => [] },
+    soilProfileOptions: { type: Array, default: () => [] },
 });
 
 /* ── Real display computed — every value below comes straight from a
@@ -102,6 +105,41 @@ function confirmDeletePractice() {
 }
 
 const deletePracticeMessage = computed(() => `Remove "${pendingPractice.value ? practiceLabel(pendingPractice.value.practice) : ''}" from this farm's sustainability practices?`);
+
+/* ── Soil profile entries — slugs resolved to their metadata display
+   name; anything not found (a retired slug) falls back to a titleized
+   version of the slug itself rather than disappearing. ────────────────── */
+const soilProfileDialogOpen = ref(false);
+
+function soilProfileLabel(slug) {
+    const match = props.soilProfileOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const deleteSoilProfileDialogOpen = ref(false);
+const pendingSoilProfile = ref(null);
+const deletingSoilProfile = ref(false);
+
+function requestDeleteSoilProfile(profile) {
+    pendingSoilProfile.value = profile;
+    deleteSoilProfileDialogOpen.value = true;
+}
+
+function confirmDeleteSoilProfile() {
+    if (!pendingSoilProfile.value) return;
+    deletingSoilProfile.value = true;
+    router.delete(route('farm.soil-profiles.destroy', [props.farm.id, pendingSoilProfile.value.id]), {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingSoilProfile.value = false;
+            deleteSoilProfileDialogOpen.value = false;
+            pendingSoilProfile.value = null;
+        },
+    });
+}
+
+const deleteSoilProfileMessage = computed(() => `Remove "${pendingSoilProfile.value ? soilProfileLabel(pendingSoilProfile.value.item) : ''}" from this farm's soil profiles?`);
 
 const waterConservationPercent = computed(() => Math.min(100, props.farm.water_conservation_percentage || 0));
 const carbonSequestrationPercent = computed(() => Math.min(100, ((props.farm.carbon_sequestration || 0) / 20) * 100));
@@ -593,6 +631,9 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                     <div class="fp-card">
                         <div class="fp-card-head">
                             <h2 class="fp-card-title"><el-icon><Grid /></el-icon> Technical Specs</h2>
+                            <button v-if="canEdit" type="button" class="fp-chip-add-btn" @click="soilProfileDialogOpen = true">
+                                <el-icon :size="12"><Plus /></el-icon> Add
+                            </button>
                         </div>
 
                         <div class="fp-spec-tiles">
@@ -628,6 +669,19 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                                 <span class="fp-info-row__label">Climate</span>
                                 <span class="fp-info-row__value">{{ farm.climate_zone?.name || '—' }}</span>
                             </div>
+                        </div>
+
+                        <div class="fp-metric-block fp-metric-block--inline">
+                            <span class="fp-stat-cell__label">Soil Profiles</span>
+                            <div v-if="soilProfiles.length" class="fp-chip-row">
+                                <span v-for="profile in soilProfiles" :key="profile.id" class="fp-chip" :class="{ 'fp-chip--removable': canEdit }" :title="profile.description || ''">
+                                    {{ soilProfileLabel(profile.item) }}
+                                    <button v-if="canEdit" type="button" class="fp-chip__remove" aria-label="Remove soil profile entry" @click="requestDeleteSoilProfile(profile)">
+                                        <el-icon :size="10"><Delete /></el-icon>
+                                    </button>
+                                </span>
+                            </div>
+                            <span v-else class="fp-muted">None recorded</span>
                         </div>
                     </div>
 
@@ -1299,6 +1353,13 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
             :practice-options="sustainabilityPracticeOptions"
         />
 
+        <AddFarmSoilProfileModal
+            v-if="canEdit"
+            v-model="soilProfileDialogOpen"
+            :farm-id="farm.id"
+            :item-options="soilProfileOptions"
+        />
+
         <ConfirmDialog
             v-model="deletePracticeDialogOpen"
             eyebrow="Farm Profile"
@@ -1308,6 +1369,17 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
             :auto-close="false"
             :loading="deletingPractice"
             @confirm="confirmDeletePractice"
+        />
+
+        <ConfirmDialog
+            v-model="deleteSoilProfileDialogOpen"
+            eyebrow="Farm Profile"
+            title="Remove Soil Profile"
+            :message="deleteSoilProfileMessage"
+            confirm-text="Remove Soil Profile"
+            :auto-close="false"
+            :loading="deletingSoilProfile"
+            @confirm="confirmDeleteSoilProfile"
         />
     </DesignPreviewLayout>
 </template>
@@ -1444,6 +1516,11 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+.fp-metric-block--inline {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid color-mix(in srgb, var(--dp-outline-variant) 25%, transparent);
 }
 .fp-metric-block__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .fp-metric-block__head .fp-stat-cell__label { margin-bottom: 0; }

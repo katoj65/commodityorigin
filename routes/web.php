@@ -192,6 +192,8 @@ Route::middleware([
         Route::delete('/{farm}/documents/{document}', [FarmController::class, 'destroyDocument'])->name('documents.destroy');
         Route::post('/{farm}/sustainability-practices', [FarmController::class, 'storeSustainabilityPractice'])->name('sustainability-practices.store');
         Route::delete('/{farm}/sustainability-practices/{practice}', [FarmController::class, 'destroySustainabilityPractice'])->name('sustainability-practices.destroy');
+        Route::post('/{farm}/soil-profiles', [FarmController::class, 'storeSoilProfile'])->name('soil-profiles.store');
+        Route::delete('/{farm}/soil-profiles/{profile}', [FarmController::class, 'destroySoilProfile'])->name('soil-profiles.destroy');
         Route::post('/geocode', GeocodeController::class)->name('geocode');
         Route::delete('/{farm}', [FarmController::class, 'destroy'])->name('destroy');
     });

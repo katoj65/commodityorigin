@@ -7,18 +7,22 @@ use App\Http\Resources\ClimateZoneMetadataResource;
 use App\Http\Resources\FarmCollectionResource;
 use App\Http\Resources\FarmDocumentResource;
 use App\Http\Resources\FarmResource;
+use App\Http\Resources\FarmSoilProfileResource;
 use App\Http\Resources\FarmSustainabilityPracticeResource;
 use App\Http\Resources\SoilMetadataResource;
 use App\Http\Resources\WeatherForecastResource;
 use App\Models\Farm;
 use App\Models\FarmCollection;
 use App\Models\FarmDocument;
+use App\Models\FarmSoilProfile;
 use App\Models\FarmSustainabilityPractice;
+use App\Models\SoilProfileMetadata;
 use App\Models\SustainabilityPracticesMetadata;
 use App\Services\ClimateZoneMetadataService;
 use App\Services\FarmCollectionService;
 use App\Services\FarmDocumentService;
 use App\Services\FarmService;
+use App\Services\FarmSoilProfileService;
 use App\Services\FarmSustainabilityPracticeService;
 use App\Services\SoilMetadataService;
 use App\Services\WeatherForecastService;
@@ -40,6 +44,7 @@ class FarmController extends Controller
         private readonly ClimateZoneMetadataService $climateZones,
         private readonly FarmCollectionService $collections,
         private readonly FarmSustainabilityPracticeService $sustainabilityPractices,
+        private readonly FarmSoilProfileService $soilProfiles,
     ) {
     }
 
@@ -175,6 +180,16 @@ class FarmController extends Controller
                 ->orderBy('name')
                 ->get(['slug', 'name'])
                 ->map(fn (SustainabilityPracticesMetadata $option): array => [
+                    'slug' => $option->slug,
+                    'name' => $option->name,
+                ]),
+            'soilProfiles' => FarmSoilProfileResource::collection($this->soilProfiles->forFarm($farm))->resolve(),
+            'soilProfileOptions' => SoilProfileMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name'])
+                ->map(fn (SoilProfileMetadata $option): array => [
                     'slug' => $option->slug,
                     'name' => $option->name,
                 ]),
@@ -374,6 +389,40 @@ class FarmController extends Controller
         $this->sustainabilityPractices->delete($practice);
 
         return back()->with('success', 'Sustainability practice removed.');
+    }
+
+    /**
+     * Record a soil profile entry against this farm. Creator only.
+     */
+    public function storeSoilProfile(Request $request, Farm $farm): RedirectResponse
+    {
+        Gate::authorize('update', $farm);
+
+        $validated = $request->validate([
+            'item' => [
+                'required',
+                'string',
+                Rule::exists('soil_profile_metadata', 'slug')->where('is_active', true),
+            ],
+            'description' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $this->soilProfiles->store($farm, $validated['item'], $validated['description'] ?? null, $request->user()->id);
+
+        return back()->with('success', 'Soil profile entry recorded.');
+    }
+
+    /**
+     * Remove a soil profile entry recorded against this farm. Creator only.
+     */
+    public function destroySoilProfile(Farm $farm, FarmSoilProfile $profile): RedirectResponse
+    {
+        Gate::authorize('update', $farm);
+        abort_unless((int) $profile->farm_id === (int) $farm->id, 404);
+
+        $this->soilProfiles->delete($profile);
+
+        return back()->with('success', 'Soil profile entry removed.');
     }
 
     /**
