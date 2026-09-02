@@ -100,10 +100,10 @@ const auctionFilters = [
 const auctionFilter = ref('all');
 
 const auctionRows = [
-    { id: 'UG-BUGI-021', origin: 'Uganda Bugisu AA', region: 'east-africa', variety: 'SL14/SL28, Washed', price: '7.35', delta: '1.8%', deltaTone: 'up', volume: '30 Bags', time: '01:05:30', timeTone: 'amber', status: 'Active Auction', statusTone: 'green', action: 'PLACE BID', style: 'solid', iconColor: '#0d631b' },
-    { id: 'ET-YIRG-042', origin: 'Ethiopia Yirgacheffe G1', region: 'east-africa', variety: 'Arabica SL28, AA', price: '6.45', delta: '0.9%', deltaTone: 'up', volume: '45 Bags', time: '02:14:45', timeTone: 'amber', status: 'Active Auction', statusTone: 'green', action: 'PLACE BID', style: 'solid', iconColor: '#0d631b' },
-    { id: 'CO-HUIL-088', origin: 'Colombia Huila Supremo', region: 'south-america', variety: 'Caturra, Screen 18', price: '5.12', delta: '0.4%', deltaTone: 'down', volume: '12.5 MT', time: null, status: 'Spot Available', statusTone: 'primary', action: 'BUY NOW', style: 'outline', iconColor: '#79573f' },
-    { id: 'KE-NYER-015', origin: 'Kenya Nyeri AA Plus', region: 'east-africa', variety: 'SL34, Washed', price: '8.20', delta: '2.3%', deltaTone: 'up', volume: '20 Bags', time: '00:12:05', timeTone: 'rose', status: 'Closing Soon', statusTone: 'rose', action: 'PLACE BID', style: 'solid', iconColor: '#735c00' },
+    { id: 'UG-BUGI-021', origin: 'Uganda Bugisu AA', region: 'east-africa', variety: 'SL14/SL28, Washed', price: '7.35', delta: '1.8%', deltaTone: 'up', volume: '30 Bags', time: '01:05:30', timeTone: 'amber', status: 'Active Auction', statusTone: 'green', action: 'Place bid', style: 'solid', iconColor: '#0d631b' },
+    { id: 'ET-YIRG-042', origin: 'Ethiopia Yirgacheffe G1', region: 'east-africa', variety: 'Arabica SL28, AA', price: '6.45', delta: '0.9%', deltaTone: 'up', volume: '45 Bags', time: '02:14:45', timeTone: 'amber', status: 'Active Auction', statusTone: 'green', action: 'Place bid', style: 'solid', iconColor: '#0d631b' },
+    { id: 'CO-HUIL-088', origin: 'Colombia Huila Supremo', region: 'south-america', variety: 'Caturra, Screen 18', price: '5.12', delta: '0.4%', deltaTone: 'down', volume: '12.5 MT', time: null, status: 'Spot Available', statusTone: 'primary', action: 'Buy now', style: 'outline', iconColor: '#79573f' },
+    { id: 'KE-NYER-015', origin: 'Kenya Nyeri AA Plus', region: 'east-africa', variety: 'SL34, Washed', price: '8.20', delta: '2.3%', deltaTone: 'up', volume: '20 Bags', time: '00:12:05', timeTone: 'rose', status: 'Closing Soon', statusTone: 'rose', action: 'Place bid', style: 'solid', iconColor: '#735c00' },
 ];
 
 const filteredAuctions = computed(() => {
@@ -182,11 +182,6 @@ const chartPriceLabels = [
         <section class="relative w-full overflow-hidden bg-[#121611] pt-12 pb-24 md:pt-24 md:pb-32 px-4 md:px-8 text-[#eef2e8]">
             <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
                 <div class="lg:col-span-5 flex flex-col gap-8 relative z-10 wp-fade-1">
-                    <!-- <div class="inline-flex items-center gap-3 px-4 py-1.5 bg-[#1a2018] rounded-full w-fit shadow-inner border border-[#0d631b]/30">
-                        <span class="w-2.5 h-2.5 rounded-full bg-[#a3f69c] wp-pulse"></span>
-                        <span class="text-xs text-[#a3f69c] uppercase tracking-[0.2em]">Global Markets Live</span>
-                    </div> -->
-
                     <h1 class="text-[44px] md:text-[64px] leading-[1.05] text-white tracking-[-0.03em] font-semibold">
                         The Digital Exchange <br class="hidden sm:block" />
                         for <span class="text-[#a3f69c]">Coffee.</span>
@@ -199,34 +194,32 @@ const chartPriceLabels = [
                     <div class="flex flex-col sm:flex-row gap-4 mt-2">
                         <Link
                             :href="route('login')"
-                            class="bg-[#a3f69c] text-[#002204] px-8 py-4 rounded text-xs font-bold tracking-widest uppercase hover:bg-[#88d982] hover:shadow-[0_0_20px_rgba(163,246,156,0.2)] hover:-translate-y-0.5 transition-all text-center no-underline"
-                        >Enter the Exchange</Link>
+                            class="bg-[#a3f69c] text-[#002204] px-8 py-4 rounded text-sm font-semibold hover:bg-[#88d982] hover:shadow-[0_0_20px_rgba(163,246,156,0.2)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all text-center no-underline"
+                        >Enter the exchange</Link>
                         <a
                             href="#auctions"
-                            class="bg-[#1a2018] text-white px-8 py-4 rounded text-xs font-bold tracking-widest uppercase hover:bg-[#20281e] transition-all border border-[#707a6c]/30 text-center no-underline"
-                        >Explore Marketplace</a>
+                            class="bg-[#1a2018] text-white px-8 py-4 rounded text-sm font-semibold hover:bg-[#20281e] active:scale-[0.97] transition-all border border-[#707a6c]/30 text-center no-underline"
+                        >Explore the marketplace</a>
                     </div>
 
-                    <div class="mt-8 grid grid-cols-3 gap-3 sm:flex sm:gap-10 border-t border-[#707a6c]/20 pt-8 bg-[#1a2018]/50 p-4 sm:p-6 rounded-lg backdrop-blur-md border border-[#707a6c]/10">
+                    <div class="mt-6 flex items-center gap-8 sm:gap-10 border-t border-[#707a6c]/20 pt-7">
                         <div class="min-w-0">
-                            <div class="wp-display text-lg sm:text-3xl font-bold tracking-tight text-white tabular-nums">$2.4B+</div>
-                            <div class="text-[9px] sm:text-[10px] text-[#bfcaba] uppercase mt-2 tracking-[0.05em] sm:tracking-[0.15em] leading-tight">Traded Volume</div>
+                            <div class="wp-display text-xl sm:text-2xl font-bold tracking-tight text-white tabular-nums">$2.4B+</div>
+                            <div class="text-[11px] text-[#8b978a] mt-1 leading-tight">Traded volume</div>
                         </div>
                         <div class="min-w-0">
-                            <div class="wp-display text-lg sm:text-3xl font-bold tracking-tight text-white tabular-nums">45+</div>
-                            <div class="text-[9px] sm:text-[10px] text-[#bfcaba] uppercase mt-2 tracking-[0.05em] sm:tracking-[0.15em] leading-tight">Origin Countries</div>
+                            <div class="wp-display text-xl sm:text-2xl font-bold tracking-tight text-white tabular-nums">45+</div>
+                            <div class="text-[11px] text-[#8b978a] mt-1 leading-tight">Origin countries</div>
                         </div>
                         <div class="min-w-0">
-                            <div class="wp-display text-lg sm:text-3xl font-bold tracking-tight text-[#a3f69c] tabular-nums flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[16px] sm:text-[24px]">trending_up</span>99.9%
-                            </div>
-                            <div class="text-[9px] sm:text-[10px] text-[#bfcaba] uppercase mt-2 tracking-[0.05em] sm:tracking-[0.15em] leading-tight">Platform Uptime</div>
+                            <div class="wp-display text-xl sm:text-2xl font-bold tracking-tight text-[#a3f69c] tabular-nums">99.9%</div>
+                            <div class="text-[11px] text-[#8b978a] mt-1 leading-tight">Platform uptime</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="lg:col-span-7 relative wp-fade-2">
-                    <div class="absolute inset-0 bg-gradient-to-tr from-[#a3f69c]/20 via-[#0d631b]/5 to-transparent rounded-2xl blur-3xl -z-10 transform scale-110"></div>
+                    <div class="absolute inset-0 bg-gradient-to-tr from-[#a3f69c]/10 via-[#0d631b]/5 to-transparent rounded-2xl blur-2xl -z-10 transform scale-110"></div>
                     <div class="relative rounded-xl overflow-hidden shadow-2xl bg-[#121611] p-1 group">
                         <svg
                             class="w-full h-[380px] md:h-[600px] rounded-lg transition-transform duration-1000 group-hover:scale-105"
@@ -264,7 +257,7 @@ const chartPriceLabels = [
                         <div class="absolute inset-0 bg-gradient-to-t from-[#121611] via-transparent to-[#121611]/50 rounded-lg pointer-events-none"></div>
 
                         <!-- Floating price card -->
-                        <div class="absolute top-8 right-8 bg-[#1a2018]/80 backdrop-blur-xl p-5 rounded-lg shadow-2xl w-64 hover:bg-[#1a2018]/95 transition-all">
+                        <div class="absolute top-8 right-8 bg-[#1a2018]/80 backdrop-blur-xl p-5 rounded-lg shadow-2xl w-64 hover:bg-[#1a2018]/95 hover:-translate-y-1 transition-all wp-fade-3">
                             <div class="flex justify-between items-start mb-3">
                                 <div class="text-xs text-[#bfcaba] uppercase tracking-wider">Arabica (KC)</div>
                                 <span class="material-symbols-outlined text-[18px] text-[#bfcaba]">show_chart</span>
@@ -286,10 +279,10 @@ const chartPriceLabels = [
                         </div>
 
                         <!-- Floating live match card -->
-                        <div class="absolute bottom-8 left-8 bg-[#1a2018]/90 backdrop-blur-xl p-5 rounded-lg shadow-2xl w-72 hover:-translate-y-1 transition-transform">
+                        <div class="absolute bottom-8 left-8 bg-[#1a2018]/90 backdrop-blur-xl p-5 rounded-lg shadow-2xl w-72 hover:-translate-y-1 transition-transform wp-fade-4">
                             <div class="flex justify-between items-center mb-4">
                                 <div class="flex items-center gap-2">
-                                    <div class="w-2 h-2 rounded-full bg-[#a3f69c] wp-pulse"></div>
+                                    <div class="w-2 h-2 rounded-full bg-[#a3f69c]"></div>
                                     <span class="text-xs text-white uppercase tracking-wider">Live Match</span>
                                 </div>
                                 <span class="text-[10px] text-[#a3f69c] border border-[#a3f69c]/30 px-2 py-0.5 rounded bg-[#a3f69c]/10 tracking-wider">FILLED</span>
@@ -304,8 +297,8 @@ const chartPriceLabels = [
                                     <div class="text-sm text-white tabular-nums">500 MT</div>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2 text-[10px] text-[#bfcaba] uppercase tracking-wider">
-                                <span class="material-symbols-outlined text-[16px] text-[#a3f69c]">verified_user</span> Smart Contract Settled
+                            <div class="flex items-center gap-2 text-[11px] text-[#bfcaba]">
+                                <span class="material-symbols-outlined text-[16px] text-[#a3f69c]">verified_user</span> Smart contract settled
                             </div>
                         </div>
                     </div>
@@ -318,17 +311,17 @@ const chartPriceLabels = [
             <div class="max-w-7xl mx-auto px-4 md:px-8">
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                     <div class="max-w-2xl">
-                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#0d631b]/10 text-[#0d631b] rounded-full w-fit mb-4">
-                            <span class="material-symbols-outlined text-[16px]">location_on</span>
-                            <span class="text-[11px] font-bold tracking-widest uppercase">Origin Network</span>
+                        <div class="flex items-center gap-2 text-[#0d631b] mb-3">
+                            <span class="material-symbols-outlined text-[18px]">location_on</span>
+                            <span class="text-xs font-semibold tracking-wide">Origin network</span>
                         </div>
                         <h2 class="text-[28px] md:text-[32px] font-semibold text-[#181d17] leading-tight">Sourced from Uganda's growing regions.</h2>
                         <p class="text-base leading-6 text-[#40493d] mt-4">
                             Six verified growing regions, each with its own altitude, variety, and processing profile. Browse lots by origin instead of guessing at a label.
                         </p>
                     </div>
-                    <Link :href="route('origin.index')" class="text-[#0d631b] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all uppercase tracking-widest w-fit no-underline flex-shrink-0">
-                        View Origin Directory <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    <Link :href="route('origin.index')" class="text-[#0d631b] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all w-fit no-underline flex-shrink-0">
+                        View origin directory <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </Link>
                 </div>
 
@@ -386,7 +379,6 @@ const chartPriceLabels = [
 
         <!-- AI MATCHMAKER -->
         <section id="matchmaker" class="py-28 md:py-32 px-4 md:px-8 bg-[#121611] text-white relative overflow-hidden wp-reveal">
-            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#0d631b]/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
             <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
                 <div class="relative z-10">
                     <h2 class="text-4xl md:text-5xl text-white max-w-xl mb-6 font-semibold tracking-tight leading-[1.1]">
@@ -406,8 +398,8 @@ const chartPriceLabels = [
                             </div>
                         </li>
                     </ul>
-                    <Link :href="route('market.news')" class="text-[#a3f69c] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all uppercase tracking-widest w-fit no-underline">
-                        Explore the Algorithm <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    <Link :href="route('market.news')" class="text-[#a3f69c] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all w-fit no-underline">
+                        See how matching works <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </Link>
                 </div>
 
@@ -416,7 +408,7 @@ const chartPriceLabels = [
                         <div class="flex items-center justify-between mb-7">
                             <span class="text-[10px] text-[#8b978a] uppercase tracking-[0.2em] font-semibold">Live Match Preview</span>
                             <span class="inline-flex items-center gap-1.5 bg-[#a3f69c]/10 text-[#a3f69c] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                                <span class="w-1.5 h-1.5 rounded-full bg-[#a3f69c] wp-pulse"></span>98% Match
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#a3f69c]"></span>98% match
                             </span>
                         </div>
 
@@ -464,16 +456,14 @@ const chartPriceLabels = [
                             </div>
                         </div>
 
-                        <Link :href="route('login')" class="block text-center w-full mt-7 bg-[#a3f69c] text-[#002204] py-3.5 rounded-lg text-sm font-bold hover:bg-[#88d982] transition-colors uppercase tracking-widest no-underline">Initiate Smart Contract</Link>
+                        <Link :href="route('login')" class="block text-center w-full mt-7 bg-[#a3f69c] text-[#002204] py-3.5 rounded-lg text-sm font-semibold hover:bg-[#88d982] active:scale-[0.98] transition-all no-underline">Initiate smart contract</Link>
                     </div>
-                    <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-[#0d631b]/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
                 </div>
             </div>
         </section>
 
         <!-- EXCHANGE TERMINAL PREVIEW -->
         <section class="py-24 px-4 md:px-8 bg-[#ebefe5] relative overflow-hidden wp-reveal">
-            <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-[#a3f69c]/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
             <div class="max-w-7xl mx-auto relative z-10 flex flex-col gap-12">
                 <div class="max-w-2xl">
                     <h2 class="wp-display text-[32px] md:text-[48px] leading-[1.15] font-semibold text-[#181d17] mb-6">Coffee, traded with <span class="text-[#0d631b]">intelligence.</span></h2>
@@ -482,8 +472,8 @@ const chartPriceLabels = [
                     </p>
                     <Link
                         :href="route('login')"
-                        class="inline-block bg-[#a3f69c] text-[#002204] px-8 py-4 rounded-lg text-xs font-semibold tracking-[0.02em] uppercase hover:bg-[#88d982] hover:shadow-[0_0_15px_rgba(163,246,156,0.3)] transition-all no-underline"
-                    >Launch Terminal Preview</Link>
+                        class="inline-block bg-[#a3f69c] text-[#002204] px-8 py-4 rounded-lg text-sm font-semibold hover:bg-[#88d982] hover:shadow-[0_0_15px_rgba(163,246,156,0.3)] active:scale-[0.97] transition-all no-underline"
+                    >See the trading terminal</Link>
                 </div>
 
                 <div class="w-full bg-[#1a1d19] rounded-xl shadow-2xl overflow-hidden flex flex-col">
@@ -500,7 +490,7 @@ const chartPriceLabels = [
                             </div>
                         </div>
                         <div class="flex items-center gap-1.5 bg-[#121611]/60 px-2.5 py-1 rounded-full border border-[#707a6c]/20 flex-shrink-0">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#10B981] wp-pulse"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
                             <span class="text-[10px] text-[#8b978a] uppercase tracking-wider font-semibold">Live</span>
                         </div>
                     </div>
@@ -596,8 +586,8 @@ const chartPriceLabels = [
 
                             <div class="p-4 border-t border-[#707a6c]/20 bg-[#181a17]">
                                 <div class="grid grid-cols-2 gap-3">
-                                    <button type="button" class="bg-[#10B981] text-[#0f1f18] py-3 rounded text-xs font-bold hover:bg-[#10B981]/90 transition-colors">BUY</button>
-                                    <button type="button" class="bg-[#F43F5E] text-[#2a0e14] py-3 rounded text-xs font-bold hover:bg-[#F43F5E]/90 transition-colors">SELL</button>
+                                    <button type="button" class="bg-[#10B981] text-[#0f1f18] py-3 rounded text-xs font-bold hover:bg-[#10B981]/90 active:scale-[0.97] transition-all">BUY</button>
+                                    <button type="button" class="bg-[#F43F5E] text-[#2a0e14] py-3 rounded text-xs font-bold hover:bg-[#F43F5E]/90 active:scale-[0.97] transition-all">SELL</button>
                                 </div>
                             </div>
                         </div>
@@ -616,8 +606,8 @@ const chartPriceLabels = [
                             Every lot traded on Bean Origin comes with verified impact data tracked on-chain, so buyers can price in sustainability instead of guessing at it.
                         </p>
                     </div>
-                    <Link :href="route('market.news')" class="text-[#0d631b] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all uppercase tracking-widest w-fit no-underline flex-shrink-0">
-                        View Methodology <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    <Link :href="route('market.news')" class="text-[#0d631b] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all w-fit no-underline flex-shrink-0">
+                        View methodology <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </Link>
                 </div>
 
@@ -662,14 +652,14 @@ const chartPriceLabels = [
             <div class="max-w-7xl mx-auto">
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                     <div class="flex flex-col gap-4">
-                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#F43F5E]/10 rounded-full w-fit">
+                        <div class="flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-[#F43F5E] wp-pulse"></span>
-                            <span class="text-[11px] font-bold tracking-widest text-[#F43F5E] uppercase">Live Auctions</span>
+                            <span class="text-xs font-semibold text-[#F43F5E]">Live now</span>
                         </div>
-                        <h2 class="text-[28px] md:text-[32px] font-semibold text-[#181d17]">Live Auctions &amp; Spot Pricing</h2>
+                        <h2 class="text-[28px] md:text-[32px] font-semibold text-[#181d17]">Live auctions &amp; spot pricing</h2>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <span class="text-[11px] font-bold tracking-widest text-[#40493d] uppercase mb-2 w-full">Filter by Origin</span>
+                        <span class="text-[11px] font-semibold text-[#40493d] mb-2 w-full">Filter by origin</span>
                         <button
                             v-for="filter in auctionFilters"
                             :key="filter.key"
@@ -747,7 +737,7 @@ const chartPriceLabels = [
                                 <td class="px-6 py-4 text-right">
                                     <Link
                                         :href="route('login')"
-                                        class="inline-block px-4 py-2 rounded text-xs font-semibold transition-all no-underline"
+                                        class="inline-block px-4 py-2 rounded text-xs font-semibold transition-all active:scale-[0.96] no-underline"
                                         :class="row.style === 'solid' ? 'bg-[#0d631b] text-white hover:bg-[#2e7d32]' : 'border border-[#0d631b] text-[#0d631b] hover:bg-[#0d631b] hover:text-white'"
                                     >{{ row.action }}</Link>
                                 </td>
@@ -757,8 +747,8 @@ const chartPriceLabels = [
                 </div>
 
                 <div class="mt-8 flex justify-center">
-                    <Link :href="route('market.live')" class="text-sm font-semibold text-[#0d631b] hover:text-[#2e7d32] flex items-center gap-2 transition-colors uppercase tracking-wider no-underline">
-                        View All Market Listings <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    <Link :href="route('market.live')" class="text-sm font-semibold text-[#0d631b] hover:text-[#2e7d32] flex items-center gap-2 transition-colors no-underline">
+                        View all market listings <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </Link>
                 </div>
             </div>
@@ -797,6 +787,14 @@ const chartPriceLabels = [
 
 .wp-page .wp-fade-2 {
     animation: wpFadeInUp 1s ease-out 0.15s both;
+}
+
+.wp-page .wp-fade-3 {
+    animation: wpFadeInUp 0.8s ease-out 0.45s both;
+}
+
+.wp-page .wp-fade-4 {
+    animation: wpFadeInUp 0.8s ease-out 0.6s both;
 }
 
 .wp-page .wp-esg-card:hover {
@@ -842,5 +840,12 @@ const chartPriceLabels = [
     .wp-page .wp-pulse {
         animation: none;
     }
+}
+
+.wp-page a:focus-visible,
+.wp-page button:focus-visible {
+    outline: 2px solid #a3f69c;
+    outline-offset: 2px;
+    border-radius: 2px;
 }
 </style>
