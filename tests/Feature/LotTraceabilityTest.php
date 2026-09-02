@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\AcidityMetadata;
+use App\Models\AftertasteMetadata;
+use App\Models\AromaMetadata;
+use App\Models\BodyMetadata;
 use App\Models\FlavorMetadata;
 use App\Models\Lot;
 use App\Models\User;
@@ -18,6 +22,10 @@ class LotTraceabilityTest extends TestCase
     public function test_the_traceability_page_exposes_the_lots_provenance_fields(): void
     {
         FlavorMetadata::query()->create(['slug' => 'chocolate', 'name' => 'Chocolate', 'sort_order' => 1, 'is_active' => true]);
+        BodyMetadata::query()->create(['slug' => 'medium', 'name' => 'Medium', 'sort_order' => 1, 'is_active' => true]);
+        AcidityMetadata::query()->create(['slug' => 'citrus', 'name' => 'Citrus', 'sort_order' => 1, 'is_active' => true]);
+        AftertasteMetadata::query()->create(['slug' => 'clean', 'name' => 'Clean', 'sort_order' => 1, 'is_active' => true]);
+        AromaMetadata::query()->create(['slug' => 'floral', 'name' => 'Floral', 'sort_order' => 1, 'is_active' => true]);
 
         $user = User::factory()->create();
         $lot = $this->makeLot($user, [
@@ -30,12 +38,12 @@ class LotTraceabilityTest extends TestCase
             'defects_percentage' => 2.5,
             'screen' => '16/18',
             'currency' => 'USD',
-            'acidity' => 8.5,
-            'body' => 8.0,
+            'acidity' => 'citrus',
+            'body' => 'medium',
             'flavor' => 'chocolate',
-            'aroma' => 8.5,
+            'aroma' => 'floral',
             'balance' => 8.0,
-            'aftertaste' => 7.75,
+            'aftertaste' => 'clean',
         ]);
 
         $this->actingAs($user)
@@ -51,12 +59,12 @@ class LotTraceabilityTest extends TestCase
                 ->where('lot.defects_percentage', 2.5)
                 ->where('lot.screen', '16/18')
                 ->where('lot.currency', 'USD')
-                ->where('lot.acidity', 8.5)
-                ->where('lot.body', 8)
+                ->where('lot.acidity', 'Citrus')
+                ->where('lot.body', 'Medium')
                 ->where('lot.flavor', 'Chocolate')
-                ->where('lot.aroma', 8.5)
+                ->where('lot.aroma', 'Floral')
                 ->where('lot.balance', 8)
-                ->where('lot.aftertaste', 7.75)
+                ->where('lot.aftertaste', 'Clean')
                 ->where('blockchain', null)
             );
     }

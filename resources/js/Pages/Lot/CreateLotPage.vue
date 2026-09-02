@@ -418,12 +418,16 @@ const submit = (intent = 'create') => {
                             <div class="lot-field-grid">
                                 <div class="lot-field">
                                     <label for="acidity">Acidity</label>
-                                    <el-input id="acidity" v-model="form.acidity" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.5" />
+                                    <el-select id="acidity" v-model="form.acidity" class="lot-form-control" filterable clearable placeholder="Select an acidity">
+                                        <el-option v-for="option in props.options.acidities" :key="option.slug" :label="option.name" :value="option.slug" />
+                                    </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.acidity" />
                                 </div>
                                 <div class="lot-field">
                                     <label for="body">Body</label>
-                                    <el-input id="body" v-model="form.body" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.0" />
+                                    <el-select id="body" v-model="form.body" class="lot-form-control" filterable clearable placeholder="Select a body">
+                                        <el-option v-for="option in props.options.bodies" :key="option.slug" :label="option.name" :value="option.slug" />
+                                    </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.body" />
                                 </div>
                                 <div class="lot-field">
@@ -435,7 +439,9 @@ const submit = (intent = 'create') => {
                                 </div>
                                 <div class="lot-field">
                                     <label for="aroma">Aroma</label>
-                                    <el-input id="aroma" v-model="form.aroma" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.5" />
+                                    <el-select id="aroma" v-model="form.aroma" class="lot-form-control" filterable clearable placeholder="Select an aroma">
+                                        <el-option v-for="option in props.options.aromas" :key="option.slug" :label="option.name" :value="option.slug" />
+                                    </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.aroma" />
                                 </div>
                                 <div class="lot-field">
@@ -445,7 +451,9 @@ const submit = (intent = 'create') => {
                                 </div>
                                 <div class="lot-field">
                                     <label for="aftertaste">Aftertaste</label>
-                                    <el-input id="aftertaste" v-model="form.aftertaste" class="lot-form-control" type="number" min="0" max="10" step="0.01" placeholder="e.g. 7.75" />
+                                    <el-select id="aftertaste" v-model="form.aftertaste" class="lot-form-control" filterable clearable placeholder="Select an aftertaste">
+                                        <el-option v-for="option in props.options.aftertastes" :key="option.slug" :label="option.name" :value="option.slug" />
+                                    </el-select>
                                     <InputError class="mt-2 text-sm" :message="form.errors.aftertaste" />
                                 </div>
                             </div>

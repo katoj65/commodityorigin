@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\AcidityMetadata;
+use App\Models\AftertasteMetadata;
+use App\Models\AromaMetadata;
+use App\Models\BodyMetadata;
 use App\Models\CoffeeGrade;
 use App\Models\Country;
 use App\Models\CropVarietyMetadata;
@@ -95,20 +99,22 @@ class LotStoreValidationTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)->post(route('lot.store'), $this->validPayload([
-            'acidity' => 8.5,
-            'body' => 8.0,
-            'aroma' => 8.5,
             'balance' => 8.0,
-            'aftertaste' => 7.75,
         ]))->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('lots', [
-            'acidity' => 8.5,
-            'body' => 8.0,
-            'aroma' => 8.5,
             'balance' => 8.0,
-            'aftertaste' => 7.75,
         ]);
+    }
+
+    public function test_cupping_attributes_must_be_within_the_zero_to_ten_scale(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('lot.store'), $this->validPayload(['balance' => 10.5]));
+
+        $response->assertSessionHasErrors(['balance']);
+        $this->assertDatabaseCount('lots', 0);
     }
 
     public function test_flavor_is_optional_and_persists_as_a_flavor_metadata_slug(): void
@@ -132,13 +138,38 @@ class LotStoreValidationTest extends TestCase
         $this->assertDatabaseCount('lots', 0);
     }
 
-    public function test_cupping_attributes_must_be_within_the_zero_to_ten_scale(): void
+    public function test_body_acidity_aftertaste_and_aroma_are_optional_and_persist_as_metadata_slugs(): void
     {
         $user = User::factory()->create();
+        $body = $this->bodySlug();
+        $acidity = $this->aciditySlug();
+        $aftertaste = $this->aftertasteSlug();
+        $aroma = $this->aromaSlug();
 
-        $response = $this->actingAs($user)->post(route('lot.store'), $this->validPayload(['acidity' => 10.5]));
+        $response = $this->actingAs($user)->post(route('lot.store'), $this->validPayload([
+            'body' => $body,
+            'acidity' => $acidity,
+            'aftertaste' => $aftertaste,
+            'aroma' => $aroma,
+        ]));
 
-        $response->assertSessionHasErrors(['acidity']);
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('lots', ['body' => $body, 'acidity' => $acidity, 'aftertaste' => $aftertaste, 'aroma' => $aroma]);
+    }
+
+    public function test_body_acidity_aftertaste_and_aroma_must_reference_real_metadata(): void
+    {
+        $user = User::factory()->create();
+        $payload = $this->validPayload();
+
+        $this->actingAs($user)->post(route('lot.store'), [...$payload, 'body' => 'not-a-real-body'])
+            ->assertSessionHasErrors(['body']);
+        $this->actingAs($user)->post(route('lot.store'), [...$payload, 'acidity' => 'not-a-real-acidity'])
+            ->assertSessionHasErrors(['acidity']);
+        $this->actingAs($user)->post(route('lot.store'), [...$payload, 'aftertaste' => 'not-a-real-aftertaste'])
+            ->assertSessionHasErrors(['aftertaste']);
+        $this->actingAs($user)->post(route('lot.store'), [...$payload, 'aroma' => 'not-a-real-aroma'])
+            ->assertSessionHasErrors(['aroma']);
         $this->assertDatabaseCount('lots', 0);
     }
 
@@ -272,6 +303,46 @@ class LotStoreValidationTest extends TestCase
         FlavorMetadata::query()->create(['slug' => 'chocolate', 'name' => 'Chocolate', 'sort_order' => 1, 'is_active' => true]);
 
         return 'chocolate';
+    }
+
+    /**
+     * Seed an active body option and return its slug.
+     */
+    private function bodySlug(): string
+    {
+        BodyMetadata::query()->create(['slug' => 'medium', 'name' => 'Medium', 'sort_order' => 1, 'is_active' => true]);
+
+        return 'medium';
+    }
+
+    /**
+     * Seed an active acidity option and return its slug.
+     */
+    private function aciditySlug(): string
+    {
+        AcidityMetadata::query()->create(['slug' => 'citrus', 'name' => 'Citrus', 'sort_order' => 1, 'is_active' => true]);
+
+        return 'citrus';
+    }
+
+    /**
+     * Seed an active aftertaste option and return its slug.
+     */
+    private function aftertasteSlug(): string
+    {
+        AftertasteMetadata::query()->create(['slug' => 'clean', 'name' => 'Clean', 'sort_order' => 1, 'is_active' => true]);
+
+        return 'clean';
+    }
+
+    /**
+     * Seed an active aroma option and return its slug.
+     */
+    private function aromaSlug(): string
+    {
+        AromaMetadata::query()->create(['slug' => 'floral', 'name' => 'Floral', 'sort_order' => 1, 'is_active' => true]);
+
+        return 'floral';
     }
 
     /**

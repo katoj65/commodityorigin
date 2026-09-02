@@ -13,6 +13,10 @@ use App\Models\Batch;
 use App\Models\FarmCollection;
 use App\Models\Lot;
 use App\Models\CropVarietyMetadata;
+use App\Models\AcidityMetadata;
+use App\Models\AftertasteMetadata;
+use App\Models\AromaMetadata;
+use App\Models\BodyMetadata;
 use App\Models\Currency;
 use App\Models\DryingMethodMetadata;
 use App\Models\FlavorMetadata;
@@ -176,6 +180,46 @@ class StoreController extends Controller
                     'id' => $flavor->id,
                     'slug' => $flavor->slug,
                     'name' => $flavor->name,
+                ]),
+            'bodyOptions' => BodyMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'slug', 'name'])
+                ->map(fn (BodyMetadata $body): array => [
+                    'id' => $body->id,
+                    'slug' => $body->slug,
+                    'name' => $body->name,
+                ]),
+            'acidityOptions' => AcidityMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'slug', 'name'])
+                ->map(fn (AcidityMetadata $acidity): array => [
+                    'id' => $acidity->id,
+                    'slug' => $acidity->slug,
+                    'name' => $acidity->name,
+                ]),
+            'aftertasteOptions' => AftertasteMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'slug', 'name'])
+                ->map(fn (AftertasteMetadata $aftertaste): array => [
+                    'id' => $aftertaste->id,
+                    'slug' => $aftertaste->slug,
+                    'name' => $aftertaste->name,
+                ]),
+            'aromaOptions' => AromaMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'slug', 'name'])
+                ->map(fn (AromaMetadata $aroma): array => [
+                    'id' => $aroma->id,
+                    'slug' => $aroma->slug,
+                    'name' => $aroma->name,
                 ]),
         ];
     }

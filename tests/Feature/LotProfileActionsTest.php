@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\AcidityMetadata;
+use App\Models\AftertasteMetadata;
+use App\Models\AromaMetadata;
+use App\Models\BodyMetadata;
 use App\Models\CoffeeGrade;
 use App\Models\Country;
 use App\Models\CropVarietyMetadata;
@@ -49,26 +53,30 @@ class LotProfileActionsTest extends TestCase
         $lot = $this->makeLot($creator);
 
         FlavorMetadata::query()->create(['slug' => 'chocolate', 'name' => 'Chocolate', 'sort_order' => 1, 'is_active' => true]);
+        BodyMetadata::query()->create(['slug' => 'medium', 'name' => 'Medium', 'sort_order' => 1, 'is_active' => true]);
+        AcidityMetadata::query()->create(['slug' => 'citrus', 'name' => 'Citrus', 'sort_order' => 1, 'is_active' => true]);
+        AftertasteMetadata::query()->create(['slug' => 'clean', 'name' => 'Clean', 'sort_order' => 1, 'is_active' => true]);
+        AromaMetadata::query()->create(['slug' => 'floral', 'name' => 'Floral', 'sort_order' => 1, 'is_active' => true]);
 
         $response = $this->actingAs($creator)->patch(route('lot.update', $lot), $this->validPayload([
-            'acidity' => 8.5,
-            'body' => 8.0,
+            'acidity' => 'citrus',
+            'body' => 'medium',
             'flavor' => 'chocolate',
-            'aroma' => 8.5,
+            'aroma' => 'floral',
             'balance' => 8.0,
-            'aftertaste' => 7.75,
+            'aftertaste' => 'clean',
         ]));
 
         $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('lots', [
             'id' => $lot->id,
-            'acidity' => 8.5,
-            'body' => 8.0,
+            'acidity' => 'citrus',
+            'body' => 'medium',
             'flavor' => 'chocolate',
-            'aroma' => 8.5,
+            'aroma' => 'floral',
             'balance' => 8.0,
-            'aftertaste' => 7.75,
+            'aftertaste' => 'clean',
         ]);
     }
 

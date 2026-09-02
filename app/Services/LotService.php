@@ -9,6 +9,10 @@ use App\Models\Batch;
 use App\Models\CropVarietyMetadata;
 use App\Models\Farm;
 use App\Models\Farmer;
+use App\Models\AcidityMetadata;
+use App\Models\AftertasteMetadata;
+use App\Models\AromaMetadata;
+use App\Models\BodyMetadata;
 use App\Models\FlavorMetadata;
 use App\Models\Lot;
 use App\Models\LotBatch;
@@ -363,6 +367,86 @@ class LotService
     }
 
     /**
+     * Active body options for the lot cupping-profile forms.
+     */
+    public function activeBodyOptions(): Collection
+    {
+        return BodyMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'slug', 'name']);
+    }
+
+    /**
+     * Resolve a body_metadata slug to its display name, if it still exists.
+     */
+    private function bodyNameFor(string $slug): ?string
+    {
+        return BodyMetadata::query()->where('slug', $slug)->value('name');
+    }
+
+    /**
+     * Active acidity options for the lot cupping-profile forms.
+     */
+    public function activeAcidityOptions(): Collection
+    {
+        return AcidityMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'slug', 'name']);
+    }
+
+    /**
+     * Resolve an acidity_metadata slug to its display name, if it still exists.
+     */
+    private function acidityNameFor(string $slug): ?string
+    {
+        return AcidityMetadata::query()->where('slug', $slug)->value('name');
+    }
+
+    /**
+     * Active aftertaste options for the lot cupping-profile forms.
+     */
+    public function activeAftertasteOptions(): Collection
+    {
+        return AftertasteMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'slug', 'name']);
+    }
+
+    /**
+     * Resolve an aftertaste_metadata slug to its display name, if it still exists.
+     */
+    private function aftertasteNameFor(string $slug): ?string
+    {
+        return AftertasteMetadata::query()->where('slug', $slug)->value('name');
+    }
+
+    /**
+     * Active aroma options for the lot cupping-profile forms.
+     */
+    public function activeAromaOptions(): Collection
+    {
+        return AromaMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'slug', 'name']);
+    }
+
+    /**
+     * Resolve an aroma_metadata slug to its display name, if it still exists.
+     */
+    private function aromaNameFor(string $slug): ?string
+    {
+        return AromaMetadata::query()->where('slug', $slug)->value('name');
+    }
+
+    /**
      * Resolve the lot status from the submission intent.
      */
     private function resolveLotStatus(string $intent): string
@@ -587,12 +671,12 @@ class LotService
                 'quantity_bags' => $lot->quantity_bags,
                 'bag_weight_kg' => $this->toFloat($lot->bag_weight_kg),
                 'quality_score' => $this->toFloat($lot->quality_score),
-                'acidity' => $this->toFloat($lot->acidity),
-                'body' => $this->toFloat($lot->body),
+                'acidity' => $lot->acidity ? ($this->acidityNameFor($lot->acidity) ?? $lot->acidity) : null,
+                'body' => $lot->body ? ($this->bodyNameFor($lot->body) ?? $lot->body) : null,
                 'flavor' => $lot->flavor ? ($this->flavorNameFor($lot->flavor) ?? $lot->flavor) : null,
-                'aroma' => $this->toFloat($lot->aroma),
+                'aroma' => $lot->aroma ? ($this->aromaNameFor($lot->aroma) ?? $lot->aroma) : null,
                 'balance' => $this->toFloat($lot->balance),
-                'aftertaste' => $this->toFloat($lot->aftertaste),
+                'aftertaste' => $lot->aftertaste ? ($this->aftertasteNameFor($lot->aftertaste) ?? $lot->aftertaste) : null,
                 'flavors' => $lot->relationLoaded('flavors') ? $lot->flavors->pluck('name')->all() : [],
                 'price' => $this->toFloat($lot->price),
                 'currency' => $lot->currency,

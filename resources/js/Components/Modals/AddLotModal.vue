@@ -14,6 +14,10 @@ const props = defineProps({
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
     flavorOptions: { type: Array, default: () => [] },
+    bodyOptions: { type: Array, default: () => [] },
+    acidityOptions: { type: Array, default: () => [] },
+    aftertasteOptions: { type: Array, default: () => [] },
+    aromaOptions: { type: Array, default: () => [] },
 });
 
 function currencyLabel(code) {
@@ -215,12 +219,16 @@ function submit() {
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Acidity <small>(optional)</small></label>
-                        <el-input-number v-model="form.acidity" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.acidity }" />
+                        <el-select v-model="form.acidity" placeholder="Select an acidity" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.acidity }">
+                            <el-option v-for="option in acidityOptions" :key="option.slug" :label="option.name" :value="option.slug" />
+                        </el-select>
                         <span v-if="form.errors.acidity" class="alm-field__error">{{ form.errors.acidity }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Body <small>(optional)</small></label>
-                        <el-input-number v-model="form.body" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.body }" />
+                        <el-select v-model="form.body" placeholder="Select a body" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.body }">
+                            <el-option v-for="option in bodyOptions" :key="option.slug" :label="option.name" :value="option.slug" />
+                        </el-select>
                         <span v-if="form.errors.body" class="alm-field__error">{{ form.errors.body }}</span>
                     </div>
                     <div class="alm-field">
@@ -232,7 +240,9 @@ function submit() {
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Aroma <small>(optional)</small></label>
-                        <el-input-number v-model="form.aroma" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aroma }" />
+                        <el-select v-model="form.aroma" placeholder="Select an aroma" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aroma }">
+                            <el-option v-for="option in aromaOptions" :key="option.slug" :label="option.name" :value="option.slug" />
+                        </el-select>
                         <span v-if="form.errors.aroma" class="alm-field__error">{{ form.errors.aroma }}</span>
                     </div>
                     <div class="alm-field">
@@ -242,7 +252,9 @@ function submit() {
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Aftertaste <small>(optional)</small></label>
-                        <el-input-number v-model="form.aftertaste" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aftertaste }" />
+                        <el-select v-model="form.aftertaste" placeholder="Select an aftertaste" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aftertaste }">
+                            <el-option v-for="option in aftertasteOptions" :key="option.slug" :label="option.name" :value="option.slug" />
+                        </el-select>
                         <span v-if="form.errors.aftertaste" class="alm-field__error">{{ form.errors.aftertaste }}</span>
                     </div>
                     <div class="alm-field alm-field--span2">

@@ -7,7 +7,11 @@ use App\Helpers\QrCodeHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LotActivityResource;
 use App\Http\Resources\LotResource;
+use App\Models\AcidityMetadata;
+use App\Models\AftertasteMetadata;
+use App\Models\AromaMetadata;
 use App\Models\Batch;
+use App\Models\BodyMetadata;
 use App\Models\Currency;
 use App\Models\FlavorMetadata;
 use App\Models\Lot;
@@ -101,12 +105,12 @@ class LotController extends Controller
             'price' => ['nullable', 'numeric', 'min:0'],
             'currency' => ['nullable', 'string', 'size:3'],
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
-            'acidity' => ['nullable', 'numeric', 'between:0,10'],
-            'body' => ['nullable', 'numeric', 'between:0,10'],
+            'acidity' => ['nullable', 'string', Rule::exists('acidity_metadata', 'slug')->where('is_active', true)],
+            'body' => ['nullable', 'string', Rule::exists('body_metadata', 'slug')->where('is_active', true)],
             'flavor' => ['nullable', 'string', Rule::exists('flavor_metadata', 'slug')->where('is_active', true)],
-            'aroma' => ['nullable', 'numeric', 'between:0,10'],
+            'aroma' => ['nullable', 'string', Rule::exists('aroma_metadata', 'slug')->where('is_active', true)],
             'balance' => ['nullable', 'numeric', 'between:0,10'],
-            'aftertaste' => ['nullable', 'numeric', 'between:0,10'],
+            'aftertaste' => ['nullable', 'string', Rule::exists('aftertaste_metadata', 'slug')->where('is_active', true)],
             'flavor_ids' => ['nullable', 'array'],
             'flavor_ids.*' => ['integer', 'exists:flavor_metadata,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -196,6 +200,26 @@ class LotController extends Controller
                     'slug' => $flavor->slug,
                     'name' => $flavor->name,
                 ]),
+                'bodies' => $this->lots->activeBodyOptions()->map(fn (BodyMetadata $body): array => [
+                    'id' => $body->id,
+                    'slug' => $body->slug,
+                    'name' => $body->name,
+                ]),
+                'acidities' => $this->lots->activeAcidityOptions()->map(fn (AcidityMetadata $acidity): array => [
+                    'id' => $acidity->id,
+                    'slug' => $acidity->slug,
+                    'name' => $acidity->name,
+                ]),
+                'aftertastes' => $this->lots->activeAftertasteOptions()->map(fn (AftertasteMetadata $aftertaste): array => [
+                    'id' => $aftertaste->id,
+                    'slug' => $aftertaste->slug,
+                    'name' => $aftertaste->name,
+                ]),
+                'aromas' => $this->lots->activeAromaOptions()->map(fn (AromaMetadata $aroma): array => [
+                    'id' => $aroma->id,
+                    'slug' => $aroma->slug,
+                    'name' => $aroma->name,
+                ]),
             ],
             'canSubmit' => (bool) $sourceFarm,
             'submissionBlockedMessage' => $sourceFarm
@@ -228,12 +252,12 @@ class LotController extends Controller
             ],
             'packaging_type' => ['required', 'string', Rule::in(['GrainPro', 'Jute Only', 'Vacuum'])],
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
-            'acidity' => ['nullable', 'numeric', 'between:0,10'],
-            'body' => ['nullable', 'numeric', 'between:0,10'],
+            'acidity' => ['nullable', 'string', Rule::exists('acidity_metadata', 'slug')->where('is_active', true)],
+            'body' => ['nullable', 'string', Rule::exists('body_metadata', 'slug')->where('is_active', true)],
             'flavor' => ['nullable', 'string', Rule::exists('flavor_metadata', 'slug')->where('is_active', true)],
-            'aroma' => ['nullable', 'numeric', 'between:0,10'],
+            'aroma' => ['nullable', 'string', Rule::exists('aroma_metadata', 'slug')->where('is_active', true)],
             'balance' => ['nullable', 'numeric', 'between:0,10'],
-            'aftertaste' => ['nullable', 'numeric', 'between:0,10'],
+            'aftertaste' => ['nullable', 'string', Rule::exists('aftertaste_metadata', 'slug')->where('is_active', true)],
             'flavor_ids' => ['nullable', 'array'],
             'flavor_ids.*' => ['integer', 'exists:flavor_metadata,id'],
             'price' => ['required', 'numeric', 'min:0'],
@@ -279,6 +303,26 @@ class LotController extends Controller
                 'id' => $flavor->id,
                 'slug' => $flavor->slug,
                 'name' => $flavor->name,
+            ]),
+            'bodyOptions' => $this->lots->activeBodyOptions()->map(fn (BodyMetadata $body): array => [
+                'id' => $body->id,
+                'slug' => $body->slug,
+                'name' => $body->name,
+            ]),
+            'acidityOptions' => $this->lots->activeAcidityOptions()->map(fn (AcidityMetadata $acidity): array => [
+                'id' => $acidity->id,
+                'slug' => $acidity->slug,
+                'name' => $acidity->name,
+            ]),
+            'aftertasteOptions' => $this->lots->activeAftertasteOptions()->map(fn (AftertasteMetadata $aftertaste): array => [
+                'id' => $aftertaste->id,
+                'slug' => $aftertaste->slug,
+                'name' => $aftertaste->name,
+            ]),
+            'aromaOptions' => $this->lots->activeAromaOptions()->map(fn (AromaMetadata $aroma): array => [
+                'id' => $aroma->id,
+                'slug' => $aroma->slug,
+                'name' => $aroma->name,
             ]),
             'currencyOptions' => Currency::query()
                 ->where('is_active', true)
@@ -346,12 +390,12 @@ class LotController extends Controller
             'price' => ['nullable', 'numeric', 'min:0'],
             'currency' => ['nullable', 'string', 'size:3'],
             'quality_score' => ['nullable', 'numeric', 'between:0,100'],
-            'acidity' => ['nullable', 'numeric', 'between:0,10'],
-            'body' => ['nullable', 'numeric', 'between:0,10'],
+            'acidity' => ['nullable', 'string', Rule::exists('acidity_metadata', 'slug')->where('is_active', true)],
+            'body' => ['nullable', 'string', Rule::exists('body_metadata', 'slug')->where('is_active', true)],
             'flavor' => ['nullable', 'string', Rule::exists('flavor_metadata', 'slug')->where('is_active', true)],
-            'aroma' => ['nullable', 'numeric', 'between:0,10'],
+            'aroma' => ['nullable', 'string', Rule::exists('aroma_metadata', 'slug')->where('is_active', true)],
             'balance' => ['nullable', 'numeric', 'between:0,10'],
-            'aftertaste' => ['nullable', 'numeric', 'between:0,10'],
+            'aftertaste' => ['nullable', 'string', Rule::exists('aftertaste_metadata', 'slug')->where('is_active', true)],
             'flavor_ids' => ['nullable', 'array'],
             'flavor_ids.*' => ['integer', 'exists:flavor_metadata,id'],
             'notes' => ['nullable', 'string', 'max:1000'],

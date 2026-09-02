@@ -37,6 +37,10 @@ const props = defineProps({
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
     flavorOptions: { type: Array, default: () => [] },
+    bodyOptions: { type: Array, default: () => [] },
+    acidityOptions: { type: Array, default: () => [] },
+    aftertasteOptions: { type: Array, default: () => [] },
+    aromaOptions: { type: Array, default: () => [] },
 });
 
 const tokenisedLots = computed(() => props.lots.filter((lot) => lot.blockchain));
@@ -54,7 +58,6 @@ const tabs = computed(() => [
         key: 'collections',
         label: 'Farm Collections',
         icon: OfficeBuilding,
-        accent: 'a',
         route: 'store.collections',
         value: props.farmCollections.length,
         sub: `From ${sourcedFarmsCount.value} farm${sourcedFarmsCount.value === 1 ? '' : 's'}`,
@@ -63,7 +66,6 @@ const tabs = computed(() => [
         key: 'batches',
         label: 'Batches',
         icon: Files,
-        accent: 'b',
         route: 'store.batches',
         value: props.batches.length,
         sub: `${totalBatchWeightKg.value.toLocaleString()} kg total`,
@@ -72,7 +74,6 @@ const tabs = computed(() => [
         key: 'lots',
         label: 'Lots',
         icon: Ticket,
-        accent: 'c',
         route: 'store.lots',
         value: props.lots.length,
         sub: `${totalLotWeightKg.value.toLocaleString()} kg total`,
@@ -81,7 +82,6 @@ const tabs = computed(() => [
         key: 'tokenised',
         label: 'Tokenised Lots',
         icon: Wallet,
-        accent: 'd',
         route: 'store.tokenised',
         value: tokenisedLots.value.length,
         sub: `${tokenisedPct.value}% of all lots`,
@@ -172,15 +172,17 @@ const importResultVisible = ref(Boolean(props.importResult));
                     >
                         <div class="st-nav-card__head">
                             <div class="st-nav-card__top">
-                                <div class="st-nav-card__icon" :class="`st-nav-card__icon--${tab.accent}`">
+                                <div class="st-nav-card__icon">
                                     <el-icon><component :is="tab.icon" /></el-icon>
                                 </div>
                                 <span class="st-nav-card__label">{{ tab.label }}</span>
                             </div>
                             <el-icon class="st-nav-card__chevron"><ArrowRight /></el-icon>
                         </div>
-                        <span class="st-nav-card__value">{{ tab.value }}</span>
-                        <span class="st-nav-card__sub">{{ tab.sub }}</span>
+                        <div class="st-nav-card__stat">
+                            <span class="st-nav-card__value">{{ tab.value }}</span>
+                            <span class="st-nav-card__sub">{{ tab.sub }}</span>
+                        </div>
                     </Link>
                 </nav>
 
@@ -217,6 +219,10 @@ const importResultVisible = ref(Boolean(props.importResult));
             :currency-options="currencyOptions"
             :currency-countries="currencyCountries"
             :flavor-options="flavorOptions"
+            :body-options="bodyOptions"
+            :acidity-options="acidityOptions"
+            :aftertaste-options="aftertasteOptions"
+            :aroma-options="aromaOptions"
         />
     </StoreLayout>
 </template>
@@ -359,43 +365,45 @@ const importResultVisible = ref(Boolean(props.importResult));
 .st-import-panel__close:hover { background: rgba(0, 0, 0, 0.06); }
 
 /* ── Nav cards — primary navigation + KPI snapshot, one row, one look.
-   Icon and title share a top row (matching the classic KPI-tile pattern),
-   with the value and sub-caption stacked below. ──────────────────────── */
+   Flat, modern tiles: no border, no resting shadow, one consistent
+   neutral color treatment (no per-tab hue coding) — the tinted surface
+   and typography carry the tile, not chrome. Value and caption sit on
+   one baseline-aligned row so the caption never breaks onto its own
+   line, truncating with an ellipsis instead if the tile gets narrow.
+   Hover adds only a small, soft shadow — no border or lift. ─────────── */
 .st-nav-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .st-nav-card {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 16px 18px;
-    background: var(--surface-container-lowest);
-    border: 1px solid var(--card-border);
+    gap: 12px;
+    padding: 18px 20px 16px;
+    background: var(--surface-container-low);
     border-radius: var(--card-radius);
     text-decoration: none;
     color: inherit;
     overflow: hidden;
-    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    transition: box-shadow .15s ease;
 }
-.st-nav-card:hover { border-color: color-mix(in srgb, var(--on-surface) 16%, var(--card-border)); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06); transform: translateY(-1px); }
+.st-nav-card:hover { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06); }
 .st-nav-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
 .st-nav-card__top { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .st-nav-card__icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 14px;
     flex-shrink: 0;
+    background: var(--surface-container-high);
+    color: var(--on-surface-variant);
 }
-.st-nav-card__icon--a { background: #ECFDF3; color: #16A34A; }
-.st-nav-card__icon--b { background: #FDF1E4; color: #B4690E; }
-.st-nav-card__icon--c { background: #EEF2FF; color: #4338CA; }
-.st-nav-card__icon--d { background: #F4EEFF; color: #7C3AED; }
 .st-nav-card__label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.st-nav-card__value { font-size: 1.5rem; font-weight: 800; letter-spacing: -.01em; color: var(--on-surface); line-height: 1.2; font-variant-numeric: tabular-nums; }
-.st-nav-card__sub { font-size: .6875rem; font-weight: 600; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-nav-card__stat { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.st-nav-card__value { flex-shrink: 0; font-size: 1.625rem; font-weight: 800; letter-spacing: -.01em; color: var(--on-surface); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.st-nav-card__sub { flex: 1; min-width: 0; font-size: .6875rem; font-weight: 600; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-nav-card__chevron { flex-shrink: 0; font-size: 14px; color: var(--on-surface-variant); opacity: 0; transform: translateX(-4px); transition: opacity .15s ease, transform .15s ease; }
 .st-nav-card:hover .st-nav-card__chevron { opacity: 1; transform: translateX(0); color: var(--primary); }
 

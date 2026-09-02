@@ -50,6 +50,10 @@ const props = defineProps({
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
     flavorOptions: { type: Array, default: () => [] },
+    bodyOptions: { type: Array, default: () => [] },
+    acidityOptions: { type: Array, default: () => [] },
+    aftertasteOptions: { type: Array, default: () => [] },
+    aromaOptions: { type: Array, default: () => [] },
     activities: { type: Array, default: () => [] },
     activityOptions: { type: Array, default: () => [] },
 });
@@ -225,6 +229,30 @@ const hasCuppingProfile = computed(() => ['acidity', 'body', 'flavor', 'aroma', 
 
 function flavorLabel(slug) {
     const match = props.flavorOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function bodyLabel(slug) {
+    const match = props.bodyOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function acidityLabel(slug) {
+    const match = props.acidityOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function aftertasteLabel(slug) {
+    const match = props.aftertasteOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function aromaLabel(slug) {
+    const match = props.aromaOptions.find((option) => option.slug === slug);
     if (match) return match.name;
     return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -454,14 +482,14 @@ const fmtDateTime = (value) => {
                             <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
                             <div class="lp-spec__body">
                                 <span class="lp-spec__label">Acidity</span>
-                                <strong class="lp-spec__value lp-mono">{{ lot.acidity !== null && lot.acidity !== undefined ? fmtNumber(lot.acidity) : 'Not recorded' }}</strong>
+                                <strong class="lp-spec__value">{{ lot.acidity ? acidityLabel(lot.acidity) : 'Not recorded' }}</strong>
                             </div>
                         </div>
                         <div class="lp-spec">
                             <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
                             <div class="lp-spec__body">
                                 <span class="lp-spec__label">Body</span>
-                                <strong class="lp-spec__value lp-mono">{{ lot.body !== null && lot.body !== undefined ? fmtNumber(lot.body) : 'Not recorded' }}</strong>
+                                <strong class="lp-spec__value">{{ lot.body ? bodyLabel(lot.body) : 'Not recorded' }}</strong>
                             </div>
                         </div>
                         <div class="lp-spec">
@@ -475,7 +503,7 @@ const fmtDateTime = (value) => {
                             <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
                             <div class="lp-spec__body">
                                 <span class="lp-spec__label">Aroma</span>
-                                <strong class="lp-spec__value lp-mono">{{ lot.aroma !== null && lot.aroma !== undefined ? fmtNumber(lot.aroma) : 'Not recorded' }}</strong>
+                                <strong class="lp-spec__value">{{ lot.aroma ? aromaLabel(lot.aroma) : 'Not recorded' }}</strong>
                             </div>
                         </div>
                         <div class="lp-spec">
@@ -489,7 +517,7 @@ const fmtDateTime = (value) => {
                             <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
                             <div class="lp-spec__body">
                                 <span class="lp-spec__label">Aftertaste</span>
-                                <strong class="lp-spec__value lp-mono">{{ lot.aftertaste !== null && lot.aftertaste !== undefined ? fmtNumber(lot.aftertaste) : 'Not recorded' }}</strong>
+                                <strong class="lp-spec__value">{{ lot.aftertaste ? aftertasteLabel(lot.aftertaste) : 'Not recorded' }}</strong>
                             </div>
                         </div>
                     </div>
@@ -567,7 +595,10 @@ const fmtDateTime = (value) => {
                 <!-- Linked batches -->
                 <div class="lp-tile">
                     <div class="lp-tile__head">
-                        <h2 class="lp-tile__title"><el-icon><Files /></el-icon> Linked Batches</h2>
+                        <div class="lp-tile__head-left">
+                            <h2 class="lp-tile__title"><el-icon><Files /></el-icon> Linked Batches</h2>
+                            <span v-if="linkedBatches.length" class="lp-tile__count">{{ linkedBatches.length }}</span>
+                        </div>
                         <button v-if="lot.can_manage" type="button" class="lp-btn lp-btn--primary" @click="showAttachBatch = true">
                             <el-icon><Plus /></el-icon> Attach Batch
                         </button>
@@ -582,16 +613,25 @@ const fmtDateTime = (value) => {
                             <span class="lp-batch-row__main">
                                 <span class="lp-batch-row__icon"><el-icon><Box /></el-icon></span>
                                 <span class="lp-batch-row__body">
-                                    <span class="lp-batch-row__number lp-mono">{{ lb.batch?.batch_number || lb.batch_number }}</span>
+                                    <span class="lp-batch-row__number lp-mono">
+                                        {{ lb.batch?.batch_number || lb.batch_number }}
+                                        <span v-if="lb.batch?.processing_method" class="lp-inline-code">{{ lb.batch.processing_method }}</span>
+                                    </span>
                                     <span class="lp-batch-row__meta">
                                         {{ lb.batch?.variety || '—' }}
                                         <span v-if="lb.batch?.warehouse_location"> &middot; <el-icon class="lp-batch-row__meta-icon"><Location /></el-icon>{{ lb.batch.warehouse_location }}</span>
                                     </span>
                                 </span>
                             </span>
-                            <span v-if="lb.allocation_kg" class="lp-batch-row__stat">
-                                <span class="lp-batch-row__stat-value lp-mono">{{ fmtNumber(lb.allocation_kg) }} kg</span>
-                                <span class="lp-batch-row__stat-label">Drawn</span>
+                            <span class="lp-batch-row__stats">
+                                <span v-if="lb.batch?.cup_score" class="lp-batch-row__stat">
+                                    <span class="lp-batch-row__stat-value lp-mono">{{ fmtNumber(lb.batch.cup_score) }}</span>
+                                    <span class="lp-batch-row__stat-label">Cup Score</span>
+                                </span>
+                                <span v-if="lb.allocation_kg" class="lp-batch-row__stat">
+                                    <span class="lp-batch-row__stat-value lp-mono">{{ fmtNumber(lb.allocation_kg) }} kg</span>
+                                    <span class="lp-batch-row__stat-label">Drawn</span>
+                                </span>
                             </span>
                             <span v-if="lb.batch?.status" class="lp-batch-row__status" :class="`lp-batch-row__status--${batchStatusTone(lb.batch.status)}`">{{ lb.batch.status }}</span>
                             <el-icon class="lp-batch-row__chevron"><ArrowRight /></el-icon>
@@ -729,6 +769,10 @@ const fmtDateTime = (value) => {
             :currency-options="currencyOptions"
             :currency-countries="currencyCountries"
             :flavor-options="flavorOptions"
+            :body-options="bodyOptions"
+            :acidity-options="acidityOptions"
+            :aftertaste-options="aftertasteOptions"
+            :aroma-options="aromaOptions"
         />
         <PublishLotModal
             v-if="lot.can_manage && !lot.is_published"
@@ -995,6 +1039,8 @@ const fmtDateTime = (value) => {
 /* ── Tile headers ─────────────────────────────────────────────────────── */
 .lp-tile__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .lp-tile__head .lp-tile__title { margin: 0; }
+.lp-tile__head-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lp-tile__head-left .lp-tile__title { margin: 0; }
 .lp-tile__title {
     font-size: 13px; font-weight: 700; color: var(--text);
     margin: 0 0 14px; display: flex; align-items: center; gap: 6px;
@@ -1096,13 +1142,13 @@ const fmtDateTime = (value) => {
 /* ── Linked batches ───────────────────────────────────────────────────── */
 .lp-batch-list { display: flex; flex-direction: column; }
 .lp-batch-row {
-    display: flex; align-items: center; gap: 14px;
-    padding: 13px 4px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px 4px; border-bottom: 1px solid var(--border);
     text-decoration: none; color: inherit;
     transition: background 120ms ease;
 }
 .lp-batch-row:last-child { border-bottom: none; }
-.lp-batch-row:hover { background: var(--surface-muted); margin: 0 -12px; padding: 13px 16px; border-radius: 8px; }
+.lp-batch-row:hover { background: var(--surface-muted); margin: 0 -12px; padding: 14px 16px; border-radius: 8px; }
 .lp-batch-row:hover .lp-batch-row__icon { background: var(--accent-soft); color: #C2410C; }
 .lp-batch-row:hover .lp-batch-row__chevron { opacity: 1; transform: translateX(0); }
 .lp-batch-row--static { cursor: default; align-items: flex-start; }
@@ -1121,9 +1167,9 @@ const fmtDateTime = (value) => {
 .lp-farm-fact .el-icon { font-size: 11px; color: var(--text-muted); }
 .lp-batch-row__main { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
 .lp-batch-row__icon {
-    width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
     background: var(--surface-elevated); color: var(--text-2);
-    display: flex; align-items: center; justify-content: center; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
     transition: background 120ms ease, color 120ms ease;
 }
 .lp-batch-row__icon--farm { background: var(--success-soft); color: var(--success); }
@@ -1146,6 +1192,7 @@ const fmtDateTime = (value) => {
 }
 .lp-batch-row__meta { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lp-batch-row__meta-icon { font-size: 11px; margin-left: 2px; }
+.lp-batch-row__stats { display: flex; align-items: center; gap: 18px; flex-shrink: 0; }
 .lp-batch-row__stat { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
 .lp-batch-row__stat-value { font-size: 12.5px; font-weight: 700; color: var(--text); white-space: nowrap; }
 .lp-batch-row__stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }

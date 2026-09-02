@@ -21,6 +21,10 @@ const props = defineProps({
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
     flavorOptions: { type: Array, default: () => [] },
+    bodyOptions: { type: Array, default: () => [] },
+    acidityOptions: { type: Array, default: () => [] },
+    aftertasteOptions: { type: Array, default: () => [] },
+    aromaOptions: { type: Array, default: () => [] },
 });
 
 function goToCollection(row) {
@@ -58,6 +62,10 @@ function formatMoney(amount, currency) {
         :currency-options="currencyOptions"
         :currency-countries="currencyCountries"
         :flavor-options="flavorOptions"
+        :body-options="bodyOptions"
+        :acidity-options="acidityOptions"
+        :aftertaste-options="aftertasteOptions"
+        :aroma-options="aromaOptions"
     >
         <div class="st-table-card">
             <div class="st-list">

@@ -193,33 +193,41 @@ const deleteMessage = computed(() => `Are you sure you want to delete this colle
                         <div class="fcp-stat__icon fcp-stat__icon--a"><el-icon><Box /></el-icon></div>
                         <div class="fcp-stat__label">Quantity</div>
                     </div>
-                    <div class="fcp-stat__value">{{ Number(collection.quantity || 0).toLocaleString() }} <span class="fcp-stat__unit">{{ collection.unit || '' }}</span></div>
-                    <div class="fcp-stat__caption">Recorded at intake</div>
+                    <div class="fcp-stat__row">
+                        <div class="fcp-stat__value">{{ Number(collection.quantity || 0).toLocaleString() }} <span class="fcp-stat__unit">{{ collection.unit || '' }}</span></div>
+                        <div class="fcp-stat__caption">Recorded at intake</div>
+                    </div>
                 </div>
                 <div class="fcp-stat">
                     <div class="fcp-stat__head">
                         <div class="fcp-stat__icon fcp-stat__icon--b"><el-icon><Coin /></el-icon></div>
                         <div class="fcp-stat__label">Price / Unit</div>
                     </div>
-                    <div class="fcp-stat__value">{{ formatMoney(collection.collection_price, collection.currency) }}</div>
-                    <div v-if="collection.unit" class="fcp-stat__caption">per {{ collection.unit }}</div>
+                    <div class="fcp-stat__row">
+                        <div class="fcp-stat__value">{{ formatMoney(collection.collection_price, collection.currency) }}</div>
+                        <div v-if="collection.unit" class="fcp-stat__caption">per {{ collection.unit }}</div>
+                    </div>
                 </div>
                 <div class="fcp-stat">
                     <div class="fcp-stat__head">
                         <div class="fcp-stat__icon" :class="hasDefects ? 'fcp-stat__icon--warn' : 'fcp-stat__icon--good'"><el-icon><WarningFilled /></el-icon></div>
                         <div class="fcp-stat__label">Defects</div>
                     </div>
-                    <div class="fcp-stat__value">{{ collection.initial_defects ?? '—' }}</div>
-                    <span v-if="defectsKnown" class="fcp-stat__pill" :class="hasDefects ? 'fcp-stat__pill--warn' : 'fcp-stat__pill--good'">
-                        {{ hasDefects ? 'Flagged' : 'Clean' }}
-                    </span>
+                    <div class="fcp-stat__row">
+                        <div class="fcp-stat__value">{{ collection.initial_defects ?? '—' }}</div>
+                        <span v-if="defectsKnown" class="fcp-stat__pill" :class="hasDefects ? 'fcp-stat__pill--warn' : 'fcp-stat__pill--good'">
+                            {{ hasDefects ? 'Flagged' : 'Clean' }}
+                        </span>
+                    </div>
                 </div>
                 <div class="fcp-stat">
                     <div class="fcp-stat__head">
                         <div class="fcp-stat__icon fcp-stat__icon--c"><el-icon><Medal /></el-icon></div>
                         <div class="fcp-stat__label">Quality Score</div>
                     </div>
-                    <div class="fcp-stat__value">{{ collection.initial_quality_score ?? '—' }} <span v-if="qualityScoreKnown" class="fcp-stat__unit">/100</span></div>
+                    <div class="fcp-stat__row">
+                        <div class="fcp-stat__value">{{ collection.initial_quality_score ?? '—' }} <span v-if="qualityScoreKnown" class="fcp-stat__unit">/100</span></div>
+                    </div>
                 </div>
             </div>
 
@@ -502,14 +510,15 @@ const deleteMessage = computed(() => `Are you sure you want to delete this colle
 
 .fcp-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .fcp-stat {
-    background: var(--surface-container-lowest);
-    border: 1px solid var(--card-border);
+    background: var(--surface-container-low);
     border-radius: var(--card-radius);
     padding: 20px;
-    transition: border-color .15s ease, box-shadow .15s ease;
+    transition: box-shadow .15s ease;
 }
-.fcp-stat:hover { border-color: color-mix(in srgb, var(--on-surface) 18%, var(--card-border)); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04); }
+.fcp-stat:hover { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06); }
 .fcp-stat__head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.fcp-stat__row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.fcp-stat__row .fcp-stat__value { flex-shrink: 0; }
 .fcp-stat__icon {
     width: 28px;
     height: 28px;
@@ -528,13 +537,13 @@ const deleteMessage = computed(() => `Are you sure you want to delete this colle
 .fcp-stat__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-variant); }
 .fcp-stat__value { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; color: var(--on-surface); font-variant-numeric: tabular-nums; line-height: 1.2; }
 .fcp-stat__unit { font-size: 13px; font-weight: 600; color: var(--on-surface-variant); }
-.fcp-stat__caption { font-size: 11.5px; color: var(--on-surface-variant); margin-top: 7px; }
+.fcp-stat__caption { flex: 1; min-width: 0; font-size: 11.5px; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .fcp-stat__pill {
     display: inline-flex;
     align-items: center;
     width: fit-content;
-    margin-top: 9px;
+    flex-shrink: 0;
     padding: 3px 9px;
     border-radius: 999px;
     font-size: 10.5px;
