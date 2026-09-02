@@ -29,6 +29,12 @@
     box-shadow: none !important;
     background: transparent !important;
     padding: 0 !important;
+    /* Its .el-input__wrapper child is forced to min-height: 48px above,
+       but this outer box otherwise keeps Element Plus's native ~32px
+       height — that mismatch let the wrapper overflow past its own
+       layout box and overlap whatever sibling followed it (e.g. a
+       validation error message positioned right after it). */
+    height: 48px !important;
 }
 
 .el-input__inner,

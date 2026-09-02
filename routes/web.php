@@ -186,6 +186,7 @@ Route::middleware([
         Route::get('/{farm}', [FarmController::class, 'show'])->name('show');
         Route::patch('/{farm}', [FarmController::class, 'update'])->name('update');
         Route::post('/{farm}/collections', [FarmController::class, 'storeCollection'])->name('collections.store');
+        Route::post('/{farm}/collections/import', [FarmController::class, 'importCollections'])->name('collections.import');
         Route::patch('/{farm}/collections/{collection}', [FarmController::class, 'updateCollection'])->name('collections.update');
         Route::delete('/{farm}/collections/{collection}', [FarmController::class, 'destroyCollection'])->name('collections.destroy');
         Route::post('/{farm}/documents', [FarmController::class, 'storeDocument'])->name('documents.store');

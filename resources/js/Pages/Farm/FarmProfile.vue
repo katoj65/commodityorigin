@@ -7,11 +7,12 @@ import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import AddFarmSustainabilityPracticeModal from '@/Components/Modals/AddFarmSustainabilityPracticeModal.vue';
 import AddFarmSoilProfileModal from '@/Components/Modals/AddFarmSoilProfileModal.vue';
 import { isGoogleMapsConfigured, renderMap } from '@/services/googleMaps';
+import { ElNotification } from 'element-plus';
 import {
-    Box, ChatDotRound, CircleCheckFilled, Coffee, Delete, Document, Download, Edit, Files,
+    Box, ChatDotRound, CircleCheckFilled, Close, Coffee, Delete, Document, Download, Edit, Files,
     Location, MapLocation, Plus, Promotion, User,
     Sunny, PartlyCloudy, Cloudy, Umbrella, Lightning, Grid,
-    Upload, Warning,
+    Upload, UploadFilled, Warning, WarningFilled,
     InfoFilled, LocationFilled, HomeFilled, Aim, Top,
     Calendar, Medal, Money, Ticket, Memo,
 } from '@element-plus/icons-vue';
@@ -36,6 +37,7 @@ const props = defineProps({
     sustainabilityPracticeOptions: { type: Array, default: () => [] },
     soilProfiles: { type: Array, default: () => [] },
     soilProfileOptions: { type: Array, default: () => [] },
+    collectionImportResult: { type: Object, default: null },
 });
 
 /* ── Real display computed — every value below comes straight from a
@@ -309,6 +311,50 @@ function editCollectionFromView() {
     if (collectionToView.value) openEditCollectionDialog(collectionToView.value);
 }
 
+/* ── Import collections from Excel ──────────────────────────────────── */
+const collectionFileInput = ref(null);
+const importingCollections = ref(false);
+const collectionImportResultVisible = ref(Boolean(props.collectionImportResult));
+
+function handleCollectionFileChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    importingCollections.value = true;
+
+    router.post(route('farm.collections.import', props.farm.id), { file }, {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            collectionImportResultVisible.value = true;
+            const imported = props.collectionImportResult?.imported ?? 0;
+            const skipped = props.collectionImportResult?.errors?.length ?? 0;
+            ElNotification({
+                title: imported > 0 ? 'Import Complete' : 'Import Failed',
+                message: imported > 0
+                    ? `${imported} collection${imported === 1 ? '' : 's'} imported${skipped ? `, ${skipped} row(s) skipped.` : '.'}`
+                    : 'No rows were imported. See the details below.',
+                type: imported > 0 ? (skipped ? 'warning' : 'success') : 'error',
+                duration: 4000,
+                offset: 84,
+            });
+        },
+        onError: (errors) => {
+            ElNotification({
+                title: 'Import Failed',
+                message: errors.file || 'Please check the file and try again.',
+                type: 'error',
+                duration: 4000,
+                offset: 84,
+            });
+        },
+        onFinish: () => {
+            importingCollections.value = false;
+            event.target.value = '';
+        },
+    });
+}
+
 function submitCollectionForm() {
     const options = {
         preserveScroll: true,
@@ -362,6 +408,7 @@ const collectionPaymentStatusTone = { pending: 'amber', partial: 'amber', paid: 
 
 const collectionRows = computed(() => props.collections.map((c) => ({
     id: c.id,
+    code: c.collection_code || '—',
     date: c.collection_date || '—',
     coffeeType: c.coffee_type || '—',
     variety: c.variety || '—',
@@ -747,8 +794,32 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                 <div class="fp-card fp-card--flush">
                     <div class="fp-card-head fp-card-head--padded">
                         <h2 class="fp-card-title"><el-icon><Coffee /></el-icon> Farm Collections</h2>
-                        <button v-if="canEdit" type="button" class="fp-btn fp-btn--outline" @click="openCollectionDialog">
-                            <el-icon :size="14"><Plus /></el-icon> Add Collection
+                        <div v-if="canEdit" class="fp-card-head__actions">
+                            <input ref="collectionFileInput" type="file" accept=".xlsx,.xls" class="d-none" @change="handleCollectionFileChange">
+                            <button type="button" class="fp-btn fp-btn--outline" :disabled="importingCollections" @click="collectionFileInput?.click()">
+                                <el-icon :size="14"><UploadFilled /></el-icon> {{ importingCollections ? 'Importing…' : 'Import Excel' }}
+                            </button>
+                            <button type="button" class="fp-btn fp-btn--outline" @click="openCollectionDialog">
+                                <el-icon :size="14"><Plus /></el-icon> Add Collection
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="collectionImportResult && collectionImportResultVisible" class="fp-import-panel" :class="{ 'fp-import-panel--warn': collectionImportResult.errors.length }">
+                        <div class="fp-import-panel__icon">
+                            <el-icon :size="16"><WarningFilled v-if="collectionImportResult.errors.length" /><UploadFilled v-else /></el-icon>
+                        </div>
+                        <div class="fp-import-panel__body">
+                            <div class="fp-import-panel__title">
+                                {{ collectionImportResult.imported }} collection{{ collectionImportResult.imported === 1 ? '' : 's' }} imported
+                                <span v-if="collectionImportResult.errors.length">, {{ collectionImportResult.errors.length }} row{{ collectionImportResult.errors.length === 1 ? '' : 's' }} skipped</span>
+                            </div>
+                            <ul v-if="collectionImportResult.errors.length" class="fp-import-panel__list">
+                                <li v-for="err in collectionImportResult.errors" :key="err.row">Row {{ err.row }}: {{ err.errors.join(' ') }}</li>
+                            </ul>
+                        </div>
+                        <button type="button" class="fp-import-panel__close" aria-label="Dismiss" @click="collectionImportResultVisible = false">
+                            <el-icon :size="14"><Close /></el-icon>
                         </button>
                     </div>
 
@@ -756,6 +827,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                         <table class="table align-middle mb-0 fp-table">
                             <thead>
                                 <tr>
+                                    <th>Code</th>
                                     <th>Date</th>
                                     <th>Coffee Type</th>
                                     <th>Variety</th>
@@ -767,6 +839,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                             </thead>
                             <tbody>
                                 <tr v-for="c in collectionRows" :key="c.id" class="fp-table-row" @click="openViewCollectionDialog(c)">
+                                    <td class="fp-mono fp-muted">{{ c.code }}</td>
                                     <td class="fp-mono fp-table-strong">{{ c.date }}</td>
                                     <td class="fp-muted">{{ c.coffeeType }}</td>
                                     <td class="fp-muted">{{ c.variety }}</td>
@@ -1112,11 +1185,6 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                         <InputError class="fp-field__error" :message="collectionForm.errors.collection_date" />
                     </div>
                     <div class="fp-field">
-                        <label class="fp-field__label">Coffee Type</label>
-                        <el-input v-model="collectionForm.coffee_type" placeholder="e.g. Arabica" class="fp-field-input" :class="{ 'fp-field-input--error': collectionForm.errors.coffee_type }" />
-                        <InputError class="fp-field__error" :message="collectionForm.errors.coffee_type" />
-                    </div>
-                    <div class="fp-field">
                         <label class="fp-field__label">Variety</label>
                         <el-select v-model="collectionForm.variety" placeholder="Select crop variety" clearable class="fp-field-input w-100" :class="{ 'fp-field-input--error': collectionForm.errors.variety }">
                             <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
@@ -1179,7 +1247,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                         </el-select>
                         <InputError class="fp-field__error" :message="collectionForm.errors.payment_status" />
                     </div>
-                    <div class="fp-field">
+                    <div class="fp-field fp-field--span2">
                         <label class="fp-field__label">Reference</label>
                         <el-input v-model="collectionForm.reference" placeholder="Payment / lot reference" class="fp-field-input" :class="{ 'fp-field-input--error': collectionForm.errors.reference }" />
                         <InputError class="fp-field__error" :message="collectionForm.errors.reference" />
@@ -1479,6 +1547,39 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 .fp-trio > .fp-card { height: 100%; display: flex; flex-direction: column; }
 .fp-card-head-icon { color: var(--dp-outline); flex-shrink: 0; }
 .fp-card-head--padded { padding: 22px 22px 0; margin-bottom: 8px; }
+.fp-card-head__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.fp-import-panel { display: flex; align-items: flex-start; gap: 12px; margin: 0 22px 16px; padding: 14px 16px; border-radius: 10px; background: var(--dp-surface-container-low); }
+.fp-import-panel--warn { background: #fffbeb; }
+.fp-import-panel__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--dp-secondary-container);
+    color: var(--dp-on-secondary-container);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fp-import-panel--warn .fp-import-panel__icon { background: #fde68a; color: #92400e; }
+.fp-import-panel__body { flex: 1; min-width: 0; }
+.fp-import-panel__title { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
+.fp-import-panel__list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--dp-on-surface-variant); display: flex; flex-direction: column; gap: 3px; }
+.fp-import-panel__close {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--dp-on-surface-variant);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.fp-import-panel__close:hover { background: var(--dp-surface-container-low); }
 .fp-mono { font-family: var(--dp-font-mono); }
 .fp-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 100%; }
 .fp-stat-cell__label { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dp-outline); margin-bottom: 6px; }
@@ -1844,6 +1945,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 @media (max-width: 640px) {
     .fp-card { padding: 18px; }
     .fp-card-head--padded { padding: 18px 18px 0; }
+    .fp-import-panel { margin: 0 18px 16px; }
     .fp-table thead th,
     .fp-table tbody td { padding: 12px 18px; }
     .fp-grid-2 { grid-template-columns: 1fr; }

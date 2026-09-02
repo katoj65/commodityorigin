@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Farm;
 
+use App\Helpers\ExcelImportHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ClimateZoneMetadataResource;
 use App\Http\Resources\FarmCollectionResource;
@@ -173,6 +174,7 @@ class FarmController extends Controller
             'collections' => FarmCollectionResource::collection($farm->collections)->resolve(),
             'collectionUnitOptions' => $this->collections->unitOptions(),
             'collectionPaymentStatusOptions' => $this->collections->paymentStatusOptions(),
+            'collectionImportResult' => session('collection_import_result'),
             'sustainabilityPractices' => FarmSustainabilityPracticeResource::collection($this->sustainabilityPractices->forFarm($farm))->resolve(),
             'sustainabilityPracticeOptions' => SustainabilityPracticesMetadata::query()
                 ->where('is_active', true)
@@ -260,6 +262,40 @@ class FarmController extends Controller
         return redirect()
             ->route('farm-collection.show', $collection)
             ->with('success', 'Collection recorded successfully.');
+    }
+
+    /**
+     * Bulk-record coffee collections from an uploaded spreadsheet. Same
+     * access as recording one by hand — the farm's creator or an admin.
+     */
+    public function importCollections(Request $request, Farm $farm): RedirectResponse
+    {
+        Gate::authorize('update', $farm);
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:5120'],
+        ]);
+
+        $rows = ExcelImportHelper::readRows($request->file('file'));
+
+        if ($rows === []) {
+            return back()->with('error', 'The file has no data rows to import.');
+        }
+
+        $result = $this->collections->importRows($farm, $rows, $request->user()->id);
+
+        session()->flash('collection_import_result', $result);
+
+        if ($result['imported'] === 0) {
+            return back()->with('error', 'No collections were imported — every row had errors.');
+        }
+
+        $message = $result['imported'].' collection'.($result['imported'] === 1 ? '' : 's').' imported successfully.';
+        if ($result['errors'] !== []) {
+            $message .= ' '.count($result['errors']).' row(s) were skipped due to errors.';
+        }
+
+        return back()->with('success', $message);
     }
 
     /**

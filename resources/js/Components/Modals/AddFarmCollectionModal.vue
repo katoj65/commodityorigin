@@ -327,6 +327,8 @@ function submit() {
 .afc-field__hint--ok { color: #2F6B35; }
 
 .afc-input { width: 100%; }
+.afc-input.el-date-editor,
+.afc-input.el-date-editor.el-input { width: 100% !important; max-width: 100%; }
 .afc-input :deep(.el-input__wrapper),
 .afc-input :deep(.el-select__wrapper),
 .afc-input :deep(.el-textarea__inner) { border-radius: 6px; }
