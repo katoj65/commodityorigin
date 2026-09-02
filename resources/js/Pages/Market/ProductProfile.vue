@@ -3,8 +3,9 @@ import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import {
     LocationFilled, ArrowLeft,
-    Grape, Pouring, Connection, UserFilled,
-    Star, TrendCharts, Setting, Collection, MapLocation, ChatLineSquare, House, Calendar,
+    Grape, Pouring, Connection, House,
+    Star, TrendCharts, Setting, Collection, MapLocation, ChatLineSquare, Calendar,
+    Grid, Odometer, Box, WarningFilled,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ImageViewer from '@/Components/ImageViewer.vue';
@@ -29,20 +30,30 @@ const FALLBACK = {
     unit: '250g bag',
     badge: 'Single Origin',
     scaScore: '88.0',
-    altitude: '1,400 - 1,600m',
+    screen: '16/18',
     process: 'Giling Basah',
     varietals: 'Typica, Catimor',
-    sensoryChips: [
-        { label: 'Earthy', dot: 'var(--dp-surface-tint)' },
-        { label: 'Spicy', dot: 'var(--dp-error-container)' },
-        { label: 'Dark Chocolate', dot: '#191818' },
-    ],
+    originStats: {
+        origin: 'Indonesia',
+        region: 'North Sumatra',
+        altitude: '1,400 - 1,600m',
+        moisture: '11.5%',
+        packagingType: 'Grain Pro Bags',
+        harvestYear: '2024',
+        defectsPercentage: '2.0%',
+    },
+    sensory: {
+        acidity: 'Low',
+        body: 'Full',
+        flavor: 'Dark Chocolate',
+        aroma: 'Earthy',
+        balance: '7.5 / 10',
+        aftertaste: 'Herbaceous',
+    },
     traderNote: 'High demand lot. Consistent cup quality across previous 3 harvests. Recommended for specialty espresso programs.',
-    originDescription: 'Grown on the slopes of Mount Leuser, this Mandheling lot benefits from rich volcanic andisols and a unique microclimate.',
-    farmGroup: 'Lintong Nihuta',
-    harvestSeason: 'Sept - Dec',
-    farmerProfileText: 'The Lintong Nihuta cooperative represents 150 smallholders preserving traditional Giling Basah methods for over three generations.',
-    farmerImpact: 'Community Impact: 100% Fair Trade',
+    sourceFarms: [
+        { name: 'Lintong Nihuta Cooperative', size: '12.4 ha', location: 'Lintong Nihuta, Sumatra, Indonesia' },
+    ],
     mapLabel: 'Mount Leuser, Sumatra',
     // Real public coordinates for Mount Leuser National Park, Sumatra (~3.70°N, 97.15°E).
     mapEmbedSrc: 'https://www.openstreetmap.org/export/embed.html?bbox=96.95%2C3.50%2C97.35%2C3.90&layer=mapnik&marker=3.70%2C97.15',
@@ -73,20 +84,33 @@ const stats = computed(() => [
         icon: Star,
     },
     {
-        label: 'Altitude',
-        value: props.item.specs?.altitude != null ? `${Math.round(props.item.specs.altitude)}m` : FALLBACK.altitude,
-        icon: TrendCharts,
+        label: 'Screen',
+        value: props.item.specs?.screen || FALLBACK.screen,
+        icon: Grid,
     },
     { label: 'Process', value: props.item.process || FALLBACK.process, icon: Setting },
     { label: 'Variety', value: props.item.specs?.variety || FALLBACK.varietals, icon: Collection },
 ]);
 
-const sensoryChips = computed(() => {
-    const notes = props.item.cupping?.flavor_notes;
-    if (!notes) return FALLBACK.sensoryChips;
-    const dots = ['var(--dp-surface-tint)', 'var(--dp-error-container)', '#191818'];
-    const chips = notes.split(',').map((label, i) => ({ label: label.trim(), dot: dots[i % dots.length] })).filter((c) => c.label);
-    return chips.length ? chips : FALLBACK.sensoryChips;
+const SENSORY_FIELDS = [
+    { key: 'acidity', label: 'Acidity' },
+    { key: 'body', label: 'Body' },
+    { key: 'flavor', label: 'Flavour' },
+    { key: 'aroma', label: 'Aroma' },
+    { key: 'balance', label: 'Balance' },
+    { key: 'aftertaste', label: 'Aftertaste' },
+];
+
+const sensoryAttributes = computed(() => {
+    const cupping = props.item.cupping || {};
+    return SENSORY_FIELDS.map(({ key, label }) => {
+        const raw = cupping[key];
+        let value = FALLBACK.sensory[key];
+        if (raw != null && raw !== '') {
+            value = key === 'balance' ? `${Number(raw).toFixed(1)} / 10` : raw;
+        }
+        return { label, value };
+    });
 });
 
 const traderNote = computed(() => {
@@ -98,23 +122,33 @@ const traderNote = computed(() => {
     return `This lot is in ${props.item.demand} demand.${listingsClause}`;
 });
 
-const origin = computed(() => ({
-    description: FALLBACK.originDescription,
-    stats: [
-        { label: 'Farm Group', value: props.item.farm?.name || FALLBACK.farmGroup, icon: House },
-        { label: 'Harvest Season', value: props.item.harvest_season || FALLBACK.harvestSeason, icon: Calendar },
-    ],
-}));
+const origin = computed(() => {
+    const specs = props.item.specs || {};
+    const stats = FALLBACK.originStats;
 
-const farmerProfile = computed(() => {
-    if (props.item.farm?.name && props.item.farmer_count) {
-        const count = props.item.farmer_count;
-        return {
-            text: `The ${props.item.farm.name} cooperative represents ${count} smallholder${count === 1 ? '' : 's'} behind this lot.`,
-            impact: FALLBACK.farmerImpact,
-        };
+    return {
+        stats: [
+            { label: 'Origin', value: specs.origin || stats.origin, icon: MapLocation },
+            { label: 'Region', value: specs.region || stats.region, icon: LocationFilled },
+            { label: 'Altitude', value: specs.altitude != null && specs.altitude !== '' ? `${specs.altitude}m` : stats.altitude, icon: TrendCharts },
+            { label: 'Moisture', value: specs.moisture != null ? `${Number(specs.moisture).toFixed(1)}%` : stats.moisture, icon: Odometer },
+            { label: 'Package Type', value: specs.packaging_type || stats.packagingType, icon: Box },
+            { label: 'Harvest Year', value: specs.year_of_harvest || stats.harvestYear, icon: Calendar },
+            { label: 'Defect %', value: specs.defects_percentage != null ? `${Number(specs.defects_percentage).toFixed(1)}%` : stats.defectsPercentage, icon: WarningFilled },
+        ],
+    };
+});
+
+const sourceFarms = computed(() => {
+    const farms = props.item.contributing_farms;
+    if (farms?.length) {
+        return farms.map((farm) => ({
+            name: farm.name,
+            size: farm.size_ha != null ? `${Number(farm.size_ha).toFixed(1)} ha` : null,
+            location: farm.location || null,
+        }));
     }
-    return { text: FALLBACK.farmerProfileText, impact: FALLBACK.farmerImpact };
+    return FALLBACK.sourceFarms;
 });
 
 const mapLocationLabel = computed(() => {
@@ -235,10 +269,11 @@ const cartMaxQuantity = computed(() => {
 
                     <div class="mp-hero__sensory">
                         <span class="mp-hero__sensory-label">Sensory Profile</span>
-                        <div class="mp-hero__chips">
-                            <span v-for="chip in sensoryChips" :key="chip.label" class="mp-hero__chip">
-                                <span class="mp-hero__chip-dot" :style="{ background: chip.dot }" />{{ chip.label }}
-                            </span>
+                        <div class="mp-hero__sensory-grid">
+                            <div v-for="attr in sensoryAttributes" :key="attr.label" class="mp-hero__sensory-item">
+                                <span class="mp-hero__sensory-item-label">{{ attr.label }}</span>
+                                <span class="mp-hero__sensory-item-value">{{ attr.value }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -272,7 +307,6 @@ const cartMaxQuantity = computed(() => {
                     <div class="mp-origin-story__left">
                         <div class="mp-origin-story__text">
                             <h2 class="mp-section-title"><el-icon :size="19"><MapLocation /></el-icon>The Origin</h2>
-                            <p class="mp-desc">{{ origin.description }}</p>
                             <div class="mp-origin-story__stats">
                                 <div v-for="stat in origin.stats" :key="stat.label">
                                     <p><el-icon :size="11"><component :is="stat.icon" /></el-icon>{{ stat.label }}</p>
@@ -282,12 +316,17 @@ const cartMaxQuantity = computed(() => {
                         </div>
 
                         <div class="mp-farmer-card">
-                            <h3 class="mp-farmer-card__title"><el-icon :size="14"><UserFilled /></el-icon>Farmer Profile</h3>
-                            <p class="mp-farmer-card__text">{{ farmerProfile.text }}</p>
-                            <div class="mp-farmer-card__impact">
-                                <span class="mp-farmer-card__impact-icon"><el-icon :size="13"><UserFilled /></el-icon></span>
-                                {{ farmerProfile.impact }}
-                            </div>
+                            <h3 class="mp-farmer-card__title"><el-icon :size="14"><House /></el-icon>Source Farms</h3>
+                            <ul class="mp-farmer-card__list">
+                                <li v-for="farm in sourceFarms" :key="farm.name" class="mp-farmer-card__farm">
+                                    <span class="mp-farmer-card__farm-name">{{ farm.name }}</span>
+                                    <span class="mp-farmer-card__farm-meta">
+                                        <span v-if="farm.size">{{ farm.size }}</span>
+                                        <span v-if="farm.size && farm.location"> · </span>
+                                        <span v-if="farm.location">{{ farm.location }}</span>
+                                    </span>
+                                </li>
+                            </ul>
                         </div>
                     </div>
 
@@ -348,7 +387,6 @@ const cartMaxQuantity = computed(() => {
 
 .mp-section-title { display: flex; align-items: center; gap: 9px; font-size: 1.5rem; font-weight: 800; letter-spacing: -.01em; color: var(--dp-on-surface); margin: 0 0 12px !important; }
 .mp-section-title :deep(.el-icon) { color: var(--dp-primary); }
-.mp-desc { font-size: 1rem; line-height: 1.7; color: var(--dp-on-surface-variant); margin: 0 !important; }
 
 /* ── Hero ────────────────────────────────────────────────────────────── */
 .mp-hero { display: grid; grid-template-columns: 4fr 5fr 3fr; gap: 24px; align-items: start; }
@@ -389,9 +427,10 @@ const cartMaxQuantity = computed(() => {
 .mp-hero__stat-value--accent { font-size: 1.5rem; font-weight: 800; color: var(--dp-primary); }
 
 .mp-hero__sensory-label { display: block; font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--dp-outline); margin-bottom: 10px; }
-.mp-hero__chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.mp-hero__chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 7px; background: var(--dp-primary-container); color: var(--dp-on-primary-container); font-size: .75rem; font-weight: 600; }
-.mp-hero__chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.mp-hero__sensory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mp-hero__sensory-item { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; border-radius: 8px; background: var(--dp-primary-container); }
+.mp-hero__sensory-item-label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--dp-on-primary-container); opacity: .7; }
+.mp-hero__sensory-item-value { font-size: .8125rem; font-weight: 600; color: var(--dp-on-primary-container); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .mp-hero__buy { display: flex; flex-direction: column; gap: 20px; }
 .mp-buy-card { padding: 22px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); transition: box-shadow .2s ease; }
@@ -409,16 +448,18 @@ const cartMaxQuantity = computed(() => {
 .mp-origin-story { margin-top: 48px; padding: 32px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); }
 .mp-origin-story__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
 .mp-origin-story__left { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.mp-origin-story__stats { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.mp-origin-story__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin-top: 20px; }
 .mp-origin-story__stats p { display: flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--dp-outline); margin: 0 !important; }
 .mp-origin-story__stats strong { font-size: .9375rem; font-weight: 700; color: var(--dp-on-surface); }
 
 .mp-farmer-card { padding: 20px; background: var(--dp-surface-container); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); height: fit-content; transition: box-shadow .15s ease, transform .15s ease; }
 .mp-farmer-card:hover { transform: translateY(-1px); box-shadow: 0 1px 2px rgba(39, 19, 16, .04), 0 14px 28px -14px rgba(39, 19, 16, .18); }
 .mp-farmer-card__title { display: flex; align-items: center; gap: 6px; font-size: .875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-primary); margin: 0 0 10px !important; }
-.mp-farmer-card__text { font-size: .8125rem; line-height: 1.65; color: var(--dp-on-surface-variant); margin: 0 0 14px !important; }
-.mp-farmer-card__impact { display: flex; align-items: center; gap: 8px; font-size: .6875rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--dp-on-surface); }
-.mp-farmer-card__impact-icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; background: var(--dp-secondary-fixed); color: var(--dp-on-secondary-fixed); }
+.mp-farmer-card__list { display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 0 !important; padding: 0 !important; }
+.mp-farmer-card__farm { display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid var(--card-border); }
+.mp-farmer-card__farm:last-child { padding-bottom: 0; border-bottom: none; }
+.mp-farmer-card__farm-name { font-size: .8125rem; font-weight: 700; color: var(--dp-on-surface); }
+.mp-farmer-card__farm-meta { font-size: .75rem; color: var(--dp-on-surface-variant); }
 
 .mp-map { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--dp-card-radius); overflow: hidden; box-shadow: var(--dp-card-shadow); }
 .mp-map__frame { width: 100%; height: 100%; border: 0; display: block; }
@@ -450,5 +491,6 @@ const cartMaxQuantity = computed(() => {
     .mp-origin-story__left { grid-template-columns: 1fr; }
     .mp-sustainability__grid { grid-template-columns: 1fr; }
     .mp-hero__stat-grid { grid-template-columns: 1fr 1fr; }
+    .mp-hero__sensory-grid { grid-template-columns: 1fr 1fr; }
 }
 </style>

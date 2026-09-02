@@ -447,6 +447,27 @@ class LotService
     }
 
     /**
+     * Resolve a lot's six cupping fields to their display values — the
+     * metadata-backed ones (acidity/body/flavor/aroma/aftertaste) to
+     * their names, balance to a plain number. Shared by anywhere that
+     * needs a lot's sensory profile (traceability, product listings)
+     * so the slug→name lookups aren't re-derived per caller.
+     *
+     * @return array<string, mixed>
+     */
+    public function cuppingProfileFor(?Lot $lot): array
+    {
+        return [
+            'acidity' => $lot?->acidity ? ($this->acidityNameFor($lot->acidity) ?? $lot->acidity) : null,
+            'body' => $lot?->body ? ($this->bodyNameFor($lot->body) ?? $lot->body) : null,
+            'flavor' => $lot?->flavor ? ($this->flavorNameFor($lot->flavor) ?? $lot->flavor) : null,
+            'aroma' => $lot?->aroma ? ($this->aromaNameFor($lot->aroma) ?? $lot->aroma) : null,
+            'balance' => $this->toFloat($lot?->balance),
+            'aftertaste' => $lot?->aftertaste ? ($this->aftertasteNameFor($lot->aftertaste) ?? $lot->aftertaste) : null,
+        ];
+    }
+
+    /**
      * Resolve the lot status from the submission intent.
      */
     private function resolveLotStatus(string $intent): string
@@ -559,10 +580,11 @@ class LotService
         $timeline = [];
         $allCollections = collect();
         $allFarmers = collect();
+        $allFarms = collect();
         $farmIds = [];
 
         $batches = $lot->lotBatches
-            ->map(function (LotBatch $lotBatch) use (&$timeline, &$allCollections, &$allFarmers, &$farmIds): ?array {
+            ->map(function (LotBatch $lotBatch) use (&$timeline, &$allCollections, &$allFarmers, &$allFarms, &$farmIds): ?array {
                 $batch = $lotBatch->batch;
 
                 if (! $batch) {
@@ -581,6 +603,7 @@ class LotService
                     $allCollections->push($collection);
                     if ($collection['farm']) {
                         $farmIds[$collection['farm']['id']] = true;
+                        $allFarms->push($collection['farm']);
                         foreach ($collection['farm']['farmers'] ?? [] as $farmer) {
                             $allFarmers->push($farmer);
                         }
@@ -671,12 +694,7 @@ class LotService
                 'quantity_bags' => $lot->quantity_bags,
                 'bag_weight_kg' => $this->toFloat($lot->bag_weight_kg),
                 'quality_score' => $this->toFloat($lot->quality_score),
-                'acidity' => $lot->acidity ? ($this->acidityNameFor($lot->acidity) ?? $lot->acidity) : null,
-                'body' => $lot->body ? ($this->bodyNameFor($lot->body) ?? $lot->body) : null,
-                'flavor' => $lot->flavor ? ($this->flavorNameFor($lot->flavor) ?? $lot->flavor) : null,
-                'aroma' => $lot->aroma ? ($this->aromaNameFor($lot->aroma) ?? $lot->aroma) : null,
-                'balance' => $this->toFloat($lot->balance),
-                'aftertaste' => $lot->aftertaste ? ($this->aftertasteNameFor($lot->aftertaste) ?? $lot->aftertaste) : null,
+                ...$this->cuppingProfileFor($lot),
                 'flavors' => $lot->relationLoaded('flavors') ? $lot->flavors->pluck('name')->all() : [],
                 'price' => $this->toFloat($lot->price),
                 'currency' => $lot->currency,
@@ -689,6 +707,7 @@ class LotService
             ],
             'blockchain' => $lot->blockchain ? BlockchainResource::make($lot->blockchain)->resolve() : null,
             'batches' => $batches->all(),
+            'farms' => $allFarms->unique('id')->values()->all(),
             'timeline' => $timeline,
             'stats' => [
                 'batches' => $batches->count(),

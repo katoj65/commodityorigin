@@ -126,7 +126,6 @@ class MarketService
             'lot.user',
             'lot.lotBatches.batch.user',
             'lot.lotBatches.batch.batchFarmCollections.farmCollection.farm.farmers',
-            'lot.sensoryProfile',
             'lot.storageProfile',
             'lot.blockchain',
             'lot.images',
@@ -135,7 +134,6 @@ class MarketService
 
         $lot = $market->lot;
         $batch = $lot?->batch;
-        $sensory = $lot?->sensoryProfile;
         $storage = $lot?->storageProfile;
 
         // Reuse the traceability aggregation (already joins batches → farm
@@ -163,8 +161,13 @@ class MarketService
         $specs = array_filter([
             'grade' => $lot?->grade,
             'variety' => $batch?->variety,
-            'screen_size' => $lot?->screen_size,
+            'screen' => $lot?->screen,
+            'origin' => $lot?->origin,
+            'region' => $lot?->region,
             'altitude' => $lot?->altitude,
+            'moisture' => $this->toFloatOrNull($lot?->moisture),
+            'year_of_harvest' => $lot?->year_of_harvest,
+            'defects_percentage' => $this->toFloatOrNull($lot?->defects_percentage),
             'moisture_content' => $this->toFloatOrNull($batch?->moisture_content),
             'defect_count' => $batch?->defect_count,
             'drying_method' => $batch?->drying_method,
@@ -176,14 +179,16 @@ class MarketService
             'warehouse' => $lot?->warehouse ?? $storage?->warehouse,
         ], fn ($value) => $value !== null && $value !== '');
 
+        // The lot's own acidity/body/flavor/aroma/aftertaste columns are the
+        // live source of truth (metadata-slug dropdowns resolved to display
+        // names) — traceabilityData() already resolved them onto $trace['lot'].
         $cupping = array_filter([
-            'aroma_score' => $this->toFloatOrNull($sensory?->aroma_score ?? $lot?->aroma_score),
-            'acidity_score' => $this->toFloatOrNull($sensory?->acidity_score ?? $lot?->acidity_score),
-            'body_score' => $this->toFloatOrNull($sensory?->body_score ?? $lot?->body_score),
-            'aftertaste_score' => $this->toFloatOrNull($sensory?->aftertaste_score),
-            'flavor_notes' => $sensory?->flavor_notes,
-            'fragrance_notes' => $sensory?->fragrance_notes,
-            'cupping_notes' => $sensory?->cupping_notes,
+            'acidity' => $trace['lot']['acidity'] ?? null,
+            'body' => $trace['lot']['body'] ?? null,
+            'flavor' => $trace['lot']['flavor'] ?? null,
+            'aroma' => $trace['lot']['aroma'] ?? null,
+            'balance' => $trace['lot']['balance'] ?? null,
+            'aftertaste' => $trace['lot']['aftertaste'] ?? null,
         ], fn ($value) => $value !== null && $value !== '');
 
         $marketAvgPrice = Market::query()
@@ -249,6 +254,14 @@ class MarketService
             'farmer_count' => $farmerCount ?: null,
             'harvest_season' => $primaryCollection['harvest_season'] ?? null,
             'supply_chain' => $supplyChain ?: null,
+            // Every distinct farm behind this lot's batches — for the "Source
+            // Farms" list, not just the primary one used for the map pin.
+            'contributing_farms' => collect($trace['farms'] ?? [])->map(fn ($farm) => [
+                'id' => $farm['id'],
+                'name' => $farm['name'],
+                'size_ha' => $farm['coffee_area_ha'],
+                'location' => $farm['location'],
+            ])->values()->all(),
         ];
     }
 
