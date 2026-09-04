@@ -15,13 +15,10 @@ import {
     Box,
     CameraFilled,
     Clock,
-    Close,
     Coffee,
     Coin,
     Connection,
     Delete,
-    Document,
-    Download,
     EditPen,
     Files,
     FullScreen,
@@ -38,6 +35,7 @@ import {
     Ticket,
     Trophy,
     User,
+    Van,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -54,6 +52,8 @@ const props = defineProps({
     acidityOptions: { type: Array, default: () => [] },
     aftertasteOptions: { type: Array, default: () => [] },
     aromaOptions: { type: Array, default: () => [] },
+    deliveryMethodOptions: { type: Array, default: () => [] },
+    incotermOptions: { type: Array, default: () => [] },
     activities: { type: Array, default: () => [] },
     activityOptions: { type: Array, default: () => [] },
 });
@@ -72,10 +72,6 @@ const pendingActivity = ref(null);
 const deletingActivity = ref(false);
 const MAX_LOT_IMAGES = 3;
 const remainingImageSlots = computed(() => Math.max(0, MAX_LOT_IMAGES - (props.lot.images?.length || 0)));
-
-function removeLotImage(imageId) {
-    router.delete(route('lot.images.destroy', [props.lot.id, imageId]), { preserveScroll: true });
-}
 
 /* ── Image viewer: main photo + gallery form one browsable sequence ─────── */
 const viewerOpen = ref(false);
@@ -183,20 +179,6 @@ const linkedBatches = computed(() => props.lot.lot_batches || []);
 // The QR encodes the traceability URL; keep a visible copy next to the code.
 const traceabilityUrl = computed(() => (props.lot.id ? route('lot.traceability', props.lot.id) : ''));
 
-function downloadQrCode() {
-    if (!props.lot.qr_code) return;
-
-    const blob = new Blob([props.lot.qr_code], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${props.lot.lot_number || 'lot'}-qr.svg`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-}
-
 const statusMap = {
     draft: { label: 'Draft', tone: 'warning' },
     ready: { label: 'Ready', tone: 'info' },
@@ -211,21 +193,22 @@ const lotValueTotal = computed(() => {
     return Number(props.lot.price) * Number(props.lot.net_weight_kg);
 });
 
-const qualityKnown = computed(() => props.lot.quality_score !== null && props.lot.quality_score !== undefined);
-const qualityTone = computed(() => {
-    if (!qualityKnown.value) return 'neutral';
-    return Number(props.lot.quality_score) >= 80 ? 'good' : 'warn';
-});
-const qualityLabel = computed(() => {
-    if (!qualityKnown.value) return 'Not yet graded';
-    return Number(props.lot.quality_score) >= 80 ? 'Specialty grade' : 'Below specialty';
-});
-
 /* ── Cupping Profile tile only renders once at least one SCA attribute
    or flavor note has been recorded, rather than showing six "Not
    recorded" rows on every lot. ─────────────────────────────────────── */
 const hasCuppingProfile = computed(() => ['acidity', 'body', 'flavor', 'aroma', 'balance', 'aftertaste']
     .some((key) => props.lot[key] !== null && props.lot[key] !== undefined) || (props.lot.flavors?.length > 0));
+
+const market = computed(() => props.lot.market ?? null);
+
+const hasDeliveryProfile = computed(() => {
+    if (!market.value) return false;
+
+    return [
+        'available_from', 'delivery_method', 'incoterm', 'dispatch',
+        'transport_arrangement', 'insurance_arrangement',
+    ].some((key) => market.value[key] !== null && market.value[key] !== undefined && market.value[key] !== '');
+});
 
 function flavorLabel(slug) {
     const match = props.flavorOptions.find((option) => option.slug === slug);
@@ -253,6 +236,18 @@ function aftertasteLabel(slug) {
 
 function aromaLabel(slug) {
     const match = props.aromaOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function deliveryMethodLabel(slug) {
+    const match = props.deliveryMethodOptions.find((option) => option.slug === slug);
+    if (match) return match.name;
+    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function incotermLabel(slug) {
+    const match = props.incotermOptions.find((option) => option.slug === slug);
     if (match) return match.name;
     return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -358,29 +353,11 @@ const fmtDateTime = (value) => {
                                     <img v-if="lot.image" :src="`/storage/${lot.image}`" :alt="lot.lot_name || lot.lot_number" />
                                     <el-icon v-else :size="46"><Ticket /></el-icon>
                                 </div>
-                                <div v-if="lot.images?.length" class="lp-hero__gallery-panel">
-                                    <span class="lp-hero__gallery-label">
-                                        Gallery
-                                        <span class="lp-mono">{{ lot.images.length }}/3</span>
-                                    </span>
-                                    <div class="lp-hero__gallery">
-                                        <div
-                                            v-for="(img, idx) in lot.images"
-                                            :key="img.id"
-                                            class="lp-hero__gallery-item"
-                                            @click="openViewer((lot.image ? 1 : 0) + idx)"
-                                        >
-                                            <img :src="img.image_url" alt="Lot photo" />
-                                            <button v-if="lot.can_manage" type="button" class="lp-hero__gallery-remove" @click.stop="removeLotImage(img.id)">
-                                                <el-icon :size="10"><Close /></el-icon>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                             <div class="lp-hero__intro">
                                 <span class="lp-badge" :class="`lp-badge--${statusInfo.tone}`"><span class="lp-badge__dot"></span>{{ statusInfo.label }}</span>
                                 <h2 class="lp-hero__title">{{ lot.lot_name || lot.lot_number }}</h2>
+                                <p v-if="lot.description" class="lp-hero__description">{{ lot.description }}</p>
                             </div>
                         </div>
                         <el-tooltip
@@ -398,6 +375,19 @@ const fmtDateTime = (value) => {
                             </button>
                         </el-tooltip>
                     </div>
+                    <div v-if="lot.images?.length" class="lp-hero__gallery-section">
+                        <div class="lp-hero__gallery">
+                            <button
+                                v-for="(img, idx) in lot.images"
+                                :key="img.id"
+                                type="button"
+                                class="lp-hero__gallery-item"
+                                @click="openViewer((lot.image ? 1 : 0) + idx)"
+                            >
+                                <img :src="img.image_url" alt="Lot photo" />
+                            </button>
+                        </div>
+                    </div>
                     <div class="lp-hero__facts">
                         <span class="lp-hero__fact"><el-icon><Ticket /></el-icon><span class="lp-mono">{{ lot.lot_number }}</span></span>
                         <span class="lp-hero__fact"><el-icon><HotWater /></el-icon>{{ lot.process || 'Process pending' }}</span>
@@ -407,22 +397,39 @@ const fmtDateTime = (value) => {
 
                 <!-- Stat tiles -->
                 <div class="lp-tile lp-tile--stat">
-                    <div class="lp-kpi__top">
-                        <span class="lp-kpi__icon lp-kpi__icon--weight"><el-icon><Odometer /></el-icon></span>
-                        <span class="lp-tile__label">Net Weight</span>
+                    <div class="lp-kpi__group">
+                        <div class="lp-kpi__top">
+                            <span class="lp-kpi__icon lp-kpi__icon--weight"><el-icon><Odometer /></el-icon></span>
+                            <span class="lp-tile__label">Net Weight</span>
+                        </div>
+                        <span class="lp-tile__value lp-mono">{{ fmtNumber(lot.net_weight_kg) }}<small>kg</small></span>
+                        <span class="lp-tile__sub">{{ lot.quantity_bags ? `${fmtNumber(lot.quantity_bags, 0)} bags total` : 'Bag count not recorded' }}</span>
                     </div>
-                    <span class="lp-tile__value lp-mono">{{ fmtNumber(lot.net_weight_kg) }}<small>kg</small></span>
-                    <span class="lp-tile__sub">{{ lot.quantity_bags ? `${fmtNumber(lot.quantity_bags, 0)} bags total` : 'Bag count not recorded' }}</span>
+
+                    <div class="lp-kpi__group">
+                        <div class="lp-kpi__top">
+                            <span class="lp-kpi__icon lp-kpi__icon--batches"><el-icon><Files /></el-icon></span>
+                            <span class="lp-tile__label">Batches Linked</span>
+                        </div>
+                        <span class="lp-tile__value lp-mono">{{ linkedBatches.length }}</span>
+                        <span class="lp-tile__sub">{{ linkedBatches.length ? 'Linked to this lot' : 'No batches linked yet' }}</span>
+                    </div>
                 </div>
-                <div class="lp-tile lp-tile--stat">
+                <div class="lp-tile lp-tile--stat lp-tile--bags">
                     <div class="lp-kpi__top">
                         <span class="lp-kpi__icon lp-kpi__icon--bags"><el-icon><Box /></el-icon></span>
                         <span class="lp-tile__label">Bags</span>
                     </div>
                     <span class="lp-tile__value lp-mono">{{ fmtNumber(lot.quantity_bags, 0) }}</span>
                     <span class="lp-tile__sub">{{ lot.bag_weight_kg ? `${fmtNumber(lot.bag_weight_kg)} kg each` : 'Bag weight not recorded' }}</span>
+
+                    <Link :href="traceabilityUrl" class="lp-bag-qr" :title="`Scan to trace ${lot.lot_number || 'this lot'}`">
+                        <span v-if="lot.qr_code" class="lp-bag-qr__code" v-html="lot.qr_code"></span>
+                        <span v-else class="lp-bag-qr__code"><el-icon :size="22"><FullScreen /></el-icon></span>
+                        <span class="lp-bag-qr__label">Scan to trace</span>
+                    </Link>
                 </div>
-                <div class="lp-tile lp-tile--stat lp-tile--accent">
+                <div class="lp-tile lp-tile--stat lp-tile--accent lp-tile--wide">
                     <div class="lp-kpi__top">
                         <span class="lp-kpi__icon lp-kpi__icon--price"><el-icon><Coin /></el-icon></span>
                         <span class="lp-tile__label">Price / kg</span>
@@ -430,15 +437,6 @@ const fmtDateTime = (value) => {
                     <span class="lp-tile__value lp-mono">{{ lot.price ? `${lot.currency || 'USD'} ${fmtNumber(lot.price)}` : '—' }}</span>
                     <span class="lp-tile__sub">{{ lotValueTotal !== null ? `${lot.currency || 'USD'} ${fmtNumber(lotValueTotal)} total value` : 'Total value pending' }}</span>
                 </div>
-                <div class="lp-tile lp-tile--stat">
-                    <div class="lp-kpi__top">
-                        <span class="lp-kpi__icon" :class="`lp-kpi__icon--quality-${qualityTone}`"><el-icon><Trophy /></el-icon></span>
-                        <span class="lp-tile__label">Quality Score</span>
-                    </div>
-                    <span class="lp-tile__value lp-mono">{{ lot.quality_score ? fmtNumber(lot.quality_score) : '—' }}<small v-if="lot.quality_score">/100</small></span>
-                    <span class="lp-tile__sub">{{ qualityLabel }}</span>
-                </div>
-
                 <!-- Specifications -->
                 <div class="lp-tile lp-tile--specs">
                     <h2 class="lp-tile__title"><el-icon><Operation /></el-icon> Specifications</h2>
@@ -469,6 +467,13 @@ const fmtDateTime = (value) => {
                             <div class="lp-spec__body">
                                 <span class="lp-spec__label">Bag Weight</span>
                                 <strong class="lp-spec__value lp-mono">{{ fmtNumber(lot.bag_weight_kg) }} kg</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Trophy /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Quality Score</span>
+                                <strong class="lp-spec__value lp-mono">{{ lot.quality_score ? `${fmtNumber(lot.quality_score)} /100` : 'Not recorded' }}</strong>
                             </div>
                         </div>
                     </div>
@@ -529,8 +534,57 @@ const fmtDateTime = (value) => {
                     </div>
                 </div>
 
+                <!-- Delivery -->
+                <div v-if="hasDeliveryProfile" class="lp-tile lp-tile--specs">
+                    <h2 class="lp-tile__title"><el-icon><Van /></el-icon> Delivery</h2>
+                    <div class="lp-spec-grid">
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Location /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Available From (Location)</span>
+                                <strong class="lp-spec__value">{{ market.available_from || 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Van /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Delivery Method</span>
+                                <strong class="lp-spec__value">{{ market.delivery_method ? deliveryMethodLabel(market.delivery_method) : 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Operation /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Incoterm</span>
+                                <strong class="lp-spec__value">{{ market.incoterm ? incotermLabel(market.incoterm) : 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Location /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Dispatch</span>
+                                <strong class="lp-spec__value">{{ market.dispatch || 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Van /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Transport Arrangement</span>
+                                <strong class="lp-spec__value">{{ market.transport_arrangement || 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                        <div class="lp-spec">
+                            <span class="lp-spec__icon"><el-icon><Promotion /></el-icon></span>
+                            <div class="lp-spec__body">
+                                <span class="lp-spec__label">Insurance Arrangement</span>
+                                <strong class="lp-spec__value">{{ market.insurance_arrangement || 'Not recorded' }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Recorded by -->
-                <div class="lp-tile lp-tile--recorder">
+                <div class="lp-tile lp-tile--recorder lp-tile--wide">
                     <h2 class="lp-tile__title"><el-icon><User /></el-icon> Recorded By</h2>
                     <div class="lp-recorder">
                         <div class="lp-recorder__avatar">{{ recorderInitials }}</div>
@@ -545,55 +599,14 @@ const fmtDateTime = (value) => {
                     </div>
                 </div>
 
-                <!-- Batches count -->
-                <div class="lp-tile lp-tile--stat">
-                    <span class="lp-tile__label"><el-icon><Files /></el-icon> Batches Linked</span>
-                    <span class="lp-tile__value lp-mono">{{ linkedBatches.length }}</span>
-                </div>
-
-                <!-- Description -->
-                <div v-if="lot.description" class="lp-tile lp-tile--wide">
-                    <h2 class="lp-tile__title"><el-icon><Document /></el-icon> Description</h2>
-                    <p class="lp-prose">{{ lot.description }}</p>
-                </div>
-
                 <!-- Notes -->
                 <div v-if="lot.notes" class="lp-tile lp-tile--full">
                     <h2 class="lp-tile__title"><el-icon><EditPen /></el-icon> Notes</h2>
                     <p class="lp-prose">{{ lot.notes }}</p>
                 </div>
 
-                <!-- Traceability row: QR code card + Linked Batches share one even row -->
-                <div class="lp-tile-row lp-tile-row--2col lp-tile--full">
-                <!-- Traceability QR code -->
-                <div class="lp-tile lp-tile--qr">
-                    <div class="lp-qr-card">
-                        <div class="lp-qr-card__code-wrap">
-                            <div v-if="lot.qr_code" class="lp-qr-card__code" v-html="lot.qr_code"></div>
-                            <div v-else class="lp-qr-card__code lp-qr-card__code--empty"><el-icon :size="30"><FullScreen /></el-icon></div>
-                            <span class="lp-qr-card__scan-ring" aria-hidden="true"></span>
-                        </div>
-                        <div class="lp-qr-card__info">
-                            <span class="lp-qr-card__eyebrow"><el-icon><FullScreen /></el-icon> Traceability QR</span>
-                            <h3 class="lp-qr-card__title">Scan to trace this lot</h3>
-                            <p class="lp-qr-card__hint">
-                                Point a phone camera at the code to open this lot's traceability timeline — origin, batches, and processing history.
-                            </p>
-                            <a :href="traceabilityUrl" class="lp-qr-card__url lp-mono">{{ traceabilityUrl }}</a>
-                            <div class="lp-qr-card__actions">
-                                <button v-if="lot.qr_code" type="button" class="lp-btn lp-btn--primary lp-btn--sm" @click="downloadQrCode">
-                                    <el-icon><Download /></el-icon> Download SVG
-                                </button>
-                                <Link :href="traceabilityUrl" class="lp-btn lp-btn--outline lp-btn--sm">
-                                    <el-icon><Connection /></el-icon> View Timeline
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Linked batches -->
-                <div class="lp-tile">
+                <div class="lp-tile lp-tile--full">
                     <div class="lp-tile__head">
                         <div class="lp-tile__head-left">
                             <h2 class="lp-tile__title"><el-icon><Files /></el-icon> Linked Batches</h2>
@@ -638,7 +651,6 @@ const fmtDateTime = (value) => {
                         </Link>
                     </div>
                     <p v-else class="lp-empty">No batches linked to this lot yet. Attach one by its batch number to record where this lot's coffee came from.</p>
-                </div>
                 </div>
 
                 <!-- Origin trace row: Farms and Farm Collections as columns -->
@@ -780,6 +792,8 @@ const fmtDateTime = (value) => {
             :lot="lot"
             :currency-options="currencyOptions"
             :currency-countries="currencyCountries"
+            :delivery-method-options="deliveryMethodOptions"
+            :incoterm-options="incotermOptions"
         />
         <ConfirmDialog
             v-model="deleteDialogOpen"
@@ -944,41 +958,37 @@ const fmtDateTime = (value) => {
    visibly smaller than it. */
 .lp-hero__photo-col { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
 
-.lp-hero__gallery-panel {
-    display: flex; flex-direction: column; gap: 6px;
-    padding: 7px 8px 8px; border-radius: 10px;
-    background: linear-gradient(180deg, var(--surface) 0%, var(--surface-muted) 100%);
-    border: 1px solid var(--border);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+.lp-hero__gallery-section {
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
 }
-.lp-hero__gallery-label {
-    display: flex; align-items: center; justify-content: space-between; gap: 6px;
-    font-size: 9px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
-    color: var(--text-muted); padding: 0 1px;
+.lp-hero__gallery {
+    display: flex;
+    gap: 10px;
 }
-.lp-hero__gallery-label .lp-mono { font-size: 9px; font-weight: 700; color: var(--text-2); letter-spacing: 0; text-transform: none; }
-
-.lp-hero__gallery { display: flex; gap: 5px; }
 .lp-hero__gallery-item {
-    position: relative; width: 46px; height: 46px; border-radius: 8px; overflow: hidden;
-    background: var(--surface-elevated); border: 1px solid var(--border); flex-shrink: 0;
-    box-shadow: 0 1px 2px rgba(24, 24, 27, 0.06); cursor: pointer;
+    width: 76px;
+    height: 76px;
+    padding: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface-elevated);
+    cursor: pointer;
+    flex-shrink: 0;
     transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
 }
 .lp-hero__gallery-item:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 14px rgba(24, 24, 27, 0.18);
     border-color: var(--accent);
-    z-index: 1;
 }
-.lp-hero__gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.lp-hero__gallery-remove {
-    position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%;
-    border: none; background: rgba(0, 0, 0, 0.7); color: #fff;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-    opacity: 0; transition: opacity 120ms ease;
+.lp-hero__gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
-.lp-hero__gallery-item:hover .lp-hero__gallery-remove { opacity: 1; }
 
 .lp-hero__photo {
     width: 148px; height: 148px; border-radius: 12px; flex-shrink: 0;
@@ -991,6 +1001,7 @@ const fmtDateTime = (value) => {
 .lp-hero__photo--clickable:hover { opacity: 0.9; }
 .lp-hero__intro { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .lp-hero__title { font-size: 25px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-hero__description { font-size: 13px; line-height: 20px; color: var(--text-2); margin: 0; white-space: pre-line; }
 .lp-hero__facts { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
 .lp-hero__fact {
     display: inline-flex; align-items: center; gap: 6px;
@@ -1032,9 +1043,32 @@ const fmtDateTime = (value) => {
 .lp-kpi__icon--weight { background: #EFF6FF; color: var(--info); }
 .lp-kpi__icon--bags { background: var(--surface-elevated); color: var(--text-2); }
 .lp-kpi__icon--price { background: var(--accent-soft); color: #C2410C; }
-.lp-kpi__icon--quality-good { background: var(--success-soft); color: var(--success); }
-.lp-kpi__icon--quality-warn { background: var(--warning-soft); color: var(--warning); }
-.lp-kpi__icon--quality-neutral { background: var(--surface-elevated); color: var(--text-muted); }
+.lp-kpi__icon--batches { background: var(--surface-elevated); color: var(--text-2); }
+
+.lp-kpi__group + .lp-kpi__group { margin-top: 18px; }
+
+.lp-bag-qr {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 12px;
+    text-decoration: none;
+}
+.lp-bag-qr__code {
+    width: 68px;
+    height: 68px;
+    padding: 6px;
+    border-radius: 8px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    color: var(--text-muted);
+}
+.lp-bag-qr__code :deep(svg) { width: 100%; height: 100%; display: block; }
+.lp-bag-qr__label { font-size: 10.5px; font-weight: 600; color: var(--text-muted); }
 
 /* ── Tile headers ─────────────────────────────────────────────────────── */
 .lp-tile__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
@@ -1085,47 +1119,6 @@ const fmtDateTime = (value) => {
     font-size: 11.5px; color: var(--text-2);
 }
 .lp-recorder__meta-row .el-icon { font-size: 12px; color: var(--text-muted); }
-
-/* ── Traceability QR card ─────────────────────────────────────────────── */
-/* A polished, gradient-panelled card: code on the left on a soft accent
-   backdrop, description + actions on the right. */
-.lp-tile--qr {
-    background: linear-gradient(135deg, var(--surface-muted) 0%, var(--surface) 55%);
-    overflow: hidden;
-}
-.lp-qr-card { display: flex; align-items: center; gap: 22px; flex: 1; }
-.lp-qr-card__code-wrap {
-    position: relative; flex-shrink: 0;
-    width: 168px; height: 168px; border-radius: 14px;
-    background: var(--accent-soft);
-    display: flex; align-items: center; justify-content: center;
-}
-.lp-qr-card__scan-ring {
-    position: absolute; inset: -1px; border-radius: inherit;
-    border: 1.5px dashed rgba(194, 65, 12, 0.35);
-    pointer-events: none;
-}
-.lp-qr-card__code {
-    width: 132px; height: 132px;
-    padding: 10px; border-radius: 10px;
-    background: #fff; border: 1px solid var(--border);
-    box-shadow: 0 8px 20px rgba(17, 24, 39, 0.10);
-    display: flex; align-items: center; justify-content: center;
-}
-.lp-qr-card__code :deep(svg) { width: 100%; height: 100%; display: block; }
-.lp-qr-card__code--empty { color: var(--text-muted); background: var(--surface-elevated); box-shadow: none; }
-.lp-qr-card__info { min-width: 0; display: flex; flex-direction: column; gap: 9px; }
-.lp-qr-card__eyebrow {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-    color: #C2410C;
-}
-.lp-qr-card__eyebrow .el-icon { font-size: 12px; }
-.lp-qr-card__title { font-size: 17px; line-height: 22px; font-weight: 700; letter-spacing: -0.01em; color: var(--text); margin: 0; }
-.lp-qr-card__hint { font-size: 12.5px; line-height: 18px; color: var(--text-2); margin: 0; }
-.lp-qr-card__url { font-size: 11px; color: var(--text-muted); word-break: break-all; text-decoration: none; }
-.lp-qr-card__url:hover { color: var(--text); text-decoration: underline; }
-.lp-qr-card__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 
 /* ── Buttons ──────────────────────────────────────────────────────────── */
 .lp-btn {

@@ -15,6 +15,7 @@ import {
     Picture,
     Postcard,
     School,
+    Sell,
     Shop,
     ShoppingBag,
     Sunny,
@@ -57,6 +58,7 @@ const sideSections = computed(() => [
         items: [
             { label: 'Browse Coffee', href: route('market.index'), active: route().current('market.index'), icon: Compass },
             { label: 'Live Market', href: route('market.active'), active: route().current('market.active'), icon: TrendCharts },
+            { label: 'Trade', href: route('trade.index'), active: route().current('trade.*'), icon: Sell },
             { label: 'Auctions', href: route('auction.index'), active: route().current('auction.*'), icon: Trophy },
             { label: 'My Store', href: route('store.show'), active: route().current('store.*'), icon: Shop },
         ],
@@ -150,6 +152,14 @@ function go(item) {
                 >
                     <el-icon :size="18"><Compass /></el-icon>
                     <span class="app-nav-item__label">Market</span>
+                </div>
+                <div
+                    class="app-nav-item"
+                    :class="{ 'app-nav-item--active': route().current('trade.*') }"
+                    @click="router.visit(route('trade.index'))"
+                >
+                    <el-icon :size="18"><Sell /></el-icon>
+                    <span class="app-nav-item__label">Trade</span>
                 </div>
                 <div
                     class="app-nav-item"

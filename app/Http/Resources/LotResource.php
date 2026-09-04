@@ -51,6 +51,17 @@ class LotResource extends JsonResource
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
             'can_manage' => $request->user() ? $request->user()->can('update', $this->resource) : false,
             'is_published' => $this->when($this->relationLoaded('market'), fn (): bool => $this->market !== null, false),
+            'market' => $this->whenLoaded('market', fn (): ?array => $this->market ? [
+                'id' => $this->market->id,
+                'title' => $this->market->title,
+                'status' => $this->market->status,
+                'available_from' => $this->market->available_from,
+                'delivery_method' => $this->market->delivery_method,
+                'incoterm' => $this->market->incoterm,
+                'dispatch' => $this->market->dispatch,
+                'transport_arrangement' => $this->market->transport_arrangement,
+                'insurance_arrangement' => $this->market->insurance_arrangement,
+            ] : null),
             'lot_batches' => $this->whenLoaded('lotBatches', fn (): array => LotBatchResource::collection($this->lotBatches)->resolve()),
             'images' => $this->whenLoaded('images', fn (): array => LotImageResource::collection($this->images)->resolve()),
             'flavors' => $this->whenLoaded('flavors', fn (): array => $this->flavors->map(fn ($flavor): array => [

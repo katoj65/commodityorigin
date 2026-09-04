@@ -4,8 +4,8 @@ import { Head } from '@inertiajs/vue3';
 import {
     LocationFilled, ArrowLeft,
     Grape, Pouring, Connection, House,
-    Star, TrendCharts, Setting, Collection, MapLocation, ChatLineSquare, Calendar,
-    Grid, Odometer, Box, WarningFilled,
+    Star, Setting, Collection, MapLocation, ChatLineSquare,
+    Grid,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ImageViewer from '@/Components/ImageViewer.vue';
@@ -128,13 +128,13 @@ const origin = computed(() => {
 
     return {
         stats: [
-            { label: 'Origin', value: specs.origin || stats.origin, icon: MapLocation },
-            { label: 'Region', value: specs.region || stats.region, icon: LocationFilled },
-            { label: 'Altitude', value: specs.altitude != null && specs.altitude !== '' ? `${specs.altitude}m` : stats.altitude, icon: TrendCharts },
-            { label: 'Moisture', value: specs.moisture != null ? `${Number(specs.moisture).toFixed(1)}%` : stats.moisture, icon: Odometer },
-            { label: 'Package Type', value: specs.packaging_type || stats.packagingType, icon: Box },
-            { label: 'Harvest Year', value: specs.year_of_harvest || stats.harvestYear, icon: Calendar },
-            { label: 'Defect %', value: specs.defects_percentage != null ? `${Number(specs.defects_percentage).toFixed(1)}%` : stats.defectsPercentage, icon: WarningFilled },
+            { label: 'Origin', value: specs.origin || stats.origin },
+            { label: 'Region', value: specs.region || stats.region },
+            { label: 'Altitude', value: specs.altitude != null && specs.altitude !== '' ? `${specs.altitude}m` : stats.altitude },
+            { label: 'Moisture', value: specs.moisture != null ? `${Number(specs.moisture).toFixed(1)}%` : stats.moisture },
+            { label: 'Package Type', value: specs.packaging_type || stats.packagingType },
+            { label: 'Harvest Year', value: specs.year_of_harvest || stats.harvestYear },
+            { label: 'Defect %', value: specs.defects_percentage != null ? `${Number(specs.defects_percentage).toFixed(1)}%` : stats.defectsPercentage },
         ],
     };
 });
@@ -309,7 +309,7 @@ const cartMaxQuantity = computed(() => {
                             <h2 class="mp-section-title"><el-icon :size="19"><MapLocation /></el-icon>The Origin</h2>
                             <div class="mp-origin-story__stats">
                                 <div v-for="stat in origin.stats" :key="stat.label">
-                                    <p><el-icon :size="11"><component :is="stat.icon" /></el-icon>{{ stat.label }}</p>
+                                    <p>{{ stat.label }}</p>
                                     <strong>{{ stat.value }}</strong>
                                 </div>
                             </div>
@@ -448,11 +448,13 @@ const cartMaxQuantity = computed(() => {
 .mp-origin-story { margin-top: 48px; padding: 32px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); }
 .mp-origin-story__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
 .mp-origin-story__left { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.mp-origin-story__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin-top: 20px; }
-.mp-origin-story__stats p { display: flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--dp-outline); margin: 0 !important; }
-.mp-origin-story__stats strong { font-size: .9375rem; font-weight: 700; color: var(--dp-on-surface); }
+.mp-origin-story__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 20px; margin-top: 20px; }
+.mp-origin-story__stats > div { display: flex; flex-direction: column; gap: 4px; }
+.mp-origin-story__stats > div:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.mp-origin-story__stats p { font-size: .6875rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--dp-outline); margin: 0 !important; }
+.mp-origin-story__stats strong { font-size: .9375rem; font-weight: 700; color: var(--dp-on-surface); font-variant-numeric: tabular-nums; }
 
-.mp-farmer-card { padding: 20px; background: var(--dp-surface-container); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); height: fit-content; transition: box-shadow .15s ease, transform .15s ease; }
+.mp-farmer-card { padding: 20px; background: var(--dp-surface-container); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); height: 100%; transition: box-shadow .15s ease, transform .15s ease; }
 .mp-farmer-card:hover { transform: translateY(-1px); box-shadow: 0 1px 2px rgba(39, 19, 16, .04), 0 14px 28px -14px rgba(39, 19, 16, .18); }
 .mp-farmer-card__title { display: flex; align-items: center; gap: 6px; font-size: .875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-primary); margin: 0 0 10px !important; }
 .mp-farmer-card__list { display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 0 !important; padding: 0 !important; }

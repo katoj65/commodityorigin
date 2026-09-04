@@ -175,13 +175,15 @@ const importResultVisible = ref(Boolean(props.importResult));
                                 <div class="st-nav-card__icon">
                                     <el-icon><component :is="tab.icon" /></el-icon>
                                 </div>
-                                <span class="st-nav-card__label">{{ tab.label }}</span>
+                                <div class="st-nav-card__stat">
+                                    <span class="st-nav-card__value">{{ tab.value }}</span>
+                                    <div class="st-nav-card__titles">
+                                        <span class="st-nav-card__label">{{ tab.label }}</span>
+                                        <span class="st-nav-card__sub">{{ tab.sub }}</span>
+                                    </div>
+                                </div>
                             </div>
                             <el-icon class="st-nav-card__chevron"><ArrowRight /></el-icon>
-                        </div>
-                        <div class="st-nav-card__stat">
-                            <span class="st-nav-card__value">{{ tab.value }}</span>
-                            <span class="st-nav-card__sub">{{ tab.sub }}</span>
                         </div>
                     </Link>
                 </nav>
@@ -367,10 +369,10 @@ const importResultVisible = ref(Boolean(props.importResult));
 /* ── Nav cards — primary navigation + KPI snapshot, one row, one look.
    Flat, modern tiles: no border, no resting shadow, one consistent
    neutral color treatment (no per-tab hue coding) — the tinted surface
-   and typography carry the tile, not chrome. Value and caption sit on
-   one baseline-aligned row so the caption never breaks onto its own
-   line, truncating with an ellipsis instead if the tile gets narrow.
-   Hover adds only a small, soft shadow — no border or lift. ─────────── */
+   and typography carry the tile, not chrome. The stat value and title sit
+   inline on the top row, and the caption sits below, left-aligned with the
+   title (truncating with an ellipsis if the tile gets narrow). Hover adds
+   only a small, soft shadow — no border or lift. ─────────────────────── */
 .st-nav-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .st-nav-card {
     position: relative;
@@ -387,7 +389,7 @@ const importResultVisible = ref(Boolean(props.importResult));
 }
 .st-nav-card:hover { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06); }
 .st-nav-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
-.st-nav-card__top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.st-nav-card__top { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 .st-nav-card__icon {
     width: 32px;
     height: 32px;
@@ -400,10 +402,11 @@ const importResultVisible = ref(Boolean(props.importResult));
     background: var(--surface-container-high);
     color: var(--on-surface-variant);
 }
-.st-nav-card__label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.st-nav-card__stat { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.st-nav-card__stat { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.st-nav-card__titles { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
 .st-nav-card__value { flex-shrink: 0; font-size: 1.625rem; font-weight: 800; letter-spacing: -.01em; color: var(--on-surface); line-height: 1.2; font-variant-numeric: tabular-nums; }
-.st-nav-card__sub { flex: 1; min-width: 0; font-size: .6875rem; font-weight: 600; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-nav-card__label { min-width: 0; font-size: .8125rem; font-weight: 700; color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-nav-card__sub { min-width: 0; font-size: .6875rem; font-weight: 600; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-nav-card__chevron { flex-shrink: 0; font-size: 14px; color: var(--on-surface-variant); opacity: 0; transform: translateX(-4px); transition: opacity .15s ease, transform .15s ease; }
 .st-nav-card:hover .st-nav-card__chevron { opacity: 1; transform: translateX(0); color: var(--primary); }
 

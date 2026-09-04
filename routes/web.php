@@ -33,11 +33,14 @@ use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Origin\OriginController;
 use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\Purchase\PurchaseController;
+use App\Http\Controllers\Rfq\RfqController;
 use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\Season\SeasonController;
 use App\Http\Controllers\Sell\SellController;
+use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Store\StoreController;
 use App\Http\Controllers\Task\TaskController;
+use App\Http\Controllers\Trade\TradeController;
 use App\Http\Controllers\Wallet\WalletController;
 use App\Http\Controllers\Weather\WeatherForecastController;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +65,23 @@ Route::middleware([
 
     // Main dashboard.
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+
+    // System settings.
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/price-indexes', [SettingsController::class, 'storePriceIndex'])->name('settings.price-indexes.store');
+    Route::delete('/settings/price-indexes/{priceIndex}', [SettingsController::class, 'destroyPriceIndex'])->name('settings.price-indexes.destroy');
+
+    // Trade hub.
+    Route::prefix('trade')->name('trade.')->group(function () {
+        Route::get('/', [TradeController::class, 'index'])->name('index');
+    });
+
+    // Request for Quote (RFQ).
+    Route::prefix('rfq')->name('rfq.')->group(function () {
+        Route::get('/', [RfqController::class, 'index'])->name('index');
+        Route::post('/', [RfqController::class, 'store'])->name('store');
+        Route::delete('/{lotRequest}', [RfqController::class, 'destroy'])->name('destroy');
+    });
 
     // Apps (agents) directory.
     Route::prefix('apps')->name('apps.')->group(function () {
@@ -282,6 +302,7 @@ Route::middleware([
     // the bid.* routes above (role:buyer,admin).
     Route::prefix('auction')->name('auction.')->group(function () {
         Route::get('/', [AuctionController::class, 'index'])->name('index');
+        Route::get('/{lot}', [AuctionController::class, 'show'])->name('show');
     });
 
     // Checkout workspace routes. Any authenticated user may buy.

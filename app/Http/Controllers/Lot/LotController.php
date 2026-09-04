@@ -13,7 +13,9 @@ use App\Models\AromaMetadata;
 use App\Models\Batch;
 use App\Models\BodyMetadata;
 use App\Models\Currency;
+use App\Models\DeliveryMethodMetadata;
 use App\Models\FlavorMetadata;
+use App\Models\IncotermMetadata;
 use App\Models\Lot;
 use App\Models\LotActivity;
 use App\Models\LotActivityMetadata;
@@ -324,6 +326,24 @@ class LotController extends Controller
                 'slug' => $aroma->slug,
                 'name' => $aroma->name,
             ]),
+            'deliveryMethodOptions' => DeliveryMethodMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name'])
+                ->map(fn (DeliveryMethodMetadata $option): array => [
+                    'slug' => $option->slug,
+                    'name' => $option->name,
+                ]),
+            'incotermOptions' => IncotermMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name'])
+                ->map(fn (IncotermMetadata $option): array => [
+                    'slug' => $option->slug,
+                    'name' => $option->name,
+                ]),
             'currencyOptions' => Currency::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')
@@ -490,6 +510,12 @@ class LotController extends Controller
             'payment_terms' => ['nullable', 'string', 'max:255'],
             'delivery_terms' => ['nullable', 'string', 'max:255'],
             'delivery_location' => ['nullable', 'string', 'max:255'],
+            'available_from' => ['nullable', 'string', 'max:255'],
+            'delivery_method' => ['nullable', 'string', Rule::exists('delivery_method_metadata', 'slug')->where('is_active', true)],
+            'incoterm' => ['required', 'string', Rule::exists('incoterm_metadata', 'slug')->where('is_active', true)],
+            'dispatch' => ['nullable', 'string', 'max:255'],
+            'transport_arrangement' => ['nullable', 'string', 'max:255'],
+            'insurance_arrangement' => ['nullable', 'string', 'max:255'],
             'is_featured' => ['nullable', 'boolean'],
             'is_public' => ['nullable', 'boolean'],
         ]);

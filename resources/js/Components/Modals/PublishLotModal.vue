@@ -9,6 +9,8 @@ const props = defineProps({
     lot: { type: Object, required: true },
     currencyOptions: { type: Array, default: () => [] },
     currencyCountries: { type: Object, default: () => ({}) },
+    deliveryMethodOptions: { type: Array, default: () => [] },
+    incotermOptions: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -50,6 +52,12 @@ function fieldsFromLot() {
         payment_terms: '',
         delivery_terms: '',
         delivery_location: batch?.warehouse_location || '',
+        available_from: '',
+        delivery_method: '',
+        incoterm: '',
+        dispatch: '',
+        transport_arrangement: '',
+        insurance_arrangement: '',
         is_featured: false,
         is_public: true,
     };
@@ -191,6 +199,44 @@ function submit() {
                 </div>
             </div>
 
+            <div class="plm-section-title">Delivery &amp; Logistics</div>
+            <div class="plm-grid">
+                <div class="plm-field">
+                    <label class="plm-field__label">Available From (Location) <small>(optional)</small></label>
+                    <el-input v-model="form.available_from" placeholder="e.g. Kampala" class="plm-input" :class="{ 'plm-input--error': form.errors.available_from }" />
+                    <span v-if="form.errors.available_from" class="plm-field__error">{{ form.errors.available_from }}</span>
+                </div>
+                <div class="plm-field">
+                    <label class="plm-field__label">Delivery Method <small>(optional)</small></label>
+                    <el-select v-model="form.delivery_method" placeholder="Select delivery method" filterable clearable class="plm-input w-100" :class="{ 'plm-input--error': form.errors.delivery_method }">
+                        <el-option v-for="option in deliveryMethodOptions" :key="option.slug" :label="option.name" :value="option.slug" />
+                    </el-select>
+                    <span v-if="form.errors.delivery_method" class="plm-field__error">{{ form.errors.delivery_method }}</span>
+                </div>
+                <div class="plm-field">
+                    <label class="plm-field__label">Incoterm <small class="plm-required">*</small></label>
+                    <el-select v-model="form.incoterm" placeholder="Select Incoterm" filterable class="plm-input w-100" :class="{ 'plm-input--error': form.errors.incoterm }">
+                        <el-option v-for="option in incotermOptions" :key="option.slug" :label="option.name" :value="option.slug" />
+                    </el-select>
+                    <span v-if="form.errors.incoterm" class="plm-field__error">{{ form.errors.incoterm }}</span>
+                </div>
+                <div class="plm-field">
+                    <label class="plm-field__label">Dispatch <small>(optional)</small></label>
+                    <el-input v-model="form.dispatch" placeholder="e.g. Kampala Warehouse" class="plm-input" :class="{ 'plm-input--error': form.errors.dispatch }" />
+                    <span v-if="form.errors.dispatch" class="plm-field__error">{{ form.errors.dispatch }}</span>
+                </div>
+                <div class="plm-field">
+                    <label class="plm-field__label">Transport Arrangement <small>(optional)</small></label>
+                    <el-input v-model="form.transport_arrangement" placeholder="e.g. Seller arranges shipping" class="plm-input" :class="{ 'plm-input--error': form.errors.transport_arrangement }" />
+                    <span v-if="form.errors.transport_arrangement" class="plm-field__error">{{ form.errors.transport_arrangement }}</span>
+                </div>
+                <div class="plm-field">
+                    <label class="plm-field__label">Insurance Arrangement <small>(optional)</small></label>
+                    <el-input v-model="form.insurance_arrangement" placeholder="e.g. Buyer covers cargo insurance" class="plm-input" :class="{ 'plm-input--error': form.errors.insurance_arrangement }" />
+                    <span v-if="form.errors.insurance_arrangement" class="plm-field__error">{{ form.errors.insurance_arrangement }}</span>
+                </div>
+            </div>
+
             <div class="plm-visibility">
                 <div class="plm-toggle">
                     <div class="plm-toggle__icon plm-toggle__icon--featured"><el-icon><Star /></el-icon></div>
@@ -310,7 +356,20 @@ function submit() {
     font-size: 13.5px; font-weight: 600; color: #121516;
 }
 .plm-field__label small { font-weight: 500; color: #6F7677; text-transform: none; }
+.plm-field__label .plm-required { color: #F85149; font-weight: 700; }
 .plm-field__error { font-size: 12px; font-weight: 500; color: #F85149; line-height: 1.4; }
+
+.plm-section-title {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #6F7677;
+    margin: 0 0 14px;
+    padding-top: 18px;
+    border-top: 1px solid #E5E7EB;
+}
 
 .plm-input { width: 100%; }
 .plm-input :deep(.el-input__wrapper),

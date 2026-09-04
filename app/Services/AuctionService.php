@@ -29,7 +29,7 @@ class AuctionService
     {
         return Lot::query()
             ->where('status', '!=', 'draft')
-            ->with(['lotBatches.batch.season.creator', 'user', 'bids.user', 'sensoryProfile'])
+            ->with(['lotBatches.batch', 'user', 'bids.user', 'sensoryProfile'])
             ->latest()
             ->get();
     }
@@ -43,7 +43,7 @@ class AuctionService
     {
         return Lot::query()
             ->where('status', 'draft')
-            ->with(['lotBatches.batch.season', 'user'])
+            ->with(['lotBatches.batch', 'user'])
             ->latest()
             ->get();
     }
@@ -85,6 +85,76 @@ class AuctionService
     {
         return $this->liveLots()
             ->take($limit)
+            ->map(fn (Lot $lot) => $this->shapeFeatured($lot))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Lots approaching the end of their auction window — approximated as the
+     * oldest live lots, since the app doesn't yet track explicit end times.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function endingSoon(int $limit = 4): array
+    {
+        return $this->liveLots()
+            ->sortBy('created_at')
+            ->take($limit)
+            ->map(fn (Lot $lot) => $this->shapeFeatured($lot))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Lots still in draft — not yet open for bidding.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function upcoming(): array
+    {
+        return $this->draftLots()
+            ->map(fn (Lot $lot) => $this->shapeFeatured($lot))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Bids placed by a given user, newest first.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function myBids(int $userId): array
+    {
+        return Bid::query()
+            ->with('lot')
+            ->where('user_id', $userId)
+            ->latest()
+            ->get()
+            ->map(fn (Bid $bid) => [
+                'id' => $bid->id,
+                'lot_id' => $bid->lot_id,
+                'lot_number' => $bid->lot?->lot_number ?? '—',
+                'amount' => (float) $bid->bid_amount,
+                'quantity' => (float) $bid->quantity,
+                'status' => $bid->status,
+                'placed_ago' => optional($bid->created_at)?->diffForHumans(),
+            ])
+            ->all();
+    }
+
+    /**
+     * Lots listed by a given user.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function myAuctions(int $userId): array
+    {
+        return Lot::query()
+            ->where('user_id', $userId)
+            ->with(['bids.user', 'lotBatches.batch'])
+            ->latest()
+            ->get()
             ->map(fn (Lot $lot) => $this->shapeFeatured($lot))
             ->values()
             ->all();
@@ -378,7 +448,7 @@ class AuctionService
      */
     public function lotDetail(int $lotId): ?array
     {
-        $lot = Lot::query()->with(['lotBatches.batch.season.creator', 'user', 'bids.user', 'sensoryProfile', 'storageProfile'])->find($lotId);
+        $lot = Lot::query()->with(['lotBatches.batch', 'user', 'bids.user', 'sensoryProfile', 'storageProfile'])->find($lotId);
 
         if (! $lot) {
             return null;
@@ -454,8 +524,8 @@ class AuctionService
             'lot_name' => $lot->lot_name,
             'image' => $lot->image,
             'origin_country' => $this->originLabel($lot),
-            'region' => $lot->batch?->season?->region,
-            'grower' => $lot->batch?->season?->creator?->name ?? $lot->user?->name,
+            'region' => $lot->region,
+            'grower' => $lot->user?->name,
             'variety' => $lot->batch?->variety,
             'grade' => $lot->grade,
             'process' => $lot->process,
@@ -485,8 +555,8 @@ class AuctionService
             'id' => $lot->id,
             'lot_number' => $lot->lot_number,
             'origin' => $this->originLabel($lot),
-            'region' => $lot->batch?->season?->region,
-            'grower' => $lot->batch?->season?->creator?->name ?? $lot->user?->name,
+            'region' => $lot->region,
+            'grower' => $lot->user?->name,
             'variety' => $lot->batch?->variety,
             'grade' => $lot->grade,
             'moisture_content' => $lot->batch?->moisture_content !== null ? (float) $lot->batch->moisture_content : null,

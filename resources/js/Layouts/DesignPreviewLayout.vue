@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Bell, Box, Calendar, Close, CoffeeCup, Coin, Compass, Document, FirstAidKit, Grid,
-    House, MagicStick, Menu, Message, Odometer, Picture, Postcard, School, Search, Setting, Shop,
+    House, MagicStick, Menu, Message, Odometer, Picture, Postcard, School, Search, Sell, Setting, Shop,
     ShoppingBag, ShoppingCart, Sunny, SwitchButton, Tickets, TrendCharts, Trophy, User, Wallet,
 } from '@element-plus/icons-vue';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
@@ -52,6 +52,7 @@ const adminNavSections = computed(() => [
         items: [
             { index: 'market-browse', label: 'Browse Coffee', icon: Compass, href: route('market.index'), active: route().current('market.index') },
             { index: 'market-live', label: 'Live Market', icon: TrendCharts, href: route('market.active'), active: route().current('market.active') },
+            { index: 'trade', label: 'Trade', icon: Sell, href: route('trade.index'), active: route().current('trade.*') },
             { index: 'auctions', label: 'Auctions', icon: Trophy, href: route('auction.index'), active: route().current('auction.*') },
             { index: 'store', label: 'My Store', icon: Shop, href: route('store.show'), active: route().current('store.*') },
         ],
@@ -103,6 +104,7 @@ const nonAdminNavSections = computed(() => {
             label: 'Marketplace',
             items: [
                 { index: 'market', label: 'Market', icon: Compass, href: route('market.index'), active: route().current('market.*') },
+                { index: 'trade', label: 'Trade', icon: Sell, href: route('trade.index'), active: route().current('trade.*') },
                 { index: 'store', label: 'My Store', icon: Shop, href: route('store.show'), active: route().current('store.*') },
                 { index: 'calendar', label: 'Calendar', icon: Calendar, href: route('calendar.index'), active: route().current('calendar.*') },
                 { index: 'contacts', label: 'Contacts', icon: Postcard, href: route('contact.index'), active: route().current('contact.*') },
@@ -143,13 +145,11 @@ const activeNavIndex = computed(() => {
     return '';
 });
 
-// "Settings" has no dedicated page in this app yet — points at the
-// profile page (the closest real settings surface) until one exists.
 const accountMenuItems = [
     { label: 'Profile Settings', icon: User, href: route('profile.show') },
     { label: 'Overview', icon: Odometer, href: route('dashboard') },
     { label: 'Apps', icon: Grid, href: route('apps.index') },
-    { label: 'Settings', icon: Setting, href: route('profile.show') },
+    { label: 'Settings', icon: Setting, href: route('settings.index') },
     { label: 'Documentation', icon: Document, href: route('documentation.index') },
 ];
 
