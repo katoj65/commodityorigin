@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
-import { Search, Close, Clock, Box, ArrowRight, MapLocation, Coffee, Star } from '@element-plus/icons-vue';
+import { Search, Close, Clock, Box, ArrowRight, Star, ShoppingCart } from '@element-plus/icons-vue';
 
 const props = defineProps({
     query: { type: String, default: '' },
@@ -75,10 +75,29 @@ function formatMoney(amount) {
 }
 
 const demandTone = {
-    Extreme: 'sch-badge--red',
-    High: 'sch-badge--amber',
-    Medium: 'sch-badge--blue',
+    Extreme: 'sch-card__badge--red',
+    High: 'sch-card__badge--amber',
+    Medium: 'sch-card__badge--blue',
 };
+
+/* ── Card actions ─────────────────────────────────────────────────────── */
+const addingId = ref(null);
+
+function goToItem(item) {
+    router.visit(route('market.show', item.id));
+}
+
+function addToCart(item) {
+    addingId.value = item.id;
+    router.post(route('checkout.items.store'), {
+        cartable_type: 'market',
+        cartable_id: item.id,
+        quantity: 1,
+    }, {
+        preserveScroll: true,
+        onFinish: () => { addingId.value = null; },
+    });
+}
 </script>
 
 <template>
@@ -89,24 +108,7 @@ const demandTone = {
             <!-- ── Page header ───────────────────────────────────────────── -->
             <div class="sch-hero">
                 <div class="sch-hero__inner">
-                    <span class="sch-kicker">Marketplace Search</span>
-                    <h1 class="sch-title">Find coffee lots across the marketplace</h1>
-                    <p class="sch-subtitle">Search live listings by name, lot code, origin, or type — then filter to narrow it down.</p>
-
-                    <div class="sch-searchbar">
-                        <el-icon :size="17" class="sch-searchbar__icon"><Search /></el-icon>
-                        <input
-                            v-model="queryInput"
-                            type="text"
-                            placeholder="Search by name, lot code, origin, type…"
-                            class="sch-searchbar__input"
-                            @keydown.enter="runSearch()"
-                        >
-                        <button v-if="queryInput" type="button" class="sch-searchbar__clear" @click="queryInput = ''; runSearch();">
-                            <el-icon :size="14"><Close /></el-icon>
-                        </button>
-                        <button type="button" class="sch-searchbar__btn" @click="runSearch()">Search</button>
-                    </div>
+                    <h1 class="sch-title">Search Results</h1>
 
                     <div v-if="query" class="sch-filters">
                         <div class="sch-filter-group">
@@ -194,38 +196,55 @@ const demandTone = {
                 </div>
 
                 <div v-else class="sch-grid">
-                    <Link v-for="item in results" :key="item.id" :href="route('market.show', item.id)" class="sch-card">
-                        <div class="sch-card__banner">
-                            <img v-if="item.image" :src="item.image" :alt="item.name">
-                            <el-icon v-else :size="26"><Coffee /></el-icon>
-                            <span v-if="item.demand" class="sch-badge sch-card__demand" :class="demandTone[item.demand] ?? 'sch-badge--muted'">{{ item.demand }}</span>
+                    <article
+                        v-for="item in results"
+                        :key="item.id"
+                        class="sch-card"
+                        @click="goToItem(item)"
+                    >
+                        <div class="sch-card__media">
+                            <img :src="item.image ? `/storage/${item.image}` : '/images/coffee_image.jpg'" :alt="item.name">
+                            <span v-if="item.demand" class="sch-card__badge" :class="demandTone[item.demand] ?? 'sch-card__badge--muted'">{{ item.demand }}</span>
                         </div>
+
                         <div class="sch-card__body">
-                            <span class="sch-card__name">{{ item.name }}</span>
                             <div class="sch-card__meta">
-                                <span v-if="item.origin" class="sch-card__meta-item"><el-icon :size="11"><MapLocation /></el-icon>{{ item.origin }}</span>
-                                <span v-if="item.type">{{ item.type }}</span>
-                                <span v-if="item.lot_code">{{ item.lot_code }}</span>
+                                <span class="sch-card__origin">{{ item.origin || '—' }}</span>
+                                <span class="sch-card__score"><el-icon :size="12"><Star /></el-icon>{{ Number(item.quality_score || 0).toFixed(1) }}</span>
                             </div>
 
-                            <div v-if="item.quality_score" class="sch-card__quality">
-                                <el-icon :size="11"><Star /></el-icon> {{ Number(item.quality_score).toFixed(1) }} quality score
+                            <h3 class="sch-card__title">{{ item.name }}</h3>
+
+                            <div class="sch-card__specs">
+                                <div class="sch-card__spec">
+                                    <span>Process</span>
+                                    <strong>{{ item.process || '—' }}</strong>
+                                </div>
+                                <div class="sch-card__spec">
+                                    <span>Variety</span>
+                                    <strong>{{ item.type || '—' }}</strong>
+                                </div>
                             </div>
 
-                            <div class="sch-card__divider" />
-
-                            <div class="sch-card__row">
-                                <span class="sch-card__price">{{ formatMoney(item.price_per_kg) }}<small>/kg</small></span>
-                                <span v-if="item.quantity" class="sch-card__qty">{{ Number(item.quantity).toLocaleString() }} kg avail.</span>
+                            <div class="sch-card__footer">
+                                <div class="sch-card__price-block">
+                                    <span class="sch-card__price">{{ formatMoney(item.price_per_kg) }}</span>
+                                    <span class="sch-card__price-unit">per kg</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="sch-card__cart"
+                                    :disabled="addingId === item.id"
+                                    title="Add to cart"
+                                    @click.stop="addToCart(item)"
+                                >
+                                    <el-icon :size="18"><ShoppingCart /></el-icon>
+                                </button>
                             </div>
 
-                            <div v-if="Array.isArray(item.badges) && item.badges.length" class="sch-card__badges">
-                                <span v-for="b in item.badges" :key="b" class="sch-badge sch-badge--muted">{{ b }}</span>
-                            </div>
-
-                            <span class="sch-card__view">View full details <el-icon :size="11"><ArrowRight /></el-icon></span>
+                            <div class="sch-card__stock"><el-icon :size="12"><Box /></el-icon>{{ Number(item.quantity || 0).toLocaleString() }} kg avail.</div>
                         </div>
-                    </Link>
+                    </article>
                 </div>
             </div>
         </div>
@@ -237,6 +256,7 @@ const demandTone = {
     background: var(--surface, #f7f9fb);
     color: var(--text-main);
     min-height: 100%;
+    margin-top: -24px;
 }
 
 /* ── Hero header ─────────────────────────────────────────────────────── */
@@ -245,32 +265,12 @@ const demandTone = {
     border-bottom: 1px solid var(--card-border);
 }
 
-.sch-hero__inner { max-width: 920px; padding: 2rem 1.5rem 1.5rem; }
+.sch-hero__inner { max-width: 920px; padding: 0.5rem 0 0.75rem; }
 
-.sch-kicker { display: inline-block; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--brand-primary); margin-bottom: 6px; }
-.sch-title { font-size: 1.625rem; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 0.375rem; color: var(--text-main); }
-.sch-subtitle { font-size: 0.875rem; color: var(--text-muted); margin: 0 0 1.25rem; line-height: 1.6; max-width: 560px; }
-
-.sch-searchbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-pill);
-    padding: 5px 6px 5px 16px;
-    background: var(--surface-container-lowest);
-    box-shadow: var(--shadow-float);
-    max-width: 720px;
-}
-.sch-searchbar__icon { color: var(--text-muted); flex-shrink: 0; }
-.sch-searchbar__input { flex: 1; border: none; background: none; font-size: 0.875rem; padding: 9px 0; outline: none; color: var(--text-main); }
-.sch-searchbar__clear { border: none; background: none; color: var(--text-muted); display: inline-flex; padding: 4px; cursor: pointer; border-radius: 6px; }
-.sch-searchbar__clear:hover { background: var(--surface-container-low); }
-.sch-searchbar__btn { border: none; border-radius: var(--radius-pill); background: var(--brand-primary); color: #fff; font-size: 0.8125rem; font-weight: 700; padding: 10px 22px; cursor: pointer; transition: opacity 0.15s; }
-.sch-searchbar__btn:hover { opacity: 0.9; }
+.sch-title { font-size: 1.5rem; line-height: 1.9rem; letter-spacing: -0.015em; font-weight: 800; margin: 0 0 0.75rem; color: var(--text-main); }
 
 /* ── Filters ─────────────────────────────────────────────────────────── */
-.sch-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px; margin-top: 1.25rem; }
+.sch-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px; }
 .sch-filter-group { display: flex; flex-direction: column; gap: 6px; }
 .sch-filter-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
 
@@ -298,7 +298,7 @@ const demandTone = {
 .sch-clear-filters:hover { color: var(--danger-rose); }
 
 /* ── Body ────────────────────────────────────────────────────────────── */
-.sch-body { max-width: 1280px; padding: 1.5rem 1.5rem 3rem; }
+.sch-body { max-width: 1280px; padding: 0.75rem 0 2rem; }
 
 /* ── Recent searches ─────────────────────────────────────────────────── */
 .sch-recent { margin-bottom: 1.5rem; }
@@ -321,60 +321,87 @@ const demandTone = {
 .sch-empty__cta { display: inline-flex; align-items: center; gap: 5px; font-size: 0.8125rem; font-weight: 700; color: var(--brand-primary); text-decoration: none; }
 .sch-empty__cta:hover { text-decoration: underline; }
 
-.sch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(252px, 1fr)); gap: 14px; }
+.sch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 8px; }
+
+@media (max-width: 1180px) {
+    .sch-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+    .sch-grid { grid-template-columns: 1fr; }
+}
 
 .sch-card {
-    display: block;
+    background: var(--surface-container-lowest);
     border: 1px solid var(--card-border);
     border-radius: var(--radius-card);
-    overflow: hidden;
-    background: var(--surface-container-lowest);
-    text-decoration: none;
-    color: inherit;
-    transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
-}
-.sch-card:hover { border-color: transparent; box-shadow: var(--shadow-float), 0 8px 24px rgba(15, 23, 42, 0.08); transform: translateY(-2px); }
-
-.sch-card__banner {
-    position: relative;
-    height: 96px;
-    background: linear-gradient(135deg, var(--el-color-primary-light-8), var(--el-color-primary-light-9));
-    color: var(--brand-primary);
+    padding: 16px;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: box-shadow .15s ease, transform .12s ease;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    min-width: 0;
 }
-.sch-card__banner img { width: 100%; height: 100%; object-fit: cover; }
-.sch-card__demand { position: absolute; top: 8px; right: 8px; }
+.sch-card:hover { box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1); transform: translateY(-2px); }
 
-.sch-card__body { padding: 14px; display: flex; flex-direction: column; gap: 5px; }
-.sch-card__name { font-size: 0.9375rem; font-weight: 700; color: var(--text-main); line-height: 1.3; }
+.sch-card__media {
+    position: relative; width: 100%; aspect-ratio: 4 / 3; background: var(--surface-container-low);
+    border-radius: var(--radius-card); margin-bottom: 14px; overflow: hidden;
+}
+.sch-card__media img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; transition: transform .5s ease; }
+.sch-card:hover .sch-card__media img { transform: scale(1.05); }
 
-.sch-card__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 0.75rem; color: var(--text-muted); }
-.sch-card__meta-item { display: inline-flex; align-items: center; gap: 3px; }
-.sch-card__meta > * + *::before { content: '·'; margin-right: 8px; color: var(--card-border); }
+.sch-card__badge { position: absolute; top: 12px; right: 12px; font-size: .6875rem; font-weight: 700; padding: 4px 11px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.sch-card__badge--red { background: #ffdad6; color: #93000a; }
+.sch-card__badge--amber { background: #fef3c7; color: #92400e; }
+.sch-card__badge--blue { background: #dbeafe; color: #1e40af; }
+.sch-card__badge--muted { background: #E5E7EB; color: var(--text-muted); }
 
-.sch-card__quality { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--warning-amber); }
+.sch-card__body { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.sch-card__meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sch-card__origin { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sch-card__score {
+    display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+    background: var(--surface-container-low); color: var(--text-main);
+    font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;
+}
+.sch-card__score .el-icon { color: var(--warning-amber); }
 
-.sch-card__divider { height: 1px; background: var(--card-border); margin: 4px 0; }
+.sch-card__title {
+    font-size: 1rem; font-weight: 700; color: var(--text-main);
+    letter-spacing: -0.005em; line-height: 1.375rem; margin: 0;
+    display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    min-height: 2.75rem;
+}
 
-.sch-card__row { display: flex; align-items: baseline; justify-content: space-between; }
-.sch-card__price { font-size: 1.0625rem; font-weight: 800; color: var(--brand-primary); }
-.sch-card__price small { font-size: 0.6875rem; font-weight: 600; color: var(--text-muted); }
-.sch-card__qty { font-size: 0.75rem; color: var(--text-muted); }
-.sch-card__badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.sch-card__specs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 2px 0 4px; }
+.sch-card__spec { background: var(--surface-container-low); border-radius: 6px; padding: 7px 10px; min-width: 0; }
+.sch-card__spec span { display: block; font-size: .5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin-bottom: 2px; }
+.sch-card__spec strong { display: block; font-size: .8125rem; font-weight: 600; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.sch-card__view { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--card-border); font-size: 0.75rem; font-weight: 700; color: var(--brand-primary); }
+.sch-card__footer {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-top: auto; padding-top: 12px; border-top: 1px solid var(--surface-container-low);
+}
+.sch-card__price-block { display: flex; flex-direction: column; line-height: 1.15; }
+.sch-card__price { font-size: 1.375rem; font-weight: 800; color: var(--brand-primary); letter-spacing: -0.01em; }
+.sch-card__price-unit { font-size: .6875rem; color: var(--text-muted); }
 
-.sch-badge { display: inline-flex; border-radius: 999px; font-size: 0.625rem; font-weight: 700; padding: 3px 8px; white-space: nowrap; }
-.sch-badge--red { background: #fee2e2; color: #991b1b; }
-.sch-badge--amber { background: #fef3c7; color: #92400e; }
-.sch-badge--blue { background: #dbeafe; color: #1e40af; }
-.sch-badge--muted { background: var(--surface-container-low); color: var(--text-muted); }
+.sch-card__cart {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 6px; border: none;
+    background: var(--surface-container-low); color: var(--text-main); cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.sch-card:hover .sch-card__cart { background: var(--brand-primary); color: #fff; }
+.sch-card__cart:disabled { opacity: .6; cursor: default; }
+
+.sch-card__stock { display: inline-flex; align-items: center; gap: 4px; font-size: .6875rem; color: var(--text-muted); white-space: nowrap; margin-top: 8px; }
 
 @media (max-width: 575.98px) {
-    .sch-hero__inner { padding: 1.25rem 1.25rem 1.25rem; }
-    .sch-body { padding: 1.25rem 1.25rem 3rem; }
+    .sch-hero__inner { padding: 0.5rem 0 0.75rem; }
+    .sch-body { padding: 0.75rem 0 2rem; }
     .sch-filters { gap: 12px; }
 }
 </style>
