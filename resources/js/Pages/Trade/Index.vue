@@ -35,7 +35,7 @@ const actions = [
         label: 'Make an Offer',
         description: 'Submit an offer on a listing and negotiate.',
         icon: Sell,
-        href: route('orders.index'),
+        href: route('trade.offer'),
     },
     {
         key: 'rfq',

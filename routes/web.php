@@ -74,6 +74,14 @@ Route::middleware([
     // Trade hub.
     Route::prefix('trade')->name('trade.')->group(function () {
         Route::get('/', [TradeController::class, 'index'])->name('index');
+        Route::get('/offer', [TradeController::class, 'offer'])->name('offer');
+        Route::post('/offer', [TradeController::class, 'storeOffer'])->name('offer.store');
+        Route::patch('/offer/{offer}', [TradeController::class, 'updateOffer'])->name('offer.update');
+        Route::delete('/offer/{offer}', [TradeController::class, 'destroyOffer'])->name('offer.destroy');
+        Route::post('/offer/{offer}/respond', [TradeController::class, 'storeOfferResponse'])->name('offer.respond');
+        Route::patch('/offer/response/{offerResponse}', [TradeController::class, 'updateOfferResponse'])->name('offer.response.update');
+        Route::get('/offer/{offer}/payment', [TradeController::class, 'showOfferPayment'])->name('offer.payment');
+        Route::post('/offer/{offer}/payment', [TradeController::class, 'storeOfferPayment'])->name('offer.payment.store');
     });
 
     // Request for Quote (RFQ).
