@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Http\Resources\LotImageResource;
 use App\Http\Resources\MarketImageResource;
+use App\Models\FarmSustainabilityPractice;
 use App\Models\Market;
+use App\Models\SustainabilityPracticesMetadata;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -145,6 +147,7 @@ class MarketService
         $primaryFarm = $primaryBatch['farms'][0] ?? null;
         $primaryCollection = $primaryBatch['collections'][0] ?? null;
         $farmerCount = $trace['stats']['farmers'] ?? 0;
+        $farmIds = collect($trace['farms'] ?? [])->pluck('id')->filter()->unique()->values()->all();
 
         $supplyChain = array_values(array_filter([
             ($primaryCollection['collection_date'] ?? null)
@@ -254,6 +257,9 @@ class MarketService
             'farmer_count' => $farmerCount ?: null,
             'harvest_season' => $primaryCollection['harvest_season'] ?? null,
             'supply_chain' => $supplyChain ?: null,
+            // All sustainability practices recorded across every farm behind
+            // this lot's batches — combined for the Sustainability column.
+            'sustainability_practices' => $this->sustainabilityPracticesForFarms($farmIds),
             // Every distinct farm behind this lot's batches — for the "Source
             // Farms" list, not just the primary one used for the map pin.
             'contributing_farms' => collect($trace['farms'] ?? [])->map(fn ($farm) => [
@@ -272,6 +278,41 @@ class MarketService
     private function toFloatOrNull(mixed $value): ?float
     {
         return $value === null ? null : (float) $value;
+    }
+
+    /**
+     * Collect the sustainability practices recorded across a set of farms,
+     * resolved to their display names via the sustainability_practices_metadata
+     * table.
+     *
+     * @param  array<int, mixed>  $farmIds
+     * @return array<int, array<string, mixed>>
+     */
+    private function sustainabilityPracticesForFarms(array $farmIds): array
+    {
+        $farmIds = array_values(array_filter(array_map('intval', $farmIds)));
+
+        if ($farmIds === []) {
+            return [];
+        }
+
+        $practices = FarmSustainabilityPractice::query()
+            ->whereIn('farm_id', $farmIds)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $names = SustainabilityPracticesMetadata::query()
+            ->whereIn('slug', $practices->pluck('practice')->filter()->unique())
+            ->pluck('name', 'slug');
+
+        return $practices->map(fn (FarmSustainabilityPractice $practice): array => [
+            'id' => $practice->id,
+            'farm_id' => $practice->farm_id,
+            'slug' => $practice->practice,
+            'name' => $names->get($practice->practice) ?? ucwords(str_replace('_', ' ', (string) $practice->practice)),
+            'description' => $practice->description,
+        ])->values()->all();
     }
 
     /**

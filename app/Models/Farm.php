@@ -113,6 +113,14 @@ class Farm extends Model
     }
 
     /**
+     * The sustainability practices recorded against this farm.
+     */
+    public function sustainabilityPractices(): HasMany
+    {
+        return $this->hasMany(FarmSustainabilityPractice::class);
+    }
+
+    /**
      * The farmers linked to this farm, via the farmers_farms pivot table.
      */
     public function farmers(): BelongsToMany

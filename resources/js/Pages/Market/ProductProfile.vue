@@ -5,7 +5,7 @@ import {
     LocationFilled, ArrowLeft,
     Grape, Pouring, Connection, House,
     Star, Setting, Collection, MapLocation, ChatLineSquare,
-    Grid,
+    Grid, Sunny, MostlyCloudy, Lightning, Refresh, RefreshRight, MagicStick, Trophy,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import ImageViewer from '@/Components/ImageViewer.vue';
@@ -166,18 +166,29 @@ const mapEmbedSrc = computed(() => {
     return `https://www.openstreetmap.org/export/embed.html?bbox=${(lng - d).toFixed(2)}%2C${(lat - d).toFixed(2)}%2C${(lng + d).toFixed(2)}%2C${(lat + d).toFixed(2)}&layer=mapnik&marker=${lat.toFixed(2)}%2C${lng.toFixed(2)}`;
 });
 
-const sustainabilityPillars = [
-    {
-        icon: Grape,
-        title: 'Regenerative Practices',
-        text: 'Intercropping with shade trees and organic composting to maintain soil health and biodiversity in the Leuser ecosystem.',
-    },
-    {
-        icon: Pouring,
-        title: 'Water Conservation',
-        text: 'Closed-loop wet milling systems reduce water consumption by 40% compared to traditional regional processing standards.',
-    },
-];
+/* ── Farm sustainability practices — the first column of the Sustainability
+   & Traceability grid. Each slug resolves to a matching icon, falling back
+   to a generic plant icon for any slug without a dedicated icon (e.g. a
+   newly added practice). ──────────────────────────────────────────────── */
+const PRACTICE_ICONS = {
+    intercropping: Grid,
+    organic_composting: RefreshRight,
+    shade_grown: MostlyCloudy,
+    water_efficient_irrigation: Pouring,
+    agroforestry: Sunny,
+    soil_conservation: Collection,
+    integrated_pest_management: MagicStick,
+    renewable_energy: Lightning,
+    waste_reduction_recycling: Refresh,
+    biodiversity_conservation: Trophy,
+};
+
+const sustainabilityPractices = computed(() =>
+    (props.item.sustainability_practices || []).map((practice) => ({
+        ...practice,
+        icon: PRACTICE_ICONS[practice.slug] || Grape,
+    })),
+);
 
 const supplyChainSteps = computed(() => (props.item.supply_chain?.length ? props.item.supply_chain : FALLBACK.supplyChain));
 
@@ -301,6 +312,9 @@ const cartMaxQuantity = computed(() => {
                 </div>
             </section>
 
+            <!-- ── Separator between the hero and the origin story ────────── -->
+            <hr class="mp-separator" />
+
             <!-- ── The Origin ───────────────────────────────────────────── -->
             <section class="mp-origin-story">
                 <div class="mp-origin-story__grid">
@@ -346,9 +360,22 @@ const cartMaxQuantity = computed(() => {
             <section class="mp-sustainability">
                 <h2 class="mp-section-title"><el-icon :size="19"><Connection /></el-icon>Sustainability &amp; Traceability</h2>
                 <div class="mp-sustainability__grid">
-                    <div v-for="pillar in sustainabilityPillars" :key="pillar.title" class="mp-sustainability__col">
-                        <h3 class="mp-sustainability__head"><el-icon :size="16"><component :is="pillar.icon" /></el-icon> {{ pillar.title }}</h3>
-                        <p>{{ pillar.text }}</p>
+                    <div class="mp-sustainability__col">
+                        <h3 class="mp-sustainability__head"><el-icon :size="16"><Grape /></el-icon> Sustainability Practices</h3>
+                        <ul v-if="sustainabilityPractices.length" class="mp-practices">
+                            <li v-for="practice in sustainabilityPractices" :key="practice.id" class="mp-practice">
+                                <el-icon class="mp-practice__icon" :size="16"><component :is="practice.icon" /></el-icon>
+                                <div class="mp-practice__body">
+                                    <span class="mp-practice__name">{{ practice.name }}</span>
+                                    <span v-if="practice.description" class="mp-practice__desc">{{ practice.description }}</span>
+                                </div>
+                            </li>
+                        </ul>
+                        <p v-else class="mp-empty">No sustainability practices recorded for this farm yet.</p>
+                    </div>
+                    <div class="mp-sustainability__col">
+                        <h3 class="mp-sustainability__head"><el-icon :size="16"><Connection /></el-icon> Traceability &amp; Certifications</h3>
+                        <p>Traceable from farm through processing to lot, with the farm's sustainability certifications.</p>
                     </div>
                     <div class="mp-sustainability__col">
                         <h3 class="mp-sustainability__head"><el-icon :size="16"><Connection /></el-icon> Supply Chain Timeline</h3>
@@ -444,8 +471,11 @@ const cartMaxQuantity = computed(() => {
 .mp-trader-note__label { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--dp-primary); margin-bottom: 6px; }
 .mp-trader-note__text { font-size: .8125rem; line-height: 1.65; color: var(--dp-on-surface); margin: 0 !important; }
 
+/* ── Section separator ───────────────────────────────────────────────── */
+.mp-separator { border: none; border-top: 1px solid var(--card-border); margin: 24px 0; opacity: 1; }
+
 /* ── The Origin ──────────────────────────────────────────────────────── */
-.mp-origin-story { margin-top: 48px; padding: 32px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); }
+.mp-origin-story { margin-top: 0; padding: 32px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); box-shadow: var(--dp-card-shadow); }
 .mp-origin-story__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
 .mp-origin-story__left { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .mp-origin-story__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 20px; margin-top: 20px; }
@@ -478,6 +508,19 @@ const cartMaxQuantity = computed(() => {
 .mp-sustainability__head { display: flex; align-items: center; gap: 8px; font-size: .9375rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface); margin: 0 0 10px !important; }
 .mp-sustainability__head :deep(.el-icon) { color: var(--dp-primary); }
 .mp-sustainability__col p { font-size: .8125rem; line-height: 1.65; color: var(--dp-on-surface-variant); margin: 0 !important; }
+
+/* ── Sustainability practices list (first column) ─────────────────────── */
+.mp-practices { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.mp-practice { display: flex; align-items: flex-start; gap: 10px; }
+.mp-practice__icon {
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--dp-secondary-container); color: var(--dp-on-secondary-container);
+}
+.mp-practice__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mp-practice__name { font-size: .8125rem; font-weight: 700; color: var(--dp-on-surface); line-height: 1.35; }
+.mp-practice__desc { font-size: .75rem; line-height: 1.5; color: var(--dp-on-surface-variant); }
+.mp-empty { font-size: .8125rem; color: var(--dp-on-surface-variant); margin: 0; }
 
 .mp-supply-timeline { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .mp-supply-timeline li { display: flex; align-items: center; gap: 8px; font-size: .75rem; color: var(--dp-on-surface-variant); }

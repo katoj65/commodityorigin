@@ -11,7 +11,6 @@ import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import ImageViewer from '@/Components/ImageViewer.vue';
 import {
     ArrowDown,
-    ArrowRight,
     Box,
     CameraFilled,
     Clock,
@@ -34,7 +33,6 @@ import {
     Star,
     Ticket,
     Trophy,
-    User,
     Van,
 } from '@element-plus/icons-vue';
 
@@ -273,24 +271,26 @@ const sourcedCollections = computed(() => {
     return rows;
 });
 
-const sourcedFarms = computed(() => {
-    const byFarm = new Map();
-    for (const row of sourcedCollections.value) {
-        const farm = row.link.farm_collection?.farm;
-        if (!farm) continue;
-        if (!byFarm.has(farm.id)) {
-            byFarm.set(farm.id, { farm, batchNumbers: new Set(), collectionCount: 0 });
+/* ── Origin trace: batches + farm collections + farms combined ─────────── */
+const originTrace = computed(() => {
+    return linkedBatches.value.map((lb) => {
+        const batch = lb.batch;
+        const collections = sourcedCollections.value.filter((row) => row.batch?.id === batch?.id);
+        const farmMap = new Map();
+        for (const row of collections) {
+            const farm = row.link.farm_collection?.farm;
+            if (farm && !farmMap.has(farm.id)) {
+                farmMap.set(farm.id, farm);
+            }
         }
-        const entry = byFarm.get(farm.id);
-        entry.batchNumbers.add(row.batch.batch_number);
-        entry.collectionCount += 1;
-    }
-    return Array.from(byFarm.values()).map((entry) => ({
-        farm: entry.farm,
-        collectionCount: entry.collectionCount,
-        batchLabel: Array.from(entry.batchNumbers).join(', '),
-    }));
+        return { lb, batch, collections, farms: Array.from(farmMap.values()) };
+    });
 });
+
+function farmLocation(farm) {
+    if (!farm) return '';
+    return [farm.district, farm.region, farm.country].filter(Boolean).join(', ');
+}
 
 const recorderInitials = computed(() => {
     const name = (props.lot.user?.name || '').trim();
@@ -583,187 +583,134 @@ const fmtDateTime = (value) => {
                     </div>
                 </div>
 
-                <!-- Recorded by -->
-                <div class="lp-tile lp-tile--recorder lp-tile--wide">
-                    <h2 class="lp-tile__title"><el-icon><User /></el-icon> Recorded By</h2>
-                    <div class="lp-recorder">
-                        <div class="lp-recorder__avatar">{{ recorderInitials }}</div>
-                        <div class="lp-recorder__body">
-                            <div class="lp-recorder__name">{{ lot.user?.name || 'Unknown' }}</div>
-                            <div class="lp-recorder__role">Lot Creator</div>
-                        </div>
-                    </div>
-                    <div class="lp-recorder__meta-row">
-                        <el-icon><Clock /></el-icon>
-                        <span class="lp-mono">{{ fmtDateTime(lot.created_at) }}</span>
-                    </div>
-                </div>
-
                 <!-- Notes -->
-                <div v-if="lot.notes" class="lp-tile lp-tile--full">
+                <div v-if="lot.notes" class="lp-tile lp-tile--specs">
                     <h2 class="lp-tile__title"><el-icon><EditPen /></el-icon> Notes</h2>
                     <p class="lp-prose">{{ lot.notes }}</p>
                 </div>
 
-                <!-- Linked batches -->
+                <!-- Origin & Provenance: batches, collections and farms combined -->
                 <div class="lp-tile lp-tile--full">
                     <div class="lp-tile__head">
                         <div class="lp-tile__head-left">
-                            <h2 class="lp-tile__title"><el-icon><Files /></el-icon> Linked Batches</h2>
+                            <h2 class="lp-tile__title"><el-icon><Connection /></el-icon> Origin &amp; Provenance</h2>
                             <span v-if="linkedBatches.length" class="lp-tile__count">{{ linkedBatches.length }}</span>
                         </div>
                         <button v-if="lot.can_manage" type="button" class="lp-btn lp-btn--primary" @click="showAttachBatch = true">
                             <el-icon><Plus /></el-icon> Attach Batch
                         </button>
                     </div>
-                    <div v-if="linkedBatches.length" class="lp-batch-list">
-                        <Link
-                            v-for="lb in linkedBatches"
-                            :key="lb.id"
-                            :href="lb.batch ? route('batch.show', lb.batch.id) : '#'"
-                            class="lp-batch-row"
-                        >
-                            <span class="lp-batch-row__main">
-                                <span class="lp-batch-row__icon"><el-icon><Box /></el-icon></span>
-                                <span class="lp-batch-row__body">
-                                    <span class="lp-batch-row__number lp-mono">
-                                        {{ lb.batch?.batch_number || lb.batch_number }}
-                                        <span v-if="lb.batch?.processing_method" class="lp-inline-code">{{ lb.batch.processing_method }}</span>
-                                    </span>
-                                    <span class="lp-batch-row__meta">
-                                        {{ lb.batch?.variety || '—' }}
-                                        <span v-if="lb.batch?.warehouse_location"> &middot; <el-icon class="lp-batch-row__meta-icon"><Location /></el-icon>{{ lb.batch.warehouse_location }}</span>
-                                    </span>
-                                </span>
-                            </span>
-                            <span class="lp-batch-row__stats">
-                                <span v-if="lb.batch?.cup_score" class="lp-batch-row__stat">
-                                    <span class="lp-batch-row__stat-value lp-mono">{{ fmtNumber(lb.batch.cup_score) }}</span>
-                                    <span class="lp-batch-row__stat-label">Cup Score</span>
-                                </span>
-                                <span v-if="lb.allocation_kg" class="lp-batch-row__stat">
-                                    <span class="lp-batch-row__stat-value lp-mono">{{ fmtNumber(lb.allocation_kg) }} kg</span>
-                                    <span class="lp-batch-row__stat-label">Drawn</span>
-                                </span>
-                            </span>
-                            <span v-if="lb.batch?.status" class="lp-batch-row__status" :class="`lp-batch-row__status--${batchStatusTone(lb.batch.status)}`">{{ lb.batch.status }}</span>
-                            <el-icon class="lp-batch-row__chevron"><ArrowRight /></el-icon>
-                        </Link>
-                    </div>
-                    <p v-else class="lp-empty">No batches linked to this lot yet. Attach one by its batch number to record where this lot's coffee came from.</p>
-                </div>
 
-                <!-- Origin trace row: Farms and Farm Collections as columns -->
-                <div class="lp-tile-row lp-tile-row--2col lp-tile--full">
-                <!-- Farms: origin of the coffee behind this lot's batches -->
-                <div class="lp-tile">
-                    <div class="lp-tile__head">
-                        <h2 class="lp-tile__title"><el-icon><OfficeBuilding /></el-icon> Farms</h2>
-                        <span v-if="sourcedFarms.length" class="lp-tile__count">{{ sourcedFarms.length }}</span>
-                    </div>
-                    <div v-if="sourcedFarms.length" class="lp-batch-list">
-                        <div v-for="entry in sourcedFarms" :key="entry.farm.id" class="lp-batch-row lp-batch-row--static">
-                            <span class="lp-batch-row__main">
-                                <span class="lp-batch-row__icon lp-batch-row__icon--farm"><el-icon><OfficeBuilding /></el-icon></span>
-                                <span class="lp-batch-row__body">
-                                    <span class="lp-batch-row__number">
-                                        {{ entry.farm.name || `Farm #${entry.farm.id}` }}
-                                        <span v-if="entry.farm.farm_code" class="lp-inline-code">{{ entry.farm.farm_code }}</span>
+                    <div v-if="originTrace.length" class="lp-origin">
+                        <div v-for="entry in originTrace" :key="entry.lb.id" class="lp-origin__batch">
+                            <div class="lp-origin__batch-head">
+                                <span class="lp-batch-row__icon"><el-icon><Box /></el-icon></span>
+                                <div class="lp-origin__batch-info">
+                                    <div class="lp-origin__batch-line">
+                                        <span class="lp-origin__batch-number lp-mono">{{ entry.batch?.batch_number || entry.lb.batch_number }}</span>
+                                        <span v-if="entry.batch?.processing_method" class="lp-inline-code">{{ entry.batch.processing_method }}</span>
+                                        <span v-if="entry.batch?.status" class="lp-batch-row__status" :class="`lp-batch-row__status--${batchStatusTone(entry.batch.status)}`">{{ entry.batch.status }}</span>
+                                    </div>
+                                    <div class="lp-origin__batch-meta">
+                                        {{ entry.batch?.variety || '—' }}
+                                        <span v-if="entry.batch?.warehouse_location"> &middot; <el-icon class="lp-batch-row__meta-icon"><Location /></el-icon>{{ entry.batch.warehouse_location }}</span>
+                                    </div>
+                                </div>
+                                <div class="lp-origin__batch-stats">
+                                    <span v-if="entry.batch?.cup_score" class="lp-origin__stat">
+                                        <span class="lp-origin__stat-value lp-mono">{{ fmtNumber(entry.batch.cup_score) }}</span>
+                                        <span class="lp-origin__stat-label">Cup Score</span>
                                     </span>
-                                    <span class="lp-batch-row__meta">
-                                        {{ [entry.farm.district, entry.farm.region, entry.farm.country].filter(Boolean).join(', ') || 'Location not recorded' }}
-                                        <span> &middot; via {{ entry.batchLabel }}</span>
+                                    <span v-if="entry.lb.allocation_kg" class="lp-origin__stat">
+                                        <span class="lp-origin__stat-value lp-mono">{{ fmtNumber(entry.lb.allocation_kg) }} kg</span>
+                                        <span class="lp-origin__stat-label">Drawn</span>
                                     </span>
+                                </div>
+                            </div>
+
+                            <div v-if="entry.collections.length" class="lp-origin__sources">
+                                <div v-for="row in entry.collections" :key="row.link.id" class="lp-origin__source">
+                                    <el-icon class="lp-origin__source-icon"><Coffee /></el-icon>
+                                    <span class="lp-origin__source-code lp-mono">{{ row.link.farm_collection_code }}</span>
+                                    <span v-if="row.link.farm_collection?.initial_grade" class="lp-grade-pill">{{ row.link.farm_collection.initial_grade }}</span>
+                                    <span v-if="row.link.farm_collection?.quantity" class="lp-origin__source-qty lp-mono">{{ Number(row.link.farm_collection.quantity).toLocaleString() }} {{ row.link.farm_collection.unit || '' }}</span>
+                                    <span class="lp-origin__source-farm">
+                                        {{ row.link.farm_collection?.farm?.name || 'Unknown farm' }}
+                                        <span v-if="farmLocation(row.link.farm_collection?.farm)" class="lp-origin__source-loc">&middot; {{ farmLocation(row.link.farm_collection?.farm) }}</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div v-if="entry.farms.length" class="lp-origin__farms">
+                                <div v-for="farm in entry.farms" :key="farm.id" class="lp-origin__farm">
+                                    <el-icon class="lp-origin__farm-icon"><OfficeBuilding /></el-icon>
+                                    <span class="lp-origin__farm-name">{{ farm.name || `Farm #${farm.id}` }}</span>
+                                    <span v-if="farmLocation(farm)" class="lp-origin__farm-loc">{{ farmLocation(farm) }}</span>
                                     <span class="lp-farm-facts">
-                                        <span v-if="entry.farm.elevation !== null && entry.farm.elevation !== undefined" class="lp-farm-fact">
-                                            <el-icon><Position /></el-icon>{{ Math.round(entry.farm.elevation) }}m
-                                        </span>
-                                        <span v-if="entry.farm.coffee_type" class="lp-farm-fact">
-                                            <el-icon><Coffee /></el-icon>{{ entry.farm.coffee_type }}
-                                        </span>
-                                        <span v-if="entry.farm.coffee_area !== null && entry.farm.coffee_area !== undefined" class="lp-farm-fact">
-                                            <el-icon><Odometer /></el-icon>{{ entry.farm.coffee_area }} ha
-                                        </span>
+                                        <span v-if="farm.elevation !== null && farm.elevation !== undefined" class="lp-farm-fact"><el-icon><Position /></el-icon>{{ Math.round(farm.elevation) }}m</span>
+                                        <span v-if="farm.coffee_type" class="lp-farm-fact"><el-icon><Coffee /></el-icon>{{ farm.coffee_type }}</span>
+                                        <span v-if="farm.coffee_area !== null && farm.coffee_area !== undefined" class="lp-farm-fact"><el-icon><Odometer /></el-icon>{{ farm.coffee_area }} ha</span>
                                     </span>
-                                </span>
-                            </span>
-                            <span class="lp-batch-row__stat">
-                                <span class="lp-batch-row__stat-value lp-mono">{{ entry.collectionCount }}</span>
-                                <span class="lp-batch-row__stat-label">{{ entry.collectionCount === 1 ? 'Collection' : 'Collections' }}</span>
-                            </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <p v-else class="lp-empty">No farm origin data available for the batches linked to this lot.</p>
-                </div>
+                    <p v-else class="lp-empty">No batches linked to this lot yet. Attach one by its batch number to record where this lot's coffee came from.</p>
 
-                <!-- Farm collections: the sourcing events behind this lot's batches -->
-                <div class="lp-tile">
-                    <div class="lp-tile__head">
-                        <h2 class="lp-tile__title"><el-icon><Coffee /></el-icon> Farm Collections</h2>
-                        <span v-if="sourcedCollections.length" class="lp-tile__count">{{ sourcedCollections.length }}</span>
+                    <div class="lp-origin__recorder">
+                        <div class="lp-recorder">
+                            <div class="lp-recorder__avatar">{{ recorderInitials }}</div>
+                            <div class="lp-recorder__body">
+                                <div class="lp-recorder__name">{{ lot.user?.name || 'Unknown' }}</div>
+                                <div class="lp-recorder__role">Recorded By · Lot Creator</div>
+                            </div>
+                        </div>
+                        <div class="lp-origin__recorder-date">
+                            <el-icon><Clock /></el-icon>
+                            <span class="lp-mono">{{ fmtDateTime(lot.created_at) }}</span>
+                        </div>
                     </div>
-                    <div v-if="sourcedCollections.length" class="lp-batch-list">
-                        <Link
-                            v-for="row in sourcedCollections"
-                            :key="row.link.id"
-                            :href="route('farm-collection.show', row.link.farm_collection_id)"
-                            class="lp-batch-row"
-                        >
-                            <span class="lp-batch-row__main">
-                                <span class="lp-batch-row__icon lp-batch-row__icon--collection"><el-icon><Coffee /></el-icon></span>
-                                <span class="lp-batch-row__body">
-                                    <span class="lp-batch-row__number lp-mono">
-                                        {{ row.link.farm_collection_code }}
-                                        <span v-if="row.link.farm_collection?.initial_grade" class="lp-grade-pill">{{ row.link.farm_collection.initial_grade }}</span>
-                                    </span>
-                                    <span class="lp-batch-row__meta">
-                                        {{ row.link.farm_collection?.farm?.name || 'Unknown farm' }}
-                                        <span> &middot; via {{ row.batch.batch_number }}</span>
-                                    </span>
-                                </span>
-                            </span>
-                            <span v-if="row.link.farm_collection?.quantity" class="lp-batch-row__stat">
-                                <span class="lp-batch-row__stat-value lp-mono">{{ Number(row.link.farm_collection.quantity).toLocaleString() }} {{ row.link.farm_collection.unit || '' }}</span>
-                                <span class="lp-batch-row__stat-label">Qty</span>
-                            </span>
-                            <span class="lp-batch-row__status" :class="`lp-batch-row__status--${batchStatusTone(row.link.farm_collection?.status)}`">{{ row.link.farm_collection?.status || row.link.status }}</span>
-                            <el-icon class="lp-batch-row__chevron"><ArrowRight /></el-icon>
-                        </Link>
-                    </div>
-                    <p v-else class="lp-empty">No farm collections linked via the batches attached to this lot.</p>
-                </div>
-                </div>
 
-                <!-- Lot Activity — always the last section on the page -->
-                <div class="lp-tile lp-tile--full">
-                    <h2 class="lp-tile__title"><el-icon><Clock /></el-icon> Lot Activity</h2>
-                    <div v-if="activities.length" class="lp-activity-table-wrap">
-                        <table class="lp-activity-table">
-                            <thead>
-                                <tr>
-                                    <th>Event</th>
-                                    <th>Description</th>
-                                    <th>Recorded By</th>
-                                    <th>Date</th>
-                                    <th v-if="lot.can_manage" class="lp-activity-table__actions-head" />
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="activity in activities" :key="activity.id">
-                                    <td><span class="lp-event-pill">{{ eventLabel(activity.event) }}</span></td>
-                                    <td class="lp-activity-table__desc">{{ activity.description || '—' }}</td>
-                                    <td>{{ activity.recorded_by?.name || 'System' }}</td>
-                                    <td class="lp-mono lp-activity-table__date">{{ fmtDateTime(activity.created_at) }}</td>
-                                    <td v-if="lot.can_manage" class="lp-activity-table__actions">
-                                        <button type="button" class="lp-activity-delete" aria-label="Delete activity" @click="requestDeleteActivity(activity)">
-                                            <el-icon :size="14"><Delete /></el-icon>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <!-- Activity log — integrated beneath the origin trace -->
+                    <div class="lp-activity">
+                        <div class="lp-activity__head">
+                            <div class="lp-activity__heading">
+                                <h3 class="lp-activity__title"><el-icon><Clock /></el-icon> Lot Activity</h3>
+                                <span v-if="activities.length" class="lp-tile__count">{{ activities.length }}</span>
+                            </div>
+                            <button v-if="lot.can_manage" type="button" class="lp-btn lp-btn--primary lp-btn--sm" @click="showAddActivity = true">
+                                <el-icon><Plus /></el-icon> Add Activity
+                            </button>
+                        </div>
+
+                        <div v-if="activities.length" class="lp-activity-table-wrap">
+                            <table class="lp-activity-table">
+                                <thead>
+                                    <tr>
+                                        <th>Event</th>
+                                        <th>Description</th>
+                                        <th>Recorded By</th>
+                                        <th>Date</th>
+                                        <th v-if="lot.can_manage" class="lp-activity-table__actions-head" />
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="activity in activities" :key="activity.id">
+                                        <td><span class="lp-event-pill">{{ eventLabel(activity.event) }}</span></td>
+                                        <td class="lp-activity-table__desc">{{ activity.description || '—' }}</td>
+                                        <td>{{ activity.recorded_by?.name || 'System' }}</td>
+                                        <td class="lp-mono lp-activity-table__date">{{ fmtDateTime(activity.created_at) }}</td>
+                                        <td v-if="lot.can_manage" class="lp-activity-table__actions">
+                                            <button type="button" class="lp-activity-delete" aria-label="Delete activity" @click="requestDeleteActivity(activity)">
+                                                <el-icon :size="14"><Delete /></el-icon>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p v-else class="lp-empty">No activity recorded for this lot yet.</p>
                     </div>
-                    <p v-else class="lp-empty">No activity recorded for this lot yet.</p>
                 </div>
             </div>
         </div>
@@ -865,8 +812,6 @@ const fmtDateTime = (value) => {
     --font-sans: Inter, system-ui, sans-serif;
     --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Consolas, monospace;
 
-    max-width: 1100px;
-    margin: 0 auto;
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);
@@ -1113,12 +1058,6 @@ const fmtDateTime = (value) => {
 .lp-recorder__body { min-width: 0; }
 .lp-recorder__name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
 .lp-recorder__role { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
-.lp-recorder__meta-row {
-    display: flex; align-items: center; gap: 6px;
-    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
-    font-size: 11.5px; color: var(--text-2);
-}
-.lp-recorder__meta-row .el-icon { font-size: 12px; color: var(--text-muted); }
 
 /* ── Buttons ──────────────────────────────────────────────────────────── */
 .lp-btn {
@@ -1204,7 +1143,87 @@ const fmtDateTime = (value) => {
     transition: opacity 120ms ease, transform 120ms ease;
 }
 
+/* ── Origin & Provenance (batches + collections + farms combined) ─────── */
+.lp-origin { display: flex; flex-direction: column; }
+.lp-origin__batch { padding: 16px 4px; border-bottom: 1px solid var(--border); }
+.lp-origin__batch:last-child { border-bottom: none; }
+.lp-origin__batch-head { display: flex; align-items: flex-start; gap: 14px; }
+.lp-origin__batch-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lp-origin__batch-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.lp-origin__batch-number { font-size: 13.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-origin__batch-meta { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); }
+.lp-origin__batch-stats { display: flex; align-items: center; gap: 18px; flex-shrink: 0; }
+.lp-origin__stat { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+.lp-origin__stat-value { font-size: 12.5px; font-weight: 700; color: var(--text); white-space: nowrap; }
+.lp-origin__stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+
+.lp-origin__sources { margin: 10px 0 0 0; padding-left: 18px; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+.lp-origin__source { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12.5px; }
+.lp-origin__source-icon { color: var(--text-muted); font-size: 13px; }
+.lp-origin__source-code { font-weight: 600; color: var(--text); }
+.lp-origin__source-qty { color: var(--text-2); font-weight: 600; }
+.lp-origin__source-farm { color: var(--text-muted); }
+.lp-origin__source-loc { color: var(--text-muted); }
+
+.lp-origin__farms { margin: 10px 0 0 0; padding-left: 18px; border-left: 2px solid var(--success-soft); display: flex; flex-direction: column; gap: 8px; }
+.lp-origin__farm { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12.5px; }
+.lp-origin__farm-icon { color: var(--success); font-size: 13px; flex-shrink: 0; }
+.lp-origin__farm-name { font-weight: 600; color: var(--text); }
+.lp-origin__farm-loc { color: var(--text-muted); }
+.lp-origin__farm .lp-farm-facts { margin-top: 0; }
+
+.lp-origin__recorder {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.lp-origin__recorder-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-2);
+}
+.lp-origin__recorder-date .el-icon { font-size: 13px; color: var(--text-muted); }
+
 .lp-empty { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+/* ── Integrated activity log (inside Origin & Provenance) ──────────────── */
+.lp-activity {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+.lp-activity__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.lp-activity__heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.lp-activity__title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.lp-activity__title .el-icon { font-size: 13px; color: currentColor; }
 
 /* ── Lot Activity ─────────────────────────────────────────────────────── */
 .lp-activity-table-wrap { overflow-x: auto; }
@@ -1256,8 +1275,6 @@ const fmtDateTime = (value) => {
 .lp-activity-delete:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
-@media (max-width: 1100px) { .lp-page { padding: 0 24px; } }
-
 @media (max-width: 900px) {
     .lp-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .lp-tile--hero { grid-column: span 2; }
@@ -1267,7 +1284,6 @@ const fmtDateTime = (value) => {
 }
 
 @media (max-width: 639.98px) {
-    .lp-page { padding: 0 16px; }
     .lp-bento { grid-template-columns: 1fr; }
     .lp-tile--hero, .lp-tile--specs, .lp-tile--wide, .lp-tile--full { grid-column: span 1; }
     .lp-tile--hero { grid-row: span 1; }

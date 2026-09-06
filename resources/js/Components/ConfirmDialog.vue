@@ -1,5 +1,5 @@
 <script setup>
-import { Delete, WarningFilled } from '@element-plus/icons-vue';
+import { Close, Delete, WarningFilled } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -50,6 +50,9 @@ function confirm() {
                                 <div v-if="eyebrow" class="cfd-eyebrow">{{ eyebrow }}</div>
                                 <h3 class="cfd-title">{{ title }}</h3>
                             </div>
+                            <button type="button" class="cfd-close" aria-label="Close" @click="close">
+                                <el-icon :size="14"><Close /></el-icon>
+                            </button>
                         </div>
 
                         <p v-if="message" class="cfd-message">{{ message }}</p>
@@ -114,6 +117,21 @@ function confirm() {
 .cfd-icon--danger { background: #FEEDED; color: #C6413A; }
 .cfd-icon--warn { background: #fef3c7; color: #92400e; }
 .cfd-head-text { flex: 1; min-width: 0; }
+.cfd-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #6F7677;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+.cfd-close:hover { background: #F1F2F3; color: #121516; }
 .cfd-eyebrow {
     font-size: 0.625rem;
     font-weight: 700;
