@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class FarmOwnerResource extends JsonResource
+class UserFarmOwnershipResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -17,19 +17,15 @@ class FarmOwnerResource extends JsonResource
         return [
             'id' => $this->id,
             'farm_id' => $this->farm_id,
-            'first_name' => $this->first_name,
-            'middle_name' => $this->middle_name,
-            'last_name' => $this->last_name,
-            'name' => $this->name,
-            'national_id' => $this->national_id,
-            'tel' => $this->tel,
-            'email' => $this->email,
+            'user_id' => $this->user_id,
+            'first_name' => $this->whenLoaded('user', fn () => $this->user->first_name),
+            'last_name' => $this->whenLoaded('user', fn () => $this->user->last_name),
+            'name' => $this->whenLoaded('user', fn () => $this->user->name),
+            'email' => $this->whenLoaded('user', fn () => $this->user->email),
+            'tel' => $this->whenLoaded('user', fn () => $this->user->telephone),
+            'national_id' => $this->whenLoaded('user', fn () => $this->user->national_id),
             'ownership_percentage' => $this->ownership_percentage !== null ? (float) $this->ownership_percentage : null,
             'is_primary' => (bool) $this->is_primary,
-            'recorded_by' => $this->whenLoaded('user', fn (): ?array => $this->user ? [
-                'id' => $this->user->id,
-                'name' => $this->user->name,
-            ] : null),
             'created_at' => optional($this->created_at)?->toDateTimeString(),
         ];
     }

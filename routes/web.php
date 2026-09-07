@@ -18,7 +18,6 @@ use App\Http\Controllers\Documentation\DocumentationController;
 use App\Http\Controllers\Escrow\EscrowController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Farm\GeocodeController;
-use App\Http\Controllers\FarmOwner\FarmOwnerController;
 use App\Http\Controllers\FarmCollection\FarmCollectionController;
 use App\Http\Controllers\Farmer\FarmerController;
 use App\Http\Controllers\Forecast\ForecastController;
@@ -227,10 +226,6 @@ Route::middleware([
         Route::delete('/{farm}/sustainability-practices/{practice}', [FarmController::class, 'destroySustainabilityPractice'])->name('sustainability-practices.destroy');
         Route::post('/{farm}/soil-profiles', [FarmController::class, 'storeSoilProfile'])->name('soil-profiles.store');
         Route::delete('/{farm}/soil-profiles/{profile}', [FarmController::class, 'destroySoilProfile'])->name('soil-profiles.destroy');
-        Route::get('/{farm}/owners', [FarmOwnerController::class, 'index'])->name('owners.index');
-        Route::post('/{farm}/owners', [FarmOwnerController::class, 'store'])->name('owners.store');
-        Route::patch('/{farm}/owners/{owner}', [FarmOwnerController::class, 'update'])->name('owners.update');
-        Route::delete('/{farm}/owners/{owner}', [FarmOwnerController::class, 'destroy'])->name('owners.destroy');
         Route::post('/geocode', GeocodeController::class)->name('geocode');
         Route::delete('/{farm}', [FarmController::class, 'destroy'])->name('destroy');
     });

@@ -250,15 +250,16 @@ function submit() {
                     </div>
 
                     <div class="afm-field">
-                        <label class="afm-field__label">Phone</label>
+                        <label class="afm-field__label">Phone <span class="afm-req">*</span></label>
                         <el-input v-model="form.owner_tel" placeholder="e.g. +256 700 000000" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_tel }" />
                         <span v-if="form.errors.owner_tel" class="afm-field__error">{{ form.errors.owner_tel }}</span>
                     </div>
 
                     <div class="afm-field">
-                        <label class="afm-field__label">Email</label>
+                        <label class="afm-field__label">Email <span class="afm-req">*</span></label>
                         <el-input v-model="form.owner_email" placeholder="e.g. owner@example.com" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_email }" />
                         <span v-if="form.errors.owner_email" class="afm-field__error">{{ form.errors.owner_email }}</span>
+                        <span class="afm-field__hint">An account will be created for the owner using this email.</span>
                     </div>
 
                     <div class="afm-field afm-field--span2">
@@ -396,6 +397,12 @@ function submit() {
     font-size: 0.75rem;
     font-weight: 500;
     color: #B91C1C;
+    line-height: 1.4;
+}
+
+.afm-field__hint {
+    font-size: 0.75rem;
+    color: #6F7677;
     line-height: 1.4;
 }
 

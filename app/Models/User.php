@@ -38,6 +38,11 @@ class User extends Authenticatable
         'last_name',
         'role',
         'currency_code',
+        'user_designation_metadata_id',
+        'other_name',
+        'created_by_user_id',
+        'national_id',
+        'qr_code',
         'telephone',
         'email',
         'password',
@@ -149,6 +154,22 @@ class User extends Authenticatable
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_code', 'code');
+    }
+
+    /**
+     * The user's designation (Farmer, Cooperative, Trader, etc.).
+     */
+    public function designation(): BelongsTo
+    {
+        return $this->belongsTo(UserDesignationMetadata::class, 'user_designation_metadata_id');
+    }
+
+    /**
+     * The user who created this account, if it wasn't self-registered.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
     /**

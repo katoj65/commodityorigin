@@ -7,11 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ClimateZoneMetadataResource;
 use App\Http\Resources\FarmCollectionResource;
 use App\Http\Resources\FarmDocumentResource;
-use App\Http\Resources\FarmOwnerResource;
 use App\Http\Resources\FarmResource;
 use App\Http\Resources\FarmSoilProfileResource;
 use App\Http\Resources\FarmSustainabilityPracticeResource;
 use App\Http\Resources\SoilMetadataResource;
+use App\Http\Resources\UserFarmOwnershipResource;
 use App\Http\Resources\WeatherForecastResource;
 use App\Models\Farm;
 use App\Models\FarmCollection;
@@ -20,10 +20,12 @@ use App\Models\FarmSoilProfile;
 use App\Models\FarmSustainabilityPractice;
 use App\Models\SoilProfileMetadata;
 use App\Models\SustainabilityPracticesMetadata;
+use App\Models\User;
+use App\Models\UserDesignationMetadata;
+use App\Models\UserFarmOwnership;
 use App\Services\ClimateZoneMetadataService;
 use App\Services\FarmCollectionService;
 use App\Services\FarmDocumentService;
-use App\Services\FarmOwnerService;
 use App\Services\FarmService;
 use App\Services\FarmSoilProfileService;
 use App\Services\FarmSustainabilityPracticeService;
@@ -33,6 +35,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -48,7 +52,6 @@ class FarmController extends Controller
         private readonly FarmCollectionService $collections,
         private readonly FarmSustainabilityPracticeService $sustainabilityPractices,
         private readonly FarmSoilProfileService $soilProfiles,
-        private readonly FarmOwnerService $owners,
     ) {
     }
 
@@ -144,8 +147,8 @@ class FarmController extends Controller
             'owner_middle_name' => ['nullable', 'string', 'max:255'],
             'owner_last_name' => ['required_if:is_self_owner,false', 'nullable', 'string', 'max:255'],
             'owner_national_id' => ['nullable', 'string', 'max:100'],
-            'owner_tel' => ['nullable', 'string', 'max:50'],
-            'owner_email' => ['nullable', 'email', 'max:255'],
+            'owner_tel' => ['required_if:is_self_owner,false', 'nullable', 'string', 'max:50'],
+            'owner_email' => ['required_if:is_self_owner,false', 'nullable', 'email', 'max:255'],
             'owner_ownership_percentage' => ['nullable', 'numeric', 'between:0,100'],
         ]);
 
@@ -161,18 +164,54 @@ class FarmController extends Controller
             'user_id' => $request->user()->id,
         ]);
 
-        $this->owners->store($farm, [
-            'first_name' => $isSelfOwner ? $request->user()->first_name : $validated['owner_first_name'],
-            'middle_name' => $isSelfOwner ? null : ($validated['owner_middle_name'] ?? null),
-            'last_name' => $isSelfOwner ? $request->user()->last_name : $validated['owner_last_name'],
-            'national_id' => $isSelfOwner ? null : ($validated['owner_national_id'] ?? null),
-            'tel' => $isSelfOwner ? $request->user()->telephone : ($validated['owner_tel'] ?? null),
-            'email' => $isSelfOwner ? $request->user()->email : ($validated['owner_email'] ?? null),
+        $ownerUser = $isSelfOwner
+            ? $request->user()
+            : $this->resolveOwnerUser($validated, $request->user()->id);
+
+        if ($ownerUser->user_designation_metadata_id === null) {
+            $ownerUser->forceFill([
+                'user_designation_metadata_id' => UserDesignationMetadata::query()->where('slug', 'farmer')->value('id'),
+            ])->save();
+        }
+
+        UserFarmOwnership::query()->create([
+            'farm_id' => $farm->id,
+            'user_id' => $ownerUser->id,
             'ownership_percentage' => $validated['owner_ownership_percentage'] ?? null,
             'is_primary' => true,
-        ], $request->user()->id);
+        ]);
 
         return back()->with('success', 'Farm added successfully.');
+    }
+
+    /**
+     * Find an existing user by the submitted owner email, or create one —
+     * the farm ownership form posts owner details straight into the
+     * `users` table so the owner is a real account, tagged as a farmer.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function resolveOwnerUser(array $validated, int $recordedByUserId): User
+    {
+        $existing = User::query()->where('email', $validated['owner_email'])->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $lastName = trim(collect([$validated['owner_middle_name'] ?? null, $validated['owner_last_name']])->filter()->implode(' '));
+
+        return User::query()->create([
+            'first_name' => $validated['owner_first_name'],
+            'last_name' => $lastName,
+            'national_id' => $validated['owner_national_id'] ?? null,
+            'telephone' => $validated['owner_tel'],
+            'email' => $validated['owner_email'],
+            'password' => Hash::make(Str::random(40)),
+            'role' => 'user',
+            'user_designation_metadata_id' => UserDesignationMetadata::query()->where('slug', 'farmer')->value('id'),
+            'created_by_user_id' => $recordedByUserId,
+        ]);
     }
 
     /**
@@ -189,7 +228,14 @@ class FarmController extends Controller
 
         return Inertia::render('Farm/FarmProfile', [
             'farm' => FarmResource::make($farm)->resolve(),
-            'owners' => FarmOwnerResource::collection($this->owners->forFarm($farm))->resolve(),
+            'owners' => UserFarmOwnershipResource::collection(
+                UserFarmOwnership::query()
+                    ->where('farm_id', $farm->id)
+                    ->with('user')
+                    ->orderByDesc('is_primary')
+                    ->orderByDesc('created_at')
+                    ->get()
+            )->resolve(),
             'canEdit' => Gate::allows('update', $farm),
             'varietyOptions' => $this->farms->activeVarietyOptions(),
             'cropVarietyOptions' => $this->farms->activeVarietyMetadata(),

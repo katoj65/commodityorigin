@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             RoleMetadataSeeder::class,
+            UserDesignationMetadataSeeder::class,
             CurrencySeeder::class,
             CropMetadataSeeder::class,
             CropVarietyMetadataSeeder::class,
