@@ -1127,7 +1127,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     border-bottom: 1px solid #f0f2f2;
     background: #f0f2f2;
 }
-.bt-metric { background: #fff; padding: 10px 8px; text-align: center; }
+.bt-metric { background: #fff; border: 1px solid #eef2f0; padding: 10px 8px; text-align: center; }
 .bt-metric-val { font-size: 15px; font-weight: 800; color: #1f2a2a; line-height: 1.1; }
 .bt-metric-val span { font-size: 10px; color: #94a1b2; }
 .bt-grid-card-foot { display: flex; gap: 8px; padding: 10px 12px; }

@@ -511,6 +511,7 @@ const deleteMessage = computed(() => `Are you sure you want to delete this colle
 .fcp-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .fcp-stat {
     background: var(--surface-container-low);
+    border: 1px solid var(--card-border);
     border-radius: var(--card-radius);
     padding: 20px;
     transition: box-shadow .15s ease;

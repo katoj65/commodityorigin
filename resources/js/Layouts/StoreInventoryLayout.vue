@@ -381,6 +381,7 @@ const importResultVisible = ref(Boolean(props.importResult));
     gap: 12px;
     padding: 18px 20px 16px;
     background: var(--surface-container-low);
+    border: 1px solid var(--card-border);
     border-radius: var(--card-radius);
     text-decoration: none;
     color: inherit;

@@ -49,11 +49,12 @@ class AuctionService
     }
 
     /**
-     * Headline KPIs for the auction overview hero.
+     * Headline KPIs for the auction overview hero — including the acting
+     * user's own bid count, for the "My Bids" KPI tile.
      *
      * @return array<string, mixed>
      */
-    public function overview(): array
+    public function overview(int $userId): array
     {
         $live = $this->liveLots();
         $drafts = $this->draftLots();
@@ -71,6 +72,7 @@ class AuctionService
             'lots_available' => $live->count(),
             'total_auction_value' => round($totalAuctionValue, 2),
             'highest_bid_today' => $highestBidToday !== null ? round((float) $highestBidToday, 2) : null,
+            'my_bids_count' => $bids->where('user_id', $userId)->count(),
             'average_winning_price' => null,
             'ai_summary' => $this->buildSummary($live, $bids, $activeBuyers, $totalAuctionValue),
         ];
@@ -140,6 +142,40 @@ class AuctionService
                 'status' => $bid->status,
                 'placed_ago' => optional($bid->created_at)?->diffForHumans(),
             ])
+            ->all();
+    }
+
+    /**
+     * Every distinct buyer who has placed a bid, with their bidding stats,
+     * ranked by total bid value — the full roster behind the "Active
+     * Buyers" KPI (leaderboard() only surfaces the top 5, for a widget).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function activeBuyers(): array
+    {
+        return Bid::query()
+            ->with('user')
+            ->get()
+            ->groupBy('user_id')
+            ->filter(fn (Collection $group) => $group->first()->user !== null)
+            ->map(function (Collection $group) {
+                $user = $group->first()->user;
+                $lastBid = $group->sortByDesc('created_at')->first();
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'role' => $user->role,
+                    'bids_placed' => $group->count(),
+                    'lots_bid_on' => $group->pluck('lot_id')->unique()->count(),
+                    'total_bid_value' => (float) $group->sum('bid_amount'),
+                    'highest_bid' => (float) $group->max('bid_amount'),
+                    'last_bid_ago' => optional($lastBid->created_at)?->diffForHumans(),
+                ];
+            })
+            ->sortByDesc('total_bid_value')
+            ->values()
             ->all();
     }
 

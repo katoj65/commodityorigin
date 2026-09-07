@@ -107,10 +107,10 @@ const chartOptions = {
    1. MARKET PULSE — global trends + currency exchange
    ══════════════════════════════════════════════════════════════════════ */
 const marketKpis = [
-    { label: 'Arabica (KC)', value: '$5.10', unit: '/lb', change: '+2.4%', up: true, icon: CoffeeCup },
-    { label: 'Robusta (RM)', value: '$2,340', unit: '/mt', change: '+1.1%', up: true, icon: CoffeeCup },
-    { label: 'Coffee C Price', value: '186.40', unit: '¢/lb', change: '-0.6%', up: false, icon: PriceTag },
-    { label: 'Market Sentiment', value: 'Bullish', unit: '', change: '72/100', up: true, icon: Opportunity },
+    { label: 'Arabica (KC)', value: '$5.10', unit: '/lb', change: '+2.4%', up: true, icon: CoffeeCup, slug: 'arabica' },
+    { label: 'Robusta (RM)', value: '$2,340', unit: '/mt', change: '+1.1%', up: true, icon: CoffeeCup, slug: 'robusta' },
+    { label: 'Coffee C Price', value: '186.40', unit: '¢/lb', change: '-0.6%', up: false, icon: PriceTag, slug: 'coffee-c-price' },
+    { label: 'Market Sentiment', value: 'Bullish', unit: '', change: '72/100', up: true, icon: Opportunity, slug: 'market-sentiment' },
 ];
 
 const marketChartData = {
@@ -321,7 +321,7 @@ onBeforeUnmount(() => {
             <div class="container-fluid px-0 py-0">
                 <div class="row g-4">
                     <div v-for="kpi in marketKpis" :key="kpi.label" class="col-6 col-md-3">
-                        <div class="cp-kpi h-100">
+                        <Link :href="route('dashboard.kpi', kpi.slug)" class="cp-kpi h-100">
                             <div class="cp-kpi__top">
                                 <div class="cp-kpi__icon"><el-icon><component :is="kpi.icon" /></el-icon></div>
                                 <div class="cp-kpi__value">{{ kpi.value }}<small v-if="kpi.unit">{{ ' ' + kpi.unit }}</small></div>
@@ -330,7 +330,7 @@ onBeforeUnmount(() => {
                                 <span class="cp-kpi__label">{{ kpi.label }}</span>
                                 <span class="cp-kpi__change" :class="kpi.up ? 'cp-up' : 'cp-down'">{{ kpi.change }}</span>
                             </div>
-                        </div>
+                        </Link>
                     </div>
 
                     <div class="col-12 cp-col-70">
@@ -948,7 +948,7 @@ onBeforeUnmount(() => {
 .cp-btn-primary:active { transform: translateY(1px); }
 
 /* ── KPI tiles ────────────────────────────────────────────────────────── */
-.cp-kpi { background: #fff; border: 1px solid var(--card-border) !important; border-radius: var(--card-radius); padding: 1.25rem; box-shadow: var(--card-shadow); transition: box-shadow .15s ease, transform .15s ease; }
+.cp-kpi { display: block; background: #fff; border: 1px solid var(--card-border) !important; border-radius: var(--card-radius); padding: 1.25rem; box-shadow: var(--card-shadow); text-decoration: none; color: inherit; cursor: pointer; transition: box-shadow .15s ease, transform .15s ease; }
 .cp-kpi:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .cp-kpi__top { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .cp-kpi__icon { width: 28px; height: 28px; border-radius: 50%; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }

@@ -400,6 +400,7 @@ function openOrder(escrow) {
     position: relative;
     overflow: hidden;
     padding: 22px;
+    border: 1px solid var(--dp-outline-variant);
     border-radius: var(--dp-card-radius);
     background: var(--dp-surface-container-lowest);
     box-shadow: var(--dp-card-shadow);

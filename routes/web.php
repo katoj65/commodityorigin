@@ -18,6 +18,7 @@ use App\Http\Controllers\Documentation\DocumentationController;
 use App\Http\Controllers\Escrow\EscrowController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Farm\GeocodeController;
+use App\Http\Controllers\FarmOwner\FarmOwnerController;
 use App\Http\Controllers\FarmCollection\FarmCollectionController;
 use App\Http\Controllers\Farmer\FarmerController;
 use App\Http\Controllers\Forecast\ForecastController;
@@ -65,6 +66,9 @@ Route::middleware([
 
     // Main dashboard.
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+
+    // KPI drill-down pages — one per headline KPI on the general dashboard.
+    Route::get('/dashboard/{kpi}', [DashboardController::class, 'kpi'])->name('dashboard.kpi');
 
     // System settings.
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
@@ -223,6 +227,10 @@ Route::middleware([
         Route::delete('/{farm}/sustainability-practices/{practice}', [FarmController::class, 'destroySustainabilityPractice'])->name('sustainability-practices.destroy');
         Route::post('/{farm}/soil-profiles', [FarmController::class, 'storeSoilProfile'])->name('soil-profiles.store');
         Route::delete('/{farm}/soil-profiles/{profile}', [FarmController::class, 'destroySoilProfile'])->name('soil-profiles.destroy');
+        Route::get('/{farm}/owners', [FarmOwnerController::class, 'index'])->name('owners.index');
+        Route::post('/{farm}/owners', [FarmOwnerController::class, 'store'])->name('owners.store');
+        Route::patch('/{farm}/owners/{owner}', [FarmOwnerController::class, 'update'])->name('owners.update');
+        Route::delete('/{farm}/owners/{owner}', [FarmOwnerController::class, 'destroy'])->name('owners.destroy');
         Route::post('/geocode', GeocodeController::class)->name('geocode');
         Route::delete('/{farm}', [FarmController::class, 'destroy'])->name('destroy');
     });
@@ -307,9 +315,14 @@ Route::middleware([
 
     // Auction workspace routes. Any authenticated user may browse and
     // watch the exchange; bidding itself is still gated separately by
-    // the bid.* routes above (role:buyer,admin).
+    // the bid.* routes above (role:buyer,admin). The specific pages
+    // (live/my-bids/active-buyers) must be registered before the {lot}
+    // wildcard below, or it would swallow them as a lot lookup.
     Route::prefix('auction')->name('auction.')->group(function () {
         Route::get('/', [AuctionController::class, 'index'])->name('index');
+        Route::get('/live', [AuctionController::class, 'live'])->name('live');
+        Route::get('/my-bids', [AuctionController::class, 'myBids'])->name('mybids');
+        Route::get('/active-buyers', [AuctionController::class, 'activeBuyers'])->name('buyers');
         Route::get('/{lot}', [AuctionController::class, 'show'])->name('show');
     });
 

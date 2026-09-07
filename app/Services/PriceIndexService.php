@@ -39,6 +39,19 @@ class PriceIndexService
     }
 
     /**
+     * Find the first price index entry whose item name contains the given
+     * term (case-insensitive) — a looser fallback for callers that only
+     * know a keyword (e.g. "Arabica") rather than the exact item name an
+     * admin gave it (e.g. "Uganda Arabica").
+     */
+    public function forItemLike(string $term): ?PriceIndex
+    {
+        return PriceIndex::query()
+            ->whereRaw('LOWER(item) LIKE ?', ['%'.strtolower($term).'%'])
+            ->first();
+    }
+
+    /**
      * Create or update the price index entry for an item.
      *
      * @param  array<string, mixed>  $data

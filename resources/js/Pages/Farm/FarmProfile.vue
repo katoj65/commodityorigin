@@ -19,6 +19,7 @@ import {
 
 const props = defineProps({
     farm: { type: Object, required: true },
+    owners: { type: Array, default: () => [] },
     canEdit: { type: Boolean, default: false },
     varietyOptions: { type: Array, default: () => [] },
     cropVarietyOptions: { type: Array, default: () => [] },
@@ -65,7 +66,9 @@ const elevationLabel = computed(() => (props.farm.elevation !== null && props.fa
 
 const locationTrail = computed(() => [props.farm.country, props.farm.region, props.farm.district, props.farm.county].filter(Boolean).join(' › '));
 
-const farmerName = computed(() => props.farm.user?.full_name || [props.farm.user?.first_name, props.farm.user?.last_name].filter(Boolean).join(' '));
+const primaryOwner = computed(() => props.owners?.[0] || null);
+const coOwners = computed(() => props.owners?.slice(1) || []);
+const farmerName = computed(() => primaryOwner.value?.name || '');
 
 /* ── Agronomy — real, linked via soil_metadata_id / climate_zone_metadata_id
    / the farm_crop_varieties & farm_certifications pivots. Composed into
@@ -868,7 +871,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 
                 <!-- ── Farm Owner + Weather ──────────────────────────────── -->
                 <div class="fp-pair">
-                    <div v-if="farm.user" class="fp-card">
+                    <div v-if="primaryOwner" class="fp-card">
                         <div class="fp-card-head">
                             <h2 class="fp-card-title"><el-icon><User /></el-icon> Farm Owner</h2>
                         </div>
@@ -876,23 +879,41 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                         <div class="fp-owner">
                             <div class="fp-owner__avatar-wrap">
                                 <div class="fp-owner__avatar">
-                                    {{ (farm.user.first_name?.[0] || '') + (farm.user.last_name?.[0] || '') || '?' }}
+                                    {{ (primaryOwner.first_name?.[0] || '') + (primaryOwner.last_name?.[0] || '') || '?' }}
                                 </div>
                             </div>
                             <div class="fp-owner__body">
                                 <div class="fp-owner__name">{{ farmerName }}</div>
+                                <div v-if="primaryOwner.ownership_percentage !== null" class="fp-owner__share">{{ primaryOwner.ownership_percentage }}% ownership</div>
                             </div>
                         </div>
 
                         <div class="fp-owner__contacts">
-                            <a v-if="farm.user.telephone" :href="`tel:${farm.user.telephone}`" class="fp-owner__contact fp-owner__contact--link">
+                            <a v-if="primaryOwner.tel" :href="`tel:${primaryOwner.tel}`" class="fp-owner__contact fp-owner__contact--link">
                                 <span class="fp-owner__contact-icon"><el-icon :size="14"><ChatDotRound /></el-icon></span>
-                                <span>{{ farm.user.telephone }}</span>
+                                <span>{{ primaryOwner.tel }}</span>
                             </a>
-                            <a v-if="farm.user.email" :href="`mailto:${farm.user.email}`" class="fp-owner__contact fp-owner__contact--link">
+                            <a v-if="primaryOwner.email" :href="`mailto:${primaryOwner.email}`" class="fp-owner__contact fp-owner__contact--link">
                                 <span class="fp-owner__contact-icon"><el-icon :size="14"><Promotion /></el-icon></span>
-                                <span class="fp-truncate">{{ farm.user.email }}</span>
+                                <span class="fp-truncate">{{ primaryOwner.email }}</span>
                             </a>
+                        </div>
+
+                        <div v-if="coOwners.length" class="fp-owner__co-list">
+                            <div v-for="co in coOwners" :key="co.id" class="fp-owner__co-row">
+                                <span class="fp-owner__co-name">{{ co.name }}</span>
+                                <span v-if="co.ownership_percentage !== null" class="fp-owner__co-share">{{ co.ownership_percentage }}%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title"><el-icon><User /></el-icon> Farm Owner</h2>
+                        </div>
+                        <div class="fp-empty">
+                            <el-icon :size="20"><User /></el-icon>
+                            <p>No owner recorded for this farm yet.</p>
                         </div>
                     </div>
 
@@ -1704,6 +1725,26 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     font-weight: 800;
 }
 .fp-owner__name { font-size: 15px; font-weight: 700; color: var(--dp-on-surface); margin-bottom: 5px; }
+.fp-owner__share { font-size: 12px; font-weight: 600; color: var(--dp-on-surface-variant); }
+
+.fp-owner__co-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--dp-outline-variant);
+}
+.fp-owner__co-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--dp-on-surface-variant);
+}
+.fp-owner__co-share { color: var(--dp-on-surface); }
 
 .fp-owner__contacts { display: flex; flex-direction: column; gap: 4px; }
 .fp-owner__contact {

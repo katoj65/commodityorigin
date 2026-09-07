@@ -470,7 +470,7 @@ const fabOpen = ref(false);
 
 /* ── KPI cards ────────────────────────────────────────────────────────────── */
 .bs-kpi {
-    background: var(--surface-low); border-radius: 0.5rem;
+    background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 0.5rem;
     padding: 14px; display: flex; flex-direction: column; gap: 4px;
 }
 .bs-kpi-label {

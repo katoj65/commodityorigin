@@ -1,5 +1,7 @@
 <script setup>
+import { ref, computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { View, Hide } from '@element-plus/icons-vue';
 import InputError from '@/Components/InputError.vue';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
@@ -19,6 +21,58 @@ const submit = () => {
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
 };
+
+const showPassword = ref(false);
+const showPasswordConfirmation = ref(false);
+
+const passwordStrength = computed(() => {
+    const password = form.password;
+    if (!password) return { score: 0, label: '', color: '#4a5540' };
+
+    let score = 0;
+    if (password.length >= 8) score += 1;
+    if (password.length >= 12) score += 1;
+    if (/[a-z]/.test(password)) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/\d/.test(password)) score += 1;
+    if (/[@$!%*#?&^()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password)) score += 1;
+
+    let label = '';
+    let color = '#4a5540';
+
+    if (score <= 2) {
+        label = 'Weak';
+        color = '#ef4444';
+    } else if (score <= 4) {
+        label = 'Fair';
+        color = '#f59e0b';
+    } else if (score <= 5) {
+        label = 'Good';
+        color = '#a3f69c';
+    } else {
+        label = 'Strong';
+        color = '#4ade80';
+    }
+
+    return { score, label, color };
+});
+
+const passwordMatch = computed(() => {
+    if (!form.password_confirmation) return { state: 'empty', text: '' };
+    if (form.password === form.password_confirmation) {
+        if (form.password.length >= 8) {
+            return { state: 'match', text: 'Passwords match' };
+        }
+        return { state: 'empty', text: '' };
+    }
+    return { state: 'mismatch', text: 'Passwords do not match' };
+});
+
+const passwordMatchColor = computed(() => {
+    if (passwordMatch.value.state === 'match') return '#4ade80';
+    if (passwordMatch.value.state === 'mismatch') return '#ef4444';
+    return '#707a6c';
+});
 </script>
 
 <template>
@@ -43,11 +97,6 @@ const submit = () => {
 
         <div class="relative z-10 mx-auto grid min-h-screen max-w-7xl gap-10 px-4 md:px-8 pt-32 pb-16 lg:grid-cols-[1fr_1.05fr] lg:items-center">
             <section class="flex flex-col justify-center">
-                <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#1a2018] rounded-full w-fit border border-[#0d631b]/30">
-                    <span class="w-2 h-2 rounded-full bg-[#a3f69c]"></span>
-                    <span class="text-[11px] text-[#a3f69c] uppercase tracking-[0.2em]">Open Account</span>
-                </div>
-
                 <h1 class="mt-6 text-[40px] md:text-[56px] leading-[1.1] text-white tracking-tight font-light">
                     Join the Digital <br />
                     <span class="text-[#a3f69c] font-semibold italic">Coffee Exchange.</span>
@@ -80,16 +129,6 @@ const submit = () => {
                         </div>
                     </div>
                 </div>
-
-                <div class="mt-10 flex items-center gap-3 bg-[#1a2018]/50 backdrop-blur-md rounded-lg px-4 py-4">
-                    <div class="w-2 h-2 rounded-full bg-[#a3f69c] auth-pulse flex-shrink-0"></div>
-                    <div>
-                        <div class="text-[10px] text-[#bfcaba] uppercase tracking-[0.15em]">Account Profile</div>
-                        <div class="mt-1 text-sm text-[#bfcaba]">
-                            Use your direct contact details so the marketplace can reach you reliably.
-                        </div>
-                    </div>
-                </div>
             </section>
 
             <section class="flex items-center justify-center">
@@ -100,7 +139,13 @@ const submit = () => {
                         Set up your profile with the same identity fields used in the trading database.
                     </p>
 
-                    <form class="mt-8 space-y-5" @submit.prevent="submit">
+                    <div v-if="form.errors && Object.keys(form.errors).length > 0" class="mt-5 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                        <ul class="list-disc list-inside space-y-0.5">
+                            <li v-for="(error, key) in form.errors" :key="key">{{ error }}</li>
+                        </ul>
+                    </div>
+
+                    <form class="mt-6 space-y-5" @submit.prevent="submit">
                         <div class="grid gap-5 sm:grid-cols-2">
                             <div>
                                 <label for="first_name" class="auth-label">First name</label>
@@ -109,6 +154,7 @@ const submit = () => {
                                     v-model="form.first_name"
                                     type="text"
                                     class="auth-input mt-2"
+                                    :class="{ 'auth-input--error': form.errors.first_name }"
                                     autofocus
                                     required
                                     autocomplete="given-name"
@@ -124,6 +170,7 @@ const submit = () => {
                                     v-model="form.last_name"
                                     type="text"
                                     class="auth-input mt-2"
+                                    :class="{ 'auth-input--error': form.errors.last_name }"
                                     required
                                     autocomplete="family-name"
                                     placeholder="Kato"
@@ -139,6 +186,7 @@ const submit = () => {
                                 v-model="form.telephone"
                                 type="tel"
                                 class="auth-input mt-2"
+                                :class="{ 'auth-input--error': form.errors.telephone }"
                                 required
                                 autocomplete="tel"
                                 placeholder="+256752567534"
@@ -153,6 +201,7 @@ const submit = () => {
                                 v-model="form.email"
                                 type="email"
                                 class="auth-input mt-2"
+                                :class="{ 'auth-input--error': form.errors.email }"
                                 required
                                 autocomplete="username"
                                 placeholder="joshua@example.com"
@@ -163,29 +212,74 @@ const submit = () => {
                         <div class="grid gap-5 sm:grid-cols-2">
                             <div>
                                 <label for="password" class="auth-label">Password</label>
-                                <input
-                                    id="password"
-                                    v-model="form.password"
-                                    type="password"
-                                    class="auth-input mt-2"
-                                    required
-                                    autocomplete="new-password"
-                                    placeholder="Create a password"
-                                />
+                                <div class="relative mt-2">
+                                    <input
+                                        id="password"
+                                        v-model="form.password"
+                                        :type="showPassword ? 'text' : 'password'"
+                                        class="auth-input pr-10"
+                                        :class="{ 'auth-input--error': form.errors.password }"
+                                        required
+                                        autocomplete="new-password"
+                                        placeholder="Create a password"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="showPassword = !showPassword"
+                                        class="absolute inset-y-0 right-0 flex items-center justify-center w-9 text-[#bfcaba] hover:text-[#a3f69c] transition-colors"
+                                        :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                                    >
+                                        <el-icon :size="16" v-if="showPassword"><Hide /></el-icon>
+                                        <el-icon :size="16" v-else><View /></el-icon>
+                                    </button>
+                                </div>
+
+                                <div v-if="form.password" class="mt-3">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-[10px] text-[#bfcaba] uppercase tracking-[0.15em]">Password strength</span>
+                                        <span class="text-xs font-medium" :style="{ color: passwordStrength.color }">{{ passwordStrength.label }}</span>
+                                    </div>
+                                    <div class="h-1.5 w-full rounded-full bg-[#2a3328] overflow-hidden">
+                                        <div
+                                            class="h-full rounded-full transition-all duration-200"
+                                            :style="{ width: (passwordStrength.score / 6) * 100 + '%', backgroundColor: passwordStrength.color }"
+                                        />
+                                    </div>
+                                    <p class="mt-1.5 text-[11px] text-[#707a6c] leading-relaxed">
+                                        Use at least 8 characters with a mix of upper and lower case letters, numbers, and symbols.
+                                    </p>
+                                </div>
                                 <InputError class="mt-2" :message="form.errors.password" />
                             </div>
 
                             <div>
                                 <label for="password_confirmation" class="auth-label">Confirm password</label>
-                                <input
-                                    id="password_confirmation"
-                                    v-model="form.password_confirmation"
-                                    type="password"
-                                    class="auth-input mt-2"
-                                    required
-                                    autocomplete="new-password"
-                                    placeholder="Repeat your password"
-                                />
+                                <div class="relative mt-2">
+                                    <input
+                                        id="password_confirmation"
+                                        v-model="form.password_confirmation"
+                                        :type="showPasswordConfirmation ? 'text' : 'password'"
+                                        class="auth-input pr-10"
+                                        :class="{ 'auth-input--error': form.errors.password_confirmation }"
+                                        required
+                                        autocomplete="new-password"
+                                        placeholder="Repeat your password"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="showPasswordConfirmation = !showPasswordConfirmation"
+                                        class="absolute inset-y-0 right-0 flex items-center justify-center w-9 text-[#bfcaba] hover:text-[#a3f69c] transition-colors"
+                                        :aria-label="showPasswordConfirmation ? 'Hide password' : 'Show password'"
+                                    >
+                                        <el-icon :size="16" v-if="showPasswordConfirmation"><Hide /></el-icon>
+                                        <el-icon :size="16" v-else><View /></el-icon>
+                                    </button>
+                                </div>
+
+                                <div v-if="passwordMatch.state !== 'empty'" class="mt-3 flex items-center gap-2 text-xs">
+                                    <div class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: passwordMatchColor }"></div>
+                                    <span :style="{ color: passwordMatchColor }">{{ passwordMatch.text }}</span>
+                                </div>
                                 <InputError class="mt-2" :message="form.errors.password_confirmation" />
                             </div>
                         </div>
@@ -209,9 +303,9 @@ const submit = () => {
                                 <a target="_blank" :href="route('policy.show')" class="text-[#a3f69c] no-underline transition-colors hover:text-[#88d982]">Privacy Policy</a>.
                             </span>
                         </label>
-                        <InputError class="mt-2" :message="form.errors.terms" />
+                        <InputError class="mt-4" :message="form.errors.terms" />
 
-                        <SubmitButton class="mt-6" :loading="form.processing" :disabled="form.processing">
+                        <SubmitButton class="mt-10" :loading="form.processing" :disabled="form.processing">
                             Create account
                         </SubmitButton>
                     </form>
@@ -237,19 +331,6 @@ const submit = () => {
 .auth-shell {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     position: relative;
-}
-
-@keyframes authPulse {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(163, 246, 156, 0.5);
-    }
-    50% {
-        box-shadow: 0 0 0 6px rgba(163, 246, 156, 0);
-    }
-}
-
-.auth-shell .auth-pulse {
-    animation: authPulse 2s ease-in-out infinite;
 }
 
 .auth-label {
@@ -279,6 +360,15 @@ const submit = () => {
 .auth-input:focus {
     border-color: rgba(163, 246, 156, 0.6);
     box-shadow: 0 0 0 3px rgba(163, 246, 156, 0.12);
+}
+
+.auth-input--error {
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.auth-input--error:focus {
+    border-color: rgba(239, 68, 68, 0.6);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
 }
 
 .auth-check {

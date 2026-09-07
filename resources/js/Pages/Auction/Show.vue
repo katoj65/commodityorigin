@@ -4,7 +4,6 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ElMessage } from 'element-plus';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import {
-    ArrowLeft,
     Box,
     CircleCheck,
     Clock,
@@ -88,10 +87,6 @@ const submitBid = () => {
         <Head :title="lot.lot_name || 'Auction'" />
 
         <div class="as">
-            <Link :href="route('auction.index')" class="as-back">
-                <el-icon><ArrowLeft /></el-icon> Back to Auctions
-            </Link>
-
             <!-- Header -->
             <header class="as-hero">
                 <div class="as-hero__main">
@@ -264,9 +259,6 @@ const submitBid = () => {
 </template>
 <style scoped>
 .as { display: flex; flex-direction: column; gap: 16px; }
-
-.as-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--dp-on-surface-variant); text-decoration: none; width: fit-content; }
-.as-back:hover { color: var(--dp-on-surface); }
 
 /* Hero */
 .as-hero { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: flex-end; }

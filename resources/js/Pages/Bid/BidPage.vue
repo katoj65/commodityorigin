@@ -707,6 +707,7 @@ const footerStats = [
 .bp-portfolio-grid { display: flex; flex-direction: column; gap: 0.625rem; }
 .bp-portfolio-stat {
     background: var(--surface-low);
+    border: 1px solid var(--surface-high);
     border-radius: 0.625rem;
     padding: 12px 14px;
 }

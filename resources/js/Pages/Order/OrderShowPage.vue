@@ -1118,7 +1118,7 @@ const noActionsMessage = computed(() => {
 .osh-review-bio { font-size: 13px; color: #4B5457; line-height: 1.6; margin: 0 0 10px; }
 
 .osh-review-stats { display: flex; gap: 10px; }
-.osh-review-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px; border-radius: 6px; background: #F5F6F7; }
+.osh-review-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px; border: 1px solid var(--border); border-radius: 6px; background: #F5F6F7; }
 .osh-review-stat strong { font-size: 1.125rem; font-weight: 800; color: #121516; font-variant-numeric: tabular-nums; }
 .osh-review-stat span { font-size: 11px; font-weight: 600; color: #6F7677; text-transform: uppercase; letter-spacing: 0.04em; }
 

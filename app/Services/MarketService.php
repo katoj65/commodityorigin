@@ -49,28 +49,91 @@ class MarketService
     public function marketPageListing(): array
     {
         return $this->liveMarkets()
-            ->map(fn (Market $market): array => [
-                'id' => $market->id,
-                'lot_code' => $market->lot_code,
-                'name' => $market->title,
-                'origin' => $market->origin,
-                'type' => $market->type,
-                'process' => $market->process,
-                'quality_score' => (float) ($market->quality_score ?? 0),
-                'quantity' => (float) ($market->quantity ?? 0),
-                'available_quantity' => (float) ($market->available_quantity ?? 0),
-                'unit' => $market->unit,
-                'currency' => $market->currency,
-                'price_per_kg' => (float) ($market->price_per_unit ?? 0),
-                'pricing_type' => $market->pricing_type,
-                'demand' => $market->demand,
-                'badges' => $market->badges ?? [],
-                'target_market' => $market->target_market,
-                'status' => $market->status,
-                'is_featured' => (bool) $market->is_featured,
-                'image' => $market->image,
-            ])
+            ->map(fn (Market $market): array => $this->shapeListing($market))
             ->all();
+    }
+
+    /**
+     * Live listings of a given coffee type (e.g. "arabica", "robusta"),
+     * matched case-insensitively since the metadata-backed type column
+     * has inconsistent casing across older listings.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listingsByType(string $type): array
+    {
+        return $this->liveMarkets()
+            ->filter(fn (Market $market) => strtolower((string) $market->type) === strtolower($type))
+            ->map(fn (Market $market): array => $this->shapeListing($market))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * How live listings split across demand tiers (high/medium/low), plus
+     * a simple weighted sentiment score — real math over real listings,
+     * not a fabricated figure.
+     *
+     * @return array<string, mixed>
+     */
+    public function demandBreakdown(): array
+    {
+        $weights = ['high' => 100, 'medium' => 60, 'low' => 20];
+
+        $live = $this->liveMarkets();
+        $total = $live->count();
+
+        $tiers = collect(['high', 'medium', 'low'])
+            ->map(function (string $tier) use ($live, $total) {
+                $listings = $live->filter(fn (Market $market) => strtolower((string) $market->demand) === $tier)->values();
+
+                return [
+                    'tier' => $tier,
+                    'count' => $listings->count(),
+                    'percentage' => $total > 0 ? round(($listings->count() / $total) * 100, 1) : 0.0,
+                    'listings' => $listings->map(fn (Market $market) => $this->shapeListing($market))->values()->all(),
+                ];
+            });
+
+        $scored = $tiers->sum(fn (array $tier) => $tier['count'] * $weights[$tier['tier']]);
+        $unspecified = $total - $tiers->sum('count');
+
+        return [
+            'total_listings' => $total,
+            'unspecified' => $unspecified,
+            'sentiment_score' => $total > 0 ? (int) round($scored / $total) : null,
+            'tiers' => $tiers->values()->all(),
+        ];
+    }
+
+    /**
+     * Shape a single market listing the same way everywhere it's listed.
+     *
+     * @return array<string, mixed>
+     */
+    private function shapeListing(Market $market): array
+    {
+        return [
+            'id' => $market->id,
+            'lot_code' => $market->lot_code,
+            'name' => $market->title,
+            'origin' => $market->origin,
+            'type' => $market->type,
+            'process' => $market->process,
+            'quality_score' => (float) ($market->quality_score ?? 0),
+            'quantity' => (float) ($market->quantity ?? 0),
+            'available_quantity' => (float) ($market->available_quantity ?? 0),
+            'unit' => $market->unit,
+            'currency' => $market->currency,
+            'price_per_kg' => (float) ($market->price_per_unit ?? 0),
+            'pricing_type' => $market->pricing_type,
+            'demand' => $market->demand,
+            'badges' => $market->badges ?? [],
+            'target_market' => $market->target_market,
+            'status' => $market->status,
+            'is_featured' => (bool) $market->is_featured,
+            'image' => $market->image,
+        ];
     }
 
     /**

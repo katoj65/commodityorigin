@@ -376,6 +376,7 @@ function deleteFarmer() {
 @media (max-width: 640px) { .fpr-metrics { grid-template-columns: 1fr; } }
 .fpr-metric-card {
     background: var(--dp-surface-container-lowest); box-shadow: var(--dp-card-shadow);
+    border: 1px solid var(--dp-outline-variant);
     border-radius: 6px; padding: 18px; display: flex; align-items: center; gap: 14px;
     transition: box-shadow .15s ease, transform .15s ease; min-width: 0;
 }

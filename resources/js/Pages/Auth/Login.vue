@@ -47,42 +47,14 @@ const submit = () => {
 
         <div class="relative z-10 mx-auto grid min-h-screen max-w-7xl gap-10 px-4 md:px-8 pt-32 pb-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <section class="flex flex-col justify-center">
-                <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#1a2018] rounded-full w-fit border border-[#0d631b]/30">
-                    <span class="w-2 h-2 rounded-full bg-[#a3f69c]"></span>
-                    <span class="text-[11px] text-[#a3f69c] uppercase tracking-[0.2em]">Member Access</span>
-                </div>
-
-                <h1 class="mt-6 text-[40px] md:text-[56px] leading-[1.1] text-white tracking-tight font-light">
+                <h1 class="text-[40px] md:text-[56px] leading-[1.1] text-white tracking-tight font-light">
                     Welcome back to <br />
                     <span class="text-[#a3f69c] font-semibold italic">Bean Origin.</span>
                 </h1>
 
                 <p class="mt-6 max-w-lg text-lg leading-relaxed text-[#bfcaba]">
-                    Sign in to access verified lots, live pricing, origin intelligence, and the full farm-to-export record from the exchange.
+                    Sign in to continue trading verified coffee with live pricing and full origin traceability.
                 </p>
-
-                <div class="mt-10 grid grid-cols-3 gap-3 sm:gap-6">
-                    <div class="min-w-0">
-                        <div class="text-lg sm:text-3xl font-light tracking-tight text-white tabular-nums">$2.4B+</div>
-                        <div class="text-[9px] sm:text-[10px] text-[#bfcaba] uppercase mt-2 tracking-[0.1em] sm:tracking-[0.15em] leading-tight">Traded Volume</div>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="text-lg sm:text-3xl font-light tracking-tight text-white tabular-nums">45+</div>
-                        <div class="text-[9px] sm:text-[10px] text-[#bfcaba] uppercase mt-2 tracking-[0.1em] sm:tracking-[0.15em] leading-tight">Origin Countries</div>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="text-lg sm:text-3xl font-light tracking-tight text-[#a3f69c] tabular-nums">99.9%</div>
-                        <div class="text-[9px] sm:text-[10px] text-[#bfcaba] uppercase mt-2 tracking-[0.1em] sm:tracking-[0.15em] leading-tight">Platform Uptime</div>
-                    </div>
-                </div>
-
-                <div class="mt-10 flex items-center gap-3 bg-[#1a2018]/50 backdrop-blur-md rounded-lg px-4 py-4">
-                    <div class="w-2 h-2 rounded-full bg-[#a3f69c] auth-pulse flex-shrink-0"></div>
-                    <div>
-                        <div class="text-[10px] text-[#bfcaba] uppercase tracking-[0.15em]">Market Status</div>
-                        <div class="mt-1 text-sm font-medium text-[#a3f69c]">Live pricing feed active</div>
-                    </div>
-                </div>
             </section>
 
             <section class="flex items-center justify-center">
@@ -172,19 +144,6 @@ const submit = () => {
 .auth-shell {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     position: relative;
-}
-
-@keyframes authPulse {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(163, 246, 156, 0.5);
-    }
-    50% {
-        box-shadow: 0 0 0 6px rgba(163, 246, 156, 0);
-    }
-}
-
-.auth-shell .auth-pulse {
-    animation: authPulse 2s ease-in-out infinite;
 }
 
 .auth-label {

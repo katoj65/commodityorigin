@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ClimateZoneMetadataResource;
 use App\Http\Resources\FarmCollectionResource;
 use App\Http\Resources\FarmDocumentResource;
+use App\Http\Resources\FarmOwnerResource;
 use App\Http\Resources\FarmResource;
 use App\Http\Resources\FarmSoilProfileResource;
 use App\Http\Resources\FarmSustainabilityPracticeResource;
@@ -22,6 +23,7 @@ use App\Models\SustainabilityPracticesMetadata;
 use App\Services\ClimateZoneMetadataService;
 use App\Services\FarmCollectionService;
 use App\Services\FarmDocumentService;
+use App\Services\FarmOwnerService;
 use App\Services\FarmService;
 use App\Services\FarmSoilProfileService;
 use App\Services\FarmSustainabilityPracticeService;
@@ -46,6 +48,7 @@ class FarmController extends Controller
         private readonly FarmCollectionService $collections,
         private readonly FarmSustainabilityPracticeService $sustainabilityPractices,
         private readonly FarmSoilProfileService $soilProfiles,
+        private readonly FarmOwnerService $owners,
     ) {
     }
 
@@ -136,12 +139,38 @@ class FarmController extends Controller
             'crop_variety_ids.*' => ['integer', 'exists:crop_variety_metadata,id'],
             'certification_ids' => ['nullable', 'array'],
             'certification_ids.*' => ['integer', 'exists:certification_metadata,id'],
+            'is_self_owner' => ['nullable', 'boolean'],
+            'owner_first_name' => ['required_if:is_self_owner,false', 'nullable', 'string', 'max:255'],
+            'owner_middle_name' => ['nullable', 'string', 'max:255'],
+            'owner_last_name' => ['required_if:is_self_owner,false', 'nullable', 'string', 'max:255'],
+            'owner_national_id' => ['nullable', 'string', 'max:100'],
+            'owner_tel' => ['nullable', 'string', 'max:50'],
+            'owner_email' => ['nullable', 'email', 'max:255'],
+            'owner_ownership_percentage' => ['nullable', 'numeric', 'between:0,100'],
         ]);
 
-        $this->farms->create([
-            ...$validated,
+        $isSelfOwner = (bool) ($validated['is_self_owner'] ?? false);
+        $ownerFields = [
+            'is_self_owner', 'owner_first_name', 'owner_middle_name', 'owner_last_name',
+            'owner_national_id', 'owner_tel', 'owner_email', 'owner_ownership_percentage',
+        ];
+        $farmData = collect($validated)->except($ownerFields)->all();
+
+        $farm = $this->farms->create([
+            ...$farmData,
             'user_id' => $request->user()->id,
         ]);
+
+        $this->owners->store($farm, [
+            'first_name' => $isSelfOwner ? $request->user()->first_name : $validated['owner_first_name'],
+            'middle_name' => $isSelfOwner ? null : ($validated['owner_middle_name'] ?? null),
+            'last_name' => $isSelfOwner ? $request->user()->last_name : $validated['owner_last_name'],
+            'national_id' => $isSelfOwner ? null : ($validated['owner_national_id'] ?? null),
+            'tel' => $isSelfOwner ? $request->user()->telephone : ($validated['owner_tel'] ?? null),
+            'email' => $isSelfOwner ? $request->user()->email : ($validated['owner_email'] ?? null),
+            'ownership_percentage' => $validated['owner_ownership_percentage'] ?? null,
+            'is_primary' => true,
+        ], $request->user()->id);
 
         return back()->with('success', 'Farm added successfully.');
     }
@@ -160,6 +189,7 @@ class FarmController extends Controller
 
         return Inertia::render('Farm/FarmProfile', [
             'farm' => FarmResource::make($farm)->resolve(),
+            'owners' => FarmOwnerResource::collection($this->owners->forFarm($farm))->resolve(),
             'canEdit' => Gate::allows('update', $farm),
             'varietyOptions' => $this->farms->activeVarietyOptions(),
             'cropVarietyOptions' => $this->farms->activeVarietyMetadata(),

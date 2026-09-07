@@ -831,7 +831,7 @@ const badgeClass = (b) => {
 .fm-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); max-width: 320px; margin: 0; line-height: 1.5; }
 
 /* ── Stat cell ─────────────────────────────────────────────────────────────── */
-.fm-stat-cell { background: var(--surface-low); border-radius: 6px; padding: 5px 8px; }
+.fm-stat-cell { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 5px 8px; }
 .fm-stat-cell span   { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; }
 .fm-stat-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; font-variant-numeric: tabular-nums; }
 
@@ -895,7 +895,7 @@ const badgeClass = (b) => {
 .fm-bar-fill  { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
 
 /* ── Metrics / mini charts ─────────────────────────────────────────────────── */
-.fm-metric-cell { background: var(--surface-low); border-radius: 8px; padding: 8px 10px; }
+.fm-metric-cell { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 8px; padding: 8px 10px; }
 .fm-metric-cell span   { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; margin-bottom: 2px; }
 .fm-metric-cell strong { font-size: 0.9375rem; font-weight: 800; color: var(--on-surface); font-variant-numeric: tabular-nums; }
 .fm-mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 44px; background: var(--surface-low); border-radius: 8px; padding: 5px; }

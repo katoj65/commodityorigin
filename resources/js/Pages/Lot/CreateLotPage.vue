@@ -859,6 +859,7 @@ const submit = (intent = 'create') => {
 
 .lot-stat-card {
     background: #ffffff;
+    border: 1px solid #eef2f0;
     border-radius: 6px;
     padding: 14px 16px;
 }
@@ -1238,6 +1239,7 @@ const submit = (intent = 'create') => {
 .lot-metric-box {
     align-items: center;
     background: rgba(255, 255, 255, 0.74);
+    border: 1px solid #eef2f0;
     border-radius: 10px;
     display: flex;
     justify-content: space-between;

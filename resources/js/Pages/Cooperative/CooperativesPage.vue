@@ -766,7 +766,7 @@ const badgeClass = (b) => {
 .cp-score-badge { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6875rem; font-weight: 800; flex-shrink: 0; }
 .cp-score-badge--high { background: #dcfce7; color: #166534; }
 .cp-score-badge--mid  { background: #fef3c7; color: #92400e; }
-.cp-stat-cell { background: var(--surface-low); border-radius: 6px; padding: 5px 8px; }
+.cp-stat-cell { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 5px 8px; }
 .cp-stat-cell span   { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; }
 .cp-stat-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; }
 .cp-type-chip { display: inline-flex; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
@@ -820,7 +820,7 @@ const badgeClass = (b) => {
 .cp-act-btn--outline:hover { background: var(--surface-mid); color: var(--on-surface); }
 
 /* ── Performance / mini charts ─────────────────────────────────────────────── */
-.cp-metric-cell { background: var(--surface-low); border-radius: 8px; padding: 8px 10px; }
+.cp-metric-cell { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 8px; padding: 8px 10px; }
 .cp-metric-cell span   { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; margin-bottom: 2px; }
 .cp-metric-cell strong { font-size: 0.9375rem; font-weight: 800; color: var(--on-surface); }
 .cp-mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 44px; background: var(--surface-low); border-radius: 8px; padding: 5px; }

@@ -17,18 +17,51 @@ class AuctionController extends Controller
     }
 
     /**
-     * Display the coffee auction exchange.
+     * Display the coffee auction exchange — every table that used to live
+     * on the single auction page, now the "overview" landing page of the
+     * auction section.
      */
     public function index(Request $request): Response
     {
-        return Inertia::render('Auction/AuctionPage', [
-            'overview' => $this->auctions->overview(),
+        return $this->renderPage($request, 'Auction/Index', [
             'featuredLots' => $this->auctions->featuredLots(),
             'endingSoon' => $this->auctions->endingSoon(),
             'upcoming' => $this->auctions->upcoming(),
             'myBids' => $this->auctions->myBids($request->user()->id),
             'myAuctions' => $this->auctions->myAuctions($request->user()->id),
-            'liveBids' => $this->auctions->liveBidFeed(),
+        ]);
+    }
+
+    /**
+     * Live auctions — lots open for bidding right now, plus the ones
+     * ending soonest.
+     */
+    public function live(Request $request): Response
+    {
+        return $this->renderPage($request, 'Auction/Live', [
+            'featuredLots' => $this->auctions->featuredLots(),
+            'endingSoon' => $this->auctions->endingSoon(),
+        ]);
+    }
+
+    /**
+     * Every bid the acting user has placed.
+     */
+    public function myBids(Request $request): Response
+    {
+        return $this->renderPage($request, 'Auction/MyBids', [
+            'myBids' => $this->auctions->myBids($request->user()->id),
+        ]);
+    }
+
+    /**
+     * Every buyer who has placed at least one bid, ranked by total bid
+     * value — the roster behind the "Active Buyers" KPI.
+     */
+    public function activeBuyers(Request $request): Response
+    {
+        return $this->renderPage($request, 'Auction/ActiveBuyers', [
+            'buyers' => $this->auctions->activeBuyers(),
         ]);
     }
 
@@ -44,6 +77,20 @@ class AuctionController extends Controller
         return Inertia::render('Auction/Show', [
             'lot' => $detail,
             'canBid' => in_array($request->user()?->role, ['buyer', 'admin'], true),
+        ]);
+    }
+
+    /**
+     * Render an auction-section page with the KPI overview every page
+     * under the auction layout shares, merged with that page's own data.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function renderPage(Request $request, string $component, array $data = []): Response
+    {
+        return Inertia::render($component, [
+            'overview' => $this->auctions->overview($request->user()->id),
+            ...$data,
         ]);
     }
 }

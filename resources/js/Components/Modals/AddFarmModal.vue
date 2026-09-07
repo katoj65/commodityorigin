@@ -1,8 +1,11 @@
 <script setup>
 import { computed, watch } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { useForm, usePage } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import { Close, House, Plus } from '@element-plus/icons-vue';
+
+const page = usePage();
+const currentUser = computed(() => page.props.auth.user);
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -33,6 +36,14 @@ function emptyForm() {
         elevation: '',
         total_area: '',
         coffee_area: '',
+        is_self_owner: false,
+        owner_first_name: '',
+        owner_middle_name: '',
+        owner_last_name: '',
+        owner_national_id: '',
+        owner_tel: '',
+        owner_email: '',
+        owner_ownership_percentage: '',
     };
 }
 
@@ -147,13 +158,13 @@ function submit() {
                     <span v-if="form.errors.subcounty" class="afm-field__error">{{ form.errors.subcounty }}</span>
                 </div>
 
-                <div class="afm-field afm-field--span2">
+                <div class="afm-field">
                     <label class="afm-field__label">Parish</label>
                     <el-input v-model="form.parish" placeholder="e.g. Bumwoni" class="afm-input" :class="{ 'afm-input--error': form.errors.parish }" />
                     <span v-if="form.errors.parish" class="afm-field__error">{{ form.errors.parish }}</span>
                 </div>
 
-                <div class="afm-field afm-field--span2">
+                <div class="afm-field">
                     <label class="afm-field__label">Village</label>
                     <el-input v-model="form.village" placeholder="e.g. Busamaga" class="afm-input" :class="{ 'afm-input--error': form.errors.village }" />
                     <span v-if="form.errors.village" class="afm-field__error">{{ form.errors.village }}</span>
@@ -193,6 +204,67 @@ function submit() {
                         <label class="afm-field__label">Coffee Area (ha)</label>
                         <el-input v-model="form.coffee_area" type="number" min="0" step="0.01" placeholder="e.g. 3.75" class="afm-input" :class="{ 'afm-input--error': form.errors.coffee_area }" />
                         <span v-if="form.errors.coffee_area" class="afm-field__error">{{ form.errors.coffee_area }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="afm-section">
+                <div class="afm-section__title">Ownership</div>
+                <p class="afm-section__hint">Who owns this farm?</p>
+
+                <div class="afm-owner-switch">
+                    <el-switch
+                        v-model="form.is_self_owner"
+                        active-text="I am the owner"
+                        inactive-text="Someone else owns it"
+                    />
+                </div>
+
+                <p v-if="form.is_self_owner" class="afm-section__hint">
+                    Ownership will be recorded under your account ({{ currentUser?.name }}).
+                </p>
+
+                <div v-else class="afm-grid" style="margin-top: 14px;">
+                    <div class="afm-field">
+                        <label class="afm-field__label">First Name <span class="afm-req">*</span></label>
+                        <el-input v-model="form.owner_first_name" placeholder="e.g. Jane" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_first_name }" />
+                        <span v-if="form.errors.owner_first_name" class="afm-field__error">{{ form.errors.owner_first_name }}</span>
+                    </div>
+
+                    <div class="afm-field">
+                        <label class="afm-field__label">Middle Name</label>
+                        <el-input v-model="form.owner_middle_name" placeholder="Optional" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_middle_name }" />
+                        <span v-if="form.errors.owner_middle_name" class="afm-field__error">{{ form.errors.owner_middle_name }}</span>
+                    </div>
+
+                    <div class="afm-field">
+                        <label class="afm-field__label">Last Name <span class="afm-req">*</span></label>
+                        <el-input v-model="form.owner_last_name" placeholder="e.g. Nakato" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_last_name }" />
+                        <span v-if="form.errors.owner_last_name" class="afm-field__error">{{ form.errors.owner_last_name }}</span>
+                    </div>
+
+                    <div class="afm-field">
+                        <label class="afm-field__label">National ID</label>
+                        <el-input v-model="form.owner_national_id" placeholder="e.g. CM123456789ABC" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_national_id }" />
+                        <span v-if="form.errors.owner_national_id" class="afm-field__error">{{ form.errors.owner_national_id }}</span>
+                    </div>
+
+                    <div class="afm-field">
+                        <label class="afm-field__label">Phone</label>
+                        <el-input v-model="form.owner_tel" placeholder="e.g. +256 700 000000" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_tel }" />
+                        <span v-if="form.errors.owner_tel" class="afm-field__error">{{ form.errors.owner_tel }}</span>
+                    </div>
+
+                    <div class="afm-field">
+                        <label class="afm-field__label">Email</label>
+                        <el-input v-model="form.owner_email" placeholder="e.g. owner@example.com" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_email }" />
+                        <span v-if="form.errors.owner_email" class="afm-field__error">{{ form.errors.owner_email }}</span>
+                    </div>
+
+                    <div class="afm-field afm-field--span2">
+                        <label class="afm-field__label">Ownership %</label>
+                        <el-input v-model="form.owner_ownership_percentage" type="number" min="0" max="100" step="0.01" placeholder="e.g. 100" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_ownership_percentage }" />
+                        <span v-if="form.errors.owner_ownership_percentage" class="afm-field__error">{{ form.errors.owner_ownership_percentage }}</span>
                     </div>
                 </div>
             </div>
@@ -360,6 +432,22 @@ function submit() {
     color: #6F7677;
     line-height: 1.5;
     margin: 0 0 12px;
+}
+
+.afm-owner-switch {
+    display: flex;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.afm-owner-switch :deep(.el-switch__label) {
+    color: #6F7677;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.afm-owner-switch :deep(.el-switch__label.is-active) {
+    color: #121516;
 }
 
 .afm-modal__footer {
