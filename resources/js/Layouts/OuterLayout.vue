@@ -15,10 +15,10 @@ const mobileNavOpen = ref(false);
 const scrolled = ref(false);
 
 const navLinks = [
-    { label: 'Exchange', href: '#top', active: true },
+    { label: 'Exchange', route: 'exchange.index' },
     { label: 'Marketplace', route: 'market.live' },
-    { label: 'Market Intelligence', route: 'market.news' },
-    { label: 'How It Works', href: '#matchmaker' },
+    { label: 'Market Intelligence', route: 'market-intelligence.index' },
+    { label: 'How It Works', route: 'how-it-works.index' },
 ];
 
 let revealObserver;
@@ -93,10 +93,12 @@ onBeforeUnmount(() => {
             :class="scrolled ? 'bg-[#121611]/95 shadow-[0_4px_20px_rgba(0,0,0,0.25)] border-b border-[#bfcaba]/10' : 'bg-[#121611]/80 shadow-[0_1px_8px_rgba(0,0,0,0.1)] border-b border-transparent'"
         >
             <div class="h-20 max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between">
-                <a href="#top" class="flex items-center gap-2 md:gap-3 flex-shrink-0 no-underline">
-                    <ApplicationMark class="h-9 w-9 md:h-10 md:w-10 flex-shrink-0 wp-invert" />
+                <Link :href="route('home')" class="flex items-center gap-2 md:gap-3 flex-shrink-0 no-underline">
+                    <span class="wp-mark-wrap">
+                        <ApplicationMark class="wp-mark" />
+                    </span>
                     <span class="text-base md:text-lg font-bold text-white tracking-tight whitespace-nowrap">Bean Origin</span>
-                </a>
+                </Link>
 
                 <nav class="hidden lg:flex items-center gap-8">
                     <template v-for="link in navLinks" :key="link.label">
@@ -133,9 +135,10 @@ onBeforeUnmount(() => {
 
             <Transition name="wp-mobile-nav">
                 <div v-if="mobileNavOpen" class="lg:hidden bg-[#121611] border-t border-[#bfcaba]/10 px-4 py-4 flex flex-col gap-1 origin-top">
+                    <Link :href="route('exchange.index')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">Exchange</Link>
                     <Link :href="route('market.live')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">Marketplace</Link>
-                    <Link :href="route('market.news')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">Market Intelligence</Link>
-                    <a href="#matchmaker" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">How It Works</a>
+                    <Link :href="route('market-intelligence.index')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">Market Intelligence</Link>
+                    <Link :href="route('how-it-works.index')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">How It Works</Link>
                     <div class="flex items-center gap-4 pt-3 mt-2 border-t border-[#bfcaba]/10">
                         <Link :href="route('login')" class="text-sm text-[#bfcaba] no-underline">Sign in</Link>
                         <Link :href="route('register')" class="bg-[#a3f69c] text-[#002204] px-3 py-1.5 rounded text-sm font-semibold no-underline">Create account</Link>
@@ -211,8 +214,24 @@ onBeforeUnmount(() => {
     position: relative;
 }
 
-.wp-page .wp-invert {
-    filter: brightness(0) invert(1);
+/* ── Logo mark — mirrors DesignPreviewLayout's .dp-aside__mark-wrap (same
+   white badge treatment) so the header reads as the same product. ──── */
+.wp-page .wp-mark-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+.wp-page .wp-mark {
+    height: 30px;
+    width: 30px;
+    flex-shrink: 0;
 }
 
 .wp-page .wp-display {

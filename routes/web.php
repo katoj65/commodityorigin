@@ -16,6 +16,7 @@ use App\Http\Controllers\Country\CountryController;
 use App\Http\Controllers\Currency\CurrencyController;
 use App\Http\Controllers\Documentation\DocumentationController;
 use App\Http\Controllers\Escrow\EscrowController;
+use App\Http\Controllers\Exchange\ExchangeController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Farm\GeocodeController;
 use App\Http\Controllers\FarmCollection\FarmCollectionController;
@@ -24,10 +25,12 @@ use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Gallery\GalleryController;
 use App\Http\Controllers\Home\Dashboard as DashboardController;
 use App\Http\Controllers\Home\HomeController;
+use App\Http\Controllers\HowItWorks\HowItWorksController;
 use App\Http\Controllers\Input\AgriculturalInputController;
 use App\Http\Controllers\Inspection\InspectionController;
 use App\Http\Controllers\Lot\LotController;
 use App\Http\Controllers\Market\MarketController;
+use App\Http\Controllers\MarketIntelligence\MarketIntelligenceController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Origin\OriginController;
@@ -53,9 +56,22 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // the real app shell so it can be inspected without touching production
 // pages. Not linked from anywhere; visit directly.
 Route::get('/test/design', fn () => Inertia::render('Test/DesignPreview'))->name('test.design');
-Route::get('/news', [MarketController::class, 'marketIntelligence'])->name('market.news');
-Route::get('/live-market', [MarketController::class, 'liveMarket'])->name('market.live');
 Route::get('/origins', [OriginController::class, 'index'])->name('origin.index');
+
+// How It Works — public explainer page, dedicated route prefix.
+Route::prefix('how-it-works')->name('how-it-works.')->group(function () {
+    Route::get('/', [HowItWorksController::class, 'index'])->name('index');
+});
+
+// Exchange — public live exchange snapshot, dedicated route prefix.
+Route::prefix('exchange')->name('exchange.')->group(function () {
+    Route::get('/', [ExchangeController::class, 'index'])->name('index');
+});
+
+// Market Intelligence — public news/updates feed, dedicated route prefix.
+Route::prefix('market-intelligence')->name('market-intelligence.')->group(function () {
+    Route::get('/', [MarketIntelligenceController::class, 'index'])->name('index');
+});
 
 // Authenticated application routes.
 Route::middleware([
@@ -68,6 +84,9 @@ Route::middleware([
 
     // KPI drill-down pages — one per headline KPI on the general dashboard.
     Route::get('/dashboard/{kpi}', [DashboardController::class, 'kpi'])->name('dashboard.kpi');
+
+    // Live Market overview — moved inside the app shell (was public).
+    Route::get('/live-market', [MarketController::class, 'liveMarket'])->name('market.live');
 
     // System settings.
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');

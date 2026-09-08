@@ -70,6 +70,8 @@ class DatabaseSeeder extends Seeder
             OrderSeeder::class,
             CropGradeMetadataSeeder::class,
             CoffeeGradeSeeder::class,
+            HowItWorksStepSeeder::class,
+            MarketIntelligenceArticleSeeder::class,
             BatchActivityMetadataSeeder::class,
             FarmCollectionActivityMetadataSeeder::class,
             LotActivityMetadataSeeder::class,

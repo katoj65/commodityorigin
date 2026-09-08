@@ -91,20 +91,18 @@ class MarketController extends Controller
     }
 
     /**
-     * Display the market intelligence briefing.
-     */
-    public function marketIntelligence(): Response
-    {
-        return Inertia::render('Market/MarketIntelligence');
-    }
-
-    /**
-     * Display the live market terminal.
+     * Display the live market overview — real-time pulse across every live
+     * listing (headline numbers, demand split, opportunities, and the
+     * listings themselves), distinct from Active Market's listing-
+     * management focus.
      */
     public function liveMarket(): Response
     {
         return Inertia::render('Market/LiveMarket', [
             'lots' => $this->market->liveMarketListing(),
+            'analysis' => $this->market->marketAnalysis(),
+            'demand' => $this->market->demandBreakdown(),
+            'opportunities' => $this->market->marketOpportunities(),
         ]);
     }
 

@@ -398,7 +398,7 @@ const chartPriceLabels = [
                             </div>
                         </li>
                     </ul>
-                    <Link :href="route('market.news')" class="text-[#a3f69c] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all w-fit no-underline">
+                    <Link :href="route('how-it-works.index')" class="text-[#a3f69c] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all w-fit no-underline">
                         See how matching works <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </Link>
                 </div>
@@ -606,7 +606,7 @@ const chartPriceLabels = [
                             Every lot traded on Bean Origin comes with verified impact data tracked on-chain, so buyers can price in sustainability instead of guessing at it.
                         </p>
                     </div>
-                    <Link :href="route('market.news')" class="text-[#0d631b] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all w-fit no-underline flex-shrink-0">
+                    <Link :href="route('market-intelligence.index')" class="text-[#0d631b] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all w-fit no-underline flex-shrink-0">
                         View methodology <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </Link>
                 </div>
