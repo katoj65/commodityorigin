@@ -10,16 +10,19 @@ use App\Http\Resources\ForecastResource;
 use App\Http\Resources\CountryResource;
 use App\Http\Resources\MarketListingResource;
 use App\Http\Resources\OrderResource;
+use App\Http\Resources\PriceIndexResource;
 use App\Models\Market;
 use App\Models\MarketImage;
 use App\Services\BuyService;
 use App\Services\CalendarService;
+use App\Services\CartService;
 use App\Services\CountryService;
 use App\Services\ExchangeRateService;
 use App\Services\ForecastService;
 use App\Services\MarketImageService;
 use App\Services\MarketService;
 use App\Services\OrderService;
+use App\Services\PriceIndexService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,6 +41,8 @@ class MarketController extends Controller
         private readonly ForecastService $forecasts,
         private readonly CountryService $countries,
         private readonly MarketImageService $marketImages,
+        private readonly PriceIndexService $priceIndexes,
+        private readonly CartService $cart,
     ) {
     }
 
@@ -48,10 +53,16 @@ class MarketController extends Controller
     {
         return Inertia::render('Market/MarketListings', [
             'markets' => $this->market->marketPageListing(),
+            'featuredLots' => $this->market->featuredListing(),
             'calendarEvents' => CalendarResource::collection(
                 $this->calendar->eventsForUser($request->user()->id),
             )->resolve(),
             'exchangeRates' => ExchangeRateResource::collection($this->exchangeRates->all())->resolve(),
+            'priceIndexes' => PriceIndexResource::collection($this->priceIndexes->all())->resolve(),
+            'analysis' => $this->market->marketAnalysis(),
+            'demand' => $this->market->demandBreakdown(),
+            'opportunities' => $this->market->marketOpportunities(),
+            'topSellers' => $this->market->competitorLandscape(),
         ]);
     }
 
@@ -160,6 +171,25 @@ class MarketController extends Controller
         return Inertia::render('Market/ProductProfile', [
             'item' => $this->market->show($market),
         ]);
+    }
+
+    /**
+     * Confirm a Quick Buy order — adds the listing to the current user's
+     * cart at the confirmed quantity (or increases it, if it's already
+     * there). The actual checkout/payment step still happens from the
+     * cart, same as adding any other listing.
+     */
+    public function buy(Request $request, Market $market): RedirectResponse
+    {
+        abort_unless($market->status === 'live', 404);
+
+        $validated = $request->validate([
+            'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
+        ]);
+
+        $this->cart->addItem($request->user()->id, 'market', $market->id, $validated['quantity']);
+
+        return back()->with('success', "Added {$validated['quantity']} kg of \"{$market->title}\" to your cart.");
     }
 
     /**

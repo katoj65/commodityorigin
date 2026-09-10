@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import { router, useForm } from '@inertiajs/vue3';
+import TradeLayout from '@/Layouts/TradeLayout.vue';
 import {
     Plus, Close, Files, Box, ShoppingCart,
     Tickets, User, Coffee, Coin, Checked, Search, FolderOpened, List,
@@ -11,6 +11,11 @@ const props = defineProps({
     orders: { type: Array, default: () => [] },
     openOrders: { type: Array, default: () => [] },
     authUserId: { type: Number, default: null },
+    marketCount: { type: Number, default: 0 },
+    auctionCount: { type: Number, default: 0 },
+    requestCount: { type: Number, default: 0 },
+    cropTypeOptions: { type: Array, default: () => [] },
+    gradeOptions: { type: Array, default: () => [] },
 });
 
 /* ── Perspective helpers ─────────────────────────────────────────────── */
@@ -259,17 +264,19 @@ function openOrder(order) {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Orders">
-        <Head title="Orders" />
-
+    <TradeLayout
+        title="My Trades"
+        subtitle="Track every coffee order you've placed or received, from confirmation through delivery."
+        :market-count="marketCount"
+        :auction-count="auctionCount"
+        :request-count="requestCount"
+        :crop-type-options="cropTypeOptions"
+        :grade-options="gradeOptions"
+    >
         <div class="ord-page">
 
             <!-- ── Page Header ───────────────────────────────────────────── -->
             <div class="ord-page-header">
-                <div class="ord-page-header__left">
-                    <h1 class="ord-title">Orders</h1>
-                    <p class="ord-subtitle">Track every coffee order you've placed or received, from confirmation through delivery.</p>
-                </div>
                 <div class="ord-page-header__actions">
                     <button type="button" class="ord-btn ord-btn--outline" @click="openCreateDialog('offer')">
                         <el-icon><Box /></el-icon> Post Offer
@@ -519,7 +526,7 @@ function openOrder(order) {
                 </div>
             </template>
         </el-dialog>
-    </DesignPreviewLayout>
+    </TradeLayout>
 </template>
 
 <style scoped>
@@ -551,28 +558,11 @@ function openOrder(order) {
 .ord-page-header {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-end;
     flex-wrap: wrap;
     gap: 16px;
 }
-.ord-page-header__left { max-width: 640px; }
 .ord-page-header__actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-.ord-title {
-    font-size: 1.5rem;
-    line-height: 1.9rem;
-    letter-spacing: -0.015em;
-    font-weight: 800;
-    margin: 0 0 6px;
-}
-.ord-subtitle {
-    font-size: 0.9375rem;
-    line-height: 1.5rem;
-    color: var(--text-muted);
-    margin: 0;
-    max-width: 64ch;
-    text-wrap: pretty;
-}
 
 /* ── Buttons ─────────────────────────────────────────────────────────── */
 .ord-btn {

@@ -487,6 +487,7 @@ Route::middleware([
         Route::delete('/{market}', [MarketController::class, 'destroy'])->name('destroy');
         Route::post('/{market}/images', [MarketController::class, 'storeImages'])->name('images.store');
         Route::delete('/{market}/images/{image}', [MarketController::class, 'destroyImage'])->name('images.destroy');
+        Route::post('/{market}/buy', [MarketController::class, 'buy'])->name('buy');
     });
 
     // Buyer workspace routes.

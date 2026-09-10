@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Http\Resources\LotImageResource;
 use App\Http\Resources\MarketImageResource;
+use App\Models\Bid;
 use App\Models\FarmSustainabilityPractice;
 use App\Models\Market;
 use App\Models\SustainabilityPracticesMetadata;
@@ -49,6 +50,25 @@ class MarketService
     public function marketPageListing(): array
     {
         return $this->liveMarkets()
+            ->map(fn (Market $market): array => $this->shapeListing($market))
+            ->all();
+    }
+
+    /**
+     * The most recently created featured live listings, for the market
+     * page's spotlight grid.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function featuredListing(int $limit = 3): array
+    {
+        return Market::query()
+            ->where('status', 'live')
+            ->where('is_featured', true)
+            ->with('lot.images')
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get()
             ->map(fn (Market $market): array => $this->shapeListing($market))
             ->all();
     }
@@ -174,6 +194,77 @@ class MarketService
             'types' => $listings->pluck('type')->filter()->unique()->sort()->values()->all(),
             'origins' => $listings->pluck('origin')->filter()->unique()->sort()->values()->all(),
             'processes' => $listings->pluck('process')->filter()->unique()->sort()->values()->all(),
+        ];
+    }
+
+    /**
+     * How many listings are currently live — the Trade hub's "Market" tab
+     * count, without paying for tradeListing()'s full shape/bid lookup.
+     */
+    public function liveCount(): int
+    {
+        return Market::where('status', 'live')->count();
+    }
+
+    /**
+     * Live listings shaped for the Trade hub's coffee listings table —
+     * richer than marketPageListing() (pulls in the underlying lot's grade
+     * and screen, real trust flags, and the highest real bid per lot so
+     * auction rows don't need a fabricated suggested amount).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function tradeListing(): array
+    {
+        $markets = Market::query()
+            ->where('status', 'live')
+            ->with('lot')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $highestBids = Bid::query()
+            ->whereIn('lot_id', $markets->pluck('lot_id')->filter()->unique())
+            ->selectRaw('lot_id, MAX(bid_amount) as highest')
+            ->groupBy('lot_id')
+            ->pluck('highest', 'lot_id');
+
+        return $markets
+            ->map(fn (Market $market): array => $this->shapeTradeListing($market, $highestBids->get($market->lot_id)))
+            ->all();
+    }
+
+    /**
+     * Shape a single market listing for the Trade table row.
+     *
+     * @return array<string, mixed>
+     */
+    private function shapeTradeListing(Market $market, mixed $highestBid = null): array
+    {
+        $lot = $market->lot;
+        $quantity = (float) ($market->available_quantity ?: $market->quantity ?? 0);
+        $price = (float) ($market->price_per_unit ?? 0);
+
+        return [
+            'id' => $market->id,
+            'name' => $market->title,
+            'lot_code' => $market->lot_code,
+            'pricing_type' => $market->pricing_type ?? 'fixed',
+            'origin' => $market->origin,
+            'region' => $lot?->region,
+            'type' => $market->type,
+            'grade' => $lot?->grade,
+            'screen' => $lot?->screen,
+            'process' => $market->process,
+            'quality_score' => $this->toFloatOrNull($market->quality_score),
+            'quantity' => $quantity,
+            'unit' => $market->unit ?? 'kg',
+            'quantity_bags' => $lot?->quantity_bags,
+            'currency' => $market->currency ?? 'USD',
+            'price_per_kg' => $price,
+            'total_price' => round($price * $quantity, 2),
+            'highest_bid' => $highestBid !== null ? (float) $highestBid : null,
+            'is_traceable' => $market->lot_id !== null,
+            'blockchain_registered' => $market->blockchain_id !== null,
         ];
     }
 

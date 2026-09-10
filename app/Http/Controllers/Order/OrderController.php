@@ -6,9 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderInspectionResource;
 use App\Http\Resources\OrderIntentResource;
 use App\Http\Resources\OrderResource;
+use App\Models\Auction;
+use App\Models\CropGradeMetadata;
+use App\Models\CropVarietyMetadata;
+use App\Models\LotRequest;
 use App\Models\Order;
 use App\Models\OrderIntent;
 use App\Services\EscrowService;
+use App\Services\MarketService;
 use App\Services\NotificationService;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
@@ -27,13 +32,16 @@ class OrderController extends Controller
         private readonly OrderService $orders,
         private readonly NotificationService $notifications,
         private readonly EscrowService $escrow,
+        private readonly MarketService $market,
     ) {
     }
 
     /**
      * Display the orders page — every order the authenticated user placed
      * or is fulfilling, plus every other request and offer on the
-     * marketplace, at any status, visible to the whole community.
+     * marketplace, at any status, visible to the whole community. Wrapped
+     * in the Trade hub's TradeLayout shell (as the "My Trades" tab), so it
+     * needs the same tab-bar counts TradeController::index() uses.
      */
     public function index(Request $request): Response
     {
@@ -43,6 +51,19 @@ class OrderController extends Controller
             'orders' => OrderResource::collection($this->orders->ordersForUser($userId))->resolve(),
             'openOrders' => OrderResource::collection($this->orders->openOrdersExcluding($userId))->resolve(),
             'authUserId' => $userId,
+            'marketCount' => $this->market->liveCount(),
+            'auctionCount' => Auction::query()->count(),
+            'requestCount' => LotRequest::query()->count(),
+            'cropTypeOptions' => CropVarietyMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'gradeOptions' => CropGradeMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
         ]);
     }
 

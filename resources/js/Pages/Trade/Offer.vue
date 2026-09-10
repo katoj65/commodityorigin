@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import { Link, router, useForm } from '@inertiajs/vue3';
+import TradeLayout from '@/Layouts/TradeLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import OfferPreviewModal from '@/Components/Offers/OfferPreviewModal.vue';
 import {
@@ -13,6 +13,11 @@ const props = defineProps({
     myOfferResponses: { type: Array, default: () => [] },
     myResponses: { type: Array, default: () => [] },
     authUserId: { type: Number, default: null },
+    marketCount: { type: Number, default: 0 },
+    auctionCount: { type: Number, default: 0 },
+    requestCount: { type: Number, default: 0 },
+    cropTypeOptions: { type: Array, default: () => [] },
+    gradeOptions: { type: Array, default: () => [] },
 });
 
 /* ── Search + KPI helpers ────────────────────────────────────────────── */
@@ -250,16 +255,18 @@ function saveOffer() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Offers">
-        <Head title="Offers" />
-
+    <TradeLayout
+        title="Offers"
+        subtitle="Browse and respond to sell-side offers posted by growers and exporters across the marketplace."
+        :market-count="marketCount"
+        :auction-count="auctionCount"
+        :request-count="requestCount"
+        :crop-type-options="cropTypeOptions"
+        :grade-options="gradeOptions"
+    >
         <div class="ofr-page">
             <!-- ── Page Header ───────────────────────────────────────────── -->
             <div class="ofr-page-header">
-                <div class="ofr-page-header__left">
-                    <h1 class="ofr-title">Offers</h1>
-                    <p class="ofr-subtitle">Browse and respond to sell-side offers posted by growers and exporters across the marketplace.</p>
-                </div>
                 <div class="ofr-page-header__actions">
                     <button type="button" class="ofr-btn ofr-btn--primary" @click="openCreateDialog">
                         <el-icon><Plus /></el-icon> Post Offer
@@ -639,7 +646,7 @@ function saveOffer() {
                 </div>
             </template>
         </el-dialog>
-    </DesignPreviewLayout>
+    </TradeLayout>
 </template>
 
 <style scoped>
@@ -667,15 +674,11 @@ function saveOffer() {
 .ofr-page-header {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-end;
     flex-wrap: wrap;
     gap: 16px;
 }
-.ofr-page-header__left { max-width: 640px; }
 .ofr-page-header__actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-.ofr-title { font-size: 1.5rem; line-height: 1.9rem; letter-spacing: -0.015em; font-weight: 800; margin: 0 0 6px; }
-.ofr-subtitle { font-size: 0.9375rem; line-height: 1.5rem; color: var(--text-muted); margin: 0; max-width: 64ch; text-wrap: pretty; }
 
 /* ── Buttons ─────────────────────────────────────────────────────────── */
 .ofr-btn {
@@ -954,7 +957,6 @@ function saveOffer() {
     .ofr-page-header { flex-direction: column; align-items: stretch; }
     .ofr-grid-2 { grid-template-columns: 1fr; }
     .ofr-page { gap: 14px; }
-    .ofr-title { font-size: 1.25rem; line-height: 1.6rem; }
     .ofr-page-header__actions .ofr-btn { width: 100%; justify-content: center; }
     .ofr-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .ofr-kpi { padding: 12px 14px; gap: 10px; }

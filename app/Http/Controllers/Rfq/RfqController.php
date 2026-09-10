@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Rfq;
 
 use App\Http\Controllers\Controller;
+use App\Models\Auction;
 use App\Models\CropGradeMetadata;
 use App\Models\CropVarietyMetadata;
 use App\Models\LotRequest;
 use App\Services\LotService;
+use App\Services\MarketService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,11 +19,15 @@ class RfqController extends Controller
 {
     public function __construct(
         private readonly LotService $lots,
+        private readonly MarketService $market,
     ) {
     }
 
     /**
-     * Display the request-for-quote list.
+     * Display the request-for-quote list — wrapped in the same TradeLayout
+     * shell as the rest of the Trade hub, so its tab bar's counts need the
+     * same real Market/Auction/LotRequest figures TradeController::index()
+     * uses.
      */
     public function index(): Response
     {
@@ -37,6 +43,9 @@ class RfqController extends Controller
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->pluck('name'),
+            'marketCount' => $this->market->liveCount(),
+            'auctionCount' => Auction::query()->count(),
+            'requestCount' => LotRequest::query()->count(),
         ]);
     }
 

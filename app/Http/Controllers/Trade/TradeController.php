@@ -7,9 +7,15 @@ use App\Http\Resources\OfferResource;
 use App\Http\Resources\OfferResponseResource;
 use App\Helpers\WalletTransferHelper;
 use App\Models\Auction;
+use App\Models\CertificationMetadata;
+use App\Models\CoffeeGrade;
+use App\Models\CropGradeMetadata;
+use App\Models\CropVarietyMetadata;
 use App\Models\LotRequest;
 use App\Models\Offer;
 use App\Models\OfferResponse;
+use App\Models\ProcessingMetadata;
+use App\Services\CountryService;
 use App\Services\MarketService;
 use App\Services\OfferPaymentService;
 use App\Services\OfferService;
@@ -26,18 +32,50 @@ class TradeController extends Controller
         private readonly OfferService $offers,
         private readonly OfferPaymentService $payments,
         private readonly WalletService $wallet,
+        private readonly CountryService $countries,
     ) {
     }
 
     /**
-     * Display the trade hub.
+     * Display the trade hub — the live coffee listings table, its filter
+     * dropdowns (sourced from the same metadata tables the lot-creation
+     * forms use, so a filter value always matches real listing data), and
+     * KPI counts derived from those same real listings.
      */
     public function index(): Response
     {
+        $listings = $this->market->tradeListing();
+
         return Inertia::render('Trade/Index', [
-            'markets' => $this->market->marketPageListing(),
+            'markets' => $listings,
+            'availableLots' => count($listings),
+            'availableVolumeKg' => round(array_sum(array_column($listings, 'quantity')), 2),
             'auctionCount' => Auction::query()->count(),
             'requestCount' => LotRequest::query()->count(),
+            ...$this->rfqFormOptions(),
+            'filterOptions' => [
+                'types' => CropVarietyMetadata::query()
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->pluck('name'),
+                'origins' => $this->countries->coffeeProducers()->pluck('name')->values(),
+                'processes' => ProcessingMetadata::query()
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->pluck('name'),
+                'grades' => CoffeeGrade::query()
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->pluck('name'),
+                'certifications' => CertificationMetadata::query()
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->pluck('name'),
+            ],
         ]);
     }
 
@@ -67,6 +105,10 @@ class TradeController extends Controller
             'myOfferResponses' => OfferResponseResource::collection($received)->resolve(),
             'myResponses' => OfferResponseResource::collection($sent)->resolve(),
             'authUserId' => $userId,
+            'marketCount' => $this->market->liveCount(),
+            'auctionCount' => Auction::query()->count(),
+            'requestCount' => LotRequest::query()->count(),
+            ...$this->rfqFormOptions(),
         ]);
     }
 
@@ -233,5 +275,28 @@ class TradeController extends Controller
     private function authorizeSeller(Offer $offer, int $userId): void
     {
         abort_unless($offer->seller_id === $userId, 403);
+    }
+
+    /**
+     * Option lists for the "Create RFQ" modal TradeLayout renders on every
+     * Trade-section page — same metadata tables RfqController::index() and
+     * the RFQ validation rules use, so a submitted value always matches.
+     *
+     * @return array<string, mixed>
+     */
+    private function rfqFormOptions(): array
+    {
+        return [
+            'cropTypeOptions' => CropVarietyMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'gradeOptions' => CropGradeMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+        ];
     }
 }
