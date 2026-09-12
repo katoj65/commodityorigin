@@ -7,9 +7,10 @@
    extension is avoided app-wide). The real dark sidebar/header shell is
    unchanged — only this page's content area is rebuilt.
 
-   Every number/label below is static placeholder content matching the
-   mockup's own example figures — intentionally NOT wired to real
-   MarketService/Auction/LotRequest/Offer data yet, per instruction. */
+   Shared shell for the whole Trade hub (Market/RFQs/Offers/Auctions/My
+   Trades) — title/badge/subtitle and the tab counts are real, passed in
+   by whichever controller renders the page. Offers/My Trades tab counts
+   are still static since no controller wires those yet. */
 import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Close, Tickets } from '@element-plus/icons-vue';
@@ -17,6 +18,7 @@ import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
 const props = defineProps({
     title: { type: String, default: 'Trade' },
+    badge: { type: String, default: 'B2B Commodity Exchange' },
     subtitle: { type: String, default: 'Discover, evaluate and trade verified coffee from trusted origins with instant cryptographic provenance.' },
     marketCount: { type: Number, default: 0 },
     auctionCount: { type: Number, default: 0 },
@@ -82,7 +84,7 @@ function submitRfq() {
                 <div>
                     <div class="trade-head__title-row">
                         <h1 class="trade-head__title">{{ title }}</h1>
-                        <span class="trade-head__badge">B2B Commodity Exchange</span>
+                        <span class="trade-head__badge">{{ badge }}</span>
                     </div>
                     <p class="trade-head__subtitle">{{ subtitle }}</p>
                 </div>

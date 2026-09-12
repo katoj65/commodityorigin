@@ -4,7 +4,7 @@ import { router, useForm } from '@inertiajs/vue3';
 import TradeLayout from '@/Layouts/TradeLayout.vue';
 import {
     Plus, Close, Files, Box, ShoppingCart,
-    Tickets, User, Coffee, Coin, Checked, Search, FolderOpened, List,
+    Tickets, User, Coffee, Coin, Checked, Search, FolderOpened,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -39,15 +39,6 @@ function isCreator(order) {
 
 function counterpartName(order) {
     return isBuyer(order) ? order.seller_name : order.buyer_name;
-}
-
-function perspectiveLabel(order) {
-    if (order.status === 'open') {
-        if (isCreator(order)) return 'Placed';
-        return order.type === 'offer' ? 'Offer' : 'Open';
-    }
-    if (!isParty(order)) return order.type === 'offer' ? 'Offer' : 'Request';
-    return isCreator(order) ? 'Placed' : 'Received';
 }
 
 function partyLabel(order) {
@@ -108,6 +99,7 @@ const filteredOrders = computed(() => {
 
     return allOrders.value.filter((order) => {
         if (!matchesFilter(activeFilter.value, order)) return false;
+        if (typeFilter.value !== ALL_TRADE_TYPES && perspectiveType(order) !== typeFilter.value) return false;
         if (!term) return true;
 
         const haystack = [
@@ -116,6 +108,13 @@ const filteredOrders = computed(() => {
         ].filter(Boolean).join(' ').toLowerCase();
         return haystack.includes(term);
     });
+});
+
+const sortedOrders = computed(() => {
+    const rows = filteredOrders.value;
+    if (sortBy.value === 'Highest Value') return [...rows].sort((a, b) => b.total_amount - a.total_amount);
+    if (sortBy.value === 'Largest Volume') return [...rows].sort((a, b) => b.quantity - a.quantity);
+    return rows;
 });
 
 const isSearching = computed(() => !!search.value.trim());
@@ -127,16 +126,83 @@ function tabCount(key) {
 function resetFilters() {
     search.value = '';
     activeFilter.value = 'all';
+    typeFilter.value = ALL_TRADE_TYPES;
+    sortBy.value = 'Newest First';
 }
 
-/* ── KPIs ────────────────────────────────────────────────────────────── */
-const kpis = computed(() => ({
-    total: allOrders.value.length,
-    placed: tabCount('placed'),
-    received: tabCount('received'),
-    marketplace: tabCount('marketplace'),
-    delivered: tabCount('delivered'),
-}));
+/* ── KPIs — scoped to the viewer's own trades (props.orders), not the
+   wider marketplace feed, matching "My Trades" as a personal summary. ── */
+const ACTIVE_STATUSES = ['pending', 'confirmed', 'processing', 'shipped'];
+
+const kpis = computed(() => {
+    const mine = props.orders;
+
+    return {
+        active: mine.filter((o) => ACTIVE_STATUSES.includes(o.status)).length,
+        volumeKg: mine.reduce((sum, o) => sum + Number(o.quantity || 0), 0),
+        // "Pending Payments": orders confirmed but not yet moved to processing —
+        // the window before an admin activates shipping and escrow triggers.
+        pendingPayments: mine
+            .filter((o) => o.status === 'confirmed')
+            .reduce((sum, o) => sum + Number(o.total_amount || 0), 0),
+        inFulfilment: mine.filter((o) => ['processing', 'shipped'].includes(o.status)).length,
+        completed: mine.filter((o) => o.status === 'delivered').length,
+    };
+});
+
+/* ── Escrow state — inferred from status rather than a live per-row
+   EscrowAccount lookup: EscrowService::holdAndRelease() fires exactly
+   when an admin moves an order from "processing" to "shipped", so the
+   status alone tells the real escrow state without an extra query. ──── */
+function escrowState(order) {
+    if (['shipped', 'delivered'].includes(order.status)) return { label: 'Released', tone: 'ord-badge--green' };
+    if (order.status === 'processing') return { label: 'Pending Release', tone: 'ord-badge--amber' };
+    if (order.status === 'confirmed') return { label: 'Awaiting Escrow', tone: 'ord-badge--blue' };
+    return { label: '—', tone: 'ord-badge--muted' };
+}
+
+/* ── Perspective-aware trade type — "Purchase"/"Selling" for the viewer's
+   own trades, the raw request/offer label for marketplace rows they
+   aren't part of. ────────────────────────────────────────────────────── */
+function perspectiveType(order) {
+    if (isParty(order)) return isBuyer(order) ? 'Purchase' : 'Selling';
+    return typeLabel(order.type);
+}
+
+function perspectiveTypeTone(order) {
+    if (isParty(order)) return isBuyer(order) ? 'ord-badge--blue' : 'ord-badge--amber';
+    return typeTone(order.type);
+}
+
+/* ── Sort + type filter ──────────────────────────────────────────────── */
+const sortBy = ref('Newest First');
+const sortOptions = ['Newest First', 'Highest Value', 'Largest Volume'];
+
+const ALL_TRADE_TYPES = 'All Types';
+const typeFilter = ref(ALL_TRADE_TYPES);
+const typeFilterOptions = [ALL_TRADE_TYPES, 'Purchase', 'Selling'];
+
+/* ── Export — a real CSV of whatever the current filters/search/sort are
+   showing, built client-side from the same rows the table renders. ──── */
+function exportCsv() {
+    const header = ['Order Number', 'Date', 'Type', 'Counterparty', 'Crop', 'Variety', 'Grade', 'Quantity (kg)', 'Unit Price', 'Total Amount', 'Currency', 'Status'];
+    const rows = sortedOrders.value.map((o) => [
+        o.order_number, o.created_at, perspectiveType(o), counterpartName(o) || '',
+        o.crop_type, o.variety || '', o.grade || '', o.quantity, o.unit_price, o.total_amount, o.currency, o.status,
+    ]);
+
+    const csv = [header, ...rows]
+        .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `bean-origin-trades-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+}
 
 function typeLabel(type) {
     return type === 'offer' ? 'Offer' : 'Request';
@@ -277,7 +343,14 @@ function openOrder(order) {
 
             <!-- ── Page Header ───────────────────────────────────────────── -->
             <div class="ord-page-header">
+                <div class="ord-page-header__eyebrow">
+                    <span class="ord-eyebrow-badge">Execution &amp; Settlement</span>
+                    <span class="ord-eyebrow-mono">DESK // TRADE_OPS</span>
+                </div>
                 <div class="ord-page-header__actions">
+                    <button type="button" class="ord-btn ord-btn--outline" @click="exportCsv">
+                        <span class="material-symbols-outlined">download</span> Export Audit Manifest (CSV)
+                    </button>
                     <button type="button" class="ord-btn ord-btn--outline" @click="openCreateDialog('offer')">
                         <el-icon><Box /></el-icon> Post Offer
                     </button>
@@ -287,44 +360,47 @@ function openOrder(order) {
                 </div>
             </div>
 
-            <!-- ── Overview tiles ───────────────────────────────────────────
-                 Individual elevated cards, not a flat bordered strip — the
-                 same floating-card language as the market listing page. -->
+            <!-- ── Overview tiles — scoped to the viewer's own trades. ────── -->
             <div class="ord-kpi-grid">
                 <div class="ord-kpi">
-                    <div class="ord-kpi__icon"><el-icon :size="16"><List /></el-icon></div>
-                    <div class="ord-kpi__body">
-                        <strong class="ord-kpi__val">{{ kpis.total }}</strong>
-                        <span class="ord-kpi__label">Total Orders</span>
+                    <div class="ord-kpi__head">
+                        <span class="ord-kpi__label">Active Trades</span>
+                        <span class="material-symbols-outlined">sync_alt</span>
                     </div>
+                    <div class="ord-kpi__val">{{ kpis.active }}</div>
+                    <p class="ord-kpi__hint">Current contracts in execution</p>
                 </div>
                 <div class="ord-kpi">
-                    <div class="ord-kpi__icon"><el-icon :size="16"><ShoppingCart /></el-icon></div>
-                    <div class="ord-kpi__body">
-                        <strong class="ord-kpi__val">{{ kpis.placed }}</strong>
-                        <span class="ord-kpi__label">Placed by Me</span>
+                    <div class="ord-kpi__head">
+                        <span class="ord-kpi__label">Total Volume</span>
+                        <span class="material-symbols-outlined">package_2</span>
                     </div>
+                    <div class="ord-kpi__val">{{ kpis.volumeKg.toLocaleString() }} <span class="ord-kpi__unit">KG</span></div>
+                    <p class="ord-kpi__hint">Coffee bought &amp; sold</p>
                 </div>
                 <div class="ord-kpi">
-                    <div class="ord-kpi__icon"><el-icon :size="16"><Box /></el-icon></div>
-                    <div class="ord-kpi__body">
-                        <strong class="ord-kpi__val">{{ kpis.received }}</strong>
-                        <span class="ord-kpi__label">Received</span>
+                    <div class="ord-kpi__head">
+                        <span class="ord-kpi__label">Pending Payments</span>
+                        <span class="material-symbols-outlined">account_balance</span>
                     </div>
+                    <div class="ord-kpi__val">${{ kpis.pendingPayments.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+                    <p class="ord-kpi__hint">Escrow settlement window open</p>
                 </div>
                 <div class="ord-kpi">
-                    <div class="ord-kpi__icon"><el-icon :size="16"><Tickets /></el-icon></div>
-                    <div class="ord-kpi__body">
-                        <strong class="ord-kpi__val">{{ kpis.marketplace }}</strong>
-                        <span class="ord-kpi__label">Marketplace</span>
+                    <div class="ord-kpi__head">
+                        <span class="ord-kpi__label">In Fulfilment</span>
+                        <span class="material-symbols-outlined">local_shipping</span>
                     </div>
+                    <div class="ord-kpi__val">{{ kpis.inFulfilment }}</div>
+                    <p class="ord-kpi__hint">Processing or shipped</p>
                 </div>
                 <div class="ord-kpi">
-                    <div class="ord-kpi__icon ord-kpi__icon--green"><el-icon :size="16"><Checked /></el-icon></div>
-                    <div class="ord-kpi__body">
-                        <strong class="ord-kpi__val ord-text-green">{{ kpis.delivered }}</strong>
-                        <span class="ord-kpi__label">Delivered</span>
+                    <div class="ord-kpi__head">
+                        <span class="ord-kpi__label">Completed</span>
+                        <span class="material-symbols-outlined">task_alt</span>
                     </div>
+                    <div class="ord-kpi__val ord-text-green">{{ kpis.completed }}</div>
+                    <p class="ord-kpi__hint">Delivered &amp; settled</p>
                 </div>
             </div>
 
@@ -344,7 +420,9 @@ function openOrder(order) {
                                 <span class="ord-filter__count">{{ tabCount(f.key) }}</span>
                             </button>
                         </div>
+                    </div>
 
+                    <div class="ord-toolbar ord-toolbar--controls">
                         <el-input
                             v-model="search"
                             class="ord-search"
@@ -352,31 +430,46 @@ function openOrder(order) {
                             placeholder="Search order #, crop, counterparty…"
                             clearable
                         />
+                        <el-select v-model="typeFilter" class="ord-el-select">
+                            <el-option v-for="o in typeFilterOptions" :key="o" :label="o" :value="o" />
+                        </el-select>
+                        <el-select v-model="sortBy" class="ord-el-select">
+                            <el-option v-for="o in sortOptions" :key="o" :label="`Sort: ${o}`" :value="o" />
+                        </el-select>
                     </div>
 
                     <div class="ord-card">
                     <el-table
-                        :data="filteredOrders"
+                        :data="sortedOrders"
                         class="ord-table"
                         @row-click="openOrder"
                     >
-                        <el-table-column width="170">
-                            <template #header><span class="ord-th"><el-icon><Tickets /></el-icon> Order</span></template>
+                        <el-table-column width="150">
+                            <template #header><span class="ord-th"><el-icon><Tickets /></el-icon> Trade ID &amp; Date</span></template>
                             <template #default="{ row }">
                                 <div class="ord-cell-order">
                                     <span class="ord-cell-order__num">{{ row.order_number }}</span>
-                                    <span class="ord-row__perspective">{{ perspectiveLabel(row) }}</span>
+                                    <span class="ord-cell-order__date">{{ formatDate(row.created_at) }}</span>
+                                </div>
+                            </template>
+                        </el-table-column>
+                        <el-table-column min-width="160">
+                            <template #header><span class="ord-th"><el-icon><Coffee /></el-icon> Coffee Lot</span></template>
+                            <template #default="{ row }">
+                                <div class="ord-cell-order">
+                                    <span class="ord-cell-order__num" style="font-family: inherit; font-weight: 600;">{{ row.crop_type }}</span>
+                                    <span class="ord-cell-order__date">{{ [row.variety, row.grade].filter(Boolean).join(' · ') || '—' }}</span>
                                 </div>
                             </template>
                         </el-table-column>
                         <el-table-column width="100">
                             <template #header><span class="ord-th">Type</span></template>
                             <template #default="{ row }">
-                                <span class="ord-badge" :class="typeTone(row.type)">{{ typeLabel(row.type) }}</span>
+                                <span class="ord-badge" :class="perspectiveTypeTone(row)">{{ perspectiveType(row) }}</span>
                             </template>
                         </el-table-column>
                         <el-table-column min-width="190">
-                            <template #header><span class="ord-th"><el-icon><User /></el-icon> Party</span></template>
+                            <template #header><span class="ord-th"><el-icon><User /></el-icon> Counterparty</span></template>
                             <template #default="{ row }">
                                 <div class="ord-cell-party">
                                     <span
@@ -388,19 +481,24 @@ function openOrder(order) {
                                 </div>
                             </template>
                         </el-table-column>
-                        <el-table-column min-width="160">
-                            <template #header><span class="ord-th"><el-icon><Coffee /></el-icon> Coffee</span></template>
-                            <template #default="{ row }">
-                                {{ row.crop_type }}<template v-if="row.variety"> — {{ row.variety }}</template>
-                            </template>
-                        </el-table-column>
                         <el-table-column width="110" align="right">
                             <template #header><span class="ord-th ord-th--right"><el-icon><Box /></el-icon> Quantity</span></template>
                             <template #default="{ row }"><span class="ord-num">{{ row.quantity.toLocaleString() }} kg</span></template>
                         </el-table-column>
                         <el-table-column width="150" align="right">
-                            <template #header><span class="ord-th ord-th--right"><el-icon><Coin /></el-icon> Amount</span></template>
-                            <template #default="{ row }"><span class="ord-num ord-amount">{{ formatMoney(row.total_amount, row.currency) }}</span></template>
+                            <template #header><span class="ord-th ord-th--right"><el-icon><Coin /></el-icon> Unit / Total</span></template>
+                            <template #default="{ row }">
+                                <div class="ord-cell-status">
+                                    <span class="ord-num ord-amount">{{ formatMoney(row.total_amount, row.currency) }}</span>
+                                    <span class="ord-status-date">{{ formatMoney(row.unit_price, row.currency) }} / kg</span>
+                                </div>
+                            </template>
+                        </el-table-column>
+                        <el-table-column width="140">
+                            <template #header><span class="ord-th">Escrow</span></template>
+                            <template #default="{ row }">
+                                <span class="ord-badge" :class="escrowState(row).tone">{{ escrowState(row).label }}</span>
+                            </template>
                         </el-table-column>
                         <el-table-column width="130" align="right">
                             <template #header><span class="ord-th ord-th--right"><el-icon><Checked /></el-icon> Status</span></template>
@@ -409,6 +507,12 @@ function openOrder(order) {
                                     <span class="ord-badge" :class="statusTone(row.status)">{{ statusLabel(row.status) }}</span>
                                     <span class="ord-status-date">{{ formatDate(row.updated_at) }}</span>
                                 </div>
+                            </template>
+                        </el-table-column>
+                        <el-table-column width="110" align="center">
+                            <template #header><span class="ord-th">Action</span></template>
+                            <template #default="{ row }">
+                                <button type="button" class="ord-view-btn" @click.stop="openOrder(row)">View Trade</button>
                             </template>
                         </el-table-column>
 
@@ -555,14 +659,22 @@ function openOrder(order) {
 }
 
 /* ── Page header ─────────────────────────────────────────────────────── */
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; line-height: 1; }
 .ord-page-header {
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
     gap: 16px;
 }
+.ord-page-header__eyebrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ord-eyebrow-badge {
+    display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    padding: 3px 9px; border-radius: 4px; background: var(--dp-secondary-container, #FEDCBE); color: var(--dp-on-secondary-container, #291806);
+}
+.ord-eyebrow-mono { font-family: var(--dp-font-mono, 'JetBrains Mono', monospace); font-size: 11px; color: var(--text-muted); }
 .ord-page-header__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ord-btn .material-symbols-outlined { font-size: 16px; }
 
 /* ── Buttons ─────────────────────────────────────────────────────────── */
 .ord-btn {
@@ -600,9 +712,6 @@ function openOrder(order) {
     gap: 14px;
 }
 .ord-kpi {
-    display: flex;
-    align-items: center;
-    gap: 12px;
     background: var(--surface);
     border: 1px solid var(--card-border);
     border-radius: var(--dp-card-radius, 6px);
@@ -615,19 +724,8 @@ function openOrder(order) {
     transform: translateY(-1px);
     border-color: var(--primary);
 }
-.ord-kpi__icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    background: var(--surface-muted);
-    color: var(--text-2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.ord-kpi__icon--green { background: var(--dp-secondary-container, #E5FAE7); color: var(--dp-on-secondary-container, #2F6B35); }
-.ord-kpi__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ord-kpi__head { display: flex; align-items: center; justify-content: space-between; }
+.ord-kpi__head .material-symbols-outlined { font-size: 18px; color: var(--text-2); }
 .ord-kpi__label {
     font-size: 0.6875rem;
     font-weight: 700;
@@ -643,7 +741,11 @@ function openOrder(order) {
     color: var(--text);
     letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
+    font-family: var(--dp-font-mono, 'JetBrains Mono', monospace);
+    margin-top: 6px;
 }
+.ord-kpi__unit { font-family: var(--dp-font-sans, inherit); font-size: 0.875rem; font-weight: 700; color: var(--text-2); }
+.ord-kpi__hint { font-size: 11.5px; color: var(--text-muted); margin: 2px 0 0; font-family: var(--dp-font-sans, inherit); }
 .ord-text-green { color: var(--success); }
 
 /* ── Body / section card ─────────────────────────────────────────────── */
@@ -663,9 +765,15 @@ function openOrder(order) {
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 0;
 }
+.ord-toolbar--controls { padding: 10px 16px 14px; border-bottom: 1px solid var(--border); }
+.ord-el-select { width: 170px; }
+.ord-el-select :deep(.el-select__wrapper) {
+    height: 36px; min-height: 36px !important; border-radius: 6px; box-shadow: 0 0 0 1px var(--border) inset !important;
+    background: var(--surface); font-size: 13px; font-family: inherit;
+}
+.ord-el-select :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 1.5px var(--primary) inset !important; }
 .ord-filters { display: flex; flex-wrap: wrap; gap: 6px; }
 .ord-filter {
     height: 32px;
@@ -754,6 +862,7 @@ function openOrder(order) {
     color: var(--text);
     font-family: var(--dp-font-mono, 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace);
 }
+.ord-cell-order__date { font-size: 11px; color: var(--text-muted); }
 .ord-muted-cell { color: var(--text-muted); font-style: italic; }
 
 /* ── Party identity ────────────────────────────────────────────────────── */
@@ -784,17 +893,20 @@ function openOrder(order) {
 .ord-empty__title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
 .ord-empty__text { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; max-width: 340px; margin-left: auto; margin-right: auto; line-height: 1.5; }
 
-.ord-row__perspective {
-    font-size: 10px;
+.ord-view-btn {
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: none;
+    background: var(--surface-muted);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 11.5px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--dp-on-secondary-container, #2F6B35);
-    background: var(--dp-secondary-container, #E5FAE7);
-    border-radius: 999px;
-    padding: 2px 8px;
-    align-self: flex-start;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
 }
+.ord-view-btn:hover { background: var(--primary); color: var(--on-primary); }
 
 .ord-badge {
     display: inline-flex;
@@ -1069,8 +1181,8 @@ function openOrder(order) {
 @media (max-width: 767.98px) {
     .ord-page-header { flex-direction: column; align-items: stretch; }
     .ord-kpi-grid { grid-template-columns: 1fr; }
-    .ord-toolbar { flex-direction: column; align-items: stretch; }
-    .ord-search { width: 100%; }
+    .ord-toolbar, .ord-toolbar--controls { flex-direction: column; align-items: stretch; }
+    .ord-search, .ord-el-select { width: 100%; }
     .ord-field-row { grid-template-columns: 1fr; }
 }
 

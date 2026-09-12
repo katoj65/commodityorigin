@@ -29,7 +29,7 @@ class RfqController extends Controller
      * same real Market/Auction/LotRequest figures TradeController::index()
      * uses.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('Rfq/Index', [
             'requests' => LotRequest::query()->with('user')->latest()->get(),
@@ -46,6 +46,7 @@ class RfqController extends Controller
             'marketCount' => $this->market->liveCount(),
             'auctionCount' => Auction::query()->count(),
             'requestCount' => LotRequest::query()->count(),
+            'authUserId' => $request->user()->id,
         ]);
     }
 
@@ -69,10 +70,14 @@ class RfqController extends Controller
     }
 
     /**
-     * Remove a request for quote.
+     * Remove a request for quote. Only its owner (or an admin) may delete
+     * it — mirrors LotRequestPolicy::delete(), the same rule the
+     * lot.request.destroy route already enforces for this model.
      */
-    public function destroy(LotRequest $lotRequest): RedirectResponse
+    public function destroy(Request $request, LotRequest $lotRequest): RedirectResponse
     {
+        abort_unless($request->user()->isAdmin() || $lotRequest->user_id === $request->user()->id, 403);
+
         $this->lots->destroyRequest($lotRequest);
 
         return back()->with('success', 'Request for quote removed.');

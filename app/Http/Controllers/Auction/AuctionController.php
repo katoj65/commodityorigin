@@ -3,8 +3,13 @@
 namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
+use App\Models\Auction;
+use App\Models\CropGradeMetadata;
+use App\Models\CropVarietyMetadata;
 use App\Models\Lot;
+use App\Models\LotRequest;
 use App\Services\AuctionService;
+use App\Services\MarketService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,22 +18,39 @@ class AuctionController extends Controller
 {
     public function __construct(
         private readonly AuctionService $auctions,
+        private readonly MarketService $market,
     ) {
     }
 
     /**
      * Display the coffee auction exchange — every table that used to live
      * on the single auction page, now the "overview" landing page of the
-     * auction section.
+     * auction section. Wrapped in the Trade hub's shared TradeLayout (as
+     * the "Auctions" tab), so it needs the same tab-bar counts and Create
+     * RFQ modal options every other Trade-hub page passes in.
      */
     public function index(Request $request): Response
     {
-        return $this->renderPage($request, 'Auction/Index', [
+        return Inertia::render('Auction/Index', [
+            'overview' => $this->auctions->overview($request->user()->id),
             'featuredLots' => $this->auctions->featuredLots(),
             'endingSoon' => $this->auctions->endingSoon(),
             'upcoming' => $this->auctions->upcoming(),
             'myBids' => $this->auctions->myBids($request->user()->id),
             'myAuctions' => $this->auctions->myAuctions($request->user()->id),
+            'marketCount' => $this->market->liveCount(),
+            'auctionCount' => Auction::query()->count(),
+            'requestCount' => LotRequest::query()->count(),
+            'cropTypeOptions' => CropVarietyMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'gradeOptions' => CropGradeMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
         ]);
     }
 
