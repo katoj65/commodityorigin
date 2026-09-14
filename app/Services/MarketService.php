@@ -281,7 +281,7 @@ class MarketService
             'user',
             'lot.user',
             'lot.lotBatches.batch.user',
-            'lot.lotBatches.batch.batchFarmCollections.farmCollection.farm.farmers',
+            'lot.lotBatches.batch.batchFarmCollections.farmCollection.farm.owners.user',
             'lot.storageProfile',
             'lot.blockchain',
             'lot.images',
@@ -291,6 +291,7 @@ class MarketService
         $lot = $market->lot;
         $batch = $lot?->batch;
         $storage = $lot?->storageProfile;
+        $blockchain = $lot?->blockchain;
 
         // Reuse the traceability aggregation (already joins batches → farm
         // collections → farms → farmers) instead of re-walking the same
@@ -400,6 +401,14 @@ class MarketService
             'price_delta_pct' => $priceDeltaPct,
             'seller_active_listings' => $sellerActiveListings,
             'is_traceable' => $market->lot_id !== null,
+            'blockchain' => $blockchain ? [
+                'network' => $blockchain->network,
+                'hash' => $blockchain->hash,
+                'block_number' => $blockchain->block_number,
+                'confirmations' => $blockchain->confirmations,
+                'status' => $blockchain->status,
+                'committed_at' => optional($blockchain->committed_at)?->toDateTimeString(),
+            ] : null,
             'farm' => $primaryFarm ? [
                 'name' => $primaryFarm['name'],
                 'district' => $primaryFarm['district'],

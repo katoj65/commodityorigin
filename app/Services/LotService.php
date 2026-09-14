@@ -8,7 +8,6 @@ use App\Http\Resources\BlockchainResource;
 use App\Models\Batch;
 use App\Models\CropVarietyMetadata;
 use App\Models\Farm;
-use App\Models\Farmer;
 use App\Models\AcidityMetadata;
 use App\Models\AftertasteMetadata;
 use App\Models\AromaMetadata;
@@ -20,6 +19,7 @@ use App\Models\LotRequest;
 use App\Models\Market;
 use App\Models\ProcessingMetadata;
 use App\Models\User;
+use App\Models\UserFarmOwnership;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -574,7 +574,7 @@ class LotService
      * alongside aggregate `stats` for the summary strip.
      *
      * Expects the lot to be loaded with:
-     * lotBatches.batch.batchFarmCollections.farmCollection.farm.farmers,
+     * lotBatches.batch.batchFarmCollections.farmCollection.farm.owners.user,
      * lotBatches.batch.user, user.
      *
      * @return array<string, mixed>
@@ -784,12 +784,16 @@ class LotService
             'coffee_area_ha' => $farm->coffee_area,
             'coffee_type' => $farm->coffee_type,
             'soil_type' => $farm->soil_type,
-            'farmers' => $farm->farmers->map(fn (Farmer $farmer): array => [
-                'id' => $farmer->id,
-                'name' => trim($farmer->first_name.' '.$farmer->last_name),
-                'farmer_number' => $farmer->farmer_number,
-                'district' => $farmer->district,
-                'tel' => $farmer->tel,
+            // "Farmers" here means the farm's owner(s) of record (via
+            // user_farm_ownership) — the farmers_farms pivot this used to
+            // read from was removed; Farmer records now belong to a
+            // Cooperative, not a Farm, so they're no longer the right
+            // source for "who works this farm".
+            'farmers' => $farm->owners->map(fn (UserFarmOwnership $ownership): array => [
+                'id' => $ownership->user_id,
+                'name' => $ownership->user?->name,
+                'ownership_percentage' => $this->toFloat($ownership->ownership_percentage),
+                'is_primary' => (bool) $ownership->is_primary,
             ])->all(),
         ];
     }

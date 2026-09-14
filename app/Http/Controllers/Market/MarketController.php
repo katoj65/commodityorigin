@@ -170,6 +170,13 @@ class MarketController extends Controller
     {
         return Inertia::render('Market/ProductProfile', [
             'item' => $this->market->show($market),
+            'similar' => $market->type
+                ? collect($this->market->listingsByType($market->type))
+                    ->reject(fn (array $listing) => $listing['id'] === $market->id)
+                    ->take(3)
+                    ->values()
+                    ->all()
+                : [],
         ]);
     }
 

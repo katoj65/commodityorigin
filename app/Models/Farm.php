@@ -119,4 +119,13 @@ class Farm extends Model
     {
         return $this->hasMany(FarmSustainabilityPractice::class);
     }
+
+    /**
+     * The ownership records for this farm (a farm can have more than one
+     * owner, each with an ownership percentage) — see user_farm_ownership.
+     */
+    public function owners(): HasMany
+    {
+        return $this->hasMany(UserFarmOwnership::class);
+    }
 }

@@ -579,12 +579,12 @@ class LotController extends Controller
     /**
      * Show the lot traceability page. Eager-loads the full origin chain —
      * batches, their farm collections, each collection's farm, and that
-     * farm's farmers — plus the users who recorded each step.
+     * farm's owner(s) — plus the users who recorded each step.
      */
     public function lotTraceability(Lot $lot): Response
     {
         $lot->load([
-            'lotBatches.batch.batchFarmCollections.farmCollection.farm.farmers',
+            'lotBatches.batch.batchFarmCollections.farmCollection.farm.owners.user',
             'lotBatches.batch.batchFarmCollections.farmCollection.user',
             'lotBatches.batch.user',
             'user',
