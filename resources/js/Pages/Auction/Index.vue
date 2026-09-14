@@ -123,6 +123,16 @@ const filteredLots = computed(() => {
     return sorted;
 });
 
+/* ── My Managed Auctions — compact per-lot summary (not the full wide
+   AuctionLotTable, which doesn't fit the half-width summary card). ────── */
+const fmtMoney = (n) => (n != null ? `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—');
+
+function managedStatus(lot) {
+    return lot.status === 'draft'
+        ? { label: 'Draft', cls: '' }
+        : { label: 'Live', cls: 'auc-badge--live' };
+}
+
 /* ── Export — a real CSV of whatever the current tab/filters/search/sort
    are showing. ────────────────────────────────────────────────────────── */
 function exportCsv() {
@@ -165,13 +175,14 @@ function exportCsv() {
         <div class="auc-page">
             <!-- ── Page header ───────────────────────────────────────────── -->
             <div class="auc-page-header">
+                <div class="auc-page-header__eyebrow">
+                    <span class="auc-eyebrow-badge">Execution &amp; Bidding Desk</span>
+                    <span class="auc-eyebrow-mono">DESK // LIVE_FLOOR</span>
+                </div>
                 <div class="auc-page-header__actions">
                     <button type="button" class="auc-btn auc-btn--outline" @click="exportCsv">
                         <span class="material-symbols-outlined">download</span> Export Bid Activity (CSV)
                     </button>
-                    <Link :href="route('lot.create')" class="auc-btn auc-btn--primary">
-                        <span class="material-symbols-outlined">add_circle</span> Create Auction
-                    </Link>
                 </div>
             </div>
 
@@ -248,7 +259,35 @@ function exportCsv() {
                         <h3><span class="material-symbols-outlined">work</span> My Managed Auctions</h3>
                         <span class="auc-summary-card__count">{{ myAuctions.length }} listed</span>
                     </div>
-                    <AuctionLotTable :lots="myAuctions.slice(0, 5)" mode="mine" empty-text="You haven't listed any auctions." />
+                    <div v-if="myAuctions.length" class="auc-managed-list">
+                        <div v-for="lot in myAuctions.slice(0, 5)" :key="lot.id" class="auc-managed-item">
+                            <div class="auc-managed-item__head">
+                                <div class="auc-managed-item__id">
+                                    <span class="auc-managed-item__name">{{ lot.lot_name || lot.lot_number }}</span>
+                                    <span class="auc-managed-item__num">Lot #{{ lot.lot_number }}</span>
+                                </div>
+                                <span class="auc-badge" :class="managedStatus(lot).cls">{{ managedStatus(lot).label }}</span>
+                            </div>
+                            <div class="auc-managed-item__stats">
+                                <div>
+                                    <span class="auc-managed-item__stat-label">Current Bid</span>
+                                    <strong>{{ fmtMoney(lot.current_bid ?? lot.starting_price) }}</strong>
+                                </div>
+                                <div>
+                                    <span class="auc-managed-item__stat-label">Bids</span>
+                                    <strong>{{ lot.bid_count ?? 0 }}</strong>
+                                </div>
+                                <div>
+                                    <span class="auc-managed-item__stat-label">Bidders</span>
+                                    <strong>{{ lot.bidder_count ?? 0 }}</strong>
+                                </div>
+                            </div>
+                            <Link :href="route('auction.show', lot.id)" class="auc-managed-item__link">
+                                Manage Auction <span class="material-symbols-outlined">arrow_forward</span>
+                            </Link>
+                        </div>
+                    </div>
+                    <p v-else class="auc-empty-text">You haven't listed any auctions.</p>
                 </div>
             </div>
 
@@ -277,7 +316,13 @@ function exportCsv() {
 .auc-page { display: flex; flex-direction: column; gap: 18px; }
 
 /* ── Page header ──────────────────────────────────────────────────────── */
-.auc-page-header { display: flex; align-items: center; justify-content: flex-end; }
+.auc-page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.auc-page-header__eyebrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.auc-eyebrow-badge {
+    display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    padding: 3px 9px; border-radius: 4px; background: var(--dp-secondary-container); color: var(--dp-on-secondary-container);
+}
+.auc-eyebrow-mono { font-family: var(--dp-font-mono); font-size: 11px; color: var(--dp-on-surface-variant); }
 .auc-page-header__actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .auc-btn {
     display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 8px;
@@ -285,8 +330,6 @@ function exportCsv() {
     text-decoration: none; transition: background .15s ease, opacity .15s ease;
 }
 .auc-btn .material-symbols-outlined { font-size: 16px; }
-.auc-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
-.auc-btn--primary:hover { opacity: .88; }
 .auc-btn--outline { background: var(--dp-surface); color: var(--dp-on-surface); border: 1px solid var(--dp-outline-variant); }
 .auc-btn--outline:hover { background: var(--dp-surface-container-low); }
 
@@ -335,6 +378,31 @@ function exportCsv() {
 .auc-summary-card__head h3 { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: var(--dp-on-surface); margin: 0; }
 .auc-summary-card__head .material-symbols-outlined { font-size: 18px; color: var(--dp-primary); }
 .auc-summary-card__count { font-size: 11px; font-weight: 700; color: var(--dp-on-surface-variant); background: var(--dp-surface-container-high); padding: 2px 9px; border-radius: 999px; }
+.auc-empty-text { font-size: 13px; color: var(--dp-on-surface-variant); margin: 0; padding: 8px 0; }
+
+/* ── My Managed Auctions — compact list ──────────────────────────────── */
+.auc-managed-list { display: flex; flex-direction: column; gap: 10px; }
+.auc-managed-item { border: 1px solid var(--dp-outline-variant); border-radius: 8px; padding: 12px; background: var(--dp-surface-container-low); }
+.auc-managed-item__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.auc-managed-item__id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.auc-managed-item__name { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.auc-managed-item__num { font-family: var(--dp-font-mono); font-size: 11px; color: var(--dp-on-surface-variant); }
+.auc-managed-item__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--dp-outline-variant); text-align: center; }
+.auc-managed-item__stats > div { display: flex; flex-direction: column; gap: 2px; }
+.auc-managed-item__stats strong { font-family: var(--dp-font-mono); font-size: 12.5px; font-weight: 800; color: var(--dp-on-surface); }
+.auc-managed-item__stat-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface-variant); }
+.auc-managed-item__link {
+    display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 10px; height: 30px; border-radius: 6px;
+    background: var(--dp-primary); color: var(--dp-on-primary); font-size: 11.5px; font-weight: 700; text-decoration: none;
+}
+.auc-managed-item__link:hover { opacity: .88; }
+.auc-managed-item__link .material-symbols-outlined { font-size: 14px; }
+
+.auc-badge {
+    display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--dp-on-surface-variant); background: var(--dp-surface-container-high); padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+}
+.auc-badge--live { color: #16A34A; background: #E9F9EE; }
 
 /* ── Lifecycle footnote ───────────────────────────────────────────────── */
 .auc-lifecycle { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); border: 1px solid var(--dp-outline-variant); }

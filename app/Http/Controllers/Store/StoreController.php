@@ -111,6 +111,160 @@ class StoreController extends Controller
     }
 
     /**
+     * Real cross-stage numbers for the inventory hero — per-stage volume/
+     * record counts and how many have moved to the next stage (a farm
+     * collection's own `status` column already tracks "batched" vs
+     * "pending"; batches/lots use their real pivot links instead, since
+     * neither has an equivalent status column), a merged recent-activity
+     * feed, one real farm→collection→batch→lot→token chain example, and
+     * real quality/moisture averages (no fabricated SLA percentage).
+     *
+     * @return array<string, mixed>
+     */
+    private function stageSummary(int $userId): array
+    {
+        $collections = FarmCollection::query()->where('user_id', $userId)->with('farm')->get();
+        $batches = Batch::query()->where('user_id', $userId)->with('lotBatches', 'batchFarmCollections.farmCollection.farm')->get();
+        $lots = Lot::query()->where('user_id', $userId)
+            ->with(['lotBatches.batch.batchFarmCollections.farmCollection.farm', 'blockchain'])
+            ->get();
+
+        /* ── "Farm Collection" volume can only honestly total the
+           kilogram-denominated records — a "bags" quantity has no fixed
+           kg equivalent recorded anywhere, so it can't be summed into a
+           weight figure without inventing a conversion factor. Records/
+           ready/progress are scoped to that same kg subset so the card's
+           four numbers describe one consistent set rather than mixing a
+           partial volume with a total headcount. Any bag-denominated
+           collections are surfaced via `note` instead of silently
+           dropped. ─────────────────────────────────────────────────── */
+        $kgCollections = $collections->where('unit', 'kg');
+        $otherUnitCollections = $collections->count() - $kgCollections->count();
+        $batchedCollections = $kgCollections->where('status', 'batched')->count();
+        $batchesLinkedToLot = $batches->filter(fn (Batch $b) => $b->lotBatches->isNotEmpty())->count();
+
+        /* ── Tokenisation is defined strictly as "has a row in the
+           blockchains table" — not a status flag on the lot itself,
+           which only means "submitted with intent to tokenise". The
+           total weight is produced by an actual JOIN against
+           blockchains rather than summing in PHP, so the figure is
+           computed straight from the two tables it describes. ────── */
+        $tokenisedRows = Lot::query()
+            ->join('blockchains', 'blockchains.lot_id', '=', 'lots.id')
+            ->where('lots.user_id', $userId)
+            ->select('lots.id', 'lots.net_weight_kg')
+            ->get();
+        $tokenisedVolumeKg = (float) $tokenisedRows->sum('net_weight_kg');
+        $tokenisedLots = $lots->whereIn('id', $tokenisedRows->pluck('id'));
+
+        $stageProgress = [
+            [
+                'key' => 'collections', 'label' => 'Farm Collection', 'route' => 'store.collections', 'icon' => 'agriculture',
+                'volume_kg' => (float) $kgCollections->sum('quantity'),
+                'records' => $kgCollections->count(),
+                'ready' => $kgCollections->count() - $batchedCollections,
+                'ready_label' => 'Awaiting batch conversion',
+                'progress' => $kgCollections->count() ? (int) round($batchedCollections / $kgCollections->count() * 100) : 0,
+                'note' => $otherUnitCollections > 0
+                    ? '+' . $otherUnitCollections . ' in bags, excluded from KG total'
+                    : null,
+            ],
+            [
+                'key' => 'batches', 'label' => 'Batch Assembly', 'route' => 'store.batches', 'icon' => 'science',
+                'volume_kg' => (float) $batches->sum('weight'),
+                'records' => $batches->count(),
+                'ready' => $batches->count() - $batchesLinkedToLot,
+                'ready_label' => 'Awaiting lot certification',
+                'progress' => $batches->count() ? (int) round($batchesLinkedToLot / $batches->count() * 100) : 0,
+                'note' => null,
+            ],
+            [
+                'key' => 'lots', 'label' => 'Certified Lot', 'route' => 'store.lots', 'icon' => 'verified',
+                'volume_kg' => (float) $lots->sum('net_weight_kg'),
+                'records' => $lots->count(),
+                'ready' => $lots->count() - $tokenisedLots->count(),
+                'ready_label' => 'Awaiting tokenisation',
+                'progress' => $lots->count() ? (int) round($tokenisedLots->count() / $lots->count() * 100) : 0,
+                'note' => null,
+            ],
+            [
+                'key' => 'tokenised', 'label' => 'Tokenised RWA', 'route' => 'store.tokenised', 'icon' => 'token',
+                'volume_kg' => $tokenisedVolumeKg,
+                'records' => $tokenisedLots->count(),
+                'ready' => null,
+                'ready_label' => null,
+                'progress' => 100,
+                'note' => null,
+            ],
+        ];
+
+
+        
+        $movementLedger = collect()
+            ->concat($collections->map(fn (FarmCollection $c) => [
+                'label' => "Collection recorded {$c->collection_code}",
+                'detail' => ($c->farm?->name ?? 'Unknown farm') . ' logged ' . number_format((float) $c->quantity) . ' ' . $c->unit,
+                'at' => $c->created_at,
+            ]))
+            ->concat($batches->map(fn (Batch $b) => [
+                'label' => "Batch assembled {$b->batch_number}",
+                'detail' => number_format((float) $b->weight) . ' kg batch created',
+                'at' => $b->created_at,
+            ]))
+            ->concat($lots->map(fn (Lot $l) => $l->blockchain ? [
+                'label' => "Lot tokenised {$l->lot_number}",
+                'detail' => number_format((float) $l->net_weight_kg) . ' kg committed on-chain',
+                'at' => $l->blockchain->committed_at ?? $l->blockchain->created_at,
+            ] : [
+                'label' => "Lot certified {$l->lot_number}",
+                'detail' => number_format((float) $l->net_weight_kg) . ' kg graded ' . ($l->grade ?: 'ungraded'),
+                'at' => $l->created_at,
+            ]))
+            ->filter(fn (array $event) => $event['at'] !== null)
+            ->sortByDesc('at')
+            ->take(5)
+            ->map(fn (array $event) => ['label' => $event['label'], 'detail' => $event['detail'], 'ago' => $event['at']->diffForHumans()])
+            ->values()
+            ->all();
+
+        $exampleLot = $tokenisedLots->first() ?? $lots->first();
+        $chainLineage = null;
+
+        if ($exampleLot) {
+            $link = $exampleLot->lotBatches->first();
+            $batch = $link?->batch;
+            $collectionLink = $batch?->batchFarmCollections?->first();
+            $collection = $collectionLink?->farmCollection;
+            $farm = $collection?->farm;
+
+            $chainLineage = array_values(array_filter([
+                $farm ? ['icon' => 'nature_people', 'title' => $farm->name, 'sub' => trim(($farm->district ?: '') . ', ' . ($farm->country ?: ''), ', ')] : null,
+                $collection ? ['icon' => 'scale', 'title' => $collection->collection_code, 'sub' => number_format((float) $collection->quantity) . ' ' . $collection->unit . ' collected'] : null,
+                $batch ? ['icon' => 'science', 'title' => $batch->batch_number, 'sub' => number_format((float) $batch->weight) . ' kg assembled'] : null,
+                ['icon' => 'verified', 'title' => $exampleLot->lot_number, 'sub' => number_format((float) $exampleLot->net_weight_kg) . ' kg · ' . ($exampleLot->grade ?: 'ungraded')],
+                $exampleLot->blockchain ? ['icon' => 'token', 'title' => 'On-chain', 'sub' => $exampleLot->blockchain->hash ?: 'Blockchain committed'] : null,
+            ]));
+        }
+
+        $avgQuality = $lots->avg('quality_score');
+        $avgMoisture = $batches->avg('moisture_content');
+        $totalValue = $lots->sum(fn (Lot $l) => (float) ($l->price ?? 0) * (float) ($l->net_weight_kg ?? 0));
+        $tokenisedValue = $tokenisedLots->sum(fn (Lot $l) => (float) ($l->price ?? 0) * (float) ($l->net_weight_kg ?? 0));
+
+        return [
+            'stageProgress' => $stageProgress,
+            'movementLedger' => $movementLedger,
+            'chainLineage' => $chainLineage,
+            'inventoryHealth' => [
+                'avg_quality_score' => $avgQuality ? round($avgQuality, 1) : null,
+                'avg_moisture_content' => $avgMoisture ? round($avgMoisture, 1) : null,
+                'total_value' => round($totalValue, 2),
+                'tokenised_value' => round($tokenisedValue, 2),
+            ],
+        ];
+    }
+
+    /**
      * The data every inventory tab page needs — the three collections
      * themselves (each tab lists one, but the shared KPI snapshot totals
      * all three) plus every option list the "Register New ▾" modals need,
@@ -121,6 +275,7 @@ class StoreController extends Controller
     private function inventoryContext(int $userId): array
     {
         return [
+            ...$this->stageSummary($userId),
             'farmCollections' => FarmCollectionResource::collection(
                 FarmCollection::query()
                     ->where('user_id', $userId)

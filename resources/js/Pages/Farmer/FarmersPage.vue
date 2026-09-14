@@ -30,7 +30,6 @@ const rows = computed(() => props.farmers.map(farmer => ({
     ...farmer,
     fullName: farmer.full_name || [farmer.first_name, farmer.last_name].filter(Boolean).join(' ') || 'Unnamed Farmer',
     location: [farmer.subcounty, farmer.district].filter(Boolean).join(', ') || 'Location pending',
-    farmsCount: farmer.farms_count || 0,
 })));
 
 const filteredRows = computed(() => {
@@ -126,10 +125,6 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
                         <div class="fd-row__spec">
                             <span class="fd-row__spec-label">Verification</span>
                             <strong class="fd-row__spec-value">{{ verificationLabel(farmer.verification_status) }}</strong>
-                        </div>
-                        <div class="fd-row__spec">
-                            <span class="fd-row__spec-label">Farms</span>
-                            <strong class="fd-row__spec-value">{{ farmer.farmsCount }} registered</strong>
                         </div>
                         <div class="fd-row__spec">
                             <span class="fd-row__spec-label">Cooperative</span>

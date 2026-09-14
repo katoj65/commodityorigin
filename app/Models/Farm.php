@@ -119,14 +119,4 @@ class Farm extends Model
     {
         return $this->hasMany(FarmSustainabilityPractice::class);
     }
-
-    /**
-     * The farmers linked to this farm, via the farmers_farms pivot table.
-     */
-    public function farmers(): BelongsToMany
-    {
-        return $this->belongsToMany(Farmer::class, 'farmers_farms')
-            ->withPivot(['farm_code', 'status'])
-            ->withTimestamps();
-    }
 }

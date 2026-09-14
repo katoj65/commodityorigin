@@ -37,14 +37,12 @@ class FarmerResource extends JsonResource
             'national_id' => $this->national_id,
             'status' => $this->status,
             'verification_status' => $this->verification_status,
-            'farms_count' => $this->when(isset($this->farms_count), (int) $this->farms_count),
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
             'cooperative' => $this->whenLoaded('cooperative', fn () => $this->cooperative ? [
                 'id' => $this->cooperative->id,
                 'name' => $this->cooperative->name,
             ] : null),
-            'farms' => $this->whenLoaded('farms', fn () => FarmResource::collection($this->farms)->resolve()),
         ];
     }
 }

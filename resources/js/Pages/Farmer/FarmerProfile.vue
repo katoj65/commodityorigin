@@ -2,10 +2,9 @@
 import { computed, ref } from 'vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import {
-    ArrowLeft, ArrowRight, Calendar, Check, CircleCheck, CirclePlus,
-    CollectionTag, Delete, EditPen, Location, MapLocation, Medal, Message,
-    OfficeBuilding, Phone, Postcard, UserFilled, View,
-    Warning,
+    Calendar, Check, CircleCheck, CirclePlus,
+    CollectionTag, Delete, EditPen, Location, Medal, Message,
+    OfficeBuilding, Phone, Postcard, UserFilled,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import AddFarmModal from '@/Components/Modals/AddFarmModal.vue';
@@ -49,7 +48,6 @@ const statusLabel = computed(() => {
     const s = props.farmer.status;
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : '—';
 });
-const farms = computed(() => props.farmer.farms || []);
 
 /* Same 7-row "Technical Specifications" list shape as the reference
    mockup, with its Coffee Type / Farm Size swapped for real farmer
@@ -78,26 +76,14 @@ const aboutParagraph = computed(() => {
     if (props.farmer.cooperative?.name) {
         parts.push(`Affiliated with ${props.farmer.cooperative.name}.`);
     }
-    parts.push(`Verification status: ${verificationLabel.value.toLowerCase()}, with ${farms.value.length} farm${farms.value.length === 1 ? '' : 's'} currently registered.`);
+    parts.push(`Verification status: ${verificationLabel.value.toLowerCase()}.`);
     return parts.join(' ');
 });
-
-/* ── Farm portfolio paging (3 per page, matching the mockup's grid) ── */
-const PAGE_SIZE = 3;
-const farmPage = ref(0);
-const farmPageCount = computed(() => Math.max(1, Math.ceil(farms.value.length / PAGE_SIZE)));
-const pagedFarms = computed(() => {
-    const start = farmPage.value * PAGE_SIZE;
-    return farms.value.slice(start, start + PAGE_SIZE);
-});
-const prevFarmPage = () => { if (farmPage.value > 0) farmPage.value--; };
-const nextFarmPage = () => { if (farmPage.value < farmPageCount.value - 1) farmPage.value++; };
 
 /* ── Navigation ────────────────────────────────────────────────── */
 const addFarmOpen    = ref(false);
 const editFarmerOpen = ref(false);
 const deleteConfirmOpen = ref(false);
-const goToFarm = (id) => router.visit(route('farm.show', id));
 
 function deleteFarmer() {
     router.delete(route('farmer.destroy', props.farmer.id));
@@ -176,13 +162,6 @@ function deleteFarmer() {
                     <!-- Metrics -->
                     <section class="fpr-metrics">
                         <div class="fpr-metric-card">
-                            <div class="fpr-metric-icon"><el-icon><MapLocation /></el-icon></div>
-                            <div>
-                                <h3 class="fpr-metric-label">Total Farms</h3>
-                                <p class="fpr-metric-value">{{ farms.length }}</p>
-                            </div>
-                        </div>
-                        <div class="fpr-metric-card">
                             <div class="fpr-metric-icon fpr-metric-icon--green"><el-icon><CircleCheck /></el-icon></div>
                             <div>
                                 <h3 class="fpr-metric-label">Status</h3>
@@ -202,52 +181,6 @@ function deleteFarmer() {
                     <section class="fpr-card">
                         <h2 class="fpr-card-heading">About the Producer</h2>
                         <p class="fpr-about-text">{{ aboutParagraph }}</p>
-                    </section>
-
-                    <!-- Farm Portfolio -->
-                    <section class="fpr-card fpr-portfolio">
-                        <div class="fpr-portfolio-head">
-                            <h2 class="fpr-portfolio-title">Farm Portfolio</h2>
-                            <div class="fpr-page-nav" v-if="farms.length > PAGE_SIZE">
-                                <button class="fpr-page-btn" type="button" :disabled="farmPage === 0" @click="prevFarmPage">
-                                    <el-icon><ArrowLeft /></el-icon>
-                                </button>
-                                <button class="fpr-page-btn" type="button" :disabled="farmPage >= farmPageCount - 1" @click="nextFarmPage">
-                                    <el-icon><ArrowRight /></el-icon>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div v-if="!farms.length" class="fpr-empty">
-                            <div class="fpr-empty-icon"><el-icon><Warning /></el-icon></div>
-                            <div class="fpr-empty-title">No farms registered yet</div>
-                            <p class="fpr-empty-text">Link this farmer's first farm to start tracking quality and traceability.</p>
-                            <button v-if="canCreateFarm" class="fpr-btn fpr-btn--primary" type="button" @click="addFarmOpen = true">
-                                <el-icon><CirclePlus /></el-icon> Add First Farm
-                            </button>
-                        </div>
-
-                        <template v-else>
-                            <div class="fpr-farm-grid">
-                                <article
-                                    v-for="farm in pagedFarms"
-                                    :key="farm.id"
-                                    class="fpr-farm-card"
-                                    @click="goToFarm(farm.id)"
-                                >
-                                    <div class="fpr-farm-thumb" :class="toneClass(farm.id)">
-                                        <el-icon><MapLocation /></el-icon>
-                                    </div>
-                                    <div class="fpr-farm-info">
-                                        <h3 class="fpr-farm-name">{{ farm.name || `Farm ${farm.id}` }}</h3>
-                                        <p class="fpr-farm-desc">{{ [farm.coffee_type, [farm.district, farm.region].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Location pending' }}</p>
-                                    </div>
-                                    <button class="fpr-farm-view" type="button" @click.stop="goToFarm(farm.id)">
-                                        <el-icon><View /></el-icon>
-                                    </button>
-                                </article>
-                            </div>
-                        </template>
                     </section>
 
                 </div>
@@ -372,7 +305,7 @@ function deleteFarmer() {
 .fpr-spec-value { font-size: .9375rem; font-weight: 600; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Metrics ─────────────────────────────────────────────────────── */
-.fpr-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.fpr-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 @media (max-width: 640px) { .fpr-metrics { grid-template-columns: 1fr; } }
 .fpr-metric-card {
     background: var(--dp-surface-container-lowest); box-shadow: var(--dp-card-shadow);
@@ -392,67 +325,4 @@ function deleteFarmer() {
 
 /* ── About ───────────────────────────────────────────────────────── */
 .fpr-about-text { font-size: .9375rem; color: var(--dp-on-surface-variant); line-height: 1.7; margin: 0 !important; }
-
-/* ── Farm portfolio ──────────────────────────────────────────────── */
-.fpr-portfolio { display: flex; flex-direction: column; gap: 12px; }
-.fpr-portfolio-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.fpr-portfolio-title { font-size: 1.25rem; font-weight: 800; letter-spacing: -.01em; color: var(--dp-primary); margin: 0 !important; }
-
-.fpr-page-nav { display: flex; gap: 8px; }
-.fpr-page-btn {
-    width: 32px; height: 32px; border-radius: 6px;
-    border: 1px solid var(--dp-outline-variant); background: transparent; color: var(--dp-on-surface-variant);
-    display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: .875rem;
-    transition: color .15s ease, border-color .15s ease, background .15s ease;
-}
-.fpr-page-btn:hover:not(:disabled) { color: var(--dp-primary); border-color: var(--dp-primary); background: var(--dp-surface-container-low); }
-.fpr-page-btn:disabled { opacity: .4; cursor: not-allowed; }
-
-.fpr-farm-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-@media (min-width: 768px) { .fpr-farm-grid { grid-template-columns: repeat(3, 1fr); } }
-.fpr-farm-card {
-    display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 12px; cursor: pointer;
-    background: var(--dp-surface-container-lowest); box-shadow: var(--dp-card-shadow);
-    border-radius: 6px; transition: box-shadow .15s ease, transform .15s ease; min-width: 0;
-}
-@media (min-width: 768px) { .fpr-farm-card { flex-direction: row; } }
-.fpr-farm-card:hover { box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 14px 28px -14px rgba(0,0,0,.18); transform: translateY(-1px); }
-.fpr-farm-thumb {
-    width: 100%; height: 96px; border-radius: 8px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    background-image: var(--fpr-tone-gradient); color: rgba(255,255,255,.5); font-size: 1.5rem;
-}
-@media (min-width: 768px) { .fpr-farm-thumb { width: 64px; height: 64px; } }
-.fpr-farm-info { flex: 1; min-width: 0; width: 100%; text-align: center; }
-@media (min-width: 768px) { .fpr-farm-info { text-align: left; } }
-.fpr-farm-name { font-size: .875rem; font-weight: 700; color: var(--dp-primary); margin: 0 0 2px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fpr-farm-desc { font-size: .75rem; color: var(--dp-on-surface-variant); margin: 0 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fpr-farm-view {
-    flex-shrink: 0; width: 32px; height: 32px; border-radius: 6px; border: none;
-    background: var(--dp-surface-container-low); color: var(--dp-primary);
-    display: none; align-items: center; justify-content: center; cursor: pointer;
-}
-@media (min-width: 768px) { .fpr-farm-view { display: flex; } }
-
-.fpr-btn {
-    display: inline-flex; align-items: center; gap: 6px; width: fit-content;
-    height: 36px; border-radius: 6px; padding: 0 16px; font-size: 13px; font-weight: 600;
-    border: 1px solid transparent; cursor: pointer; font-family: var(--dp-font-sans);
-    transition: background .15s ease, transform .15s ease;
-}
-.fpr-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
-.fpr-btn--primary:hover { transform: translateY(-1px); }
-
-/* ── Empty state ─────────────────────────────────────────────────── */
-.fpr-empty {
-    display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px;
-    padding: 48px 24px; background: var(--dp-surface-container-low); border-radius: 12px; flex: 1; justify-content: center;
-}
-.fpr-empty-icon {
-    width: 44px; height: 44px; border-radius: 50%; background: var(--dp-surface-container-lowest);
-    color: var(--dp-on-surface-variant); display: flex; align-items: center; justify-content: center;
-    font-size: 18px; margin-bottom: 8px;
-}
-.fpr-empty-title { font-size: 1rem; font-weight: 700; color: var(--dp-on-surface); }
-.fpr-empty-text { font-size: .8125rem; color: var(--dp-on-surface-variant); max-width: 340px; margin: 4px 0 16px !important; line-height: 1.5; }
 </style>

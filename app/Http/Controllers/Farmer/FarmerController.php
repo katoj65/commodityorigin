@@ -70,7 +70,7 @@ class FarmerController extends Controller
     {
         Gate::authorize('view', $farmer);
 
-        $farmer->load(['farms', 'cooperative']);
+        $farmer->load('cooperative');
 
         return Inertia::render('Farmer/FarmerProfile', [
             'farmer' => FarmerResource::make($farmer)->resolve(),

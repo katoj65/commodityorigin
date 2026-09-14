@@ -1,13 +1,14 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import AddFarmModal from '@/Components/Modals/AddFarmModal.vue';
 import {
-    Plus, View, Edit, Delete, Box,
-    House, Location, TrendCharts, Collection,
+    Plus, View, Edit, Delete, Box, Download,
+    Location, MapLocation, OfficeBuilding, Search, List, Grid,
+    ArrowRight,
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -17,7 +18,11 @@ const props = defineProps({
 });
 
 function isActive(farm) {
-    return (farm.status || 'Active').toLowerCase() === 'active';
+    return (farm.status || 'active').toLowerCase() === 'active';
+}
+
+function hasCoordinates(farm) {
+    return farm.latitude !== null && farm.latitude !== undefined && farm.longitude !== null && farm.longitude !== undefined;
 }
 
 function goToFarm(farm) {
@@ -26,6 +31,99 @@ function goToFarm(farm) {
 
 function farmLocation(farm) {
     return [farm.district, farm.region].filter(Boolean).join(', ') || farm.country || '—';
+}
+
+function farmInitials(farm) {
+    const parts = (farm.name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    return parts.length === 1 ? parts[0].slice(0, 2).toUpperCase() : (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function fmtVolume(kg) {
+    const value = Number(kg || 0);
+    if (value > 0 && value < 1000) {
+        return `${value.toLocaleString(undefined, { maximumFractionDigits: 0 })} KG`;
+    }
+    return `${(value / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} MT`;
+}
+
+/* ── Real custody-pipeline stage list — same 4 stages / order used on the
+   Store and single Farm Profile pages (collection → batch → lot → token),
+   sourced from FarmController::farmSummaries(). ────────────────────────── */
+const PIPELINE_STAGES = [
+    { key: 'collections', label: 'Collections', short: 'C' },
+    { key: 'batches', label: 'Batches', short: 'B' },
+    { key: 'lots', label: 'Lots', short: 'L' },
+    { key: 'tokenised', label: 'Tokenised', short: 'T' },
+];
+
+function traceDots(farm) {
+    return Array.from({ length: PIPELINE_STAGES.length }, (_, i) => i < farm.pipelineStagesDone);
+}
+
+/* ── KPI rollups — every figure here is aggregated straight from the real
+   per-farm fields/pipeline already resolved server-side; nothing is an
+   estimate (no fabricated tree counts or EUDR percentages). ───────────── */
+const kpis = computed(() => {
+    const totalFarms = props.farms.length;
+    const districts = new Set(props.farms.map((f) => f.district).filter(Boolean)).size;
+    const located = props.farms.filter(hasCoordinates).length;
+    const totalArea = props.farms.reduce((s, f) => s + (Number(f.total_area) || 0), 0);
+    const cultivatedArea = props.farms.reduce((s, f) => s + (Number(f.coffee_area) || 0), 0);
+    const activeFarms = props.farms.filter((f) => f.pipeline.collections.records > 0).length;
+    const totalVolumeKg = props.farms.reduce((s, f) => s + (f.pipeline.collections.volume_kg || 0), 0);
+    return { totalFarms, districts, located, totalArea, cultivatedArea, activeFarms, totalVolumeKg };
+});
+
+/* ── Search / sort / pagination — all client-side over the real farms
+   payload. ──────────────────────────────────────────────────────────────── */
+const search = ref('');
+const sortKey = ref('recent');
+const viewMode = ref('table');
+const page = ref(1);
+const pageSize = 5;
+
+const filteredFarms = computed(() => {
+    const q = search.value.trim().toLowerCase();
+    if (!q) return props.farms;
+    return props.farms.filter((f) => {
+        const hay = [f.name, f.farm_code, f.district, f.region, f.country].filter(Boolean).join(' ').toLowerCase();
+        return hay.includes(q);
+    });
+});
+
+const sortedFarms = computed(() => {
+    const list = [...filteredFarms.value];
+    if (sortKey.value === 'name') return list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    if (sortKey.value === 'area') return list.sort((a, b) => (Number(b.total_area) || 0) - (Number(a.total_area) || 0));
+    if (sortKey.value === 'lastCollection') {
+        return list.sort((a, b) => new Date(b.latestCollection?.collection_date || 0) - new Date(a.latestCollection?.collection_date || 0));
+    }
+    return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+});
+
+watch(search, () => { page.value = 1; });
+
+const pageCount = computed(() => Math.max(1, Math.ceil(sortedFarms.value.length / pageSize)));
+const pagedFarms = computed(() => sortedFarms.value.slice((page.value - 1) * pageSize, page.value * pageSize));
+
+/* ── CSV export — exports exactly the rows currently in view (filtered +
+   sorted), nothing more. ───────────────────────────────────────────────── */
+function exportCsv() {
+    const header = ['Farm', 'Farm Code', 'District', 'Region', 'Country', 'Latitude', 'Longitude', 'Total Area (ha)', 'Coffee Area (ha)', 'Coffee Type', 'Status'];
+    const rows = sortedFarms.value.map((f) => [
+        f.name, f.farm_code, f.district, f.region, f.country, f.latitude, f.longitude, f.total_area, f.coffee_area, f.coffee_type, isActive(f) ? 'Active' : 'Inactive',
+    ]);
+    const csv = [header, ...rows]
+        .map((row) => row.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'my-farms.csv';
+    link.click();
+    URL.revokeObjectURL(url);
 }
 
 /* ── Add farm ──────────────────────────────────────────────────────── */
@@ -115,70 +213,244 @@ function deleteFarm() {
             <div class="mf-header">
                 <div class="mf-header__text">
                     <h1 class="mf-title">My Farms</h1>
-                    <p class="mf-subtitle">Farms you've registered on Bean Origin.</p>
+                    <p class="mf-subtitle">Manage your registered farms, review real intake &amp; custody pipeline data, and keep agronomic records up to date.</p>
                 </div>
-                <button v-if="canCreateFarm" type="button" class="mf-btn mf-btn--primary" @click="openAddDialog">
-                    <el-icon><Plus /></el-icon> Add Farm
-                </button>
+                <div class="mf-header__actions">
+                    <button type="button" class="mf-btn mf-btn--outline" @click="exportCsv">
+                        <el-icon><Download /></el-icon> Export CSV
+                    </button>
+                    <button v-if="canCreateFarm" type="button" class="mf-btn mf-btn--primary" @click="openAddDialog">
+                        <el-icon><Plus /></el-icon> Add Farm
+                    </button>
+                </div>
             </div>
 
-            <!-- ── Toolbar ───────────────────────────────────────────────── -->
-            <div class="mf-toolbar">
-                <span class="mf-toolbar__title">All Farms</span>
-                <span class="mf-toolbar__count">{{ farms.length }} total</span>
+            <!-- ── KPI Summary ───────────────────────────────────────────── -->
+            <div class="mf-kpi-grid">
+                <div class="mf-kpi">
+                    <div class="mf-kpi__head">
+                        <span class="mf-kpi__label">My Farms</span>
+                        <div class="mf-kpi__icon"><el-icon><OfficeBuilding /></el-icon></div>
+                    </div>
+                    <div class="mf-kpi__value">{{ kpis.totalFarms }}</div>
+                    <div class="mf-kpi__foot">
+                        <span>Across {{ kpis.districts }} district{{ kpis.districts === 1 ? '' : 's' }}</span>
+                    </div>
+                </div>
+                <div class="mf-kpi">
+                    <div class="mf-kpi__head">
+                        <span class="mf-kpi__label">Located Farms</span>
+                        <div class="mf-kpi__icon"><el-icon><MapLocation /></el-icon></div>
+                    </div>
+                    <div class="mf-kpi__value">{{ kpis.located }} <span class="mf-kpi__value-of">/ {{ kpis.totalFarms }}</span></div>
+                    <div class="mf-kpi__foot">
+                        <span>{{ kpis.totalFarms - kpis.located }} without GPS coordinates</span>
+                    </div>
+                </div>
+                <div class="mf-kpi">
+                    <div class="mf-kpi__head">
+                        <span class="mf-kpi__label">Total Farm Area</span>
+                        <div class="mf-kpi__icon"><el-icon><Grid /></el-icon></div>
+                    </div>
+                    <div class="mf-kpi__value">{{ kpis.totalArea.toLocaleString(undefined, { maximumFractionDigits: 1 }) }} <span class="mf-kpi__unit">ha</span></div>
+                    <div class="mf-kpi__foot">
+                        <span>{{ kpis.cultivatedArea.toLocaleString(undefined, { maximumFractionDigits: 1 }) }} ha under coffee</span>
+                    </div>
+                </div>
+                <div class="mf-kpi">
+                    <div class="mf-kpi__head">
+                        <span class="mf-kpi__label">Active In-Flow</span>
+                        <div class="mf-kpi__icon"><el-icon><Box /></el-icon></div>
+                    </div>
+                    <div class="mf-kpi__value">{{ kpis.activeFarms }} <span class="mf-kpi__unit">farm{{ kpis.activeFarms === 1 ? '' : 's' }}</span></div>
+                    <div class="mf-kpi__foot">
+                        <span>{{ fmtVolume(kpis.totalVolumeKg) }} recorded in collections</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- ── List (boxed card) ────────────────────────────────────── -->
-            <div class="mf-card">
-                <div v-if="farms.length" class="mf-list">
-                    <div v-for="farm in farms" :key="farm.id" class="mf-list-row" @click="goToFarm(farm)">
-                        <div class="mf-list-row__icon"><el-icon><House /></el-icon></div>
-                        <div class="mf-list-row__main">
-                            <div class="mf-list-row__title">{{ farm.name }}</div>
-                            <div class="mf-list-row__sub"><el-icon :size="11"><Location /></el-icon> {{ farmLocation(farm) }}</div>
+            <!-- ── Toolbar: search, sort, view switcher ─────────────────── -->
+            <div class="mf-toolbar-card">
+                <div class="mf-toolbar-row">
+                    <el-input v-model="search" size="small" class="mf-search-input" placeholder="Search farm name, location, or farm code..." clearable>
+                        <template #prefix><el-icon><Search /></el-icon></template>
+                    </el-input>
+                    <div class="mf-toolbar-controls">
+                        <div class="mf-sort">
+                            <span class="mf-sort__label">Sort:</span>
+                            <el-select v-model="sortKey" size="small" class="mf-sort-select">
+                                <el-option label="Recently Registered" value="recent" />
+                                <el-option label="Farm Name (A–Z)" value="name" />
+                                <el-option label="Largest Farm (Area)" value="area" />
+                                <el-option label="Most Recent Collection" value="lastCollection" />
+                            </el-select>
                         </div>
-                        <div class="mf-list-row__stats">
-                            <div class="mf-list-stat">
-                                <span class="mf-list-stat__value">{{ farm.total_area ? `${Number(farm.total_area).toLocaleString()} ha` : '—' }}</span>
-                                <span class="mf-list-stat__label">Size</span>
-                            </div>
-                            <div class="mf-list-stat">
-                                <span class="mf-list-stat__value">{{ farm.elevation ? `${Number(farm.elevation).toLocaleString()} m` : '—' }}</span>
-                                <span class="mf-list-stat__label">Altitude</span>
-                            </div>
-                            <div class="mf-list-stat mf-list-stat--wide">
-                                <span class="mf-list-stat__value">{{ farm.coffee_type || '—' }}</span>
-                                <span class="mf-list-stat__label">Variety</span>
-                            </div>
-                            <span class="mf-badge" :class="isActive(farm) ? 'mf-badge--good' : 'mf-badge--neutral'">{{ farm.status || 'Active' }}</span>
-                        </div>
-                        <div class="mf-row-actions" @click.stop>
-                            <el-tooltip content="View" placement="top">
-                                <Link :href="route('farm.show', farm.id)" class="mf-act-btn mf-act-btn--view">
-                                    <el-icon><View /></el-icon>
-                                </Link>
-                            </el-tooltip>
-                            <el-tooltip content="Edit" placement="top">
-                                <button type="button" class="mf-act-btn mf-act-btn--edit" @click="openEditDialog(farm)">
-                                    <el-icon><Edit /></el-icon>
-                                </button>
-                            </el-tooltip>
-                            <el-tooltip content="Delete" placement="top">
-                                <button type="button" class="mf-act-btn mf-act-btn--delete" @click="openDeleteDialog(farm)">
-                                    <el-icon><Delete /></el-icon>
-                                </button>
-                            </el-tooltip>
+                        <div class="mf-view-switch">
+                            <button type="button" class="mf-view-btn" :class="{ 'mf-view-btn--active': viewMode === 'table' }" @click="viewMode = 'table'">
+                                <el-icon><List /></el-icon> Table
+                            </button>
+                            <button type="button" class="mf-view-btn" :class="{ 'mf-view-btn--active': viewMode === 'grid' }" @click="viewMode = 'grid'">
+                                <el-icon><Grid /></el-icon> Grid
+                            </button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- ── Table view ────────────────────────────────────────────── -->
+            <div v-if="viewMode === 'table'" class="mf-card">
+                <div v-if="pagedFarms.length" class="mf-table-wrap">
+                    <table class="table align-middle mb-0 mf-table">
+                        <colgroup>
+                            <col style="width: 16%">
+                            <col style="width: 11%">
+                            <col style="width: 11%">
+                            <col style="width: 8%">
+                            <col style="width: 10%">
+                            <col style="width: 14%">
+                            <col style="width: 12%">
+                            <col style="width: 8%">
+                            <col style="width: 10%">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Farm &amp; ID</th>
+                                <th>Location</th>
+                                <th>Producer</th>
+                                <th class="text-end">Area</th>
+                                <th>Variety</th>
+                                <th>Inventory Pipeline</th>
+                                <th>Last Collection</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="farm in pagedFarms" :key="farm.id" class="mf-table-row" @click="goToFarm(farm)">
+                                <td>
+                                    <div class="mf-farm-cell">
+                                        <div class="mf-farm-cell__avatar">{{ farmInitials(farm) }}</div>
+                                        <div class="mf-cell-truncate">
+                                            <div class="mf-farm-cell__name mf-ellipsis">{{ farm.name }}</div>
+                                            <div class="mf-farm-cell__code fp-mono">{{ farm.farm_code || '—' }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="mf-cell-truncate">
+                                    <div class="mf-loc-cell__main mf-ellipsis">{{ farmLocation(farm) }}</div>
+                                    <div v-if="hasCoordinates(farm)" class="mf-loc-cell__gps fp-mono" :title="`${farm.latitude}°, ${farm.longitude}°`">
+                                        {{ Number(farm.latitude).toFixed(2) }}°, {{ Number(farm.longitude).toFixed(2) }}°
+                                    </div>
+                                </td>
+                                <td class="mf-cell-truncate">
+                                    <template v-if="farm.owner">
+                                        <div class="mf-table-strong mf-ellipsis">{{ farm.owner.name || '—' }}</div>
+                                        <div class="mf-muted mf-ellipsis">{{ farm.owner.ownership_percentage !== null ? `${farm.owner.ownership_percentage}%` : (farm.owner.is_primary ? 'Primary' : 'Owner') }}</div>
+                                    </template>
+                                    <span v-else class="mf-muted">No owner</span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="mf-table-strong">{{ farm.total_area !== null && farm.total_area !== undefined ? `${farm.total_area} ha` : '—' }}</div>
+                                    <div class="mf-muted">{{ farm.coffee_area ? `${farm.coffee_area} ha coffee` : '—' }}</div>
+                                </td>
+                                <td class="mf-cell-truncate">
+                                    <span v-if="farm.coffee_type" class="mf-tag">{{ farm.coffee_type }}</span>
+                                    <span v-else class="mf-muted">—</span>
+                                    <div v-if="farm.crop_varieties?.length" class="mf-muted mf-mt-2 mf-ellipsis" :title="farm.crop_varieties.map((v) => v.name).join(', ')">{{ farm.crop_varieties.map((v) => v.name).join(', ') }}</div>
+                                </td>
+                                <td class="mf-pipeline-cell">
+                                    <div class="mf-pipeline-cell__top">
+                                        <span class="mf-pipeline-cell__vol">{{ fmtVolume(farm.pipeline.collections.volume_kg) }}</span>
+                                        <div class="mf-trace-dots">
+                                            <span v-for="(done, i) in traceDots(farm)" :key="i" class="mf-trace-dot" :class="{ 'mf-trace-dot--done': done }" :title="PIPELINE_STAGES[i].label"></span>
+                                        </div>
+                                    </div>
+                                    <span class="mf-pipeline-cell__nodes">{{ farm.pipelineStagesDone }}/4 stages</span>
+                                </td>
+                                <td class="mf-cell-truncate">
+                                    <template v-if="farm.latestCollection">
+                                        <div class="mf-table-strong">{{ farm.latestCollection.collection_date || '—' }}</div>
+                                        <div class="mf-muted fp-mono mf-ellipsis">{{ farm.latestCollection.collection_code }}</div>
+                                    </template>
+                                    <span v-else class="mf-muted">None yet</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="mf-badge" :class="hasCoordinates(farm) ? 'mf-badge--good' : 'mf-badge--neutral'">{{ hasCoordinates(farm) ? 'Located' : 'Not Located' }}</span>
+                                </td>
+                                <td class="text-end" @click.stop>
+                                    <div class="mf-row-actions">
+                                        <el-tooltip content="View" placement="top">
+                                            <Link :href="route('farm.show', farm.id)" class="mf-act-btn mf-act-btn--view">
+                                                <el-icon><View /></el-icon>
+                                            </Link>
+                                        </el-tooltip>
+                                        <el-tooltip content="Edit" placement="top">
+                                            <button type="button" class="mf-act-btn mf-act-btn--edit" @click="openEditDialog(farm)">
+                                                <el-icon><Edit /></el-icon>
+                                            </button>
+                                        </el-tooltip>
+                                        <el-tooltip content="Delete" placement="top">
+                                            <button type="button" class="mf-act-btn mf-act-btn--delete" @click="openDeleteDialog(farm)">
+                                                <el-icon><Delete /></el-icon>
+                                            </button>
+                                        </el-tooltip>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <div v-else class="mf-empty">
                     <el-icon :size="24" class="mf-empty__icon"><Box /></el-icon>
-                    <div class="mf-empty__title">You haven't added any farms yet</div>
-                    <p class="mf-empty__text">Register your first farm to start tracking quality and traceability.</p>
-                    <button v-if="canCreateFarm" type="button" class="mf-btn mf-btn--primary" @click="openAddDialog">
+                    <div class="mf-empty__title">{{ farms.length ? 'No farms match your search' : "You haven't added any farms yet" }}</div>
+                    <p class="mf-empty__text">{{ farms.length ? 'Try a different search term.' : 'Register your first farm to start tracking quality and traceability.' }}</p>
+                    <button v-if="!farms.length && canCreateFarm" type="button" class="mf-btn mf-btn--primary" @click="openAddDialog">
                         <el-icon><Plus /></el-icon> Add Your First Farm
                     </button>
+                    <button v-else-if="farms.length" type="button" class="mf-btn mf-btn--outline" @click="search = ''">Clear Search</button>
+                </div>
+
+                <div v-if="sortedFarms.length" class="mf-table-footer">
+                    <span>Showing <strong>{{ pagedFarms.length }}</strong> of <strong>{{ sortedFarms.length }}</strong> registered coffee farm{{ sortedFarms.length === 1 ? '' : 's' }}</span>
+                    <div class="mf-pagination">
+                        <button type="button" class="mf-page-btn" :disabled="page === 1" @click="page = Math.max(1, page - 1)">Prev</button>
+                        <button v-for="p in pageCount" :key="p" type="button" class="mf-page-btn" :class="{ 'mf-page-btn--active': p === page }" @click="page = p">{{ p }}</button>
+                        <button type="button" class="mf-page-btn" :disabled="page === pageCount" @click="page = Math.min(pageCount, page + 1)">Next</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Grid view ─────────────────────────────────────────────── -->
+            <div v-else class="mf-grid">
+                <div v-for="farm in pagedFarms" :key="farm.id" class="mf-grid-card" @click="goToFarm(farm)">
+                    <div class="mf-grid-card__head">
+                        <div class="min-w-0">
+                            <span class="mf-grid-card__code fp-mono">{{ farm.farm_code || '—' }}</span>
+                            <h3 class="mf-grid-card__name">{{ farm.name }}</h3>
+                            <p class="mf-grid-card__sub">{{ farmLocation(farm) }}<template v-if="farm.owner"> · {{ farm.owner.name }}</template></p>
+                        </div>
+                        <span class="mf-badge" :class="hasCoordinates(farm) ? 'mf-badge--good' : 'mf-badge--neutral'">{{ hasCoordinates(farm) ? 'Located' : 'Not Located' }}</span>
+                    </div>
+                    <div class="mf-grid-card__stats">
+                        <div><span class="mf-grid-card__stat-label">Area</span><span class="mf-grid-card__stat-value">{{ farm.total_area ? `${farm.total_area} ha` : '—' }}</span></div>
+                        <div><span class="mf-grid-card__stat-label">Variety</span><span class="mf-grid-card__stat-value">{{ farm.coffee_type || '—' }}</span></div>
+                        <div><span class="mf-grid-card__stat-label">In Pipeline</span><span class="mf-grid-card__stat-value">{{ fmtVolume(farm.pipeline.collections.volume_kg) }}</span></div>
+                    </div>
+                    <div class="mf-grid-card__row">
+                        <span>Latest Collection:</span>
+                        <span class="fp-mono mf-table-strong">{{ farm.latestCollection ? `${farm.latestCollection.collection_date} (${farm.latestCollection.quantity}${farm.latestCollection.unit})` : 'None yet' }}</span>
+                    </div>
+                    <div class="mf-grid-card__foot">
+                        <span class="mf-muted">{{ farm.pipelineStagesDone }}/4 Stages Active</span>
+                        <Link :href="route('farm.show', farm.id)" class="mf-btn mf-btn--primary mf-btn--sm" @click.stop>View Farm Profile <el-icon><ArrowRight /></el-icon></Link>
+                    </div>
+                </div>
+
+                <div v-if="!pagedFarms.length" class="mf-empty mf-grid-empty">
+                    <el-icon :size="24" class="mf-empty__icon"><Box /></el-icon>
+                    <div class="mf-empty__title">{{ farms.length ? 'No farms match these filters' : "You haven't added any farms yet" }}</div>
+                    <p class="mf-empty__text">{{ farms.length ? 'Try clearing a filter or search term.' : 'Register your first farm to start tracking quality and traceability.' }}</p>
                 </div>
             </div>
 
@@ -295,18 +567,19 @@ function deleteFarm() {
     background: var(--surface);
     color: var(--text);
     min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-/* ── Header ────────────────────────────────────────────────────────────── */
-.mf-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
-.mf-header__text { min-width: 0; }
-.mf-title { font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
-.mf-subtitle { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; max-width: 60ch; }
+.fp-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
-/* ── Toolbar ───────────────────────────────────────────────────────────── */
-.mf-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.mf-toolbar__title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); }
-.mf-toolbar__count { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+/* ── Header ────────────────────────────────────────────────────────────── */
+.mf-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: nowrap; }
+.mf-header__text { min-width: 0; flex: 1 1 auto; }
+.mf-title { font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
+.mf-subtitle { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-header__actions { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; flex-shrink: 0; }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────
    NOTE: literal hex values on purpose, not var(--primary) — these classes
@@ -316,11 +589,64 @@ function deleteFarm() {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     height: 36px; padding: 0 16px; border-radius: 6px;
     font-size: 13px; font-weight: 600; border: 1px solid transparent;
-    text-decoration: none; cursor: pointer; transition: opacity 120ms ease;
+    text-decoration: none; cursor: pointer; transition: opacity 120ms ease, background 120ms ease;
 }
 .mf-btn--primary { background: #000000; color: #fff; }
 .mf-btn--primary:hover:not(:disabled) { opacity: 0.88; }
 .mf-btn--primary:disabled { opacity: .5; cursor: not-allowed; }
+.mf-btn--outline { background: #ffffff; color: #121516; border-color: #E5E7EB; }
+.mf-btn--outline:hover { background: #F5F6F7; }
+.mf-btn--sm { height: 30px; padding: 0 12px; font-size: 12px; }
+
+/* ── KPI cards ─────────────────────────────────────────────────────────── */
+.mf-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.mf-kpi { border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; background: var(--surface); }
+.mf-kpi__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.mf-kpi__label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.mf-kpi__icon { width: 24px; height: 24px; border-radius: 6px; background: var(--surface-muted); color: var(--text-2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; }
+.mf-kpi__value { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); line-height: 1.1; }
+.mf-kpi__value-of, .mf-kpi__unit { font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+.mf-kpi__foot { margin-top: 6px; font-size: 10.5px; color: var(--text-muted); }
+
+/* ── Toolbar ───────────────────────────────────────────────────────────── */
+.mf-toolbar-card { border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; background: var(--surface); }
+.mf-toolbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+/* NOTE: resources/css/element-overrides.css globally forces every
+   .el-input__wrapper/.el-select__wrapper to min-height:48px !important —
+   these fields must fight that with matching !important (our selector's
+   extra classes give it the higher specificity to win the tie), to match
+   the 32px-tall filter fields used elsewhere in the app (e.g. LotPage's
+   .lt-search-input/.lt-select). */
+.mf-search-input { flex: 1; min-width: 200px; max-width: 260px; }
+.mf-search-input :deep(.el-input__wrapper) {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 0 10px !important;
+    box-shadow: 0 0 0 1px var(--border) inset !important;
+    border-radius: 6px !important;
+    background: var(--surface-muted) !important;
+}
+.mf-search-input :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px var(--text) inset !important; background: var(--surface) !important; }
+.mf-search-input :deep(.el-input__inner) { font-size: 12.5px !important; color: var(--text); height: 30px !important; line-height: 30px !important; }
+.mf-search-input :deep(.el-input__prefix) { color: var(--text-muted); font-size: 13px; }
+
+.mf-toolbar-controls { display: flex; align-items: center; gap: 12px; flex-shrink: 0; flex-wrap: wrap; }
+.mf-sort { display: flex; align-items: center; gap: 8px; }
+.mf-sort__label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); flex-shrink: 0; }
+.mf-sort-select { width: 170px; }
+.mf-sort-select :deep(.el-select__wrapper) {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 0 10px !important;
+    box-shadow: 0 0 0 1px var(--border) inset !important;
+    border-radius: 6px !important;
+    background: var(--surface-muted) !important;
+}
+.mf-sort-select :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 1px var(--text) inset !important; }
+.mf-sort-select :deep(.el-select__selected-item) { font-size: 12.5px !important; font-weight: 600; color: var(--text); }
+.mf-view-switch { display: inline-flex; background: var(--surface-muted); padding: 3px; border-radius: 8px; gap: 2px; }
+.mf-view-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; border: none; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; }
+.mf-view-btn--active { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
 
 /* ── Card — flat, bordered, no shadow, matching the app's default card
    convention (Lot/Batch/Apps/Weather/Inputs). ─────────────────────────── */
@@ -331,54 +657,82 @@ function deleteFarm() {
     background: var(--surface);
 }
 
-/* ── List rows ─────────────────────────────────────────────────────────── */
-.mf-list { display: flex; flex-direction: column; }
-.mf-list-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background .15s ease;
-}
-.mf-list-row:last-child { border-bottom: none; }
-.mf-list-row:hover { background: var(--surface-muted); }
-.mf-list-row__icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
+/* ── Table — fixed layout so all columns fit the card width with no
+   horizontal scroll; long content truncates with an ellipsis (full value
+   still available via title tooltip) instead of forcing overflow. ─────── */
+.mf-table-wrap { width: 100%; overflow-x: auto; }
+.mf-table { table-layout: fixed; width: 100%; }
+.mf-table thead th {
     background: var(--surface-muted);
-    color: var(--text-2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 16px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    padding: 9px 10px;
+    border-bottom-color: transparent;
+    white-space: normal;
+    line-height: 1.3;
 }
-.mf-list-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.mf-list-row__title { font-size: 14px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mf-list-row__sub { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mf-list-row__stats { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
-.mf-list-stat { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 56px; }
-.mf-list-stat--wide { min-width: 84px; }
-.mf-list-stat__value { font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
-.mf-list-stat__label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); white-space: nowrap; }
+.mf-table tbody td { padding: 10px 10px; font-size: 12px; border-color: var(--border); vertical-align: middle; overflow: hidden; }
+.mf-table-row { cursor: pointer; transition: background .12s ease; }
+.mf-table-row:hover { background: var(--surface-muted); }
+.mf-table-row:last-child td { border-bottom: none; }
+.mf-table-strong { font-weight: 700; color: var(--text); }
+.mf-muted { font-size: 11px; color: var(--text-muted); }
+.mf-mt-2 { margin-top: 3px; }
+.mf-cell-truncate { min-width: 0; }
+.mf-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 
-/* ── Status badge ──────────────────────────────────────────────────────── */
-.mf-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.mf-farm-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mf-farm-cell__avatar { width: 26px; height: 26px; border-radius: 7px; background: var(--surface-elevated); color: var(--text-2); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; }
+.mf-farm-cell__name { font-size: 12.5px; font-weight: 700; color: var(--text); }
+.mf-farm-cell__code { font-size: 10px; color: var(--text-muted); }
+
+.mf-loc-cell__main { font-weight: 600; font-size: 12px; color: var(--text); }
+.mf-loc-cell__gps { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+.mf-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--surface-elevated); color: var(--text-2); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.mf-pipeline-cell__top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.mf-pipeline-cell__vol { font-size: 12px; font-weight: 700; color: var(--text); flex-shrink: 0; }
+.mf-pipeline-cell__nodes { display: block; margin-top: 4px; font-size: 10px; font-weight: 600; color: var(--text-muted); }
+
+.mf-trace-dots { display: inline-flex; gap: 3px; flex-shrink: 0; }
+.mf-trace-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--surface-elevated); }
+.mf-trace-dot--done { background: #15803d; }
+
+.mf-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; flex-shrink: 0; }
 .mf-badge--good { background: var(--success-soft); color: var(--success); }
 .mf-badge--neutral { background: var(--surface-elevated); color: var(--text-2); }
 
-/* ── Row actions ───────────────────────────────────────────────────────── */
-.mf-row-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.mf-act-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; text-decoration: none; border: none; background: transparent; cursor: pointer; transition: background .15s ease, color .15s ease; }
-.mf-act-btn--view { color: var(--text-2); }
-.mf-act-btn--view:hover { background: var(--surface-elevated); color: var(--text); }
-.mf-act-btn--edit { color: var(--text-2); }
-.mf-act-btn--edit:hover { background: var(--surface-elevated); color: var(--text); }
-.mf-act-btn--delete { color: var(--text-2); }
+.mf-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+.mf-act-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; text-decoration: none; border: none; background: transparent; cursor: pointer; transition: background .15s ease, color .15s ease; color: var(--text-2); flex-shrink: 0; }
+.mf-act-btn :deep(svg) { width: 13px; height: 13px; }
+.mf-act-btn:hover { background: var(--surface-elevated); color: var(--text); }
 .mf-act-btn--delete:hover { background: var(--error-soft); color: var(--error); }
+
+.mf-table-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface-muted); font-size: 12px; color: var(--text-2); }
+.mf-pagination { display: flex; align-items: center; gap: 4px; }
+.mf-page-btn { min-width: 28px; height: 28px; padding: 0 6px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--text-2); font-size: 12px; font-weight: 700; cursor: pointer; }
+.mf-page-btn:hover:not(:disabled) { background: var(--surface-elevated); }
+.mf-page-btn--active { background: #000000; color: #fff; }
+.mf-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Grid view ─────────────────────────────────────────────────────────── */
+.mf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.mf-grid-card { border: 1px solid var(--border); border-radius: 6px; padding: 18px; background: var(--surface); cursor: pointer; transition: box-shadow .15s ease; display: flex; flex-direction: column; gap: 14px; }
+.mf-grid-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+.mf-grid-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.mf-grid-card__code { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+.mf-grid-card__name { font-size: 15px; font-weight: 800; color: var(--text); margin: 2px 0 0; }
+.mf-grid-card__sub { font-size: 11.5px; color: var(--text-muted); margin: 2px 0 0; }
+.mf-grid-card__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--surface-muted); padding: 10px; border-radius: 8px; text-align: center; }
+.mf-grid-card__stat-label { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+.mf-grid-card__stat-value { display: block; font-size: 12.5px; font-weight: 700; color: var(--text); margin-top: 2px; }
+.mf-grid-card__row { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); }
+.mf-grid-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+.mf-grid-empty { grid-column: 1 / -1; border: 1px solid var(--border); border-radius: 6px; }
 
 /* ── Empty state ───────────────────────────────────────────────────────── */
 .mf-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 20px; }
@@ -427,14 +781,20 @@ function deleteFarm() {
 /* Footer has no Cancel button — the single action sits right-aligned. */
 .fp-modal__footer { display: flex; justify-content: flex-end; padding: 16px 24px; background: #F5F6F7; border-top: 1px solid #E5E7EB; }
 
+@media (max-width: 1200px) {
+    .mf-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 767.98px) {
-    .mf-list-row { flex-wrap: wrap; row-gap: 10px; }
-    .mf-list-row__stats { order: 3; width: 100%; justify-content: space-between; }
-    .mf-row-actions { order: 2; margin-left: auto; }
+    .mf-kpi-grid { grid-template-columns: 1fr; }
+    .mf-toolbar-row { flex-direction: column; align-items: stretch; }
+    .mf-toolbar-controls { justify-content: space-between; }
 }
 
 @media (max-width: 575.98px) {
     .mf-header { flex-direction: column; align-items: stretch; }
+    .mf-header__actions { width: 100%; }
+    .mf-header__actions .mf-btn { flex: 1; }
     .fp-field-row { grid-template-columns: 1fr; }
     :deep(.el-dialog.fp-modal) { width: 92vw !important; }
 }

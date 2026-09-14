@@ -1,23 +1,26 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import StoreLayout from '@/Layouts/StoreLayout.vue';
 import AddFarmCollectionModal from '@/Components/Modals/AddFarmCollectionModal.vue';
 import AddBatchModal from '@/Components/Modals/AddBatchModal.vue';
 import AddLotModal from '@/Components/Modals/AddLotModal.vue';
 import {
-    ArrowDown, ArrowRight, Close, Files, Filter, MoreFilled, OfficeBuilding,
-    Plus, Ticket, UploadFilled, Wallet, WarningFilled,
+    ArrowDown, Close, Plus, UploadFilled, WarningFilled,
 } from '@element-plus/icons-vue';
 
 /* ── The shell every inventory tab page (Farm Collections, Batches, Lots,
-   Tokenised Lots) renders inside — hero, nav cards, and the blockchain
-   status banner all stay identical across tabs; only the `<slot />`
-   content (each tab's own list) differs. The old el-tabs bar + separate
-   KPI grid have been folded into one row of clickable nav cards (each
-   both a link to its page and a live count), and Quick Transfer has been
-   dropped entirely — this is meant to be the simple, inviting front door
-   to the store, not a dashboard. ──────────────────────────────────────── */
+   Tokenised Lots) renders inside — structural/visual port of the uploaded
+   "Inventory" mockup (code.html / DESIGN.md), restyled with this page's
+   own literal-hex UI.md tokens (see .st-page below) rather than the
+   mockup's own palette.
+
+   Everything in this file is real data passed in from
+   StoreController::stageSummary() — no fabricated SLA/yield percentages:
+   a farm collection's own `status` column tracks batched-vs-pending;
+   batches/lots don't have an equivalent status, so "moved to next stage"
+   is derived from their real pivot links (batchFarmCollections/
+   lotBatches) and blockchain relation instead. ────────────────────────── */
 const props = defineProps({
     store: { type: Object, default: null },
     statusOptions: { type: Array, default: () => [] },
@@ -26,6 +29,10 @@ const props = defineProps({
     farmCollections: { type: Array, default: () => [] },
     batches: { type: Array, default: () => [] },
     lots: { type: Array, default: () => [] },
+    stageProgress: { type: Array, default: () => [] },
+    movementLedger: { type: Array, default: () => [] },
+    chainLineage: { type: Array, default: null },
+    inventoryHealth: { type: Object, default: () => ({}) },
     processOptions: { type: Array, default: () => [] },
     dryingMethodOptions: { type: Array, default: () => [] },
     millingOptions: { type: Array, default: () => [] },
@@ -43,52 +50,41 @@ const props = defineProps({
     aromaOptions: { type: Array, default: () => [] },
 });
 
-const tokenisedLots = computed(() => props.lots.filter((lot) => lot.blockchain));
-const tokenisedPct = computed(() => props.lots.length ? Math.round((tokenisedLots.value.length / props.lots.length) * 100) : 0);
-const sourcedFarmsCount = computed(() => new Set(props.farmCollections.map((c) => c.farm_id).filter(Boolean)).size);
-const totalBatchWeightKg = computed(() => props.batches.reduce((sum, b) => sum + Number(b.net_weight_kg || 0), 0));
-const totalLotWeightKg = computed(() => props.lots.reduce((sum, l) => sum + Number(l.net_weight_kg || 0), 0));
+/* ── A stage's real weight is shown in whichever unit keeps it legible —
+   a small real value (e.g. a single 40kg lot) rounds down to "0.0" in
+   metric tons and reads as if nothing were there, so anything under
+   1 MT is shown in KG instead of being silently truncated to zero. ── */
+function fmtVolume(kg) {
+    const value = Number(kg || 0);
+    if (value > 0 && value < 1000) {
+        return { value: value.toLocaleString(undefined, { maximumFractionDigits: 0 }), unit: 'KG' };
+    }
+    return { value: (value / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }), unit: 'MT' };
+}
 
-/* ── Nav cards — the page's primary navigation, one per tab. Doubles as
-   the KPI snapshot the old separate grid used to show, so there's one
-   thing to look at instead of two. Every tab page is always linked here,
-   regardless of which one is active. ──────────────────────────────────── */
-const tabs = computed(() => [
-    {
-        key: 'collections',
-        label: 'Farm Collections',
-        icon: OfficeBuilding,
-        route: 'store.collections',
-        value: props.farmCollections.length,
-        sub: `From ${sourcedFarmsCount.value} farm${sourcedFarmsCount.value === 1 ? '' : 's'}`,
-    },
-    {
-        key: 'batches',
-        label: 'Batches',
-        icon: Files,
-        route: 'store.batches',
-        value: props.batches.length,
-        sub: `${totalBatchWeightKg.value.toLocaleString()} kg total`,
-    },
-    {
-        key: 'lots',
-        label: 'Lots',
-        icon: Ticket,
-        route: 'store.lots',
-        value: props.lots.length,
-        sub: `${totalLotWeightKg.value.toLocaleString()} kg total`,
-    },
-    {
-        key: 'tokenised',
-        label: 'Tokenised Lots',
-        icon: Wallet,
-        route: 'store.tokenised',
-        value: tokenisedLots.value.length,
-        sub: `${tokenisedPct.value}% of all lots`,
-    },
-]);
+const currentTab = computed(() => props.stageProgress.find((tab) => tab.key === props.activeTab));
 
-const currentTab = computed(() => tabs.value.find((tab) => tab.key === props.activeTab));
+/* ── Header action — a real export, not the mockup's decorative button. ── */
+function exportLedgerCsv() {
+    const header = ['Type', 'ID', 'Coffee', 'Quantity (kg)', 'Status', 'Created'];
+    const rows = [
+        ...props.farmCollections.map((c) => ['Farm Collection', c.collection_code, [c.coffee_type, c.variety].filter(Boolean).join(' '), c.quantity, c.status, c.created_at]),
+        ...props.batches.map((b) => ['Batch', b.batch_number, b.variety, b.net_weight_kg, b.status, b.created_at]),
+        ...props.lots.map((l) => ['Lot', l.lot_number, [l.variety, l.grade].filter(Boolean).join(' '), l.net_weight_kg, l.blockchain ? 'tokenised' : l.status, l.created_at]),
+    ];
+
+    const csv = [header, ...rows]
+        .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `bean-origin-inventory-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+}
 
 /* ── Hero "Register New ▾" dropdown — opens the matching independent
    modal component instead of navigating away. ────────────────────────── */
@@ -109,13 +105,19 @@ const importResultVisible = ref(Boolean(props.importResult));
 
 <template>
     <StoreLayout
-        title="My Store"
+        title="Inventory"
         :store="store"
         :status-options="statusOptions"
         :import-result="importResult"
         v-model:store-dialog-open="storeDialogOpen"
         v-model:import-result-visible="importResultVisible"
     >
+        <Head>
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+            <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+        </Head>
+
         <div class="st-page">
             <!-- ── Import results ───────────────────────────────────────── -->
             <div v-if="importResult && importResultVisible">
@@ -141,12 +143,19 @@ const importResultVisible = ref(Boolean(props.importResult));
             </div>
 
             <div class="st-verified">
+                <!-- ── Page header ───────────────────────────────────────── -->
                 <div class="st-hero">
                     <div class="st-hero__text">
-                        <h1 class="st-title">My Store</h1>
-                        <p class="st-subtitle">Manage your active inventory and certify lots on the blockchain before pushing to market.</p>
+                        <div class="st-hero__title-row">
+                            <h1 class="st-title">Inventory</h1>
+                            <span class="st-hero__badge">Physical &amp; Tokenised</span>
+                        </div>
+                        <p class="st-subtitle">Farm-to-token custody tracking</p>
                     </div>
                     <div class="st-hero__actions">
+                        <button type="button" class="st-btn-outline" @click="exportLedgerCsv">
+                            <span class="material-symbols-outlined">download</span> Export Ledger (CSV)
+                        </button>
                         <el-dropdown trigger="click" @command="handleRegisterCommand">
                             <button type="button" class="st-btn-primary">
                                 <el-icon><Plus /></el-icon> Register New <el-icon class="st-caret"><ArrowDown /></el-icon>
@@ -162,29 +171,27 @@ const importResultVisible = ref(Boolean(props.importResult));
                     </div>
                 </div>
 
-                <!-- ── Nav cards — every tab page is always linked here. ──── -->
+                <!-- ── Stage cards — every tab page is always linked here. ── -->
                 <nav class="st-nav-cards">
                     <Link
-                        v-for="tab in tabs"
-                        :key="tab.key"
-                        :href="route(tab.route)"
+                        v-for="stage in stageProgress"
+                        :key="stage.key"
+                        :href="route(stage.route)"
                         class="st-nav-card"
                     >
-                        <div class="st-nav-card__head">
-                            <div class="st-nav-card__top">
-                                <div class="st-nav-card__icon">
-                                    <el-icon><component :is="tab.icon" /></el-icon>
-                                </div>
-                                <div class="st-nav-card__stat">
-                                    <span class="st-nav-card__value">{{ tab.value }}</span>
-                                    <div class="st-nav-card__titles">
-                                        <span class="st-nav-card__label">{{ tab.label }}</span>
-                                        <span class="st-nav-card__sub">{{ tab.sub }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <el-icon class="st-nav-card__chevron"><ArrowRight /></el-icon>
+                        <div class="st-nav-card__top">
+                            <div class="st-nav-card__icon"><span class="material-symbols-outlined">{{ stage.icon }}</span></div>
+                            <span class="st-nav-card__records">{{ stage.records }} Record{{ stage.records === 1 ? '' : 's' }}</span>
                         </div>
+                        <div class="st-nav-card__value">{{ fmtVolume(stage.volume_kg).value }} <span class="st-nav-card__unit">{{ fmtVolume(stage.volume_kg).unit }}</span></div>
+                        <div class="st-nav-card__label">{{ stage.label }}</div>
+                        <div v-if="stage.ready !== null" class="st-nav-card__bar"><div class="st-nav-card__bar-fill" :style="{ width: stage.progress + '%' }" /></div>
+                        <div v-if="stage.ready !== null" class="st-nav-card__ready">
+                            <span>{{ stage.ready_label }}:</span>
+                            <strong>{{ stage.ready }}</strong>
+                        </div>
+                        <p v-if="stage.note" class="st-nav-card__note">{{ stage.note }}</p>
+                        <span class="st-nav-card__link">View {{ stage.label }} <span class="material-symbols-outlined">arrow_forward</span></span>
                     </Link>
                 </nav>
 
@@ -192,13 +199,71 @@ const importResultVisible = ref(Boolean(props.importResult));
                 <div class="st-body">
                     <div class="st-list-toolbar">
                         <h2 class="st-list-toolbar__title">{{ currentTab?.label }}</h2>
-                        <div class="st-list-toolbar__actions">
-                            <button type="button" class="st-icon-btn"><el-icon><Filter /></el-icon></button>
-                            <button type="button" class="st-icon-btn"><el-icon><MoreFilled /></el-icon></button>
-                        </div>
                     </div>
 
                     <slot />
+                </div>
+
+                <!-- ── Bottom triptych ───────────────────────────────────── -->
+                <div class="st-triptych">
+                    <div class="st-panel">
+                        <div class="st-panel__head">
+                            <span class="material-symbols-outlined">sync_alt</span>
+                            <h3>Recent Movement Ledger</h3>
+                        </div>
+                        <div v-if="movementLedger.length" class="st-timeline">
+                            <div v-for="(event, i) in movementLedger" :key="i" class="st-timeline__item">
+                                <div class="st-timeline__head">
+                                    <span class="st-timeline__label">{{ event.label }}</span>
+                                    <span class="st-timeline__ago">{{ event.ago }}</span>
+                                </div>
+                                <p class="st-timeline__detail">{{ event.detail }}</p>
+                            </div>
+                        </div>
+                        <p v-else class="st-panel__empty">No inventory movement recorded yet.</p>
+                    </div>
+
+                    <div class="st-panel">
+                        <div class="st-panel__head">
+                            <span class="material-symbols-outlined">share_location</span>
+                            <h3>Chain Lineage Inspector</h3>
+                        </div>
+                        <div v-if="chainLineage && chainLineage.length" class="st-chain">
+                            <div v-for="(link, i) in chainLineage" :key="i" class="st-chain__item">
+                                <span class="st-chain__icon material-symbols-outlined">{{ link.icon }}</span>
+                                <div class="st-chain__body">
+                                    <div class="st-chain__title">{{ link.title }}</div>
+                                    <div class="st-chain__sub">{{ link.sub }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <p v-else class="st-panel__empty">No traceable chain yet — register a farm collection to begin one.</p>
+                    </div>
+
+                    <div class="st-panel">
+                        <div class="st-panel__head">
+                            <span class="material-symbols-outlined">speed</span>
+                            <h3>Inventory Health</h3>
+                        </div>
+                        <div class="st-health-grid">
+                            <div class="st-health-box">
+                                <div class="st-health-box__label">Avg Quality Score</div>
+                                <div class="st-health-box__value">{{ inventoryHealth.avg_quality_score ?? '—' }}</div>
+                            </div>
+                            <div class="st-health-box">
+                                <div class="st-health-box__label">Avg Moisture</div>
+                                <div class="st-health-box__value">{{ inventoryHealth.avg_moisture_content != null ? inventoryHealth.avg_moisture_content + '%' : '—' }}</div>
+                            </div>
+                            <div class="st-health-box">
+                                <div class="st-health-box__label">Total Active Value</div>
+                                <div class="st-health-box__value">${{ Number(inventoryHealth.total_value || 0).toLocaleString() }}</div>
+                            </div>
+                            <div class="st-health-box">
+                                <div class="st-health-box__label">Tokenised Value</div>
+                                <div class="st-health-box__value">${{ Number(inventoryHealth.tokenised_value || 0).toLocaleString() }}</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -300,19 +365,32 @@ const importResultVisible = ref(Boolean(props.importResult));
 .st-register-menu :deep(.el-dropdown-menu__item:hover) { background: var(--surface-container-low); color: var(--on-surface); }
 
 /* ── Editorial hero ────────────────────────────────────────────────────── */
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; line-height: 1; }
 .st-verified { display: flex; flex-direction: column; gap: 28px; }
-.st-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.st-hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .st-hero__text { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
+.st-hero__title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.st-hero__badge {
+    display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    background: var(--secondary-container); color: var(--on-secondary-container);
+}
 .st-title {
     font-size: 1.5rem;
     line-height: 1.9rem;
     letter-spacing: -0.015em;
     font-weight: 800;
     color: var(--primary);
-    margin: 0 0 6px;
+    margin: 0;
 }
 .st-subtitle { font-size: .9375rem; line-height: 1.5rem; font-weight: 400; color: var(--on-surface-variant); margin: 0; max-width: 620px; }
-.st-hero__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.st-hero__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
+.st-btn-outline {
+    display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 6px;
+    background: var(--surface-container-high); color: var(--on-surface); border: none; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background .15s ease; white-space: nowrap;
+}
+.st-btn-outline:hover { background: var(--surface-container); }
+.st-btn-outline .material-symbols-outlined { font-size: 17px; }
 
 @media (max-width: 575.98px) {
     .st-title { font-size: 1.25rem; line-height: 1.6rem; }
@@ -366,71 +444,77 @@ const importResultVisible = ref(Boolean(props.importResult));
 }
 .st-import-panel__close:hover { background: rgba(0, 0, 0, 0.06); }
 
-/* ── Nav cards — primary navigation + KPI snapshot, one row, one look.
-   Flat, modern tiles: no border, no resting shadow, one consistent
-   neutral color treatment (no per-tab hue coding) — the tinted surface
-   and typography carry the tile, not chrome. The stat value and title sit
-   inline on the top row, and the caption sits below, left-aligned with the
-   title (truncating with an ellipsis if the tile gets narrow). Hover adds
-   only a small, soft shadow — no border or lift. ─────────────────────── */
+/* ── Stage cards — real per-stage volume/records/progress, each also the
+   nav link to that tab. ────────────────────────────────────────────────── */
 .st-nav-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .st-nav-card {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 18px 20px 16px;
-    background: var(--surface-container-low);
+    gap: 8px;
+    padding: 18px 20px;
+    background: var(--surface-container-lowest);
     border: 1px solid var(--card-border);
     border-radius: var(--card-radius);
     text-decoration: none;
     color: inherit;
     overflow: hidden;
-    transition: box-shadow .15s ease;
+    transition: box-shadow .15s ease, border-color .15s ease;
 }
 .st-nav-card:hover { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06); }
-.st-nav-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
-.st-nav-card__top { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.st-nav-card__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .st-nav-card__icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    flex-shrink: 0;
-    background: var(--surface-container-high);
-    color: var(--on-surface-variant);
+    width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    background: var(--surface-container-high); color: var(--on-surface-variant); flex-shrink: 0;
 }
-.st-nav-card__stat { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
-.st-nav-card__titles { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
-.st-nav-card__value { flex-shrink: 0; font-size: 1.625rem; font-weight: 800; letter-spacing: -.01em; color: var(--on-surface); line-height: 1.2; font-variant-numeric: tabular-nums; }
-.st-nav-card__label { min-width: 0; font-size: .8125rem; font-weight: 700; color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.st-nav-card__sub { min-width: 0; font-size: .6875rem; font-weight: 600; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.st-nav-card__chevron { flex-shrink: 0; font-size: 14px; color: var(--on-surface-variant); opacity: 0; transform: translateX(-4px); transition: opacity .15s ease, transform .15s ease; }
-.st-nav-card:hover .st-nav-card__chevron { opacity: 1; transform: translateX(0); color: var(--primary); }
+.st-nav-card__icon .material-symbols-outlined { font-size: 17px; }
+.st-nav-card__records { font-family: monospace; font-size: 11px; font-weight: 600; color: var(--on-surface-variant); background: var(--surface-container); padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.st-nav-card__value { font-size: 1.375rem; font-weight: 800; letter-spacing: -.01em; color: var(--on-surface); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.st-nav-card__unit { font-size: .75rem; font-weight: 700; color: var(--on-surface-variant); }
+.st-nav-card__label { font-size: .8125rem; font-weight: 700; color: var(--on-surface-variant); }
+.st-nav-card__bar { width: 100%; height: 5px; border-radius: 999px; background: var(--surface-container-high); overflow: hidden; margin-top: 4px; }
+.st-nav-card__bar-fill { height: 100%; border-radius: 999px; background: var(--primary); }
+.st-nav-card__ready { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: .75rem; color: var(--on-surface-variant); }
+.st-nav-card__ready strong { color: var(--on-surface); font-weight: 700; }
+.st-nav-card__note { font-size: .6875rem; color: var(--on-surface-variant); margin: 0; line-height: 1.4; }
+.st-nav-card__link {
+    display: inline-flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--card-border);
+    font-size: .75rem; font-weight: 700; color: var(--primary);
+}
+.st-nav-card__link .material-symbols-outlined { font-size: 14px; }
 
 /* ── Active tab content ───────────────────────────────────────────────── */
 .st-body { display: flex; flex-direction: column; gap: 14px; padding-top: 12px; border-top: 1px solid var(--card-border); }
 .st-list-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .st-list-toolbar__title { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.005em; color: var(--on-surface); margin: 0; }
-.st-list-toolbar__actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-.st-icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 6px;
-    border: none;
-    background: transparent;
-    color: var(--on-surface-variant);
-    cursor: pointer;
-    transition: background .15s ease;
-}
-.st-icon-btn:hover { background: var(--surface-container); }
-.st-icon-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ── Bottom triptych ──────────────────────────────────────────────────── */
+.st-triptych { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.st-panel { display: flex; flex-direction: column; gap: 14px; background: var(--surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--card-radius); padding: 20px; }
+.st-panel__head { display: flex; align-items: center; gap: 8px; }
+.st-panel__head .material-symbols-outlined { font-size: 19px; color: var(--primary); }
+.st-panel__head h3 { font-size: .8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface); margin: 0; }
+.st-panel__empty { font-size: .8125rem; color: var(--on-surface-variant); margin: 0; }
+
+.st-timeline { display: flex; flex-direction: column; gap: 12px; position: relative; padding-left: 14px; border-left: 2px solid var(--card-border); }
+.st-timeline__item { position: relative; }
+.st-timeline__item::before { content: ''; position: absolute; left: -18px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+.st-timeline__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.st-timeline__label { font-family: monospace; font-size: .75rem; font-weight: 700; color: var(--on-surface); }
+.st-timeline__ago { font-family: monospace; font-size: .6875rem; color: var(--on-surface-variant); white-space: nowrap; }
+.st-timeline__detail { font-size: .75rem; color: var(--on-surface-variant); margin: 3px 0 0; line-height: 1.4; }
+
+.st-chain { display: flex; flex-direction: column; gap: 10px; }
+.st-chain__item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; background: var(--surface-container-low); }
+.st-chain__icon { width: 26px; height: 26px; border-radius: 50%; background: var(--surface-container-high); color: var(--on-surface); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.st-chain__body { min-width: 0; }
+.st-chain__title { font-family: monospace; font-size: .75rem; font-weight: 700; color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-chain__sub { font-size: .6875rem; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.st-health-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.st-health-box { padding: 12px; border-radius: 8px; background: var(--surface-container-low); }
+.st-health-box__label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--on-surface-variant); }
+.st-health-box__value { font-size: 1.0625rem; font-weight: 800; color: var(--on-surface); margin-top: 3px; font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: reduce) {
     .st-nav-card,
@@ -445,7 +529,9 @@ const importResultVisible = ref(Boolean(props.importResult));
     .st-page { gap: 16px; }
     .st-verified { gap: 18px; }
     .st-hero { flex-direction: column; align-items: stretch; }
-    .st-hero__actions .st-btn-primary { justify-content: center; }
+    .st-hero__actions .st-btn-primary,
+    .st-hero__actions .st-btn-outline { justify-content: center; }
     .st-nav-cards { grid-template-columns: 1fr; gap: 10px; }
+    .st-health-grid { grid-template-columns: 1fr; }
 }
 </style>

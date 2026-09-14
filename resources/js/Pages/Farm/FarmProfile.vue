@@ -10,7 +10,7 @@ import { isGoogleMapsConfigured, renderMap } from '@/services/googleMaps';
 import { ElNotification } from 'element-plus';
 import {
     Box, ChatDotRound, CircleCheckFilled, Close, Coffee, Delete, Document, Download, Edit, Files,
-    Location, MapLocation, Plus, Promotion, User,
+    Location, Plus, Promotion, User,
     Sunny, PartlyCloudy, Cloudy, Umbrella, Lightning, Grid,
     Upload, UploadFilled, Warning, WarningFilled,
     InfoFilled, LocationFilled, HomeFilled, Aim, Top,
@@ -39,6 +39,7 @@ const props = defineProps({
     soilProfiles: { type: Array, default: () => [] },
     soilProfileOptions: { type: Array, default: () => [] },
     collectionImportResult: { type: Object, default: null },
+    pipelineSummary: { type: Array, default: () => [] },
 });
 
 /* ── Real display computed — every value below comes straight from a
@@ -564,6 +565,84 @@ function weatherMonthLabel(row) {
 const weatherPreviewCount = 3;
 const weatherPreview = computed(() => props.weatherOutlook.slice(0, weatherPreviewCount));
 const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPreviewCount);
+
+/* ── Traceability Pipeline — real custody volumes traced from this farm's
+   own collections through batch assembly, certification and tokenisation
+   (see FarmController::pipelineSummary()); nothing here is an estimate. */
+const pipelineIcons = { collections: Coffee, batches: Box, lots: Medal, tokenised: Ticket };
+const pipelineSteps = computed(() => props.pipelineSummary.map((stage) => ({
+    ...stage,
+    icon: pipelineIcons[stage.key] || Box,
+    done: stage.records > 0,
+})));
+
+function fmtVolume(kg) {
+    const value = Number(kg || 0);
+    if (value > 0 && value < 1000) {
+        return { value: value.toLocaleString(undefined, { maximumFractionDigits: 0 }), unit: 'KG' };
+    }
+    return { value: (value / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }), unit: 'MT' };
+}
+
+/* ── Production Snapshot — aggregated straight from this farm's real
+   collection records; no annual yield or harvest estimate is fabricated. */
+const productionSnapshot = computed(() => {
+    const list = props.collections;
+    const kgList = list.filter((c) => (c.unit || 'kg') === 'kg');
+    const totalKg = kgList.reduce((sum, c) => sum + Number(c.quantity || 0), 0);
+    const scored = list.filter((c) => c.initial_quality_score !== null && c.initial_quality_score !== undefined);
+    const avgScore = scored.length ? scored.reduce((sum, c) => sum + Number(c.initial_quality_score), 0) / scored.length : null;
+    const dated = [...list].filter((c) => c.collection_date).sort((a, b) => new Date(b.collection_date) - new Date(a.collection_date));
+    return {
+        totalKg,
+        count: list.length,
+        avgScore,
+        latestDate: dated[0]?.collection_date || null,
+    };
+});
+
+/* ── Chronological Farm Activity — a genuine ledger built by merging the
+   real created_at timestamp already on every kind of farm record; nothing
+   here is a synthetic audit-log entry. ─────────────────────────────────── */
+const auditTrail = computed(() => {
+    const events = [];
+    if (props.farm.created_at) {
+        events.push({ id: 'farm', label: 'Farm registered', detail: farmName.value, at: props.farm.created_at });
+    }
+    props.collections.forEach((c) => {
+        events.push({
+            id: `col-${c.id}`,
+            label: `Collection recorded ${c.collection_code || ''}`.trim(),
+            detail: `${Number(c.quantity || 0).toLocaleString()} ${c.unit || 'kg'} · ${c.coffee_type || 'coffee'}`,
+            at: c.created_at,
+        });
+    });
+    props.documents.forEach((d) => {
+        events.push({ id: `doc-${d.id}`, label: `Document uploaded: ${d.title}`, detail: d.document_type || 'Document', at: d.created_at });
+    });
+    props.sustainabilityPractices.forEach((p) => {
+        events.push({ id: `prac-${p.id}`, label: 'Sustainability practice recorded', detail: practiceLabel(p.practice), at: p.created_at });
+    });
+    props.owners.forEach((o) => {
+        events.push({
+            id: `own-${o.id}`,
+            label: `Ownership recorded: ${o.name}`,
+            detail: o.ownership_percentage !== null && o.ownership_percentage !== undefined ? `${o.ownership_percentage}% ownership` : 'Ownership grant',
+            at: o.created_at,
+        });
+    });
+    return events
+        .filter((e) => e.at)
+        .sort((a, b) => new Date(b.at) - new Date(a.at))
+        .slice(0, 8);
+});
+
+function formatEventDate(value) {
+    if (!value) return '—';
+    const date = new Date(value.replace(' ', 'T'));
+    if (Number.isNaN(date.getTime())) return '—';
+    return `${date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })} · ${date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+}
 </script>
 
 <template>
@@ -574,91 +653,37 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
             <!-- ── Hero ──────────────────────────────────────────────────── -->
             <div class="fp-hero">
                 <div class="fp-hero__text">
-                    <h1 class="dp-display-md">{{ farmName }}</h1>
+                    <div class="fp-hero__title-row">
+                        <h1 class="dp-display-md">{{ farmName }}</h1>
+                        <span v-if="farm.farm_code" class="fp-code-pill fp-mono">{{ farm.farm_code }}</span>
+                        <strong class="fp-status-pill" :class="`fp-status-pill--${farm.status === 'inactive' ? 'muted' : 'green'}`">
+                            <el-icon :size="11"><CircleCheckFilled /></el-icon> {{ farm.status === 'inactive' ? 'Inactive' : 'Active' }}
+                        </strong>
+                        <span v-if="hasCoordinates" class="fp-status-pill fp-status-pill--primary">
+                            <el-icon :size="11"><LocationFilled /></el-icon> Geofence Locked
+                        </span>
+                    </div>
                     <p class="fp-subtitle">{{ subtitle }}</p>
                 </div>
                 <div v-if="canEdit" class="fp-hero__actions">
                     <button type="button" class="fp-btn fp-btn--outline" @click="openEditDialog">
                         <el-icon :size="15"><Edit /></el-icon> Edit Farm
                     </button>
-                    <button type="button" class="fp-btn fp-btn--danger-outline" @click="deleteDialogOpen = true">
-                        <el-icon :size="15"><Delete /></el-icon> Delete
+                    <button type="button" class="fp-btn fp-btn--primary" @click="openCollectionDialog">
+                        <el-icon :size="15"><Plus /></el-icon> Add Collection
+                    </button>
+                    <button type="button" class="fp-icon-btn fp-icon-btn--danger" title="Delete farm" @click="deleteDialogOpen = true">
+                        <el-icon :size="15"><Delete /></el-icon>
                     </button>
                 </div>
             </div>
 
             <div class="fp-stack">
-                <!-- ── General Information + Location ───────────────────── -->
-                <div class="fp-pair">
-                    <div class="fp-card">
-                        <div class="fp-card-head">
-                            <h2 class="fp-card-title"><el-icon><InfoFilled /></el-icon> General Information</h2>
-                        </div>
-
-                        <div class="fp-info-header">
-                            <div class="fp-info-avatar"><el-icon :size="22"><Coffee /></el-icon></div>
-                            <div class="fp-info-header__body">
-                                <div class="fp-info-header__name">{{ farm.name }}</div>
-                                <div class="fp-info-header__meta">
-                                    <span class="fp-mono">{{ farm.farm_code || '—' }}</span>
-                                    <span v-if="farm.coffee_type" class="fp-info-header__dot">•</span>
-                                    <span v-if="farm.coffee_type">{{ farm.coffee_type }}</span>
-                                </div>
-                            </div>
-                            <strong class="fp-status-pill" :class="`fp-status-pill--${farm.status === 'inactive' ? 'muted' : 'green'}`">
-                                {{ farm.status === 'inactive' ? 'Inactive' : 'Active' }}
-                            </strong>
-                        </div>
-
-                        <div class="fp-info-rows">
-                            <div class="fp-info-row">
-                                <span class="fp-info-row__icon"><el-icon :size="14"><ChatDotRound /></el-icon></span>
-                                <span class="fp-info-row__label">Phone</span>
-                                <span class="fp-info-row__value">{{ farm.tel || '—' }}</span>
-                            </div>
-                            <div class="fp-info-row">
-                                <span class="fp-info-row__icon"><el-icon :size="14"><Promotion /></el-icon></span>
-                                <span class="fp-info-row__label">Email</span>
-                                <span class="fp-info-row__value fp-truncate">{{ farm.email || '—' }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="fp-card">
-                        <div class="fp-card-head">
-                            <h2 class="fp-card-title"><el-icon><Location /></el-icon> Location</h2>
-                        </div>
-
-                        <div class="fp-loc-header">
-                            <div class="fp-loc-avatar"><el-icon :size="20"><LocationFilled /></el-icon></div>
-                            <div class="fp-loc-header__body">
-                                <div class="fp-loc-header__trail">{{ locationTrail || '—' }}</div>
-                                <div class="fp-loc-header__sub">Administrative origin trail</div>
-                            </div>
-                        </div>
-
-                        <div class="fp-loc-coords">
-                            <span class="fp-loc-coords__icon"><el-icon :size="14"><Aim /></el-icon></span>
-                            <span class="fp-loc-coords__label">Coordinates</span>
-                            <span class="fp-loc-coords__value fp-mono">{{ latitudeLabel }}, {{ longitudeLabel }}</span>
-                        </div>
-
-                        <div class="fp-grid-2 fp-loc-grid">
-                            <div class="fp-stat-cell"><span><el-icon :size="12"><Location /></el-icon> Subcounty</span><strong>{{ farm.subcounty || '—' }}</strong></div>
-                            <div class="fp-stat-cell"><span><el-icon :size="12"><Location /></el-icon> Parish</span><strong>{{ farm.parish || '—' }}</strong></div>
-                            <div class="fp-stat-cell fp-field--span2"><span><el-icon :size="12"><HomeFilled /></el-icon> Village</span><strong>{{ farm.village || '—' }}</strong></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── Map + Technical Specs + Sustainability Metrics ────── -->
-                <div class="fp-trio">
-                    <div class="fp-card">
-                        <div class="fp-card-head">
-                            <h2 class="fp-card-title">Location &amp; Origin Map</h2>
-                            <el-icon :size="18" class="fp-card-head-icon"><MapLocation /></el-icon>
-                        </div>
-                        <div class="fp-map-tile">
+                <!-- ── Identity: real map + key facts (photo dropped — no
+                     Farm column backs one; the map is the honest visual). -->
+                <div class="fp-card fp-identity">
+                    <div class="fp-identity__map">
+                        <div class="fp-map-tile fp-map-tile--lg">
                             <template v-if="hasCoordinates && mapConfigured">
                                 <div ref="mapEl" class="fp-map-canvas"></div>
                                 <div v-if="!mapReady && !mapFailed" class="fp-map-empty">
@@ -677,15 +702,125 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                             </div>
                         </div>
                     </div>
+                    <div class="fp-identity__facts">
+                        <span class="fp-identity__eyebrow">Registered Origin Asset</span>
+                        <div class="fp-identity__name">{{ farmName }}</div>
+                        <div class="fp-grid-3 fp-identity__grid">
+                            <div class="fp-stat-cell"><span><el-icon :size="12"><User /></el-icon> Owner</span><strong>{{ farmerName || '—' }}</strong></div>
+                            <div class="fp-stat-cell"><span><el-icon :size="12"><Aim /></el-icon> GPS Centroid</span><strong class="fp-mono">{{ latitudeLabel }}, {{ longitudeLabel }}</strong></div>
+                            <div class="fp-stat-cell">
+                                <span><el-icon :size="12"><Grid /></el-icon> Total Area</span>
+                                <strong>{{ farm.total_area !== null && farm.total_area !== undefined ? `${farm.total_area} ha` : '—' }}</strong>
+                            </div>
+                            <div class="fp-stat-cell"><span><el-icon :size="12"><Coffee /></el-icon> Primary Crop</span><strong>{{ farm.coffee_type || '—' }}</strong></div>
+                            <div class="fp-stat-cell"><span><el-icon :size="12"><ChatDotRound /></el-icon> Phone</span><strong>{{ farm.tel || '—' }}</strong></div>
+                            <div class="fp-stat-cell"><span><el-icon :size="12"><Promotion /></el-icon> Email</span><strong class="fp-truncate">{{ farm.email || '—' }}</strong></div>
+                        </div>
+                        <div class="fp-identity__banner">
+                            <el-icon :size="16"><CircleCheckFilled /></el-icon>
+                            <span>
+                                <strong>{{ collections.length }}</strong> verified collection{{ collections.length === 1 ? '' : 's' }} on file for <span class="fp-mono">{{ farm.farm_code || farmName }}</span><span v-if="coOwners.length"> · shared with {{ coOwners.length }} co-owner{{ coOwners.length === 1 ? '' : 's' }}</span>.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Traceability Pipeline ─────────────────────────────── -->
+                <div class="fp-card fp-pipeline">
+                    <div class="fp-card-head">
+                        <h2 class="fp-card-title fp-card-title--lg"><el-icon><Files /></el-icon> Traceability Lineage &amp; Downstream Supply Flow</h2>
+                    </div>
+                    <p class="fp-card-desc">Real custody pipeline linking this farm's own collections to physical batches, certified lots and tokenised assets.</p>
+
+                    <div class="fp-pipeline__nodes">
+                        <div v-for="step in pipelineSteps" :key="step.key" class="fp-pipeline__node" :class="{ 'fp-pipeline__node--done': step.done }">
+                            <div class="fp-pipeline__node-head">
+                                <span class="fp-pipeline__node-icon"><el-icon :size="16"><component :is="step.icon" /></el-icon></span>
+                                <span class="fp-pipeline__node-count">{{ step.records }} record{{ step.records === 1 ? '' : 's' }}</span>
+                            </div>
+                            <div class="fp-pipeline__node-label">{{ step.label }}</div>
+                            <div class="fp-pipeline__node-volume fp-mono">{{ fmtVolume(step.volume_kg).value }} {{ fmtVolume(step.volume_kg).unit }}</div>
+                            <p v-if="step.note" class="fp-pipeline__node-note">{{ step.note }}</p>
+                        </div>
+                    </div>
+
+                    <div class="fp-pipeline__balances">
+                        <span class="fp-pipeline__balances-label">Current Pipeline Balances:</span>
+                        <div class="fp-pipeline__balances-row">
+                            <div v-for="step in pipelineSteps" :key="step.key"><span>{{ step.label }}:</span> <strong>{{ fmtVolume(step.volume_kg).value }} {{ fmtVolume(step.volume_kg).unit }}</strong></div>
+                        </div>
+                        <span class="fp-pipeline__balances-hint">Stages represent physical and legal custody transformations, not additive independent inventories.</span>
+                    </div>
+                </div>
+
+                <!-- ── Location & Geolocation + Producer & Governance + Agro-Ecological Metrics ── -->
+                <div class="fp-trio">
+                    <div class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title"><el-icon><Location /></el-icon> Location &amp; Geolocation</h2>
+                        </div>
+                        <div class="fp-info-rows">
+                            <div class="fp-info-row"><span class="fp-info-row__icon"><el-icon :size="14"><LocationFilled /></el-icon></span><span class="fp-info-row__label">Country</span><span class="fp-info-row__value">{{ farm.country || '—' }}</span></div>
+                            <div class="fp-info-row"><span class="fp-info-row__icon"><el-icon :size="14"><Location /></el-icon></span><span class="fp-info-row__label">Region</span><span class="fp-info-row__value">{{ farm.region || '—' }}</span></div>
+                            <div class="fp-info-row"><span class="fp-info-row__icon"><el-icon :size="14"><Location /></el-icon></span><span class="fp-info-row__label">District</span><span class="fp-info-row__value">{{ farm.district || '—' }}</span></div>
+                            <div class="fp-info-row"><span class="fp-info-row__icon"><el-icon :size="14"><Location /></el-icon></span><span class="fp-info-row__label">Subcounty</span><span class="fp-info-row__value">{{ farm.subcounty || '—' }}</span></div>
+                            <div class="fp-info-row"><span class="fp-info-row__icon"><el-icon :size="14"><Location /></el-icon></span><span class="fp-info-row__label">Parish</span><span class="fp-info-row__value">{{ farm.parish || '—' }}</span></div>
+                            <div class="fp-info-row"><span class="fp-info-row__icon"><el-icon :size="14"><HomeFilled /></el-icon></span><span class="fp-info-row__label">Village</span><span class="fp-info-row__value">{{ farm.village || '—' }}</span></div>
+                            <div class="fp-info-row"><span class="fp-info-row__icon"><el-icon :size="14"><Top /></el-icon></span><span class="fp-info-row__label">Elevation</span><span class="fp-info-row__value">{{ elevationLabel }}</span></div>
+                        </div>
+                        <div class="fp-loc-coords fp-mt">
+                            <span class="fp-loc-coords__icon"><el-icon :size="14"><Aim /></el-icon></span>
+                            <span class="fp-loc-coords__label">Coordinates</span>
+                            <span class="fp-loc-coords__value fp-mono">{{ latitudeLabel }}, {{ longitudeLabel }}</span>
+                        </div>
+                    </div>
 
                     <div class="fp-card">
                         <div class="fp-card-head">
-                            <h2 class="fp-card-title"><el-icon><Grid /></el-icon> Technical Specs</h2>
+                            <h2 class="fp-card-title"><el-icon><User /></el-icon> Producer &amp; Governance</h2>
+                        </div>
+                        <template v-if="primaryOwner">
+                            <div class="fp-owner">
+                                <div class="fp-owner__avatar-wrap">
+                                    <div class="fp-owner__avatar">
+                                        {{ (primaryOwner.first_name?.[0] || '') + (primaryOwner.last_name?.[0] || '') || '?' }}
+                                    </div>
+                                </div>
+                                <div class="fp-owner__body">
+                                    <div class="fp-owner__name">{{ farmerName }}</div>
+                                    <div v-if="primaryOwner.ownership_percentage !== null" class="fp-owner__share">{{ primaryOwner.ownership_percentage }}% ownership</div>
+                                </div>
+                            </div>
+                            <div class="fp-owner__contacts">
+                                <a v-if="primaryOwner.tel" :href="`tel:${primaryOwner.tel}`" class="fp-owner__contact fp-owner__contact--link">
+                                    <span class="fp-owner__contact-icon"><el-icon :size="14"><ChatDotRound /></el-icon></span>
+                                    <span>{{ primaryOwner.tel }}</span>
+                                </a>
+                                <a v-if="primaryOwner.email" :href="`mailto:${primaryOwner.email}`" class="fp-owner__contact fp-owner__contact--link">
+                                    <span class="fp-owner__contact-icon"><el-icon :size="14"><Promotion /></el-icon></span>
+                                    <span class="fp-truncate">{{ primaryOwner.email }}</span>
+                                </a>
+                            </div>
+                            <div v-if="coOwners.length" class="fp-owner__co-list">
+                                <div v-for="co in coOwners" :key="co.id" class="fp-owner__co-row">
+                                    <span class="fp-owner__co-name">{{ co.name }}</span>
+                                    <span v-if="co.ownership_percentage !== null" class="fp-owner__co-share">{{ co.ownership_percentage }}%</span>
+                                </div>
+                            </div>
+                        </template>
+                        <div v-else class="fp-empty">
+                            <el-icon :size="20"><User /></el-icon>
+                            <p>No owner recorded for this farm yet.</p>
+                        </div>
+                    </div>
+
+                    <div class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title"><el-icon><Grid /></el-icon> Agro-Ecological Metrics</h2>
                             <button v-if="canEdit" type="button" class="fp-chip-add-btn" @click="soilProfileDialogOpen = true">
                                 <el-icon :size="12"><Plus /></el-icon> Add
                             </button>
                         </div>
-
                         <div class="fp-spec-tiles">
                             <div class="fp-spec-tile">
                                 <span class="fp-spec-tile__label">Total Area</span>
@@ -702,13 +837,7 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                                 </div>
                             </div>
                         </div>
-
                         <div class="fp-info-rows">
-                            <div class="fp-info-row">
-                                <span class="fp-info-row__icon"><el-icon :size="14"><Top /></el-icon></span>
-                                <span class="fp-info-row__label">Elevation</span>
-                                <span class="fp-info-row__value">{{ elevationLabel }}</span>
-                            </div>
                             <div class="fp-info-row">
                                 <span class="fp-info-row__icon"><el-icon :size="14"><Grid /></el-icon></span>
                                 <span class="fp-info-row__label">Soil Type</span>
@@ -720,7 +849,13 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                                 <span class="fp-info-row__value">{{ farm.climate_zone?.name || '—' }}</span>
                             </div>
                         </div>
-
+                        <div class="fp-metric-block fp-metric-block--inline">
+                            <span class="fp-stat-cell__label">Crop Varieties</span>
+                            <div v-if="farm.crop_varieties?.length" class="fp-chip-row">
+                                <span v-for="variety in farm.crop_varieties" :key="variety.id" class="fp-chip" :title="variety.description || ''">{{ variety.name }}</span>
+                            </div>
+                            <span v-else class="fp-muted">None recorded</span>
+                        </div>
                         <div class="fp-metric-block fp-metric-block--inline">
                             <span class="fp-stat-cell__label">Soil Profiles</span>
                             <div v-if="soilProfiles.length" class="fp-chip-row">
@@ -732,6 +867,37 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                                 </span>
                             </div>
                             <span v-else class="fp-muted">None recorded</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Production Snapshot + Sustainability Metrics + Active Certifications ── -->
+                <div class="fp-trio">
+                    <div class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title"><el-icon><Coffee /></el-icon> Production Snapshot</h2>
+                        </div>
+                        <div class="fp-spec-tiles">
+                            <div class="fp-spec-tile">
+                                <span class="fp-spec-tile__label">Total Intake</span>
+                                <div class="fp-spec-tile__value">{{ fmtVolume(productionSnapshot.totalKg).value }}<span class="fp-spec-tile__unit">{{ fmtVolume(productionSnapshot.totalKg).unit }}</span></div>
+                            </div>
+                            <div class="fp-spec-tile">
+                                <span class="fp-spec-tile__label">Collections</span>
+                                <div class="fp-spec-tile__value">{{ productionSnapshot.count }}</div>
+                            </div>
+                        </div>
+                        <div class="fp-info-rows">
+                            <div class="fp-info-row">
+                                <span class="fp-info-row__icon"><el-icon :size="14"><Medal /></el-icon></span>
+                                <span class="fp-info-row__label">Avg Quality</span>
+                                <span class="fp-info-row__value">{{ productionSnapshot.avgScore !== null ? `${productionSnapshot.avgScore.toFixed(1)} / 100` : '—' }}</span>
+                            </div>
+                            <div class="fp-info-row">
+                                <span class="fp-info-row__icon"><el-icon :size="14"><Calendar /></el-icon></span>
+                                <span class="fp-info-row__label">Last Intake</span>
+                                <span class="fp-info-row__value">{{ productionSnapshot.latestDate || '—' }}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -762,7 +928,6 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                                 <div class="fp-gauge__label">Soil Health</div>
                             </div>
                         </div>
-
                         <div class="fp-metric-footer">
                             <div class="fp-metric-block">
                                 <div class="fp-metric-block__head">
@@ -781,14 +946,25 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                                 </div>
                                 <span v-else class="fp-muted">None recorded</span>
                             </div>
+                        </div>
+                    </div>
 
-                            <div class="fp-metric-block">
-                                <span class="fp-stat-cell__label">Certifications</span>
-                                <div v-if="certificationList.length" class="fp-chip-row">
-                                    <span v-for="cert in certificationList" :key="cert.id" class="fp-chip" :title="cert.description || ''">{{ cert.name }}</span>
+                    <div class="fp-card">
+                        <div class="fp-card-head">
+                            <h2 class="fp-card-title"><el-icon><Medal /></el-icon> Active Certifications</h2>
+                        </div>
+                        <div v-if="certificationList.length" class="fp-cert-list">
+                            <div v-for="cert in certificationList" :key="cert.id" class="fp-cert-item" :title="cert.description || ''">
+                                <div class="fp-cert-item__body">
+                                    <div class="fp-cert-item__name">{{ cert.name }}</div>
+                                    <div v-if="cert.description" class="fp-muted fp-truncate">{{ cert.description }}</div>
                                 </div>
-                                <span v-else class="fp-muted">None recorded</span>
+                                <span class="fp-status-pill fp-status-pill--green">Certified</span>
                             </div>
+                        </div>
+                        <div v-else class="fp-empty">
+                            <el-icon :size="20"><Medal /></el-icon>
+                            <p>No certifications recorded yet.</p>
                         </div>
                     </div>
                 </div>
@@ -797,14 +973,17 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                 <div class="fp-card fp-card--flush">
                     <div class="fp-card-head fp-card-head--padded">
                         <h2 class="fp-card-title"><el-icon><Coffee /></el-icon> Farm Collections</h2>
-                        <div v-if="canEdit" class="fp-card-head__actions">
-                            <input ref="collectionFileInput" type="file" accept=".xlsx,.xls" class="d-none" @change="handleCollectionFileChange">
-                            <button type="button" class="fp-btn fp-btn--outline" :disabled="importingCollections" @click="collectionFileInput?.click()">
-                                <el-icon :size="14"><UploadFilled /></el-icon> {{ importingCollections ? 'Importing…' : 'Import Excel' }}
-                            </button>
-                            <button type="button" class="fp-btn fp-btn--outline" @click="openCollectionDialog">
-                                <el-icon :size="14"><Plus /></el-icon> Add Collection
-                            </button>
+                        <div class="fp-card-head__actions">
+                            <span class="fp-total-badge fp-mono">Total Intake: {{ fmtVolume(productionSnapshot.totalKg).value }} {{ fmtVolume(productionSnapshot.totalKg).unit }}</span>
+                            <template v-if="canEdit">
+                                <input ref="collectionFileInput" type="file" accept=".xlsx,.xls" class="d-none" @change="handleCollectionFileChange">
+                                <button type="button" class="fp-btn fp-btn--outline" :disabled="importingCollections" @click="collectionFileInput?.click()">
+                                    <el-icon :size="14"><UploadFilled /></el-icon> {{ importingCollections ? 'Importing…' : 'Import Excel' }}
+                                </button>
+                                <button type="button" class="fp-btn fp-btn--outline" @click="openCollectionDialog">
+                                    <el-icon :size="14"><Plus /></el-icon> Add Collection
+                                </button>
+                            </template>
                         </div>
                     </div>
 
@@ -869,51 +1048,41 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                     </div>
                 </div>
 
-                <!-- ── Farm Owner + Weather ──────────────────────────────── -->
+                <!-- ── Documents + Farm Weather ───────────────────────────── -->
                 <div class="fp-pair">
-                    <div v-if="primaryOwner" class="fp-card">
+                    <div class="fp-card">
                         <div class="fp-card-head">
-                            <h2 class="fp-card-title"><el-icon><User /></el-icon> Farm Owner</h2>
+                            <h2 class="fp-card-title"><el-icon><Files /></el-icon> Documents</h2>
+                            <button v-if="canEdit" type="button" class="fp-btn fp-btn--outline" @click="openDocumentDialog">
+                                <el-icon :size="14"><Upload /></el-icon> Upload
+                            </button>
                         </div>
 
-                        <div class="fp-owner">
-                            <div class="fp-owner__avatar-wrap">
-                                <div class="fp-owner__avatar">
-                                    {{ (primaryOwner.first_name?.[0] || '') + (primaryOwner.last_name?.[0] || '') || '?' }}
+                        <div v-if="documents.length" class="fp-doc-list">
+                            <div v-for="doc in documents" :key="doc.id" class="fp-doc-item">
+                                <div class="fp-doc-item__icon"><el-icon :size="16"><Document /></el-icon></div>
+                                <div class="fp-doc-item__body">
+                                    <div class="fp-doc-item__title">{{ doc.title }}</div>
+                                    <div class="fp-muted">
+                                        <span v-if="doc.document_type">{{ doc.document_type }} · </span>{{ formatFileSize(doc.file_size) }} · {{ formatDocDate(doc.created_at) }}
+                                    </div>
+                                </div>
+                                <div class="fp-doc-item__actions">
+                                    <a :href="doc.file_url" target="_blank" rel="noopener" class="fp-icon-btn" title="Download">
+                                        <el-icon :size="14"><Download /></el-icon>
+                                    </a>
+                                    <button v-if="canEdit" type="button" class="fp-icon-btn fp-icon-btn--danger" title="Delete" @click="openDeleteDocumentDialog(doc)">
+                                        <el-icon :size="14"><Delete /></el-icon>
+                                    </button>
                                 </div>
                             </div>
-                            <div class="fp-owner__body">
-                                <div class="fp-owner__name">{{ farmerName }}</div>
-                                <div v-if="primaryOwner.ownership_percentage !== null" class="fp-owner__share">{{ primaryOwner.ownership_percentage }}% ownership</div>
-                            </div>
                         </div>
-
-                        <div class="fp-owner__contacts">
-                            <a v-if="primaryOwner.tel" :href="`tel:${primaryOwner.tel}`" class="fp-owner__contact fp-owner__contact--link">
-                                <span class="fp-owner__contact-icon"><el-icon :size="14"><ChatDotRound /></el-icon></span>
-                                <span>{{ primaryOwner.tel }}</span>
-                            </a>
-                            <a v-if="primaryOwner.email" :href="`mailto:${primaryOwner.email}`" class="fp-owner__contact fp-owner__contact--link">
-                                <span class="fp-owner__contact-icon"><el-icon :size="14"><Promotion /></el-icon></span>
-                                <span class="fp-truncate">{{ primaryOwner.email }}</span>
-                            </a>
-                        </div>
-
-                        <div v-if="coOwners.length" class="fp-owner__co-list">
-                            <div v-for="co in coOwners" :key="co.id" class="fp-owner__co-row">
-                                <span class="fp-owner__co-name">{{ co.name }}</span>
-                                <span v-if="co.ownership_percentage !== null" class="fp-owner__co-share">{{ co.ownership_percentage }}%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div v-else class="fp-card">
-                        <div class="fp-card-head">
-                            <h2 class="fp-card-title"><el-icon><User /></el-icon> Farm Owner</h2>
-                        </div>
-                        <div class="fp-empty">
-                            <el-icon :size="20"><User /></el-icon>
-                            <p>No owner recorded for this farm yet.</p>
+                        <div v-else class="fp-empty">
+                            <el-icon :size="20"><Files /></el-icon>
+                            <p>No documents uploaded yet.</p>
+                            <button v-if="canEdit" type="button" class="fp-btn fp-btn--outline" @click="openDocumentDialog">
+                                <el-icon :size="14"><Upload /></el-icon> Upload Document
+                            </button>
                         </div>
                     </div>
 
@@ -950,40 +1119,28 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
                     </div>
                 </div>
 
-                <!-- ── Documents ─────────────────────────────────────────── -->
+                <!-- ── Chronological Farm Activity ───────────────────────── -->
                 <div class="fp-card">
                     <div class="fp-card-head">
-                        <h2 class="fp-card-title"><el-icon><Files /></el-icon> Documents</h2>
-                        <button v-if="canEdit" type="button" class="fp-btn fp-btn--outline" @click="openDocumentDialog">
-                            <el-icon :size="14"><Upload /></el-icon> Upload
-                        </button>
+                        <h2 class="fp-card-title fp-card-title--lg"><el-icon><Calendar /></el-icon> Chronological Farm Activity</h2>
+                        <span class="fp-status-pill fp-status-pill--green">{{ auditTrail.length }} Recorded Event{{ auditTrail.length === 1 ? '' : 's' }}</span>
                     </div>
-
-                    <div v-if="documents.length" class="fp-doc-list">
-                        <div v-for="doc in documents" :key="doc.id" class="fp-doc-item">
-                            <div class="fp-doc-item__icon"><el-icon :size="16"><Document /></el-icon></div>
-                            <div class="fp-doc-item__body">
-                                <div class="fp-doc-item__title">{{ doc.title }}</div>
-                                <div class="fp-muted">
-                                    <span v-if="doc.document_type">{{ doc.document_type }} · </span>{{ formatFileSize(doc.file_size) }} · {{ formatDocDate(doc.created_at) }}
+                    <p class="fp-card-desc">Real timeline built from this farm's own record timestamps — collections, documents, practices and ownership grants.</p>
+                    <div v-if="auditTrail.length" class="fp-timeline">
+                        <div v-for="event in auditTrail" :key="event.id" class="fp-timeline__item">
+                            <span class="fp-timeline__dot"></span>
+                            <div class="fp-timeline__body">
+                                <div class="fp-timeline__row">
+                                    <span class="fp-timeline__label">{{ event.label }}</span>
+                                    <span class="fp-timeline__date fp-mono">{{ formatEventDate(event.at) }}</span>
                                 </div>
-                            </div>
-                            <div class="fp-doc-item__actions">
-                                <a :href="doc.file_url" target="_blank" rel="noopener" class="fp-icon-btn" title="Download">
-                                    <el-icon :size="14"><Download /></el-icon>
-                                </a>
-                                <button v-if="canEdit" type="button" class="fp-icon-btn fp-icon-btn--danger" title="Delete" @click="openDeleteDocumentDialog(doc)">
-                                    <el-icon :size="14"><Delete /></el-icon>
-                                </button>
+                                <p class="fp-timeline__detail">{{ event.detail }}</p>
                             </div>
                         </div>
                     </div>
                     <div v-else class="fp-empty">
-                        <el-icon :size="20"><Files /></el-icon>
-                        <p>No documents uploaded yet.</p>
-                        <button v-if="canEdit" type="button" class="fp-btn fp-btn--outline" @click="openDocumentDialog">
-                            <el-icon :size="14"><Upload /></el-icon> Upload Document
-                        </button>
+                        <el-icon :size="20"><Calendar /></el-icon>
+                        <p>No activity recorded yet.</p>
                     </div>
                 </div>
             </div>
@@ -1483,10 +1640,99 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 
 /* ── Hero ────────────────────────────────────────────────────────────── */
 .fp-hero { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
-.fp-hero__text { max-width: 640px; }
+.fp-hero__text { max-width: 720px; }
 .fp-hero__text h1 { color: var(--dp-primary); }
+.fp-hero__title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .fp-subtitle { font-size: 14px; line-height: 1.6; color: var(--dp-on-surface-variant); margin: 8px 0 0; }
-.fp-hero__actions { display: flex; gap: 10px; flex-shrink: 0; }
+.fp-hero__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.fp-code-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: var(--dp-surface-container-high);
+    color: var(--dp-on-surface-variant);
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+/* ── Identity card (map + key facts) ──────────────────────────────────── */
+.fp-identity { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 24px; align-items: center; }
+.fp-map-tile--lg { height: 100%; min-height: 260px; }
+.fp-identity__facts { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.fp-identity__eyebrow { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dp-outline); }
+.fp-identity__name { font-size: 20px; font-weight: 800; color: var(--dp-on-surface); padding-bottom: 12px; border-bottom: 1px solid var(--dp-outline-variant); }
+.fp-identity__grid { padding: 4px 0 4px; }
+.fp-identity__banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+    padding: 11px 14px;
+    border-radius: 8px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-on-surface-variant);
+    font-size: 12px;
+}
+.fp-identity__banner .el-icon { color: var(--dp-primary); flex-shrink: 0; }
+.fp-identity__banner strong { color: var(--dp-on-surface); }
+
+/* ── Traceability Pipeline ─────────────────────────────────────────────── */
+.fp-card-title--lg { font-size: 14px; text-transform: none; letter-spacing: 0; color: var(--dp-on-surface); }
+.fp-card-title--lg .el-icon { color: var(--dp-primary); }
+.fp-card-desc { font-size: 12.5px; color: var(--dp-on-surface-variant); margin: -8px 0 18px; }
+
+.fp-pipeline__nodes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.fp-pipeline__node {
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--dp-outline-variant);
+    background: var(--dp-surface-container-low);
+}
+.fp-pipeline__node--done { border-color: var(--dp-primary); background: color-mix(in srgb, var(--dp-secondary-container) 35%, var(--dp-surface-container-lowest)); }
+.fp-pipeline__node-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.fp-pipeline__node-icon { display: inline-flex; color: var(--dp-primary); }
+.fp-pipeline__node-count { font-size: 10.5px; font-weight: 700; color: var(--dp-on-surface-variant); }
+.fp-pipeline__node-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dp-outline); margin-bottom: 4px; }
+.fp-pipeline__node-volume { font-size: 16px; font-weight: 800; color: var(--dp-on-surface); }
+.fp-pipeline__node-note { font-size: 10.5px; color: var(--dp-on-surface-variant); margin: 6px 0 0; line-height: 1.4; }
+
+.fp-pipeline__balances { margin-top: 16px; padding: 14px 16px; border-radius: 8px; background: var(--dp-surface-container-low); }
+.fp-pipeline__balances-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dp-on-surface-variant); }
+.fp-pipeline__balances-row { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 8px; font-size: 12.5px; }
+.fp-pipeline__balances-row span { color: var(--dp-outline); }
+.fp-pipeline__balances-row strong { color: var(--dp-on-surface); font-family: var(--dp-font-mono); }
+.fp-pipeline__balances-hint { display: block; margin-top: 8px; font-size: 10.5px; color: var(--dp-outline); font-style: italic; }
+
+/* ── Active certifications card ────────────────────────────────────────── */
+.fp-cert-list { display: flex; flex-direction: column; gap: 10px; }
+.fp-cert-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 8px; background: var(--dp-surface-container-low); }
+.fp-cert-item__body { min-width: 0; }
+.fp-cert-item__name { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
+
+/* ── Total-intake badge (Farm Collections card head) ──────────────────── */
+.fp-total-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 12px;
+    border-radius: 6px;
+    background: var(--dp-surface-container-low);
+    color: var(--dp-on-surface-variant);
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+/* ── Chronological activity timeline ──────────────────────────────────── */
+.fp-timeline { position: relative; display: flex; flex-direction: column; gap: 16px; }
+.fp-timeline::before { content: ''; position: absolute; left: 3px; top: 4px; bottom: 4px; width: 2px; background: var(--dp-outline-variant); }
+.fp-timeline__item { position: relative; display: flex; align-items: flex-start; gap: 14px; padding-left: 20px; }
+.fp-timeline__dot { position: absolute; left: 0; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--dp-primary); box-shadow: 0 0 0 3px var(--dp-surface-container-lowest); }
+.fp-timeline__body { flex: 1; min-width: 0; }
+.fp-timeline__row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fp-timeline__label { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
+.fp-timeline__date { font-size: 10.5px; color: var(--dp-outline); flex-shrink: 0; }
+.fp-timeline__detail { font-size: 12px; color: var(--dp-on-surface-variant); margin: 3px 0 0; }
 
 /* ── Buttons ─────────────────────────────────────────────────────────── */
 .fp-btn {
@@ -1773,25 +2019,6 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     flex-shrink: 0;
 }
 
-/* ── General information card ────────────────────────────────────────── */
-.fp-info-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
-.fp-info-avatar {
-    width: 46px;
-    height: 46px;
-    border-radius: 13px;
-    background: var(--dp-surface-container-low);
-    color: var(--dp-outline);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.fp-info-header__body { min-width: 0; flex: 1; }
-.fp-info-header__name { font-size: 16px; font-weight: 800; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fp-info-header__meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 12px; font-weight: 600; color: var(--dp-on-surface-variant); }
-.fp-info-header__meta .fp-mono { color: var(--dp-outline); }
-.fp-info-header__dot { color: var(--dp-outline); }
-
 .fp-info-rows { display: flex; flex-direction: column; gap: 4px; }
 .fp-info-row {
     display: flex;
@@ -1813,26 +2040,10 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     color: var(--dp-outline);
     flex-shrink: 0;
 }
-.fp-info-row__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dp-outline); width: 64px; flex-shrink: 0; }
+.fp-info-row__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dp-outline); width: 86px; flex-shrink: 0; }
 .fp-info-row__value { font-size: 13.5px; font-weight: 700; color: var(--dp-on-surface); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
 /* ── Location card ───────────────────────────────────────────────────── */
-.fp-loc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-.fp-loc-avatar {
-    width: 46px;
-    height: 46px;
-    border-radius: 13px;
-    background: var(--dp-surface-container-low);
-    color: var(--dp-outline);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.fp-loc-header__body { min-width: 0; flex: 1; }
-.fp-loc-header__trail { font-size: 14px; font-weight: 800; color: var(--dp-on-surface); line-height: 1.35; overflow-wrap: break-word; }
-.fp-loc-header__sub { font-size: 11px; font-weight: 600; color: var(--dp-outline); margin-top: 2px; }
-
 .fp-loc-coords {
     display: flex;
     align-items: center;
@@ -1845,8 +2056,6 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 .fp-loc-coords__icon { display: inline-flex; color: var(--dp-outline); flex-shrink: 0; }
 .fp-loc-coords__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dp-outline); }
 .fp-loc-coords__value { font-size: 12.5px; font-weight: 700; color: var(--dp-on-surface); margin-left: auto; }
-
-.fp-loc-grid { margin-top: auto; }
 
 /* ── Technical specs card ────────────────────────────────────────────── */
 .fp-spec-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
@@ -1976,11 +2185,14 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
     .fp-trio { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fp-pipeline__nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 900px) {
     .fp-pair { grid-template-columns: 1fr; }
     .fp-trio { grid-template-columns: 1fr; }
+    .fp-identity { grid-template-columns: 1fr; }
+    .fp-map-tile--lg { min-height: 200px; }
 }
 
 @media (max-width: 640px) {
@@ -1996,6 +2208,9 @@ const hasMoreWeather = computed(() => props.weatherOutlook.length > weatherPrevi
     .fp-hero__actions .fp-btn { flex: 1; }
     .fp-weather-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .fp-weather-card { padding: 12px 6px; }
+    .fp-pipeline__nodes { grid-template-columns: 1fr; }
+    .fp-identity__grid.fp-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fp-card-head__actions { flex-wrap: wrap; }
 }
 
 /* ── Modals — el-dialog teleports to <body>, outside .dp-shell, so

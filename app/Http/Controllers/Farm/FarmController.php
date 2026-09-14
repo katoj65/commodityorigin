@@ -13,11 +13,15 @@ use App\Http\Resources\FarmSustainabilityPracticeResource;
 use App\Http\Resources\SoilMetadataResource;
 use App\Http\Resources\UserFarmOwnershipResource;
 use App\Http\Resources\WeatherForecastResource;
+use App\Models\Batch;
+use App\Models\BatchFarmCollection;
 use App\Models\Farm;
 use App\Models\FarmCollection;
 use App\Models\FarmDocument;
 use App\Models\FarmSoilProfile;
 use App\Models\FarmSustainabilityPractice;
+use App\Models\Lot;
+use App\Models\LotBatch;
 use App\Models\SoilProfileMetadata;
 use App\Models\SustainabilityPracticesMetadata;
 use App\Models\User;
@@ -72,11 +76,103 @@ class FarmController extends Controller
      */
     public function myFarms(Request $request): Response
     {
+        $farms = $this->farms->listForUser($request->user()->id);
+
         return Inertia::render('Farm/MyFarms', [
-            'farms' => FarmResource::collection($this->farms->listForUser($request->user()->id))->resolve(),
+            'farms' => $this->farmSummaries($farms),
             'varietyOptions' => $this->farms->activeVarietyOptions(),
             'canCreateFarm' => Gate::allows('create', Farm::class),
         ]);
+    }
+
+    /**
+     * Enrich each of this user's farms with its real custody-pipeline
+     * volumes, latest collection, and primary owner — the same genuine
+     * collection → batch → lot → blockchain chain used on the single
+     * farm profile page (see pipelineSummary()), computed here for a
+     * whole list of farms in grouped queries rather than per-row.
+     *
+     * @param  \Illuminate\Support\Collection<int, Farm>  $farms
+     */
+    private function farmSummaries($farms): array
+    {
+        $farmIds = $farms->pluck('id');
+
+        $collections = FarmCollection::query()->whereIn('farm_id', $farmIds)->get();
+        $collectionsByFarm = $collections->groupBy('farm_id');
+        $collectionFarmMap = $collections->pluck('farm_id', 'id');
+
+        $batchLinks = BatchFarmCollection::query()
+            ->whereIn('farm_collection_id', $collections->pluck('id'))
+            ->get();
+        $batchIdsByFarm = [];
+        foreach ($batchLinks as $link) {
+            $farmId = $collectionFarmMap[$link->farm_collection_id] ?? null;
+            if ($farmId) {
+                $batchIdsByFarm[$farmId][] = $link->batch_id;
+            }
+        }
+        $allBatchIds = $batchLinks->pluck('batch_id')->unique();
+        $batches = Batch::query()->whereIn('id', $allBatchIds)->get()->keyBy('id');
+
+        $lotLinks = LotBatch::query()->whereIn('batch_id', $allBatchIds)->get();
+        $lotIdsByBatch = $lotLinks->groupBy('batch_id')->map(fn ($g) => $g->pluck('lot_id')->unique());
+        $allLotIds = $lotLinks->pluck('lot_id')->unique();
+        $lots = Lot::query()->whereIn('id', $allLotIds)->get()->keyBy('id');
+
+        $tokenisedRows = Lot::query()
+            ->join('blockchains', 'blockchains.lot_id', '=', 'lots.id')
+            ->whereIn('lots.id', $allLotIds)
+            ->select('lots.id', 'lots.net_weight_kg')
+            ->get()
+            ->keyBy('id');
+
+        $owners = UserFarmOwnership::query()
+            ->whereIn('farm_id', $farmIds)
+            ->with('user')
+            ->orderByDesc('is_primary')
+            ->orderByDesc('created_at')
+            ->get()
+            ->groupBy('farm_id');
+
+        return $farms->map(function (Farm $farm) use (
+            $collectionsByFarm, $batchIdsByFarm, $batches, $lotIdsByBatch, $lots, $tokenisedRows, $owners
+        ): array {
+            $farmCollections = $collectionsByFarm->get($farm->id, collect());
+            $kgCollections = $farmCollections->where('unit', 'kg');
+
+            $farmBatchIds = collect($batchIdsByFarm[$farm->id] ?? [])->unique();
+            $farmBatches = $farmBatchIds->map(fn ($id) => $batches->get($id))->filter();
+
+            $farmLotIds = $farmBatchIds->flatMap(fn ($id) => $lotIdsByBatch->get($id, collect()))->unique();
+            $farmLots = $farmLotIds->map(fn ($id) => $lots->get($id))->filter();
+
+            $farmTokenisedRows = $farmLotIds->map(fn ($id) => $tokenisedRows->get($id))->filter();
+
+            $stages = [
+                'collections' => ['records' => $kgCollections->count(), 'volume_kg' => (float) $kgCollections->sum('quantity')],
+                'batches' => ['records' => $farmBatches->count(), 'volume_kg' => (float) $farmBatches->sum('weight')],
+                'lots' => ['records' => $farmLots->count(), 'volume_kg' => (float) $farmLots->sum('net_weight_kg')],
+                'tokenised' => ['records' => $farmTokenisedRows->count(), 'volume_kg' => (float) $farmTokenisedRows->sum('net_weight_kg')],
+            ];
+            $stagesDone = collect($stages)->filter(fn ($s) => $s['records'] > 0)->count();
+
+            $latest = $farmCollections->sortByDesc('collection_date')->first();
+            $owner = $owners->get($farm->id)?->first();
+
+            return array_merge(FarmResource::make($farm)->resolve(), [
+                'pipeline' => $stages,
+                'pipelineStagesDone' => $stagesDone,
+                'latestCollection' => $latest ? [
+                    'collection_code' => $latest->collection_code,
+                    'collection_date' => optional($latest->collection_date)->toDateString(),
+                    'quantity' => (float) $latest->quantity,
+                    'unit' => $latest->unit,
+                    'status' => $latest->status,
+                ] : null,
+                'owner' => $owner ? UserFarmOwnershipResource::make($owner)->resolve() : null,
+            ]);
+        })->values()->all();
     }
 
     /**
@@ -271,7 +367,76 @@ class FarmController extends Controller
                     'slug' => $option->slug,
                     'name' => $option->name,
                 ]),
+            'pipelineSummary' => $this->pipelineSummary($farm),
         ]);
+    }
+
+    /**
+     * Real custody-chain volumes for this farm: how much of its own
+     * collections have actually moved into batches, then certified lots,
+     * then been tokenised — traced through the same batch_farm_collection
+     * / lot_batch / blockchains link tables used across Store and Farm
+     * Collection, not a fabricated per-farm production estimate.
+     */
+    private function pipelineSummary(Farm $farm): array
+    {
+        $collections = $farm->collections;
+        $kgCollections = $collections->where('unit', 'kg');
+        $otherUnitCollections = $collections->count() - $kgCollections->count();
+
+        $collectionIds = $collections->pluck('id');
+        $batchedCollectionIds = BatchFarmCollection::query()
+            ->whereIn('farm_collection_id', $collectionIds)
+            ->pluck('farm_collection_id')
+            ->unique();
+        $batchIds = BatchFarmCollection::query()
+            ->whereIn('farm_collection_id', $collectionIds)
+            ->pluck('batch_id')
+            ->unique();
+        $batches = Batch::query()->whereIn('id', $batchIds)->with('lotBatches')->get();
+        $batchesLinkedToLot = $batches->filter(fn (Batch $b) => $b->lotBatches->isNotEmpty())->count();
+
+        $lotIds = LotBatch::query()->whereIn('batch_id', $batchIds)->pluck('lot_id')->unique();
+        $lots = Lot::query()->whereIn('id', $lotIds)->get();
+
+        $tokenisedRows = Lot::query()
+            ->join('blockchains', 'blockchains.lot_id', '=', 'lots.id')
+            ->whereIn('lots.id', $lotIds)
+            ->select('lots.id', 'lots.net_weight_kg')
+            ->get();
+
+        return [
+            [
+                'key' => 'collections', 'label' => 'Farm Collections',
+                'volume_kg' => (float) $kgCollections->sum('quantity'),
+                'records' => $kgCollections->count(),
+                'ready' => $kgCollections->whereIn('id', $batchedCollectionIds)->count(),
+                'note' => $otherUnitCollections > 0
+                    ? '+' . $otherUnitCollections . ' in bags, excluded from KG total'
+                    : null,
+            ],
+            [
+                'key' => 'batches', 'label' => 'Composite Batches',
+                'volume_kg' => (float) $batches->sum('weight'),
+                'records' => $batches->count(),
+                'ready' => $batchesLinkedToLot,
+                'note' => null,
+            ],
+            [
+                'key' => 'lots', 'label' => 'Certified Lots',
+                'volume_kg' => (float) $lots->sum('net_weight_kg'),
+                'records' => $lots->count(),
+                'ready' => $tokenisedRows->count(),
+                'note' => null,
+            ],
+            [
+                'key' => 'tokenised', 'label' => 'Tokenised Assets',
+                'volume_kg' => (float) $tokenisedRows->sum('net_weight_kg'),
+                'records' => $tokenisedRows->count(),
+                'ready' => null,
+                'note' => null,
+            ],
+        ];
     }
 
     /**

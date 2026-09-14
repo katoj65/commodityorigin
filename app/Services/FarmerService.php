@@ -9,13 +9,13 @@ use Illuminate\Support\Str;
 class FarmerService
 {
     /**
-     * Get every farmer with their farm count, newest first.
+     * Get every farmer, newest first.
      *
      * @return Collection<int, Farmer>
      */
     public function all(): Collection
     {
-        return Farmer::query()->with('cooperative')->withCount('farms')->latest()->get();
+        return Farmer::query()->with('cooperative')->latest()->get();
     }
 
     /**

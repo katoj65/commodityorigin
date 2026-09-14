@@ -197,7 +197,6 @@ function submit() {
 
         <template #footer>
             <div class="afc-modal__footer">
-                <button type="button" class="afc-btn-outline" @click="closeDialog">Cancel</button>
                 <button type="button" class="afc-btn-primary" :disabled="form.processing" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Save Changes' }}
                 </button>
@@ -307,19 +306,6 @@ function submit() {
 }
 .afc-btn-primary:hover { opacity: 0.88; }
 .afc-btn-primary:disabled { opacity: 0.5; cursor: default; }
-.afc-btn-outline {
-    display: inline-flex; align-items: center; justify-content: center;
-    height: 36px; padding: 0 16px;
-    background: #fff;
-    border: 1px solid #E5E7EB;
-    color: #121516;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-.afc-btn-outline:hover { background: #F5F6F7; }
 
 @media (max-width: 640px) {
     .afc-grid { grid-template-columns: 1fr; }

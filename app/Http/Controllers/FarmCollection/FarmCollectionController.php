@@ -5,13 +5,20 @@ namespace App\Http\Controllers\FarmCollection;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FarmCollectionActivityResource;
 use App\Http\Resources\FarmCollectionResource;
+use App\Http\Resources\FarmSustainabilityPracticeResource;
+use App\Http\Resources\UserFarmOwnershipResource;
+use App\Models\BatchFarmCollection;
 use App\Models\CropVarietyMetadata;
 use App\Models\Currency;
 use App\Models\FarmCollection;
 use App\Models\FarmCollectionActivity;
 use App\Models\FarmCollectionActivityMetadata;
+use App\Models\LotBatch;
 use App\Models\SeasonMetadata;
+use App\Models\SustainabilityPracticesMetadata;
+use App\Models\UserFarmOwnership;
 use App\Services\FarmCollectionActivityService;
+use App\Services\FarmSustainabilityPracticeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -21,8 +28,10 @@ use Inertia\Response;
 
 class FarmCollectionController extends Controller
 {
-    public function __construct(private readonly FarmCollectionActivityService $activities)
-    {
+    public function __construct(
+        private readonly FarmCollectionActivityService $activities,
+        private readonly FarmSustainabilityPracticeService $sustainabilityPractices,
+    ) {
     }
 
     /**
@@ -32,10 +41,21 @@ class FarmCollectionController extends Controller
     {
         Gate::authorize('view', $collection);
 
-        $collection->load(['farm', 'user']);
+        $collection->load(['farm.certifications', 'user']);
+
+        $farmOwner = $collection->farm_id
+            ? UserFarmOwnership::query()
+                ->where('farm_id', $collection->farm_id)
+                ->with('user')
+                ->orderByDesc('is_primary')
+                ->orderByDesc('created_at')
+                ->first()
+            : null;
 
         return Inertia::render('FarmCollection/FarmCollectionProfile', [
             'collection' => FarmCollectionResource::make($collection)->resolve(),
+            'custodyChain' => $this->custodyChain($collection),
+            'farmOwner' => $farmOwner ? UserFarmOwnershipResource::make($farmOwner)->resolve() : null,
             'coffeeTypeOptions' => CropVarietyMetadata::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')
@@ -61,7 +81,74 @@ class FarmCollectionController extends Controller
                     'slug' => $option->slug,
                     'name' => $option->name,
                 ]),
+            'sustainabilityPractices' => FarmSustainabilityPracticeResource::collection(
+                $collection->farm ? $this->sustainabilityPractices->forFarm($collection->farm) : []
+            )->resolve(),
+            'sustainabilityPracticeOptions' => SustainabilityPracticesMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name'])
+                ->map(fn (SustainabilityPracticesMetadata $option): array => [
+                    'slug' => $option->slug,
+                    'name' => $option->name,
+                ]),
         ]);
+    }
+
+    /**
+     * Trace this collection forward through the real custody chain —
+     * batch (via batch_farm_collection), lot (via lot_batch), and
+     * blockchain commit — so the profile's lineage strip only shows
+     * stages this specific collection has actually reached. A step
+     * that hasn't happened yet is omitted rather than filled with a
+     * placeholder code.
+     */
+    private function custodyChain(FarmCollection $collection): array
+    {
+        $link = BatchFarmCollection::query()
+            ->where('farm_collection_id', $collection->id)
+            ->with('batch')
+            ->first();
+        $batch = $link?->batch;
+
+        $lotLink = $batch
+            ? LotBatch::query()->where('batch_id', $batch->id)->with('lot.blockchain')->first()
+            : null;
+        $lot = $lotLink?->lot;
+
+        /* ── Only shown when it's a sane fraction of the batch (0-100%) —
+           a batch's recorded weight doesn't always reconcile with the
+           sum of its linked collections, and a ">100%" figure would
+           read as broken rather than communicate anything real. ────── */
+        $contributionPct = null;
+        if ($batch && $collection->unit === 'kg' && (float) $batch->weight > 0) {
+            $pct = round((float) $collection->quantity / (float) $batch->weight * 100, 1);
+            $contributionPct = ($pct > 0 && $pct <= 100) ? $pct : null;
+        }
+
+        return [
+            'batch' => $batch ? [
+                'id' => $batch->id,
+                'batch_number' => $batch->batch_number,
+                'weight' => (float) $batch->weight,
+                'status' => $batch->status,
+                'contribution_pct' => $contributionPct,
+            ] : null,
+            'lot' => $lot ? [
+                'id' => $lot->id,
+                'lot_number' => $lot->lot_number,
+                'lot_name' => $lot->lot_name,
+                'net_weight_kg' => $lot->net_weight_kg !== null ? (float) $lot->net_weight_kg : null,
+                'grade' => $lot->grade,
+                'status' => $lot->status,
+            ] : null,
+            'tokenised' => ($lot && $lot->blockchain) ? [
+                'hash' => $lot->blockchain->hash,
+                'network' => $lot->blockchain->network,
+                'committed_at' => optional($lot->blockchain->committed_at)?->toDateTimeString(),
+            ] : null,
+        ];
     }
 
     /**

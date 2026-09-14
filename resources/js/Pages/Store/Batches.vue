@@ -7,6 +7,10 @@ const props = defineProps({
     store: { type: Object, default: null },
     statusOptions: { type: Array, default: () => [] },
     importResult: { type: Object, default: null },
+    stageProgress: { type: Array, default: () => [] },
+    movementLedger: { type: Array, default: () => [] },
+    chainLineage: { type: Array, default: null },
+    inventoryHealth: { type: Object, default: () => ({}) },
     farmCollections: { type: Array, default: () => [] },
     batches: { type: Array, default: () => [] },
     lots: { type: Array, default: () => [] },
@@ -35,6 +39,7 @@ function formatDate(value) {
     if (!value) return '';
     return new Date(value.replace(' ', 'T')).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
+
 </script>
 
 <template>
@@ -43,6 +48,10 @@ function formatDate(value) {
         :store="store"
         :status-options="statusOptions"
         :import-result="importResult"
+        :stage-progress="stageProgress"
+        :movement-ledger="movementLedger"
+        :chain-lineage="chainLineage"
+        :inventory-health="inventoryHealth"
         :farm-collections="farmCollections"
         :batches="batches"
         :lots="lots"
@@ -92,12 +101,12 @@ function formatDate(value) {
                 </div>
                 <div v-if="!batches.length" class="st-empty-cell">
                     <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
-                    No batches created yet.
+                    No batches recorded yet.
                 </div>
             </div>
 
             <div class="st-pagination-foot">
-                <span class="st-pagination-foot__text">Showing {{ batches.length }} batch{{ batches.length === 1 ? '' : 'es' }}</span>
+                <span class="st-pagination-foot__text">{{ batches.length }} batch{{ batches.length === 1 ? '' : 'es' }}</span>
             </div>
         </div>
     </StoreInventoryLayout>

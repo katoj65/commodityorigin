@@ -51,6 +51,7 @@ class FarmService
     {
         return $this->query()
             ->where('user_id', $userId)
+            ->with(['certifications', 'cropVarieties'])
             ->latest()
             ->get();
     }

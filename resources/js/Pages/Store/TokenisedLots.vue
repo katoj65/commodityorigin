@@ -8,6 +8,10 @@ const props = defineProps({
     store: { type: Object, default: null },
     statusOptions: { type: Array, default: () => [] },
     importResult: { type: Object, default: null },
+    stageProgress: { type: Array, default: () => [] },
+    movementLedger: { type: Array, default: () => [] },
+    chainLineage: { type: Array, default: null },
+    inventoryHealth: { type: Object, default: () => ({}) },
     farmCollections: { type: Array, default: () => [] },
     batches: { type: Array, default: () => [] },
     lots: { type: Array, default: () => [] },
@@ -50,6 +54,10 @@ function formatMoney(amount, currency) {
         :store="store"
         :status-options="statusOptions"
         :import-result="importResult"
+        :stage-progress="stageProgress"
+        :movement-ledger="movementLedger"
+        :chain-lineage="chainLineage"
+        :inventory-health="inventoryHealth"
         :farm-collections="farmCollections"
         :batches="batches"
         :lots="lots"
@@ -100,12 +108,12 @@ function formatMoney(amount, currency) {
                 </div>
                 <div v-if="!tokenisedLots.length" class="st-empty-cell">
                     <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
-                    No lots committed on the blockchain yet.
+                    No tokenised lots yet.
                 </div>
             </div>
 
             <div class="st-pagination-foot">
-                <span class="st-pagination-foot__text">Showing {{ tokenisedLots.length }} tokenised lot{{ tokenisedLots.length === 1 ? '' : 's' }}</span>
+                <span class="st-pagination-foot__text">{{ tokenisedLots.length }} tokenised lot{{ tokenisedLots.length === 1 ? '' : 's' }}</span>
             </div>
         </div>
     </StoreInventoryLayout>

@@ -12,6 +12,9 @@ import { resolveIcon } from '@/utils/icon';
 
 defineProps({
     title: { type: String, default: 'Bean Origin' },
+    /* Opt-in: drops the sticky top header's shadow/border line. Default
+       (false) keeps every existing page's look unchanged. */
+    flushHeader: { type: Boolean, default: false },
 });
 
 const mobileNavOpen = ref(false);
@@ -276,7 +279,7 @@ function markAllNotificationsRead() {
 
         <div class="dp-content">
             <!-- ── Header ───────────────────────────────────────────────── -->
-            <header class="dp-header">
+            <header class="dp-header" :class="{ 'dp-header--flush': flushHeader }">
                 <el-button text circle class="dp-menu-btn" @click="mobileNavOpen = true">
                     <el-icon :size="20"><Menu /></el-icon>
                 </el-button>
@@ -684,6 +687,7 @@ function markAllNotificationsRead() {
     background: var(--dp-surface-container-lowest);
     box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
 }
+.dp-header--flush { box-shadow: none; }
 .dp-menu-btn.el-button { display: none; flex-shrink: 0; color: var(--dp-on-surface-variant); font-size: 20px; }
 
 .dp-header__actions { display: flex; align-items: center; gap: 20px; margin-left: auto; padding-left: 24px; }
