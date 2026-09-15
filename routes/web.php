@@ -283,6 +283,7 @@ Route::middleware([
         Route::post('/{lot}/images', [LotController::class, 'storeImages'])->name('images.store');
         Route::delete('/{lot}/images/{image}', [LotController::class, 'destroyImage'])->name('images.destroy');
         Route::post('/{lot}/batches', [LotController::class, 'attachBatch'])->name('batches.store');
+        Route::delete('/{lot}/batches/{batch}', [LotController::class, 'detachBatch'])->name('batches.destroy');
         Route::post('/{lot}/activities', [LotController::class, 'storeActivity'])->name('activities.store');
         Route::delete('/{lot}/activities/{activity}', [LotController::class, 'destroyActivity'])->name('activities.destroy');
     });

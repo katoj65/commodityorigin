@@ -73,6 +73,11 @@ function submit() {
             lookupStatus.value = 'idle';
             foundBatch.value = null;
             ElNotification({ title: 'Batch Linked', message: 'The batch was linked to this lot.', type: 'success', duration: 3200, offset: 84 });
+            // The host page's derived display state (Parent Milling Batch,
+            // traceability pipeline, etc.) is computed once from props at
+            // setup — Inertia reuses the same mounted instance on redirect,
+            // so a hard reload is needed for it to reflect the new link.
+            window.location.reload();
         },
     });
 }
@@ -141,7 +146,6 @@ function submit() {
 
         <template #footer>
             <div class="abtm-modal__footer">
-                <button type="button" class="abtm-btn-outline" @click="closeDialog">Cancel</button>
                 <button type="button" class="abtm-btn-primary" :disabled="form.processing || !foundBatch" @click="submit">
                     {{ form.processing ? 'Linking…' : 'Link Batch' }}
                 </button>

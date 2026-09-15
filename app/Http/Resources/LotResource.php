@@ -55,6 +55,10 @@ class LotResource extends JsonResource
                 'id' => $this->market->id,
                 'title' => $this->market->title,
                 'status' => $this->market->status,
+                'quantity' => $this->market->quantity,
+                'available_quantity' => $this->market->available_quantity,
+                'reserved_quantity' => $this->market->reserved_quantity,
+                'unit' => $this->market->unit,
                 'available_from' => $this->market->available_from,
                 'delivery_method' => $this->market->delivery_method,
                 'incoterm' => $this->market->incoterm,
@@ -63,6 +67,7 @@ class LotResource extends JsonResource
                 'insurance_arrangement' => $this->market->insurance_arrangement,
             ] : null),
             'lot_batches' => $this->whenLoaded('lotBatches', fn (): array => LotBatchResource::collection($this->lotBatches)->resolve()),
+            'lot_batch_farm_collections' => $this->whenLoaded('lotBatchFarmCollections', fn (): array => LotBatchFarmCollectionResource::collection($this->lotBatchFarmCollections)->resolve()),
             'images' => $this->whenLoaded('images', fn (): array => LotImageResource::collection($this->images)->resolve()),
             'flavors' => $this->whenLoaded('flavors', fn (): array => $this->flavors->map(fn ($flavor): array => [
                 'id' => $flavor->id,
@@ -70,6 +75,14 @@ class LotResource extends JsonResource
                 'name' => $flavor->name,
             ])->all()),
             'blockchain' => $this->whenLoaded('blockchain', fn (): ?array => $this->blockchain ? BlockchainResource::make($this->blockchain)->resolve() : null),
+            'activities' => $this->whenLoaded('activities', fn (): array => LotActivityResource::collection(
+                $this->activities->sortByDesc('created_at')->values()
+            )->resolve()),
+            'storage_profile' => $this->whenLoaded('storageProfile', fn (): ?array => $this->storageProfile ? [
+                'warehouse' => $this->storageProfile->warehouse,
+                'storage_location' => $this->storageProfile->storage_location,
+                'storage_condition' => $this->storageProfile->storage_condition,
+            ] : null),
             'user' => $this->whenLoaded('user', fn (): ?array => $this->user ? [
                 'id' => $this->user->id,
                 'name' => $this->user->name,

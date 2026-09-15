@@ -33,6 +33,7 @@ class LotService
         private readonly BatchService $batches,
         private readonly BlockchainService $blockchain,
         private readonly MarketImageService $marketImages,
+        private readonly LotBatchFarmCollectionService $lotBatchFarmCollections,
     ) {
     }
 
@@ -144,13 +145,17 @@ class LotService
      */
     public function attachBatch(Lot $lot, Batch $batch, int $userId): LotBatch
     {
-        return LotBatch::query()->create([
+        $lotBatch = LotBatch::query()->create([
             'lot_id' => $lot->id,
             'batch_id' => $batch->id,
             'batch_number' => $batch->batch_number,
             'allocation_kg' => $lot->net_weight_kg,
             'user_id' => $userId,
         ]);
+
+        $this->lotBatchFarmCollections->syncForLotBatch($lot, $batch);
+
+        return $lotBatch;
     }
 
     /**
@@ -179,6 +184,20 @@ class LotService
         }
 
         return $this->attachBatch($lot, $batch, $userId);
+    }
+
+    /**
+     * Unlink a batch from a lot — removes the lot_batch pivot row only;
+     * the batch record itself is untouched.
+     */
+    public function detachBatch(Lot $lot, Batch $batch): void
+    {
+        LotBatch::query()
+            ->where('lot_id', $lot->id)
+            ->where('batch_id', $batch->id)
+            ->delete();
+
+        $this->lotBatchFarmCollections->removeForLotBatch($lot, $batch);
     }
 
     /**
@@ -503,6 +522,7 @@ class LotService
             'description' => $data['description'] ?? null,
             'quantity' => $data['quantity'],
             'available_quantity' => $data['available_quantity'] ?? $data['quantity'],
+            'reserved_quantity' => $data['reserved_quantity'] ?? null,
             'unit' => $data['unit'] ?? 'kg',
             'currency' => $data['currency'] ?? 'USD',
             'price_per_unit' => $data['price_per_unit'],

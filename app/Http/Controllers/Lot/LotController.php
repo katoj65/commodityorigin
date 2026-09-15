@@ -14,6 +14,7 @@ use App\Models\Batch;
 use App\Models\BodyMetadata;
 use App\Models\Currency;
 use App\Models\DeliveryMethodMetadata;
+use App\Models\DeliveryTermsMetadata;
 use App\Models\FlavorMetadata;
 use App\Models\IncotermMetadata;
 use App\Models\Lot;
@@ -21,11 +22,13 @@ use App\Models\LotActivity;
 use App\Models\LotActivityMetadata;
 use App\Models\LotImage;
 use App\Models\LotRequest;
+use App\Models\PaymentMetadata;
 use App\Services\CoffeeGradeService;
 use App\Services\CountryService;
 use App\Services\LotActivityService;
 use App\Services\LotImageService;
 use App\Services\LotService;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -287,11 +290,15 @@ class LotController extends Controller
 
         $lot->load([
             'lotBatches.batch.user',
-            'lotBatches.batch.batchFarmCollections.farmCollection.farm',
+            'lotBatches.batch.batchFarmCollections.farmCollection.farm.certifications',
+            'lotBatchFarmCollections.farmCollection',
             'user',
             'market',
             'images',
             'flavors',
+            'blockchain.user',
+            'activities.user',
+            'storageProfile',
         ]);
 
         return Inertia::render('Lot/LotProfile', [
@@ -341,6 +348,24 @@ class LotController extends Controller
                 ->orderBy('name')
                 ->get(['slug', 'name'])
                 ->map(fn (IncotermMetadata $option): array => [
+                    'slug' => $option->slug,
+                    'name' => $option->name,
+                ]),
+            'paymentOptions' => PaymentMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name'])
+                ->map(fn (PaymentMetadata $option): array => [
+                    'slug' => $option->slug,
+                    'name' => $option->name,
+                ]),
+            'deliveryTermsOptions' => DeliveryTermsMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name'])
+                ->map(fn (DeliveryTermsMetadata $option): array => [
                     'slug' => $option->slug,
                     'name' => $option->name,
                 ]),
@@ -456,6 +481,18 @@ class LotController extends Controller
     }
 
     /**
+     * Unlink a batch from this lot.
+     */
+    public function detachBatch(Lot $lot, Batch $batch): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
+
+        $this->lots->detachBatch($lot, $batch);
+
+        return back()->with('success', 'Batch removed from this lot.');
+    }
+
+    /**
      * Record a manual activity-log entry for this lot — `event` must be
      * an active slug in lot_activity_metadata.
      */
@@ -495,20 +532,31 @@ class LotController extends Controller
      */
     public function publish(Request $request, Lot $lot): RedirectResponse
     {
-        Gate::authorize('update', $lot);
+        Gate::authorize('publish', $lot);
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'quantity' => ['required', 'numeric', 'min:0.01'],
             'available_quantity' => ['nullable', 'numeric', 'min:0', 'lte:quantity'],
+            'reserved_quantity' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'lte:quantity',
+                function (string $attribute, mixed $value, Closure $fail) use ($lot): void {
+                    if ($lot->net_weight_kg !== null && (float) $value > (float) $lot->net_weight_kg) {
+                        $fail("The reserved quantity cannot exceed the lot's recorded weight ({$lot->net_weight_kg} kg).");
+                    }
+                },
+            ],
             'unit' => ['nullable', 'string', 'max:20'],
             'currency' => ['nullable', 'string', 'size:3'],
             'price_per_unit' => ['required', 'numeric', 'min:0'],
             'pricing_type' => ['nullable', 'string', Rule::in(['fixed', 'negotiable', 'auction'])],
             'minimum_order_quantity' => ['nullable', 'numeric', 'min:0'],
-            'payment_terms' => ['nullable', 'string', 'max:255'],
-            'delivery_terms' => ['nullable', 'string', 'max:255'],
+            'payment_terms' => ['nullable', 'string', Rule::exists('payment_metadata', 'slug')->where('is_active', true)],
+            'delivery_terms' => ['nullable', 'string', Rule::exists('delivery_terms_metadata', 'slug')->where('is_active', true)],
             'delivery_location' => ['nullable', 'string', 'max:255'],
             'available_from' => ['nullable', 'string', 'max:255'],
             'delivery_method' => ['nullable', 'string', Rule::exists('delivery_method_metadata', 'slug')->where('is_active', true)],
@@ -564,7 +612,7 @@ class LotController extends Controller
      */
     public function unpublish(Lot $lot): RedirectResponse
     {
-        Gate::authorize('update', $lot);
+        Gate::authorize('publish', $lot);
 
         $this->lots->unpublish($lot);
 

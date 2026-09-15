@@ -9,6 +9,10 @@ class BatchPolicy
 {
     /**
      * Determine whether the user can view the batch profile.
+     *
+     * Also allowed: the owner of a lot this batch is linked to (via the
+     * lot_batch pivot) — a lot's traceability chain links out to its
+     * source batch's profile regardless of who recorded the batch.
      */
     public function view(User $user, Batch $batch): bool
     {
@@ -16,7 +20,13 @@ class BatchPolicy
             return true;
         }
 
-        return (int) $batch->user_id === (int) $user->id;
+        if ((int) $batch->user_id === (int) $user->id) {
+            return true;
+        }
+
+        return $batch->lotBatches()
+            ->whereHas('lot', fn ($query) => $query->where('user_id', $user->id))
+            ->exists();
     }
 
     /**

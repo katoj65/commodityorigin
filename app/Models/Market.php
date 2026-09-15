@@ -13,12 +13,12 @@ class Market extends Model
 
     protected $fillable = [
         'lot_id',
-        'blockchain_id',
         'user_id',
         'title',
         'description',
         'quantity',
         'available_quantity',
+        'reserved_quantity',
         'unit',
         'currency',
         'price_per_unit',
@@ -42,6 +42,7 @@ class Market extends Model
     protected $casts = [
         'quantity' => 'decimal:2',
         'available_quantity' => 'decimal:2',
+        'reserved_quantity' => 'decimal:2',
         'price_per_unit' => 'decimal:2',
         'minimum_order_quantity' => 'decimal:2',
         'is_featured' => 'boolean',
@@ -57,11 +58,6 @@ class Market extends Model
     public function lot(): BelongsTo
     {
         return $this->belongsTo(Lot::class);
-    }
-
-    public function blockchain(): BelongsTo
-    {
-        return $this->belongsTo(Blockchain::class);
     }
 
     /**

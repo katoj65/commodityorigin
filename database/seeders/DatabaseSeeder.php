@@ -79,6 +79,8 @@ class DatabaseSeeder extends Seeder
             FlavorMetadataSeeder::class,
             DeliveryMethodMetadataSeeder::class,
             IncotermMetadataSeeder::class,
+            PaymentMetadataSeeder::class,
+            DeliveryTermsMetadataSeeder::class,
             PriceIndexSeeder::class,
             SoilProfileMetadataSeeder::class,
             AcidityMetadataSeeder::class,

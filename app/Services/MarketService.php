@@ -264,7 +264,6 @@ class MarketService
             'total_price' => round($price * $quantity, 2),
             'highest_bid' => $highestBid !== null ? (float) $highestBid : null,
             'is_traceable' => $market->lot_id !== null,
-            'blockchain_registered' => $market->blockchain_id !== null,
         ];
     }
 

@@ -290,7 +290,6 @@ function scrollToOrder() {
             <div class="mp-topbar">
                 <div class="mp-topbar__crumbs-row">
                     <div class="mp-topbar__meta">
-                        <span class="mp-status-chip"><span class="mp-status-chip__dot"></span>{{ batch.status }}</span>
                         <span class="mp-muted">Listing ID: {{ batch.listingId }}</span>
                     </div>
                 </div>
@@ -719,8 +718,6 @@ function scrollToOrder() {
 .mp-topbar { padding: 26px 30px; background: var(--dp-surface-container-lowest); border: none; border-bottom: 1px solid var(--card-border); border-radius: 0; display: flex; flex-direction: column; gap: 18px; }
 .mp-topbar__crumbs-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .mp-topbar__meta { display: flex; align-items: center; gap: 12px; }
-.mp-status-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--dp-primary-fixed); color: var(--dp-on-primary-fixed); font-size: .6875rem; font-weight: 700; }
-.mp-status-chip__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dp-primary); }
 .mp-topbar__title-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .mp-topbar__title-line { display: flex; align-items: center; gap: 8px; }
 .mp-topbar__title { font-size: 1.625rem; font-weight: 800; letter-spacing: -.015em; color: var(--dp-on-surface); margin: 0 !important; }
@@ -743,7 +740,7 @@ function scrollToOrder() {
 /* ── Body layout ─────────────────────────────────────────────────────── */
 .mp-body { display: flex; align-items: flex-start; gap: 28px; }
 .mp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 28px; }
-.mp-side { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 20px; }
+.mp-side { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
 
 /* ── Spotlight ───────────────────────────────────────────────────────── */
 .mp-spotlight { flex-direction: row; gap: 24px; }
@@ -942,7 +939,7 @@ function scrollToOrder() {
 }
 @media (max-width: 1024px) {
     .mp-body { flex-direction: column; }
-    .mp-side { width: 100%; position: static; }
+    .mp-side { width: 100%; }
     .mp-spotlight { flex-direction: column; }
     .mp-spotlight__media { width: 100%; }
     .mp-related-grid { grid-template-columns: 1fr 1fr; }

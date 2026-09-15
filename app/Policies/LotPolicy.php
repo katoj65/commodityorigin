@@ -56,6 +56,14 @@ class LotPolicy
     }
 
     /**
+     * Determine whether the user can publish the lot to the live market.
+     */
+    public function publish(User $user, Lot $lot): bool
+    {
+        return $this->ownsOrAdmins($user, $lot);
+    }
+
+    /**
      * Determine whether the user owns the lot or can manage it as an admin.
      */
     private function ownsOrAdmins(User $user, Lot $lot): bool

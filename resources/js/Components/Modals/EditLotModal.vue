@@ -339,7 +339,6 @@ function submit() {
 
         <template #footer>
             <div class="elm-modal__footer">
-                <button type="button" class="elm-btn-outline" @click="closeDialog">Cancel</button>
                 <button type="button" class="elm-btn-primary" :disabled="form.processing" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Save Changes' }}
                 </button>

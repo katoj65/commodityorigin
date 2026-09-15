@@ -1,41 +1,25 @@
 <script setup>
-import { computed, ref } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
-import AttachBatchModal from '@/Components/Modals/AttachBatchModal.vue';
-import EditLotModal from '@/Components/Modals/EditLotModal.vue';
-import PublishLotModal from '@/Components/Modals/PublishLotModal.vue';
-import AddLotImagesDialog from '@/Components/Modals/AddLotImagesDialog.vue';
-import AddLotActivityModal from '@/Components/Modals/AddLotActivityModal.vue';
-import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import ImageViewer from '@/Components/ImageViewer.vue';
+import { ref } from 'vue';
+import { router, Link as InertiaLink } from '@inertiajs/vue3';
+import { ElNotification } from 'element-plus';
 import {
-    ArrowDown,
-    Box,
-    CameraFilled,
-    Clock,
-    Coffee,
-    Coin,
-    Connection,
-    Delete,
-    EditPen,
-    Files,
-    FullScreen,
-    HotWater,
-    Location,
-    Odometer,
-    OfficeBuilding,
-    Operation,
-    Plus,
-    Position,
-    Promotion,
-    SoldOut,
-    Star,
-    Ticket,
-    Trophy,
-    Van,
+    PriceTag, Sell, Goods, EditPen, InfoFilled, PieChart, Lock,
+    Connection, Check, Collection, Box, Document, Trophy, CircleCheck,
+    LocationFilled, MapLocation, Shop, Link, Files, Clock, Cpu, WarningFilled,
+    Right, TopRight, Download, Delete, Plus,
 } from '@element-plus/icons-vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import EditLotModal from '@/Components/Modals/EditLotModal.vue';
+import AttachBatchModal from '@/Components/Modals/AttachBatchModal.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import PublishToMarketButton from '@/Components/Button/PublishToMarketButton.vue';
 
+/* ── Real Lot data, field by field, with dummy fallbacks ported from the
+   "Lot #LOT-000124 — Institutional Master Record" reference mockup
+   wherever the database has nothing to say. `lot` is LotResource for this
+   record (real lot + batches + farm collections + farms + blockchain +
+   activity log). The layout/markup below is unchanged — only the data
+   feeding it. ───────────────────────────────────────────────────────── */
 const props = defineProps({
     lot: { type: Object, default: () => ({}) },
     processOptions: { type: Array, default: () => [] },
@@ -52,674 +36,706 @@ const props = defineProps({
     aromaOptions: { type: Array, default: () => [] },
     deliveryMethodOptions: { type: Array, default: () => [] },
     incotermOptions: { type: Array, default: () => [] },
-    activities: { type: Array, default: () => [] },
-    activityOptions: { type: Array, default: () => [] },
+    paymentOptions: { type: Array, default: () => [] },
+    deliveryTermsOptions: { type: Array, default: () => [] },
 });
+const l = props.lot ?? {};
 
-const showAttachBatch = ref(false);
-const showEditLot = ref(false);
-const showPublishLot = ref(false);
+/* A published lot is live on the market — editing/deleting it here could
+   silently invalidate that listing, so both actions are disabled while
+   published; use Unpublish first. */
+const isPublished = Boolean(l.is_published);
+
+/* ── Edit / delete — real actions against the real lot.update / lot.destroy
+   routes (the backend for these already existed; only this page's wiring
+   was missing). ─────────────────────────────────────────────────────── */
+const editModalOpen = ref(false);
 const deleteDialogOpen = ref(false);
-const deleting = ref(false);
-const unpublishDialogOpen = ref(false);
-const unpublishing = ref(false);
-const showAddImages = ref(false);
-const showAddActivity = ref(false);
-const deleteActivityDialogOpen = ref(false);
-const pendingActivity = ref(null);
-const deletingActivity = ref(false);
-const MAX_LOT_IMAGES = 3;
-const remainingImageSlots = computed(() => Math.max(0, MAX_LOT_IMAGES - (props.lot.images?.length || 0)));
+const deleteLoading = ref(false);
+const attachBatchModalOpen = ref(false);
+const detachBatchDialogOpen = ref(false);
+const detachBatchLoading = ref(false);
 
-/* ── Image viewer: main photo + gallery form one browsable sequence ─────── */
-const viewerOpen = ref(false);
-const viewerIndex = ref(0);
-const viewerImages = computed(() => {
-    const list = [];
-    if (props.lot.image) {
-        list.push({ url: `/storage/${props.lot.image}`, alt: props.lot.lot_name || props.lot.lot_number });
-    }
-    for (const img of props.lot.images || []) {
-        list.push({ url: img.image_url, alt: props.lot.lot_name || props.lot.lot_number || 'Lot photo' });
-    }
-    return list;
-});
-
-function openViewer(index) {
-    viewerIndex.value = index;
-    viewerOpen.value = true;
-}
-
-function handleOptionsCommand(command) {
-    if (command === 'traceability') {
-        router.visit(route('lot.traceability', props.lot.id));
-        return;
-    }
-
-    if (command === 'edit') {
-        showEditLot.value = true;
-        return;
-    }
-
-    if (command === 'publish') {
-        showPublishLot.value = true;
-        return;
-    }
-
-    if (command === 'unpublish') {
-        unpublishDialogOpen.value = true;
-        return;
-    }
-
-    if (command === 'add-activity') {
-        showAddActivity.value = true;
-        return;
-    }
-
-    if (command === 'delete') {
-        deleteDialogOpen.value = true;
-    }
-}
-
-/* ── Lot Activity — event slugs are resolved to their metadata display
-   name; anything not found (a retired slug) falls back to a titleized
-   version of the slug itself rather than disappearing. ────────────────── */
-function eventLabel(slug) {
-    const match = props.activityOptions.find((option) => option.slug === slug);
-    if (match) return match.name;
-    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function requestDeleteActivity(activity) {
-    pendingActivity.value = activity;
-    deleteActivityDialogOpen.value = true;
-}
-
-function confirmDeleteActivity() {
-    if (!pendingActivity.value) return;
-    deletingActivity.value = true;
-    router.delete(route('lot.activities.destroy', [props.lot.id, pendingActivity.value.id]), {
-        preserveScroll: true,
-        onFinish: () => {
-            deletingActivity.value = false;
-            deleteActivityDialogOpen.value = false;
-            pendingActivity.value = null;
+function confirmDelete() {
+    if (!has(l.id)) return;
+    deleteLoading.value = true;
+    router.delete(route('lot.destroy', l.id), {
+        onSuccess: () => {
+            ElNotification({
+                title: 'Lot Deleted',
+                message: `Lot ${l.lot_number || `#${l.id}`} was deleted successfully.`,
+                type: 'success',
+                duration: 3200,
+                offset: 84,
+            });
         },
-    });
-}
-
-const deleteActivityMessage = computed(() => `Remove the "${pendingActivity.value ? eventLabel(pendingActivity.value.event) : ''}" activity from this lot's log? This action cannot be undone.`);
-
-function confirmDeleteLot() {
-    deleting.value = true;
-    router.delete(route('lot.destroy', props.lot.id), {
+        onError: () => {
+            ElNotification({
+                title: 'Delete Failed',
+                message: 'This lot could not be deleted.',
+                type: 'error',
+                duration: 3200,
+                offset: 84,
+            });
+        },
         onFinish: () => {
-            deleting.value = false;
+            deleteLoading.value = false;
             deleteDialogOpen.value = false;
         },
     });
 }
 
-function confirmUnpublishLot() {
-    unpublishing.value = true;
-    router.delete(route('lot.unpublish', props.lot.id), {
+const has = (v) => v !== null && v !== undefined && v !== '';
+const titleCase = (s) => String(s).replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const fmtLongDate = (s) => {
+    if (!has(s)) return null;
+    const d = new Date(String(s).replace(' ', 'T'));
+    return isNaN(d) ? null : d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+const fmtActivityDate = (s) => {
+    if (!has(s)) return null;
+    const d = new Date(String(s).replace(' ', 'T'));
+    return isNaN(d) ? null : d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+};
+const truncateHash = (h) => (has(h) ? `${String(h).slice(0, 6)}...${String(h).slice(-4)}` : null);
+
+const lotBatches = l.lot_batches ?? [];
+const primaryLotBatch = lotBatches[0] ?? null;
+const primaryBatch = primaryLotBatch?.batch ?? null;
+const collectionLinks = lotBatches.flatMap((lb) => lb.batch?.farm_collection_links ?? []);
+const collectionUnits = [...new Set(collectionLinks.map((link) => link.farm_collection?.unit).filter(has))];
+const collectionUnit = collectionUnits[0] || 'kg';
+const totalCollectionQty = collectionUnits.length === 1
+    ? collectionLinks.reduce((sum, link) => sum + (parseFloat(link.farm_collection?.quantity) || 0), 0)
+    : null;
+const farmsById = new Map();
+collectionLinks.forEach((link) => {
+    const farm = link.farm_collection?.farm;
+    if (farm?.id) farmsById.set(farm.id, farm);
+});
+const uniqueFarms = [...farmsById.values()];
+const primaryFarm = uniqueFarms[0] ?? null;
+
+const lot = {
+    code: l.lot_number || 'LOT-000124',
+    name: l.lot_name || 'Uganda Robusta Reserve',
+    status: has(l.status) ? titleCase(l.status) : 'Ready for Trading',
+    origin: l.origin || 'Uganda',
+    coffeeType: l.variety || 'Robusta (Fine Canephora)',
+    createdDate: fmtLongDate(l.created_at) || '15 September 2026',
+    hash: truncateHash(l.blockchain?.hash) || '0x8f2d...471c',
+};
+
+const marketQty = has(l.market?.quantity) ? parseFloat(l.market.quantity) : null;
+const marketQtySub = marketQty !== null
+    ? (has(l.net_weight_kg) ? `${marketQty.toLocaleString()} of ${parseFloat(l.net_weight_kg).toLocaleString()} kg total` : 'Listed on market')
+    : (l.market ? 'Listed on market' : 'Not yet published to market');
+
+const kpis = [
+    { label: 'Available Quantity', value: marketQty !== null ? marketQty.toLocaleString() : '500', unit: l.market?.unit || 'kg', sub: marketQtySub, accent: 'success' },
+    { label: 'Coffee Type', value: l.variety || 'Robusta', sub: l.process || 'Fine Canephora' },
+    { label: 'Physical Grade', value: has(l.screen) ? `Screen ${l.screen}` : 'Screen 18', sub: has(l.grade) ? l.grade : '7.14mm (92.4% Ret.)', mono: true },
+    { label: 'Processing', value: l.process || 'Natural', sub: primaryBatch?.drying_method || 'Raised Drying Beds' },
+    { label: 'Origin Region', value: l.origin || 'Uganda', sub: primaryFarm?.district || l.region || 'Mukono District' },
+    { label: 'Lot Status', value: has(l.status) ? titleCase(l.status) : 'Ready for Trading', sub: 'Escrow Ready', accent: 'dark' },
+];
+
+const aboutText = l.description || l.notes || '500 kg of Uganda Robusta coffee aggregated from verified farm collections and prepared for commercial trading. Sourced specifically from verified smallholder farmers along the Mukono basin under supervised zero-water natural sun-drying protocols.';
+const checklist = [
+    'Defect count verified by certified Q-Grader',
+    'Hermetic GrainPro lining sealed in Kampala bonded depot',
+    'Zero deforestation polygon match (EUDR Art. 9)',
+];
+
+/* Physical Quantity Allocation — sourced from this lot's market listing
+   (markets.quantity / available_quantity / reserved_quantity). Allocated is
+   derived (total minus available minus reserved) since markets has no
+   dedicated "allocated" column. No market listing yet → all zero, not
+   illustrative dummy data. */
+const marketTotal = has(l.market?.quantity) ? parseFloat(l.market.quantity) : 0;
+const marketAvailable = has(l.market?.available_quantity) ? parseFloat(l.market.available_quantity) : 0;
+const marketReserved = has(l.market?.reserved_quantity) ? parseFloat(l.market.reserved_quantity) : 0;
+const marketAllocated = Math.max(marketTotal - marketAvailable - marketReserved, 0);
+const allocation = {
+    total: marketTotal,
+    allocated: marketAllocated,
+    reserved: marketReserved,
+    available: marketAvailable,
+    depot: l.storage_profile?.warehouse || 'None',
+};
+
+const pipeline = [
+    { num: 1, title: 'Farm Origin', sub: uniqueFarms.length ? `${uniqueFarms.length} Smallholder${uniqueFarms.length === 1 ? '' : 's'}` : '3 Smallholders', state: 'completed' },
+    { num: 2, title: 'Farm Collections', sub: collectionLinks.length ? `${collectionLinks.length} Recorded${totalCollectionQty !== null ? ` (${totalCollectionQty.toLocaleString()} ${collectionUnit})` : ''}` : '3 Recorded (1,000 kg)', state: 'completed' },
+    { num: 3, title: 'Milling Batch', sub: primaryBatch?.batch_number || 'BAT-2026-00082', state: 'completed' },
+    { num: 4, title: 'Active Lot', sub: `${lot.code} (Current)`, state: 'active' },
+];
+const dummyCollections = [
+    { id: null, code: 'FC-001', qty: '300 kg' },
+    { id: null, code: 'FC-002', qty: '400 kg' },
+    { id: null, code: 'FC-003', qty: '300 kg' },
+];
+/* Sourced from the lot_batch_farm_collection pivot directly (lot -> farm
+   collection, one join) rather than the deeper lot_batches -> batch ->
+   batch_farm_collection -> farm_collection chain used elsewhere on this
+   page. */
+const lotBatchFarmCollections = l.lot_batch_farm_collections ?? [];
+const collections = lotBatchFarmCollections.length
+    ? lotBatchFarmCollections.map((link) => ({
+        id: link.farm_collection_id,
+        code: link.farm_collection?.collection_code,
+        qty: has(link.farm_collection?.quantity) ? `${link.farm_collection.quantity} ${link.farm_collection?.unit ?? 'kg'}` : '—',
+    }))
+    : dummyCollections;
+/* A lot can have more than one linked batch (via lot_batch) — show every
+   one of them, not just the first. */
+const parentBatches = lotBatches
+    .filter((lb) => lb.batch)
+    .map((lb) => ({
+        id: lb.batch.id,
+        code: lb.batch.batch_number,
+        qty: has(lb.batch.net_weight_kg) ? `${lb.batch.net_weight_kg} kg` : null,
+    }));
+
+const batchToDetach = ref(null);
+
+function requestDetachBatch(batch) {
+    batchToDetach.value = batch;
+    detachBatchDialogOpen.value = true;
+}
+
+function confirmDetachBatch() {
+    if (!batchToDetach.value) return;
+    const batch = batchToDetach.value;
+    detachBatchLoading.value = true;
+    router.delete(route('lot.batches.destroy', { lot: l.id, batch: batch.id }), {
         preserveScroll: true,
+        onSuccess: () => {
+            ElNotification({
+                title: 'Batch Removed',
+                message: `Batch #${batch.code} was removed from this lot.`,
+                type: 'success',
+                duration: 3200,
+                offset: 84,
+            });
+            window.location.reload();
+        },
+        onError: () => {
+            ElNotification({
+                title: 'Remove Failed',
+                message: 'This batch could not be removed from the lot.',
+                type: 'error',
+                duration: 3200,
+                offset: 84,
+            });
+        },
         onFinish: () => {
-            unpublishing.value = false;
-            unpublishDialogOpen.value = false;
+            detachBatchLoading.value = false;
+            detachBatchDialogOpen.value = false;
         },
     });
 }
 
-const linkedBatches = computed(() => props.lot.lot_batches || []);
+/* Trade names don't imply their species epithet (Robusta -> Coffea
+   canephora, not "Coffea robusta") — look it up rather than guess. */
+const speciesByVariety = { robusta: 'Coffea canephora', arabica: 'Coffea arabica', liberica: 'Coffea liberica', excelsa: 'Coffea excelsa' };
+const coffeeSpecies = speciesByVariety[l.variety?.toLowerCase()] ?? null;
 
-/* ── Traceability QR code ─────────────────────────────────────────────── */
-// The QR encodes the traceability URL; keep a visible copy next to the code.
-const traceabilityUrl = computed(() => (props.lot.id ? route('lot.traceability', props.lot.id) : ''));
+const specs = [
+    { label: 'Lot Identifier', value: lot.code, mono: true },
+    { label: 'Lot Name', value: lot.name },
+    { label: 'Coffee Type / Species', value: l.variety ? `${l.variety}${coffeeSpecies ? ` (${coffeeSpecies})` : ''}` : 'Robusta (Coffea canephora)' },
+    { label: 'Genetic Variety', value: 'NARO-Kituza KR Clones' },
+    { label: 'Origin Country & Region', value: [l.origin, l.region].filter(has).join(', ') || 'Uganda, Central Mukono Basin' },
+    { label: 'Harvest Period', value: has(l.year_of_harvest) ? `${l.year_of_harvest} Harvest` : 'Main Crop Nov 2025 – Jan 2026' },
+    { label: 'Processing Method', value: [l.process, primaryBatch?.drying_method].filter(has).join(' — ') || 'Natural Sun-Dried (Raised Beds)' },
+    { label: 'Physical Grade', value: l.grade || 'Uganda Fine Robusta Grade 1' },
+    { label: 'Screen Size', value: has(l.screen) ? `Screen ${l.screen} standard` : 'Screen 18 (7.14mm standard)', mono: true },
+    { label: 'Current Physical Quantity', value: has(l.net_weight_kg) ? `${l.net_weight_kg} kg` : '500 kg Remaining (700 kg Free)', mono: true, accent: true },
+    { label: 'Standard Unit of Measure', value: has(l.bag_weight_kg) ? `Kilograms (kg) / ${l.bag_weight_kg}kg Bags` : 'Kilograms (kg) / 60kg Hermetic Bags', mono: true },
+];
 
-const statusMap = {
-    draft: { label: 'Draft', tone: 'warning' },
-    ready: { label: 'Ready', tone: 'info' },
-    listing_ready: { label: 'Listing Ready', tone: 'success' },
-    tokenisation_ready: { label: 'Tokenised', tone: 'success' },
+const dummyQualityFlavors = ['Dark Cocoa Nibs', 'Black Molasses', 'Toasted Walnut', 'Dried Black Cherry', 'Sweet Cedar', 'Raw Cane Sugar'];
+const realFlavors = (l.flavors?.length ? l.flavors.map((f) => f.name) : [l.flavor, l.aroma, l.body, l.acidity, l.aftertaste].filter(has).map(titleCase));
+const quality = {
+    score: has(l.quality_score) ? Number(l.quality_score).toFixed(2) : '82.50',
+    gradeLabel: 'Specialty Fine Robusta Grade',
+    assessedDate: '14 Feb 2026',
+    lab: 'Mukono Cupping Lab #3',
+    metrics: [
+        { label: 'Moisture', value: has(l.moisture) ? `${l.moisture}%` : '11.2%', sub: 'Optimal 10-12%' },
+        { label: has(l.screen) ? `Screen ${l.screen}` : 'Screen 18', value: '92.4%', sub: 'Retention' },
+        { label: 'Primary Defects', value: has(l.defects_percentage) ? `${l.defects_percentage}% / lot` : '0 / 350g', sub: 'Export Zero', accent: true },
+        { label: 'Water Act.', value: '0.54 aw', sub: 'Safe <0.65' },
+    ],
+    flavors: realFlavors.length ? realFlavors : dummyQualityFlavors,
 };
-const statusInfo = computed(() => statusMap[props.lot.status] || { label: props.lot.status || 'Unknown', tone: 'info' });
 
-/* ── KPI sub-values ───────────────────────────────────────────────────── */
-const lotValueTotal = computed(() => {
-    if (!props.lot.price || !props.lot.net_weight_kg) return null;
-    return Number(props.lot.price) * Number(props.lot.net_weight_kg);
-});
+const originFacts = {
+    countryDistrict: [primaryFarm?.country || l.origin, primaryFarm?.district].filter(has).join(', ') || 'Uganda, Mukono District',
+    microclimate: [primaryFarm?.region ? `${primaryFarm.region} Region` : null, has(primaryFarm?.elevation) ? `${primaryFarm.elevation}m ASL` : null].filter(has).join(' · ') || 'Central Basin Microclimate · 1,220m ASL',
+    coop: l.user?.name ? titleCase(l.user.name) : 'Mukono Smallholder Agro-Coop',
+    leadProducer: primaryFarm ? `Lead Producer: ${primaryFarm.name}` : 'Lead Producer: John Kato (Kato Family Farm)',
+    gps: has(primaryFarm?.latitude) && has(primaryFarm?.longitude) ? `${primaryFarm.latitude}° N, ${primaryFarm.longitude}° E` : '0.3542° N, 32.7481° E',
+};
+const mapSector = primaryFarm?.district ? `${primaryFarm.district} District (Farm ${primaryFarm.farm_code || primaryFarm.name})` : 'Mukono Cadastral Sector 4 (Plot 4B, 5A, 6C)';
 
-/* ── Cupping Profile tile only renders once at least one SCA attribute
-   or flavor note has been recorded, rather than showing six "Not
-   recorded" rows on every lot. ─────────────────────────────────────── */
-const hasCuppingProfile = computed(() => ['acidity', 'body', 'flavor', 'aroma', 'balance', 'aftertaste']
-    .some((key) => props.lot[key] !== null && props.lot[key] !== undefined) || (props.lot.flavors?.length > 0));
+/* No boolean verification flags exist on the Lot record to source these
+   from honestly — this stays fully illustrative. */
+const sustainBadges = ['Verified Origin', 'Traceable', 'Quality Verified', 'Certification Available'];
+const dummySustainItems = [
+    { title: 'EUDR Deforestation-Free Pass', sub: 'Satellite verified post-Dec 2020 zero cut', status: 'VERIFIED' },
+    { title: 'Zero-Water Dry Footprint', sub: 'Raised African beds drying process', status: 'PASSED' },
+    { title: 'Fair Producer Living Wage', sub: '+38% disbursed over market baseline', status: 'AUDITED' },
+];
+const sustainItems = primaryFarm?.certifications?.length
+    ? primaryFarm.certifications.slice(0, 4).map((c) => ({ title: c.name, sub: c.description || `Certified for ${primaryFarm.name}`, status: 'VERIFIED' }))
+    : dummySustainItems;
 
-const market = computed(() => props.lot.market ?? null);
+const dummyListings = [
+    { channel: 'Product Profile', detail: 'Uganda Fine Robusta Screen 18', price: '$4.20 / kg', status: 'Active', style: 'success', action: 'View' },
+    { channel: 'Bilateral Offer', detail: 'Direct Roaster Offer #OFF-0042', price: '$4.20 / kg (200kg)', status: 'Active', style: 'primary', action: 'View' },
+    { channel: 'Live Auction', detail: 'Auction Terminal Lot #AUC-18', price: 'Starting $3.80 / kg', status: 'Not Active', style: 'neutral', action: 'Setup' },
+    { channel: 'B2B RFQ', detail: '2 Institutional Requests pending', price: 'Custom CIF', status: '2 Pending', style: 'warning', action: 'Review' },
+];
+const listings = [
+    l.market
+        ? { channel: 'Product Profile', detail: l.market.title, price: has(l.price) ? `$${l.price} / kg` : dummyListings[0].price, status: titleCase(l.market.status), style: l.market.status === 'live' ? 'success' : 'neutral', action: 'View' }
+        : dummyListings[0],
+    ...dummyListings.slice(1),
+];
 
-const hasDeliveryProfile = computed(() => {
-    if (!market.value) return false;
-
-    return [
-        'available_from', 'delivery_method', 'incoterm', 'dispatch',
-        'transport_arrangement', 'insurance_arrangement',
-    ].some((key) => market.value[key] !== null && market.value[key] !== undefined && market.value[key] !== '');
-});
-
-function flavorLabel(slug) {
-    const match = props.flavorOptions.find((option) => option.slug === slug);
-    if (match) return match.name;
-    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function bodyLabel(slug) {
-    const match = props.bodyOptions.find((option) => option.slug === slug);
-    if (match) return match.name;
-    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function acidityLabel(slug) {
-    const match = props.acidityOptions.find((option) => option.slug === slug);
-    if (match) return match.name;
-    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function aftertasteLabel(slug) {
-    const match = props.aftertasteOptions.find((option) => option.slug === slug);
-    if (match) return match.name;
-    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function aromaLabel(slug) {
-    const match = props.aromaOptions.find((option) => option.slug === slug);
-    if (match) return match.name;
-    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function deliveryMethodLabel(slug) {
-    const match = props.deliveryMethodOptions.find((option) => option.slug === slug);
-    if (match) return match.name;
-    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function incotermLabel(slug) {
-    const match = props.incotermOptions.find((option) => option.slug === slug);
-    if (match) return match.name;
-    return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function batchStatusTone(status) {
-    const s = (status || '').toLowerCase();
-    if (['received', 'ready', 'completed', 'delivered', 'approved', 'batched'].includes(s)) return 'good';
-    if (['processing', 'pending', 'draft'].includes(s)) return 'warn';
-    if (['cancelled', 'rejected', 'expired'].includes(s)) return 'bad';
-    return 'neutral';
-}
-
-/* ── Origin trace: farms and farm collections behind the linked batches ── */
-const sourcedCollections = computed(() => {
-    const rows = [];
-    for (const lb of linkedBatches.value) {
-        const batch = lb.batch;
-        if (!batch) continue;
-        for (const link of batch.farm_collection_links || []) {
-            rows.push({ link, batch });
-        }
+const token = l.blockchain
+    ? {
+        id: `TKN-UG-${lot.code}`,
+        chain: l.blockchain.network,
+        volume: has(l.net_weight_kg) ? `${l.net_weight_kg} kg (1:1 Pegged)` : '500 kg (1:1 Pegged)',
+        mintTimestamp: fmtActivityDate(l.blockchain.committed_at) || '15 Sep 2026 14:22 UTC',
+        contractRef: truncateHash(l.blockchain.hash) || '0x39a04...8821f',
     }
-    return rows;
-});
+    : {
+        id: 'TKN-UG-LOT-000124',
+        chain: 'Hedera Hashgraph (HCS)',
+        volume: '500 kg (1:1 Pegged)',
+        mintTimestamp: '15 Sep 2026 14:22 UTC',
+        contractRef: '0x39a04...8821f',
+    };
 
-/* ── Origin trace: batches + farm collections + farms combined ─────────── */
-const originTrace = computed(() => {
-    return linkedBatches.value.map((lb) => {
-        const batch = lb.batch;
-        const collections = sourcedCollections.value.filter((row) => row.batch?.id === batch?.id);
-        const farmMap = new Map();
-        for (const row of collections) {
-            const farm = row.link.farm_collection?.farm;
-            if (farm && !farmMap.has(farm.id)) {
-                farmMap.set(farm.id, farm);
-            }
-        }
-        return { lb, batch, collections, farms: Array.from(farmMap.values()) };
-    });
-});
+/* No document/certificate attachment schema exists for lots — this stays
+   fully illustrative. */
+const documents = [
+    { name: 'Quality & Cupping Lab Report', meta: 'CQI-Q-Robusta · 82.50 pts · 1.2 MB' },
+    { name: 'Certificate of Origin (Form O)', meta: 'UCDA-UG-2026-9092 · 840 KB' },
+    { name: 'EUDR Geolocation Statement', meta: 'EU-REG-2023/1115 · 2.4 MB' },
+    { name: 'Phytosanitary Inspection Pass', meta: 'MAAIF-PHYTO-UG · 620 KB' },
+];
 
-function farmLocation(farm) {
-    if (!farm) return '';
-    return [farm.district, farm.region, farm.country].filter(Boolean).join(', ');
-}
+const dummyActivity = [
+    { title: 'Lot Created & Allocated', text: '500 kg aggregated from Batch #BAT-001', date: '15 Sep 2026 · 10:14 AM' },
+    { title: 'Quality & Defect Audit Recorded', text: '82.50 CQI Score and zero primary defects verified', date: '16 Sep 2026 · 02:40 PM' },
+    { title: 'EUDR & Regulatory Verification', text: 'Satellite farm polygons certified deforestation-free', date: '18 Sep 2026 · 09:12 AM' },
+    { title: 'Commercial Product Profile Published', text: 'Listed on marketplace at $4.20/kg FOB', date: '20 Sep 2026 · 11:30 AM' },
+    { title: '200 kg Allocated to Offer', text: 'Bilateral order #OFF-0042 placed into escrow', date: 'Today · 08:15 AM' },
+];
+const activity = l.activities?.length
+    ? l.activities.map((a) => ({ title: titleCase(a.event), text: a.description || '', date: fmtActivityDate(a.created_at) || '—' }))
+    : dummyActivity;
 
-const recorderInitials = computed(() => {
-    const name = (props.lot.user?.name || '').trim();
-    if (!name) return '?';
-    return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
-});
-
-const fmtNumber = (value, digits = 2) => {
-    if (value === null || value === undefined || value === '') return '—';
-    return Number(value).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
-};
-
-const fmtDate = (value) => {
-    if (!value) return '—';
-    return new Date(value.replace(' ', 'T')).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-};
-
-const fmtDateTime = (value) => {
-    if (!value) return '—';
-    return new Date(value.replace(' ', 'T')).toLocaleString('en-US', {
-        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
+/* Advisory copy — no AI scoring pipeline runs against real lots yet, so
+   this stays fully illustrative. */
+const aiInsight = {
+    tag: 'Market Opportunity',
+    tagSub: 'High Demand Match',
+    text: 'Trading Readiness: 100%. Screen 18 retention (92.4%) combined with 82.50 Q-grade positions this lot in the top 5% of East African Fine Robustas. Priced at $4.20/kg, it offers a strong +12% margin premium over standard commercial FAQ grades.',
+    buyerRelevance: 'Targeted at premium European espresso roasters seeking consistent single-origin crema density and low-astringency chocolate profiles.',
+    disclaimer: 'AI provides analytical market intelligence only. Official physical quantities, provenance, and certifications remain immutable.',
 };
 </script>
 
 <template>
     <DesignPreviewLayout title="Lot Profile">
         <div class="lp-page">
-            <!-- ── Page header ──────────────────────────────────────────── -->
-            <div class="lp-page-header">
-                <div class="lp-page-header__text">
-                    <h1 class="lp-page-title">Lot Profile</h1>
-                    <p class="lp-page-description">Full specifications, linked batches, and activity history for this coffee lot.</p>
+            <!-- ── Page header ───────────────────────────────────────────────────── -->
+            <div class="lp-header">
+                <div class="lp-header__text">
+                    <div class="lp-header__title-row">
+                        <h1 class="lp-header__title">Lot #{{ lot.code }}</h1>
+                        <span class="lp-status-pill"><span class="lp-status-pill__dot"></span>{{ lot.status }}</span>
+                        <span class="lp-check-pill"><el-icon><CircleCheck /></el-icon> Verified Inventory</span>
+                    </div>
+                    <div class="lp-header__meta">
+                        <span><strong>Lot Name:</strong> {{ lot.name }}</span>
+                        <span class="lp-dot">•</span>
+                        <span><strong>Origin:</strong> {{ lot.origin }}</span>
+                        <span class="lp-dot">•</span>
+                        <span><strong>Coffee:</strong> {{ lot.coffeeType }}</span>
+                        <span class="lp-dot">•</span>
+                        <span><strong>Created:</strong> {{ lot.createdDate }}</span>
+                        <span class="lp-dot">•</span>
+                        <span class="lp-mono">Hash: {{ lot.hash }}</span>
+                    </div>
                 </div>
-                <el-dropdown trigger="click" @command="handleOptionsCommand">
-                    <button type="button" class="lp-btn lp-btn--primary">
-                        Options <el-icon class="lp-caret"><ArrowDown /></el-icon>
-                    </button>
-                    <template #dropdown>
-                        <el-dropdown-menu class="lp-options-menu">
-                            <el-dropdown-item command="traceability"><el-icon><Connection /></el-icon> View Traceability</el-dropdown-item>
-                            <el-dropdown-item v-if="lot.can_manage" command="edit"><el-icon><EditPen /></el-icon> Edit Lot</el-dropdown-item>
-                            <el-dropdown-item v-if="lot.can_manage && !lot.is_published" command="publish"><el-icon><Promotion /></el-icon> Publish to Market</el-dropdown-item>
-                            <el-dropdown-item v-if="lot.can_manage && lot.is_published" command="unpublish"><el-icon><SoldOut /></el-icon> Unpublish from Market</el-dropdown-item>
-                            <el-dropdown-item v-if="lot.can_manage" command="add-activity"><el-icon><Clock /></el-icon> Add Activity</el-dropdown-item>
-                            <el-dropdown-item v-if="lot.can_manage" command="delete" divided class="lp-options-menu__item--danger"><el-icon><Delete /></el-icon> Delete Lot</el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
+                <div class="lp-header__actions">
+                    <PublishToMarketButton
+                        :lot="l"
+                        :currency-options="currencyOptions"
+                        :currency-countries="currencyCountries"
+                        :delivery-method-options="deliveryMethodOptions"
+                        :incoterm-options="incotermOptions"
+                        :payment-options="paymentOptions"
+                        :delivery-terms-options="deliveryTermsOptions"
+                    />
+                    <button type="button" class="lp-btn lp-btn--outline"><el-icon><PriceTag /></el-icon> Create Offer</button>
+                    <button type="button" class="lp-btn lp-btn--outline"><el-icon><Sell /></el-icon> Create Auction</button>
+                    <button type="button" class="lp-btn lp-btn--outline"><el-icon><Goods /></el-icon> Create Product</button>
+                    <button
+                        type="button"
+                        class="lp-btn lp-btn--outline"
+                        :disabled="isPublished"
+                        :title="isPublished ? 'Unpublish this lot from the market before editing it' : undefined"
+                        @click="editModalOpen = true"
+                    ><el-icon><EditPen /></el-icon> Edit Lot</button>
+                    <button
+                        type="button"
+                        class="lp-btn lp-btn--outline lp-btn--danger"
+                        :disabled="isPublished"
+                        :title="isPublished ? 'Unpublish this lot from the market before deleting it' : undefined"
+                        @click="deleteDialogOpen = true"
+                    ><el-icon><Delete /></el-icon> Delete Lot</button>
+                </div>
             </div>
 
-            <!-- ── Bento mosaic ─────────────────────────────────────────── -->
-            <div class="lp-bento">
-                <!-- Hero tile -->
-                <div class="lp-tile lp-tile--hero">
-                    <div class="lp-hero__top">
-                        <div class="lp-hero__top-main">
-                            <div class="lp-hero__photo-col">
-                                <div class="lp-hero__photo" :class="{ 'lp-hero__photo--clickable': lot.image }" @click="lot.image && openViewer(0)">
-                                    <img v-if="lot.image" :src="`/storage/${lot.image}`" :alt="lot.lot_name || lot.lot_number" />
-                                    <el-icon v-else :size="46"><Ticket /></el-icon>
-                                </div>
-                            </div>
-                            <div class="lp-hero__intro">
-                                <span class="lp-badge" :class="`lp-badge--${statusInfo.tone}`"><span class="lp-badge__dot"></span>{{ statusInfo.label }}</span>
-                                <h2 class="lp-hero__title">{{ lot.lot_name || lot.lot_number }}</h2>
-                                <p v-if="lot.description" class="lp-hero__description">{{ lot.description }}</p>
-                            </div>
+            <!-- ── KPI strip ─────────────────────────────────────────────────────── -->
+            <div class="lp-kpi-grid">
+                <div v-for="k in kpis" :key="k.label" class="lp-kpi">
+                    <span class="lp-eyebrow">{{ k.label }}</span>
+                    <div class="lp-kpi__value" :class="{ 'lp-mono': k.mono, 'lp-accent-text': k.accent === 'success' }">{{ k.value }} <span v-if="k.unit">{{ k.unit }}</span></div>
+                    <span class="lp-kpi__sub" :class="{ 'lp-accent-text': k.accent }">{{ k.sub }}</span>
+                </div>
+            </div>
+
+            <!-- ── About this lot + allocation ──────────────────────────────────── -->
+            <div class="lp-grid-5-7">
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><InfoFilled /></el-icon> About This Lot</h2>
+                        <span class="lp-tag-mono">Master Record</span>
+                    </div>
+                    <p class="lp-body-text">{{ aboutText }}</p>
+                    <div class="lp-checklist-box">
+                        <div class="lp-checklist-box__head">
+                            <span>Commercial Readiness Checklist</span>
+                            <span class="lp-check-badge">100% Compliant</span>
                         </div>
-                        <el-tooltip
-                            v-if="lot.can_manage"
-                            :content="remainingImageSlots > 0 ? 'Upload photos' : 'Photo limit reached'"
-                            placement="top"
-                        >
-                            <button
-                                type="button"
-                                class="lp-btn lp-btn--outline lp-btn--icon lp-hero__upload"
-                                :disabled="remainingImageSlots <= 0"
-                                @click="showAddImages = true"
+                        <div class="lp-checklist-box__item" v-for="c in checklist" :key="c">
+                            <el-icon><Check /></el-icon>{{ c }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><PieChart /></el-icon> Physical Quantity Allocation</h2>
+                        <span class="lp-tag-mono lp-tag-mono--success"><el-icon><Lock /></el-icon> Double-Sale Protection Active</span>
+                    </div>
+                    <div class="lp-alloc-head">
+                        <span>Total Master Quantity: <strong>{{ allocation.total.toLocaleString() }} kg</strong></span>
+                        <span class="lp-mono"><strong>{{ allocation.available.toLocaleString() }} kg</strong> Available for spot allocation</span>
+                    </div>
+                    <div class="lp-alloc-track">
+                        <div class="lp-alloc-track__fill lp-alloc-track__fill--available" :style="{ width: (allocation.total ? allocation.available / allocation.total * 100 : 0) + '%' }"></div>
+                        <div class="lp-alloc-track__fill lp-alloc-track__fill--allocated" :style="{ width: (allocation.total ? allocation.allocated / allocation.total * 100 : 0) + '%' }"></div>
+                        <div class="lp-alloc-track__fill lp-alloc-track__fill--reserved" :style="{ width: (allocation.total ? allocation.reserved / allocation.total * 100 : 0) + '%' }"></div>
+                    </div>
+                    <div class="lp-alloc-stats">
+                        <div class="lp-alloc-stat"><el-icon><Box /></el-icon><span>Original</span><strong>{{ allocation.total.toLocaleString() }} kg</strong></div>
+                        <div class="lp-alloc-stat"><el-icon class="lp-alloc-stat--allocated"><TopRight /></el-icon><span>Allocated</span><strong class="lp-alloc-stat--allocated">{{ allocation.allocated.toLocaleString() }} kg</strong><small class="lp-alloc-stat__sub">of {{ allocation.total.toLocaleString() }} kg original</small></div>
+                        <div class="lp-alloc-stat"><el-icon class="lp-alloc-stat--reserved"><Lock /></el-icon><span>Reserved</span><strong class="lp-alloc-stat--reserved">{{ allocation.reserved.toLocaleString() }} kg</strong></div>
+                        <div class="lp-alloc-stat"><el-icon class="lp-alloc-stat--available"><CircleCheck /></el-icon><span>Available</span><strong class="lp-alloc-stat--available">{{ allocation.available.toLocaleString() }} kg</strong></div>
+                    </div>
+                    <div class="lp-info-strip">
+                        <span><el-icon><InfoFilled /></el-icon> Allocated inventory prevents duplicate commercial listings.</span>
+                        <span class="lp-strong">Depot #{{ allocation.depot }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Traceability custody journey ─────────────────────────────────── -->
+            <div class="lp-card">
+                <div class="lp-card__head">
+                    <div>
+                        <h2 class="lp-card__title"><el-icon><Connection /></el-icon> Traceability Custody Journey</h2>
+                        <span class="lp-muted">Upstream records contributing directly to this Lot's custody chain</span>
+                    </div>
+                    <button type="button" class="lp-btn lp-btn--outline lp-btn--sm">View Full Traceability <el-icon><Right /></el-icon></button>
+                </div>
+                <div class="lp-pipeline">
+                    <div class="lp-pipeline__line"></div>
+                    <div v-for="p in pipeline" :key="p.num" class="lp-pipeline__step" :class="`lp-pipeline__step--${p.state}`">
+                        <div class="lp-pipeline__circle"><el-icon><component :is="p.state === 'active' ? Collection : Check" /></el-icon></div>
+                        <div class="lp-pipeline__title">{{ p.num }}. {{ p.title }}</div>
+                        <div class="lp-pipeline__sub lp-mono">{{ p.sub }}</div>
+                    </div>
+                </div>
+                <div class="lp-grid-8-4">
+                    <div class="lp-subpanel">
+                        <span class="lp-strong">Contributing Farm Collections:</span>
+                        <div class="lp-chip-row">
+                            <component
+                                :is="c.id ? InertiaLink : 'span'"
+                                v-for="c in collections"
+                                :key="c.code"
+                                :href="c.id ? route('farm-collection.show', c.id) : undefined"
+                                class="lp-chip"
+                                :class="{ 'lp-chip--linked': c.id }"
                             >
-                                <el-icon><CameraFilled /></el-icon>
-                            </button>
-                        </el-tooltip>
+                                <el-icon><Box /></el-icon> Collection <strong>#{{ c.code }}</strong>
+                                <span class="lp-chip__qty lp-mono">{{ c.qty }}</span>
+                                <el-icon><Right /></el-icon>
+                            </component>
+                        </div>
                     </div>
-                    <div v-if="lot.images?.length" class="lp-hero__gallery-section">
-                        <div class="lp-hero__gallery">
-                            <button
-                                v-for="(img, idx) in lot.images"
-                                :key="img.id"
-                                type="button"
-                                class="lp-hero__gallery-item"
-                                @click="openViewer((lot.image ? 1 : 0) + idx)"
+                    <div class="lp-subpanel">
+                        <div class="lp-subpanel__head">
+                            <span class="lp-strong">Parent Milling Batch:</span>
+                            <button type="button" class="lp-btn lp-btn--outline lp-btn--sm" @click="attachBatchModalOpen = true">
+                                <el-icon><Plus /></el-icon> Add Batch
+                            </button>
+                        </div>
+                        <div v-if="!parentBatches.length" class="lp-batch-row">
+                            <span><el-icon><Box /></el-icon> <strong>None</strong></span>
+                        </div>
+                        <div v-else class="lp-batch-list">
+                            <component
+                                :is="InertiaLink"
+                                v-for="batch in parentBatches"
+                                :key="batch.id"
+                                :href="route('batch.show', batch.id)"
+                                class="lp-batch-row lp-batch-row--linked"
                             >
-                                <img :src="img.image_url" alt="Lot photo" />
-                            </button>
+                                <span :title="`Batch #${batch.code}`"><el-icon><Box /></el-icon> <strong>{{ `Batch #${batch.code}` }}</strong></span>
+                                <span class="lp-batch-row__right">
+                                    <span v-if="batch.qty" class="lp-tag-mono">{{ batch.qty }}</span>
+                                    <button
+                                        type="button"
+                                        class="lp-batch-row__remove"
+                                        title="Remove this batch from the lot"
+                                        @click.stop.prevent="requestDetachBatch(batch)"
+                                    >
+                                        <el-icon><Delete /></el-icon>
+                                    </button>
+                                </span>
+                            </component>
                         </div>
                     </div>
-                    <div class="lp-hero__facts">
-                        <span class="lp-hero__fact"><el-icon><Ticket /></el-icon><span class="lp-mono">{{ lot.lot_number }}</span></span>
-                        <span class="lp-hero__fact"><el-icon><HotWater /></el-icon>{{ lot.process || 'Process pending' }}</span>
-                        <span class="lp-hero__fact"><el-icon><Clock /></el-icon>{{ fmtDate(lot.created_at) }}</span>
-                    </div>
                 </div>
+            </div>
 
-                <!-- Stat tiles -->
-                <div class="lp-tile lp-tile--stat">
-                    <div class="lp-kpi__group">
-                        <div class="lp-kpi__top">
-                            <span class="lp-kpi__icon lp-kpi__icon--weight"><el-icon><Odometer /></el-icon></span>
-                            <span class="lp-tile__label">Net Weight</span>
-                        </div>
-                        <span class="lp-tile__value lp-mono">{{ fmtNumber(lot.net_weight_kg) }}<small>kg</small></span>
-                        <span class="lp-tile__sub">{{ lot.quantity_bags ? `${fmtNumber(lot.quantity_bags, 0)} bags total` : 'Bag count not recorded' }}</span>
+            <!-- ── Specifications + quality ──────────────────────────────────────── -->
+            <div class="lp-grid-6-6">
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><Document /></el-icon> Physical &amp; Botanical Specifications</h2>
+                        <span class="lp-tag-mono">Two-Column Master</span>
                     </div>
-
-                    <div class="lp-kpi__group">
-                        <div class="lp-kpi__top">
-                            <span class="lp-kpi__icon lp-kpi__icon--batches"><el-icon><Files /></el-icon></span>
-                            <span class="lp-tile__label">Batches Linked</span>
-                        </div>
-                        <span class="lp-tile__value lp-mono">{{ linkedBatches.length }}</span>
-                        <span class="lp-tile__sub">{{ linkedBatches.length ? 'Linked to this lot' : 'No batches linked yet' }}</span>
-                    </div>
-                </div>
-                <div class="lp-tile lp-tile--stat lp-tile--bags">
-                    <div class="lp-kpi__top">
-                        <span class="lp-kpi__icon lp-kpi__icon--bags"><el-icon><Box /></el-icon></span>
-                        <span class="lp-tile__label">Bags</span>
-                    </div>
-                    <span class="lp-tile__value lp-mono">{{ fmtNumber(lot.quantity_bags, 0) }}</span>
-                    <span class="lp-tile__sub">{{ lot.bag_weight_kg ? `${fmtNumber(lot.bag_weight_kg)} kg each` : 'Bag weight not recorded' }}</span>
-
-                    <Link :href="traceabilityUrl" class="lp-bag-qr" :title="`Scan to trace ${lot.lot_number || 'this lot'}`">
-                        <span v-if="lot.qr_code" class="lp-bag-qr__code" v-html="lot.qr_code"></span>
-                        <span v-else class="lp-bag-qr__code"><el-icon :size="22"><FullScreen /></el-icon></span>
-                        <span class="lp-bag-qr__label">Scan to trace</span>
-                    </Link>
-                </div>
-                <div class="lp-tile lp-tile--stat lp-tile--accent lp-tile--wide">
-                    <div class="lp-kpi__top">
-                        <span class="lp-kpi__icon lp-kpi__icon--price"><el-icon><Coin /></el-icon></span>
-                        <span class="lp-tile__label">Price / kg</span>
-                    </div>
-                    <span class="lp-tile__value lp-mono">{{ lot.price ? `${lot.currency || 'USD'} ${fmtNumber(lot.price)}` : '—' }}</span>
-                    <span class="lp-tile__sub">{{ lotValueTotal !== null ? `${lot.currency || 'USD'} ${fmtNumber(lotValueTotal)} total value` : 'Total value pending' }}</span>
-                </div>
-                <!-- Specifications -->
-                <div class="lp-tile lp-tile--specs">
-                    <h2 class="lp-tile__title"><el-icon><Operation /></el-icon> Specifications</h2>
-                    <div class="lp-spec-grid">
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><HotWater /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Process</span>
-                                <strong class="lp-spec__value">{{ lot.process || 'Not recorded' }}</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Coffee /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Grade</span>
-                                <strong class="lp-spec__value">{{ lot.grade || 'Not recorded' }}</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Box /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Packaging Type</span>
-                                <strong class="lp-spec__value">{{ lot.packaging_type || 'Not recorded' }}</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Odometer /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Bag Weight</span>
-                                <strong class="lp-spec__value lp-mono">{{ fmtNumber(lot.bag_weight_kg) }} kg</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Trophy /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Quality Score</span>
-                                <strong class="lp-spec__value lp-mono">{{ lot.quality_score ? `${fmtNumber(lot.quality_score)} /100` : 'Not recorded' }}</strong>
-                            </div>
+                    <div class="lp-spec-table">
+                        <div v-for="s in specs" :key="s.label" class="lp-spec-row">
+                            <span>{{ s.label }}</span>
+                            <strong :class="[{ 'lp-mono': s.mono }, { 'lp-accent-text': s.accent }]">{{ s.value }}</strong>
                         </div>
                     </div>
                 </div>
 
-                <!-- Cupping Profile -->
-                <div v-if="hasCuppingProfile" class="lp-tile lp-tile--specs">
-                    <h2 class="lp-tile__title"><el-icon><Star /></el-icon> Cupping Profile</h2>
-                    <div class="lp-spec-grid">
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Acidity</span>
-                                <strong class="lp-spec__value">{{ lot.acidity ? acidityLabel(lot.acidity) : 'Not recorded' }}</strong>
-                            </div>
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><Trophy /></el-icon> Certified Quality Assessment</h2>
+                        <button type="button" class="lp-btn lp-btn--outline lp-btn--sm">View Quality Report <el-icon><TopRight /></el-icon></button>
+                    </div>
+                    <div class="lp-quality-callout">
+                        <div>
+                            <span class="lp-eyebrow">CQI Certified Score</span>
+                            <div class="lp-quality-callout__score lp-mono">{{ quality.score }} <span>/ 100</span></div>
+                            <span class="lp-quality-callout__grade"><el-icon><CircleCheck /></el-icon> {{ quality.gradeLabel }}</span>
                         </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Body</span>
-                                <strong class="lp-spec__value">{{ lot.body ? bodyLabel(lot.body) : 'Not recorded' }}</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Flavor</span>
-                                <strong class="lp-spec__value">{{ lot.flavor ? flavorLabel(lot.flavor) : 'Not recorded' }}</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Aroma</span>
-                                <strong class="lp-spec__value">{{ lot.aroma ? aromaLabel(lot.aroma) : 'Not recorded' }}</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Balance</span>
-                                <strong class="lp-spec__value lp-mono">{{ lot.balance !== null && lot.balance !== undefined ? fmtNumber(lot.balance) : 'Not recorded' }}</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Star /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Aftertaste</span>
-                                <strong class="lp-spec__value">{{ lot.aftertaste ? aftertasteLabel(lot.aftertaste) : 'Not recorded' }}</strong>
-                            </div>
+                        <div class="lp-quality-callout__meta">
+                            <span class="lp-mono">Assessed: <strong>{{ quality.assessedDate }}</strong></span>
+                            <span>{{ quality.lab }}</span>
                         </div>
                     </div>
-                    <div v-if="lot.flavors?.length" class="lp-flavor-notes">
-                        <span class="lp-spec__label">Flavor Notes</span>
-                        <div class="lp-flavor-notes__chips">
-                            <span v-for="flavor in lot.flavors" :key="flavor.id" class="lp-event-pill">{{ flavor.name }}</span>
+                    <div class="lp-metric4-grid">
+                        <div v-for="m in quality.metrics" :key="m.label" class="lp-metric4">
+                            <span>{{ m.label }}</span>
+                            <strong class="lp-mono" :class="{ 'lp-accent-text': m.accent }">{{ m.value }}</strong>
+                            <em :class="{ 'lp-accent-text': m.accent }">{{ m.sub }}</em>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="lp-label-row">Validated Flavor Descriptors</span>
+                        <div class="lp-flavor-tags">
+                            <span v-for="f in quality.flavors" :key="f" class="lp-flavor-tag">{{ f }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Origin/farms + sustainability ────────────────────────────────── -->
+            <div class="lp-grid-7-5">
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><LocationFilled /></el-icon> Geographical Origin &amp; Contributing Farms</h2>
+                        <button type="button" class="lp-btn lp-btn--outline lp-btn--sm">View Farms (3) <el-icon><Right /></el-icon></button>
+                    </div>
+                    <div class="lp-origin-layout">
+                        <div class="lp-origin-facts">
+                            <div class="lp-origin-fact">
+                                <span>Country &amp; District</span>
+                                <strong>{{ originFacts.countryDistrict }}</strong>
+                                <em>{{ originFacts.microclimate }}</em>
+                            </div>
+                            <div class="lp-origin-fact">
+                                <span>Participating Producer Cooperative</span>
+                                <strong>{{ originFacts.coop }}</strong>
+                                <em>{{ originFacts.leadProducer }}</em>
+                            </div>
+                            <div class="lp-origin-fact">
+                                <span>Geospatial Telemetry</span>
+                                <strong class="lp-mono">{{ originFacts.gps }}</strong>
+                                <span class="lp-tag-mono lp-tag-mono--success lp-mt6"><el-icon><CircleCheck /></el-icon> Sentinel-2 Polygon Geofenced</span>
+                            </div>
+                        </div>
+                        <div class="lp-map-card">
+                            <el-icon><MapLocation /></el-icon>
+                            <span class="lp-strong">Cadastral Polygon Map</span>
+                            <span class="lp-mono lp-muted">{{ mapSector }}</span>
+                            <button type="button" class="lp-btn lp-btn--outline lp-btn--sm">Inspect Cadastral Plot <el-icon><TopRight /></el-icon></button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Delivery -->
-                <div v-if="hasDeliveryProfile" class="lp-tile lp-tile--specs">
-                    <h2 class="lp-tile__title"><el-icon><Van /></el-icon> Delivery</h2>
-                    <div class="lp-spec-grid">
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Location /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Available From (Location)</span>
-                                <strong class="lp-spec__value">{{ market.available_from || 'Not recorded' }}</strong>
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><CircleCheck /></el-icon> Verified Sustainability</h2>
+                        <span class="lp-check-badge">4 Audited Proofs</span>
+                    </div>
+                    <div class="lp-chip-row">
+                        <span v-for="b in sustainBadges" :key="b" class="lp-check-pill lp-check-pill--outline"><el-icon><CircleCheck /></el-icon>{{ b }}</span>
+                    </div>
+                    <div class="lp-sustain-list">
+                        <div v-for="s in sustainItems" :key="s.title" class="lp-sustain-row">
+                            <div>
+                                <span class="lp-strong">{{ s.title }}</span>
+                                <em>{{ s.sub }}</em>
                             </div>
+                            <span class="lp-status-tag">{{ s.status }}</span>
                         </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Van /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Delivery Method</span>
-                                <strong class="lp-spec__value">{{ market.delivery_method ? deliveryMethodLabel(market.delivery_method) : 'Not recorded' }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Commercial status + tokenisation ─────────────────────────────── -->
+            <div class="lp-grid-7-5">
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><Shop /></el-icon> Commercial Status &amp; Active Listings</h2>
+                        <span class="lp-tag-mono lp-tag-mono--success">Master Inventory Synced</span>
+                    </div>
+                    <p class="lp-body-text lp-body-text--sm">All commercial channels below reference this unified Lot inventory. Allocating quantity in one channel instantly secures the underlying physical volume.</p>
+                    <div class="lp-listing-table">
+                        <div class="lp-listing-row lp-listing-row--head">
+                            <span>Channel</span><span>Reference / Details</span><span>Price / Term</span><span>Status</span><span>Action</span>
+                        </div>
+                        <div v-for="l in listings" :key="l.channel" class="lp-listing-row">
+                            <span class="lp-strong">{{ l.channel }}</span>
+                            <span class="lp-muted-inline">{{ l.detail }}</span>
+                            <span class="lp-mono lp-strong">{{ l.price }}</span>
+                            <span class="lp-status-chip" :class="`lp-status-chip--${l.style}`">{{ l.status }}</span>
+                            <button type="button" class="lp-btn lp-btn--outline lp-btn--sm">{{ l.action }}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><Link /></el-icon> Blockchain Tokenisation</h2>
+                        <span class="lp-check-badge">Tokenised</span>
+                    </div>
+                    <div class="lp-token-box">
+                        <div class="lp-token-row"><span>Token Identifier</span><strong class="lp-mono">{{ token.id }}</strong></div>
+                        <div class="lp-token-row"><span>Underlying Chain</span><strong><el-icon><Connection /></el-icon> {{ token.chain }}</strong></div>
+                        <div class="lp-token-row"><span>Tokenised Volume</span><strong class="lp-mono lp-accent-text">{{ token.volume }}</strong></div>
+                        <div class="lp-token-row"><span>Mint Timestamp</span><strong class="lp-mono">{{ token.mintTimestamp }}</strong></div>
+                        <div class="lp-token-row"><span>Contract Reference</span><strong class="lp-mono">{{ token.contractRef }}</strong></div>
+                    </div>
+                    <div class="lp-token-foot">
+                        <span><el-icon><CircleCheck /></el-icon> Immutable digital twin</span>
+                        <button type="button" class="lp-btn lp-btn--outline lp-btn--sm">View Blockchain Record <el-icon><TopRight /></el-icon></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Documents + activity + AI insight ────────────────────────────── -->
+            <div class="lp-grid-3">
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><Files /></el-icon> Attached Documents</h2>
+                        <span class="lp-tag-mono">4 Verified</span>
+                    </div>
+                    <div class="lp-doc-list">
+                        <div v-for="d in documents" :key="d.name" class="lp-doc-row">
+                            <div class="lp-doc-row__icon"><el-icon><Document /></el-icon></div>
+                            <div class="lp-doc-row__text">
+                                <span class="lp-doc-row__name">{{ d.name }}</span>
+                                <span class="lp-mono lp-muted">{{ d.meta }}</span>
                             </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Operation /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Incoterm</span>
-                                <strong class="lp-spec__value">{{ market.incoterm ? incotermLabel(market.incoterm) : 'Not recorded' }}</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Location /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Dispatch</span>
-                                <strong class="lp-spec__value">{{ market.dispatch || 'Not recorded' }}</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Van /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Transport Arrangement</span>
-                                <strong class="lp-spec__value">{{ market.transport_arrangement || 'Not recorded' }}</strong>
-                            </div>
-                        </div>
-                        <div class="lp-spec">
-                            <span class="lp-spec__icon"><el-icon><Promotion /></el-icon></span>
-                            <div class="lp-spec__body">
-                                <span class="lp-spec__label">Insurance Arrangement</span>
-                                <strong class="lp-spec__value">{{ market.insurance_arrangement || 'Not recorded' }}</strong>
+                            <div class="lp-doc-row__actions">
+                                <button type="button" class="lp-btn lp-btn--outline lp-btn--sm">View</button>
+                                <button type="button" class="lp-btn lp-btn--outline lp-btn--sm lp-btn--icon"><el-icon><Download /></el-icon></button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Notes -->
-                <div v-if="lot.notes" class="lp-tile lp-tile--specs">
-                    <h2 class="lp-tile__title"><el-icon><EditPen /></el-icon> Notes</h2>
-                    <p class="lp-prose">{{ lot.notes }}</p>
-                </div>
-
-                <!-- Origin & Provenance: batches, collections and farms combined -->
-                <div class="lp-tile lp-tile--full">
-                    <div class="lp-tile__head">
-                        <div class="lp-tile__head-left">
-                            <h2 class="lp-tile__title"><el-icon><Connection /></el-icon> Origin &amp; Provenance</h2>
-                            <span v-if="linkedBatches.length" class="lp-tile__count">{{ linkedBatches.length }}</span>
-                        </div>
-                        <button v-if="lot.can_manage" type="button" class="lp-btn lp-btn--primary" @click="showAttachBatch = true">
-                            <el-icon><Plus /></el-icon> Attach Batch
-                        </button>
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><Clock /></el-icon> Lifecycle Audit History</h2>
+                        <span class="lp-tag-mono">Chronological</span>
                     </div>
-
-                    <div v-if="originTrace.length" class="lp-origin">
-                        <div v-for="entry in originTrace" :key="entry.lb.id" class="lp-origin__batch">
-                            <div class="lp-origin__batch-head">
-                                <span class="lp-batch-row__icon"><el-icon><Box /></el-icon></span>
-                                <div class="lp-origin__batch-info">
-                                    <div class="lp-origin__batch-line">
-                                        <span class="lp-origin__batch-number lp-mono">{{ entry.batch?.batch_number || entry.lb.batch_number }}</span>
-                                        <span v-if="entry.batch?.processing_method" class="lp-inline-code">{{ entry.batch.processing_method }}</span>
-                                        <span v-if="entry.batch?.status" class="lp-batch-row__status" :class="`lp-batch-row__status--${batchStatusTone(entry.batch.status)}`">{{ entry.batch.status }}</span>
-                                    </div>
-                                    <div class="lp-origin__batch-meta">
-                                        {{ entry.batch?.variety || '—' }}
-                                        <span v-if="entry.batch?.warehouse_location"> &middot; <el-icon class="lp-batch-row__meta-icon"><Location /></el-icon>{{ entry.batch.warehouse_location }}</span>
-                                    </div>
-                                </div>
-                                <div class="lp-origin__batch-stats">
-                                    <span v-if="entry.batch?.cup_score" class="lp-origin__stat">
-                                        <span class="lp-origin__stat-value lp-mono">{{ fmtNumber(entry.batch.cup_score) }}</span>
-                                        <span class="lp-origin__stat-label">Cup Score</span>
-                                    </span>
-                                    <span v-if="entry.lb.allocation_kg" class="lp-origin__stat">
-                                        <span class="lp-origin__stat-value lp-mono">{{ fmtNumber(entry.lb.allocation_kg) }} kg</span>
-                                        <span class="lp-origin__stat-label">Drawn</span>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div v-if="entry.collections.length" class="lp-origin__sources">
-                                <div v-for="row in entry.collections" :key="row.link.id" class="lp-origin__source">
-                                    <el-icon class="lp-origin__source-icon"><Coffee /></el-icon>
-                                    <span class="lp-origin__source-code lp-mono">{{ row.link.farm_collection_code }}</span>
-                                    <span v-if="row.link.farm_collection?.initial_grade" class="lp-grade-pill">{{ row.link.farm_collection.initial_grade }}</span>
-                                    <span v-if="row.link.farm_collection?.quantity" class="lp-origin__source-qty lp-mono">{{ Number(row.link.farm_collection.quantity).toLocaleString() }} {{ row.link.farm_collection.unit || '' }}</span>
-                                    <span class="lp-origin__source-farm">
-                                        {{ row.link.farm_collection?.farm?.name || 'Unknown farm' }}
-                                        <span v-if="farmLocation(row.link.farm_collection?.farm)" class="lp-origin__source-loc">&middot; {{ farmLocation(row.link.farm_collection?.farm) }}</span>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div v-if="entry.farms.length" class="lp-origin__farms">
-                                <div v-for="farm in entry.farms" :key="farm.id" class="lp-origin__farm">
-                                    <el-icon class="lp-origin__farm-icon"><OfficeBuilding /></el-icon>
-                                    <span class="lp-origin__farm-name">{{ farm.name || `Farm #${farm.id}` }}</span>
-                                    <span v-if="farmLocation(farm)" class="lp-origin__farm-loc">{{ farmLocation(farm) }}</span>
-                                    <span class="lp-farm-facts">
-                                        <span v-if="farm.elevation !== null && farm.elevation !== undefined" class="lp-farm-fact"><el-icon><Position /></el-icon>{{ Math.round(farm.elevation) }}m</span>
-                                        <span v-if="farm.coffee_type" class="lp-farm-fact"><el-icon><Coffee /></el-icon>{{ farm.coffee_type }}</span>
-                                        <span v-if="farm.coffee_area !== null && farm.coffee_area !== undefined" class="lp-farm-fact"><el-icon><Odometer /></el-icon>{{ farm.coffee_area }} ha</span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <p v-else class="lp-empty">No batches linked to this lot yet. Attach one by its batch number to record where this lot's coffee came from.</p>
-
-                    <div class="lp-origin__recorder">
-                        <div class="lp-recorder">
-                            <div class="lp-recorder__avatar">{{ recorderInitials }}</div>
-                            <div class="lp-recorder__body">
-                                <div class="lp-recorder__name">{{ lot.user?.name || 'Unknown' }}</div>
-                                <div class="lp-recorder__role">Recorded By · Lot Creator</div>
-                            </div>
-                        </div>
-                        <div class="lp-origin__recorder-date">
-                            <el-icon><Clock /></el-icon>
-                            <span class="lp-mono">{{ fmtDateTime(lot.created_at) }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Activity log — integrated beneath the origin trace -->
                     <div class="lp-activity">
-                        <div class="lp-activity__head">
-                            <div class="lp-activity__heading">
-                                <h3 class="lp-activity__title"><el-icon><Clock /></el-icon> Lot Activity</h3>
-                                <span v-if="activities.length" class="lp-tile__count">{{ activities.length }}</span>
+                        <div v-for="a in activity" :key="a.title" class="lp-activity-row">
+                            <span class="lp-activity-dot"><el-icon><Check /></el-icon></span>
+                            <div>
+                                <span class="lp-strong">{{ a.title }}</span>
+                                <em>{{ a.text }}</em>
+                                <span class="lp-mono lp-activity-date">{{ a.date }}</span>
                             </div>
-                            <button v-if="lot.can_manage" type="button" class="lp-btn lp-btn--primary lp-btn--sm" @click="showAddActivity = true">
-                                <el-icon><Plus /></el-icon> Add Activity
-                            </button>
                         </div>
-
-                        <div v-if="activities.length" class="lp-activity-table-wrap">
-                            <table class="lp-activity-table">
-                                <thead>
-                                    <tr>
-                                        <th>Event</th>
-                                        <th>Description</th>
-                                        <th>Recorded By</th>
-                                        <th>Date</th>
-                                        <th v-if="lot.can_manage" class="lp-activity-table__actions-head" />
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="activity in activities" :key="activity.id">
-                                        <td><span class="lp-event-pill">{{ eventLabel(activity.event) }}</span></td>
-                                        <td class="lp-activity-table__desc">{{ activity.description || '—' }}</td>
-                                        <td>{{ activity.recorded_by?.name || 'System' }}</td>
-                                        <td class="lp-mono lp-activity-table__date">{{ fmtDateTime(activity.created_at) }}</td>
-                                        <td v-if="lot.can_manage" class="lp-activity-table__actions">
-                                            <button type="button" class="lp-activity-delete" aria-label="Delete activity" @click="requestDeleteActivity(activity)">
-                                                <el-icon :size="14"><Delete /></el-icon>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="lp-empty">No activity recorded for this lot yet.</p>
                     </div>
+                </div>
+
+                <div class="lp-card">
+                    <div class="lp-card__head">
+                        <h2 class="lp-card__title"><el-icon><Cpu /></el-icon> AI Lot Intelligence</h2>
+                        <span class="lp-check-badge">Advisory Model</span>
+                    </div>
+                    <div class="lp-ai-box">
+                        <div class="lp-ai-box__head">
+                            <span class="lp-status-chip lp-status-chip--success">{{ aiInsight.tag }}</span>
+                            <span class="lp-mono lp-muted">{{ aiInsight.tagSub }}</span>
+                        </div>
+                        <p>{{ aiInsight.text }}</p>
+                    </div>
+                    <div class="lp-ai-buyer">
+                        <span class="lp-strong">Potential Buyer Relevance</span>
+                        <p>{{ aiInsight.buyerRelevance }}</p>
+                    </div>
+                    <div class="lp-ai-disclaimer"><el-icon><WarningFilled /></el-icon> {{ aiInsight.disclaimer }}</div>
                 </div>
             </div>
         </div>
 
-        <AttachBatchModal v-if="lot.can_manage" v-model="showAttachBatch" :lot-id="lot.id" />
         <EditLotModal
-            v-if="lot.can_manage"
-            v-model="showEditLot"
-            :lot="lot"
+            v-model="editModalOpen"
+            :lot="l"
             :process-options="processOptions"
             :coffee-grade-options="coffeeGradeOptions"
             :variety-options="varietyOptions"
@@ -733,564 +749,282 @@ const fmtDateTime = (value) => {
             :aftertaste-options="aftertasteOptions"
             :aroma-options="aromaOptions"
         />
-        <PublishLotModal
-            v-if="lot.can_manage && !lot.is_published"
-            v-model="showPublishLot"
-            :lot="lot"
-            :currency-options="currencyOptions"
-            :currency-countries="currencyCountries"
-            :delivery-method-options="deliveryMethodOptions"
-            :incoterm-options="incotermOptions"
-        />
         <ConfirmDialog
             v-model="deleteDialogOpen"
-            eyebrow="Lot"
-            title="Delete Lot"
-            :message="`Are you sure you want to delete lot ${lot.lot_number}? This action cannot be undone.`"
+            eyebrow="Lot Profile"
+            title="Delete this lot?"
+            :message="`Lot ${l.lot_number || `#${l.id}`} and its records will be permanently removed. This cannot be undone.`"
             confirm-text="Delete Lot"
+            :loading="deleteLoading"
             :auto-close="false"
-            :loading="deleting"
-            @confirm="confirmDeleteLot"
+            :show-cancel="false"
+            @confirm="confirmDelete"
         />
-        <AddLotImagesDialog
-            v-if="lot.can_manage"
-            v-model="showAddImages"
-            :lot-id="lot.id"
-            :remaining-slots="remainingImageSlots"
-        />
+        <AttachBatchModal v-model="attachBatchModalOpen" :lot-id="l.id" />
         <ConfirmDialog
-            v-model="unpublishDialogOpen"
-            eyebrow="Lot"
-            title="Unpublish from Market"
-            :message="`Remove lot ${lot.lot_number} from the market? Buyers will no longer be able to find or order it.`"
-            confirm-text="Unpublish"
+            v-model="detachBatchDialogOpen"
+            eyebrow="Lot Profile"
+            title="Remove this batch from the lot?"
+            :message="`Batch #${batchToDetach?.code} will be unlinked from this lot. The batch record itself is not deleted.`"
+            confirm-text="Remove Batch"
+            :loading="detachBatchLoading"
             :auto-close="false"
-            :loading="unpublishing"
-            @confirm="confirmUnpublishLot"
-        />
-        <ImageViewer v-model="viewerOpen" :images="viewerImages" :index="viewerIndex" />
-
-        <AddLotActivityModal
-            v-if="lot.can_manage"
-            v-model="showAddActivity"
-            :lot-id="lot.id"
-            :activity-options="activityOptions"
-        />
-        <ConfirmDialog
-            v-model="deleteActivityDialogOpen"
-            eyebrow="Lot Activity"
-            title="Delete Activity"
-            :message="deleteActivityMessage"
-            confirm-text="Delete Activity"
-            :auto-close="false"
-            :loading="deletingActivity"
-            @confirm="confirmDeleteActivity"
+            :show-cancel="false"
+            @confirm="confirmDetachBatch"
         />
     </DesignPreviewLayout>
 </template>
 
 <style scoped>
-/* ── Tokens ───────────────────────────────────────────────────────────── */
+/* ── Ported from the "Lot #LOT-000124 — Institutional Master Record"
+   reference mockup (code.html) + DESIGN.md, mapped onto the app's
+   persistent --dp-* tokens. All content on this page is illustrative
+   sample data — see the script's opening comment. ─────────────────────── */
 .lp-page {
-    --bg: #FFFFFF;
-    --surface: #FFFFFF;
-    --surface-muted: #FAFAFA;
-    --surface-elevated: #F4F4F5;
-    --border: #E4E4E7;
-    --primary: #000000;
-    --text: #18181B;
-    --text-2: #52525B;
-    --text-muted: #A1A1AA;
-    --accent: #EA580C;
-    --accent-soft: #FFF1E8;
-    --success: #15803D;
-    --success-soft: #F0FDF4;
-    --warning: #B45309;
-    --warning-soft: #FEF3E2;
-    --error: #B91C1C;
-    --info: #1D4ED8;
-    --font-sans: Inter, system-ui, sans-serif;
-    --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Consolas, monospace;
-
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-sans);
-    min-height: 100%;
-}
-.lp-mono { font-family: var(--font-mono); }
-
-/* ── Page header ──────────────────────────────────────────────────────── */
-.lp-page-header {
-    display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
-    margin-bottom: 24px;
-}
-.lp-page-header__text { min-width: 0; }
-.lp-page-title {
-    font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px;
-    display: flex; align-items: center; gap: 9px;
-}
-.lp-page-title .el-icon { font-size: 20px; color: currentColor; }
-
-.lp-options-menu.el-dropdown-menu { border-radius: 6px; border: 1px solid var(--border); padding: 4px; }
-.lp-options-menu :deep(.el-dropdown-menu__item) {
-    display: flex; align-items: center; gap: 8px;
-    border-radius: 6px; font-size: 13px; color: var(--text);
-}
-.lp-options-menu :deep(.el-dropdown-menu__item) .el-icon { font-size: 14px; color: currentColor; }
-.lp-options-menu :deep(.el-dropdown-menu__item:hover) { background: var(--surface-elevated); color: var(--text); }
-.lp-options-menu :deep(.lp-options-menu__item--danger) { color: var(--error); }
-.lp-options-menu :deep(.lp-options-menu__item--danger:hover) { background: #FEF2F2; color: var(--error); }
-.lp-page-description { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; max-width: 60ch; }
-
-.lp-btn--outline {
-    background: var(--surface-muted); color: var(--text); border-color: var(--border);
-}
-.lp-btn--outline:hover { background: var(--surface-elevated); opacity: 1; }
-.lp-caret { font-size: 11px; margin-left: 2px; }
-
-/* ── Bento grid ───────────────────────────────────────────────────────── */
-.lp-bento {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-rows: minmax(96px, auto);
-    grid-auto-flow: dense;
-    gap: 14px;
-}
-
-.lp-tile {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 18px;
+    --card-border: var(--dp-outline-variant);
+    font-family: var(--dp-font-sans);
+    color: var(--dp-on-surface);
     display: flex;
     flex-direction: column;
-    min-width: 0;
-}
-.lp-tile--hero { grid-column: span 2; grid-row: span 2; background: var(--surface-muted); justify-content: space-between; gap: 16px; }
-.lp-tile--stat { justify-content: center; gap: 6px; }
-.lp-tile--accent { background: var(--accent-soft); border-color: transparent; }
-.lp-tile--specs { grid-column: span 2; }
-.lp-tile--wide { grid-column: span 2; }
-.lp-tile--full { grid-column: span 4; }
-
-/* ── Origin trace row: Farms / Farm Collections columns ─────────────────── */
-.lp-tile-row {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-    align-items: stretch;
-}
-.lp-tile-row--2col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.lp-tile-row .lp-tile__head { flex-wrap: wrap; row-gap: 10px; }
-/* Columns are narrow, so stack each row's stat/status below its icon+text
-   instead of squeezing everything onto one line. */
-.lp-tile-row .lp-batch-row { flex-wrap: wrap; row-gap: 8px; }
-.lp-tile-row .lp-batch-row__main { flex: 1 1 100%; }
-.lp-tile-row .lp-batch-row__stat { align-items: flex-start; }
-.lp-tile-row .lp-batch-row__chevron { display: none; }
-
-/* ── Hero tile ────────────────────────────────────────────────────────── */
-.lp-hero__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.lp-hero__top-main { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
-.lp-btn--icon { width: 36px; height: 36px; padding: 0; justify-content: center; }
-.lp-btn--icon .el-icon { font-size: 19px; }
-.lp-hero__upload { flex-shrink: 0; }
-.lp-hero__upload:disabled { opacity: 0.5; cursor: default; }
-.lp-hero__upload:disabled:hover { opacity: 0.5; }
-
-/* Main lot photo sits above its own uploaded-gallery strip, both in one
-   column, so the gallery reads as "below the main image" and stays
-   visibly smaller than it. */
-.lp-hero__photo-col { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
-
-.lp-hero__gallery-section {
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-}
-.lp-hero__gallery {
-    display: flex;
-    gap: 10px;
-}
-.lp-hero__gallery-item {
-    width: 76px;
-    height: 76px;
-    padding: 0;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    background: var(--surface-elevated);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
-}
-.lp-hero__gallery-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(24, 24, 27, 0.18);
-    border-color: var(--accent);
-}
-.lp-hero__gallery-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+    gap: 32px;
 }
 
-.lp-hero__photo {
-    width: 148px; height: 148px; border-radius: 12px; flex-shrink: 0;
-    background: var(--surface-elevated); border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--text-muted); overflow: hidden;
-}
-.lp-hero__photo img { width: 100%; height: 100%; object-fit: cover; }
-.lp-hero__photo--clickable { cursor: pointer; transition: opacity 120ms ease; }
-.lp-hero__photo--clickable:hover { opacity: 0.9; }
-.lp-hero__intro { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.lp-hero__title { font-size: 25px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lp-hero__description { font-size: 13px; line-height: 20px; color: var(--text-2); margin: 0; white-space: pre-line; }
-.lp-hero__facts { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
-.lp-hero__fact {
-    display: inline-flex; align-items: center; gap: 6px;
-    height: 26px; padding: 0 10px; border-radius: 999px;
-    background: var(--surface-elevated); border: 1px solid var(--border);
-    font-size: 12px; font-weight: 600; color: var(--text-2);
-}
-.lp-hero__fact .el-icon { font-size: 12px; color: var(--text-muted); }
+.lp-mono { font-family: var(--dp-font-mono); }
+.lp-muted { color: var(--dp-on-surface-variant); }
+.lp-muted-inline { color: var(--dp-on-surface-variant); font-size: .8125rem; }
+.lp-accent-text { color: var(--dp-primary) !important; }
+.lp-strong { display: block; font-weight: 700; color: var(--dp-on-surface); font-size: .8125rem; }
+.lp-dot { color: var(--dp-outline); }
+.lp-mt6 { margin-top: 6px; }
+.lp-eyebrow { display: block; font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--dp-on-surface-variant); margin-bottom: 3px; }
+.lp-label-row { display: block; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface-variant); margin-bottom: 8px; }
+.lp-body-text { font-size: .8125rem; line-height: 1.65; color: var(--dp-on-surface-variant); margin: 0 !important; }
+.lp-body-text--sm { font-size: .75rem; }
 
-/* ── Badges ───────────────────────────────────────────────────────────── */
-.lp-badge {
-    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
-    height: 22px; padding: 0 9px; border-radius: 999px;
-    font-size: 11px; font-weight: 600;
-    background: var(--surface-elevated); border: 1px solid var(--border); color: var(--text-2);
-}
-.lp-badge__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.lp-badge--success { color: var(--success); background: var(--success-soft); border-color: transparent; }
-.lp-badge--warning { color: var(--warning); background: var(--warning-soft); border-color: transparent; }
-.lp-badge--error { color: var(--error); background: #FEF2F2; border-color: transparent; }
-.lp-badge--info { color: var(--info); background: #EFF6FF; border-color: transparent; }
+/* ── Cards & buttons ─────────────────────────────────────────────────── */
+.lp-card { padding: 24px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); display: flex; flex-direction: column; gap: 16px; }
+.lp-card__head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.lp-card__title { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 800; letter-spacing: -.01em; color: var(--dp-on-surface); margin: 0 !important; }
+.lp-card__title :deep(.el-icon) { color: var(--dp-primary); }
 
-/* ── Stat tiles ───────────────────────────────────────────────────────── */
-.lp-tile__label { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
-.lp-tile__label .el-icon { font-size: 12px; }
-.lp-tile__value { font-size: 22px; line-height: 28px; font-weight: 700; color: var(--text); display: flex; align-items: baseline; gap: 4px; }
-.lp-tile__value small { font-size: 11px; font-weight: 500; color: var(--text-muted); }
-.lp-tile__sub { font-size: 11px; color: var(--text-muted); }
-.lp-tile--accent .lp-tile__label { color: #C2410C; }
-.lp-tile--accent .lp-tile__value { color: #9A3412; }
-.lp-tile--accent .lp-tile__sub { color: #C2410C; }
+.lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: var(--dp-card-radius); font-size: .75rem; font-weight: 700; cursor: pointer; border: 1px solid transparent; font-family: inherit; white-space: nowrap; }
+.lp-btn:disabled { opacity: .45; cursor: not-allowed; }
+.lp-btn:disabled:hover { background: var(--dp-surface-container-lowest); border-color: var(--card-border); }
+.lp-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
+.lp-btn--primary:hover { opacity: .9; }
+.lp-btn--outline { background: var(--dp-surface-container-lowest); border-color: var(--card-border); color: var(--dp-on-surface); }
+.lp-btn--outline:hover { background: var(--dp-surface-container); }
+.lp-btn--danger { color: var(--dp-error); }
+.lp-btn--danger:hover { background: var(--dp-error-container); border-color: var(--dp-error); }
+.lp-btn--sm { height: 32px; padding: 0 10px; font-size: .6875rem; flex-shrink: 0; }
+.lp-btn--icon { width: 32px; padding: 0; }
 
-.lp-kpi__top { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
-.lp-kpi__icon {
-    width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--surface-elevated); color: var(--text-muted); font-size: 13px;
-}
-.lp-kpi__icon--weight { background: #EFF6FF; color: var(--info); }
-.lp-kpi__icon--bags { background: var(--surface-elevated); color: var(--text-2); }
-.lp-kpi__icon--price { background: var(--accent-soft); color: #C2410C; }
-.lp-kpi__icon--batches { background: var(--surface-elevated); color: var(--text-2); }
+/* ── Header ──────────────────────────────────────────────────────────── */
+.lp-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--card-border); }
+.lp-header__text { display: flex; flex-direction: column; gap: 8px; }
+.lp-header__title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lp-header__title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.01em; color: var(--dp-on-surface); margin: 0 !important; }
+.lp-status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--dp-card-radius); background: var(--dp-primary-container); color: var(--dp-on-primary-container); font-size: .75rem; font-weight: 700; }
+.lp-status-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dp-primary); }
+.lp-check-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container); color: var(--dp-on-surface); font-size: .75rem; font-weight: 600; }
+.lp-check-pill :deep(.el-icon) { color: var(--dp-primary); }
+.lp-check-pill--outline { background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); }
+.lp-header__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .8125rem; color: var(--dp-on-surface-variant); }
+.lp-header__meta strong { color: var(--dp-on-surface); font-weight: 700; }
+.lp-header__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 
-.lp-kpi__group + .lp-kpi__group { margin-top: 18px; }
+/* ── KPI grid ────────────────────────────────────────────────────────── */
+.lp-kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.lp-kpi { padding: 14px 16px; background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--dp-card-radius); display: flex; flex-direction: column; gap: 4px; }
+.lp-kpi__value { font-size: 1.1875rem; font-weight: 800; color: var(--dp-on-surface); }
+.lp-kpi__value span { font-size: .8125rem; font-weight: 500; color: var(--dp-on-surface-variant); }
+.lp-kpi__sub { font-size: .6875rem; color: var(--dp-on-surface-variant); }
 
-.lp-bag-qr {
+/* ── Layout helpers ──────────────────────────────────────────────────── */
+.lp-grid-5-7 { display: grid; grid-template-columns: 5fr 7fr; gap: 24px; align-items: stretch; }
+.lp-grid-6-6 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; }
+.lp-grid-7-5 { display: grid; grid-template-columns: 7fr 5fr; gap: 24px; align-items: stretch; }
+.lp-grid-8-4 { display: grid; grid-template-columns: 8fr 4fr; gap: 14px; }
+.lp-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: stretch; }
+
+/* ── About / checklist ───────────────────────────────────────────────── */
+.lp-tag-mono { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container); color: var(--dp-on-surface-variant); font-family: var(--dp-font-mono); font-size: .6875rem; font-weight: 600; flex-shrink: 0; }
+.lp-tag-mono--success { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
+.lp-checklist-box { padding: 14px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); display: flex; flex-direction: column; gap: 8px; }
+.lp-checklist-box__head { display: flex; align-items: center; justify-content: space-between; }
+.lp-checklist-box__head span:first-child { font-size: .75rem; font-weight: 700; color: var(--dp-on-surface); }
+.lp-check-badge { padding: 3px 9px; border-radius: 999px; background: var(--dp-primary-container); color: var(--dp-on-primary-container); font-size: .625rem; font-weight: 700; flex-shrink: 0; }
+.lp-checklist-box__item { display: flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--dp-on-surface-variant); }
+.lp-checklist-box__item :deep(.el-icon) { color: var(--dp-primary); flex-shrink: 0; }
+
+/* ── Allocation ──────────────────────────────────────────────────────── */
+.lp-alloc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: .75rem; color: var(--dp-on-surface-variant); flex-wrap: wrap; }
+.lp-alloc-head strong { color: var(--dp-on-surface); }
+.lp-alloc-track { display: flex; width: 100%; height: 14px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-high); overflow: hidden; }
+.lp-alloc-track__fill--available { background: var(--dp-primary); }
+.lp-alloc-track__fill--allocated { background: #3B82F6; }
+.lp-alloc-track__fill--reserved { background: #F59E0B; }
+.lp-alloc-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+.lp-alloc-stat { padding: 8px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.lp-alloc-stat .el-icon { font-size: 16px; color: var(--dp-on-surface-variant); margin-bottom: 2px; }
+.lp-alloc-stat span { display: block; font-family: var(--dp-font-mono); font-size: .625rem; color: var(--dp-on-surface-variant); text-transform: uppercase; }
+.lp-alloc-stat strong { font-family: var(--dp-font-mono); font-size: .875rem; color: var(--dp-on-surface); }
+.lp-alloc-stat__sub { font-size: .625rem; color: var(--dp-on-surface-variant); text-transform: none; }
+.lp-alloc-stat .lp-alloc-stat--allocated { color: #3B82F6; }
+.lp-alloc-stat .lp-alloc-stat--reserved { color: #B45309; }
+.lp-alloc-stat .lp-alloc-stat--available { color: var(--dp-primary); }
+.lp-info-strip { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); font-size: .75rem; color: var(--dp-on-surface-variant); font-family: var(--dp-font-mono); flex-wrap: wrap; }
+.lp-info-strip :deep(.el-icon) { color: var(--dp-outline); }
+
+/* ── Traceability pipeline ───────────────────────────────────────────── */
+.lp-pipeline { position: relative; display: flex; align-items: flex-start; justify-content: space-between; padding: 8px 0; }
+.lp-pipeline__line { position: absolute; top: 27px; left: 30px; right: 30px; height: 2px; background: var(--dp-surface-container-high); }
+.lp-pipeline__step { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; background: var(--dp-surface-container-lowest); }
+.lp-pipeline__circle { width: 38px; height: 38px; border-radius: 50%; background: var(--dp-surface-container-low); border: 2px solid var(--card-border); display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+.lp-pipeline__circle :deep(.el-icon) { color: var(--dp-on-surface-variant); }
+.lp-pipeline__step--completed .lp-pipeline__circle { background: var(--dp-primary-container); border-color: var(--dp-primary); }
+.lp-pipeline__step--completed .lp-pipeline__circle :deep(.el-icon) { color: #fff; }
+.lp-pipeline__step--active .lp-pipeline__circle { background: var(--dp-primary); border-color: var(--dp-primary); }
+.lp-pipeline__step--active .lp-pipeline__circle :deep(.el-icon) { color: #fff; }
+.lp-pipeline__title { font-size: .75rem; font-weight: 700; color: var(--dp-on-surface); }
+.lp-pipeline__sub { font-size: .625rem; color: var(--dp-on-surface-variant); }
+.lp-subpanel { padding: 14px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); display: flex; flex-direction: column; gap: 10px; }
+.lp-subpanel__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lp-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.lp-chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); font-size: .75rem; color: var(--dp-on-surface); text-decoration: none; }
+.lp-chip :deep(.el-icon) { color: var(--dp-on-surface-variant); font-size: 13px; }
+.lp-chip__qty { padding: 1px 6px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container); font-size: .625rem; color: var(--dp-on-surface-variant); }
+.lp-chip--linked { cursor: pointer; transition: border-color .12s ease, background .12s ease, color .12s ease; }
+.lp-chip--linked:hover { border-color: var(--dp-primary); background: var(--dp-primary-container); color: #fff; }
+.lp-chip--linked:hover :deep(.el-icon) { color: #fff; }
+.lp-chip--linked:hover .lp-chip__qty { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.lp-batch-list { display: flex; flex-direction: column; gap: 8px; }
+.lp-batch-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); font-size: .8125rem; text-decoration: none; color: var(--dp-on-surface); }
+.lp-batch-row > span:first-child { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+.lp-batch-row > span:first-child strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-batch-row :deep(.el-icon) { color: var(--dp-primary); }
+.lp-batch-row--linked { cursor: pointer; transition: border-color .12s ease, background .12s ease, color .12s ease; }
+.lp-batch-row--linked:hover { border-color: var(--dp-primary); background: var(--dp-primary-container); color: #fff; }
+.lp-batch-row--linked:hover :deep(.el-icon) { color: #fff; }
+.lp-batch-row--linked:hover .lp-tag-mono { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.lp-batch-row__right { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.lp-batch-row__remove {
     display: inline-flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    margin-top: 12px;
-    text-decoration: none;
-}
-.lp-bag-qr__code {
-    width: 68px;
-    height: 68px;
-    padding: 6px;
-    border-radius: 8px;
-    background: #fff;
-    display: flex;
     align-items: center;
     justify-content: center;
-    box-sizing: border-box;
-    color: var(--text-muted);
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .12s ease;
 }
-.lp-bag-qr__code :deep(svg) { width: 100%; height: 100%; display: block; }
-.lp-bag-qr__label { font-size: 10.5px; font-weight: 600; color: var(--text-muted); }
+.lp-batch-row__remove:hover { background: rgba(248, 81, 73, 0.16); }
 
-/* ── Tile headers ─────────────────────────────────────────────────────── */
-.lp-tile__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.lp-tile__head .lp-tile__title { margin: 0; }
-.lp-tile__head-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.lp-tile__head-left .lp-tile__title { margin: 0; }
-.lp-tile__title {
-    font-size: 13px; font-weight: 700; color: var(--text);
-    margin: 0 0 14px; display: flex; align-items: center; gap: 6px;
-    text-transform: uppercase; letter-spacing: 0.05em;
-}
-.lp-tile__title .el-icon { font-size: 13px; color: currentColor; }
-.lp-tile__count {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-width: 20px; height: 20px; padding: 0 6px; margin-top: -1px;
-    border-radius: 999px; background: var(--surface-elevated); color: var(--text-2);
-    font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
-}
+/* ── Specs table ─────────────────────────────────────────────────────── */
+.lp-spec-table { display: flex; flex-direction: column; }
+.lp-spec-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--dp-surface-container-high); font-size: .8125rem; }
+.lp-spec-row:last-child { border-bottom: none; }
+.lp-spec-row span { color: var(--dp-on-surface-variant); font-weight: 500; }
+.lp-spec-row strong { color: var(--dp-on-surface); font-weight: 700; text-align: right; }
 
-/* ── Specifications ───────────────────────────────────────────────────── */
-.lp-spec-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; flex: 1; align-content: start; }
-.lp-spec { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
-.lp-spec__icon {
-    width: 30px; height: 30px; border-radius: 6px; flex-shrink: 0;
-    background: var(--surface-elevated); color: var(--text-2);
-    display: flex; align-items: center; justify-content: center; font-size: 14px;
-}
-.lp-spec__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.lp-spec__label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
-.lp-spec__value { font-size: 13.5px; font-weight: 600; color: var(--text); }
+/* ── Quality ─────────────────────────────────────────────────────────── */
+.lp-quality-callout { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 14px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); }
+.lp-quality-callout__score { font-size: 1.5rem; font-weight: 800; color: var(--dp-on-surface); }
+.lp-quality-callout__score span { font-size: .8125rem; font-weight: 500; color: var(--dp-on-surface-variant); }
+.lp-quality-callout__grade { display: flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 600; color: var(--dp-primary); }
+.lp-quality-callout__meta { display: flex; flex-direction: column; gap: 2px; text-align: right; font-size: .6875rem; color: var(--dp-on-surface-variant); flex-shrink: 0; }
+.lp-quality-callout__meta strong { color: var(--dp-on-surface); }
+.lp-metric4-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.lp-metric4 { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); text-align: center; }
+.lp-metric4 span { font-size: .5625rem; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface-variant); }
+.lp-metric4 strong { font-size: .8125rem; font-weight: 700; color: var(--dp-on-surface); }
+.lp-metric4 em { font-style: normal; font-size: .625rem; color: var(--dp-on-surface-variant); }
+.lp-flavor-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.lp-flavor-tag { padding: 4px 10px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-lowest); border: 1px solid var(--card-border); color: var(--dp-on-surface); font-size: .6875rem; font-weight: 600; }
 
-.lp-prose { font-size: 13.5px; line-height: 21px; color: var(--text-2); margin: 0; white-space: pre-line; flex: 1; }
+/* ── Origin & sustainability ─────────────────────────────────────────── */
+.lp-origin-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
+.lp-origin-facts { display: flex; flex-direction: column; gap: 14px; }
+.lp-origin-fact { display: flex; flex-direction: column; gap: 2px; }
+.lp-origin-fact span { font-size: .75rem; color: var(--dp-on-surface-variant); }
+.lp-origin-fact strong { font-size: .8125rem; font-weight: 700; color: var(--dp-on-surface); }
+.lp-origin-fact em { font-style: normal; font-size: .75rem; color: var(--dp-on-surface-variant); }
+.lp-map-card { border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px; padding: 20px; min-height: 160px; }
+.lp-map-card :deep(.el-icon) { color: var(--dp-on-surface-variant); font-size: 26px; margin-bottom: 4px; }
+.lp-map-card .lp-btn { margin-top: 8px; }
+.lp-sustain-list { display: flex; flex-direction: column; }
+.lp-sustain-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--dp-surface-container-high); }
+.lp-sustain-row em { display: block; font-style: normal; font-size: .6875rem; color: var(--dp-on-surface-variant); margin-top: 1px; }
+.lp-status-tag { padding: 3px 9px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container); color: var(--dp-primary); font-family: var(--dp-font-mono); font-size: .625rem; font-weight: 700; flex-shrink: 0; }
 
-/* ── Recorded by ──────────────────────────────────────────────────────── */
-.lp-recorder { display: flex; align-items: center; gap: 12px; }
-.lp-recorder__avatar {
-    width: 40px; height: 40px; border-radius: 999px; flex-shrink: 0;
-    background: var(--accent-soft); color: #C2410C; border: 1px solid transparent;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 700;
-}
-.lp-recorder__body { min-width: 0; }
-.lp-recorder__name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
-.lp-recorder__role { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+/* ── Commercial listings table ───────────────────────────────────────── */
+.lp-listing-table { display: flex; flex-direction: column; }
+.lp-listing-row { display: grid; grid-template-columns: 1.1fr 1.6fr 1.1fr .9fr .7fr; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--dp-surface-container-high); }
+.lp-listing-row:last-child { border-bottom: none; }
+.lp-listing-row--head { font-size: .625rem; text-transform: uppercase; letter-spacing: .04em; color: var(--dp-on-surface-variant); font-weight: 700; padding-bottom: 8px; }
+.lp-status-chip { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; font-size: .6875rem; font-weight: 700; background: var(--dp-surface-container); color: var(--dp-on-surface-variant); width: fit-content; }
+.lp-status-chip--success { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
+.lp-status-chip--primary { background: var(--dp-primary-fixed); color: var(--dp-on-primary-fixed); }
+.lp-status-chip--warning { background: var(--dp-secondary-fixed); color: var(--dp-on-secondary-fixed); }
+.lp-status-chip--neutral { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
 
-/* ── Buttons ──────────────────────────────────────────────────────────── */
-.lp-btn {
-    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-    height: 32px; padding: 0 13px; border-radius: 6px;
-    font-size: 12.5px; font-weight: 600; border: 1px solid transparent;
-    cursor: pointer; transition: opacity 120ms ease;
-}
-.lp-btn--sm { height: 28px; padding: 0 10px; font-size: 12px; }
-.lp-btn--sm .el-icon { font-size: 13px; }
-.lp-btn--primary { background: var(--primary); color: #fff; }
-.lp-btn--primary:hover { opacity: 0.88; }
+/* ── Tokenisation ────────────────────────────────────────────────────── */
+.lp-token-box { padding: 14px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); display: flex; flex-direction: column; gap: 8px; }
+.lp-token-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .75rem; }
+.lp-token-row span { color: var(--dp-on-surface-variant); }
+.lp-token-row strong { color: var(--dp-on-surface); font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+.lp-token-row strong :deep(.el-icon) { color: var(--dp-primary); }
+.lp-token-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.lp-token-foot > span { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; color: var(--dp-on-surface-variant); font-family: var(--dp-font-mono); }
+.lp-token-foot :deep(.el-icon) { color: var(--dp-primary); }
 
-/* ── Linked batches ───────────────────────────────────────────────────── */
-.lp-batch-list { display: flex; flex-direction: column; }
-.lp-batch-row {
-    display: flex; align-items: center; gap: 16px;
-    padding: 14px 4px; border-bottom: 1px solid var(--border);
-    text-decoration: none; color: inherit;
-    transition: background 120ms ease;
-}
-.lp-batch-row:last-child { border-bottom: none; }
-.lp-batch-row:hover { background: var(--surface-muted); margin: 0 -12px; padding: 14px 16px; border-radius: 8px; }
-.lp-batch-row:hover .lp-batch-row__icon { background: var(--accent-soft); color: #C2410C; }
-.lp-batch-row:hover .lp-batch-row__chevron { opacity: 1; transform: translateX(0); }
-.lp-batch-row--static { cursor: default; align-items: flex-start; }
-.lp-batch-row--static:hover { background: none; margin: 0; padding: 13px 4px; border-radius: 0; }
-.lp-batch-row--static:hover .lp-batch-row__icon { background: var(--surface-elevated); color: var(--text-2); }
-.lp-batch-row--static .lp-batch-row__main { align-items: flex-start; }
-.lp-batch-row--static .lp-batch-row__icon { margin-top: 1px; }
-.lp-batch-row--static .lp-batch-row__stat { padding-top: 1px; }
-.lp-farm-facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
-.lp-farm-fact {
-    display: inline-flex; align-items: center; gap: 5px;
-    height: 22px; padding: 0 8px; border-radius: 999px;
-    background: var(--surface-elevated); color: var(--text-2);
-    font-size: 11px; font-weight: 600;
-}
-.lp-farm-fact .el-icon { font-size: 11px; color: var(--text-muted); }
-.lp-batch-row__main { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
-.lp-batch-row__icon {
-    width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
-    background: var(--surface-elevated); color: var(--text-2);
-    display: flex; align-items: center; justify-content: center; font-size: 15px;
-    transition: background 120ms ease, color 120ms ease;
-}
-.lp-batch-row__icon--farm { background: var(--success-soft); color: var(--success); }
-.lp-batch-row--static:hover .lp-batch-row__icon--farm { background: var(--success-soft); color: var(--success); }
-.lp-batch-row__icon--collection { background: var(--warning-soft); color: var(--warning); }
-.lp-batch-row:hover .lp-batch-row__icon--collection { background: #FDE68A; color: #92400E; }
-.lp-batch-row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.lp-batch-row__number { font-size: 13.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lp-inline-code {
-    display: inline-flex; align-items: center; vertical-align: middle; margin-left: 6px;
-    padding: 1px 6px; border-radius: 4px;
-    background: var(--surface-elevated); color: var(--text-muted);
-    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
-}
-.lp-grade-pill {
-    display: inline-flex; align-items: center; vertical-align: middle; margin-left: 6px;
-    padding: 1px 7px; border-radius: 999px;
-    background: var(--accent-soft); color: #9A3412;
-    font-family: var(--font-sans); font-size: 10px; font-weight: 700;
-}
-.lp-batch-row__meta { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lp-batch-row__meta-icon { font-size: 11px; margin-left: 2px; }
-.lp-batch-row__stats { display: flex; align-items: center; gap: 18px; flex-shrink: 0; }
-.lp-batch-row__stat { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
-.lp-batch-row__stat-value { font-size: 12.5px; font-weight: 700; color: var(--text); white-space: nowrap; }
-.lp-batch-row__stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
-.lp-batch-row__status {
-    flex-shrink: 0; text-transform: capitalize;
-    padding: 3px 9px; border-radius: 999px;
-    background: var(--surface-elevated); color: var(--text-2);
-    font-size: 11px; font-weight: 600;
-}
-.lp-batch-row__status--good { background: var(--success-soft); color: var(--success); }
-.lp-batch-row__status--warn { background: var(--warning-soft); color: var(--warning); }
-.lp-batch-row__status--bad { background: #FEF2F2; color: var(--error); }
-.lp-batch-row__chevron {
-    flex-shrink: 0; font-size: 13px; color: var(--text-muted);
-    opacity: 0; transform: translateX(-3px);
-    transition: opacity 120ms ease, transform 120ms ease;
-}
+/* ── Documents ───────────────────────────────────────────────────────── */
+.lp-doc-list { display: flex; flex-direction: column; gap: 8px; }
+.lp-doc-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); }
+.lp-doc-row__icon { width: 30px; height: 30px; border-radius: var(--dp-card-radius); background: var(--dp-primary-fixed); color: var(--dp-on-primary-fixed); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.lp-doc-row__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.lp-doc-row__name { font-size: .75rem; font-weight: 700; color: var(--dp-on-surface); }
+.lp-doc-row__actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-/* ── Origin & Provenance (batches + collections + farms combined) ─────── */
-.lp-origin { display: flex; flex-direction: column; }
-.lp-origin__batch { padding: 16px 4px; border-bottom: 1px solid var(--border); }
-.lp-origin__batch:last-child { border-bottom: none; }
-.lp-origin__batch-head { display: flex; align-items: flex-start; gap: 14px; }
-.lp-origin__batch-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.lp-origin__batch-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-.lp-origin__batch-number { font-size: 13.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lp-origin__batch-meta { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); }
-.lp-origin__batch-stats { display: flex; align-items: center; gap: 18px; flex-shrink: 0; }
-.lp-origin__stat { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
-.lp-origin__stat-value { font-size: 12.5px; font-weight: 700; color: var(--text); white-space: nowrap; }
-.lp-origin__stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+/* ── Activity ────────────────────────────────────────────────────────── */
+.lp-activity { display: flex; flex-direction: column; }
+.lp-activity-row { position: relative; display: flex; gap: 10px; padding-bottom: 14px; }
+.lp-activity-row:last-child { padding-bottom: 0; }
+.lp-activity-row::before { content: ''; position: absolute; left: 9px; top: 20px; bottom: 0; width: 2px; background: var(--dp-surface-container-high); }
+.lp-activity-row:last-child::before { display: none; }
+.lp-activity-dot { width: 20px; height: 20px; border-radius: 50%; background: var(--dp-primary-container); color: var(--dp-on-primary-container); display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 1; }
+.lp-activity-dot :deep(.el-icon) { font-size: 11px; }
+.lp-activity-row em { display: block; font-style: normal; font-size: .75rem; color: var(--dp-on-surface-variant); margin-top: 1px; }
+.lp-activity-date { display: block; font-size: .625rem; color: var(--dp-on-surface-variant); margin-top: 3px; }
 
-.lp-origin__sources { margin: 10px 0 0 0; padding-left: 18px; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-.lp-origin__source { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12.5px; }
-.lp-origin__source-icon { color: var(--text-muted); font-size: 13px; }
-.lp-origin__source-code { font-weight: 600; color: var(--text); }
-.lp-origin__source-qty { color: var(--text-2); font-weight: 600; }
-.lp-origin__source-farm { color: var(--text-muted); }
-.lp-origin__source-loc { color: var(--text-muted); }
+/* ── AI insight ──────────────────────────────────────────────────────── */
+.lp-ai-box { padding: 12px 14px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); }
+.lp-ai-box__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.lp-ai-box p { font-size: .75rem; line-height: 1.55; color: var(--dp-on-surface); margin: 0 !important; }
+.lp-ai-buyer p { font-size: .75rem; line-height: 1.5; color: var(--dp-on-surface-variant); margin: 4px 0 0 !important; }
+.lp-ai-disclaimer { display: flex; align-items: flex-start; gap: 6px; padding: 8px 10px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); font-family: var(--dp-font-mono); font-size: .625rem; color: var(--dp-on-surface-variant); line-height: 1.5; }
+.lp-ai-disclaimer :deep(.el-icon) { color: var(--dp-outline); flex-shrink: 0; margin-top: 1px; }
 
-.lp-origin__farms { margin: 10px 0 0 0; padding-left: 18px; border-left: 2px solid var(--success-soft); display: flex; flex-direction: column; gap: 8px; }
-.lp-origin__farm { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12.5px; }
-.lp-origin__farm-icon { color: var(--success); font-size: 13px; flex-shrink: 0; }
-.lp-origin__farm-name { font-weight: 600; color: var(--text); }
-.lp-origin__farm-loc { color: var(--text-muted); }
-.lp-origin__farm .lp-farm-facts { margin-top: 0; }
-
-.lp-origin__recorder {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+    .lp-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .lp-grid-3 { grid-template-columns: 1fr; }
 }
-.lp-origin__recorder-date {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--text-2);
+@media (max-width: 1024px) {
+    .lp-grid-5-7, .lp-grid-6-6, .lp-grid-7-5 { grid-template-columns: 1fr; }
+    .lp-grid-8-4 { grid-template-columns: 1fr; }
+    .lp-origin-layout { grid-template-columns: 1fr; }
+    .lp-listing-row { grid-template-columns: 1fr 1fr; row-gap: 4px; }
+    .lp-listing-row--head { display: none; }
 }
-.lp-origin__recorder-date .el-icon { font-size: 13px; color: var(--text-muted); }
-
-.lp-empty { font-size: 13px; color: var(--text-muted); margin: 0; }
-
-/* ── Integrated activity log (inside Origin & Provenance) ──────────────── */
-.lp-activity {
-    margin-top: 18px;
-    padding-top: 18px;
-    border-top: 1px solid var(--border);
-}
-.lp-activity__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
-}
-.lp-activity__heading {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-}
-.lp-activity__title {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-.lp-activity__title .el-icon { font-size: 13px; color: currentColor; }
-
-/* ── Lot Activity ─────────────────────────────────────────────────────── */
-.lp-activity-table-wrap { overflow-x: auto; }
-.lp-activity-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.lp-activity-table thead th {
-    text-align: left;
-    padding: 0 0 10px;
-    font-size: 10.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-}
-.lp-activity-table thead th:not(:first-child) { padding-left: 20px; }
-.lp-activity-table tbody td {
-    padding: 13px 0;
-    border-bottom: 1px dashed var(--border);
-    color: var(--text);
-    vertical-align: top;
-}
-.lp-activity-table tbody td:not(:first-child) { padding-left: 20px; }
-.lp-activity-table tbody tr:last-child td { border-bottom: none; padding-bottom: 0; }
-.lp-activity-table__desc { color: var(--text-2); max-width: 360px; }
-.lp-activity-table__date { color: var(--text-2); white-space: nowrap; }
-.lp-activity-table__actions-head { width: 1%; }
-.lp-activity-table__actions { width: 1%; text-align: right; }
-
-.lp-event-pill {
-    display: inline-flex; align-items: center;
-    padding: 4px 11px; border-radius: 999px;
-    background: var(--surface-elevated); color: var(--text-2);
-    border: 1px solid var(--border);
-    font-size: 11.5px; font-weight: 700;
-    white-space: nowrap;
-}
-
-.lp-flavor-notes { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border); }
-.lp-flavor-notes__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-
-.lp-activity-delete {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 28px; height: 28px; border: none; border-radius: 6px;
-    background: transparent; color: var(--text-muted); cursor: pointer;
-    transition: background 120ms ease, color 120ms ease;
-}
-.lp-activity-delete:hover { background: #FEF2F2; color: var(--error); }
-.lp-activity-delete:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-
-/* ── Responsive ───────────────────────────────────────────────────────── */
-@media (max-width: 900px) {
-    .lp-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .lp-tile--hero { grid-column: span 2; }
-    .lp-tile--specs, .lp-tile--wide { grid-column: span 2; }
-    .lp-tile--full { grid-column: span 2; }
-    .lp-tile-row { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 639.98px) {
-    .lp-bento { grid-template-columns: 1fr; }
-    .lp-tile--hero, .lp-tile--specs, .lp-tile--wide, .lp-tile--full { grid-column: span 1; }
-    .lp-tile--hero { grid-row: span 1; }
-    .lp-hero__title { font-size: 20px; line-height: 26px; }
-    .lp-spec-grid { grid-template-columns: 1fr; }
-    .lp-batch-row { flex-wrap: wrap; }
-    .lp-batch-row__chevron { display: none; }
-    .lp-tile__head { flex-direction: column; align-items: stretch; }
+@media (max-width: 640px) {
+    .lp-kpi-grid { grid-template-columns: 1fr 1fr; }
+    .lp-metric4-grid { grid-template-columns: 1fr 1fr; }
+    .lp-alloc-stats { grid-template-columns: 1fr 1fr; }
+    .lp-header__actions { width: 100%; }
+    .lp-header__actions .lp-btn { flex: 1; }
 }
 </style>

@@ -11,6 +11,8 @@ const props = defineProps({
     currencyCountries: { type: Object, default: () => ({}) },
     deliveryMethodOptions: { type: Array, default: () => [] },
     incotermOptions: { type: Array, default: () => [] },
+    paymentOptions: { type: Array, default: () => [] },
+    deliveryTermsOptions: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -44,6 +46,7 @@ function fieldsFromLot() {
         description: props.lot.description || '',
         quantity: props.lot.net_weight_kg ?? '',
         available_quantity: props.lot.net_weight_kg ?? '',
+        reserved_quantity: 0,
         unit: 'kg',
         currency: props.lot.currency || 'USD',
         price_per_unit: props.lot.price ?? '',
@@ -82,12 +85,17 @@ function submit() {
         preserveScroll: true,
         onSuccess: () => {
             const flash = usePage().props.flash || {};
+            closeDialog();
             if (flash.error) {
                 ElNotification({ title: 'Already Published', message: flash.error, type: 'warning', duration: 3600, offset: 84 });
-            } else {
-                ElNotification({ title: 'Published', message: flash.success || 'Your lot is now live on the market.', type: 'success', duration: 3200, offset: 84 });
+                return;
             }
-            closeDialog();
+            ElNotification({ title: 'Published', message: flash.success || 'Your lot is now live on the market.', type: 'success', duration: 3200, offset: 84 });
+            // The lot's derived display state (KPIs, allocation, Edit/Delete
+            // gating, etc.) is computed once from props at setup — Inertia
+            // reuses this same mounted page instance on redirect, so a hard
+            // reload is needed for it to actually reflect the new listing.
+            window.location.reload();
         },
     });
 }
@@ -141,6 +149,11 @@ function submit() {
                     <el-input-number v-model="form.available_quantity" :min="0" :max="form.quantity || undefined" :precision="2" class="plm-input w-100" :class="{ 'plm-input--error': form.errors.available_quantity }" />
                     <span v-if="form.errors.available_quantity" class="plm-field__error">{{ form.errors.available_quantity }}</span>
                 </div>
+                <div class="plm-field">
+                    <label class="plm-field__label">How much is already reserved? <small>(optional)</small></label>
+                    <el-input-number v-model="form.reserved_quantity" :min="0" :max="form.quantity || undefined" :precision="2" class="plm-input w-100" :class="{ 'plm-input--error': form.errors.reserved_quantity }" />
+                    <span v-if="form.errors.reserved_quantity" class="plm-field__error">{{ form.errors.reserved_quantity }}</span>
+                </div>
 
                 <div class="plm-field">
                     <label class="plm-field__label">Unit</label>
@@ -183,12 +196,16 @@ function submit() {
 
                 <div class="plm-field">
                     <label class="plm-field__label">How should buyers pay? <small>(optional)</small></label>
-                    <el-input v-model="form.payment_terms" placeholder="e.g. 50% deposit, balance on delivery" class="plm-input" :class="{ 'plm-input--error': form.errors.payment_terms }" />
+                    <el-select v-model="form.payment_terms" placeholder="Select payment terms" filterable clearable class="plm-input w-100" :class="{ 'plm-input--error': form.errors.payment_terms }">
+                        <el-option v-for="option in paymentOptions" :key="option.slug" :label="option.name" :value="option.slug" />
+                    </el-select>
                     <span v-if="form.errors.payment_terms" class="plm-field__error">{{ form.errors.payment_terms }}</span>
                 </div>
-                <div class="plm-field">
+                <div class="plm-field plm-field--span2">
                     <label class="plm-field__label">How will it be delivered? <small>(optional)</small></label>
-                    <el-input v-model="form.delivery_terms" placeholder="e.g. FOB, Ex-works" class="plm-input" :class="{ 'plm-input--error': form.errors.delivery_terms }" />
+                    <el-select v-model="form.delivery_terms" placeholder="Select delivery terms" filterable clearable class="plm-input w-100" :class="{ 'plm-input--error': form.errors.delivery_terms }">
+                        <el-option v-for="option in deliveryTermsOptions" :key="option.slug" :label="option.name" :value="option.slug" />
+                    </el-select>
                     <span v-if="form.errors.delivery_terms" class="plm-field__error">{{ form.errors.delivery_terms }}</span>
                 </div>
 

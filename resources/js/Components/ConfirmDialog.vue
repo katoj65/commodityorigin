@@ -18,6 +18,9 @@ const props = defineProps({
     // must finish before navigating away) pass :auto-close="false" and close
     // the v-model themselves once their async work settles.
     autoClose: { type: Boolean, default: true },
+    // Shown by default everywhere; a caller can hide it when the header
+    // close button is the only dismiss path they want to offer.
+    showCancel: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
@@ -58,7 +61,7 @@ function confirm() {
                         <p v-if="message" class="cfd-message">{{ message }}</p>
 
                         <div class="cfd-actions">
-                            <button type="button" class="cfd-btn cfd-btn--ghost" :disabled="loading" @click="close">{{ cancelText }}</button>
+                            <button v-if="showCancel" type="button" class="cfd-btn cfd-btn--ghost" :disabled="loading" @click="close">{{ cancelText }}</button>
                             <button type="button" class="cfd-btn" :class="danger ? 'cfd-btn--danger' : 'cfd-btn--primary'" :disabled="loading" @click="confirm">
                                 {{ loading ? loadingText : confirmText }}
                             </button>

@@ -175,4 +175,22 @@ class Lot extends Model
     {
         return $this->belongsToMany(FlavorMetadata::class, 'lot_flavors');
     }
+
+    /**
+     * Get the sustainability practices recorded against this lot.
+     */
+    public function sustainabilityPractices(): HasMany
+    {
+        return $this->hasMany(LotSustainability::class);
+    }
+
+    /**
+     * Get this lot's denormalized custody links to farm collections (via
+     * lot_batch_farm_collection) — a shallow read of lot -> farm collection
+     * without joining through lot_batches and batch_farm_collection.
+     */
+    public function lotBatchFarmCollections(): HasMany
+    {
+        return $this->hasMany(LotBatchFarmCollection::class);
+    }
 }
