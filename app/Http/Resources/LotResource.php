@@ -68,6 +68,7 @@ class LotResource extends JsonResource
             ] : null),
             'lot_batches' => $this->whenLoaded('lotBatches', fn (): array => LotBatchResource::collection($this->lotBatches)->resolve()),
             'lot_batch_farm_collections' => $this->whenLoaded('lotBatchFarmCollections', fn (): array => LotBatchFarmCollectionResource::collection($this->lotBatchFarmCollections)->resolve()),
+            'sustainability_verifications' => $this->whenLoaded('sustainabilityVerifications', fn (): array => LotSustainabilityVerificationResource::collection($this->sustainabilityVerifications)->resolve()),
             'images' => $this->whenLoaded('images', fn (): array => LotImageResource::collection($this->images)->resolve()),
             'flavors' => $this->whenLoaded('flavors', fn (): array => $this->flavors->map(fn ($flavor): array => [
                 'id' => $flavor->id,

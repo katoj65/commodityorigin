@@ -193,4 +193,12 @@ class Lot extends Model
     {
         return $this->hasMany(LotBatchFarmCollection::class);
     }
+
+    /**
+     * Get this lot's sustainability/compliance checklist items.
+     */
+    public function sustainabilityVerifications(): HasMany
+    {
+        return $this->hasMany(LotSustainabilityVerification::class);
+    }
 }

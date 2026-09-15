@@ -22,12 +22,15 @@ use App\Models\LotActivity;
 use App\Models\LotActivityMetadata;
 use App\Models\LotImage;
 use App\Models\LotRequest;
+use App\Models\LotSustainabilityVerification;
 use App\Models\PaymentMetadata;
+use App\Models\SustainabilityVerificationMetadata;
 use App\Services\CoffeeGradeService;
 use App\Services\CountryService;
 use App\Services\LotActivityService;
 use App\Services\LotImageService;
 use App\Services\LotService;
+use App\Services\LotSustainabilityVerificationService;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,6 +48,7 @@ class LotController extends Controller
         private readonly CountryService $countries,
         private readonly LotImageService $lotImages,
         private readonly LotActivityService $activities,
+        private readonly LotSustainabilityVerificationService $sustainabilityVerifications,
     ) {
     }
 
@@ -299,6 +303,7 @@ class LotController extends Controller
             'blockchain.user',
             'activities.user',
             'storageProfile',
+            'sustainabilityVerifications',
         ]);
 
         return Inertia::render('Lot/LotProfile', [
@@ -368,6 +373,16 @@ class LotController extends Controller
                 ->map(fn (DeliveryTermsMetadata $option): array => [
                     'slug' => $option->slug,
                     'name' => $option->name,
+                ]),
+            'sustainabilityVerificationOptions' => SustainabilityVerificationMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name', 'description'])
+                ->map(fn (SustainabilityVerificationMetadata $option): array => [
+                    'slug' => $option->slug,
+                    'name' => $option->name,
+                    'description' => $option->description,
                 ]),
             'currencyOptions' => Currency::query()
                 ->where('is_active', true)
@@ -525,6 +540,41 @@ class LotController extends Controller
         $this->activities->delete($activity);
 
         return back()->with('success', 'Activity removed.');
+    }
+
+    /**
+     * Add a sustainability/compliance checklist item to this lot — `item`
+     * is typically sourced from an active sustainability_verification_metadata
+     * option on the frontend, but is stored as free text here.
+     */
+    public function storeSustainabilityVerification(Request $request, Lot $lot): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
+
+        $validated = $request->validate([
+            'item' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'status' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $validated['order'] = $lot->sustainabilityVerifications()->count();
+
+        $this->sustainabilityVerifications->store($lot, $validated);
+
+        return back()->with('success', 'Sustainability verification added.');
+    }
+
+    /**
+     * Remove a sustainability/compliance checklist item from this lot.
+     */
+    public function destroySustainabilityVerification(Lot $lot, LotSustainabilityVerification $sustainabilityVerification): RedirectResponse
+    {
+        Gate::authorize('update', $lot);
+        abort_unless((int) $sustainabilityVerification->lot_id === (int) $lot->id, 404);
+
+        $this->sustainabilityVerifications->delete($sustainabilityVerification);
+
+        return back()->with('success', 'Sustainability verification removed.');
     }
 
     /**

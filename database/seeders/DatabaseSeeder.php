@@ -76,6 +76,7 @@ class DatabaseSeeder extends Seeder
             FarmCollectionActivityMetadataSeeder::class,
             LotActivityMetadataSeeder::class,
             SustainabilityPracticesMetadataSeeder::class,
+            SustainabilityVerificationMetadataSeeder::class,
             FlavorMetadataSeeder::class,
             DeliveryMethodMetadataSeeder::class,
             IncotermMetadataSeeder::class,

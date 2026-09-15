@@ -11,6 +11,7 @@ import {
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import EditLotModal from '@/Components/Modals/EditLotModal.vue';
 import AttachBatchModal from '@/Components/Modals/AttachBatchModal.vue';
+import AddSustainabilityVerificationModal from '@/Components/Modals/AddSustainabilityVerificationModal.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import PublishToMarketButton from '@/Components/Button/PublishToMarketButton.vue';
 
@@ -38,6 +39,7 @@ const props = defineProps({
     incotermOptions: { type: Array, default: () => [] },
     paymentOptions: { type: Array, default: () => [] },
     deliveryTermsOptions: { type: Array, default: () => [] },
+    sustainabilityVerificationOptions: { type: Array, default: () => [] },
 });
 const l = props.lot ?? {};
 
@@ -53,6 +55,9 @@ const editModalOpen = ref(false);
 const deleteDialogOpen = ref(false);
 const deleteLoading = ref(false);
 const attachBatchModalOpen = ref(false);
+const addVerificationModalOpen = ref(false);
+const deleteVerificationDialogOpen = ref(false);
+const deleteVerificationLoading = ref(false);
 const detachBatchDialogOpen = ref(false);
 const detachBatchLoading = ref(false);
 
@@ -236,6 +241,45 @@ function confirmDetachBatch() {
     });
 }
 
+const verificationToDelete = ref(null);
+
+function requestDeleteVerification(item) {
+    verificationToDelete.value = item;
+    deleteVerificationDialogOpen.value = true;
+}
+
+function confirmDeleteVerification() {
+    if (!verificationToDelete.value) return;
+    const item = verificationToDelete.value;
+    deleteVerificationLoading.value = true;
+    router.delete(route('lot.sustainability-verifications.destroy', { lot: l.id, sustainabilityVerification: item.id }), {
+        preserveScroll: true,
+        onSuccess: () => {
+            ElNotification({
+                title: 'Verification Removed',
+                message: `"${item.title}" was removed from this lot.`,
+                type: 'success',
+                duration: 3200,
+                offset: 84,
+            });
+            window.location.reload();
+        },
+        onError: () => {
+            ElNotification({
+                title: 'Remove Failed',
+                message: 'This verification could not be removed.',
+                type: 'error',
+                duration: 3200,
+                offset: 84,
+            });
+        },
+        onFinish: () => {
+            deleteVerificationLoading.value = false;
+            deleteVerificationDialogOpen.value = false;
+        },
+    });
+}
+
 /* Trade names don't imply their species epithet (Robusta -> Coffea
    canephora, not "Coffea robusta") — look it up rather than guess. */
 const speciesByVariety = { robusta: 'Coffea canephora', arabica: 'Coffea arabica', liberica: 'Coffea liberica', excelsa: 'Coffea excelsa' };
@@ -288,9 +332,11 @@ const dummySustainItems = [
     { title: 'Zero-Water Dry Footprint', sub: 'Raised African beds drying process', status: 'PASSED' },
     { title: 'Fair Producer Living Wage', sub: '+38% disbursed over market baseline', status: 'AUDITED' },
 ];
-const sustainItems = primaryFarm?.certifications?.length
-    ? primaryFarm.certifications.slice(0, 4).map((c) => ({ title: c.name, sub: c.description || `Certified for ${primaryFarm.name}`, status: 'VERIFIED' }))
-    : dummySustainItems;
+const sustainItems = l.sustainability_verifications?.length
+    ? l.sustainability_verifications.map((v) => ({ id: v.id, title: v.item, sub: v.description || '—', status: v.status ? v.status.toUpperCase() : 'PENDING' }))
+    : primaryFarm?.certifications?.length
+        ? primaryFarm.certifications.slice(0, 4).map((c) => ({ title: c.name, sub: c.description || `Certified for ${primaryFarm.name}`, status: 'VERIFIED' }))
+        : dummySustainItems;
 
 const dummyListings = [
     { channel: 'Product Profile', detail: 'Uganda Fine Robusta Screen 18', price: '$4.20 / kg', status: 'Active', style: 'success', action: 'View' },
@@ -536,7 +582,6 @@ const aiInsight = {
                 <div class="lp-card">
                     <div class="lp-card__head">
                         <h2 class="lp-card__title"><el-icon><Document /></el-icon> Physical &amp; Botanical Specifications</h2>
-                        <span class="lp-tag-mono">Two-Column Master</span>
                     </div>
                     <div class="lp-spec-table">
                         <div v-for="s in specs" :key="s.label" class="lp-spec-row">
@@ -615,18 +660,31 @@ const aiInsight = {
                 <div class="lp-card">
                     <div class="lp-card__head">
                         <h2 class="lp-card__title"><el-icon><CircleCheck /></el-icon> Verified Sustainability</h2>
-                        <span class="lp-check-badge">4 Audited Proofs</span>
+                        <button type="button" class="lp-btn lp-btn--outline lp-btn--sm" @click="addVerificationModalOpen = true">
+                            <el-icon><Plus /></el-icon> Add Verification
+                        </button>
                     </div>
                     <div class="lp-chip-row">
                         <span v-for="b in sustainBadges" :key="b" class="lp-check-pill lp-check-pill--outline"><el-icon><CircleCheck /></el-icon>{{ b }}</span>
                     </div>
                     <div class="lp-sustain-list">
-                        <div v-for="s in sustainItems" :key="s.title" class="lp-sustain-row">
-                            <div>
+                        <div v-for="s in sustainItems" :key="s.id ?? s.title" class="lp-sustain-row">
+                            <div class="lp-sustain-row__label">
                                 <span class="lp-strong">{{ s.title }}</span>
                                 <em>{{ s.sub }}</em>
                             </div>
-                            <span class="lp-status-tag">{{ s.status }}</span>
+                            <span class="lp-sustain-row__right">
+                                <span class="lp-status-tag">{{ s.status }}</span>
+                                <button
+                                    v-if="s.id"
+                                    type="button"
+                                    class="lp-batch-row__remove"
+                                    title="Remove this verification"
+                                    @click="requestDeleteVerification(s)"
+                                >
+                                    <el-icon><Delete /></el-icon>
+                                </button>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -761,6 +819,7 @@ const aiInsight = {
             @confirm="confirmDelete"
         />
         <AttachBatchModal v-model="attachBatchModalOpen" :lot-id="l.id" />
+        <AddSustainabilityVerificationModal v-model="addVerificationModalOpen" :lot-id="l.id" :options="sustainabilityVerificationOptions" />
         <ConfirmDialog
             v-model="detachBatchDialogOpen"
             eyebrow="Lot Profile"
@@ -771,6 +830,17 @@ const aiInsight = {
             :auto-close="false"
             :show-cancel="false"
             @confirm="confirmDetachBatch"
+        />
+        <ConfirmDialog
+            v-model="deleteVerificationDialogOpen"
+            eyebrow="Lot Profile"
+            title="Remove this verification?"
+            :message="`&quot;${verificationToDelete?.title}&quot; will be removed from this lot's sustainability checklist.`"
+            confirm-text="Remove Verification"
+            :loading="deleteVerificationLoading"
+            :auto-close="false"
+            :show-cancel="false"
+            @confirm="confirmDeleteVerification"
         />
     </DesignPreviewLayout>
 </template>
@@ -958,6 +1028,9 @@ const aiInsight = {
 .lp-sustain-list { display: flex; flex-direction: column; }
 .lp-sustain-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--dp-surface-container-high); }
 .lp-sustain-row em { display: block; font-style: normal; font-size: .6875rem; color: var(--dp-on-surface-variant); margin-top: 1px; }
+.lp-sustain-row__label { min-width: 0; overflow: hidden; }
+.lp-sustain-row__label .lp-strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-sustain-row__right { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .lp-status-tag { padding: 3px 9px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container); color: var(--dp-primary); font-family: var(--dp-font-mono); font-size: .625rem; font-weight: 700; flex-shrink: 0; }
 
 /* ── Commercial listings table ───────────────────────────────────────── */

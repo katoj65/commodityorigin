@@ -286,6 +286,8 @@ Route::middleware([
         Route::delete('/{lot}/batches/{batch}', [LotController::class, 'detachBatch'])->name('batches.destroy');
         Route::post('/{lot}/activities', [LotController::class, 'storeActivity'])->name('activities.store');
         Route::delete('/{lot}/activities/{activity}', [LotController::class, 'destroyActivity'])->name('activities.destroy');
+        Route::post('/{lot}/sustainability-verifications', [LotController::class, 'storeSustainabilityVerification'])->name('sustainability-verifications.store');
+        Route::delete('/{lot}/sustainability-verifications/{sustainabilityVerification}', [LotController::class, 'destroySustainabilityVerification'])->name('sustainability-verifications.destroy');
     });
 
     // Batch workspace routes.
