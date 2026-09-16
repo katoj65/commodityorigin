@@ -76,7 +76,7 @@ class BatchService
      */
     public function loadProfileRelations(Batch $batch): Batch
     {
-        return $batch->load(['lotBatches.lot', 'user', 'batchFarmCollections.farmCollection.farm', 'warehouse']);
+        return $batch->load(['lotBatches.lot', 'user', 'batchFarmCollections.farmCollection.farm', 'batchStorage']);
     }
 
     /**

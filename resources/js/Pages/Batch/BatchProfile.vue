@@ -279,21 +279,21 @@ function confirmDeleteActivity() {
     });
 }
 
-const warehouse = b.warehouse ?? null;
+const batchStorage = b.batch_storage ?? null;
 const storage = [
-    { label: 'Warehouse Facility', value: b.warehouse_location || 'Kampala Coffee Bonded Warehouse (Depot #4)' },
-    { label: 'Storage Bay', value: warehouse?.storage_bay || 'Depot #Kampala-04, Bay 3B', chip: true },
-    { label: 'Date Stored', value: fmtLongDate(warehouse?.date_stored) || fmtLongDate(b.created_at) || '15 September 2026' },
+    { label: 'Warehouse Facility', value: batchStorage?.location || 'None' },
+    { label: 'Storage Bay', value: batchStorage?.storage_bay || 'None', chip: true },
+    { label: 'Date Stored', value: fmtLongDate(batchStorage?.date_stored) || 'None' },
     {
         label: 'Quantity Stored',
-        value: has(warehouse?.quantity_stored_kg)
-            ? `${Number(warehouse.quantity_stored_kg).toLocaleString()} kg${has(b.quantity_bags) ? ` (${b.quantity_bags} bags)` : ''}`
-            : has(netWeight) ? `${netWeight.toLocaleString()} kg${has(b.quantity_bags) ? ` (${b.quantity_bags} bags)` : ''}` : '850 kg (14.2 × 60kg Sacks)',
+        value: has(batchStorage?.quantity_stored_kg)
+            ? `${Number(batchStorage.quantity_stored_kg).toLocaleString()} kg${has(b.quantity_bags) ? ` (${b.quantity_bags} bags)` : ''}`
+            : 'None',
         accent: true,
     },
-    { label: 'Climate Ambient', value: warehouse?.climate_ambient || '18°C - 21°C · 58% Relative Humidity' },
-    { label: 'Physical Pallet', value: warehouse?.physical_pallet || 'Palletized & Raised (15cm off deck)' },
-    { label: 'Packaging Spec', value: warehouse?.packaging_spec || 'GrainPro Hermetic + Food-Grade Jute' },
+    { label: 'Climate Ambient', value: batchStorage?.climate_ambient || 'None' },
+    { label: 'Physical Pallet', value: batchStorage?.physical_pallet || 'None' },
+    { label: 'Packaging Spec', value: batchStorage?.packaging_spec || 'None' },
 ];
 
 const qualityMetrics = [
@@ -628,7 +628,7 @@ const reconciliationText = hasYieldPair
         />
         <AttachFarmCollectionModal v-if="b.can_manage" v-model="attachModalOpen" :batch-id="b.id" />
         <AddBatchActivityModal v-if="b.can_manage" v-model="addActivityModalOpen" :batch-id="b.id" :activity-options="activityOptions" />
-        <AddStorageRecordModal v-if="b.can_manage" v-model="addStorageModalOpen" :batch-id="b.id" :warehouse="warehouse" />
+        <AddStorageRecordModal v-if="b.can_manage" v-model="addStorageModalOpen" :batch-id="b.id" :batch-storage="batchStorage" />
         <ConfirmDialog
             v-model="deleteActivityDialogOpen"
             eyebrow="Batch Processing Records"
@@ -734,6 +734,7 @@ const reconciliationText = hasYieldPair
 .btp-spec-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; font-size: .8125rem; }
 .btp-spec-row span { color: var(--dp-on-surface-variant); font-weight: 500; }
 .btp-spec-row strong { color: var(--dp-on-surface); font-weight: 700; text-align: right; }
+.btp-spec-row span.btp-status-tag-solid { color: var(--dp-on-primary); }
 .btp-spec-chip { padding: 2px 8px; border-radius: 4px; background: var(--dp-surface-container-high); }
 .btp-status-tag-solid { padding: 3px 9px; border-radius: 999px; font-size: .6875rem; font-weight: 700; background: var(--dp-primary); color: var(--dp-on-primary); }
 .btp-info-strip { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: var(--dp-card-radius); background: var(--dp-surface-container-low); font-size: .75rem; color: var(--dp-on-surface-variant); flex-wrap: wrap; }

@@ -40,7 +40,7 @@ class BatchResource extends JsonResource
                 $this->lotBatches->map(fn ($link) => $link->lot)->filter()->values()
             )->resolve()),
             'farm_collection_links' => $this->whenLoaded('batchFarmCollections', fn (): array => BatchFarmCollectionResource::collection($this->batchFarmCollections)->resolve()),
-            'warehouse' => $this->whenLoaded('warehouse', fn (): ?array => $this->warehouse ? WarehouseResource::make($this->warehouse)->resolve() : null),
+            'batch_storage' => $this->whenLoaded('batchStorage', fn (): ?array => $this->batchStorage ? BatchStorageResource::make($this->batchStorage)->resolve() : null),
             'user' => $this->whenLoaded('user', fn (): ?array => $this->user ? [
                 'id' => $this->user->id,
                 'name' => $this->user->name,

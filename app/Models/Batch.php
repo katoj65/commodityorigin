@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Batch extends Model
@@ -93,5 +94,16 @@ class Batch extends Model
     public function warehouse(): MorphOne
     {
         return $this->morphOne(Warehouse::class, 'item');
+    }
+
+    /**
+     * Get this batch's dedicated storage record, if recorded. Distinct
+     * from warehouse() (Warehouse) — that's the shared polymorphic
+     * warehousing table also used by farm collections and lots; this is a
+     * batch-only storage record keyed directly on batch_id.
+     */
+    public function batchStorage(): HasOne
+    {
+        return $this->hasOne(BatchStorage::class);
     }
 }

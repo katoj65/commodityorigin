@@ -7,7 +7,7 @@ import { Close, Box } from '@element-plus/icons-vue';
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
     batchId: { type: [Number, String], required: true },
-    warehouse: { type: Object, default: null },
+    batchStorage: { type: Object, default: null },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -19,12 +19,13 @@ const dialogVisible = computed({
 
 function emptyForm() {
     return {
-        storage_bay: props.warehouse?.storage_bay ?? '',
-        date_stored: props.warehouse?.date_stored ?? '',
-        quantity_stored_kg: props.warehouse?.quantity_stored_kg ?? '',
-        climate_ambient: props.warehouse?.climate_ambient ?? '',
-        physical_pallet: props.warehouse?.physical_pallet ?? '',
-        packaging_spec: props.warehouse?.packaging_spec ?? '',
+        location: props.batchStorage?.location ?? '',
+        storage_bay: props.batchStorage?.storage_bay ?? '',
+        date_stored: props.batchStorage?.date_stored ?? '',
+        quantity_stored_kg: props.batchStorage?.quantity_stored_kg ?? '',
+        climate_ambient: props.batchStorage?.climate_ambient ?? '',
+        physical_pallet: props.batchStorage?.physical_pallet ?? '',
+        packaging_spec: props.batchStorage?.packaging_spec ?? '',
     };
 }
 
@@ -46,8 +47,9 @@ function isFutureDate(date) {
 }
 
 function submit() {
-    if (!form.storage_bay || !form.date_stored || !form.quantity_stored_kg) {
+    if (!form.location || !form.storage_bay || !form.date_stored || !form.quantity_stored_kg) {
         form.setError({
+            location: form.location ? undefined : 'Location is required.',
             storage_bay: form.storage_bay ? undefined : 'Storage bay is required.',
             date_stored: form.date_stored ? undefined : 'Date stored is required.',
             quantity_stored_kg: form.quantity_stored_kg ? undefined : 'Quantity stored is required.',
@@ -55,11 +57,11 @@ function submit() {
         return;
     }
 
-    form.post(route('batch.warehouse.store', props.batchId), {
+    form.post(route('batch.storage.store', props.batchId), {
         preserveScroll: true,
         onSuccess: () => {
             closeDialog();
-            ElNotification({ title: 'Storage Record Saved', message: "The batch's warehousing detail was saved.", type: 'success', duration: 3200, offset: 84 });
+            ElNotification({ title: 'Storage Record Saved', message: "The batch's storage detail was saved.", type: 'success', duration: 3200, offset: 84 });
             // The host page's storage detail is computed once from props at
             // setup — Inertia reuses the same mounted instance on redirect,
             // so a hard reload is needed for it to reflect the new record.
@@ -95,6 +97,12 @@ function submit() {
         </template>
 
         <div class="asr-modal__body">
+            <div class="asr-field">
+                <label class="asr-field__label">Location</label>
+                <el-input v-model="form.location" placeholder="e.g. Kampala Coffee Bonded Warehouse (Depot #4)" class="asr-input" :class="{ 'asr-input--error': form.errors.location }" />
+                <span v-if="form.errors.location" class="asr-field__error">{{ form.errors.location }}</span>
+            </div>
+
             <div class="asr-field">
                 <label class="asr-field__label">Storage Bay</label>
                 <el-input v-model="form.storage_bay" placeholder="e.g. Depot #Kampala-04, Bay 3B" class="asr-input" :class="{ 'asr-input--error': form.errors.storage_bay }" />

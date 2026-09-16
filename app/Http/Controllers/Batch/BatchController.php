@@ -11,7 +11,7 @@ use App\Models\BatchActivityMetadata;
 use App\Models\Currency;
 use App\Services\BatchActivityService;
 use App\Services\BatchService;
-use App\Services\WarehouseService;
+use App\Services\BatchStorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,7 +25,7 @@ class BatchController extends Controller
     public function __construct(
         private readonly BatchService $batches,
         private readonly BatchActivityService $activities,
-        private readonly WarehouseService $warehouses,
+        private readonly BatchStorageService $batchStorage,
     ) {
     }
 
@@ -181,11 +181,12 @@ class BatchController extends Controller
     /**
      * Record or update this batch's bonded-warehousing/storage detail.
      */
-    public function storeWarehouse(Request $request, Batch $batch): RedirectResponse
+    public function storeStorage(Request $request, Batch $batch): RedirectResponse
     {
         Gate::authorize('update', $batch);
 
         $validated = $request->validate([
+            'location' => ['required', 'string', 'max:255'],
             'storage_bay' => ['required', 'string', 'max:255'],
             'date_stored' => ['required', 'date', 'before_or_equal:today'],
             'quantity_stored_kg' => ['required', 'numeric', 'min:0.01'],
@@ -194,7 +195,7 @@ class BatchController extends Controller
             'packaging_spec' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $this->warehouses->store($batch, $validated);
+        $this->batchStorage->store($batch, $validated);
 
         return back()->with('success', 'Storage record saved.');
     }
