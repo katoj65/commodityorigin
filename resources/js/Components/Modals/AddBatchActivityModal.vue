@@ -43,6 +43,11 @@ function submit() {
         onSuccess: () => {
             closeDialog();
             ElNotification({ title: 'Activity Recorded', message: 'The batch activity was added to the log.', type: 'success', duration: 3200, offset: 84 });
+            // The host page's Processing Records list is computed once from
+            // props at setup — Inertia reuses the same mounted instance on
+            // redirect, so a hard reload is needed for it to reflect the
+            // new entry.
+            window.location.reload();
         },
     });
 }
@@ -91,7 +96,6 @@ function submit() {
 
         <template #footer>
             <div class="aba-modal__footer">
-                <button type="button" class="aba-btn-outline" @click="closeDialog">Cancel</button>
                 <button type="button" class="aba-btn-primary" :disabled="form.processing" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Record Activity' }}
                 </button>

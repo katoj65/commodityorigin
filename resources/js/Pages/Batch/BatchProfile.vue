@@ -1,10 +1,18 @@
 <script setup>
+import { computed, ref } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
+import { ElNotification } from 'element-plus';
 import {
     Box, CircleCheck, Coffee, Sunny, Checked, User, InfoFilled, PieChart,
     EditPen, Trophy, Operation, Plus, Ticket, Check, Collection,
-    OfficeBuilding, LocationFilled, Download, Document, Clock,
+    OfficeBuilding, LocationFilled, Download, Document, Clock, Delete,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import UpdateBatchModal from '@/Components/Modals/UpdateBatchModal.vue';
+import AttachFarmCollectionModal from '@/Components/Modals/AttachFarmCollectionModal.vue';
+import AddBatchActivityModal from '@/Components/Modals/AddBatchActivityModal.vue';
+import AddStorageRecordModal from '@/Components/Modals/AddStorageRecordModal.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 /* ── Real Batch data, field by field, with dummy fallbacks ported from the
    "Batch #BAT-000124" reference mockup (code.html) + DESIGN.md wherever the
@@ -22,6 +30,41 @@ const props = defineProps({
     activityOptions: { type: Array, default: () => [] },
 });
 const b = props.batch ?? {};
+
+/* ── Edit / delete / attach — real actions against the real batch.update,
+   batch.destroy, and batch.farm-collections.store routes (the backend for
+   these already existed; only this redesigned page's wiring was missing).
+   Editing and attaching a collection keep the user on this same route, so
+   the page reloads on success to pick up the fresh data — this page's
+   derived display state is computed once from props at setup and Inertia
+   reuses the same mounted instance on a same-route redirect. ──────────── */
+const editModalOpen = ref(false);
+const deleteDialogOpen = ref(false);
+const deleting = ref(false);
+const attachModalOpen = ref(false);
+const addActivityModalOpen = ref(false);
+const addStorageModalOpen = ref(false);
+
+const deleteMessage = computed(() => `Are you sure you want to delete batch ${b.batch_number || `#${b.id}`}? This action cannot be undone.`);
+
+function deleteBatch() {
+    deleting.value = true;
+    router.delete(route('batch.destroy', b.id), {
+        onError: () => {
+            ElNotification({
+                title: 'Delete Failed',
+                message: 'This batch could not be deleted.',
+                type: 'error',
+                duration: 3200,
+                offset: 84,
+            });
+        },
+        onFinish: () => {
+            deleting.value = false;
+            deleteDialogOpen.value = false;
+        },
+    });
+}
 
 const has = (v) => v !== null && v !== undefined && v !== '';
 const titleCase = (s) => String(s).replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -145,6 +188,7 @@ const collections = collectionLinks.length
         const fc = link.farm_collection;
         const farm = fc?.farm;
         return {
+            id: link.farm_collection_id ?? fc?.id ?? null,
             code: link.farm_collection_code || fc?.collection_code,
             farm: farm?.name || `Collection ${link.farm_collection_code}`,
             plot: [farm?.farm_code ? `Plot #${farm.farm_code}` : null, 'Verified Smallholder'].filter(has).join(' · '),
@@ -181,6 +225,7 @@ const dummyProcessingRecords = [
 ];
 const processingRecords = props.activities?.length
     ? props.activities.map((a) => ({
+        id: a.id,
         icon: eventIcon(a.event),
         title: eventLabel(a.event),
         date: fmtShortDate(a.created_at) || '—',
@@ -192,15 +237,63 @@ const processingRecords = props.activities?.length
     }))
     : dummyProcessingRecords;
 
+const activityToDelete = ref(null);
+const deleteActivityDialogOpen = ref(false);
+const deletingActivity = ref(false);
+const deleteActivityMessage = computed(() => `Remove the "${activityToDelete.value?.title ?? ''}" record from this batch's log? This action cannot be undone.`);
+
+function requestDeleteActivity(record) {
+    activityToDelete.value = record;
+    deleteActivityDialogOpen.value = true;
+}
+
+function confirmDeleteActivity() {
+    if (!activityToDelete.value) return;
+    const record = activityToDelete.value;
+    deletingActivity.value = true;
+    router.delete(route('batch.activities.destroy', { batch: b.id, activity: record.id }), {
+        preserveScroll: true,
+        onSuccess: () => {
+            ElNotification({
+                title: 'Record Removed',
+                message: `"${record.title}" was removed from this batch's log.`,
+                type: 'success',
+                duration: 3200,
+                offset: 84,
+            });
+            window.location.reload();
+        },
+        onError: () => {
+            ElNotification({
+                title: 'Remove Failed',
+                message: 'This record could not be removed.',
+                type: 'error',
+                duration: 3200,
+                offset: 84,
+            });
+        },
+        onFinish: () => {
+            deletingActivity.value = false;
+            deleteActivityDialogOpen.value = false;
+        },
+    });
+}
+
+const warehouse = b.warehouse ?? null;
 const storage = [
     { label: 'Warehouse Facility', value: b.warehouse_location || 'Kampala Coffee Bonded Warehouse (Depot #4)' },
-    // No storage bay/pallet/packaging schema exists on the batch record — stays illustrative.
-    { label: 'Storage Bay', value: 'Depot #Kampala-04, Bay 3B', chip: true },
-    { label: 'Date Stored', value: fmtLongDate(b.created_at) || '15 September 2026' },
-    { label: 'Quantity Stored', value: has(netWeight) ? `${netWeight.toLocaleString()} kg${has(b.quantity_bags) ? ` (${b.quantity_bags} bags)` : ''}` : '850 kg (14.2 × 60kg Sacks)', accent: true },
-    { label: 'Climate Ambient', value: '18°C - 21°C · 58% Relative Humidity' },
-    { label: 'Physical Pallet', value: 'Palletized & Raised (15cm off deck)' },
-    { label: 'Packaging Spec', value: 'GrainPro Hermetic + Food-Grade Jute' },
+    { label: 'Storage Bay', value: warehouse?.storage_bay || 'Depot #Kampala-04, Bay 3B', chip: true },
+    { label: 'Date Stored', value: fmtLongDate(warehouse?.date_stored) || fmtLongDate(b.created_at) || '15 September 2026' },
+    {
+        label: 'Quantity Stored',
+        value: has(warehouse?.quantity_stored_kg)
+            ? `${Number(warehouse.quantity_stored_kg).toLocaleString()} kg${has(b.quantity_bags) ? ` (${b.quantity_bags} bags)` : ''}`
+            : has(netWeight) ? `${netWeight.toLocaleString()} kg${has(b.quantity_bags) ? ` (${b.quantity_bags} bags)` : ''}` : '850 kg (14.2 × 60kg Sacks)',
+        accent: true,
+    },
+    { label: 'Climate Ambient', value: warehouse?.climate_ambient || '18°C - 21°C · 58% Relative Humidity' },
+    { label: 'Physical Pallet', value: warehouse?.physical_pallet || 'Palletized & Raised (15cm off deck)' },
+    { label: 'Packaging Spec', value: warehouse?.packaging_spec || 'GrainPro Hermetic + Food-Grade Jute' },
 ];
 
 const qualityMetrics = [
@@ -254,11 +347,13 @@ const reconciliationText = hasYieldPair
                     </div>
                 </div>
                 <div class="btp-header__actions">
-                    <button type="button" class="btp-btn btp-btn--outline"><el-icon><EditPen /></el-icon> Edit Batch</button>
-                    <button type="button" class="btp-btn btp-btn--outline"><el-icon><Trophy /></el-icon> Record Quality</button>
-                    <button type="button" class="btp-btn btp-btn--outline"><el-icon><Operation /></el-icon> Record Processing</button>
-                    <button type="button" class="btp-btn btp-btn--secondary"><el-icon><Plus /></el-icon> Add Collection</button>
-                    <button type="button" class="btp-btn btp-btn--primary"><el-icon><Ticket /></el-icon> Create Lot</button>
+                    <template v-if="b.can_manage">
+                        <button type="button" class="btp-btn btp-btn--outline" @click="editModalOpen = true"><el-icon><EditPen /></el-icon> Edit Batch</button>
+                        <button type="button" class="btp-btn btp-btn--outline btp-btn--danger" @click="deleteDialogOpen = true"><el-icon><Delete /></el-icon> Delete Batch</button>
+                    </template>
+                    <button v-if="b.can_manage" type="button" class="btp-btn btp-btn--outline" @click="addActivityModalOpen = true"><el-icon><Operation /></el-icon> Record Processing</button>
+                    <button v-if="b.can_manage" type="button" class="btp-btn btp-btn--secondary" @click="attachModalOpen = true"><el-icon><Plus /></el-icon> Add Collection</button>
+                    <button v-if="b.can_manage" type="button" class="btp-btn btp-btn--primary" @click="addStorageModalOpen = true"><el-icon><Box /></el-icon> Add Storage Record</button>
                 </div>
             </div>
 
@@ -320,7 +415,7 @@ const reconciliationText = hasYieldPair
                             <h2 class="btp-card__title"><el-icon><Operation /></el-icon> Processing Yield &amp; Outturn Waterfall</h2>
                             <span class="btp-muted">Physical mass balance tracking across mechanical and dehydration phases</span>
                         </div>
-                        <button type="button" class="btp-btn btp-btn--outline btp-btn--sm"><el-icon><Operation /></el-icon> Record Processing</button>
+                        <button v-if="b.can_manage" type="button" class="btp-btn btp-btn--outline btp-btn--sm" @click="addActivityModalOpen = true"><el-icon><Operation /></el-icon> Record Processing</button>
                     </div>
                     <div class="btp-waterfall-grid">
                         <div v-for="w in waterfall" :key="w.step" class="btp-waterfall-step" :class="{ 'btp-waterfall-step--highlight': w.highlight }">
@@ -376,7 +471,10 @@ const reconciliationText = hasYieldPair
                                 <td class="btp-mono btp-collections-table__qty">{{ c.qty }}</td>
                                 <td class="btp-mono btp-muted-inline">{{ c.moisture }}</td>
                                 <td><span class="btp-status-tag-solid">{{ c.status }}</span></td>
-                                <td class="btp-collections-table__action"><button type="button" class="btp-btn btp-btn--outline btp-btn--sm">View Collection</button></td>
+                                <td class="btp-collections-table__action">
+                                    <Link v-if="c.id" :href="route('farm-collection.show', c.id)" class="btp-btn btp-btn--outline btp-btn--sm">View Collection</Link>
+                                    <button v-else type="button" class="btp-btn btp-btn--outline btp-btn--sm" disabled>View Collection</button>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -394,10 +492,10 @@ const reconciliationText = hasYieldPair
                         <h2 class="btp-card__title"><el-icon><Clock /></el-icon> Processing Records &amp; Station Audit Trail</h2>
                         <span class="btp-muted">Chronological station transformations verified by certified station masters</span>
                     </div>
-                    <button type="button" class="btp-btn btp-btn--primary btp-btn--sm"><el-icon><Plus /></el-icon> Add Processing Record</button>
+                    <button v-if="b.can_manage" type="button" class="btp-btn btp-btn--primary btp-btn--sm" @click="addActivityModalOpen = true"><el-icon><Plus /></el-icon> Add Processing Record</button>
                 </div>
                 <div class="btp-audit-list">
-                    <div v-for="r in processingRecords" :key="r.title" class="btp-audit-row">
+                    <div v-for="r in processingRecords" :key="r.id ?? r.title" class="btp-audit-row">
                         <div class="btp-audit-row__left">
                             <div class="btp-audit-row__icon"><el-icon><component :is="r.icon" /></el-icon></div>
                             <div>
@@ -415,6 +513,15 @@ const reconciliationText = hasYieldPair
                                 <strong class="btp-mono">{{ r.massInOut }}</strong>
                             </div>
                             <span class="btp-tag-mono" :class="{ 'btp-tag-mono--success': r.statusAccent }">{{ r.status }}</span>
+                            <button
+                                v-if="r.id && b.can_manage"
+                                type="button"
+                                class="btp-audit-row__remove"
+                                title="Remove this record"
+                                @click="requestDeleteActivity(r)"
+                            >
+                                <el-icon><Delete /></el-icon>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -500,6 +607,39 @@ const reconciliationText = hasYieldPair
                 </div>
             </div>
         </div>
+
+        <UpdateBatchModal
+            v-if="b.can_manage"
+            v-model="editModalOpen"
+            :batch="b"
+            :currency-options="currencyOptions"
+            @success="() => window.location.reload()"
+        />
+        <ConfirmDialog
+            v-model="deleteDialogOpen"
+            eyebrow="Batch"
+            title="Delete Batch"
+            :message="deleteMessage"
+            confirm-text="Delete Batch"
+            :auto-close="false"
+            :loading="deleting"
+            :show-cancel="false"
+            @confirm="deleteBatch"
+        />
+        <AttachFarmCollectionModal v-if="b.can_manage" v-model="attachModalOpen" :batch-id="b.id" />
+        <AddBatchActivityModal v-if="b.can_manage" v-model="addActivityModalOpen" :batch-id="b.id" :activity-options="activityOptions" />
+        <AddStorageRecordModal v-if="b.can_manage" v-model="addStorageModalOpen" :batch-id="b.id" :warehouse="warehouse" />
+        <ConfirmDialog
+            v-model="deleteActivityDialogOpen"
+            eyebrow="Batch Processing Records"
+            title="Remove this record?"
+            :message="deleteActivityMessage"
+            confirm-text="Remove Record"
+            :loading="deletingActivity"
+            :auto-close="false"
+            :show-cancel="false"
+            @confirm="confirmDeleteActivity"
+        />
     </DesignPreviewLayout>
 </template>
 
@@ -535,7 +675,8 @@ const reconciliationText = hasYieldPair
 .btp-card__title { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 800; letter-spacing: -.01em; color: var(--dp-on-surface); margin: 0 !important; }
 .btp-card__title :deep(.el-icon) { color: var(--dp-primary); }
 
-.btp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: var(--dp-card-radius); font-size: .75rem; font-weight: 700; cursor: pointer; border: 1px solid transparent; font-family: inherit; white-space: nowrap; }
+.btp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: var(--dp-card-radius); font-size: .75rem; font-weight: 700; cursor: pointer; border: 1px solid transparent; font-family: inherit; white-space: nowrap; text-decoration: none; }
+.btp-btn:disabled, a.btp-btn[disabled] { opacity: .5; cursor: default; pointer-events: none; }
 .btp-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
 .btp-btn--primary:hover { opacity: .9; }
 .btp-btn--outline { background: var(--dp-surface-container-lowest); border-color: var(--card-border); color: var(--dp-on-surface); }
@@ -544,6 +685,8 @@ const reconciliationText = hasYieldPair
 .btp-btn--secondary:hover { opacity: .88; }
 .btp-btn--light { background: var(--dp-surface-container-lowest); color: var(--dp-on-surface); }
 .btp-btn--light:hover { background: var(--dp-surface-container-high); }
+.btp-btn--danger { color: var(--dp-error); }
+.btp-btn--danger:hover { background: var(--dp-error-container); border-color: var(--dp-error); }
 .btp-btn--sm { height: 32px; padding: 0 10px; font-size: .6875rem; flex-shrink: 0; }
 .btp-btn--block { width: 100%; }
 
@@ -656,6 +799,21 @@ const reconciliationText = hasYieldPair
 .btp-audit-row__mass { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .btp-audit-row__mass span { font-size: .625rem; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface-variant); }
 .btp-audit-row__mass strong { font-weight: 700; color: var(--dp-on-surface); }
+.btp-audit-row__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--dp-on-surface-variant);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .12s ease, color .12s ease;
+}
+.btp-audit-row__remove:hover { background: var(--dp-error-container); color: var(--dp-error); }
 
 /* ── Quality metrics ─────────────────────────────────────────────────── */
 .btp-metric4-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }

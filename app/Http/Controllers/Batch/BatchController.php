@@ -11,6 +11,7 @@ use App\Models\BatchActivityMetadata;
 use App\Models\Currency;
 use App\Services\BatchActivityService;
 use App\Services\BatchService;
+use App\Services\WarehouseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,7 @@ class BatchController extends Controller
     public function __construct(
         private readonly BatchService $batches,
         private readonly BatchActivityService $activities,
+        private readonly WarehouseService $warehouses,
     ) {
     }
 
@@ -174,6 +176,27 @@ class BatchController extends Controller
         $this->batches->attachFarmCollection($batch, $validated['collection_code'], $request->user()->id);
 
         return back()->with('success', 'Farm collection linked to this batch.');
+    }
+
+    /**
+     * Record or update this batch's bonded-warehousing/storage detail.
+     */
+    public function storeWarehouse(Request $request, Batch $batch): RedirectResponse
+    {
+        Gate::authorize('update', $batch);
+
+        $validated = $request->validate([
+            'storage_bay' => ['required', 'string', 'max:255'],
+            'date_stored' => ['required', 'date', 'before_or_equal:today'],
+            'quantity_stored_kg' => ['required', 'numeric', 'min:0.01'],
+            'climate_ambient' => ['nullable', 'string', 'max:255'],
+            'physical_pallet' => ['nullable', 'string', 'max:255'],
+            'packaging_spec' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->warehouses->store($batch, $validated);
+
+        return back()->with('success', 'Storage record saved.');
     }
 
     /**

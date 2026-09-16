@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Lot extends Model
 {
@@ -200,5 +201,18 @@ class Lot extends Model
     public function sustainabilityVerifications(): HasMany
     {
         return $this->hasMany(LotSustainabilityVerification::class);
+    }
+
+    /**
+     * Get this lot's bonded-warehousing/storage record, if recorded.
+     *
+     * Distinct from storageProfile() (LotStorageProfile) — that's this
+     * lot's own dedicated warehouse/packaging record; this is the shared
+     * polymorphic warehouses table also used by batches and farm
+     * collections.
+     */
+    public function warehouse(): MorphOne
+    {
+        return $this->morphOne(Warehouse::class, 'item');
     }
 }

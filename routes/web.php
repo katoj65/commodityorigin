@@ -308,6 +308,7 @@ Route::middleware([
         Route::delete('/{batch}', [BatchController::class, 'destroy'])->name('destroy');
         Route::get('/{batch}', [BatchController::class, 'show'])->name('show');
         Route::post('/{batch}/farm-collections', [BatchController::class, 'attachFarmCollection'])->name('farm-collections.store');
+        Route::post('/{batch}/warehouse', [BatchController::class, 'storeWarehouse'])->name('warehouse.store');
         Route::post('/{batch}/activities', [BatchController::class, 'storeActivity'])->name('activities.store');
         Route::delete('/{batch}/activities/{activity}', [BatchController::class, 'destroyActivity'])->name('activities.destroy');
     });

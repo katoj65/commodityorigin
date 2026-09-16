@@ -101,6 +101,7 @@ const submit = () => {
     form.patch(route('batch.update', props.batch.id), {
         preserveScroll: 'errors',
         onSuccess: () => {
+            closeDialog();
             ElNotification({
                 title: 'Batch Updated',
                 message: `Batch ${props.batch.batch_number || `#${props.batch.id}`} was updated successfully.`,
@@ -109,7 +110,6 @@ const submit = () => {
                 offset: 84,
             });
             emit('success');
-            closeDialog();
         },
         onError: () => {
             dialogVisible.value = true;
@@ -270,7 +270,6 @@ const submit = () => {
 
         <template #footer>
             <div class="afc-modal__footer">
-                <button type="button" class="afc-btn-outline" @click="closeDialog">Cancel</button>
                 <button type="button" class="afc-btn-primary" :disabled="form.processing" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Save Changes' }}
                 </button>

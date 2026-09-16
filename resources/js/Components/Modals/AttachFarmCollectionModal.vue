@@ -81,6 +81,12 @@ function submit() {
             lookupStatus.value = 'idle';
             foundCollection.value = null;
             ElNotification({ title: 'Collection Linked', message: 'The farm collection was linked to this batch.', type: 'success', duration: 3200, offset: 84 });
+            // The host page's derived display state (Contributing Farm
+            // Collections, weight totals, etc.) is computed once from props
+            // at setup — Inertia reuses the same mounted instance on
+            // redirect, so a hard reload is needed for it to reflect the
+            // new link.
+            window.location.reload();
         },
     });
 }
@@ -153,7 +159,6 @@ function submit() {
 
         <template #footer>
             <div class="afc-modal__footer">
-                <button type="button" class="afc-btn-outline" @click="closeDialog">Cancel</button>
                 <button type="button" class="afc-btn-primary" :disabled="form.processing || !foundCollection || !collectionAvailable" @click="submit">
                     {{ form.processing ? 'Linking…' : 'Link Collection' }}
                 </button>

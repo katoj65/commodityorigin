@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Batch extends Model
 {
@@ -84,5 +85,13 @@ class Batch extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(BatchActivity::class);
+    }
+
+    /**
+     * Get this batch's bonded-warehousing/storage record, if recorded.
+     */
+    public function warehouse(): MorphOne
+    {
+        return $this->morphOne(Warehouse::class, 'item');
     }
 }

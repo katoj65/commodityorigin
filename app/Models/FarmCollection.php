@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class FarmCollection extends Model
 {
@@ -74,5 +75,23 @@ class FarmCollection extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(FarmCollectionActivity::class);
+    }
+
+    /**
+     * Get the batch links for this farm collection, via the
+     * batch_farm_collection pivot table.
+     */
+    public function batchFarmCollections(): HasMany
+    {
+        return $this->hasMany(BatchFarmCollection::class);
+    }
+
+    /**
+     * Get this farm collection's bonded-warehousing/storage record, if
+     * recorded.
+     */
+    public function warehouse(): MorphOne
+    {
+        return $this->morphOne(Warehouse::class, 'item');
     }
 }
