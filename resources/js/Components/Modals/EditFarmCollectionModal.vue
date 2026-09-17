@@ -1,8 +1,8 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import { Close, Coffee } from '@element-plus/icons-vue';
+import { Close, Coffee, Loading } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -42,8 +42,17 @@ const form = useForm({
     notes: '',
 });
 
-watch(() => props.modelValue, (open) => {
-    if (!open) return;
+// This ~15-field reactive form is expensive enough to mount/hydrate that
+// doing it in lockstep with the dialog's own open animation (e.g. on a
+// modelValue watcher) visibly delays the dialog appearing at all — worse
+// still on the very first open, since el-dialog doesn't render its body
+// until then. contentReady stays false until the dialog has already
+// finished opening, so the shell + a loading state appear immediately,
+// and the real fields mount right after. It never resets back to false,
+// so every open after the first is instant with no skeleton flash.
+const contentReady = ref(false);
+
+function onDialogOpened() {
     form.clearErrors();
     form.collection_date = props.collection.collection_date || '';
     form.coffee_type = props.collection.coffee_type || '';
@@ -60,7 +69,8 @@ watch(() => props.modelValue, (open) => {
     form.payment_status = props.collection.payment_status || 'pending';
     form.reference = props.collection.reference || '';
     form.notes = props.collection.notes || '';
-});
+    contentReady.value = true;
+}
 
 function disableFutureDates(date) {
     return date.getTime() > Date.now();
@@ -88,7 +98,9 @@ function submit() {
         align-center
         :close-on-click-modal="false"
         :show-close="false"
+        transition="dialog-fade-fast"
         class="afc-modal"
+        @opened="onDialogOpened"
     >
         <template #header>
             <div class="afc-modal__head">
@@ -106,6 +118,11 @@ function submit() {
         </template>
 
         <div class="afc-modal__body">
+            <div v-if="!contentReady" class="afc-modal__loading">
+                <el-icon class="is-loading" :size="22"><Loading /></el-icon>
+                <span>Preparing form…</span>
+            </div>
+            <template v-else>
                 <div class="afc-grid">
                     <div class="afc-field">
                         <label class="afc-field__label">Collection Date</label>
@@ -193,11 +210,12 @@ function submit() {
                         <span v-if="form.errors.notes" class="afc-field__error">{{ form.errors.notes }}</span>
                     </div>
                 </div>
+            </template>
         </div>
 
         <template #footer>
             <div class="afc-modal__footer">
-                <button type="button" class="afc-btn-primary" :disabled="form.processing" @click="submit">
+                <button type="button" class="afc-btn-primary" :disabled="form.processing || !contentReady" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Save Changes' }}
                 </button>
             </div>
@@ -218,6 +236,15 @@ function submit() {
 .el-dialog.afc-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.afc-modal .el-dialog__body { padding: 0; }
 .el-dialog.afc-modal .el-dialog__footer { padding: 0; }
+
+/* Element Plus's default dialog-fade transition (and the --el-transition-duration
+   it's keyed to) takes 0.3s, which reads as a perceptible delay before the
+   modal appears. Reusing the same open() animation shape at a snappier
+   duration removes that lag without an abrupt pop-in. */
+.dialog-fade-fast-enter-active { animation: modal-fade-in .12s; }
+.dialog-fade-fast-enter-active .el-overlay-dialog { animation: dialog-fade-in .12s; }
+.dialog-fade-fast-leave-active { animation: modal-fade-out .12s; }
+.dialog-fade-fast-leave-active .el-overlay-dialog { animation: dialog-fade-out .12s; }
 </style>
 
 <style scoped>
@@ -267,6 +294,19 @@ function submit() {
 .afc-modal__close:hover { background: #E5E7EB; color: #121516; }
 
 .afc-modal__body { padding: 22px 24px 8px; max-height: 72vh; overflow-y: auto; }
+.afc-modal__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 0;
+    color: #6F7677;
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.afc-modal__loading .is-loading { animation: afc-spin 1s linear infinite; color: #121516; }
+@keyframes afc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .afc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .afc-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin-bottom: 16px; }

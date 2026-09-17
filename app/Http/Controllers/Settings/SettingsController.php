@@ -10,6 +10,7 @@ use App\Models\IncotermMetadata;
 use App\Models\PriceIndex;
 use App\Services\ExchangeRateService;
 use App\Services\PriceIndexService;
+use App\Services\UserSessionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,15 +21,17 @@ class SettingsController extends Controller
     public function __construct(
         private readonly ExchangeRateService $exchangeRates,
         private readonly PriceIndexService $priceIndexes,
+        private readonly UserSessionService $sessions,
     ) {
     }
 
     /**
      * Display the system settings page.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('Settings/Index', [
+            'sessions' => $this->sessions->forUser($request),
             'exchangeRates' => ExchangeRateResource::collection($this->exchangeRates->all())->resolve(),
             'priceIndexes' => PriceIndexResource::collection($this->priceIndexes->all())->resolve(),
             'deliveryMethods' => DeliveryMethodMetadata::query()

@@ -1,8 +1,8 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import { Close, Box } from '@element-plus/icons-vue';
+import { Close, Box, Loading } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -31,12 +31,18 @@ function emptyForm() {
 
 const form = useForm(emptyForm());
 
-watch(() => props.modelValue, (open) => {
-    if (!open) return;
+// Deferring hydration to @opened (instead of a modelValue watcher) lets
+// the dialog's shell + loading state appear immediately; the real fields
+// mount right after, while it's already visible. contentReady never
+// resets back to false, so every open after the first is instant.
+const contentReady = ref(false);
+
+function onDialogOpened() {
     form.defaults(emptyForm());
     form.reset();
     form.clearErrors();
-});
+    contentReady.value = true;
+}
 
 function closeDialog() {
     dialogVisible.value = false;
@@ -75,11 +81,12 @@ function submit() {
     <el-dialog
         v-model="dialogVisible"
         width="min(520px, calc(100vw - 2rem))"
-        destroy-on-close
         align-center
         :close-on-click-modal="false"
         :show-close="false"
+        transition="dialog-fade-fast"
         class="asr-modal"
+        @opened="onDialogOpened"
     >
         <template #header>
             <div class="asr-modal__head">
@@ -97,6 +104,11 @@ function submit() {
         </template>
 
         <div class="asr-modal__body">
+            <div v-if="!contentReady" class="asr-modal__loading">
+                <el-icon class="is-loading" :size="22"><Loading /></el-icon>
+                <span>Preparing form…</span>
+            </div>
+            <template v-else>
             <div class="asr-field">
                 <label class="asr-field__label">Location</label>
                 <el-input v-model="form.location" placeholder="e.g. Kampala Coffee Bonded Warehouse (Depot #4)" class="asr-input" :class="{ 'asr-input--error': form.errors.location }" />
@@ -139,11 +151,12 @@ function submit() {
                 <el-input v-model="form.packaging_spec" placeholder="e.g. GrainPro Hermetic + Food-Grade Jute" class="asr-input" :class="{ 'asr-input--error': form.errors.packaging_spec }" />
                 <span v-if="form.errors.packaging_spec" class="asr-field__error">{{ form.errors.packaging_spec }}</span>
             </div>
+            </template>
         </div>
 
         <template #footer>
             <div class="asr-modal__footer">
-                <button type="button" class="asr-btn-primary" :disabled="form.processing" @click="submit">
+                <button type="button" class="asr-btn-primary" :disabled="form.processing || !contentReady" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Save Storage Record' }}
                 </button>
             </div>
@@ -164,6 +177,15 @@ function submit() {
 .el-dialog.asr-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.asr-modal .el-dialog__body { padding: 0; }
 .el-dialog.asr-modal .el-dialog__footer { padding: 0; }
+
+/* Element Plus's default dialog-fade transition (and the --el-transition-duration
+   it's keyed to) takes 0.3s, which reads as a perceptible delay before the
+   modal appears. Reusing the same open() animation shape at a snappier
+   duration removes that lag without an abrupt pop-in. */
+.dialog-fade-fast-enter-active { animation: modal-fade-in .12s; }
+.dialog-fade-fast-enter-active .el-overlay-dialog { animation: dialog-fade-in .12s; }
+.dialog-fade-fast-leave-active { animation: modal-fade-out .12s; }
+.dialog-fade-fast-leave-active .el-overlay-dialog { animation: dialog-fade-out .12s; }
 </style>
 
 <style scoped>
@@ -213,6 +235,9 @@ function submit() {
 .asr-modal__close:hover { background: #E5E7EB; color: #121516; }
 
 .asr-modal__body { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+.asr-modal__loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 48px 0; color: #6F7677; font-size: .8125rem; font-weight: 600; }
+.asr-modal__loading .is-loading { animation: asr-spin 1s linear infinite; color: #121516; }
+@keyframes asr-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .asr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 .asr-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }

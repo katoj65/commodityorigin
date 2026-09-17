@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import {
     Plus, Close, Calendar as CalendarIcon, Files, CircleCheck, Loading,
@@ -37,10 +37,13 @@ const form = useForm({
 const knownTypeValues = ['', 'task', 'deadline', 'harvest', 'market'];
 const otherTypeMode = ref(false);
 
-/* ── Populate the form whenever the dialog opens ────────────────────── */
-watch(() => props.modelValue, (open) => {
-    if (!open) return;
+// Deferring hydration to @opened (instead of a modelValue watcher) lets
+// the dialog's shell + loading state appear immediately; the real fields
+// mount right after, while it's already visible. contentReady never
+// resets back to false, so every open after the first is instant.
+const contentReady = ref(false);
 
+function onDialogOpened() {
     form.clearErrors();
 
     if (props.event) {
@@ -56,7 +59,9 @@ watch(() => props.modelValue, (open) => {
         form.event_date = props.defaultDate || todayStr();
         otherTypeMode.value = false;
     }
-});
+
+    contentReady.value = true;
+}
 
 function selectType(value) {
     otherTypeMode.value = false;
@@ -99,10 +104,11 @@ const typeOptions = [
     <el-dialog
         v-model="dialogVisible"
         width="480px"
-        destroy-on-close
         align-center
         :show-close="false"
+        transition="dialog-fade-fast"
         class="evt-modal"
+        @opened="onDialogOpened"
     >
         <template #header>
             <div class="evt-modal__head">
@@ -120,6 +126,11 @@ const typeOptions = [
         </template>
 
         <div class="evt-modal__body">
+            <div v-if="!contentReady" class="evt-modal__loading">
+                <el-icon class="is-loading" :size="22"><Loading /></el-icon>
+                <span>Preparing form…</span>
+            </div>
+            <template v-else>
             <div class="evt-field">
                 <label class="evt-field__label">Title</label>
                 <el-input v-model="form.title" placeholder="e.g. Export deadline for Lot #42" class="evt-input" :class="{ 'evt-input--error': form.errors.title }" />
@@ -202,12 +213,13 @@ const typeOptions = [
                     <el-switch v-model="form.make_task" class="evt-switch" />
                 </div>
             </div>
+            </template>
         </div>
 
         <template #footer>
             <div class="evt-modal__footer">
                 <button type="button" class="evt-btn-outline" @click="dialogVisible = false">Cancel</button>
-                <button type="button" class="evt-btn-primary" :disabled="form.processing" @click="saveEvent">
+                <button type="button" class="evt-btn-primary" :disabled="form.processing || !contentReady" @click="saveEvent">
                     <el-icon v-if="!form.processing"><Plus /></el-icon>
                     {{ form.processing ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Event' }}
                 </button>
@@ -242,6 +254,15 @@ const typeOptions = [
 .el-dialog.evt-modal .el-dialog__footer {
     padding: 0;
 }
+
+/* Element Plus's default dialog-fade transition (and the --el-transition-duration
+   it's keyed to) takes 0.3s, which reads as a perceptible delay before the
+   modal appears. Reusing the same open() animation shape at a snappier
+   duration removes that lag without an abrupt pop-in. */
+.dialog-fade-fast-enter-active { animation: modal-fade-in .12s; }
+.dialog-fade-fast-enter-active .el-overlay-dialog { animation: dialog-fade-in .12s; }
+.dialog-fade-fast-leave-active { animation: modal-fade-out .12s; }
+.dialog-fade-fast-leave-active .el-overlay-dialog { animation: dialog-fade-out .12s; }
 </style>
 
 <style scoped>
@@ -319,6 +340,19 @@ const typeOptions = [
     max-height: 65vh;
     overflow-y: auto;
 }
+.evt-modal__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 0;
+    color: #6b7280;
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.evt-modal__loading .is-loading { animation: evt-spin 1s linear infinite; color: #004532; }
+@keyframes evt-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .evt-field {
     display: flex;

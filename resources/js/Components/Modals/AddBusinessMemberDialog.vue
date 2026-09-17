@@ -1,8 +1,8 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import { Close, Upload, UserFilled } from '@element-plus/icons-vue';
+import { Close, Loading, Upload, UserFilled } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -79,14 +79,20 @@ function onPhotoChange(event) {
 
 onBeforeUnmount(revokeLocalPreview);
 
-watch(() => props.modelValue, (open) => {
-    if (!open) return;
+// Deferring hydration to @opened (instead of a modelValue watcher) lets
+// the dialog's shell + loading state appear immediately; the real fields
+// mount right after, while it's already visible. contentReady never
+// resets back to false, so every open after the first is instant.
+const contentReady = ref(false);
+
+function onDialogOpened() {
     const defaults = isEdit.value ? formFromMember(props.member) : emptyForm();
     form.defaults(defaults);
     form.reset();
     form.clearErrors();
     revokeLocalPreview();
-});
+    contentReady.value = true;
+}
 
 function disableFutureDates(date) {
     const today = new Date();
@@ -136,11 +142,12 @@ function submit() {
     <el-dialog
         v-model="dialogVisible"
         width="min(640px, calc(100vw - 2rem))"
-        destroy-on-close
         align-center
         :close-on-click-modal="false"
         :show-close="false"
+        transition="dialog-fade-fast"
         class="abm-modal"
+        @opened="onDialogOpened"
     >
         <template #header>
             <div class="abm-modal__head">
@@ -158,6 +165,11 @@ function submit() {
         </template>
 
         <div class="abm-modal__body">
+            <div v-if="!contentReady" class="abm-modal__loading">
+                <el-icon class="is-loading" :size="22"><Loading /></el-icon>
+                <span>Preparing form…</span>
+            </div>
+            <template v-else>
             <div class="abm-photo">
                 <label class="abm-photo__upload" :class="{ 'abm-photo__upload--has-image': displayPhotoUrl }">
                     <input type="file" accept="image/*" class="abm-photo__input" @change="onPhotoChange">
@@ -272,12 +284,13 @@ function submit() {
                     <span v-if="form.errors.notes" class="abm-field__error">{{ form.errors.notes }}</span>
                 </div>
             </div>
+            </template>
         </div>
 
         <template #footer>
             <div class="abm-modal__footer">
                 <button type="button" class="abm-btn-outline" @click="closeDialog">Cancel</button>
-                <button type="button" class="abm-btn-primary" :disabled="form.processing" @click="submit">
+                <button type="button" class="abm-btn-primary" :disabled="form.processing || !contentReady" @click="submit">
                     {{ form.processing ? (isEdit ? 'Saving…' : 'Registering…') : (isEdit ? 'Save Changes' : 'Register Member') }}
                 </button>
             </div>
@@ -309,6 +322,15 @@ function submit() {
 .abm-input.el-date-editor {
     height: 40px;
 }
+
+/* Element Plus's default dialog-fade transition (and the --el-transition-duration
+   it's keyed to) takes 0.3s, which reads as a perceptible delay before the
+   modal appears. Reusing the same open() animation shape at a snappier
+   duration removes that lag without an abrupt pop-in. */
+.dialog-fade-fast-enter-active { animation: modal-fade-in .12s; }
+.dialog-fade-fast-enter-active .el-overlay-dialog { animation: dialog-fade-in .12s; }
+.dialog-fade-fast-leave-active { animation: modal-fade-out .12s; }
+.dialog-fade-fast-leave-active .el-overlay-dialog { animation: dialog-fade-out .12s; }
 </style>
 
 <style scoped>
@@ -371,6 +393,19 @@ function submit() {
     max-height: 70vh;
     overflow-y: auto;
 }
+.abm-modal__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 0;
+    color: #9ca3af;
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.abm-modal__loading .is-loading { animation: abm-spin 1s linear infinite; color: #271310; }
+@keyframes abm-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .abm-photo {
     margin-bottom: 18px;

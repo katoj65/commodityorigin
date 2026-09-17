@@ -21,12 +21,22 @@ class FarmPolicy
     }
 
     /**
-     * Determine whether the user can view a single farm profile.
-     * Creator and admins only.
+     * Determine whether the user can view a single farm profile. Admins,
+     * the farm's creator, and anyone who has recorded a farm collection
+     * against this farm (e.g. via "View Farm Profile" on a Farm Collection
+     * they don't otherwise own) can all view it.
      */
     public function view(User $user, Farm $farm): bool
     {
-        return $user->isAdmin() || $farm->user_id === $user->id;
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if ((int) $farm->user_id === (int) $user->id) {
+            return true;
+        }
+
+        return $farm->collections()->where('user_id', $user->id)->exists();
     }
 
     /**

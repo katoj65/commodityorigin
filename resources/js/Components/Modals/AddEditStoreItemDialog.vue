@@ -1,8 +1,8 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import { Close, Goods } from '@element-plus/icons-vue';
+import { Close, Goods, Loading } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -51,13 +51,19 @@ const form = useForm(emptyForm());
 
 const selectedCurrencySymbol = computed(() => currencyOptions.value.find((c) => c.code === form.currency_code)?.symbol ?? '');
 
-watch(() => props.modelValue, (open) => {
-    if (!open) return;
+// Deferring hydration to @opened (instead of a modelValue watcher) lets
+// the dialog's shell + loading state appear immediately; the real fields
+// mount right after, while it's already visible. contentReady never
+// resets back to false, so every open after the first is instant.
+const contentReady = ref(false);
+
+function onDialogOpened() {
     const defaults = isEdit.value ? formFromItem(props.item) : emptyForm();
     form.defaults(defaults);
     form.reset();
     form.clearErrors();
-});
+    contentReady.value = true;
+}
 
 function closeDialog() {
     dialogVisible.value = false;
@@ -89,11 +95,12 @@ function submit() {
     <el-dialog
         v-model="dialogVisible"
         width="min(600px, calc(100vw - 2rem))"
-        destroy-on-close
         align-center
         :close-on-click-modal="false"
         :show-close="false"
+        transition="dialog-fade-fast"
         class="asi-modal"
+        @opened="onDialogOpened"
     >
         <template #header>
             <div class="asi-modal__head">
@@ -111,6 +118,11 @@ function submit() {
         </template>
 
         <div class="asi-modal__body">
+            <div v-if="!contentReady" class="asi-modal__loading">
+                <el-icon class="is-loading" :size="22"><Loading /></el-icon>
+                <span>Preparing form…</span>
+            </div>
+            <template v-else>
             <div class="asi-field asi-field--span2">
                 <label class="asi-field__label">Item Name</label>
                 <el-input v-model="form.name" placeholder="e.g. Washed Arabica AA" class="asi-input" :class="{ 'asi-input--error': form.errors.name }" />
@@ -174,12 +186,13 @@ function submit() {
                 <el-input v-model="form.notes" type="textarea" :rows="2" placeholder="Any additional detail" class="asi-input" :class="{ 'asi-input--error': form.errors.notes }" />
                 <span v-if="form.errors.notes" class="asi-field__error">{{ form.errors.notes }}</span>
             </div>
+            </template>
         </div>
 
         <template #footer>
             <div class="asi-modal__footer">
                 <button type="button" class="asi-btn-outline" @click="closeDialog">Cancel</button>
-                <button type="button" class="asi-btn-primary" :disabled="form.processing" @click="submit">
+                <button type="button" class="asi-btn-primary" :disabled="form.processing || !contentReady" @click="submit">
                     {{ form.processing ? 'Saving…' : (isEdit ? 'Save Changes' : 'Add Item') }}
                 </button>
             </div>
@@ -199,6 +212,15 @@ function submit() {
 .el-dialog.asi-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.asi-modal .el-dialog__body { padding: 0; }
 .el-dialog.asi-modal .el-dialog__footer { padding: 0; }
+
+/* Element Plus's default dialog-fade transition (and the --el-transition-duration
+   it's keyed to) takes 0.3s, which reads as a perceptible delay before the
+   modal appears. Reusing the same open() animation shape at a snappier
+   duration removes that lag without an abrupt pop-in. */
+.dialog-fade-fast-enter-active { animation: modal-fade-in .12s; }
+.dialog-fade-fast-enter-active .el-overlay-dialog { animation: dialog-fade-in .12s; }
+.dialog-fade-fast-leave-active { animation: modal-fade-out .12s; }
+.dialog-fade-fast-leave-active .el-overlay-dialog { animation: dialog-fade-out .12s; }
 </style>
 
 <style scoped>
@@ -248,6 +270,9 @@ function submit() {
 .asi-modal__close:hover { background: #e5e7eb; color: #111827; }
 
 .asi-modal__body { padding: 22px 24px 8px; max-height: 72vh; overflow-y: auto; }
+.asi-modal__loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 48px 0; color: #9ca3af; font-size: .8125rem; font-weight: 600; }
+.asi-modal__loading .is-loading { animation: asi-spin 1s linear infinite; color: #271310; }
+@keyframes asi-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .asi-divider {
     display: flex;

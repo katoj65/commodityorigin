@@ -1,8 +1,8 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import { Close, Hide, Promotion, Star, View } from '@element-plus/icons-vue';
+import { Close, Hide, Loading, Promotion, Star, View } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -68,16 +68,27 @@ function fieldsFromLot() {
 
 const form = useForm(fieldsFromLot());
 
-watch(() => props.modelValue, (isOpen) => {
-    if (isOpen) {
-        form.defaults(fieldsFromLot());
-        form.reset();
-        form.clearErrors();
-    }
-});
-
 function closeDialog() {
     dialogVisible.value = false;
+}
+
+// The ~30 Element Plus form controls below are themselves expensive to
+// mount the very first time this dialog opens (each el-select sets up its
+// own popper/teleport instance) — el-dialog doesn't render its body until
+// the first open, so that mount cost previously landed inside the same
+// frame as the open click, reading as a multi-second freeze with no
+// feedback. contentReady stays false until the dialog has already
+// finished its (fast) open animation, so the shell + a loading state
+// appear instantly, and the real fields mount a moment later while the
+// dialog is already visible. It never resets back to false, so every
+// open after the first is instant with no skeleton flash.
+const contentReady = ref(false);
+
+function onDialogOpened() {
+    form.defaults(fieldsFromLot());
+    form.reset();
+    form.clearErrors();
+    contentReady.value = true;
 }
 
 function submit() {
@@ -108,7 +119,9 @@ function submit() {
         align-center
         :close-on-click-modal="false"
         :show-close="false"
+        transition="dialog-fade-fast"
         class="plm-modal"
+        @opened="onDialogOpened"
     >
         <template #header>
             <div class="plm-modal__head">
@@ -126,6 +139,11 @@ function submit() {
         </template>
 
         <div class="plm-modal__body">
+            <div v-if="!contentReady" class="plm-modal__loading">
+                <el-icon class="is-loading" :size="22"><Loading /></el-icon>
+                <span>Preparing form…</span>
+            </div>
+            <template v-else>
             <p class="plm-message">
                 We've filled this in using <strong>{{ lot.lot_name || lot.lot_number }}</strong>'s details — have a look, tweak anything you like, then send it live for buyers to see.
             </p>
@@ -276,12 +294,13 @@ function submit() {
                     <el-switch v-model="form.is_public" active-text="Public" inactive-text="Private" inline-prompt />
                 </div>
             </div>
+            </template>
         </div>
 
         <template #footer>
             <div class="plm-modal__footer">
                 <button type="button" class="plm-btn-outline" :disabled="form.processing" @click="closeDialog">Cancel</button>
-                <button type="button" class="plm-btn-primary" :disabled="form.processing" @click="submit">
+                <button type="button" class="plm-btn-primary" :disabled="form.processing || !contentReady" @click="submit">
                     {{ form.processing ? 'Publishing…' : 'Publish Lot' }}
                 </button>
             </div>
@@ -301,6 +320,15 @@ function submit() {
 .el-dialog.plm-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.plm-modal .el-dialog__body { padding: 0; }
 .el-dialog.plm-modal .el-dialog__footer { padding: 0; }
+
+/* Element Plus's default dialog-fade transition (and the --el-transition-duration
+   it's keyed to) takes 0.3s, which reads as a perceptible delay before the
+   modal appears. Reusing the same open() animation shape at a snappier
+   duration removes that lag without an abrupt pop-in. */
+.dialog-fade-fast-enter-active { animation: modal-fade-in .12s; }
+.dialog-fade-fast-enter-active .el-overlay-dialog { animation: dialog-fade-in .12s; }
+.dialog-fade-fast-leave-active { animation: modal-fade-out .12s; }
+.dialog-fade-fast-leave-active .el-overlay-dialog { animation: dialog-fade-out .12s; }
 </style>
 
 <style scoped>
@@ -350,6 +378,19 @@ function submit() {
 .plm-modal__close:hover { background: #E5E7EB; color: #121516; }
 
 .plm-modal__body { padding: 22px 24px 8px; max-height: 72vh; overflow-y: auto; }
+.plm-modal__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 0;
+    color: #6F7677;
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.plm-modal__loading .is-loading { animation: plm-spin 1s linear infinite; color: #121516; }
+@keyframes plm-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .plm-message { font-size: 13.5px; line-height: 1.6; color: #4B5457; margin: 0 0 18px; }
 .plm-message strong { color: #121516; }
 

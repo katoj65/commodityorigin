@@ -1,7 +1,7 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { ElNotification } from 'element-plus';
-import { Close, Document, Files, Operation, WarningFilled } from '@element-plus/icons-vue';
+import { Close, Document, Files, Loading, Operation, WarningFilled } from '@element-plus/icons-vue';
 import { useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -76,15 +76,6 @@ const hydrateForm = () => {
 };
 
 watch(
-    () => props.modelValue,
-    (isOpen) => {
-        if (isOpen) {
-            hydrateForm();
-        }
-    },
-);
-
-watch(
     () => props.batch,
     () => {
         if (props.modelValue) {
@@ -95,6 +86,21 @@ watch(
 
 const closeDialog = () => {
     dialogVisible.value = false;
+};
+
+// This ~17-field reactive form is expensive enough to mount/hydrate that
+// doing it in lockstep with the dialog's own open animation (e.g. on a
+// modelValue watcher) visibly delays the dialog appearing at all — worse
+// still on the very first open, since el-dialog doesn't render its body
+// until then. contentReady stays false until the dialog has already
+// finished opening, so the shell + a loading state appear immediately,
+// and the real fields mount right after. It never resets back to false,
+// so every open after the first is instant with no skeleton flash.
+const contentReady = ref(false);
+
+const onDialogOpened = () => {
+    hydrateForm();
+    contentReady.value = true;
 };
 
 const submit = () => {
@@ -125,7 +131,9 @@ const submit = () => {
         align-center
         :close-on-click-modal="false"
         :show-close="false"
+        transition="dialog-fade-fast"
         class="afc-modal"
+        @opened="onDialogOpened"
     >
         <template #header>
             <div class="afc-modal__head">
@@ -143,6 +151,11 @@ const submit = () => {
         </template>
 
         <div class="afc-modal__body">
+            <div v-if="!contentReady" class="afc-modal__loading">
+                <el-icon class="is-loading" :size="22"><Loading /></el-icon>
+                <span>Preparing form…</span>
+            </div>
+            <template v-else>
             <div class="afc-section">
                 <h3 class="afc-section__title"><el-icon><Files /></el-icon> Batch Details</h3>
                 <div class="afc-grid">
@@ -266,11 +279,12 @@ const submit = () => {
                     </div>
                 </div>
             </div>
+            </template>
         </div>
 
         <template #footer>
             <div class="afc-modal__footer">
-                <button type="button" class="afc-btn-primary" :disabled="form.processing" @click="submit">
+                <button type="button" class="afc-btn-primary" :disabled="form.processing || !contentReady" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Save Changes' }}
                 </button>
             </div>
@@ -291,6 +305,15 @@ const submit = () => {
 .el-dialog.afc-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.afc-modal .el-dialog__body { padding: 0; }
 .el-dialog.afc-modal .el-dialog__footer { padding: 0; }
+
+/* Element Plus's default dialog-fade transition (and the --el-transition-duration
+   it's keyed to) takes 0.3s, which reads as a perceptible delay before the
+   modal appears. Reusing the same open() animation shape at a snappier
+   duration removes that lag without an abrupt pop-in. */
+.dialog-fade-fast-enter-active { animation: modal-fade-in .12s; }
+.dialog-fade-fast-enter-active .el-overlay-dialog { animation: dialog-fade-in .12s; }
+.dialog-fade-fast-leave-active { animation: modal-fade-out .12s; }
+.dialog-fade-fast-leave-active .el-overlay-dialog { animation: dialog-fade-out .12s; }
 </style>
 
 <style scoped>
@@ -340,6 +363,19 @@ const submit = () => {
 .afc-modal__close:hover { background: #E5E7EB; color: #121516; }
 
 .afc-modal__body { padding: 22px 24px 8px; max-height: 72vh; overflow-y: auto; }
+.afc-modal__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 0;
+    color: #6F7677;
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.afc-modal__loading .is-loading { animation: afc-spin 1s linear infinite; color: #121516; }
+@keyframes afc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .afc-section { margin-bottom: 22px; }
 .afc-section:last-child { margin-bottom: 0; }

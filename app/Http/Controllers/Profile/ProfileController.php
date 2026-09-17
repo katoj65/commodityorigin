@@ -10,14 +10,12 @@ use App\Services\BusinessMemberService;
 use App\Services\BusinessProfileService;
 use App\Services\CurrencyService;
 use App\Services\ProfileService;
+use App\Services\UserSessionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Laravel\Jetstream\Agent;
 
 class ProfileController extends Controller
 {
@@ -26,6 +24,7 @@ class ProfileController extends Controller
         private readonly BusinessProfileService $businessProfiles,
         private readonly BusinessMemberService $businessMembers,
         private readonly CurrencyService $currencies,
+        private readonly UserSessionService $sessions,
     ) {
     }
 
@@ -160,7 +159,7 @@ class ProfileController extends Controller
     public function show(Request $request): Response
     {
         $user = $request->user();
-        $sessions = $this->sessionsFor($request);
+        $sessions = $this->sessions->forUser($request);
 
         if ($user->role === 'business') {
             $businessProfile = $this->businessProfiles->forUser($user->id);
@@ -178,41 +177,6 @@ class ProfileController extends Controller
         return Inertia::render('Profile/PersonalProfile', [
             'sessions' => $sessions,
         ]);
-    }
-
-    /**
-     * The current user's active sessions, for the Security Protocol card —
-     * mirrors Jetstream's own UserProfileController::sessions(), which this
-     * controller now replaces.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function sessionsFor(Request $request): array
-    {
-        if (config('session.driver') !== 'database') {
-            return [];
-        }
-
-        return collect(
-            DB::connection(config('session.connection'))
-                ->table(config('session.table', 'sessions'))
-                ->where('user_id', $request->user()->getAuthIdentifier())
-                ->orderBy('last_activity', 'desc')
-                ->get(),
-        )->map(function ($session) use ($request) {
-            $agent = tap(new Agent(), fn (Agent $agent) => $agent->setUserAgent($session->user_agent));
-
-            return [
-                'agent' => [
-                    'is_desktop' => $agent->isDesktop(),
-                    'platform' => $agent->platform(),
-                    'browser' => $agent->browser(),
-                ],
-                'ip_address' => $session->ip_address,
-                'is_current_device' => $session->id === $request->session()->getId(),
-                'last_active' => Carbon::createFromTimestamp($session->last_activity)->diffForHumans(),
-            ];
-        })->all();
     }
 
     /**

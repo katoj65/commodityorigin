@@ -1,8 +1,8 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import { Close, Document, Star, Ticket, WarningFilled } from '@element-plus/icons-vue';
+import { Close, Document, Loading, Star, Ticket, WarningFilled } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -96,12 +96,25 @@ const hydrateForm = () => {
     form.clearErrors();
 };
 
-watch(() => props.modelValue, (isOpen) => {
-    if (isOpen) hydrateForm();
-});
-
 function closeDialog() {
     dialogVisible.value = false;
+}
+
+// The ~40 Element Plus form controls below are themselves expensive to
+// mount the very first time this dialog opens (each el-select sets up its
+// own popper/teleport instance) — el-dialog doesn't render its body until
+// the first open, so that mount cost previously landed inside the same
+// frame as the open click, reading as a multi-second freeze with no
+// feedback. contentReady stays false until the dialog has already
+// finished its (fast) open animation, so the shell + a loading state
+// appear instantly, and the real fields mount a moment later while the
+// dialog is already visible. It never resets back to false, so every
+// open after the first is instant with no skeleton flash.
+const contentReady = ref(false);
+
+function onDialogOpened() {
+    hydrateForm();
+    contentReady.value = true;
 }
 
 function onImageChange(event) {
@@ -135,7 +148,9 @@ function submit() {
         align-center
         :close-on-click-modal="false"
         :show-close="false"
+        transition="dialog-fade-fast"
         class="elm-modal"
+        @opened="onDialogOpened"
     >
         <template #header>
             <div class="elm-modal__head">
@@ -153,6 +168,11 @@ function submit() {
         </template>
 
         <div class="elm-modal__body">
+            <div v-if="!contentReady" class="elm-modal__loading">
+                <el-icon class="is-loading" :size="22"><Loading /></el-icon>
+                <span>Preparing form…</span>
+            </div>
+            <template v-else>
             <div class="elm-section">
                 <h3 class="elm-section__title"><el-icon><Ticket /></el-icon> Lot Identity</h3>
                 <div class="elm-grid">
@@ -335,11 +355,12 @@ function submit() {
                     </div>
                 </div>
             </div>
+            </template>
         </div>
 
         <template #footer>
             <div class="elm-modal__footer">
-                <button type="button" class="elm-btn-primary" :disabled="form.processing" @click="submit">
+                <button type="button" class="elm-btn-primary" :disabled="form.processing || !contentReady" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Save Changes' }}
                 </button>
             </div>
@@ -359,6 +380,15 @@ function submit() {
 .el-dialog.elm-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.elm-modal .el-dialog__body { padding: 0; }
 .el-dialog.elm-modal .el-dialog__footer { padding: 0; }
+
+/* Element Plus's default dialog-fade transition (and the --el-transition-duration
+   it's keyed to) takes 0.3s, which reads as a perceptible delay before the
+   modal appears. Reusing the same open() animation shape at a snappier
+   duration removes that lag without an abrupt pop-in. */
+.dialog-fade-fast-enter-active { animation: modal-fade-in .12s; }
+.dialog-fade-fast-enter-active .el-overlay-dialog { animation: dialog-fade-in .12s; }
+.dialog-fade-fast-leave-active { animation: modal-fade-out .12s; }
+.dialog-fade-fast-leave-active .el-overlay-dialog { animation: dialog-fade-out .12s; }
 </style>
 
 <style scoped>
@@ -408,6 +438,19 @@ function submit() {
 .elm-modal__close:hover { background: #E5E7EB; color: #121516; }
 
 .elm-modal__body { padding: 22px 24px 8px; max-height: 72vh; overflow-y: auto; }
+.elm-modal__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 0;
+    color: #6F7677;
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.elm-modal__loading .is-loading { animation: elm-spin 1s linear infinite; color: #121516; }
+@keyframes elm-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .elm-section { margin-bottom: 22px; }
 .elm-section:last-child { margin-bottom: 0; }

@@ -1,6 +1,6 @@
 <script setup>
-import { computed, watch } from 'vue';
-import { Close } from '@element-plus/icons-vue';
+import { computed, ref, watch } from 'vue';
+import { Close, Loading } from '@element-plus/icons-vue';
 import { useForm } from '@inertiajs/vue3';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 import InputError from '@/Components/InputError.vue';
@@ -52,14 +52,16 @@ const hydrateForm = () => {
     form.clearErrors();
 };
 
-watch(
-    () => props.modelValue,
-    (isOpen) => {
-        if (isOpen) {
-            hydrateForm();
-        }
-    },
-);
+// Deferring hydration to @opened (instead of a modelValue watcher) lets
+// the dialog's shell + loading state appear immediately; the real fields
+// mount right after, while it's already visible. contentReady never
+// resets back to false, so every open after the first is instant.
+const contentReady = ref(false);
+
+const onDialogOpened = () => {
+    hydrateForm();
+    contentReady.value = true;
+};
 
 watch(
     () => props.season,
@@ -94,11 +96,12 @@ const submit = () => {
         v-model="dialogVisible"
         width="min(700px, calc(100vw - 2rem))"
         class="season-edit-dialog"
-        destroy-on-close
         append-to-body
         align-center
         :close-on-click-modal="false"
         :show-close="false"
+        transition="dialog-fade-fast"
+        @opened="onDialogOpened"
     >
         <template #header>
             <div class="modal-header">
@@ -115,7 +118,11 @@ const submit = () => {
             </div>
         </template>
 
-        <el-form label-position="top" class="grid gap-4 p-5 pb-2 pt-2 sm:grid-cols-2">
+        <div v-if="!contentReady" class="season-loading">
+            <el-icon class="is-loading" :size="22"><Loading /></el-icon>
+            <span>Preparing form…</span>
+        </div>
+        <el-form v-else label-position="top" class="grid gap-4 p-5 pb-2 pt-2 sm:grid-cols-2">
             <el-form-item label="Season name" class="sm:col-span-2">
                 <el-input v-model="form.name" placeholder="e.g. Main Crop 2026" />
                 <InputError :message="form.errors.name" class="modal-input-error mt-2" />
@@ -169,13 +176,26 @@ const submit = () => {
         <template #footer>
             <div class="flex flex-col-reverse gap-3 px-5 pb-2 sm:flex-row sm:justify-end">
 
-                <SubmitButton :loading="form.processing" :full-width="false" class="min-w-[180px]" @click="submit">
+                <SubmitButton :loading="form.processing" :disabled="!contentReady" :full-width="false" class="min-w-[180px]" @click="submit">
                     Save Season
                 </SubmitButton>
             </div>
         </template>
     </el-dialog>
 </template>
+
+<style>
+/* Unscoped on purpose: the dialog-fade transition classes land on
+   ancestor wrapper elements Element Plus renders around .el-dialog
+   (the overlay + transition root), which sit outside anything a scoped
+   :deep() selector here can reach. Element Plus's default 0.3s duration
+   reads as a perceptible delay before the modal appears; reusing the
+   same open() animation shape at a snappier duration removes that lag. */
+.dialog-fade-fast-enter-active { animation: modal-fade-in .12s; }
+.dialog-fade-fast-enter-active .el-overlay-dialog { animation: dialog-fade-in .12s; }
+.dialog-fade-fast-leave-active { animation: modal-fade-out .12s; }
+.dialog-fade-fast-leave-active .el-overlay-dialog { animation: dialog-fade-out .12s; }
+</style>
 
 <style scoped>
 :deep(.season-edit-dialog .el-dialog) {
@@ -205,6 +225,20 @@ const submit = () => {
     color: #dc2626;
     font-size: 12px;
 }
+
+.season-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 20px;
+    color: #6B7280;
+    font-size: 13px;
+    font-weight: 600;
+}
+.season-loading .is-loading { animation: season-spin 1s linear infinite; color: #111827; }
+@keyframes season-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 :deep(.season-edit-dialog .el-form-item__label) {
     color: #111827;

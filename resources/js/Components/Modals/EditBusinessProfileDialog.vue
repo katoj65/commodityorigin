@@ -1,8 +1,8 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import { Close, OfficeBuilding, Upload } from '@element-plus/icons-vue';
+import { Close, Loading, OfficeBuilding, Upload } from '@element-plus/icons-vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -52,13 +52,23 @@ function revokeLocalPreview() {
     localPreviewUrl.value = '';
 }
 
-watch(() => props.modelValue, (open) => {
-    if (!open) return;
+// This ~17-field reactive form is expensive enough to mount/hydrate that
+// doing it in lockstep with the dialog's own open animation (e.g. on a
+// modelValue watcher) visibly delays the dialog appearing at all — worse
+// still on the very first open, since el-dialog doesn't render its body
+// until then. contentReady stays false until the dialog has already
+// finished opening, so the shell + a loading state appear immediately,
+// and the real fields mount right after. It never resets back to false,
+// so every open after the first is instant with no skeleton flash.
+const contentReady = ref(false);
+
+function onDialogOpened() {
     form.defaults(emptyForm());
     form.reset();
     form.clearErrors();
     revokeLocalPreview();
-});
+    contentReady.value = true;
+}
 
 onBeforeUnmount(revokeLocalPreview);
 
@@ -95,11 +105,12 @@ function submit() {
     <el-dialog
         v-model="dialogVisible"
         width="min(720px, calc(100vw - 2rem))"
-        destroy-on-close
         align-center
         :close-on-click-modal="false"
         :show-close="false"
+        transition="dialog-fade-fast"
         class="ebp-modal"
+        @opened="onDialogOpened"
     >
         <template #header>
             <div class="ebp-modal__head">
@@ -117,6 +128,11 @@ function submit() {
         </template>
 
         <div class="ebp-modal__body">
+            <div v-if="!contentReady" class="ebp-modal__loading">
+                <el-icon class="is-loading" :size="22"><Loading /></el-icon>
+                <span>Preparing form…</span>
+            </div>
+            <template v-else>
             <div class="ebp-logo">
                 <label class="ebp-logo__upload" :class="{ 'ebp-logo__upload--has-image': displayLogoUrl }">
                     <input type="file" accept="image/*" class="ebp-logo__input" @change="onLogoChange">
@@ -240,12 +256,13 @@ function submit() {
                     <span v-if="form.errors.postal_code" class="ebp-field__error">{{ form.errors.postal_code }}</span>
                 </div>
             </div>
+            </template>
         </div>
 
         <template #footer>
             <div class="ebp-modal__footer">
                 <button type="button" class="ebp-btn-outline" @click="closeDialog">Cancel</button>
-                <button type="button" class="ebp-btn-primary" :disabled="form.processing" @click="submit">
+                <button type="button" class="ebp-btn-primary" :disabled="form.processing || !contentReady" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Save Changes' }}
                 </button>
             </div>
@@ -268,6 +285,15 @@ function submit() {
 .el-dialog.ebp-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.ebp-modal .el-dialog__body { padding: 0; }
 .el-dialog.ebp-modal .el-dialog__footer { padding: 0; }
+
+/* Element Plus's default dialog-fade transition (and the --el-transition-duration
+   it's keyed to) takes 0.3s, which reads as a perceptible delay before the
+   modal appears. Reusing the same open() animation shape at a snappier
+   duration removes that lag without an abrupt pop-in. */
+.dialog-fade-fast-enter-active { animation: modal-fade-in .12s; }
+.dialog-fade-fast-enter-active .el-overlay-dialog { animation: dialog-fade-in .12s; }
+.dialog-fade-fast-leave-active { animation: modal-fade-out .12s; }
+.dialog-fade-fast-leave-active .el-overlay-dialog { animation: dialog-fade-out .12s; }
 </style>
 
 <style scoped>
@@ -330,6 +356,19 @@ function submit() {
     max-height: 70vh;
     overflow-y: auto;
 }
+.ebp-modal__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 0;
+    color: #9ca3af;
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.ebp-modal__loading .is-loading { animation: ebp-spin 1s linear infinite; color: #271310; }
+@keyframes ebp-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .ebp-logo {
     margin-bottom: 18px;
