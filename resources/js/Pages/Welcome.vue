@@ -1,851 +1,665 @@
 <script setup>
+import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { Search } from '@element-plus/icons-vue';
 import OuterLayout from '@/Layouts/OuterLayout.vue';
 
-const pageTitle = 'Bean Origin: The Digital Exchange for Coffee';
-
-// Deterministic ascending price curve for the hero visual — ties the flagship
-// image to the exchange/pricing narrative instead of decorative bean clip art.
-function seededHeroCurve(points) {
-    const coords = [];
-    let seed = 11;
-    let level = 92;
-    const rand = () => {
-        seed = (seed * 9301 + 49297) % 233280;
-        return seed / 233280;
-    };
-
-    for (let i = 0; i < points; i += 1) {
-        level -= 6.5 + rand() * 3.5;
-        const noise = (rand() - 0.5) * 6;
-        coords.push({
-            x: (400 / (points - 1)) * i,
-            y: Math.min(96, Math.max(6, level + noise)),
-        });
-    }
-
-    return coords;
-}
-
-const heroCurvePoints = seededHeroCurve(9);
-const heroCurvePath = heroCurvePoints
-    .map((point, i) => `${i === 0 ? 'M' : 'L'}${point.x.toFixed(1)},${(point.y * 5.5).toFixed(1)}`)
-    .join(' ');
-const heroCurveFillPath = `${heroCurvePath} L400,550 L0,550 Z`;
-
-const tickerItems = [
-    { label: 'Arabica (NY)', value: '184.25', change: '1.32%', tone: 'up' },
-    { label: 'Robusta (LON)', value: '3245.00', change: '0.45%', tone: 'down' },
-    { label: 'Uganda Bugisu', value: '192.50', change: '0.80%', tone: 'up' },
-    { label: 'Ethiopia Yirgacheffe', value: '215.10', change: '2.10%', tone: 'up' },
-    { label: 'Brazil Santos', value: '178.90', change: '0.15%', tone: 'down' },
-];
-
-const originRegions = [
-    { name: 'Bugisu · Mt Elgon', altitude: '1,500-2,200m', variety: 'Arabica', notes: 'SL14, SL28', lots: 18 },
-    { name: 'Rwenzori', altitude: '1,400-2,000m', variety: 'Arabica', notes: 'SL14', lots: 9 },
-    { name: 'Kisoro', altitude: '1,900-2,300m', variety: 'Arabica', notes: 'Bourbon', lots: 6 },
-    { name: 'Mubende', altitude: '1,200-1,500m', variety: 'Robusta', notes: 'Nganda', lots: 12 },
-    { name: 'West Nile', altitude: '1,100-1,400m', variety: 'Robusta', notes: 'Erecta', lots: 7 },
-    { name: 'Masaka', altitude: '1,100-1,300m', variety: 'Robusta', notes: 'Nganda', lots: 10 },
-];
-
-const matchmakerPoints = [
-    { icon: 'route', title: 'Predictive Logistics Routing', copy: 'Calculates fastest and cheapest maritime routes automatically.' },
-    { icon: 'tune', title: 'Quality Profile Matching', copy: 'Aligns SCA scores and flavor notes with specific buyer demands.' },
-];
-
-const esgMetrics = [
-    {
-        icon: 'co2',
-        color: '#0d631b',
-        title: 'Carbon Footprint',
-        sub: 'Avg. per kg',
-        value: '-1.2',
-        unit: 'kg CO2e',
-        bar: 85,
-        copy: '85% of featured lots are carbon negative or neutral at the farm gate.',
+const props = defineProps({
+    filterOptions: {
+        type: Object,
+        default: () => ({ species: [], processing: [], origins: [], grades: [], incoterms: [] }),
     },
-    {
-        icon: 'monetization_on',
-        color: '#b7791f',
-        title: 'Farmer Value',
-        sub: 'FOB Price Share',
-        value: '72',
-        unit: '%',
-        bar: 72,
-        copy: 'Average percentage of final FOB price returned directly to the producing cooperative.',
-    },
-    {
-        icon: 'water_drop',
-        color: '#79573f',
-        title: 'Water Efficiency',
-        sub: 'Processing Usage',
-        value: '4.5',
-        unit: 'L/kg',
-        bar: 90,
-        copy: 'One of the most water-efficient washing processes among the lots we verify.',
-    },
-];
-
-const auctionFilters = [
-    { key: 'all', label: 'All' },
-    { key: 'east-africa', label: 'East Africa' },
-    { key: 'south-america', label: 'South America' },
-    { key: 'central-america', label: 'Central America' },
-    { key: 'asia-pacific', label: 'Asia Pacific' },
-];
-
-const auctionFilter = ref('all');
-
-const auctionRows = [
-    { id: 'UG-BUGI-021', origin: 'Uganda Bugisu AA', region: 'east-africa', variety: 'SL14/SL28, Washed', price: '7.35', delta: '1.8%', deltaTone: 'up', volume: '30 Bags', time: '01:05:30', timeTone: 'amber', status: 'Active Auction', statusTone: 'green', action: 'Place bid', style: 'solid', iconColor: '#0d631b' },
-    { id: 'ET-YIRG-042', origin: 'Ethiopia Yirgacheffe G1', region: 'east-africa', variety: 'Arabica SL28, AA', price: '6.45', delta: '0.9%', deltaTone: 'up', volume: '45 Bags', time: '02:14:45', timeTone: 'amber', status: 'Active Auction', statusTone: 'green', action: 'Place bid', style: 'solid', iconColor: '#0d631b' },
-    { id: 'CO-HUIL-088', origin: 'Colombia Huila Supremo', region: 'south-america', variety: 'Caturra, Screen 18', price: '5.12', delta: '0.4%', deltaTone: 'down', volume: '12.5 MT', time: null, status: 'Spot Available', statusTone: 'primary', action: 'Buy now', style: 'outline', iconColor: '#79573f' },
-    { id: 'KE-NYER-015', origin: 'Kenya Nyeri AA Plus', region: 'east-africa', variety: 'SL34, Washed', price: '8.20', delta: '2.3%', deltaTone: 'up', volume: '20 Bags', time: '00:12:05', timeTone: 'rose', status: 'Closing Soon', statusTone: 'rose', action: 'Place bid', style: 'solid', iconColor: '#735c00' },
-];
-
-const filteredAuctions = computed(() => {
-    if (auctionFilter.value === 'all') {
-        return auctionRows;
-    }
-
-    return auctionRows.filter((row) => row.region === auctionFilter.value);
 });
 
-const askLadder = [
-    { price: '184.50', size: '12,400', depth: 85 },
-    { price: '184.45', size: '4,200', depth: 40 },
-    { price: '184.40', size: '8,100', depth: 65 },
-    { price: '184.35', size: '1,500', depth: 20 },
+/* ── Illustrative content — this is a public marketing landing page (no
+   authenticated props exist for it), ported 1:1 from the approved
+   institutional-exchange design file. Colors are reskinned onto the
+   OuterLayout brand palette already used for the header/footer chrome
+   (#121611 dark, #a3f69c accent, #0d631b link green) instead of the
+   mockup's own emerald/obsidian palette, for site-wide consistency. ────── */
+const tickerItems = [
+    { label: 'ARABICA (KC Spot)', value: '$5.18/kg', change: '▲ +2.4%' },
+    { label: 'ROBUSTA (RC Spot)', value: '$3.92/kg', change: '▲ +1.1%' },
+    { label: 'ICE COFFEE C', value: '248.65¢/lb', change: '▲ +0.8%' },
+    { label: 'UGANDA BUGISU AA (FOB MOMBASA)', value: '$5.10/kg', change: '▲ +1.8%' },
+    { label: 'LONDON ROBUSTA JAN', value: '$4,620/MT', change: '▲ +0.4%' },
+    { label: 'STANBIC ESCROW LIQUIDITY', value: '$14.2M ACTIVE', change: '● SECURE' },
+    { label: 'MUKONO BASIN FAQ NATURALS', value: '$3.88/kg', change: '▲ +1.2%' },
 ];
 
-const bidLadder = [
-    { price: '184.20', size: '6,100', depth: 55 },
-    { price: '184.15', size: '2,500', depth: 30 },
-    { price: '184.10', size: '9,200', depth: 75 },
-    { price: '184.05', size: '4,800', depth: 45 },
+const heroMetrics = [
+    { label: '24h Traded Volume', value: '142.8', unit: 'MT', note: '▲ +18.4% vs last week' },
+    { label: 'Active Verified Lots', value: '312', unit: 'Lots', note: 'Export-ready inventory' },
+    { label: 'Escrow Payout SLA', value: '< 24', unit: 'HRS', note: 'Stanbic Bank Tier-1 Custody' },
+    { label: 'EUDR Compliance', value: '100%', unit: 'Polygon', note: 'Zero deforestation proof' },
 ];
 
-// Deterministic OHLC series so the "Candles" tab actually renders candlesticks.
-function seededCandles(count) {
-    const candles = [];
-    let seed = 7;
-    const rand = () => {
-        seed = (seed * 9301 + 49297) % 233280;
-        return seed / 233280;
-    };
-
-    let level = 84;
-    for (let i = 0; i < count; i += 1) {
-        const drift = 4.5 + rand() * 2.5;
-        level -= drift;
-        const noise = (rand() - 0.5) * 5;
-        const open = Math.min(94, Math.max(8, level + noise + drift * 0.35));
-        const close = Math.min(94, Math.max(8, level + noise - drift * 0.35));
-        const bodyTop = Math.min(open, close);
-        const bodyBottom = Math.max(open, close);
-
-        candles.push({
-            open,
-            close,
-            high: Math.max(4, bodyTop - (1.5 + rand() * 3)),
-            low: Math.min(97, bodyBottom + (1.5 + rand() * 3)),
-            volume: 25 + rand() * 75,
-            bullish: close < open,
-        });
-    }
-
-    return candles;
-}
-
-const candleSlotWidth = 100 / 14;
-const candleBodyWidth = candleSlotWidth * 0.5;
-
-const chartCandles = seededCandles(14).map((candle, i) => ({
-    ...candle,
-    cx: candleSlotWidth * (i + 0.5),
-}));
-
-const chartPriceLabels = [
-    { y: 20, price: '184.55' },
-    { y: 40, price: '184.35' },
-    { y: 60, price: '184.15' },
-    { y: 80, price: '183.95' },
+const orderBookRows = [
+    {
+        dot: '#0d631b', title: 'Mt. Elgon Arabica (Washed)', sub: 'Bugisu High Altitude Coop',
+        lot: '#LOT-UG-9412', grade: 'Screen 18+ AA', moisture: '11.2%', cup: '86.5 pts',
+        vol: '19,200 kg', volNote: '(1 FCL)', incoterm: 'FOB Mombasa', price: '$5.15',
+    },
+    {
+        dot: '#b45309', title: 'Mukono Fine Robusta (Natural)', sub: 'Kyagalanyi Dry Mill Lot',
+        lot: '#LOT-UG-8830', grade: 'Screen 18 Extra', moisture: '11.8%', cup: '82.0 pts',
+        vol: '38,400 kg', volNote: '(2 FCL)', incoterm: 'FOB Mombasa', price: '$3.95',
+    },
+    {
+        dot: '#0d631b', title: 'Rwenzori Washed Arabica', sub: 'Kasese Snowpeaks Agronomy',
+        lot: '#LOT-UG-7711', grade: 'Grade AB (Washed)', moisture: '11.4%', cup: '84.8 pts',
+        vol: '9,600 kg', volNote: '(0.5 FCL)', incoterm: 'EXW Kampala Mill', price: '$4.70',
+    },
+    {
+        dot: '#4338ca', title: 'Sidama Washed Specialty (Anaerobic)', sub: 'Bensa Origin Direct Export',
+        lot: '#LOT-ET-3092', grade: 'Grade 1 Microlot', moisture: '10.9%', cup: '88.5 pts',
+        vol: '4,800 kg', volNote: '(Specialty)', incoterm: 'FOB Djibouti', price: '$7.40',
+    },
 ];
+
+const dppMeta = [
+    { label: 'GPS ORIGIN POLYGON', value: '1.042°N, 34.331°E', note: 'Mt. Elgon Basin (1,920m)' },
+    { label: 'UCDA QUALITY CERT', value: '#UCDA-EXP-2025-44', note: 'Grade AA · Defect Score 0' },
+    { label: 'MOISTURE & WATER ACT.', value: '11.2% / 0.54 aw', note: 'Dry Mill Inspected' },
+    { label: 'HARVEST / MILL DATE', value: 'Main Crop 2024/25', note: 'Milled Nov 2024' },
+    { label: 'WAREHOUSE LOCATION', value: 'Bolloré Jinja Dry Port', note: 'Customs Bonded WH #4' },
+    { label: 'ESCROW RELEASE SLA', value: 'On Bill of Lading (BL)', note: 'Stanbic Bank Kampala' },
+];
+
+const stepperSteps = [
+    { n: '01', title: 'Farm Polygon', note: 'Satellite GPS & EUDR zero-deforestation map' },
+    { n: '02', title: 'Collection & Brix', note: 'Weight recording & cherry density log' },
+    { n: '03', title: 'Dry Mill Batch', note: 'Hulling, screen sizing & gravimetric sorting' },
+    { n: '04', title: 'UCDA Cupping', note: 'Official state sensory score & moisture cert' },
+    { n: '05', title: 'Digital Title', note: 'Escrow allocation & exchange listing' },
+    { n: '06', title: 'Port Release', note: 'Mombasa stuffing & Stanbic payment release' },
+];
+
+const corridors = [
+    { n: '01', route: 'Mombasa → Jebel Ali (Dubai)', desc: 'Middle East Re-export Hub', transit: '9-11 Days Transit', rows: [['Carriers:', 'Maersk, CMA CGM'], ['Avg Freight:', '$1,450 / 20ft FCL'], ['Active Lots:', '84 Lots in transit']] },
+    { n: '02', route: 'Mombasa → Hamburg / RTM', desc: 'Western Europe Roasting Hub', transit: '24-28 Days Transit', rows: [['Compliance:', 'EUDR Auto-Validated'], ['Avg Freight:', '$2,680 / 20ft FCL'], ['Active Lots:', '128 Lots contracted']] },
+    { n: '03', route: 'Mombasa → Houston / NY', desc: 'North America Roasters', transit: '32-36 Days Transit', rows: [['Warehousing:', 'Continental, The Green'], ['Avg Freight:', '$3,400 / 20ft FCL'], ['Active Lots:', '62 Lots scheduled']] },
+    { n: '04', route: 'Mombasa → Singapore / Busan', desc: 'Asia Pacific Fast-Growth Hub', transit: '18-21 Days Transit', rows: [['Demand Focus:', 'Fine Robusta & AA'], ['Avg Freight:', '$1,850 / 20ft FCL'], ['Active Lots:', '38 Lots in pipeline']] },
+];
+
+const trustBadges = ['UCDA Licensed', 'EUDR 100% Valid', 'Stanbic Escrow', 'SCAA Cupping'];
+
+const aiLotMatches = [
+    { id: '#LOT-UG-8830 (Mukono Basin)', price: '$3.95/kg FOB', note: 'Vol: 38,400 kg · Moisture: 11.8% · EUDR Polygons: 142 farms' },
+    { id: '#LOT-UG-7104 (Mubende Forest)', price: '$4.05/kg FOB', note: 'Vol: 21,000 kg · Moisture: 11.4% · EUDR Polygons: 98 farms' },
+];
+
+/* Lot filter fields — options sourced from the real metadata tables
+   (crop_variety_metadata, processing_metadata, origins_metadata,
+   crop_grade_metadata, incoterm_metadata) via HomeController; no live
+   search backend wired for this illustrative landing page yet. */
+const speciesOptions = computed(() => ['All Coffee Types', ...props.filterOptions.species]);
+const processingOptions = computed(() => ['All Processing', ...props.filterOptions.processing]);
+const originOptions = computed(() => ['All Origins', ...props.filterOptions.origins]);
+const gradeOptions = computed(() => ['Any Grade', ...props.filterOptions.grades]);
+const incotermOptions = computed(() => ['Any Incoterm', ...props.filterOptions.incoterms]);
+
+const filterKeyword = ref('');
+const filterSpecies = ref(speciesOptions.value[0]);
+const filterProcessing = ref(processingOptions.value[0]);
+const filterOrigin = ref(originOptions.value[0]);
+const filterGrade = ref(gradeOptions.value[0]);
+const filterIncoterm = ref(incotermOptions.value[0]);
+const aiChatDraft = ref('');
 </script>
 
 <template>
-    <OuterLayout :title="pageTitle">
-        <!-- HERO -->
-        <section class="relative w-full overflow-hidden bg-[#121611] pt-12 pb-24 md:pt-24 md:pb-32 px-4 md:px-8 text-[#eef2e8]">
-            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                <div class="lg:col-span-5 flex flex-col gap-8 relative z-10 wp-fade-1">
-                    <h1 class="text-[44px] md:text-[64px] leading-[1.05] text-white tracking-[-0.03em] font-semibold">
-                        The Digital Exchange <br class="hidden sm:block" />
-                        for <span class="text-[#a3f69c]">Coffee.</span>
-                    </h1>
-
-                    <p class="text-lg leading-relaxed text-[#bfcaba] max-w-lg">
-                        Buy and sell coffee directly with producers and buyers around the world. Live pricing, verified origins, and settlement that doesn't take weeks.
-                    </p>
-
-                    <div class="flex flex-col sm:flex-row gap-4 mt-2">
-                        <Link
-                            :href="route('login')"
-                            class="bg-[#a3f69c] text-[#002204] px-8 py-4 rounded text-sm font-semibold hover:bg-[#88d982] hover:shadow-[0_0_20px_rgba(163,246,156,0.2)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all text-center no-underline"
-                        >Enter the exchange</Link>
-                        <a
-                            href="#auctions"
-                            class="bg-[#1a2018] text-white px-8 py-4 rounded text-sm font-semibold hover:bg-[#20281e] active:scale-[0.97] transition-all border border-[#707a6c]/30 text-center no-underline"
-                        >Explore the marketplace</a>
+    <OuterLayout title="Bean Origin — The Digital Exchange for Physical Coffee">
+        <div class="wp-exchange">
+            <!-- LIVE COMMODITY TICKER -->
+            <div class="bg-[#121611] text-[#a3f69c] border-b border-[#a3f69c]/10 py-2 overflow-hidden text-[11px] font-mono select-none">
+                <div class="flex items-center">
+                    <div class="px-3 bg-black/30 text-[#a3f69c] font-semibold border-r border-[#a3f69c]/15 uppercase tracking-widest flex items-center gap-1.5 shrink-0">
+                        <span class="w-2 h-2 rounded-full bg-[#a3f69c] animate-pulse" />
+                        EXCHANGE FEED
                     </div>
-
-                    <div class="mt-6 flex items-center gap-8 sm:gap-10 border-t border-[#707a6c]/20 pt-7">
-                        <div class="min-w-0">
-                            <div class="wp-display text-xl sm:text-2xl font-bold tracking-tight text-white tabular-nums">$2.4B+</div>
-                            <div class="text-[11px] text-[#8b978a] mt-1 leading-tight">Traded volume</div>
-                        </div>
-                        <div class="min-w-0">
-                            <div class="wp-display text-xl sm:text-2xl font-bold tracking-tight text-white tabular-nums">45+</div>
-                            <div class="text-[11px] text-[#8b978a] mt-1 leading-tight">Origin countries</div>
-                        </div>
-                        <div class="min-w-0">
-                            <div class="wp-display text-xl sm:text-2xl font-bold tracking-tight text-[#a3f69c] tabular-nums">99.9%</div>
-                            <div class="text-[11px] text-[#8b978a] mt-1 leading-tight">Platform uptime</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-7 relative wp-fade-2">
-                    <div class="absolute inset-0 bg-gradient-to-tr from-[#a3f69c]/10 via-[#0d631b]/5 to-transparent rounded-2xl blur-2xl -z-10 transform scale-110"></div>
-                    <div class="relative rounded-xl overflow-hidden shadow-2xl bg-[#121611] p-1 group">
-                        <svg
-                            class="w-full h-[380px] md:h-[600px] rounded-lg transition-transform duration-1000 group-hover:scale-105"
-                            viewBox="0 0 400 550"
-                            preserveAspectRatio="xMidYMid slice"
-                            role="img"
-                            aria-label="Ascending price chart representing coffee market growth"
-                        >
-                            <defs>
-                                <linearGradient id="heroBg" x1="0" y1="0" x2="1" y2="1">
-                                    <stop offset="0%" stop-color="#1c2a18" />
-                                    <stop offset="55%" stop-color="#141d11" />
-                                    <stop offset="100%" stop-color="#0d1309" />
-                                </linearGradient>
-                                <linearGradient id="heroCurveFill" x1="0" x2="0" y1="0" y2="1">
-                                    <stop offset="0%" stop-color="#a3f69c" stop-opacity="0.35" />
-                                    <stop offset="100%" stop-color="#a3f69c" stop-opacity="0" />
-                                </linearGradient>
-                                <radialGradient id="heroVignette" cx="50%" cy="35%" r="75%">
-                                    <stop offset="0%" stop-color="#000000" stop-opacity="0" />
-                                    <stop offset="100%" stop-color="#000000" stop-opacity="0.55" />
-                                </radialGradient>
-                            </defs>
-                            <rect width="400" height="550" fill="url(#heroBg)" />
-                            <line v-for="row in 5" :key="row" x1="0" :y1="row * 90" x2="400" :y2="row * 90" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
-                            <path :d="heroCurveFillPath" fill="url(#heroCurveFill)" />
-                            <path :d="heroCurvePath" fill="none" stroke="#a3f69c" stroke-width="2.5" stroke-linejoin="round" opacity="0.85" />
-                            <circle
-                                v-for="(point, i) in heroCurvePoints" :key="i"
-                                :cx="point.x" :cy="point.y * 5.5" r="3"
-                                fill="#a3f69c" :opacity="i === heroCurvePoints.length - 1 ? 1 : 0.35"
-                            />
-                            <rect width="400" height="550" fill="url(#heroVignette)" />
-                        </svg>
-                        <div class="absolute inset-0 bg-gradient-to-t from-[#121611] via-transparent to-[#121611]/50 rounded-lg pointer-events-none"></div>
-
-                        <!-- Floating price card -->
-                        <div class="absolute top-8 right-8 bg-[#1a2018]/80 backdrop-blur-xl p-5 rounded-lg shadow-2xl w-64 hover:bg-[#1a2018]/95 hover:-translate-y-1 transition-all wp-fade-3">
-                            <div class="flex justify-between items-start mb-3">
-                                <div class="text-xs text-[#bfcaba] uppercase tracking-wider">Arabica (KC)</div>
-                                <span class="material-symbols-outlined text-[18px] text-[#bfcaba]">show_chart</span>
-                            </div>
-                            <div class="wp-display text-3xl font-bold tracking-tight text-white tabular-nums">184.25</div>
-                            <div class="text-xs text-[#a3f69c] flex items-center gap-1 mt-2 bg-[#a3f69c]/10 w-fit px-2 py-1 rounded">
-                                <span class="material-symbols-outlined text-[14px]">arrow_upward</span> +2.40 (1.32%)
-                            </div>
-                            <div class="mt-4 pt-4 border-t border-[#707a6c]/20">
-                                <div class="text-[10px] text-[#bfcaba] mb-2 uppercase tracking-[0.2em]">24h Volume</div>
-                                <div class="h-8 w-full flex items-end gap-1 opacity-80">
-                                    <div class="w-full bg-[#0d631b]/30 rounded-t-sm h-[30%]"></div>
-                                    <div class="w-full bg-[#0d631b]/40 rounded-t-sm h-[60%]"></div>
-                                    <div class="w-full bg-[#0d631b]/50 rounded-t-sm h-[40%]"></div>
-                                    <div class="w-full bg-[#0d631b]/70 rounded-t-sm h-[90%]"></div>
-                                    <div class="w-full bg-[#a3f69c] rounded-t-sm h-full shadow-[0_0_10px_rgba(163,246,156,0.5)]"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Floating live match card -->
-                        <div class="absolute bottom-8 left-8 bg-[#1a2018]/90 backdrop-blur-xl p-5 rounded-lg shadow-2xl w-72 hover:-translate-y-1 transition-transform wp-fade-4">
-                            <div class="flex justify-between items-center mb-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-2 h-2 rounded-full bg-[#a3f69c]"></div>
-                                    <span class="text-xs text-white uppercase tracking-wider">Live Match</span>
-                                </div>
-                                <span class="text-[10px] text-[#a3f69c] border border-[#a3f69c]/30 px-2 py-0.5 rounded bg-[#a3f69c]/10 tracking-wider">FILLED</span>
-                            </div>
-                            <div class="flex justify-between items-end border-b border-[#707a6c]/20 pb-4 mb-4">
-                                <div>
-                                    <div class="text-[10px] text-[#bfcaba] mb-1 uppercase tracking-wider">Asset</div>
-                                    <div class="text-sm font-semibold text-white">Bugisu AA (UG)</div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-[10px] text-[#bfcaba] mb-1 uppercase tracking-wider">Size</div>
-                                    <div class="text-sm text-white tabular-nums">500 MT</div>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2 text-[11px] text-[#bfcaba]">
-                                <span class="material-symbols-outlined text-[16px] text-[#a3f69c]">verified_user</span> Smart contract settled
-                            </div>
+                    <div class="overflow-hidden whitespace-nowrap flex-1">
+                        <div class="wp-ticker-track flex items-center gap-8 pl-4">
+                            <template v-for="n in 2" :key="n">
+                                <template v-for="(item, i) in tickerItems" :key="`${n}-${i}`">
+                                    <span class="inline-flex items-center gap-2">
+                                        <span class="text-[#bfcaba]">{{ item.label }}</span>
+                                        <span class="text-white font-bold">{{ item.value }}</span>
+                                        <span class="text-[#a3f69c] font-semibold">{{ item.change }}</span>
+                                    </span>
+                                    <span class="text-[#3a4536]">|</span>
+                                </template>
+                            </template>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <!-- ORIGIN STRIP (real growing regions, not fabricated partners) -->
-        <section class="w-full bg-[#ebefe5] py-16 md:py-20 border-t border-[#bfcaba]/20 wp-reveal">
-            <div class="max-w-7xl mx-auto px-4 md:px-8">
-                <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-                    <div class="max-w-2xl">
-                        <div class="flex items-center gap-2 text-[#0d631b] mb-3">
-                            <span class="material-symbols-outlined text-[18px]">location_on</span>
-                            <span class="text-xs font-semibold tracking-wide">Origin network</span>
-                        </div>
-                        <h2 class="text-[28px] md:text-[32px] font-semibold text-[#181d17] leading-tight">Sourced from Uganda's growing regions.</h2>
-                        <p class="text-base leading-6 text-[#40493d] mt-4">
-                            Six verified growing regions, each with its own altitude, variety, and processing profile. Browse lots by origin instead of guessing at a label.
+            <!-- HERO -->
+            <section class="relative bg-[#121611] text-white pt-16 pb-24 md:pt-20 md:pb-28 overflow-hidden">
+                <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-[#a3f69c]/10 rounded-full blur-3xl pointer-events-none" />
+                <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center max-w-4xl mx-auto">
+                        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-5 leading-[1.12]">
+                            The Digital Exchange for <br class="hidden sm:inline" />
+                            <span class="text-[#a3f69c]">Physical Coffee</span>
+                        </h1>
+                        <p class="text-base sm:text-lg text-[#bfcaba] max-w-2xl mx-auto mb-8 leading-relaxed">
+                            Direct institutional trading, verified origin provenance, and escrow settlement connecting East African producers with global roasters and commodity desks.
                         </p>
-                    </div>
-                    <Link :href="route('origin.index')" class="text-[#0d631b] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all w-fit no-underline flex-shrink-0">
-                        View origin directory <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-                    </Link>
-                </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-                    <Link
-                        v-for="region in originRegions" :key="region.name"
-                        :href="route('origin.index')"
-                        class="group bg-[#f7fbf0] rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all no-underline flex flex-col"
-                    >
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-[#0d631b]/10 flex items-center justify-center flex-shrink-0">
-                                <span class="material-symbols-outlined text-[#0d631b] text-[16px]">terrain</span>
-                            </div>
-                            <span
-                                class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex-shrink-0"
-                                :class="region.variety === 'Arabica' ? 'bg-[#0d631b]/10 text-[#0d631b]' : 'bg-[#79573f]/10 text-[#79573f]'"
-                            >{{ region.variety }}</span>
+                        <div class="flex flex-wrap items-center justify-center gap-3.5 mb-14">
+                            <Link :href="route('register')" class="inline-flex items-center gap-2 bg-[#a3f69c] hover:bg-[#88d982] text-[#002204] font-bold px-6 py-3 rounded-lg text-sm no-underline transition-all">
+                                <span>Explore Live Exchange</span>
+                                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                            </Link>
+                            <Link :href="route('login')" class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white border border-white/20 font-semibold px-6 py-3 rounded-lg text-sm no-underline transition-all">
+                                <span class="material-symbols-outlined text-[16px] text-[#a3f69c]">terminal</span>
+                                <span>Launch Trading Terminal</span>
+                            </Link>
+                            <a href="#custody" class="inline-flex items-center gap-2 text-[#bfcaba] hover:text-white px-4 py-3 text-sm font-medium no-underline">
+                                <span class="material-symbols-outlined text-[16px] text-[#a3f69c]">verified_user</span>
+                                <span>Escrow &amp; Compliance Guarantee</span>
+                            </a>
                         </div>
-                        <h3 class="text-sm font-semibold text-[#181d17] group-hover:text-[#0d631b] transition-colors mb-1 leading-snug">{{ region.name }}</h3>
-                        <p class="text-xs text-[#40493d] leading-snug">{{ region.altitude }} · {{ region.notes }}</p>
-                        <div class="mt-3 pt-3 border-t border-[#bfcaba]/20 flex items-center justify-between">
-                            <span class="text-[10px] text-[#8b978a]">{{ region.lots }} Lots</span>
-                            <span class="material-symbols-outlined text-[14px] text-[#0d631b] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                        </div>
-                    </Link>
-                </div>
-            </div>
-        </section>
-
-        <!-- MARKET STRIP -->
-        <div class="relative w-full bg-[#121611] border-y border-[#707a6c]/20 py-4 overflow-hidden flex items-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] wp-reveal">
-            <div class="px-4 md:px-8 flex items-center gap-3 border-r border-[#707a6c]/20 pr-6 flex-shrink-0 bg-[#121611] z-20 relative">
-                <span class="w-2 h-2 rounded-full bg-[#a3f69c] wp-pulse"></span>
-                <span class="text-[10px] text-white uppercase tracking-[0.2em] font-semibold">Market Open</span>
-            </div>
-            <div class="overflow-hidden flex-1 relative">
-                <div class="wp-ticker flex items-center pl-12">
-                    <template v-for="(item, i) in [...tickerItems, ...tickerItems]" :key="i">
-                        <span class="flex items-center gap-2.5 flex-shrink-0 px-7">
-                            <span class="text-[11px] text-[#8b978a] uppercase tracking-wider">{{ item.label }}</span>
-                            <span class="text-sm text-white font-semibold tabular-nums">{{ item.value }}</span>
-                            <span
-                                class="text-[11px] font-semibold tabular-nums flex items-center gap-0.5"
-                                :class="item.tone === 'up' ? 'text-[#a3f69c]' : 'text-[#F43F5E]'"
-                            >
-                                <span class="material-symbols-outlined text-[15px]">{{ item.tone === 'up' ? 'arrow_drop_up' : 'arrow_drop_down' }}</span>{{ item.change }}
-                            </span>
-                        </span>
-                        <span class="w-px h-3 bg-[#707a6c]/20 flex-shrink-0"></span>
-                    </template>
-                </div>
-            </div>
-            <div class="pointer-events-none absolute inset-y-0 right-0 w-16 md:w-28 bg-gradient-to-l from-[#121611] to-transparent z-10"></div>
-        </div>
-
-        <!-- AI MATCHMAKER -->
-        <section id="matchmaker" class="py-28 md:py-32 px-4 md:px-8 bg-[#121611] text-white relative overflow-hidden wp-reveal">
-            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
-                <div class="relative z-10">
-                    <h2 class="text-4xl md:text-5xl text-white max-w-xl mb-6 font-semibold tracking-tight leading-[1.1]">
-                        The right buyer, matched to every <span class="text-[#a3f69c]">lot.</span>
-                    </h2>
-                    <p class="text-lg leading-relaxed text-[#bfcaba] max-w-xl mb-10">
-                        We match sellers with buyers by comparing available inventory, shipping costs, and what each buyer is actually looking for. Both sides get a better deal, faster.
-                    </p>
-                    <ul class="mb-10 border-t border-[#707a6c]/15">
-                        <li v-for="point in matchmakerPoints" :key="point.title" class="flex items-start gap-4 py-5 border-b border-[#707a6c]/15">
-                            <div class="w-9 h-9 rounded-lg bg-[#1a2018] border border-[#707a6c]/20 flex items-center justify-center flex-shrink-0">
-                                <span class="material-symbols-outlined text-[#a3f69c] text-[18px]">{{ point.icon }}</span>
-                            </div>
-                            <div>
-                                <div class="text-sm text-white font-semibold mb-1">{{ point.title }}</div>
-                                <div class="text-sm text-[#8b978a] leading-relaxed">{{ point.copy }}</div>
-                            </div>
-                        </li>
-                    </ul>
-                    <Link :href="route('how-it-works.index')" class="text-[#a3f69c] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all w-fit no-underline">
-                        See how matching works <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-                    </Link>
-                </div>
-
-                <div class="relative z-10">
-                    <div class="bg-[#181a17] rounded-2xl shadow-2xl p-7 md:p-8">
-                        <div class="flex items-center justify-between mb-7">
-                            <span class="text-[10px] text-[#8b978a] uppercase tracking-[0.2em] font-semibold">Live Match Preview</span>
-                            <span class="inline-flex items-center gap-1.5 bg-[#a3f69c]/10 text-[#a3f69c] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                                <span class="w-1.5 h-1.5 rounded-full bg-[#a3f69c]"></span>98% match
-                            </span>
-                        </div>
-
-                        <div class="flex items-start gap-4 pb-6 border-b border-[#707a6c]/10">
-                            <div class="w-11 h-11 rounded-lg bg-[#1a2018] border border-[#707a6c]/20 flex items-center justify-center flex-shrink-0">
-                                <span class="material-symbols-outlined text-[#bfcaba] text-[20px]">sell</span>
-                            </div>
-                            <div class="min-w-0">
-                                <div class="text-[10px] text-[#8b978a] uppercase tracking-[0.15em] mb-1">Selling Order</div>
-                                <div class="text-base text-white font-medium">Kisoro Highlands Co-op</div>
-                                <div class="text-[13px] text-[#8b978a] mt-0.5">Uganda · Kisoro · 18 MT · Fully Washed</div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center py-5">
-                            <div class="w-2 h-2 rounded-full bg-[#a3f69c] flex-shrink-0"></div>
-                            <div class="flex-1 border-t border-dashed border-[#a3f69c]/30 mx-3 relative">
-                                <span class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#181a17] px-3 flex items-center gap-1.5 whitespace-nowrap">
-                                    <span class="material-symbols-outlined text-[#a3f69c] wp-spin text-[14px]">sync</span>
-                                    <span class="text-[#a3f69c] text-[10px] tracking-[0.1em] uppercase font-semibold">Matching</span>
-                                </span>
-                            </div>
-                            <div class="w-2 h-2 rounded-full bg-[#a3f69c] flex-shrink-0"></div>
-                        </div>
-
-                        <div class="flex items-start gap-4 pt-6 border-t border-[#707a6c]/10">
-                            <div class="w-11 h-11 rounded-lg bg-[#1a2018] border border-[#707a6c]/20 flex items-center justify-center flex-shrink-0">
-                                <span class="material-symbols-outlined text-[#bfcaba] text-[20px]">shopping_cart</span>
-                            </div>
-                            <div class="min-w-0">
-                                <div class="text-[10px] text-[#8b978a] uppercase tracking-[0.15em] mb-1">Buying Intent</div>
-                                <div class="text-base text-white font-medium">Nordic Roasters Ltd.</div>
-                                <div class="text-[13px] text-[#8b978a] mt-0.5">Norway · Requires 15-20 MT · Ugandan Washed Arabica</div>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 grid grid-cols-2 divide-x divide-[#707a6c]/15 border-t border-[#707a6c]/10 pt-6">
-                            <div class="pr-4">
-                                <div class="text-[10px] text-[#8b978a] uppercase tracking-[0.15em] mb-1.5">Est. Shipping</div>
-                                <div class="text-sm text-white font-semibold tabular-nums">$1,240 · 14 Days</div>
-                            </div>
-                            <div class="pl-4">
-                                <div class="text-[10px] text-[#a3f69c]/70 uppercase tracking-[0.15em] mb-1.5">Margin Boost</div>
-                                <div class="text-sm text-[#a3f69c] font-semibold tabular-nums">+4.2% vs Spot</div>
-                            </div>
-                        </div>
-
-                        <Link :href="route('login')" class="block text-center w-full mt-7 bg-[#a3f69c] text-[#002204] py-3.5 rounded-lg text-sm font-semibold hover:bg-[#88d982] active:scale-[0.98] transition-all no-underline">Initiate smart contract</Link>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- EXCHANGE TERMINAL PREVIEW -->
-        <section class="py-24 px-4 md:px-8 bg-[#ebefe5] relative overflow-hidden wp-reveal">
-            <div class="max-w-7xl mx-auto relative z-10 flex flex-col gap-12">
-                <div class="max-w-2xl">
-                    <h2 class="wp-display text-[32px] md:text-[48px] leading-[1.15] font-semibold text-[#181d17] mb-6">Coffee, traded with <span class="text-[#0d631b]">intelligence.</span></h2>
-                    <p class="text-base leading-6 text-[#40493d] max-w-lg mb-8">
-                        The same matching engine and trading interface our traders use every day. Fast, reliable, and deep enough for serious volume.
-                    </p>
-                    <Link
-                        :href="route('login')"
-                        class="inline-block bg-[#a3f69c] text-[#002204] px-8 py-4 rounded-lg text-sm font-semibold hover:bg-[#88d982] hover:shadow-[0_0_15px_rgba(163,246,156,0.3)] active:scale-[0.97] transition-all no-underline"
-                    >See the trading terminal</Link>
-                </div>
-
-                <div class="w-full bg-[#1a1d19] rounded-xl shadow-2xl overflow-hidden flex flex-col">
-                    <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-[#20241f] border-b border-[#707a6c]/20">
-                        <div class="flex flex-wrap items-center gap-4">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[#a3f69c] text-[18px]">candlestick_chart</span>
-                                <span class="text-sm font-medium text-[#eef2e8]">KCH4 <span class="text-[#bfcaba] font-normal">(Arabica Mar '24)</span></span>
-                            </div>
-                            <div class="hidden sm:block h-4 w-px bg-[#707a6c]/30"></div>
-                            <div class="hidden sm:flex items-baseline gap-2">
-                                <span class="text-lg text-[#eef2e8] font-semibold tabular-nums">184.25</span>
-                                <span class="text-sm text-[#10B981] flex items-center tabular-nums"><span class="material-symbols-outlined text-[16px]">arrow_upward</span>1.32%</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-1.5 bg-[#121611]/60 px-2.5 py-1 rounded-full border border-[#707a6c]/20 flex-shrink-0">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
-                            <span class="text-[10px] text-[#8b978a] uppercase tracking-wider font-semibold">Live</span>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col lg:flex-row">
-                        <!-- Chart area -->
-                        <div class="flex-1 lg:border-r border-[#707a6c]/20 flex flex-col relative bg-[#181a17]">
-                            <div class="h-12 border-b border-[#707a6c]/10 flex items-center justify-between px-4 gap-4 overflow-x-auto">
-                                <div class="flex items-center gap-1 bg-[#121611] rounded-full p-1 flex-shrink-0">
-                                    <button type="button" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-[#a3f69c] text-[#002204]">1H</button>
-                                    <button type="button" class="px-3 py-1 rounded-full text-[11px] font-medium text-[#8b978a] hover:text-white transition-colors">4H</button>
-                                    <button type="button" class="px-3 py-1 rounded-full text-[11px] font-medium text-[#8b978a] hover:text-white transition-colors">1D</button>
-                                    <button type="button" class="px-3 py-1 rounded-full text-[11px] font-medium text-[#8b978a] hover:text-white transition-colors">1W</button>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-left max-w-4xl mx-auto bg-black/30 border border-white/10 rounded-xl p-4 sm:p-5">
+                            <div v-for="(m, i) in heroMetrics" :key="m.label" class="pl-0 md:pl-2" :class="i < 3 ? 'border-r border-white/10 pr-3' : ''">
+                                <div class="text-[11px] font-mono text-[#8a9384] uppercase">{{ m.label }}</div>
+                                <div class="text-2xl font-bold font-mono text-white flex items-baseline gap-1.5 mt-0.5" :class="{ 'text-[#a3f69c]': i === 3 }">
+                                    {{ m.value }} <span class="text-xs font-normal" :class="i === 3 ? 'text-[#bfcaba]' : 'text-[#a3f69c]'">{{ m.unit }}</span>
                                 </div>
-                                <span class="hidden sm:flex items-center gap-1.5 text-[11px] text-[#8b978a] flex-shrink-0">
-                                    <span class="material-symbols-outlined text-[14px]">candlestick_chart</span>Candles
-                                </span>
-                            </div>
-                            <div class="flex-1 p-4 relative h-72 lg:h-96">
-                                <svg class="absolute inset-4 w-[calc(100%-2rem)] h-[calc(100%-2rem)]" preserveAspectRatio="none" viewBox="0 0 100 100">
-                                    <line v-for="row in 4" :key="row" x1="0" :y1="row * 20" x2="100" :y2="row * 20" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" />
-                                    <g v-for="(candle, i) in chartCandles" :key="i">
-                                        <line
-                                            :x1="candle.cx" :x2="candle.cx" :y1="candle.high" :y2="candle.low"
-                                            :stroke="candle.bullish ? '#10B981' : '#F43F5E'" stroke-width="0.6"
-                                        />
-                                        <rect
-                                            :x="candle.cx - candleBodyWidth / 2"
-                                            :y="Math.min(candle.open, candle.close)"
-                                            :width="candleBodyWidth"
-                                            :height="Math.max(Math.abs(candle.open - candle.close), 1.4)"
-                                            :fill="candle.bullish ? '#10B981' : '#F43F5E'"
-                                        />
-                                    </g>
-                                </svg>
-                                <div class="absolute inset-4 pointer-events-none">
-                                    <span
-                                        v-for="label in chartPriceLabels"
-                                        :key="label.price"
-                                        class="absolute right-0 text-[9px] text-[#8b978a] tabular-nums -translate-y-1/2 bg-[#181a17] pl-1.5"
-                                        :style="{ top: label.y + '%' }"
-                                    >{{ label.price }}</span>
-                                </div>
-                                <div class="absolute bottom-4 left-4 right-4 h-14 flex items-end gap-1">
-                                    <div
-                                        v-for="(candle, i) in chartCandles" :key="i"
-                                        class="flex-1 rounded-t-sm opacity-30"
-                                        :class="candle.bullish ? 'bg-[#10B981]' : 'bg-[#F43F5E]'"
-                                        :style="{ height: candle.volume + '%' }"
-                                    ></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Order book -->
-                        <div class="w-full lg:w-80 bg-[#1e221d] flex flex-col">
-                            <div class="p-4 border-b border-[#707a6c]/20">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-[11px] font-bold tracking-widest text-[#bfcaba] uppercase">Market Sentiment</span>
-                                    <span class="text-[10px] text-[#10B981] font-bold">BULLISH</span>
-                                </div>
-                                <div class="h-2 w-full bg-[#181a17] rounded-full overflow-hidden flex">
-                                    <div class="h-full bg-[#10B981]/80 w-[68%]"></div>
-                                    <div class="h-full bg-[#F43F5E]/80 w-[32%]"></div>
-                                </div>
-                                <div class="flex justify-between text-[10px] text-[#bfcaba] tabular-nums mt-1">
-                                    <span>68% Buy</span>
-                                    <span>32% Sell</span>
-                                </div>
-                            </div>
-
-                            <div class="p-4 flex-1 flex flex-col gap-1">
-                                <div class="flex justify-between text-[10px] text-[#bfcaba] uppercase mb-1">
-                                    <span>Price (USD)</span>
-                                    <span>Size (MT)</span>
-                                </div>
-                                <div v-for="ask in askLadder" :key="ask.price" class="flex justify-between text-xs text-[#F43F5E] relative py-0.5 tabular-nums">
-                                    <div class="absolute right-0 top-0 h-full bg-[#F43F5E]/15 rounded-l-sm" :style="{ width: ask.depth + '%' }"></div>
-                                    <span class="relative z-10 pl-1">{{ ask.price }}</span><span class="relative z-10 pr-1">{{ ask.size }}</span>
-                                </div>
-                                <div class="py-2 flex items-center justify-between border-y border-[#707a6c]/10 my-1 bg-[#20241f] px-2 rounded">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-[#eef2e8] text-base font-bold tabular-nums">184.25</span>
-                                        <span class="material-symbols-outlined text-[16px] text-[#10B981]">arrow_upward</span>
-                                    </div>
-                                    <span class="text-[10px] text-[#bfcaba]">Spread 0.05</span>
-                                </div>
-                                <div v-for="bid in bidLadder" :key="bid.price" class="flex justify-between text-xs text-[#10B981] relative py-0.5 tabular-nums">
-                                    <div class="absolute left-0 top-0 h-full bg-[#10B981]/15 rounded-r-sm" :style="{ width: bid.depth + '%' }"></div>
-                                    <span class="relative z-10 pl-1">{{ bid.price }}</span><span class="relative z-10 pr-1">{{ bid.size }}</span>
-                                </div>
-                            </div>
-
-                            <div class="p-4 border-t border-[#707a6c]/20 bg-[#181a17]">
-                                <div class="grid grid-cols-2 gap-3">
-                                    <button type="button" class="bg-[#10B981] text-[#0f1f18] py-3 rounded text-xs font-bold hover:bg-[#10B981]/90 active:scale-[0.97] transition-all">BUY</button>
-                                    <button type="button" class="bg-[#F43F5E] text-[#2a0e14] py-3 rounded text-xs font-bold hover:bg-[#F43F5E]/90 active:scale-[0.97] transition-all">SELL</button>
-                                </div>
+                                <div class="text-[11px] font-mono mt-0.5" :class="i === 1 ? 'text-[#8a9384]' : 'text-[#a3f69c]/90'">{{ m.note }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- ESG SCORECARDS -->
-        <section class="py-24 px-4 md:px-8 bg-[#f1f5eb] border-b border-[#bfcaba]/30 wp-reveal">
-            <div class="max-w-7xl mx-auto">
-                <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
-                    <div class="max-w-2xl">
-                        <h2 class="text-[28px] md:text-[32px] font-semibold text-[#181d17] leading-tight">Transparent ESG metrics, verified per lot.</h2>
-                        <p class="text-base leading-6 text-[#40493d] mt-4">
-                            Every lot traded on Bean Origin comes with verified impact data tracked on-chain, so buyers can price in sustainability instead of guessing at it.
-                        </p>
+            <!-- SEARCH & LOT MATCHER -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-9 relative z-20">
+                <div class="bg-white rounded-xl border border-[#e2e8e0] shadow-xl shadow-black/5 p-4 sm:p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+                        <div class="flex items-center gap-2 text-xs font-bold text-[#181d17] uppercase tracking-wide">
+                            <span class="material-symbols-outlined text-[16px] text-[#0d631b]">filter_alt</span>
+                            <span>Institutional Lot Filter &amp; Spot Matcher</span>
+                        </div>
+                        <div class="text-xs font-mono text-[#6b7568]">
+                            Matched: <span class="font-bold text-[#0d631b]">312 export Lots</span> across 4 active African corridors
+                        </div>
                     </div>
-                    <Link :href="route('market-intelligence.index')" class="text-[#0d631b] text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all w-fit no-underline flex-shrink-0">
-                        View methodology <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-                    </Link>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div v-for="metric in esgMetrics" :key="metric.title" class="wp-esg-card bg-[#f7fbf0] rounded-xl p-6 shadow-sm transition-shadow">
-                        <div class="flex items-start justify-between mb-6">
-                            <div>
-                                <h3 class="text-base font-semibold text-[#181d17]">{{ metric.title }}</h3>
-                                <p class="text-[10px] font-bold tracking-wider text-[#8b978a] uppercase mt-1">{{ metric.sub }}</p>
-                            </div>
-                            <span class="material-symbols-outlined text-[20px]" :style="{ color: metric.color }" title="Blockchain-verified">verified</span>
-                        </div>
-
-                        <div class="flex items-center gap-5 mb-5">
-                            <div class="relative w-20 h-20 flex-shrink-0">
-                                <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
-                                    <circle cx="50" cy="50" r="42" fill="none" stroke="#e5eadf" stroke-width="9" />
-                                    <circle
-                                        cx="50" cy="50" r="42" fill="none" :stroke="metric.color" stroke-width="9" stroke-linecap="round"
-                                        stroke-dasharray="264"
-                                        :stroke-dashoffset="264 - (264 * metric.bar) / 100"
-                                    />
-                                </svg>
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-[22px]" :style="{ color: metric.color }">{{ metric.icon }}</span>
-                                </div>
-                            </div>
-                            <div class="min-w-0">
-                                <div class="text-3xl font-bold tabular-nums leading-none" :style="{ color: metric.color }">{{ metric.value }}</div>
-                                <div class="text-sm text-[#8b978a] mt-1.5">{{ metric.unit }}</div>
-                            </div>
-                        </div>
-
-                        <p class="text-sm text-[#40493d] leading-relaxed">{{ metric.copy }}</p>
+                    <div class="flex flex-nowrap items-center gap-2 overflow-x-auto wp-lot-filter">
+                        <el-input v-model="filterKeyword" placeholder="Search keywords, exporter, Lot #..." class="wp-lot-filter__input">
+                            <template #prefix>
+                                <el-icon :size="14" class="text-slate-400"><Search /></el-icon>
+                            </template>
+                        </el-input>
+                        <el-select v-model="filterSpecies" placeholder="Coffee Type" class="wp-lot-filter__select">
+                            <el-option v-for="opt in speciesOptions" :key="opt" :label="opt" :value="opt" />
+                        </el-select>
+                        <el-select v-model="filterProcessing" placeholder="Processing" class="wp-lot-filter__select">
+                            <el-option v-for="opt in processingOptions" :key="opt" :label="opt" :value="opt" />
+                        </el-select>
+                        <el-select v-model="filterOrigin" placeholder="Origin" class="wp-lot-filter__select">
+                            <el-option v-for="opt in originOptions" :key="opt" :label="opt" :value="opt" />
+                        </el-select>
+                        <el-select v-model="filterGrade" placeholder="Grade" class="wp-lot-filter__select">
+                            <el-option v-for="opt in gradeOptions" :key="opt" :label="opt" :value="opt" />
+                        </el-select>
+                        <el-select v-model="filterIncoterm" placeholder="Incoterm" class="wp-lot-filter__select">
+                            <el-option v-for="opt in incotermOptions" :key="opt" :label="opt" :value="opt" />
+                        </el-select>
+                        <el-button class="wp-lot-filter__btn" :icon="Search">Filter</el-button>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- LIVE AUCTIONS -->
-        <section id="auctions" class="py-24 px-4 md:px-8 bg-[#f1f5eb] wp-reveal">
-            <div class="max-w-7xl mx-auto">
-                <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-                    <div class="flex flex-col gap-4">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-[#F43F5E] wp-pulse"></span>
-                            <span class="text-xs font-semibold text-[#F43F5E]">Live now</span>
-                        </div>
-                        <h2 class="text-[28px] md:text-[32px] font-semibold text-[#181d17]">Live auctions &amp; spot pricing</h2>
+            <!-- LIVE ORDER BOOK -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" id="orderbook">
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-5">
+                    <div>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-[#181d17]">Live Institutional Order Book</h2>
+                        <p class="text-sm text-[#6b7568] mt-0.5">Physical coffee lots available for instantaneous forward contracting, counter-offers, or spot settlement.</p>
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="text-[11px] font-semibold text-[#40493d] mb-2 w-full">Filter by origin</span>
-                        <button
-                            v-for="filter in auctionFilters"
-                            :key="filter.key"
-                            type="button"
-                            class="px-4 py-2 rounded-full text-xs font-semibold transition-colors"
-                            :class="auctionFilter === filter.key ? 'bg-[#0d631b] text-white' : 'bg-[#e5eadf] text-[#40493d] hover:bg-[#bfcaba]/30'"
-                            @click="auctionFilter = filter.key"
-                        >{{ filter.label }}</button>
+                    <div class="mt-3 md:mt-0 flex items-center gap-2">
+                        <span class="text-xs font-mono text-slate-400">Market Spread: <strong>$0.04/kg</strong></span>
+                        <button type="button" class="text-xs font-mono bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-md hover:bg-slate-50 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">refresh</span> Auto-refresh (3s)
+                        </button>
                     </div>
-
                 </div>
-
-                <div class="w-full overflow-x-auto rounded-xl bg-[#f7fbf0] shadow-sm">
-                    <table class="w-full text-left border-collapse min-w-[880px]">
-                        <thead>
-                            <tr class="bg-[#e5eadf] border-b border-[#bfcaba]/30">
-                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Lot ID &amp; Origin</th>
-                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Variety &amp; Grade</th>
-                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Current Bid / Price</th>
-                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Volume</th>
-                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Time Remaining</th>
-                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-4 text-xs font-semibold text-[#40493d] uppercase tracking-wider text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-[#bfcaba]/20">
-                            <tr v-if="filteredAuctions.length === 0">
-                                <td colspan="7" class="px-6 py-16 text-center">
-                                    <p class="text-sm text-[#40493d]">No live lots in this region right now.</p>
-                                    <Link :href="route('market.live')" class="inline-block mt-2 text-sm font-semibold text-[#0d631b] hover:text-[#2e7d32] no-underline">Browse all listings</Link>
-                                </td>
-                            </tr>
-                            <tr v-for="row in filteredAuctions" :key="row.id" class="hover:bg-[#f1f5eb] transition-colors group">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded bg-[#e0e4da] flex items-center justify-center flex-shrink-0" :style="{ color: row.iconColor }">
-                                            <span class="material-symbols-outlined text-[20px]">public</span>
+                <div class="bg-white rounded-xl border border-[#e2e8e0] shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-mono text-[11px] uppercase tracking-wider">
+                                    <th class="py-3 px-4">Type / Origin</th>
+                                    <th class="py-3 px-3">Lot ID</th>
+                                    <th class="py-3 px-3">Grade &amp; Screen</th>
+                                    <th class="py-3 px-3">Moisture</th>
+                                    <th class="py-3 px-3">SCAA Cup</th>
+                                    <th class="py-3 px-3">Available Vol</th>
+                                    <th class="py-3 px-3">Incoterm</th>
+                                    <th class="py-3 px-3 text-right">Spot Ask ($/kg)</th>
+                                    <th class="py-3 px-3 text-center">Escrow Status</th>
+                                    <th class="py-3 px-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="row in orderBookRows" :key="row.lot" class="hover:bg-[#f4f9f0] transition-colors">
+                                    <td class="py-3 px-4">
+                                        <div class="font-bold text-[#181d17] flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full flex-shrink-0" :style="{ background: row.dot }" />
+                                            {{ row.title }}
                                         </div>
-                                        <div>
-                                            <div class="text-sm font-semibold text-[#181d17] group-hover:text-[#0d631b] transition-colors">{{ row.id }}</div>
-                                            <div class="text-sm text-[#40493d]">{{ row.origin }}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-[#40493d]">{{ row.variety }}</td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-sm text-[#181d17] tabular-nums font-medium">${{ row.price }} <span class="text-[10px] font-normal text-[#40493d]">/kg</span></span>
-                                        <span
-                                            class="inline-flex items-center text-[11px] font-semibold tabular-nums"
-                                            :class="row.deltaTone === 'up' ? 'text-[#10B981]' : 'text-[#F43F5E]'"
-                                        >
-                                            <span class="material-symbols-outlined text-[14px]">{{ row.deltaTone === 'up' ? 'arrow_drop_up' : 'arrow_drop_down' }}</span>{{ row.delta }}
+                                        <div class="text-[11px] text-slate-400">{{ row.sub }}</div>
+                                    </td>
+                                    <td class="py-3 px-3 font-mono text-slate-600 font-medium">{{ row.lot }}</td>
+                                    <td class="py-3 px-3"><span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 font-mono text-[11px] text-slate-700">{{ row.grade }}</span></td>
+                                    <td class="py-3 px-3 font-mono text-slate-600">{{ row.moisture }}</td>
+                                    <td class="py-3 px-3 font-mono font-bold text-[#0d631b]">{{ row.cup }}</td>
+                                    <td class="py-3 px-3 font-mono font-semibold text-slate-800">{{ row.vol }} <span class="text-[10px] text-slate-400 font-normal">{{ row.volNote }}</span></td>
+                                    <td class="py-3 px-3 font-mono text-slate-600">{{ row.incoterm }}</td>
+                                    <td class="py-3 px-3 font-mono font-bold text-[#181d17] text-right text-sm">{{ row.price }}</td>
+                                    <td class="py-3 px-3 text-center">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#e9f6e3] text-[#0d631b] font-medium">
+                                            <span class="material-symbols-outlined text-[12px]">verified</span> Stanbic Verified
                                         </span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-[#181d17] tabular-nums">{{ row.volume }}</td>
-                                <td class="px-6 py-4">
-                                    <div v-if="row.time" class="flex items-center gap-2 text-sm tabular-nums" :class="row.timeTone === 'rose' ? 'text-[#F43F5E]' : 'text-[#F59E0B]'">
-                                        <span v-if="row.timeTone === 'rose'" class="w-1.5 h-1.5 rounded-full bg-[#F43F5E] wp-pulse flex-shrink-0"></span>
-                                        <span v-else class="material-symbols-outlined text-[16px]">schedule</span>{{ row.time }}
-                                    </div>
-                                    <span v-else class="text-sm text-[#40493d]">N/A</span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span
-                                        class="px-2 py-1 rounded-sm text-[10px] font-semibold uppercase"
-                                        :class="{
-                                            'bg-[#10B981]/10 text-[#10B981]': row.statusTone === 'green',
-                                            'bg-[#0d631b]/10 text-[#0d631b]': row.statusTone === 'primary',
-                                            'bg-[#F43F5E]/10 text-[#F43F5E]': row.statusTone === 'rose',
-                                        }"
-                                    >{{ row.status }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <Link
-                                        :href="route('login')"
-                                        class="inline-block px-4 py-2 rounded text-xs font-semibold transition-all active:scale-[0.96] no-underline"
-                                        :class="row.style === 'solid' ? 'bg-[#0d631b] text-white hover:bg-[#2e7d32]' : 'border border-[#0d631b] text-[#0d631b] hover:bg-[#0d631b] hover:text-white'"
-                                    >{{ row.action }}</Link>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    </td>
+                                    <td class="py-3 px-4 text-right">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <button type="button" class="bg-[#e9f6e3] text-[#0d631b] hover:bg-[#d9efce] font-bold px-2.5 py-1 rounded text-xs transition-colors">Bid</button>
+                                            <button type="button" class="bg-[#121611] hover:bg-[#232b1f] text-white font-bold px-2.5 py-1 rounded text-xs transition-colors">Buy Spot</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-slate-500">
+                        <div>Total spot liquidity represented: <strong class="text-slate-800">72,000 kg ($328,400 USD)</strong></div>
+                        <Link :href="route('market.live')" class="text-[#0d631b] font-bold hover:underline flex items-center gap-1 no-underline">
+                            Open Full 312 Lot Order Depth <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+                        </Link>
+                    </div>
                 </div>
+            </section>
 
-                <div class="mt-8 flex justify-center">
-                    <Link :href="route('market.live')" class="text-sm font-semibold text-[#0d631b] hover:text-[#2e7d32] flex items-center gap-2 transition-colors no-underline">
-                        View all market listings <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-                    </Link>
+            <!-- PROVENANCE & CHAIN OF CUSTODY -->
+            <section class="bg-white border-y border-[#e2e8e0] py-16" id="custody">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center max-w-3xl mx-auto mb-14">
+                        <h2 class="text-3xl font-extrabold text-[#181d17]">A Marketplace Built Around Real Physical Coffee</h2>
+                        <p class="text-[#6b7568] mt-2 text-sm leading-relaxed">
+                            Every commercial contract is cryptographically and legally tethered to the physical batch: GPS agronomy polygon, moisture sensor logs, official UCDA cupping certification, and bill of lading custody.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-16 bg-[#f7fbf0] border border-[#e2e8e0] rounded-2xl p-6 sm:p-8">
+                        <div class="lg:col-span-5 relative">
+                            <div class="rounded-xl overflow-hidden border border-[#e2e8e0] relative aspect-[4/3] bg-[#121611] flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[64px] text-[#a3f69c]/40">grain</span>
+                                <div class="absolute top-3 left-3 bg-[#121611]/90 text-white font-mono text-[10px] font-bold px-2.5 py-1 rounded flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[12px] text-[#a3f69c]">verified</span>
+                                    PHYSICAL BATCH VERIFIED
+                                </div>
+                                <div class="absolute bottom-3 right-3 bg-black/75 text-white font-mono text-[11px] px-2.5 py-1 rounded">
+                                    Weight: 60kg Export Bag
+                                </div>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-7">
+                            <div class="bg-white border border-[#e2e8e0] rounded-xl p-6">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                                    <div>
+                                        <span class="font-mono text-[10px] text-slate-400 uppercase">Digital Product Passport (DPP)</span>
+                                        <h3 class="text-lg font-bold text-[#181d17]">Uganda Bugisu Grade AA · Lot #LOT-UG-9412</h3>
+                                    </div>
+                                    <span class="px-2.5 py-1 rounded bg-[#e9f6e3] text-[#0d631b] border border-[#0d631b]/20 font-mono text-xs font-bold whitespace-nowrap">
+                                        ✓ 100% EUDR Compliant
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs mb-4">
+                                    <div v-for="item in dppMeta" :key="item.label" class="bg-slate-50 p-2.5 rounded border border-slate-100">
+                                        <span class="text-slate-400 text-[10px] font-mono block">{{ item.label }}</span>
+                                        <span class="font-bold text-slate-800 font-mono">{{ item.value }}</span>
+                                        <span class="text-[10px] text-slate-500 block">{{ item.note }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100 text-xs">
+                                    <span class="text-slate-500 font-mono">Audit Hash: <code class="text-slate-700">0x7f2a...8c1e</code></span>
+                                    <a href="#" class="text-[#0d631b] font-bold hover:underline inline-flex items-center gap-1 no-underline">
+                                        <span class="material-symbols-outlined text-[14px]">description</span> Download Complete Traceability Dossier
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                        <div v-for="(step, i) in stepperSteps" :key="step.n" class="rounded-xl p-4 text-center transition-all" :class="i === 5 ? 'bg-[#121611] text-white' : 'bg-slate-50 border border-slate-200 hover:border-[#0d631b]/40'">
+                            <div class="w-9 h-9 rounded-full font-mono font-bold text-sm flex items-center justify-center mx-auto mb-2" :class="i === 5 ? 'bg-[#a3f69c] text-[#002204]' : 'bg-white border border-[#0d631b] text-[#0d631b]'">{{ step.n }}</div>
+                            <div class="font-bold text-xs" :class="i === 5 ? 'text-[#a3f69c]' : 'text-[#181d17]'">{{ step.title }}</div>
+                            <div class="text-[11px] mt-1" :class="i === 5 ? 'text-white/70' : 'text-slate-500'">{{ step.note }}</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+
+            <!-- DUAL TERMINALS -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" id="dual-terminals">
+                <div class="text-center max-w-2xl mx-auto mb-12">
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-[#181d17]">Institutional Desks for Both Sides of Trade</h2>
+                    <p class="text-sm text-[#6b7568] mt-1">Tailored interfaces and risk controls for roasters, commodity desks, and origin suppliers.</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white border border-[#e2e8e0] rounded-2xl p-7 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                            <div class="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#0d631b] uppercase tracking-wide bg-[#e9f6e3] px-2.5 py-1 rounded">
+                                <span class="material-symbols-outlined text-[14px]">shopping_cart_checkout</span> Buyer Sourcing Suite
+                            </div>
+                            <span class="text-xs font-mono text-slate-400">For Roasters &amp; Trade Desks</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-[#181d17] mb-2">Algorithmic Coffee Procurement</h3>
+                        <p class="text-sm text-[#6b7568] mb-5 leading-relaxed">
+                            Access high-grade spot supplies and forward container commitments with direct digital contracts, moisture warranties, and automated letter of credit integration.
+                        </p>
+                        <div class="space-y-2.5 mb-6">
+                            <div class="flex items-start gap-2 text-xs text-slate-700">
+                                <span class="material-symbols-outlined text-[16px] text-[#0d631b] mt-0.5">check_circle</span>
+                                <span>Broadcast a spec — say, 100 MT Bugisu Grade AA — as an RFQ or reverse auction straight to verified exporters.</span>
+                            </div>
+                            <div class="flex items-start gap-2 text-xs text-slate-700">
+                                <span class="material-symbols-outlined text-[16px] text-[#0d631b] mt-0.5">check_circle</span>
+                                <span>Your capital sits in Stanbic Bank escrow and only releases once the container passes SGS inspection at Mombasa.</span>
+                            </div>
+                            <div class="flex items-start gap-2 text-xs text-slate-700">
+                                <span class="material-symbols-outlined text-[16px] text-[#0d631b] mt-0.5">check_circle</span>
+                                <span>Pull a polygon export in one click, formatted for the EU TRACES database.</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-100">
+                            <Link :href="route('register')" class="bg-[#121611] hover:bg-[#232b1f] text-white text-xs font-bold px-4 py-2.5 rounded-lg no-underline">Launch Sourcing Desk</Link>
+                            <a href="#rfq" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-lg no-underline">Publish Buyer RFQ</a>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-[#e2e8e0] rounded-2xl p-7 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                            <div class="inline-flex items-center gap-2 text-xs font-mono font-bold text-amber-800 uppercase tracking-wide bg-amber-50 px-2.5 py-1 rounded">
+                                <span class="material-symbols-outlined text-[14px]">domain</span> Producer &amp; Exporter Suite
+                            </div>
+                            <span class="text-xs font-mono text-slate-400">For Mills, Coops &amp; Shippers</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-[#181d17] mb-2">Direct International Liquidation</h3>
+                        <p class="text-sm text-[#6b7568] mb-5 leading-relaxed">
+                            Convert warehouse receipt inventory into global cash contracts. Bypass traditional opaque broker cascades and retain full commercial margin.
+                        </p>
+                        <div class="space-y-2.5 mb-6">
+                            <div class="flex items-start gap-2 text-xs text-slate-700">
+                                <span class="material-symbols-outlined text-[16px] text-amber-600 mt-0.5">check_circle</span>
+                                <span>Upload harvest logs, milling moisture data, and UCDA certificates, and a lot is digitized in minutes.</span>
+                            </div>
+                            <div class="flex items-start gap-2 text-xs text-slate-700">
+                                <span class="material-symbols-outlined text-[16px] text-amber-600 mt-0.5">check_circle</span>
+                                <span>Funded escrow accounts guarantee the trade, with wire settlement triggered automatically on bill of lading.</span>
+                            </div>
+                            <div class="flex items-start gap-2 text-xs text-slate-700">
+                                <span class="material-symbols-outlined text-[16px] text-amber-600 mt-0.5">check_circle</span>
+                                <span>Lock a forward contract with international roasters before milling is even complete.</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-100">
+                            <Link :href="route('register')" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg no-underline">Onboard Coffee Inventory</Link>
+                            <a href="#seller-guide" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-lg no-underline">Exporter Requirements</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TRADE CORRIDORS -->
+            <section class="bg-[#121611] text-white py-16">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+                        <div>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Trans-Continental Trade Corridors</h2>
+                            <p class="text-sm text-[#8a9384] mt-1">Connecting East African dry mills via bonded rail and road to Port of Mombasa for scheduled global ocean departures.</p>
+                        </div>
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded bg-white/5 border border-white/10 font-mono text-xs text-[#bfcaba] whitespace-nowrap">
+                            <span class="material-symbols-outlined text-[14px] text-[#a3f69c]">anchor</span> Port of Exit: Mombasa (KE-MBA)
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div v-for="c in corridors" :key="c.n" class="bg-white/5 border border-white/10 rounded-xl p-5 hover:border-[#a3f69c]/50 transition-colors">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-mono font-bold text-[#a3f69c]">CORRIDOR {{ c.n }}</span>
+                                <span class="text-[10px] font-mono bg-black/30 text-[#a3f69c] border border-[#a3f69c]/20 px-2 py-0.5 rounded whitespace-nowrap">{{ c.transit }}</span>
+                            </div>
+                            <div class="text-lg font-bold text-white mb-1">{{ c.route }}</div>
+                            <div class="text-xs text-[#8a9384] mb-3">{{ c.desc }}</div>
+                            <div class="border-t border-white/10 pt-3 text-[11px] font-mono text-[#bfcaba] space-y-1">
+                                <div v-for="pair in c.rows" :key="pair[0]" class="flex justify-between gap-2">
+                                    <span>{{ pair[0] }}</span> <span class="text-white text-right">{{ pair[1] }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI AGENTIC COMMERCE -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" id="ai-terminal">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div class="lg:col-span-6">
+                        <h2 class="text-3xl font-extrabold text-[#181d17]">Trade with Bean Origin AI</h2>
+                        <p class="text-[#6b7568] mt-3 text-sm leading-relaxed">
+                            Type plain-English trading requirements. The exchange agent parses real physical inventories, evaluates moisture and cupping dossiers, constructs formal counter-offers, and provisions escrow contracts.
+                        </p>
+                        <div class="mt-6 space-y-3">
+                            <div class="flex items-start gap-3">
+                                <div class="w-7 h-7 rounded bg-[#e9f6e3] text-[#0d631b] flex items-center justify-center shrink-0 mt-0.5">
+                                    <span class="material-symbols-outlined text-[15px]">format_quote</span>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-[#181d17]">Natural Language Procurement Query</div>
+                                    <div class="text-xs text-slate-500">"Match me 20 MT Screen 18 Robusta under $4.00 FOB Mombasa for Q1 shipment."</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-7 h-7 rounded bg-[#e9f6e3] text-[#0d631b] flex items-center justify-center shrink-0 mt-0.5">
+                                    <span class="material-symbols-outlined text-[15px]">task_alt</span>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-[#181d17]">Guaranteed Human-In-The-Loop Signoff</div>
+                                    <div class="text-xs text-slate-500">AI drafts the formal escrow and purchase offer, requiring cryptographic confirmation before any financial movement.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-slate-200">
+                            <div class="text-[11px] font-mono text-slate-400 uppercase mb-3">Institutional Regulatory Credentials</div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono text-[11px]">
+                                <div v-for="badge in trustBadges" :key="badge" class="bg-slate-100 p-2 rounded border border-slate-200 text-slate-700 font-semibold">{{ badge }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-6">
+                        <div class="bg-white border border-[#e2e8e0] rounded-2xl shadow-xl overflow-hidden">
+                            <div class="bg-[#121611] px-4 py-3 text-white flex items-center justify-between text-xs font-mono border-b border-white/10">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-[#a3f69c]" />
+                                    <span class="font-bold">Bean Origin AI Copilot · Session #TR-881</span>
+                                </div>
+                                <span class="text-[#8a9384] text-[10px]">Connected to Exchange Engine</span>
+                            </div>
+                            <div class="p-5 space-y-4 text-xs bg-slate-50/50">
+                                <div class="flex justify-end">
+                                    <div class="bg-[#121611] text-white p-3 rounded-2xl rounded-tr-none max-w-[85%]">
+                                        "Find me 20 tonnes of Ugandan Screen 18 Robusta under $4.10/kg FOB Mombasa with EUDR geolocation ready."
+                                    </div>
+                                </div>
+                                <div class="flex justify-start">
+                                    <div class="bg-white border border-slate-200 text-slate-800 p-3.5 rounded-2xl rounded-tl-none max-w-[90%] space-y-2">
+                                        <div class="font-semibold text-[#0d631b] flex items-center gap-1.5 font-mono text-[11px]">
+                                            <span class="material-symbols-outlined text-[14px]">bolt</span> Matched 2 Verified Exchange Lots:
+                                        </div>
+                                        <div v-for="lot in aiLotMatches" :key="lot.id" class="bg-slate-50 p-2.5 rounded border border-slate-200 font-mono text-[11px] space-y-1">
+                                            <div class="flex justify-between font-bold text-slate-900 gap-2">
+                                                <span>{{ lot.id }}</span>
+                                                <span class="text-[#0d631b]">{{ lot.price }}</span>
+                                            </div>
+                                            <div class="text-slate-500 text-[10px]">{{ lot.note }}</div>
+                                        </div>
+                                        <div class="text-slate-600 text-xs">
+                                            Would you like me to draft a binding purchase bid on #LOT-UG-8830 at $3.95/kg ($76,800 total) into Stanbic escrow?
+                                        </div>
+                                        <div class="flex items-center gap-2 pt-1 font-mono text-[10px]">
+                                            <button type="button" class="bg-[#0d631b] text-white px-3 py-1.5 rounded font-bold hover:bg-[#0a4f15] transition-colors">Draft Escrow Offer</button>
+                                            <button type="button" class="bg-slate-100 text-slate-700 px-3 py-1.5 rounded border border-slate-200 hover:bg-slate-200">Compare Cupping Scores</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-white border-t border-slate-200 flex items-center gap-2 wp-filter-fields">
+                                <el-input v-model="aiChatDraft" placeholder="Instruct AI: e.g. Prepare FOB Mombasa contract..." class="flex-1" />
+                                <button type="button" class="w-8 h-8 rounded-lg bg-[#121611] text-white flex items-center justify-center hover:bg-[#232b1f] flex-shrink-0">
+                                    <span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- INSTITUTIONAL CTA -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+                <div class="bg-[#121611] rounded-2xl p-8 sm:p-12 text-white text-center relative overflow-hidden">
+                    <div class="relative z-10 max-w-2xl mx-auto">
+                        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Ready to Trade Physical Coffee on Digital Rails?</h2>
+                        <p class="text-[#bfcaba] text-sm sm:text-base mt-3 mb-8">
+                            Join verified roasters, commodity funds, and East African producer cooperatives settling commercial contracts transparently.
+                        </p>
+                        <div class="flex flex-wrap items-center justify-center gap-3">
+                            <Link :href="route('register')" class="bg-[#a3f69c] hover:bg-[#88d982] text-[#002204] font-bold text-xs px-6 py-3 rounded-lg no-underline transition-all">Open Roaster / Buyer Account</Link>
+                            <Link :href="route('register')" class="bg-white/10 hover:bg-white/20 text-white border border-white/30 font-semibold text-xs px-6 py-3 rounded-lg no-underline transition-all">Apply as Verified Exporter / Dry Mill</Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </OuterLayout>
 </template>
 
-<style>
-@keyframes wpPulse {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
-    }
-    50% {
-        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
-    }
+<style scoped>
+@keyframes wp-ticker-slide {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
 }
-
-.wp-page .wp-pulse {
-    animation: wpPulse 2s ease-in-out infinite;
+.wp-ticker-track {
+    display: inline-flex;
+    white-space: nowrap;
+    animation: wp-ticker-slide 42s linear infinite;
 }
-
-@keyframes wpFadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(1rem);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.wp-page .wp-fade-1 {
-    animation: wpFadeInUp 0.8s ease-out both;
-}
-
-.wp-page .wp-fade-2 {
-    animation: wpFadeInUp 1s ease-out 0.15s both;
-}
-
-.wp-page .wp-fade-3 {
-    animation: wpFadeInUp 0.8s ease-out 0.45s both;
-}
-
-.wp-page .wp-fade-4 {
-    animation: wpFadeInUp 0.8s ease-out 0.6s both;
-}
-
-.wp-page .wp-esg-card:hover {
-    
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
-}
-
-@keyframes wpTicker {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-.wp-page .wp-ticker {
-    width: max-content;
-    animation: wpTicker 40s linear infinite;
-}
-
-.wp-page .wp-ticker:hover {
+.wp-ticker-track:hover {
     animation-play-state: paused;
 }
 
-@keyframes wpSpin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Element Plus field overrides — match the page's slate/green Tailwind
+   look (small text, slate-50 fill, green focus) instead of ElementPlus's
+   own default theme. */
+.wp-filter-fields :deep(.el-input__wrapper),
+.wp-filter-fields :deep(.el-select__wrapper) {
+    background: #f8fafc;
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px #e2e8f0 inset;
+    padding: 1px 11px;
+    height: 34px;
+    box-sizing: border-box;
+}
+.wp-filter-fields :deep(.el-select) {
+    height: 34px;
+}
+.wp-filter-fields :deep(.el-input__wrapper.is-focus),
+.wp-filter-fields :deep(.el-select__wrapper.is-focused) {
+    background: #ffffff;
+    box-shadow: 0 0 0 1px #0d631b inset;
+}
+.wp-filter-fields :deep(.el-input__inner),
+.wp-filter-fields :deep(.el-select__selected-item) {
+    font-size: 12px;
+    color: #0f172a;
+}
+.wp-filter-fields :deep(.el-input__inner::placeholder) {
+    color: #94a3b8;
 }
 
-.wp-page .wp-spin {
-    display: inline-block;
-    animation: wpSpin 3s linear infinite;
+/* Institutional Lot Filter — single-line, compact row: every field and
+   the button are pinned to the exact same 36px medium-sized box (height
+   + line-height + paddings), so nothing looks taller or shorter. */
+.wp-lot-filter {
+    padding-bottom: 2px;
 }
-
-@media (prefers-reduced-motion: reduce) {
-    .wp-page .wp-ticker,
-    .wp-page .wp-spin,
-    .wp-page .wp-pulse {
-        animation: none;
-    }
+.wp-lot-filter__input {
+    flex: 1 1 240px;
+    min-width: 180px;
 }
-
-.wp-page a:focus-visible,
-.wp-page button:focus-visible {
-    outline: 2px solid #a3f69c;
-    outline-offset: 2px;
-    border-radius: 2px;
+.wp-lot-filter__select {
+    flex: 0 0 148px;
+    width: 148px;
+}
+.wp-lot-filter :deep(.el-input),
+.wp-lot-filter :deep(.el-select) {
+    height: 36px !important;
+}
+.wp-lot-filter :deep(.el-input__wrapper),
+.wp-lot-filter :deep(.el-select__wrapper) {
+    background: #f8fafc;
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px #e2e8f0 inset;
+    height: 36px !important;
+    min-height: 36px !important;
+    line-height: 36px !important;
+    padding: 0 12px !important;
+    box-sizing: border-box;
+}
+.wp-lot-filter :deep(.el-select__selection) {
+    height: 34px !important;
+}
+.wp-lot-filter :deep(.el-input__wrapper.is-focus),
+.wp-lot-filter :deep(.el-select__wrapper.is-focused) {
+    background: #ffffff;
+    box-shadow: 0 0 0 1px #0d631b inset;
+}
+.wp-lot-filter :deep(.el-input__inner),
+.wp-lot-filter :deep(.el-select__selected-item),
+.wp-lot-filter :deep(.el-select__placeholder) {
+    height: 34px !important;
+    line-height: 34px !important;
+    font-size: 13px !important;
+    color: #0f172a;
+}
+.wp-lot-filter :deep(.el-input__prefix) {
+    margin-right: 4px;
+}
+.wp-lot-filter :deep(.el-input__inner::placeholder) {
+    color: #94a3b8;
+    font-size: 13px !important;
+}
+.wp-lot-filter__btn.el-button {
+    flex-shrink: 0;
+    height: 36px !important;
+    min-height: 36px !important;
+    line-height: 36px !important;
+    margin: 0;
+    border: none;
+    border-radius: 6px;
+    background: #0d631b;
+    color: #ffffff;
+    font-size: 13px !important;
+    font-weight: 700;
+    padding: 0 18px !important;
+    box-sizing: border-box;
+}
+.wp-lot-filter__btn.el-button:hover,
+.wp-lot-filter__btn.el-button:focus {
+    background: #0a4f15;
+    color: #ffffff;
 }
 </style>

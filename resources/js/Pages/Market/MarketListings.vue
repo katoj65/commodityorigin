@@ -1,659 +1,761 @@
 <script setup>
-/* Design-fidelity pass: most of this content area still uses placeholder
-   data to match the uploaded "Coffee Market" mockup's exact features
-   (KPIs, filters, Quick Buy, opportunities, seller spotlight, price/
-   demand chart) — real MarketService data will be wired back in once the
-   feature set here is signed off. The Lot grid and "All Lots" table are
-   already real, backed by MarketService::featuredListing() and
-   marketPageListing() respectively. */
-import { computed, ref, watch } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
+import { ElMessage } from 'element-plus';
+import {
+    ShoppingCart, Sell, DocumentAdd, Refresh,
+    Shop, Files, Connection, Cloudy, Coin, DataAnalysis, Ship,
+    Warning, CircleCheck, CircleCheckFilled, Clock, Position,
+    Lightning,
+} from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
-import QuickBuy from '@/Components/Market/QuickBuy.vue';
 
-const props = defineProps({
-    featuredLots: { type: Array, default: () => [] },
+defineProps({
     markets: { type: Array, default: () => [] },
-    priceIndexes: { type: Array, default: () => [] },
+    featuredLots: { type: Array, default: () => [] },
+    calendarEvents: { type: Array, default: () => [] },
     exchangeRates: { type: Array, default: () => [] },
+    priceIndexes: { type: Array, default: () => [] },
+    analysis: { type: Object, default: () => ({}) },
+    demand: { type: Object, default: () => ({}) },
+    opportunities: { type: Array, default: () => [] },
+    topSellers: { type: Array, default: () => [] },
 });
 
-/* KPI row — real, derived from the same `markets` data backing the
-   "All Lots" table (every live listing). Type is matched
-   case-insensitively since it's free-typed metadata with inconsistent
-   casing across older listings (see MarketService::listingsByType()).
-   "Price Trend" is the real average `percentage_fluctuation` across the
-   coffee entries in price_indexes (PriceIndexService) — an actual
-   reduction/increase signal, not a fabricated one. */
-const kpis = computed(() => {
-    const markets = props.markets;
-    const arabicaCount = markets.filter((m) => (m.type || '').toLowerCase() === 'arabica').length;
-    const robustaCount = markets.filter((m) => (m.type || '').toLowerCase() === 'robusta').length;
-
-    const fluctuations = props.priceIndexes.map((p) => Number(p.percentage_fluctuation)).filter((f) => !Number.isNaN(f));
-    const avgFluctuation = fluctuations.length ? fluctuations.reduce((a, b) => a + b, 0) / fluctuations.length : null;
-    const trendValue = avgFluctuation != null ? `${avgFluctuation >= 0 ? '+' : ''}${avgFluctuation.toFixed(2)}%` : '—';
-
-    return [
-        { label: 'Arabica Lots', value: arabicaCount.toLocaleString() },
-        { label: 'Robusta Lots', value: robustaCount.toLocaleString() },
-        { label: 'Price Trend', value: trendValue, tone: avgFluctuation == null ? null : (avgFluctuation >= 0 ? 'up' : 'down') },
-        { label: 'Lots Available', value: markets.length.toLocaleString() },
-    ];
-});
-
-/* ── Filter bar — real, filters the "All Lots" table below against
-   metadata pulled straight from the live `markets` data (the same
-   source MarketService::filterOptions() derives its dropdowns from).
-   Price/quality use fixed buckets rather than free-typed ranges to fit
-   the compact chip UI; the SCA quality bands match the industry-
-   standard Specialty Coffee Association cupping scale. The Lot grid
-   above (featured lots) is deliberately left unfiltered — it's curated
-   content, not a listing search. */
-const filterType = ref('');
-const filterOrigin = ref('');
-const filterPriceBucket = ref('');
-const filterQualityBucket = ref('');
-
-/* Type is free-typed metadata with inconsistent casing across older
-   listings (e.g. "Arabica" vs "arabica") — dedupe case-insensitively so
-   the dropdown doesn't show near-duplicate options, same fix as the
-   Arabica/Robusta KPI counts above. */
-const filterTypeOptions = computed(() => {
-    const seen = new Map();
-    for (const m of props.markets) {
-        if (!m.type) continue;
-        const key = m.type.toLowerCase();
-        if (!seen.has(key)) seen.set(key, key.charAt(0).toUpperCase() + key.slice(1));
-    }
-    return [...seen.values()].sort();
-});
-const filterOriginOptions = computed(() => [...new Set(props.markets.map((m) => m.origin).filter(Boolean))].sort());
-
-const priceBuckets = [
-    { value: 'under-3', label: 'Under $3/kg', min: 0, max: 3 },
-    { value: '3-5', label: '$3 – $5/kg', min: 3, max: 5 },
-    { value: '5-8', label: '$5 – $8/kg', min: 5, max: 8 },
-    { value: '8-plus', label: '$8/kg & up', min: 8, max: Infinity },
+/* ── Dummy market content — illustrative only ───────────────────────── */
+const heroActions = [
+    { icon: ShoppingCart, label: 'Buy Coffee', tone: 'primary' },
+    { icon: Sell, label: 'Sell Coffee', tone: 'muted' },
+    { icon: DocumentAdd, label: 'Create RFQ', tone: 'muted' },
 ];
 
-const qualityBuckets = [
-    { value: '90-plus', label: '90+ Outstanding', min: 90, max: Infinity },
-    { value: '85-89', label: '85–89 Excellent', min: 85, max: 90 },
-    { value: '80-84', label: '80–84 Very Good', min: 80, max: 85 },
-    { value: 'below-80', label: 'Below 80', min: 0, max: 80 },
+const kpis = [
+    { icon: Files, label: 'Available Volume', value: '1,284', unit: 'MT', note: 'Physical inventory verified in warehouse' },
+    { icon: Files, label: 'Active Lots', value: '86', unit: 'Lots', note: 'Ready for immediate contract allocation' },
+    { icon: Coin, label: 'Open Spot Offers', value: '24', unit: 'Tranches', note: 'Avg pricing: $4.15/kg FOB Mombasa' },
+    { icon: DataAnalysis, label: 'Active Buyer RFQs', value: '18', unit: 'Demand Orders', note: 'Aggregated bid volume: 540 MT', noteTone: 'primary' },
 ];
 
-const activeFilterCount = computed(() => [
-    filterType.value, filterOrigin.value, filterPriceBucket.value, filterQualityBucket.value,
-].filter(Boolean).length);
-
-function resetFilters() {
-    filterType.value = '';
-    filterOrigin.value = '';
-    filterPriceBucket.value = '';
-    filterQualityBucket.value = '';
-}
-
-const filteredMarkets = computed(() => {
-    const price = priceBuckets.find((b) => b.value === filterPriceBucket.value);
-    const quality = qualityBuckets.find((b) => b.value === filterQualityBucket.value);
-
-    return props.markets.filter((m) => {
-        if (filterType.value && (m.type || '').toLowerCase() !== filterType.value.toLowerCase()) return false;
-        if (filterOrigin.value && m.origin !== filterOrigin.value) return false;
-        if (price) {
-            const p = Number(m.price_per_kg || 0);
-            if (p < price.min || p >= price.max) return false;
-        }
-        if (quality) {
-            const q = Number(m.quality_score || 0);
-            if (q < quality.min || q >= quality.max) return false;
-        }
-        return true;
-    });
-});
-
-/* Lot grid — real, backed by MarketService::featuredListing() (live
-   listings where is_featured = true, newest first, limit 3). The badge
-   tones alternate green/dark same as the "All Lots" table's cert tags. */
-const lots = computed(() => props.featuredLots.map((m) => {
-    const quantity = Number(m.quantity || 0);
-    const available = Number(m.available_quantity ?? m.quantity ?? 0);
-    const unit = m.unit || 'kg';
-
-    return {
-        id: m.id,
-        name: m.name || m.lot_code,
-        code: m.lot_code,
-        badges: (m.badges || []).slice(0, 2).map((label, i) => ({ label, tone: i === 0 ? 'primary' : 'secondary' })),
-        score: Number(m.quality_score || 0),
-        origin: m.origin || '—',
-        process: m.process || '—',
-        quantity: `${quantity.toLocaleString()} ${unit}`,
-        price: `$${Number(m.price_per_kg || 0).toFixed(2)}/kg`,
-        priceValue: Number(m.price_per_kg || 0),
-        availLabel: `${available.toLocaleString()} ${unit} avail.`,
-        image: m.image ? `/storage/${m.image}` : '/images/coffee_image.jpg',
-    };
-}));
-
-/* ── "Market Listings" section hosts the full lots table (see below)
-   instead of the old opportunity callout cards. Real, backed by
-   MarketService::marketPageListing() — already every live listing,
-   newest-first (`liveMarkets()` runs `orderByDesc('created_at')`), so no
-   client-side sort is needed here — just filter (see above) and
-   paginate at 15 rows/page. */
-const allLots = computed(() => filteredMarkets.value.map((m) => {
-    const quantity = Number(m.quantity || 0);
-    const unit = m.unit || 'kg';
-    const cert = (m.badges || [])[0] || null;
-
-    return {
-        id: m.id,
-        name: m.name || m.lot_code,
-        code: m.lot_code,
-        origin: m.origin || '—',
-        quantity: `${quantity.toLocaleString()} ${unit}`,
-        price: `$${Number(m.price_per_kg || 0).toFixed(2)}/kg`,
-        quality: Number(m.quality_score || 0),
-        cert,
-        certTone: cert ? 'primary-fixed' : null,
-    };
-}));
-
-const tablePage = ref(1);
-const tablePageSize = 15;
-const pagedLots = computed(() => {
-    const start = (tablePage.value - 1) * tablePageSize;
-    return allLots.value.slice(start, start + tablePageSize);
-});
-
-watch([filterType, filterOrigin, filterPriceBucket, filterQualityBucket], () => { tablePage.value = 1; });
-
-function goToLotDetails(row) {
-    router.visit(route('market.show', row.id));
-}
-
-const addingId = ref(null);
-
-function addLotToCart(row) {
-    addingId.value = row.id;
-    router.post(route('checkout.items.store'), {
-        cartable_type: 'market',
-        cartable_id: row.id,
-        quantity: 1,
-    }, {
-        preserveScroll: true,
-        onFinish: () => { addingId.value = null; },
-    });
-}
-
-const seller = {
-    name: 'Misty Mountains Coop',
-    location: 'Sidama Region, Ethiopia',
-    rating: 4.9,
-    reviews: 124,
-    certs: ['RFA Certified', 'Organic Cert'],
-};
-
-const priceChartBars = [
-    { height: 40, tone: 'low' },
-    { height: 55, tone: 'low' },
-    { height: 50, tone: 'low' },
-    { height: 70, tone: 'primary' },
-    { height: 85, tone: 'primary' },
-    { height: 75, tone: 'primary' },
-    { height: 95, tone: 'secondary' },
+const decisionPanels = [
+    { label: 'Price Parity', value: '$4.15', unit: '/kg Spot', sub: 'Benchmark: $4.08/kg', foot: '+1.7% Spread', footTone: 'primary', tag: 'Fair Value', tagTone: 'primary' },
+    { label: 'Supply Availability', value: '1,284 MT', sub: '86 lots listed on exchange', foot: 'Tightening', footTone: 'secondary', tag: 'Moderate', tagTone: 'secondary' },
+    { label: 'Active Demand', value: '18 RFQs', sub: 'Buyer target: Robusta Screen 18', foot: 'High Inflow', footTone: 'primary', tag: 'Strong', tagTone: 'primary' },
+    { label: 'Corridor Transit', value: '18–24 Days', sub: 'Mombasa to Jebel Ali / Dubai', foot: 'Mombasa: 2.4d delay', footTone: 'neutral', tag: 'Normal', tagTone: 'neutral' },
+    { label: 'Macro Risk Index', value: 'EUDR Compliance', sub: 'GPS Polygon verification required', foot: 'Strict SLA', footTone: 'error', tag: 'Critical', tagTone: 'error' },
 ];
-const priceChartLabels = ['AUG', 'SEP', 'OCT', 'NOV (PROJ)'];
 
-/* ── Quick Buy — selection now lives in the independent <QuickBuy>
-   component (resources/js/Components/Market/QuickBuy.vue), v-model'd
-   here so the Lot grid's "Select" buttons can still drive it directly.
-   Starts unselected: QuickBuy shows a lot-number lookup field until
-   either that resolves a match or a featured card is picked. */
-const selectedLot = ref(null);
+const macroFactors = [
+    { label: 'Weather', value: 'Favorable (+0.4)', tone: 'primary' },
+    { label: 'Vietnam Output', value: 'Drought (-12%)', tone: 'error' },
+    { label: 'FX UGX/USD', value: 'Stable (3,710)', tone: 'primary' },
+    { label: 'Red Sea Shipping', value: 'Cape Reroute (+6d)', tone: 'secondary' },
+];
 
-function selectLot(lot) {
-    selectedLot.value = lot;
+const priceTabs = ['All Markets', 'Robusta', 'Arabica', 'Uganda Floor'];
+const priceTab = ref('All Markets');
+
+const benchmarkPrices = [
+    { name: 'Uganda Robusta', dot: 'primary', port: 'Mombasa (FOB)', grade: 'Screen 18', gradeTone: 'neutral', price: '$4.18', change: '+1.9%', changeTone: 'primary', vol: '420 MT', cta: 'View Lots' },
+    { name: 'Uganda Robusta', dot: 'primary', port: 'Mombasa (FOB)', grade: 'Screen 15', gradeTone: 'neutral', price: '$4.02', change: '+0.8%', changeTone: 'primary', vol: '310 MT', cta: 'View Lots' },
+    { name: 'Bugisu Arabica', dot: 'secondary', port: 'Mombasa (FOB)', grade: 'Grade AA', gradeTone: 'secondary', price: '$5.40', change: '-0.4%', changeTone: 'error', vol: '180 MT', cta: 'View Lots' },
+    { name: 'Rwenzori Natural', dot: 'secondary', port: 'Mombasa (FOB)', grade: 'Drugar Clean', gradeTone: 'neutral', price: '$4.85', change: '+2.1%', changeTone: 'primary', vol: '95 MT', cta: 'View Lots' },
+    { name: 'Vietnam Robusta', dot: 'neutral', port: 'Ho Chi Minh (FOB)', grade: 'Grade 2, 5%', gradeTone: 'neutral', price: '$4.42', change: '+3.2%', changeTone: 'primary', vol: '620 MT', cta: 'Compare' },
+];
+
+const trendRanges = ['1M', '3M', '1Y'];
+const trendRange = ref('1M');
+
+const farmgateRows = [
+    { name: 'Uganda Robusta (Kiboko)', ugx: 'UGX 12,400', usd: '$3.34/kg', milling: '$0.32/kg', fob: '$4.18/kg', spread: '+$0.52/kg', margin: '12.4%' },
+    { name: 'Bugisu Arabica AA (Parchment)', ugx: 'UGX 16,500', usd: '$4.44/kg', milling: '$0.38/kg', fob: '$5.40/kg', spread: '+$0.58/kg', margin: '10.7%' },
+    { name: 'Rwenzori Drugar Clean', ugx: 'UGX 14,800', usd: '$3.98/kg', milling: '$0.35/kg', fob: '$4.85/kg', spread: '+$0.52/kg', margin: '10.7%' },
+];
+
+const originProfiles = [
+    { country: 'Uganda', dot: 'primary', phase: 'Main Crop Harvest', price: '$4.18/kg FOB', flow: 'Export Flow: High', flowTone: 'primary' },
+    { country: 'Vietnam', dot: 'secondary', phase: 'Off-Season Transition', price: '$4.42/kg FOB', flow: 'Export Flow: Constrained', flowTone: 'secondary' },
+    { country: 'Brazil', dot: 'primary', phase: 'Conilon / Arabica Tail', price: '$4.65/kg FOB', flow: 'Export Flow: Peak', flowTone: 'primary' },
+    { country: 'Ethiopia', dot: 'neutral', phase: 'Washed Prep / ECX', price: '$5.90/kg FOB', flow: 'Export Flow: Moderate', flowTone: 'neutral' },
+];
+
+const balanceMetrics = [
+    { label: 'East Africa Supply Pressure', value: '68% (Adequate)', tone: 'primary', pct: 68 },
+    { label: 'European / UAE Buyer Demand', value: '84% (High Appetite)', tone: 'secondary', pct: 84 },
+    { label: 'EUDR Traceability Readiness', value: '91% (Compliant)', tone: 'primary', pct: 91 },
+];
+
+const opportunityCards = [
+    { tag: 'Price Arbitrage', tagTone: 'primary', stat: '-$0.24/kg Spread', statTone: 'primary', title: 'Uganda Screen 18 Discount vs Vietnam', body: 'Vietnamese drought has elevated Ho Chi Minh FOB to $4.42/kg. Uganda Screen 18 at $4.18/kg FOB offers instant $240/MT cost reduction for identical soluble/espresso specs.', cta: 'Review Matching Lots (6 Available)' },
+    { tag: 'Origin Alert', tagTone: 'secondary', stat: '120 MT Tranche', statTone: 'secondary', title: 'Verified Deforestation-Free Bugisu AA', body: 'Direct cooperative lot from Mbale with validated polygon coordinate boundaries on chain. Zero risk under EU Deforestation Regulation enforcement.', cta: 'Access Inspection Certs' },
+    { tag: 'Freight Optimizer', tagTone: 'tertiary', stat: 'Jebel Ali Route', statTone: 'neutral', title: 'Consolidated UAE Direct Vessel Slot', body: 'Anchor buyer departing Mombasa on Maersk feeder line Nov 4. Booking open for 4x 20ft FCLs at discounted negotiated rate of $1,450/box.', cta: 'Join Shipping Slot' },
+];
+
+const spotLots = [
+    { id: 'LOT-UG-8821', spec: 'Uganda Screen 18 Robusta Clean', region: 'Masaka / Central', alt: '1,200m ASL', grade: 'Fine Robusta 83.5', gradeTone: 'primary', vol: '60.0 MT', bags: '1,000 Bags (60kg)', price: '$4.18', total: '$250,800 Total', moisture: '11.8%', seller: 'Great Lakes Ltd', sellerNote: 'Tier-1 Exporter · Escrow Ready', checked: true },
+    { id: 'LOT-UG-9042', spec: 'Bugisu Arabica Grade AA Washed', region: 'Mt. Elgon / Mbale', alt: '1,850m ASL', grade: 'Specialty 86.0', gradeTone: 'secondary', vol: '19.2 MT', bags: '320 Bags (60kg)', price: '$5.40', total: '$103,680 Total', moisture: '11.4%', seller: 'Mbale Coffee Union', sellerNote: 'EUDR Certified Polygon', sellerNoteTone: 'primary', checked: true },
+    { id: 'LOT-RW-3021', spec: 'Rwenzori Natural Drugar Arabica', region: 'Kasese / Rwenzori', alt: '1,600m ASL', grade: 'Commercial 82.5', gradeTone: 'neutral', vol: '38.4 MT', bags: '640 Bags (60kg)', price: '$4.85', total: '$186,240 Total', moisture: '12.1%', seller: 'Rwenzori Apex Mill', sellerNote: 'Direct Origin Warehoused', checked: true },
+    { id: 'LOT-UG-7714', spec: 'Uganda Screen 15 Robusta Standard', region: 'Luweero / Central', alt: '1,150m ASL', grade: 'Commercial 80.0', gradeTone: 'neutral', vol: '76.8 MT', bags: '1,280 Bags (60kg)', price: '$4.02', total: '$308,736 Total', moisture: '12.0%', seller: 'Nalukolongo Hub', sellerNote: 'UCDA Stamp Verified', checked: false },
+    { id: 'LOT-TZ-4402', spec: 'Tanzania Kilimanjaro Plantation AA', region: 'Moshi / Northern', alt: '1,700m ASL', grade: 'Specialty 84.5', gradeTone: 'secondary', vol: '21.6 MT', bags: '360 Bags (60kg)', price: '$5.25', total: '$113,400 Total', moisture: '11.6%', seller: 'Kilimanjaro Traders', sellerNote: 'Dar es Salaam Port Ready', checked: false },
+];
+
+const comparisonLots = [
+    { id: 'LOT-UG-8821', type: 'Robusta', typeTone: 'primary', price: '$4.18/kg FOB', spec: 'Fine Robusta Screen 18 · Masaka', rows: [['CQI Cup Score', '83.5 pts'], ['Altitude', '1,200m'], ['Moisture & Def', '11.8% · 2/300g'], ['EUDR Polygons', '100% Mapped', 'primary'], ['Landed Dubai Est', '$4.48/kg']] },
+    { id: 'LOT-UG-9042', type: 'Arabica AA', typeTone: 'secondary', price: '$5.40/kg FOB', spec: 'Bugisu Washed · Mt. Elgon', rows: [['CQI Cup Score', '86.0 pts (Specialty)'], ['Altitude', '1,850m'], ['Moisture & Def', '11.4% · 0/300g'], ['EUDR Polygons', '100% Mapped', 'primary'], ['Landed Dubai Est', '$5.72/kg']] },
+    { id: 'LOT-RW-3021', type: 'Natural Arabica', typeTone: 'neutral', price: '$4.85/kg FOB', spec: 'Rwenzori Drugar Clean · Kasese', rows: [['CQI Cup Score', '82.5 pts'], ['Altitude', '1,600m'], ['Moisture & Def', '12.1% · 4/300g'], ['EUDR Polygons', 'In Verification'], ['Landed Dubai Est', '$5.16/kg']] },
+];
+
+const landedCostRows = [
+    { label: 'Base FOB Mombasa Price', value: '$4.18 / kg' },
+    { label: 'Inland Rail / Trucking Transit (Kampala → Mombasa)', value: '$0.08 / kg' },
+    { label: 'Ocean Freight (Per 20ft FCL 19.2 MT)', value: '$0.14 / kg' },
+    { label: 'Marine Cargo Insurance (All-Risk 110%)', value: '$0.02 / kg' },
+    { label: 'Port Handling & Pre-Shipment Inspection (SGS)', value: '$0.06 / kg' },
+];
+const portOptions = ['Jebel Ali (Dubai)', 'Rotterdam (Europe)', 'Houston (USA)'];
+const portSelection = ref(portOptions[0]);
+
+const logisticsRows = [
+    { icon: Ship, name: 'Port of Mombasa (KE)', note: 'Anchor wait: 2.4 days · Berth turnaround: 36h', tag: 'Fluid', tagTone: 'primary' },
+    { icon: Ship, name: 'Jebel Ali Terminal (UAE)', note: 'Transit corridor: 18–22 days direct feeder', tag: 'Optimal', tagTone: 'primary' },
+    { icon: Warning, name: 'Rotterdam Terminal (NL)', note: 'Cape of Good Hope reroute: 32–36 days transit', tag: '+6d Delay', tagTone: 'secondary' },
+];
+
+const microclimates = [
+    { name: 'Mukono / Masaka (UG)', status: 'Optimal', statusTone: 'primary', meta: '24°C · Rain: 45mm/wk', note: 'Drying conditions ideal on raised patios. Cherry uniform ripening confirmed.' },
+    { name: 'Mbale / Bugisu (UG)', status: 'Normal', statusTone: 'primary', meta: '19°C · Rain: 60mm/wk', note: 'Mountain showers steady. Pulping washing stations running at 100% capacity.' },
+    { name: 'Central Highlands (VN)', status: 'Drought Alert', statusTone: 'error', meta: '32°C · Rain: -35% norm', note: 'Dak Lak province groundwater depletion. Projected 10-15% crop reduction.' },
+    { name: 'Cerrado Mineiro (BR)', status: 'Moderate', statusTone: 'secondary', meta: '28°C · Rain: Dry season', note: 'Flowering initiated under irrigated sections; awaiting broad seasonal rains.' },
+];
+
+const tradeWire = [
+    { tag: 'European Commission · EUDR', tagTone: 'primary', time: '2 hours ago', title: 'EU Parliament Confirms Traceability Standards for East African Exporters', body: 'Due diligence statements with polygon geo-coordinates validated via national coffee registries are recognized as priority fast-track entries.' },
+    { tag: 'Uganda Coffee Development Authority', tagTone: 'secondary', time: '5 hours ago', title: 'September Coffee Export Volume Reaches Record 785,000 Bags', body: 'High international Robusta prices spur farmer deliveries and rapid processing turnaround across Greater Masaka.' },
+    { tag: 'Freight Rate Monitor', tagTone: 'neutral', time: 'Yesterday', title: 'Bunker Fuel Surcharges Stabilize on Middle East Shipping Lanes', body: 'Mombasa to Jebel Ali container rates flat at $1,400 to $1,550 for 20-foot standard dry boxes.' },
+];
+
+const calendarItems = [
+    { when: 'Today', time: '14:00', tone: 'primary', title: 'UCDA Central Quality Floor', note: 'Daily price guide release & sample inspections' },
+    { when: 'Tomorrow', time: '10:00', tone: 'neutral', title: 'Dubai Roaster Group Tender Deadline', note: 'RFQ matching closing for 300 MT Robusta' },
+    { when: '28 Oct', time: '18:00', tone: 'neutral', title: 'CMA CGM Mombasa Terminal Cut-off', note: 'Voyage 409E gate-in deadline for Jebel Ali discharge' },
+];
+
+const checklistItems = [
+    { icon: CircleCheckFilled, tone: 'primary', title: 'Price Competitiveness', note: 'Validated within 1.7% of official ICE/UCDA parity benchmarks.' },
+    { icon: CircleCheckFilled, tone: 'primary', title: 'Moisture & Grade Verification', note: 'Under 12.0% moisture, CQI score verified by certified Q-grader.' },
+    { icon: CircleCheckFilled, tone: 'primary', title: 'EUDR Polygon Geo-Mapping', note: 'Farm boundaries digitized and cross-verified with satellite deforestation maps.' },
+    { icon: CircleCheckFilled, tone: 'primary', title: 'Escrow Account Clearance', note: 'Direct custody tier-1 bank account (Stanbic Uganda) verified active.' },
+    { icon: CircleCheckFilled, tone: 'primary', title: 'Physical Warehouse Inspection', note: 'Coffee inspected in dry palletized bags with phytosanitary permit on file.' },
+    { icon: Clock, tone: 'secondary', title: 'Vessel Space Guarantee', note: 'Container booking pending final carrier allocation (within 48h).' },
+];
+
+function placeholderAction(label) {
+    ElMessage.info(`${label} (dummy preview).`);
 }
-
-const alertsEnabled = ref(true);
-const priceDropAlerts = ref(true);
-const newSpecialtyLots = ref(true);
 </script>
 
 <template>
     <DesignPreviewLayout title="Coffee Market">
-        <Head title="Coffee Market">
-            <link rel="preconnect" href="https://fonts.googleapis.com" />
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-            <link
-                href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-                rel="stylesheet"
-            />
-        </Head>
+        <Head title="Coffee Market" />
 
-        <div class="cm-page">
-            <!-- ── Title + actions ─────────────────────────────────────── -->
-            <section class="cm-header">
+        <!-- 1. PAGE HERO HEADER -->
+        <section class="mkt-card mkt-hero">
+            <div class="mkt-hero__top">
                 <div>
-                    <h1 class="cm-header__title">Coffee Market</h1>
-                    <p class="cm-header__subtitle">Buy verified, traceable, and export-ready coffee lots directly from certified regional cooperatives.</p>
+                    <div class="mkt-title-row">
+                        <h1 class="dp-display-md">Coffee Market</h1>
+                        <span class="mkt-live-badge"><span class="mkt-dot"></span> Live Floor</span>
+                    </div>
+                    <p class="dp-body-md mkt-muted">Institutional coffee market intelligence, benchmark parity, and real-time physical lot execution.</p>
                 </div>
-                <div class="cm-header__actions">
-                    <Link :href="route('orders.index')" class="cm-btn cm-btn--tonal">
-                        <span class="material-symbols-outlined">receipt_long</span> My Orders
-                    </Link>
-                    <button type="button" class="cm-btn cm-btn--secondary" title="Coming soon">
-                        <span class="material-symbols-outlined">smart_toy</span> Ask Advisor
+                <div class="mkt-hero__actions">
+                    <button v-for="action in heroActions" :key="action.label" type="button" class="mkt-btn" :class="`mkt-btn--${action.tone}`" @click="placeholderAction(action.label)">
+                        <el-icon :size="15"><component :is="action.icon" /></el-icon>
+                        <span>{{ action.label }}</span>
                     </button>
                 </div>
-            </section>
+            </div>
 
-            <!-- ── KPI grid ─────────────────────────────────────────────── -->
-            <div class="cm-kpis">
-                <div v-for="kpi in kpis" :key="kpi.label" class="cm-kpi">
-                    <p class="cm-kpi__label">{{ kpi.label }}</p>
-                    <div class="cm-kpi__row">
-                        <h3 class="cm-kpi__value" :class="{ 'cm-kpi__value--up': kpi.tone === 'up', 'cm-kpi__value--down': kpi.tone === 'down' }">
-                            <span v-if="kpi.tone" class="material-symbols-outlined">{{ kpi.tone === 'up' ? 'arrow_upward' : 'arrow_downward' }}</span>{{ kpi.value }}
-                        </h3>
-                        <div class="cm-kpi__spark" />
+            <div class="mkt-status-line">
+                <div class="mkt-status-line__left">
+                    <span class="mkt-flex-icon mkt-strong mkt-icon--primary"><el-icon :size="14"><Position /></el-icon> Trading Session Open</span>
+                    <span class="mkt-muted">Last tick: 42s ago</span>
+                    <span class="mkt-muted">Coverage: <strong class="mkt-on">East Africa · LatAm · SE Asia</strong></span>
+                    <span class="mkt-muted">Currency: <strong class="mkt-on">USD/kg (Metric)</strong></span>
+                    <span class="mkt-muted">Feeds: <strong class="mkt-on">ICO · ICE Futures · UCDA</strong></span>
+                </div>
+                <div class="mkt-status-line__right">
+                    <span class="mkt-tag-mini">Validated Parity</span>
+                    <button type="button" class="mkt-icon-btn" title="Force Refresh Data" @click="placeholderAction('Force Refresh Data')"><el-icon :size="15"><Refresh /></el-icon></button>
+                </div>
+            </div>
+
+            <div class="mkt-kpi-row">
+                <div v-for="kpi in kpis" :key="kpi.label" class="mkt-kpi">
+                    <div class="mkt-kpi__head">
+                        <span class="dp-label-md mkt-muted">{{ kpi.label }}</span>
+                        <el-icon :size="16" class="mkt-icon--primary"><component :is="kpi.icon" /></el-icon>
+                    </div>
+                    <div class="dp-display-md mkt-kpi__value">{{ kpi.value }} <span class="dp-body-md mkt-muted">{{ kpi.unit }}</span></div>
+                    <p class="dp-caption" :class="kpi.noteTone ? `mkt-icon--${kpi.noteTone} mkt-strong` : 'mkt-muted'">{{ kpi.note }}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. MARKET DECISION CENTER -->
+        <section class="mkt-card">
+            <div class="mkt-card__head">
+                <div>
+                    <div class="mkt-title-row"><el-icon :size="18" class="mkt-icon--primary"><DataAnalysis /></el-icon><h2 class="dp-headline-md">Market Decision Center</h2></div>
+                    <p class="dp-caption mkt-muted">Aggregated execution indicators calibrated against spot physical flows &amp; ICE benchmarks.</p>
+                </div>
+                <span class="mkt-tag-mini">Composite Sentiment: <strong class="mkt-icon--primary">BUY-ACCUMULATE</strong></span>
+            </div>
+            <div class="mkt-decision-grid">
+                <div v-for="panel in decisionPanels" :key="panel.label" class="mkt-decision">
+                    <div>
+                        <div class="dp-label-md mkt-muted">{{ panel.label }}</div>
+                        <div class="dp-headline-sm mkt-strong mkt-mt-xs">{{ panel.value }} <span class="dp-caption mkt-muted">{{ panel.unit }}</span></div>
+                        <div class="dp-caption mkt-muted">{{ panel.sub }}</div>
+                    </div>
+                    <div class="mkt-decision__foot">
+                        <span class="dp-caption mkt-strong" :class="`mkt-icon--${panel.footTone}`">{{ panel.foot }}</span>
+                        <span class="mkt-tag-mini" :class="`mkt-tag-mini--${panel.tagTone}`">{{ panel.tag }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mkt-factors-row">
+                <span class="dp-caption mkt-muted">Core Macro Drivers:</span>
+                <span v-for="f in macroFactors" :key="f.label" class="mkt-factor-chip">{{ f.label }}: <strong :class="`mkt-icon--${f.tone}`">{{ f.value }}</strong></span>
+            </div>
+        </section>
+
+        <!-- 4. BENCHMARK PRICES + TREND CHART -->
+        <section class="mkt-grid-12">
+            <div class="mkt-card mkt-col-8">
+                <div class="mkt-card__head">
+                    <div>
+                        <h2 class="dp-headline-md">Cash Market Benchmark Prices</h2>
+                        <p class="dp-caption mkt-muted">Official exchange benchmark prices updated continuously</p>
+                    </div>
+                    <div class="mkt-toggle-group">
+                        <button v-for="tab in priceTabs" :key="tab" type="button" class="mkt-toggle" :class="{ 'mkt-toggle--active': priceTab === tab }" @click="priceTab = tab">{{ tab }}</button>
+                    </div>
+                </div>
+                <div class="mkt-table-wrap">
+                    <table class="mkt-table">
+                        <thead>
+                            <tr><th>Commodity</th><th>Origin / Port</th><th>Grade</th><th>Spot ($/kg)</th><th>24h Chg</th><th>24h Volume</th><th class="mkt-right">Action</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(row, i) in benchmarkPrices" :key="i">
+                                <td><span class="mkt-flex-icon mkt-strong"><span class="mkt-dot" :class="`mkt-dot--${row.dot}`"></span> {{ row.name }}</span></td>
+                                <td class="mkt-muted">{{ row.port }}</td>
+                                <td><span class="mkt-tag-mini" :class="`mkt-tag-mini--${row.gradeTone}`">{{ row.grade }}</span></td>
+                                <td class="mkt-strong dp-mono">{{ row.price }}</td>
+                                <td class="mkt-strong" :class="`mkt-icon--${row.changeTone}`">{{ row.change }}</td>
+                                <td class="mkt-muted dp-mono">{{ row.vol }}</td>
+                                <td class="mkt-right"><button type="button" class="mkt-link" @click="placeholderAction(row.cta)">{{ row.cta }}</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mkt-footline">
+                    <span class="dp-caption mkt-muted">Benchmark basis: 60kg export bags, seaworthy jute or grainpro lined.</span>
+                    <a href="#" class="mkt-link" @click.prevent="placeholderAction('Complete Pricing Sheet')">Complete Pricing Sheet →</a>
+                </div>
+            </div>
+
+            <div class="mkt-card mkt-col-4">
+                <div>
+                    <div class="mkt-card__head">
+                        <h2 class="dp-headline-md">Price Trajectory &amp; Spreads</h2>
+                        <div class="mkt-toggle-group mkt-toggle-group--sm">
+                            <button v-for="r in trendRanges" :key="r" type="button" class="mkt-toggle" :class="{ 'mkt-toggle--active': trendRange === r }" @click="trendRange = r">{{ r }}</button>
+                        </div>
+                    </div>
+                    <p class="dp-caption mkt-muted mkt-mb-sm">Uganda Screen 18 vs ICE Robusta Futures</p>
+                    <div class="mkt-chart-box">
+                        <div class="mkt-series-row">
+                            <span class="mkt-flex-icon dp-caption mkt-muted"><span class="mkt-dot mkt-dot--primary"></span> UG Robusta Scr 18 ($4.18)</span>
+                            <span class="mkt-flex-icon dp-caption mkt-muted"><span class="mkt-dot mkt-dot--secondary"></span> ICE Robusta London ($4.05)</span>
+                        </div>
+                        <svg viewBox="0 0 360 140" class="mkt-chart__svg">
+                            <line x1="0" x2="360" y1="20" y2="20" stroke="var(--dp-outline-variant)" stroke-dasharray="2,2" stroke-opacity="0.4" />
+                            <line x1="0" x2="360" y1="60" y2="60" stroke="var(--dp-outline-variant)" stroke-dasharray="2,2" stroke-opacity="0.4" />
+                            <line x1="0" x2="360" y1="100" y2="100" stroke="var(--dp-outline-variant)" stroke-dasharray="2,2" stroke-opacity="0.4" />
+                            <polygon points="10,110 50,95 90,102 130,80 170,75 210,60 250,55 290,40 330,35 350,30 350,135 10,135" fill="var(--dp-primary)" fill-opacity="0.08" />
+                            <polyline points="10,110 50,95 90,102 130,80 170,75 210,60 250,55 290,40 330,35 350,30" fill="none" stroke="var(--dp-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <polyline points="10,120 50,115 90,110 130,95 170,88 210,80 250,72 290,60 330,55 350,50" fill="none" stroke="var(--dp-secondary)" stroke-width="1.8" stroke-dasharray="3,3" stroke-linecap="round" />
+                            <circle cx="350" cy="30" r="4" fill="var(--dp-primary)" />
+                            <circle cx="350" cy="30" r="7" fill="var(--dp-primary)" fill-opacity="0.2" />
+                        </svg>
+                        <div class="mkt-chart-foot dp-mono">
+                            <span>30 Days Ago</span><span>15 Days Ago</span><span class="mkt-icon--primary mkt-strong">Today</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mkt-note-box">
+                    <div class="mkt-note-box__row"><span class="dp-caption mkt-muted">Mombasa Export Parity:</span><span class="dp-caption mkt-strong mkt-icon--primary">+13.4 c/lb over ICE</span></div>
+                    <p class="dp-caption mkt-muted">East African screen 18 quality premium holds firm due to tight European port stocks.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. FARMGATE VS FOB ARBITRAGE -->
+        <section class="mkt-card">
+            <div class="mkt-card__head">
+                <div>
+                    <div class="mkt-title-row"><el-icon :size="18" class="mkt-icon--primary"><Coin /></el-icon><h2 class="dp-headline-md">Farmgate Parity vs. FOB Mombasa Export Arbitrage</h2></div>
+                    <p class="dp-caption mkt-muted">Live transparent breakdown of internal buying costs in Uganda Shillings (UGX) to FOB ocean export margin.</p>
+                </div>
+                <span class="dp-caption mkt-muted dp-mono">FX Parity Basis: 1 USD = 3,710 UGX</span>
+            </div>
+            <div class="mkt-table-wrap">
+                <table class="mkt-table">
+                    <thead>
+                        <tr><th>Coffee Type / Origin</th><th>Farmgate (UGX/kg)</th><th>Farmgate USD Equiv.</th><th>Milling &amp; Trucking</th><th>FOB Mombasa Price</th><th>Gross Spread</th><th>Gross Margin %</th><th class="mkt-right">Origin Action</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="row in farmgateRows" :key="row.name">
+                            <td class="mkt-strong">{{ row.name }}</td>
+                            <td class="dp-mono">{{ row.ugx }}</td>
+                            <td class="dp-mono mkt-muted">{{ row.usd }}</td>
+                            <td class="dp-mono mkt-muted">{{ row.milling }}</td>
+                            <td class="mkt-strong">{{ row.fob }}</td>
+                            <td class="mkt-strong mkt-icon--primary">{{ row.spread }}</td>
+                            <td><span class="mkt-tag-mini mkt-tag-mini--primary">{{ row.margin }}</span></td>
+                            <td class="mkt-right"><button type="button" class="mkt-btn mkt-btn--muted mkt-btn--sm" @click="placeholderAction(`Audit Parity: ${row.name}`)">Audit Parity</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 6. ORIGIN PROFILES + MARKET BALANCE -->
+        <section class="mkt-grid-12">
+            <div class="mkt-card mkt-col-8">
+                <div class="mkt-card__head">
+                    <div>
+                        <h2 class="dp-headline-md">Primary Origin Execution Profiles</h2>
+                        <p class="dp-caption mkt-muted">Production calendar cycles and export availability</p>
+                    </div>
+                    <span class="dp-caption mkt-muted">8 Key Origins Tracked</span>
+                </div>
+                <div class="mkt-origin-grid">
+                    <div v-for="o in originProfiles" :key="o.country" class="mkt-origin">
+                        <div class="mkt-origin__head"><span class="mkt-strong dp-body-md">{{ o.country }}</span><span class="mkt-dot" :class="`mkt-dot--${o.dot}`"></span></div>
+                        <div class="dp-caption mkt-muted">{{ o.phase }}</div>
+                        <div class="dp-body-md mkt-strong mkt-mt-xs">{{ o.price }}</div>
+                        <div class="dp-caption mkt-strong" :class="`mkt-icon--${o.flowTone}`">{{ o.flow }}</div>
                     </div>
                 </div>
             </div>
 
-            <!-- ── Filter bar — real, filters the Market Listings table ─── -->
-            <div class="cm-filters">
-                <el-select v-model="filterType" placeholder="Coffee Type" clearable class="cm-el-select">
-                    <el-option v-for="t in filterTypeOptions" :key="t" :label="t" :value="t" />
-                </el-select>
-                <el-select v-model="filterOrigin" placeholder="Origin" clearable class="cm-el-select">
-                    <el-option v-for="o in filterOriginOptions" :key="o" :label="o" :value="o" />
-                </el-select>
-                <el-select v-model="filterPriceBucket" placeholder="Price Range" clearable class="cm-el-select">
-                    <el-option v-for="b in priceBuckets" :key="b.value" :label="b.label" :value="b.value" />
-                </el-select>
-                <el-select v-model="filterQualityBucket" placeholder="Quality (SCA)" clearable class="cm-el-select">
-                    <el-option v-for="b in qualityBuckets" :key="b.value" :label="b.label" :value="b.value" />
-                </el-select>
-                <button v-if="activeFilterCount" type="button" class="cm-filters__clear" @click="resetFilters">
-                    <span class="material-symbols-outlined">close</span> Clear filters
-                </button>
-                <div class="cm-filters__alerts">
-                    <span>Alerts:</span>
-                    <el-switch v-model="alertsEnabled" />
-                </div>
-            </div>
-
-            <!-- ── Main layout ──────────────────────────────────────────── -->
-            <div class="cm-layout">
-                <div class="cm-layout__main">
-                    <!-- Lot grid — real featured listings -->
-                    <div v-if="lots.length" class="cm-lots">
-                        <article v-for="lot in lots" :key="lot.id" class="cm-lot">
-                            <div class="cm-lot__media">
-                                <img :src="lot.image" :alt="lot.name">
-                                <div class="cm-lot__badges">
-                                    <span v-for="b in lot.badges" :key="b.label" class="cm-badge" :class="`cm-badge--${b.tone}`">{{ b.label }}</span>
-                                </div>
-                                <div class="cm-lot__score">{{ lot.score }}</div>
-                            </div>
-                            <div class="cm-lot__body">
-                                <div class="cm-lot__head">
-                                    <h4 class="cm-lot__name">{{ lot.name }}<br><span>Lot: {{ lot.code }}</span></h4>
-                                    <span class="material-symbols-outlined cm-lot__bookmark">bookmark</span>
-                                </div>
-                                <div class="cm-lot__specs">
-                                    <div><p>Origin</p><strong>{{ lot.origin }}</strong></div>
-                                    <div><p>Process</p><strong>{{ lot.process }}</strong></div>
-                                    <div><p>Quantity</p><strong>{{ lot.quantity }}</strong></div>
-                                    <div><p>Price</p><strong class="cm-lot__price">{{ lot.price }}</strong></div>
-                                </div>
-                                <div class="cm-lot__cta">
-                                    <button type="button" class="cm-btn cm-btn--primary cm-btn--block" @click="selectLot(lot)">Select</button>
-                                    <button type="button" class="cm-btn cm-btn--tonal cm-btn--block" @click="goToLotDetails(lot)">Details</button>
-                                </div>
-                            </div>
-                        </article>
-                    </div>
-                    <p v-else class="cm-lots-empty">No featured lots right now — check back soon.</p>
-
-                    <!-- Market Listings -->
-                    <section class="cm-section">
-                        <h3 class="cm-section__title"><span class="material-symbols-outlined">trending_up</span> Market Listings</h3>
-
-                        <div class="cm-compare">
-                            <div class="cm-compare__head">
-                                <h3>All Lots</h3>
-                                <span class="cm-compare__count">{{ allLots.length }} lots</span>
-                            </div>
-                            <div class="cm-compare__wrap">
-                                <table>
-                                    <colgroup>
-                                        <col style="width: 26%;"><col style="width: 15%;"><col style="width: 19%;">
-                                        <col style="width: 9%;"><col style="width: 16%;"><col style="width: 15%;">
-                                    </colgroup>
-                                    <thead>
-                                        <tr>
-                                            <th>Lot</th><th>Origin</th><th>Quantity &amp; Price</th><th>Score</th><th>Certification</th><th class="cm-compare__action"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="row in pagedLots" :key="row.id" class="cm-compare__row" @click="goToLotDetails(row)">
-                                            <td>
-                                                <div class="cm-compare__lot">
-                                                    <span class="cm-compare__strong">{{ row.name }}</span>
-                                                    <span class="cm-compare__muted">{{ row.code }}</span>
-                                                </div>
-                                            </td>
-                                            <td>{{ row.origin }}</td>
-                                            <td>
-                                                <div class="cm-compare__lot">
-                                                    <span class="cm-compare__muted">{{ row.quantity }}</span>
-                                                    <span class="cm-compare__strong">{{ row.price }}</span>
-                                                </div>
-                                            </td>
-                                            <td>{{ row.quality }}</td>
-                                            <td>
-                                                <span v-if="row.cert" class="cm-tag" :class="`cm-tag--${row.certTone}`">{{ row.cert }}</span>
-                                                <span v-else class="cm-compare__muted">—</span>
-                                            </td>
-                                            <td class="cm-compare__action">
-                                                <button
-                                                    type="button"
-                                                    class="cm-btn cm-btn--tonal cm-btn--sm"
-                                                    :disabled="addingId === row.id"
-                                                    title="Add to Cart"
-                                                    @click.stop="addLotToCart(row)"
-                                                >
-                                                    <span class="material-symbols-outlined">shopping_cart</span> Add
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="cm-compare__pagination">
-                                <el-pagination
-                                    v-model:current-page="tablePage"
-                                    :page-size="tablePageSize"
-                                    :total="allLots.length"
-                                    layout="total, prev, pager, next"
-                                    background
-                                />
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Seller + chart -->
-                    <div class="cm-bottom">
-                        <div class="cm-card">
-                            <h3 class="cm-card__title">Top Rated Seller</h3>
-                            <div class="cm-seller">
-                                <div class="cm-seller__icon"><span class="material-symbols-outlined">agriculture</span></div>
-                                <div>
-                                    <h4>{{ seller.name }}</h4>
-                                    <p>{{ seller.location }}</p>
-                                    <div class="cm-seller__rating"><span class="material-symbols-outlined">star</span>{{ seller.rating }} ({{ seller.reviews }} reviews)</div>
-                                </div>
-                            </div>
-                            <div class="cm-seller__certs">
-                                <span v-for="c in seller.certs" :key="c">{{ c }}</span>
-                            </div>
-                        </div>
-
-                        <div class="cm-card">
-                            <h3 class="cm-card__title">Price & Demand Chart</h3>
-                            <div class="cm-chart">
-                                <div v-for="(bar, i) in priceChartBars" :key="i" class="cm-chart__bar" :class="`cm-chart__bar--${bar.tone}`" :style="{ height: bar.height + '%' }" />
-                            </div>
-                            <div class="cm-chart__labels">
-                                <span v-for="l in priceChartLabels" :key="l">{{ l }}</span>
-                            </div>
+            <div class="mkt-card mkt-col-4">
+                <div>
+                    <h2 class="dp-headline-md">Market Balance Metric</h2>
+                    <p class="dp-caption mkt-muted mkt-mb-sm">Physical spot inventory vs recorded procurement orders</p>
+                    <div class="mkt-balance-list">
+                        <div v-for="b in balanceMetrics" :key="b.label">
+                            <div class="mkt-balance__head"><span class="dp-caption mkt-strong">{{ b.label }}</span><span class="dp-caption mkt-strong" :class="`mkt-icon--${b.tone}`">{{ b.value }}</span></div>
+                            <div class="mkt-bar"><div class="mkt-bar__fill" :class="`mkt-bar__fill--${b.tone}`" :style="{ width: b.pct + '%' }"></div></div>
                         </div>
                     </div>
                 </div>
+                <div class="mkt-note-box">
+                    <div class="mkt-note-box__row"><span class="dp-caption mkt-muted">Physical Balance Outlook:</span><span class="dp-caption mkt-strong mkt-icon--primary">Bullish on Robusta Screener</span></div>
+                </div>
+            </div>
+        </section>
 
-                <!-- ── Quick Buy sidebar ────────────────────────────────── -->
-                <aside class="cm-sidebar">
-                    <QuickBuy v-model="selectedLot" :markets="markets" :exchange-rates="exchangeRates" />
-
-                    <div class="cm-alerts">
-                        <h4>Market Alerts</h4>
-                        <div class="cm-alerts__row">
-                            <span>Price Drop Alerts</span>
-                            <el-switch v-model="priceDropAlerts" size="small" />
+        <!-- 7. ARBITRAGE & SOURCING OPPORTUNITIES -->
+        <section class="mkt-card">
+            <div class="mkt-title-row mkt-mb-sm">
+                <el-icon :size="18" class="mkt-icon--primary"><Lightning /></el-icon>
+                <h2 class="dp-headline-md">Data-Identified Arbitrage &amp; Sourcing Opportunities</h2>
+                <span class="dp-caption mkt-muted">Updated real-time by AI Valuation Engine</span>
+            </div>
+            <div class="mkt-opps-grid">
+                <div v-for="opp in opportunityCards" :key="opp.title" class="mkt-opp-card">
+                    <div>
+                        <div class="mkt-opp-card__head">
+                            <span class="mkt-tag-mini" :class="`mkt-tag-mini--${opp.tagTone}`">{{ opp.tag }}</span>
+                            <span class="dp-mono mkt-strong" :class="`mkt-icon--${opp.statTone}`">{{ opp.stat }}</span>
                         </div>
-                        <div class="cm-alerts__row">
-                            <span>New Specialty Lots</span>
-                            <el-switch v-model="newSpecialtyLots" size="small" />
+                        <h3 class="dp-body-lg mkt-strong">{{ opp.title }}</h3>
+                        <p class="dp-caption mkt-muted">{{ opp.body }}</p>
+                    </div>
+                    <button type="button" class="mkt-btn mkt-btn--muted mkt-btn--full" @click="placeholderAction(opp.cta)">{{ opp.cta }}</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. BUY COFFEE — SPOT & FORWARD LOTS -->
+        <section class="mkt-card">
+            <div class="mkt-card__head">
+                <div>
+                    <div class="mkt-title-row"><el-icon :size="18" class="mkt-icon--primary"><Shop /></el-icon><h2 class="dp-headline-md">Buy Coffee — Spot &amp; Forward Lots</h2></div>
+                    <p class="dp-caption mkt-muted">Inspected physical coffee available for immediate purchase, escrow allocation, or firm negotiation.</p>
+                </div>
+                <div class="mkt-actions-inline">
+                    <button type="button" class="mkt-btn mkt-btn--muted" @click="placeholderAction('Compare Selected')"><el-icon :size="15"><Connection /></el-icon> Compare Selected (3)</button>
+                    <span class="dp-caption mkt-muted">Showing <strong class="mkt-on">5 of 86 Lots</strong></span>
+                </div>
+            </div>
+            <div class="mkt-table-wrap">
+                <table class="mkt-table">
+                    <thead>
+                        <tr><th class="mkt-cb-col"></th><th>Lot Code / Coffee Spec</th><th>Origin / Region</th><th>Grade &amp; CQI</th><th>Available Vol.</th><th>Price (FOB Mombasa)</th><th>Moisture</th><th>Seller Verification</th><th class="mkt-right">Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="lot in spotLots" :key="lot.id">
+                            <td class="mkt-cb-col"><input type="checkbox" :checked="lot.checked" class="mkt-checkbox" @click.prevent /></td>
+                            <td><div class="mkt-strong">{{ lot.id }}</div><div class="dp-caption mkt-muted">{{ lot.spec }}</div></td>
+                            <td><div class="mkt-strong">{{ lot.region }}</div><div class="dp-caption mkt-muted dp-mono">{{ lot.alt }}</div></td>
+                            <td><span class="mkt-tag-mini" :class="`mkt-tag-mini--${lot.gradeTone}`">{{ lot.grade }}</span></td>
+                            <td><div class="mkt-strong dp-mono">{{ lot.vol }}</div><div class="dp-caption mkt-muted">{{ lot.bags }}</div></td>
+                            <td><div class="mkt-strong dp-mono">{{ lot.price }} <span class="dp-caption mkt-muted">/kg</span></div><div class="dp-caption mkt-muted dp-mono">{{ lot.total }}</div></td>
+                            <td class="dp-mono">{{ lot.moisture }}</td>
+                            <td>
+                                <div class="mkt-flex-icon mkt-strong"><el-icon :size="14" class="mkt-icon--primary"><CircleCheck /></el-icon> {{ lot.seller }}</div>
+                                <div class="dp-caption" :class="lot.sellerNoteTone ? `mkt-icon--${lot.sellerNoteTone} mkt-strong` : 'mkt-muted'">{{ lot.sellerNote }}</div>
+                            </td>
+                            <td class="mkt-right">
+                                <div class="mkt-actions-inline mkt-actions-inline--end">
+                                    <button type="button" class="mkt-btn mkt-btn--primary mkt-btn--sm" @click="placeholderAction(`Buy ${lot.id}`)">Buy</button>
+                                    <button type="button" class="mkt-btn mkt-btn--muted mkt-btn--sm" @click="placeholderAction(`Offer ${lot.id}`)">Offer</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 9. ACTIVE LOT COMPARISON MATRIX -->
+        <section class="mkt-card">
+            <div class="mkt-card__head">
+                <div>
+                    <div class="mkt-title-row"><el-icon :size="18" class="mkt-icon--primary"><Files /></el-icon><h2 class="dp-headline-md">Active Lot Comparison Matrix</h2></div>
+                    <p class="dp-caption mkt-muted">Technical audit of the 3 selected candidate lots for purchase</p>
+                </div>
+                <button type="button" class="mkt-link" @click="placeholderAction('Change Selection')">Change Selection</button>
+            </div>
+            <div class="mkt-compare-grid">
+                <div v-for="lot in comparisonLots" :key="lot.id" class="mkt-compare-card">
+                    <div>
+                        <div class="mkt-compare-card__head"><span class="dp-body-lg mkt-strong">{{ lot.id }}</span><span class="mkt-tag-mini" :class="`mkt-tag-mini--${lot.typeTone}`">{{ lot.type }}</span></div>
+                        <div class="dp-headline-sm mkt-strong mkt-mt-xs">{{ lot.price }}</div>
+                        <div class="dp-caption mkt-muted">{{ lot.spec }}</div>
+                        <div class="mkt-compare-rows">
+                            <div v-for="r in lot.rows" :key="r[0]" class="mkt-compare-row"><span class="dp-caption mkt-muted">{{ r[0] }}:</span> <strong class="dp-caption" :class="r[2] ? `mkt-icon--${r[2]}` : 'mkt-on'">{{ r[1] }}</strong></div>
                         </div>
                     </div>
-                </aside>
+                    <button type="button" class="mkt-btn mkt-btn--primary mkt-btn--full" @click="placeholderAction(`Select ${lot.id} for allocation`)">Select for Allocation</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10. LANDED COST ENGINE + LOGISTICS -->
+        <section class="mkt-grid-12">
+            <div class="mkt-card mkt-col-6">
+                <div>
+                    <div class="mkt-card__head">
+                        <div>
+                            <h2 class="dp-headline-md">Total Landed Cost Engine</h2>
+                            <p class="dp-caption mkt-muted">Dynamic freight, port fees, &amp; cargo insurance simulator</p>
+                        </div>
+                        <el-select v-model="portSelection" class="mkt-select">
+                            <el-option v-for="p in portOptions" :key="p" :label="p" :value="p" />
+                        </el-select>
+                    </div>
+                    <div class="mkt-cost-rows">
+                        <div v-for="row in landedCostRows" :key="row.label" class="mkt-cost-row">
+                            <span class="dp-caption mkt-muted">{{ row.label }}</span>
+                            <span class="dp-caption mkt-strong dp-mono">{{ row.value }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mkt-total-banner">
+                    <div><div class="dp-caption mkt-total-banner__label">Estimated CIF Landed Rate</div><div class="dp-caption mkt-total-banner__sub">Full transit guarantee included</div></div>
+                    <div class="dp-headline-md">$4.48 <span class="dp-caption">/kg</span></div>
+                </div>
             </div>
 
-            <!-- ── Floating advisor chatbot ─────────────────────────────── -->
-            <div class="cm-fab">
-                <button type="button" class="cm-fab__btn" title="Bean Origin Market Advisor">
-                    <span class="material-symbols-outlined">smart_toy</span>
-                </button>
+            <div class="mkt-card mkt-col-6">
+                <div>
+                    <div class="mkt-card__head">
+                        <div>
+                            <h2 class="dp-headline-md">Logistics Corridors &amp; Port Wait Times</h2>
+                            <p class="dp-caption mkt-muted">Real-time terminal congestion and maritime voyage durations</p>
+                        </div>
+                        <span class="mkt-tag-mini">AIS Monitored</span>
+                    </div>
+                    <div class="mkt-logistics-list">
+                        <div v-for="row in logisticsRows" :key="row.name" class="mkt-logistics-row">
+                            <div class="mkt-flex-icon"><el-icon :size="18" class="mkt-icon--primary"><component :is="row.icon" /></el-icon>
+                                <div><div class="dp-body-md mkt-strong">{{ row.name }}</div><div class="dp-caption mkt-muted">{{ row.note }}</div></div>
+                            </div>
+                            <span class="mkt-tag-mini" :class="`mkt-tag-mini--${row.tagTone}`">{{ row.tag }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mkt-footline">
+                    <span class="dp-caption mkt-muted">Carriers operating: Maersk, CMA CGM, MSC, Hapag-Lloyd</span>
+                    <span class="dp-caption mkt-strong mkt-icon--primary">Live Schedule Active</span>
+                </div>
             </div>
-        </div>
+        </section>
+
+        <!-- 11. MICROCLIMATES + TRADE WIRE -->
+        <section class="mkt-grid-12">
+            <div class="mkt-card mkt-col-6">
+                <div class="mkt-card__head">
+                    <div>
+                        <h2 class="dp-headline-md">Regional Microclimates &amp; Harvest Impact</h2>
+                        <p class="dp-caption mkt-muted">Satellite soil moisture and precipitation anomalies</p>
+                    </div>
+                    <el-icon :size="18" class="mkt-icon--neutral"><Cloudy /></el-icon>
+                </div>
+                <div class="mkt-weather-grid">
+                    <div v-for="w in microclimates" :key="w.name" class="mkt-weather-card">
+                        <div class="mkt-weather-card__head"><span class="dp-body-md mkt-strong">{{ w.name }}</span><span class="dp-caption mkt-strong" :class="`mkt-icon--${w.statusTone}`">{{ w.status }}</span></div>
+                        <div class="dp-caption mkt-muted">{{ w.meta }}</div>
+                        <p class="dp-caption mkt-muted">{{ w.note }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mkt-card mkt-col-6">
+                <div>
+                    <div class="mkt-card__head">
+                        <div>
+                            <h2 class="dp-headline-md">Regulatory &amp; Market Intelligence Wire</h2>
+                            <p class="dp-caption mkt-muted">Verified trade notices directly relevant to buyer execution</p>
+                        </div>
+                        <button type="button" class="mkt-link" @click="placeholderAction('View All Wires')">View All Wires</button>
+                    </div>
+                    <div class="mkt-wire-list">
+                        <div v-for="n in tradeWire" :key="n.title" class="mkt-wire-item">
+                            <div class="mkt-wire-item__head"><span class="dp-caption mkt-strong" :class="`mkt-icon--${n.tagTone}`">{{ n.tag }}</span><span class="dp-caption mkt-muted">{{ n.time }}</span></div>
+                            <div class="dp-body-md mkt-strong">{{ n.title }}</div>
+                            <p class="dp-caption mkt-muted">{{ n.body }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mkt-footline">
+                    <span class="dp-caption mkt-muted">Bean Origin Desk Intelligence Wire</span>
+                    <span class="dp-caption mkt-strong mkt-icon--primary">Terminal Feed Connected</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 12. CALENDAR + DUE DILIGENCE CHECKLIST -->
+        <section class="mkt-grid-12">
+            <div class="mkt-card mkt-col-4">
+                <div>
+                    <div class="mkt-card__head"><h2 class="dp-headline-md">Trading &amp; Port Calendar</h2><el-icon :size="18" class="mkt-icon--primary"><Ship /></el-icon></div>
+                    <div class="mkt-cal-list">
+                        <div v-for="ev in calendarItems" :key="ev.title" class="mkt-cal-item">
+                            <div class="mkt-cal-date"><div class="dp-caption mkt-muted">{{ ev.when }}</div><div class="dp-body-md mkt-strong" :class="`mkt-icon--${ev.tone}`">{{ ev.time }}</div></div>
+                            <div><div class="dp-body-md mkt-strong">{{ ev.title }}</div><div class="dp-caption mkt-muted">{{ ev.note }}</div></div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="mkt-btn mkt-btn--muted mkt-btn--full" @click="placeholderAction('Complete Operations Schedule')">Complete Operations Schedule</button>
+            </div>
+
+            <div class="mkt-card mkt-col-8">
+                <div class="mkt-card__head">
+                    <div>
+                        <div class="mkt-title-row"><el-icon :size="18" class="mkt-icon--primary"><CircleCheck /></el-icon><h2 class="dp-headline-md">Pre-Execution Buyer Due Diligence Checklist</h2></div>
+                        <p class="dp-caption mkt-muted">Systematic institutional verification before committing capital to escrow</p>
+                    </div>
+                    <span class="mkt-tag-mini mkt-tag-mini--primary">6/7 Passed · High Confidence</span>
+                </div>
+                <div class="mkt-checklist-grid">
+                    <div v-for="item in checklistItems" :key="item.title" class="mkt-checklist-item">
+                        <el-icon :size="18" :class="`mkt-icon--${item.tone}`"><component :is="item.icon" /></el-icon>
+                        <div><div class="dp-body-md mkt-strong">{{ item.title }}</div><div class="dp-caption mkt-muted">{{ item.note }}</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </DesignPreviewLayout>
 </template>
 
 <style scoped>
-/* ── App theme tokens — the same flat, hairline-border convention used
-   across LiveMarket.vue / MarketIntelligence / HowItWorks (see
-   feedback_claude_console_theme + reference_ui_md_design_system
-   memories), swapped in for the mockup's own DESIGN.md palette now that
-   the content-area feature set is signed off. ───────────────────────── */
-.cm-page {
-    --green: #000000;
-    --green-dark: #262626;
-    --card-border: #E5E7EB;
-    --card-radius: 6px;
-    --on-surface: #121516;
-    --on-surface-var: #4B5457;
-    --surface-low: #F5F6F7;
-
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    color: var(--on-surface);
-    background: #fff;
-    min-height: 100%;
-    margin-top: -48px;
-    padding: 28px 0 32px;
-    position: relative;
+.mkt-card {
+    background: var(--dp-surface-container-lowest);
+    border: 1px solid var(--dp-outline-variant);
+    border-radius: var(--dp-card-radius);
+    box-shadow: var(--dp-card-shadow);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
 }
-.cm-page .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-size: 18px; line-height: 1; }
+.mkt-muted { color: var(--dp-on-surface-variant); }
+.mkt-strong { color: var(--dp-on-surface); font-weight: 700; }
+.mkt-on { color: var(--dp-on-surface); }
+.mkt-mb-sm { margin-bottom: 8px; }
+.mkt-mt-xs { margin-top: 4px; }
+.mkt-flex-icon { display: inline-flex; align-items: center; gap: 8px; }
 
-/* ── Header ───────────────────────────────────────────────────────────── */
-.cm-header { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
-.cm-header__title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.015em; line-height: 1.3; color: var(--green); margin: 0 0 6px; }
-.cm-header__subtitle { font-size: 0.9375rem; font-weight: 400; color: var(--on-surface-var); max-width: 640px; margin: 0; }
-.cm-header__actions { display: flex; flex-wrap: wrap; gap: 10px; }
-@media (min-width: 900px) {
-    .cm-header { flex-direction: row; align-items: flex-end; justify-content: space-between; }
-}
+.mkt-icon--primary { color: var(--dp-primary); }
+.mkt-icon--secondary { color: var(--dp-secondary); }
+.mkt-icon--tertiary { color: #923357; }
+.mkt-icon--error { color: var(--dp-error); }
+.mkt-icon--neutral { color: var(--dp-on-surface-variant); }
 
-.cm-btn { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: var(--card-radius); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 9px 16px; white-space: nowrap; text-decoration: none; transition: background .15s ease, transform .15s ease; }
-.cm-btn--tonal { background: var(--surface-low); color: var(--on-surface); }
-.cm-btn--tonal:hover { background: #ece4e2; }
-.cm-btn--secondary { background: var(--green-dark); color: #fff; }
-.cm-btn--secondary:hover { background: var(--green); }
-.cm-btn--primary { background: var(--green); color: #fff; }
-.cm-btn--primary:hover { background: var(--green-dark); }
-.cm-btn--outline { background: #fff; color: var(--on-surface); border: 1px solid var(--card-border); }
-.cm-btn--outline:hover { background: var(--surface-low); }
-.cm-btn--block { flex: 1; justify-content: center; padding: 8px 10px; font-size: 12px; }
-.cm-btn--full { width: 100%; justify-content: center; }
-.cm-btn--sm { padding: 6px 12px; font-size: 11.5px; }
-.cm-btn--sm .material-symbols-outlined { font-size: 15px; }
+.mkt-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--dp-primary); flex-shrink: 0; }
+.mkt-dot--secondary { background: var(--dp-secondary); }
+.mkt-dot--neutral { background: var(--dp-on-surface-variant); }
 
-.cm-tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
-.cm-tag--primary-fixed { background: #DCFCE7; color: #166534; }
-.cm-tag--secondary-fixed { background: #FEF3C7; color: #92400E; }
+.mkt-hero { border: none; border-bottom: 1px solid var(--dp-outline-variant); margin-top: -48px; }
+.mkt-hero__top { display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 1024px) { .mkt-hero__top { flex-direction: row; align-items: center; justify-content: space-between; } }
+.mkt-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mkt-live-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--dp-primary-fixed); color: var(--dp-on-primary-fixed); font-size: 11px; font-weight: 700; }
+.mkt-hero__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-/* ── KPI grid ─────────────────────────────────────────────────────────── */
-.cm-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
-.cm-kpi { background: #fff; padding: 14px 16px; border: 1px solid var(--card-border); border-radius: var(--card-radius); }
-.cm-kpi__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); margin: 0 0 6px; }
-.cm-kpi__row { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
-.cm-kpi__value { display: inline-flex; align-items: center; gap: 2px; font-size: 1.25rem; font-weight: 800; color: var(--on-surface); font-variant-numeric: tabular-nums; margin: 0; }
-.cm-kpi__value span { font-size: 12px; font-weight: 600; color: var(--on-surface-var); }
-.cm-kpi__value--up { color: #16A34A; }
-.cm-kpi__value--down { color: #DC2626; }
-.cm-kpi__value--up .material-symbols-outlined,
-.cm-kpi__value--down .material-symbols-outlined { font-size: 18px; }
-.cm-kpi__spark { height: 28px; width: 88px; flex-shrink: 0; border-radius: 3px; background: linear-gradient(to right, rgba(0,0,0,.05), rgba(0,0,0,.18)); }
+.mkt-status-line { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; background: var(--dp-surface-container-low); border-radius: 8px; font-size: 12px; }
+@media (min-width: 1024px) { .mkt-status-line { flex-direction: row; align-items: center; justify-content: space-between; } }
+.mkt-status-line__left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.mkt-status-line__right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
-/* ── Filter bar ───────────────────────────────────────────────────────── */
-.cm-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-bottom: 14px; margin-bottom: 24px; border-bottom: 1px solid var(--card-border); }
-.cm-filters__alerts { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); }
-.cm-filters__clear { display: inline-flex; align-items: center; gap: 4px; border: none; background: none; font-family: inherit; font-size: 12px; font-weight: 700; color: var(--on-surface-var); cursor: pointer; padding: 8px 4px; }
-.cm-filters__clear:hover { color: var(--on-surface); }
-.cm-filters__clear .material-symbols-outlined { font-size: 15px; }
+.mkt-tag-mini { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 9px; border-radius: 6px; background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); white-space: nowrap; }
+.mkt-tag-mini--primary { background: var(--dp-primary-fixed); color: var(--dp-on-primary-fixed); }
+.mkt-tag-mini--secondary { background: var(--dp-secondary-fixed); color: var(--dp-on-secondary-fixed); }
+.mkt-tag-mini--tertiary { background: var(--dp-tertiary-fixed); color: var(--dp-on-tertiary-fixed); }
+.mkt-tag-mini--error { background: var(--dp-error-container); color: var(--dp-on-error-container); }
+.mkt-tag-mini--neutral { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
 
-/* ── Element Plus field overrides — flat, hairline-border theme matching
-   the rest of this page instead of Element Plus's default blue/shadow
-   look (see feedback_claude_console_theme memory). ────────────────────── */
-.cm-el-select { width: 168px; }
-.cm-el-select :deep(.el-select__wrapper) { border-radius: var(--card-radius); box-shadow: 0 0 0 1px var(--card-border) inset; background: #fff; min-height: 34px; font-size: 13px; }
-.cm-el-select :deep(.el-select__wrapper.is-focused),
-.cm-el-select :deep(.el-select__wrapper.is-hovering) { box-shadow: 0 0 0 1px var(--card-border) inset; }
-.cm-el-select :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 2px var(--green-dark) inset; }
-.cm-el-select :deep(.el-select__placeholder) { font-weight: 600; color: var(--on-surface); }
+.mkt-icon-btn { width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s ease; flex-shrink: 0; }
+.mkt-icon-btn:hover { background: var(--dp-surface-dim); }
 
-.cm-page :deep(.el-switch.is-checked .el-switch__core) { background: var(--green) !important; border-color: var(--green) !important; }
+.mkt-kpi-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 24px; }
+@media (min-width: 1024px) { .mkt-kpi-row { grid-template-columns: repeat(4, 1fr); } }
+.mkt-kpi { display: flex; flex-direction: column; gap: 6px; padding: 14px; background: var(--dp-surface-container-low); border-radius: 8px; }
+.mkt-kpi__head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.mkt-kpi__value { display: flex; align-items: baseline; gap: 6px; }
 
-/* ── Layout ───────────────────────────────────────────────────────────── */
-.cm-layout { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
-.cm-layout__main { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
-@media (min-width: 1100px) {
-    .cm-layout { grid-template-columns: 2fr 1fr; }
+.mkt-card__head { display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 640px) { .mkt-card__head { flex-direction: row; align-items: flex-start; justify-content: space-between; } }
+
+.mkt-decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (min-width: 1024px) { .mkt-decision-grid { grid-template-columns: repeat(5, 1fr); } }
+.mkt-decision { background: var(--dp-surface-container-low); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+.mkt-decision__foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: var(--dp-surface-container-lowest); padding: 6px 8px; border-radius: 6px; }
+
+.mkt-factors-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: 12px; border-top: 1px solid var(--dp-outline-variant); }
+.mkt-factor-chip { display: inline-flex; gap: 4px; padding: 4px 10px; border-radius: 6px; background: var(--dp-surface-container-low); font-size: 11px; color: var(--dp-on-surface); }
+
+.mkt-grid-12 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 1200px) {
+    .mkt-grid-12 { grid-template-columns: repeat(12, 1fr); }
+    .mkt-col-4 { grid-column: span 4; }
+    .mkt-col-6 { grid-column: span 6; }
+    .mkt-col-8 { grid-column: span 8; }
 }
 
-/* ── Lot grid ─────────────────────────────────────────────────────────── */
-.cm-lots { display: grid; grid-template-columns: 1fr; gap: 20px; }
-@media (min-width: 700px) { .cm-lots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1100px) and (max-width: 1399px) { .cm-lots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1400px) { .cm-lots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.cm-lots-empty { font-size: 13px; color: var(--on-surface-var); background: var(--surface-low); border: 1px solid var(--card-border); border-radius: var(--card-radius); padding: 24px; text-align: center; margin: 0; }
+.mkt-toggle-group { display: flex; align-items: center; gap: 2px; background: var(--dp-surface-container-low); padding: 4px; border-radius: 8px; font-size: 12px; flex-shrink: 0; flex-wrap: wrap; }
+.mkt-toggle-group--sm { font-size: 11px; }
+.mkt-toggle { padding: 5px 10px; border-radius: 6px; border: none; background: transparent; color: var(--dp-on-surface-variant); font-weight: 700; cursor: pointer; font-family: var(--dp-font-sans); }
+.mkt-toggle--active { background: var(--dp-surface-container-lowest); color: var(--dp-primary); }
 
-.cm-lot { background: #fff; border: 1px solid var(--card-border); border-radius: var(--card-radius); overflow: hidden; display: flex; flex-direction: column; transition: transform .12s ease; }
-.cm-lot:hover { transform: translateY(-2px); }
-.cm-lot__media { position: relative; height: 128px; background: var(--surface-low); }
-.cm-lot__media img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; }
-.cm-lot__badges { position: absolute; top: 12px; left: 12px; display: flex; flex-wrap: wrap; gap: 4px; }
-.cm-lot__score { position: absolute; bottom: 12px; right: 12px; background: rgba(255,255,255,.92); padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 700; color: var(--on-surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.mkt-table-wrap { overflow-x: auto; }
+.mkt-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; min-width: 560px; }
+.mkt-table thead tr { background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; font-weight: 700; }
+.mkt-table th { padding: 10px 12px; }
+.mkt-table th:first-child { border-radius: 6px 0 0 6px; }
+.mkt-table th:last-child { border-radius: 0 6px 6px 0; }
+.mkt-table tbody tr { border-bottom: 1px solid var(--dp-outline-variant); transition: background 0.15s ease; }
+.mkt-table tbody tr:last-child { border-bottom: none; }
+.mkt-table tbody tr:hover { background: var(--dp-surface-container-low); }
+.mkt-table td { padding: 12px; vertical-align: middle; }
+.mkt-right { text-align: right; }
+.mkt-cb-col { width: 30px; }
+.mkt-checkbox { accent-color: var(--dp-primary); width: 14px; height: 14px; }
 
-.cm-badge { padding: 4px 8px; font-size: 9px; font-weight: 700; text-transform: uppercase; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
-.cm-badge--primary { background: #a0f399; color: #217128; }
-.cm-badge--secondary { background: #2e2c2c; color: #d4d4d4; }
-.cm-badge--primary-container { background: #a0f399; color: #217128; }
-.cm-badge--tertiary-container { background: #2e2c2c; color: #d4d4d4; }
-.cm-badge--secondary-fixed { background: #2e2c2c; color: #d4d4d4; }
+.mkt-footline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--dp-outline-variant); font-size: 12px; }
+.mkt-link { font-weight: 700; color: var(--dp-primary); text-decoration: none; background: none; border: none; cursor: pointer; font-size: 12px; font-family: var(--dp-font-sans); }
+.mkt-link:hover { text-decoration: underline; }
 
-.cm-lot__body { padding: 16px; display: flex; flex-direction: column; flex: 1; }
-.cm-lot__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-.cm-lot__name { font-size: 15px; font-weight: 700; color: var(--on-surface); letter-spacing: -0.005em; line-height: 1.3; margin: 0; }
-.cm-lot__name span { font-size: 11px; font-weight: 500; color: var(--on-surface-var); }
-.cm-lot__bookmark { color: var(--on-surface-var); cursor: pointer; font-size: 18px !important; flex-shrink: 0; }
-.cm-lot__bookmark:hover { color: var(--green); }
+.mkt-chart-box { background: var(--dp-surface-container-low); border-radius: 8px; padding: 12px; }
+.mkt-series-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.mkt-chart__svg { width: 100%; height: 130px; overflow: visible; }
+.mkt-chart-foot { display: flex; justify-content: space-between; font-size: 10px; color: var(--dp-on-surface-variant); margin-top: 6px; }
+.mkt-note-box { background: var(--dp-surface-container-low); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+.mkt-note-box__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 
-.cm-lot__specs { display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 10px; column-gap: 8px; margin: 14px 0; }
-.cm-lot__specs p { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); margin: 0 0 2px; }
-.cm-lot__specs strong { font-size: 13px; font-weight: 600; color: var(--on-surface); }
-.cm-lot__price { font-weight: 800 !important; color: var(--on-surface) !important; }
+.mkt-origin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (min-width: 640px) { .mkt-origin-grid { grid-template-columns: repeat(4, 1fr); } }
+.mkt-origin { background: var(--dp-surface-container-low); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+.mkt-origin__head { display: flex; align-items: center; justify-content: space-between; }
 
-.cm-lot__cta { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--surface-low); display: flex; gap: 8px; }
+.mkt-balance-list { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+.mkt-balance__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.mkt-bar { width: 100%; height: 8px; border-radius: 999px; background: var(--dp-surface-container-low); overflow: hidden; }
+.mkt-bar__fill { height: 100%; border-radius: 999px; }
+.mkt-bar__fill--primary { background: var(--dp-primary); }
+.mkt-bar__fill--secondary { background: var(--dp-secondary); }
 
-/* ── Sections ─────────────────────────────────────────────────────────── */
-.cm-section__title { display: flex; align-items: center; gap: 8px; font-size: 1.0625rem; font-weight: 800; color: var(--on-surface); margin: 0 0 18px; }
-.cm-section__title .material-symbols-outlined { color: var(--green); }
+.mkt-opps-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 768px) { .mkt-opps-grid { grid-template-columns: repeat(3, 1fr); } }
+.mkt-opp-card { background: var(--dp-surface-container-low); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
+.mkt-opp-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 
-/* ── Lots table (replaces the old opportunity cards + standalone Lot
-   Comparison section — one real, paginated table under "Featured
-   Opportunities") ───────────────────────────────────────────────────── */
-.cm-compare { background: #fff; border: 1px solid var(--card-border); border-radius: var(--card-radius); overflow: hidden; }
-.cm-compare__head { padding: 16px 18px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; }
-.cm-compare__head h3 { font-size: 14px; font-weight: 800; color: var(--on-surface); margin: 0; }
-.cm-compare__count { font-size: 11px; font-weight: 700; color: var(--on-surface-var); background: var(--surface-low); padding: 3px 10px; border-radius: 999px; }
-/* table-layout: fixed + the <colgroup> widths in the template keep every
-   column within the card's own width instead of growing to fit its
-   widest cell — the fix for the table needing horizontal scroll. */
-.cm-compare__wrap { overflow-x: hidden; }
-.cm-compare table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 12.5px; }
-.cm-compare thead { background: var(--surface-low); }
-.cm-compare th { padding: 10px 10px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); white-space: nowrap; }
-.cm-compare td { padding: 10px 10px; border-top: 1px solid var(--card-border); color: var(--on-surface); white-space: normal; overflow-wrap: break-word; vertical-align: middle; }
-.cm-compare__row { cursor: pointer; }
-.cm-compare tbody tr:hover { background: var(--surface-low); }
-.cm-compare__strong { font-weight: 700; color: var(--on-surface); }
-.cm-compare__muted { color: var(--on-surface-var); font-size: 11.5px; }
-.cm-compare__lot { display: flex; flex-direction: column; gap: 2px; }
-.cm-compare__action { text-align: right; }
-.cm-compare__action .cm-btn--sm { padding: 6px 10px; }
-.cm-compare__action .cm-btn--sm .material-symbols-outlined { font-size: 14px; }
-.cm-compare .cm-tag { white-space: normal; text-align: center; }
+.mkt-actions-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mkt-actions-inline--end { justify-content: flex-end; }
 
-.cm-compare__pagination { padding: 12px 18px; border-top: 1px solid var(--card-border); }
-.cm-compare__pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; font-family: inherit; justify-content: flex-end; }
-.cm-compare__pagination :deep(.el-pagination__total) { margin-right: auto; font-size: 12.5px; font-weight: 600; color: var(--on-surface-var); }
-.cm-compare__pagination :deep(.btn-prev),
-.cm-compare__pagination :deep(.btn-next) { width: 30px; height: 30px; border-radius: 8px; background: var(--surface-low); border: none; color: var(--on-surface-var); transition: all .15s ease; }
-.cm-compare__pagination :deep(.btn-prev:hover:not(:disabled)),
-.cm-compare__pagination :deep(.btn-next:hover:not(:disabled)) { color: var(--on-surface); background: #ece4e2; }
-.cm-compare__pagination :deep(.el-pager) { display: flex; align-items: center; gap: 4px; }
-.cm-compare__pagination :deep(.el-pager li) { min-width: 30px; height: 30px; border-radius: 8px; background: var(--surface-low); border: none; color: var(--on-surface); font-size: 12.5px; font-weight: 600; transition: all .15s ease; }
-.cm-compare__pagination :deep(.el-pager li.is-active) { background: var(--green); color: #fff; }
-
-/* ── Bottom: seller + chart ───────────────────────────────────────────── */
-.cm-bottom { display: grid; grid-template-columns: 1fr; gap: 12px; }
-@media (min-width: 700px) { .cm-bottom { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.cm-card { background: #fff; padding: 18px; border: 1px solid var(--card-border); border-radius: var(--card-radius); }
-.cm-card__title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); margin: 0 0 14px; }
-
-.cm-seller { display: flex; gap: 14px; }
-.cm-seller__icon { width: 56px; height: 56px; border-radius: var(--card-radius); background: var(--surface-low); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.cm-seller__icon .material-symbols-outlined { font-size: 26px; color: var(--green); }
-.cm-seller h4 { font-size: 15px; font-weight: 700; color: var(--on-surface); margin: 0; }
-.cm-seller p { font-size: 12px; font-weight: 500; color: var(--on-surface-var); margin: 2px 0 0; }
-.cm-seller__rating { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--on-surface); margin-top: 8px; }
-.cm-seller__rating .material-symbols-outlined { font-size: 15px; color: #eab308; font-variation-settings: 'FILL' 1; }
-.cm-seller__certs { display: flex; gap: 8px; margin-top: 14px; }
-.cm-seller__certs span { font-size: 10px; font-weight: 700; color: var(--on-surface-var); background: var(--surface-low); padding: 4px 8px; border-radius: 6px; }
-
-.cm-chart { height: 88px; width: 100%; display: flex; align-items: flex-end; gap: 4px; padding: 0 6px; }
-.cm-chart__bar { flex: 1; border-radius: 3px 3px 0 0; }
-.cm-chart__bar--low { background: var(--surface-low); }
-.cm-chart__bar--primary { background: var(--green); }
-.cm-chart__bar--secondary { background: #D29922; }
-.cm-chart__labels { display: flex; justify-content: space-between; margin-top: 8px; padding: 0 6px; font-size: 10px; font-weight: 700; color: var(--on-surface-var); }
-
-/* ── Sidebar (Quick Buy is its own component now — see
-   Components/Market/QuickBuy.vue) ────────────────────────────────────── */
-.cm-sidebar { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 16px; }
-
-.cm-alerts { background: var(--surface-low); border: 1px solid var(--card-border); padding: 18px; border-radius: var(--card-radius); }
-.cm-alerts h4 { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface); margin: 0 0 14px; }
-.cm-alerts__row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; }
-.cm-alerts__row span { font-size: 13px; font-weight: 600; color: var(--on-surface); }
-
-/* ── Floating advisor chatbot ─────────────────────────────────────────── */
-.cm-fab { position: fixed; bottom: 24px; right: 24px; z-index: 40; }
-.cm-fab__btn { width: 56px; height: 56px; border-radius: 9999px; background: var(--green); color: #fff; border: none; box-shadow: 0 6px 16px -6px rgba(0,0,0,.5); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform .15s ease, background .15s ease; }
-.cm-fab__btn:hover { transform: scale(1.06); background: var(--green-dark); }
-.cm-fab__btn .material-symbols-outlined { font-size: 26px; }
-
-/* ── Responsive ───────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-    .cm-page { padding: 10px 0 24px; }
-    .cm-header__title { font-size: 1.3125rem; }
-    .cm-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mkt-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; border-radius: 8px; border: none;
+    font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; font-family: var(--dp-font-sans); white-space: nowrap;
 }
+.mkt-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
+.mkt-btn--primary:hover { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
+.mkt-btn--muted { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
+.mkt-btn--muted:hover { background: var(--dp-surface-dim); }
+.mkt-btn--sm { padding: 6px 10px; }
+.mkt-btn--full { width: 100%; }
+
+.mkt-compare-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 768px) { .mkt-compare-grid { grid-template-columns: repeat(3, 1fr); } }
+.mkt-compare-card { background: var(--dp-surface-container-low); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
+.mkt-compare-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mkt-compare-rows { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+.mkt-compare-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--dp-surface-container-lowest); padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+
+.mkt-select { width: 100%; max-width: 220px; }
+.mkt-select :deep(.el-select__wrapper) { height: 30px !important; min-height: 30px !important; }
+.mkt-select :deep(.el-select__selected-item), .mkt-select :deep(.el-select__placeholder) { font-size: 12px !important; }
+
+.mkt-cost-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.mkt-cost-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--dp-surface-container-low); padding: 10px 12px; border-radius: 8px; }
+.mkt-total-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--dp-primary-fixed); color: var(--dp-on-primary-fixed); padding: 14px; border-radius: 8px; }
+.mkt-total-banner__label { text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; }
+.mkt-total-banner__sub { opacity: 0.8; }
+
+.mkt-logistics-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.mkt-logistics-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--dp-surface-container-low); padding: 12px; border-radius: 8px; }
+
+.mkt-weather-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 640px) { .mkt-weather-grid { grid-template-columns: 1fr 1fr; } }
+.mkt-weather-card { background: var(--dp-surface-container-low); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.mkt-weather-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.mkt-wire-list { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.mkt-wire-item { background: var(--dp-surface-container-low); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px; }
+.mkt-wire-item__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.mkt-cal-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.mkt-cal-item { display: flex; align-items: flex-start; gap: 10px; background: var(--dp-surface-container-low); padding: 10px; border-radius: 8px; }
+.mkt-cal-date { background: var(--dp-surface-container-lowest); border-radius: 6px; padding: 6px 10px; text-align: center; flex-shrink: 0; min-width: 56px; }
+
+.mkt-checklist-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 640px) { .mkt-checklist-grid { grid-template-columns: 1fr 1fr; } }
+.mkt-checklist-item { display: flex; align-items: flex-start; gap: 10px; background: var(--dp-surface-container-low); padding: 12px; border-radius: 8px; }
 </style>
