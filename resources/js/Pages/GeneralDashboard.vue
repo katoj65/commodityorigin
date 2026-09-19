@@ -135,7 +135,7 @@ function placeholderAction(label) {
         <section class="gd-card gd-hero">
             <div class="gd-hero__top">
                 <div>
-                    <h1 class="dp-display-md">Coffee Exchange</h1>
+                    <h1 class="dp-display-md">Market Intelligence</h1>
                     <p class="dp-body-md gd-muted">Here is what is happening across your physical coffee corridors, inventory, and trades today.</p>
                 </div>
                 <div class="gd-hero__stats">
