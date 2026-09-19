@@ -135,7 +135,7 @@ function placeholderAction(label) {
         <section class="gd-card gd-hero">
             <div class="gd-hero__top">
                 <div>
-                    <h1 class="dp-display-md">Coffee Intelligence</h1>
+                    <h1 class="dp-display-md">Coffee Exchange</h1>
                     <p class="dp-body-md gd-muted">Here is what is happening across your physical coffee corridors, inventory, and trades today.</p>
                 </div>
                 <div class="gd-hero__stats">
@@ -471,10 +471,11 @@ function placeholderAction(label) {
     border: none;
     border-bottom: 1px solid var(--dp-outline-variant);
     /* DesignPreviewLayout's .dp-main carries its own 48px top padding
-       (shared by every page it wraps) — pulled back up here so the hero
-       card sits flush under the header instead of leaving a dead gap,
-       same fix already applied on MarketPage.vue / MarketListings.vue. */
-    margin-top: -48px;
+       (shared by every page it wraps) — partially pulled back up here so
+       the hero card keeps some breathing room under the header instead of
+       sitting fully flush, same fix already applied on MarketPage.vue /
+       MarketListings.vue. */
+    margin-top: -24px;
 }
 .gd-hero__top { display: flex; flex-direction: column; gap: 16px; padding-bottom: 4px; }
 @media (min-width: 1024px) { .gd-hero__top { flex-direction: row; align-items: center; justify-content: space-between; } }

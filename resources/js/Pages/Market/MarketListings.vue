@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ElMessage } from 'element-plus';
 import {
@@ -10,7 +10,7 @@ import {
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
-defineProps({
+const props = defineProps({
     markets: { type: Array, default: () => [] },
     featuredLots: { type: Array, default: () => [] },
     calendarEvents: { type: Array, default: () => [] },
@@ -51,16 +51,67 @@ const macroFactors = [
     { label: 'Red Sea Shipping', value: 'Cape Reroute (+6d)', tone: 'secondary' },
 ];
 
-const priceTabs = ['All Markets', 'Robusta', 'Arabica', 'Uganda Floor'];
+const priceTabs = ['All Markets', 'Robusta', 'Arabica'];
 const priceTab = ref('All Markets');
 
-const benchmarkPrices = [
-    { name: 'Uganda Robusta', dot: 'primary', port: 'Mombasa (FOB)', grade: 'Screen 18', gradeTone: 'neutral', price: '$4.18', change: '+1.9%', changeTone: 'primary', vol: '420 MT', cta: 'View Lots' },
-    { name: 'Uganda Robusta', dot: 'primary', port: 'Mombasa (FOB)', grade: 'Screen 15', gradeTone: 'neutral', price: '$4.02', change: '+0.8%', changeTone: 'primary', vol: '310 MT', cta: 'View Lots' },
-    { name: 'Bugisu Arabica', dot: 'secondary', port: 'Mombasa (FOB)', grade: 'Grade AA', gradeTone: 'secondary', price: '$5.40', change: '-0.4%', changeTone: 'error', vol: '180 MT', cta: 'View Lots' },
-    { name: 'Rwenzori Natural', dot: 'secondary', port: 'Mombasa (FOB)', grade: 'Drugar Clean', gradeTone: 'neutral', price: '$4.85', change: '+2.1%', changeTone: 'primary', vol: '95 MT', cta: 'View Lots' },
-    { name: 'Vietnam Robusta', dot: 'neutral', port: 'Ho Chi Minh (FOB)', grade: 'Grade 2, 5%', gradeTone: 'neutral', price: '$4.42', change: '+3.2%', changeTone: 'primary', vol: '620 MT', cta: 'Compare' },
+const dummyBenchmarkPrices = [
+    { name: 'Uganda Robusta', dot: 'primary', port: 'Mombasa (FOB)', grade: 'Screen 18', gradeTone: 'neutral', price: '$4.18', change: '+1.9%', changeTone: 'primary', vol: '420 MT', cta: 'View' },
+    { name: 'Uganda Robusta', dot: 'primary', port: 'Mombasa (FOB)', grade: 'Screen 15', gradeTone: 'neutral', price: '$4.02', change: '+0.8%', changeTone: 'primary', vol: '310 MT', cta: 'View' },
+    { name: 'Bugisu Arabica', dot: 'secondary', port: 'Mombasa (FOB)', grade: 'Grade AA', gradeTone: 'secondary', price: '$5.40', change: '-0.4%', changeTone: 'error', vol: '180 MT', cta: 'View' },
+    { name: 'Rwenzori Natural', dot: 'secondary', port: 'Mombasa (FOB)', grade: 'Drugar Clean', gradeTone: 'neutral', price: '$4.85', change: '+2.1%', changeTone: 'primary', vol: '95 MT', cta: 'View' },
+    { name: 'Vietnam Robusta', dot: 'neutral', port: 'Ho Chi Minh (FOB)', grade: 'Grade 2, 5%', gradeTone: 'neutral', price: '$4.42', change: '+3.2%', changeTone: 'primary', vol: '620 MT', cta: 'View' },
 ];
+
+/* Real markets-table rows shaped to match the benchmark row layout, one
+   field at a time falling back to the matching dummy row wherever the
+   market record doesn't carry that data (no historical 24h change/volume
+   tracking exists yet, so those columns always fall back). */
+const benchmarkPrices = computed(() => {
+    if (!props.markets.length) return dummyBenchmarkPrices;
+
+    return props.markets.map((market, i) => {
+        const fallback = dummyBenchmarkPrices[i % dummyBenchmarkPrices.length];
+
+        return {
+            id: market.id,
+            name: market.name || fallback.name,
+            dot: fallback.dot,
+            port: market.origin || fallback.port,
+            grade: market.process || market.type || fallback.grade,
+            gradeTone: fallback.gradeTone,
+            price: market.price_per_kg ? `$${Number(market.price_per_kg).toFixed(2)}` : fallback.price,
+            change: fallback.change,
+            changeTone: fallback.changeTone,
+            vol: market.quantity ? `${market.quantity} ${market.unit || 'MT'}` : fallback.vol,
+            cta: 'View',
+        };
+    });
+});
+
+const filteredBenchmarkPrices = computed(() => {
+    if (priceTab.value === 'All Markets') return benchmarkPrices.value;
+
+    return benchmarkPrices.value.filter((row) => row.grade.toLowerCase().includes(priceTab.value.toLowerCase()) || row.name.toLowerCase().includes(priceTab.value.toLowerCase()));
+});
+
+/* ── Benchmark table pagination — 5 rows per page ───────────────────── */
+const benchmarkPage = ref(1);
+const benchmarkPageSize = 5;
+
+watch(priceTab, () => { benchmarkPage.value = 1; });
+
+const pagedBenchmarkPrices = computed(() => {
+    const start = (benchmarkPage.value - 1) * benchmarkPageSize;
+    return filteredBenchmarkPrices.value.slice(start, start + benchmarkPageSize);
+});
+
+function viewBenchmarkRow(row) {
+    if (row.id) {
+        router.visit(route('market.show', row.id));
+        return;
+    }
+    placeholderAction(`${row.cta} ${row.name}`);
+}
 
 const trendRanges = ['1M', '3M', '1Y'];
 const trendRange = ref('1M');
@@ -247,17 +298,29 @@ function placeholderAction(label) {
                             <tr><th>Commodity</th><th>Origin / Port</th><th>Grade</th><th>Spot ($/kg)</th><th>24h Chg</th><th>24h Volume</th><th class="mkt-right">Action</th></tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(row, i) in benchmarkPrices" :key="i">
+                            <tr v-if="!filteredBenchmarkPrices.length">
+                                <td colspan="7" class="mkt-center dp-caption mkt-muted">No listings match this filter.</td>
+                            </tr>
+                            <tr v-for="row in pagedBenchmarkPrices" :key="row.id ?? row.name">
                                 <td><span class="mkt-flex-icon mkt-strong"><span class="mkt-dot" :class="`mkt-dot--${row.dot}`"></span> {{ row.name }}</span></td>
                                 <td class="mkt-muted">{{ row.port }}</td>
                                 <td><span class="mkt-tag-mini" :class="`mkt-tag-mini--${row.gradeTone}`">{{ row.grade }}</span></td>
                                 <td class="mkt-strong dp-mono">{{ row.price }}</td>
                                 <td class="mkt-strong" :class="`mkt-icon--${row.changeTone}`">{{ row.change }}</td>
                                 <td class="mkt-muted dp-mono">{{ row.vol }}</td>
-                                <td class="mkt-right"><button type="button" class="mkt-link" @click="placeholderAction(row.cta)">{{ row.cta }}</button></td>
+                                <td class="mkt-right"><button type="button" class="mkt-link" @click="viewBenchmarkRow(row)">{{ row.cta }}</button></td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                <div v-if="filteredBenchmarkPrices.length" class="mkt-pagination">
+                    <el-pagination
+                        v-model:current-page="benchmarkPage"
+                        :page-size="benchmarkPageSize"
+                        :total="filteredBenchmarkPrices.length"
+                        layout="total, prev, pager, next"
+                        background
+                    />
                 </div>
                 <div class="mkt-footline">
                     <span class="dp-caption mkt-muted">Benchmark basis: 60kg export bags, seaworthy jute or grainpro lined.</span>
@@ -614,7 +677,7 @@ function placeholderAction(label) {
 .mkt-dot--secondary { background: var(--dp-secondary); }
 .mkt-dot--neutral { background: var(--dp-on-surface-variant); }
 
-.mkt-hero { border: none; border-bottom: 1px solid var(--dp-outline-variant); margin-top: -48px; }
+.mkt-hero { border: none; border-bottom: 1px solid var(--dp-outline-variant); margin-top: -24px; }
 .mkt-hero__top { display: flex; flex-direction: column; gap: 16px; }
 @media (min-width: 1024px) { .mkt-hero__top { flex-direction: row; align-items: center; justify-content: space-between; } }
 .mkt-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -677,8 +740,20 @@ function placeholderAction(label) {
 .mkt-table tbody tr:hover { background: var(--dp-surface-container-low); }
 .mkt-table td { padding: 12px; vertical-align: middle; }
 .mkt-right { text-align: right; }
+.mkt-center { text-align: center; padding: 24px 12px; }
 .mkt-cb-col { width: 30px; }
 .mkt-checkbox { accent-color: var(--dp-primary); width: 14px; height: 14px; }
+
+.mkt-pagination { padding-top: 12px; border-top: 1px solid var(--dp-outline-variant); }
+.mkt-pagination :deep(.el-pagination) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; font-family: var(--dp-font-sans); }
+.mkt-pagination :deep(.el-pagination__total) { margin-right: auto; font-size: 12px; font-weight: 600; color: var(--dp-on-surface-variant); }
+.mkt-pagination :deep(.btn-prev),
+.mkt-pagination :deep(.btn-next) { width: 28px; height: 28px; border-radius: 6px; background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); color: var(--dp-on-surface-variant); }
+.mkt-pagination :deep(.btn-prev:disabled),
+.mkt-pagination :deep(.btn-next:disabled) { opacity: 0.4; }
+.mkt-pagination :deep(.el-pager) { display: flex; align-items: center; gap: 4px; }
+.mkt-pagination :deep(.el-pager li) { min-width: 28px; height: 28px; border-radius: 6px; background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); color: var(--dp-on-surface); font-size: 12px; font-weight: 700; }
+.mkt-pagination :deep(.el-pager li.is-active) { background: var(--dp-primary); border-color: var(--dp-primary); color: var(--dp-on-primary); }
 
 .mkt-footline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--dp-outline-variant); font-size: 12px; }
 .mkt-link { font-weight: 700; color: var(--dp-primary); text-decoration: none; background: none; border: none; cursor: pointer; font-size: 12px; font-family: var(--dp-font-sans); }

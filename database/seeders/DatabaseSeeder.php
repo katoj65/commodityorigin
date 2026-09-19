@@ -89,6 +89,7 @@ class DatabaseSeeder extends Seeder
             AftertasteMetadataSeeder::class,
             AromaMetadataSeeder::class,
             OriginMetadataSeeder::class,
+            CommodityOriginMetadataSeeder::class,
             AgentSeeder::class,
             AgentFunctionSeeder::class,
             ExchangeRateSeeder::class,

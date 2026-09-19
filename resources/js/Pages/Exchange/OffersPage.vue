@@ -1,10 +1,10 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { ElMessage } from 'element-plus';
 import {
     CirclePlus, Histogram, Search, RefreshLeft, CircleCheck, ChatDotRound,
-    EditPen, Right, Coin, Promotion,
+    Right, Coin, Promotion,
     Files, Close, Refresh,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
@@ -12,6 +12,8 @@ import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 const props = defineProps({
     originOptions: { type: Array, default: () => [] },
     coffeeTypeOptions: { type: Array, default: () => [] },
+    offers: { type: Array, default: () => [] },
+    filters: { type: Object, default: () => ({}) },
 });
 
 /* ── Dummy Offers hub content — illustrative only ─────────────────── */
@@ -25,10 +27,10 @@ const statusTabs = [
     { key: 'expired', label: 'Expired', count: 2 },
 ];
 const activeTab = ref('all');
-const searchQuery = ref('');
-const originFilter = ref('all');
-const typeFilter = ref('all');
-const statusFilter = ref('active-first');
+const searchQuery = ref(props.filters.search ?? '');
+const originFilter = ref(props.filters.origin ?? 'all');
+const typeFilter = ref(props.filters.coffee_type ?? 'all');
+const statusFilter = ref(props.filters.status ?? 'active-first');
 
 const originOptions = computed(() => [
     { value: 'all', label: 'All Origins' },
@@ -46,11 +48,17 @@ const statusOptions = [
     { value: 'expired', label: 'Expired' },
 ];
 
-function resetFilters() {
-    searchQuery.value = '';
-    originFilter.value = 'all';
-    typeFilter.value = 'all';
-    statusFilter.value = 'active-first';
+function applyFilters() {
+    router.get(route('exchange.offers'), {
+        search: searchQuery.value || undefined,
+        origin: originFilter.value !== 'all' ? originFilter.value : undefined,
+        coffee_type: typeFilter.value !== 'all' ? typeFilter.value : undefined,
+        status: statusFilter.value !== 'active-first' ? statusFilter.value : undefined,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
 }
 
 const kpis = [
@@ -61,20 +69,10 @@ const kpis = [
     { icon: Coin, label: 'Pipeline Offer Value', value: '$248,500', note: 'Volume: 58 MT (966 bags)', mono: true },
 ];
 
-const offers = [
-    { id: 'OFF-1048', focus: true, name: 'Uganda Fine Robusta Screen 18', ref: 'ref LOT-UG-8821 · Screen 18+', origin: 'Mukono, UG', elevation: '1,200m ASL', qty: '20 MT', bags: '333 bags', price: '$4.05/kg', priceNote: 'FOB Mombasa', asking: '$4.20/kg', askingDelta: 'Δ -$0.15', counterparty: 'Green Coffee Traders Ltd', counterpartyNote: 'Tier-1 Escrow Verified', verified: true, validUntil: '24 Sep 2026', validNote: '14h remaining', status: 'Negotiating (R3)', statusTone: 'secondary', action: 'Review & Counter', actionTone: 'primary' },
-    { id: 'OFF-1047', name: 'Uganda Robusta FAQ', ref: 'ref LOT-UG-7719', origin: 'Masaka, UG', elevation: '1,150m ASL', qty: '10 MT', bags: '166 bags', price: '$3.92/kg', priceNote: 'FOB Mombasa', asking: '$4.00/kg', askingDelta: 'Δ -$0.08', counterparty: 'Bean Origin Global Trade Desk', counterpartyNote: 'Direct Buyer Institutional', validUntil: '25 Sep 2026', validNote: '38h remaining', status: 'Received', statusTone: 'primary', action: 'Respond', actionTone: 'muted' },
-    { id: 'OFF-1045', name: 'Brazil Santos NY2/3 Screen 17/18', ref: 'ref LOT-BR-4902', origin: 'Minas Gerais, BR', elevation: '980m ASL', qty: '15 MT', bags: '250 bags', price: '$5.30/kg', priceNote: 'FOB Santos', asking: '$5.30/kg', askingDelta: 'Parity 100%', counterparty: 'Global Coffee Buyer Inc', counterpartyNote: 'Rotterdam Escrow A/C', validUntil: 'Executed', validNote: 'ORD-1092', status: 'Accepted', statusTone: 'accepted', action: 'View Order', actionTone: 'muted', isOrderLink: true },
-    { id: 'OFF-1042', name: 'Bugisu Arabica AA Washed', ref: 'ref LOT-UG-3112 · Grade 1', origin: 'Mt. Elgon, UG', elevation: '1,850m ASL', qty: '25 MT', bags: '416 bags', price: '$5.12/kg', priceNote: 'FOB Mombasa', asking: '$5.25/kg', askingDelta: 'Δ -$0.13', counterparty: 'Hamburg Specialty Roasters GmbH', counterpartyNote: 'Direct Importer', validUntil: '23 Sep 2026', validNote: 'Waiting on buyer', status: 'Countered (Sent)', statusTone: 'tertiary', action: 'View History', actionTone: 'muted' },
-    { id: 'OFF-1039', name: 'Rwenzori Natural Drugar', ref: 'ref LOT-UG-6501', origin: 'Kasese, UG', elevation: '1,400m ASL', qty: '12 MT', bags: '200 bags', price: '$4.55/kg', priceNote: 'FOB Mombasa', asking: '$4.80/kg', askingDelta: 'Δ -$0.25', counterparty: 'Jebel Ali Importers FZCO', counterpartyNote: 'Dubai, UAE', validUntil: 'Expired', validNote: '18 Sep 2026', status: 'Expired', statusTone: 'neutral', action: 'Re-list', actionTone: 'muted', faded: true },
-];
+const offers = computed(() => props.offers);
 
-/* ── Modals — inert dummy interactivity, nothing persisted ──────────── */
+/* ── Modal — inert dummy interactivity, nothing persisted ────────────── */
 const createOfferOpen = ref(false);
-const counterOfferOpen = ref(false);
-
-const counterForm = reactive({ price: 4.15, qty: 20 });
-const counterTotal = computed(() => Math.round(counterForm.price * counterForm.qty * 1000));
 
 const createForm = reactive({
     lot: 'LOT-UG-8821 · Mukono Fine Robusta Screen 18 (120 MT available)',
@@ -86,19 +84,6 @@ const createForm = reactive({
 
 function placeholderAction(label) {
     ElMessage.info(`${label} (dummy preview).`);
-}
-
-function handleOfferAction(offer) {
-    if (offer.action === 'Review & Counter' || offer.action === 'Respond') {
-        counterOfferOpen.value = true;
-        return;
-    }
-    placeholderAction(`${offer.action} ${offer.id}`);
-}
-
-function submitCounter() {
-    counterOfferOpen.value = false;
-    ElMessage.success('Counter-offer transmitted to Green Coffee Traders Ltd (dummy preview).');
 }
 
 function submitCreateOffer() {
@@ -181,7 +166,7 @@ function submitCreateOffer() {
                     </div>
                     <div class="ex-ft-field ex-ft-field--clear">
                         <label class="ex-ft-label">&nbsp;</label>
-                        <el-button class="ex-ft-clear" title="Clear filters" :icon="RefreshLeft" @click="resetFilters">Clear</el-button>
+                        <el-button class="ex-ft-clear" title="Apply filters" :icon="RefreshLeft" @click="applyFilters">Filter</el-button>
                     </div>
                 </div>
 
@@ -213,8 +198,7 @@ function submitCreateOffer() {
                                     <div class="dp-caption ex-muted dp-mono">{{ offer.validUntil }}</div>
                                 </td>
                                 <td class="ex-right">
-                                    <Link v-if="offer.isOrderLink" :href="route('orders.index')" class="ex-btn ex-btn--muted ex-btn--sm">{{ offer.action }}</Link>
-                                    <button v-else type="button" class="ex-btn ex-btn--sm" :class="`ex-btn--${offer.actionTone}`" @click="handleOfferAction(offer)">{{ offer.action }}</button>
+                                    <Link :href="route('exchange.offers.show', offer.recordId)" class="ex-btn ex-btn--sm" :class="`ex-btn--${offer.actionTone}`">{{ offer.action }}</Link>
                                 </td>
                             </tr>
                         </tbody>
@@ -229,64 +213,6 @@ function submitCreateOffer() {
                 </div>
             </section>
         </div>
-
-        <!-- MODAL: Counter-Offer -->
-        <el-dialog v-model="counterOfferOpen" width="min(560px, calc(100vw - 2rem))" align-center :show-close="false" class="ex-modal">
-            <template #header>
-                <div class="ex-modal-head">
-                    <div class="ex-modal-head__icon"><el-icon :size="18"><EditPen /></el-icon></div>
-                    <div>
-                        <div class="dp-caption ex-icon--primary ex-eyebrow">Negotiation Turn #4</div>
-                        <div class="dp-headline-sm ex-strong">Submit Counter-Offer</div>
-                        <div class="dp-caption ex-muted">Counterparty: Green Coffee Traders Ltd · Ref OFF-1048</div>
-                    </div>
-                    <button type="button" class="ex-modal-close" @click="counterOfferOpen = false"><el-icon :size="14"><Close /></el-icon></button>
-                </div>
-            </template>
-            <div class="ex-modal-body">
-                <div class="ex-field-grid">
-                    <div class="ex-field">
-                        <label>Counter Price ($/kg)</label>
-                        <input v-model.number="counterForm.price" type="number" step="0.01" />
-                    </div>
-                    <div class="ex-field">
-                        <label>Quantity (MT)</label>
-                        <input v-model.number="counterForm.qty" type="number" />
-                    </div>
-                </div>
-                <div class="ex-field-grid">
-                    <div class="ex-field">
-                        <label>Incoterms</label>
-                        <select><option>FOB Mombasa (Kenya)</option><option>CIF Jebel Ali (Dubai)</option><option>CFR Genoa (Italy)</option></select>
-                    </div>
-                    <div class="ex-field">
-                        <label>Validity Window</label>
-                        <select><option>24 Hours</option><option>48 Hours</option><option>7 Calendar Days</option></select>
-                    </div>
-                </div>
-                <div class="ex-field">
-                    <label>Escrow &amp; Payment Schedule</label>
-                    <select><option>Stanbic Escrow: 30% deposit upon trade / 70% SGS bill of lading</option><option>Stanbic Escrow: 100% upfront institutional escrow</option><option>Direct commercial letter of credit (LC at sight)</option></select>
-                </div>
-                <div class="ex-field">
-                    <label>Commercial Note to Buyer</label>
-                    <textarea rows="3">FOB Mombasa counter reflects certified CQI 84.5 cup score and guaranteed zero insect defect lots ready at Mombasa consolidation warehouse.</textarea>
-                </div>
-                <div class="ex-total-box">
-                    <div>
-                        <span class="dp-caption ex-icon--primary ex-eyebrow">Total Proposed Value</span>
-                        <div class="dp-headline-sm ex-icon--primary dp-mono">${{ counterTotal.toLocaleString() }} USD</div>
-                    </div>
-                    <span class="dp-caption ex-icon--primary dp-mono">{{ (counterForm.qty * 1000).toLocaleString() }} kg @ ${{ counterForm.price.toFixed(2) }}/kg</span>
-                </div>
-            </div>
-            <template #footer>
-                <div class="ex-actions-inline ex-actions-inline--end">
-                    <button type="button" class="ex-btn ex-btn--muted" @click="counterOfferOpen = false">Cancel</button>
-                    <button type="button" class="ex-btn ex-btn--primary" @click="submitCounter">Transmit Counter-Offer</button>
-                </div>
-            </template>
-        </el-dialog>
 
         <!-- MODAL: Create Offer -->
         <el-dialog v-model="createOfferOpen" width="min(640px, calc(100vw - 2rem))" align-center :show-close="false" class="ex-modal">
@@ -473,7 +399,7 @@ function submitCreateOffer() {
 .ex-center { text-align: center; }
 .ex-right { text-align: right; }
 
-.ex-footline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 4px; }
+.ex-footline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--dp-outline-variant); }
 .ex-actions-inline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ex-actions-inline--end { justify-content: flex-end; }
 

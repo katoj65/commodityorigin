@@ -98,6 +98,7 @@ Route::middleware([
     Route::prefix('exchange')->name('exchange.')->group(function () {
         Route::get('/', [ExchangeController::class, 'index'])->name('index');
         Route::get('/offers', [ExchangeController::class, 'offers'])->name('offers');
+        Route::get('/offers/{offer}', [ExchangeController::class, 'offerProfile'])->name('offers.show');
     });
 
     // System settings.

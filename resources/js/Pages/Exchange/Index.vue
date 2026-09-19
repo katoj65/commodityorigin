@@ -15,6 +15,7 @@ const props = defineProps({
         type: Object,
         default: () => ({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 } }),
     },
+    openOffersCount: { type: Number, default: 0 },
 });
 
 const visibleLotPages = computed(() => {
@@ -53,13 +54,13 @@ const headerActions = [
     { icon: DocumentAdd, label: 'Create RFQ', tone: 'muted', accent: 'primary' },
 ];
 
-const exchangeTabs = [
+const exchangeTabs = computed(() => [
     { key: 'market', icon: Shop, label: 'Market', count: '86 Lots', routeName: 'exchange.index' },
-    { key: 'offers', icon: Connection, label: 'Offers', count: '6 Active', routeName: 'exchange.offers' },
+    { key: 'offers', icon: Connection, label: 'Offers', count: `${props.openOffersCount} Open`, routeName: 'exchange.offers' },
     { key: 'rfqs', icon: DocumentChecked, label: 'RFQs', count: '18 Requests', routeName: 'rfq.index' },
     { key: 'auctions', icon: Trophy, label: 'Auctions', count: '4 Live', routeName: 'auction.index' },
     { key: 'trades', icon: Refresh, label: 'My Trades', count: '3 In-Flight', routeName: 'orders.index' },
-];
+]);
 
 function goToTab(tab) {
     if (route().current(tab.routeName)) {
