@@ -344,7 +344,7 @@ function placeholderAction(label) {
                 </div>
                 <div class="gd-footline">
                     <span class="dp-caption gd-muted">Total active physical trades volume: <strong class="gd-on">60 MT ($276,750 USD)</strong></span>
-                    <a href="#" class="gd-link" @click.prevent="router.visit(route('trade.index'))">Complete Trade Ledger →</a>
+                    <a href="#" class="gd-link" @click.prevent="router.visit(route('orders.index'))">Complete Trade Ledger →</a>
                 </div>
             </div>
         </section>

@@ -138,9 +138,6 @@ const archiveRight = [
 /* ── Verification chips ─────────────────────────────────────────────── */
 const verifyChips = ['Business Verified', 'Origin Verified', 'Quality Verified', 'Traceability Available', 'EUDR Deforestation Free'];
 
-/* ── AI pipeline ─────────────────────────────────────────────────────── */
-const aiPipeline = ['Understand', 'Search', 'Compare', 'Recommend', 'Prepare Contract', 'Confirm & Execute'];
-
 /* ── Scrollspy ───────────────────────────────────────────────────────── */
 const activeSection = ref('overview');
 let observer;
@@ -174,21 +171,11 @@ onBeforeUnmount(() => {
         <div class="wp-guide bg-white min-h-screen">
             <div class="lg:flex">
                 <!-- Sidebar -->
-                <aside class="wp-guide-sidebar hidden lg:flex lg:flex-col fixed left-0 w-[270px] bg-white border-r border-[#e2e8e0] overflow-y-auto" style="top: 80px; height: calc(100vh - 80px);">
-                    <div class="p-5 flex-1">
-                        <div class="flex items-center gap-2 mb-5 pb-4 border-b border-[#e2e8e0]">
-                            <div class="w-8 h-8 rounded-lg bg-[#0d631b] text-white flex items-center justify-center flex-shrink-0">
-                                <el-icon :size="15"><Box /></el-icon>
-                            </div>
-                            <div>
-                                <div class="text-sm font-bold text-[#181d17] leading-tight">Bean Origin</div>
-                                <div class="text-[11px] text-[#6b7568]">Knowledge & Product Guide</div>
-                            </div>
-                        </div>
-
+                <aside class="wp-guide-sidebar hidden lg:flex lg:flex-col sticky self-start left-0 w-[270px] flex-shrink-0 bg-white border-r border-[#e2e8e0] overflow-y-auto" style="top: 80px; max-height: calc(100vh - 80px);">
+                    <div class="p-[20px] flex-1">
                         <nav>
                             <template v-for="group in navGroups" :key="group.category">
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] mt-5 mb-1.5 px-2.5 first:mt-0">{{ group.category }}</div>
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] mt-[20px] mb-1.5 px-2.5 first:mt-0">{{ group.category }}</div>
                                 <a
                                     v-for="link in group.links" :key="link.id"
                                     :href="`#${link.id}`"
@@ -202,15 +189,15 @@ onBeforeUnmount(() => {
                         </nav>
                     </div>
 
-                    <div class="p-5 pt-3 border-t border-[#e2e8e0]">
-                        <Link :href="route('exchange.index')" class="wp-guide-cta">
+                    <div class="p-[20px] pt-[12px] border-t border-[#e2e8e0]">
+                        <Link :href="route('exchange-snapshot.index')" class="wp-guide-cta">
                             <el-icon :size="13"><TopRight /></el-icon> Open Live Exchange
                         </Link>
                     </div>
                 </aside>
 
                 <!-- Main content -->
-                <main class="wp-guide-content lg:ml-[270px] w-full max-w-[1080px] px-4 md:px-12 py-8 md:py-10 pb-20">
+                <main class="wp-guide-content w-full max-w-[1080px] px-4 md:px-12 py-8 md:py-10 pb-20">
                     <div class="flex items-center gap-2 mb-3 text-[#94a3b8] text-[13px]">
                         <span>Documentation</span><span>/</span><span class="text-[#181d17] font-medium">How Bean Origin Works</span>
                     </div>
@@ -223,7 +210,7 @@ onBeforeUnmount(() => {
                         </div>
                         <h1 class="text-3xl font-bold text-[#181d17] mb-2">How Bean Origin Works</h1>
                         <p class="text-lg text-[#40493d] mb-4">A simple journey from physical coffee to global digital trade.</p>
-                        <div class="bg-[#f7fbf0] border border-[#e2e8e0] rounded-xl p-4 text-sm leading-relaxed text-[#40493d]">
+                        <div class="bg-[#f7fbf0] rounded-xl p-4 text-sm leading-relaxed text-[#40493d]">
                             <strong class="text-[#181d17]">Bean Origin connects coffee supply with global demand.</strong> Coffee is recorded directly at its origin, aggregated and milled with scientific rigor, published as verified trading units on the digital Exchange, and escorted through automated escrow order, multi-tier payment, maritime fulfilment, and verified delivery.
                         </div>
                     </section>
@@ -250,17 +237,17 @@ onBeforeUnmount(() => {
                     <section id="step-1-add-coffee" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="wp-step-badge">1</span>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 1 — Add Coffee & Farm Collection</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 1: Add Coffee & Farm Collection</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">Record exactly where the coffee comes from. Producers and cooperatives record verified farm registries and intake cherry batches immediately upon harvest.</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                            <div class="bg-[#f7fbf0] border border-[#e2e8e0] rounded-lg p-3">
+                            <div class="bg-[#f7fbf0] rounded-lg p-3">
                                 <div class="text-xs font-semibold text-[#181d17] mb-2 flex items-center gap-1"><el-icon :size="13" class="text-[#0d631b]"><CircleCheckFilled /></el-icon> Captured Data Parameters</div>
                                 <div class="flex flex-wrap gap-1.5">
                                     <span v-for="p in capturedParams" :key="p" class="wp-tag">{{ p }}</span>
                                 </div>
                             </div>
-                            <div class="bg-[#f7fbf0] border border-[#e2e8e0] rounded-lg p-3">
+                            <div class="bg-[#f7fbf0] rounded-lg p-3">
                                 <div class="text-xs font-semibold text-[#181d17] mb-2">Purpose for Buyers & Roasters</div>
                                 <p class="text-xs text-[#6b7568] m-0">Guarantees 100% smallholder provenance and zero-deforestation EUDR compliance before cherry milling begins. Every single bean is anchored to verified land parcels.</p>
                             </div>
@@ -275,13 +262,13 @@ onBeforeUnmount(() => {
                     <section id="step-2-batch" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="wp-step-badge">2</span>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 2 — Build a Batch</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 2: Build a Batch</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">Combine and process collected cherries. Wet and dry mills aggregate multiple collections into a homogeneous operational batch, tracking milling transformations.</p>
                         <div class="border border-[#e2e8e0] rounded-lg overflow-x-auto mb-4">
                             <table class="w-full text-xs border-collapse min-w-[520px]">
                                 <thead>
-                                    <tr class="bg-[#f7fbf0] border-b border-[#e2e8e0]">
+                                    <tr class="bg-[#f7fbf0]">
                                         <th class="text-left font-semibold text-[#181d17] px-3 py-2">Operational Metric</th>
                                         <th class="text-left font-semibold text-[#181d17] px-3 py-2">Recorded Parameters</th>
                                         <th class="text-left font-semibold text-[#181d17] px-3 py-2">Standard Threshold</th>
@@ -306,10 +293,10 @@ onBeforeUnmount(() => {
                     <section id="step-3-lot" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="wp-step-badge">3</span>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 3 — Create a Lot</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 3: Create a Lot</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">Turn processed coffee into a commercial trading unit. A Lot represents an export-grade container-ready volume with official cupping analysis and custody documentation.</p>
-                        <div class="bg-[#f7fbf0] border border-[#e2e8e0] rounded-lg p-3 mb-4">
+                        <div class="bg-[#f7fbf0] rounded-lg p-3 mb-4">
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <div><span class="block text-[11px] text-[#94a3b8]">Commercial Spec</span><span class="font-bold font-mono text-sm text-[#181d17]">Screen 18+ / AA</span></div>
                                 <div><span class="block text-[11px] text-[#94a3b8]">Export Container</span><span class="font-bold font-mono text-sm text-[#181d17]">1 FCL (19,200 kg)</span></div>
@@ -327,7 +314,7 @@ onBeforeUnmount(() => {
                     <section id="step-4-product" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="wp-step-badge">4</span>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 4 — Create a Product</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 4: Create a Product</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">Present coffee cleanly to buyers. The Product Profile serves as the public-facing Digital Product Passport (DPP), summarizing commercial, sensory, and origin attributes without overwhelming technical jargon.</p>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
@@ -351,10 +338,10 @@ onBeforeUnmount(() => {
                     <section id="step-5-exchange" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="wp-step-badge">5</span>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 5 — Enter the Exchange</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 5: Enter the Exchange</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">Bring coffee to the marketplace. Sellers publish verified lots into direct liquidity pools, where international roasters, traders, and importers discover and benchmark physical inventories.</p>
-                        <div class="bg-[#f7fbf0] border border-[#e2e8e0] rounded-lg p-3 mb-4">
+                        <div class="bg-[#f7fbf0] rounded-lg p-3 mb-4">
                             <div class="text-xs font-semibold text-[#181d17] mb-2">Search & Match Filters Available on Exchange</div>
                             <div class="flex flex-wrap gap-1.5 text-xs">
                                 <span class="wp-tag wp-tag--white">Coffee Variety (Arabica / Robusta)</span>
@@ -371,7 +358,7 @@ onBeforeUnmount(() => {
                     <section id="trading-methods" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="wp-step-badge">6</span>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 6 — Choose How You Trade</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 6: Choose How You Trade</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">Bean Origin supports four institutional execution models tailored to commercial flexibility and pricing discovery:</p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -389,8 +376,8 @@ onBeforeUnmount(() => {
                     </section>
 
                     <!-- BUYING JOURNEY -->
-                    <section id="buying-journey" class="wp-guide-card wp-guide-card--accent" style="--accent-color: #0d631b;">
-                        <h4 class="text-lg font-bold text-[#181d17] mb-1">How Buying Works — Sourcing Journey</h4>
+                    <section id="buying-journey" class="wp-guide-card wp-guide-card--accent">
+                        <h4 class="text-lg font-bold text-[#181d17] mb-1">How Buying Works: The Sourcing Journey</h4>
                         <p class="text-sm text-[#6b7568] mb-3">Six clear steps for roasters, commodity desks, and importers:</p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
                             <div v-for="s in buyingSteps" :key="s.n" class="bg-white border border-[#e2e8e0] rounded-lg p-3">
@@ -402,8 +389,8 @@ onBeforeUnmount(() => {
                     </section>
 
                     <!-- SELLING JOURNEY -->
-                    <section id="selling-journey" class="wp-guide-card wp-guide-card--accent" style="--accent-color: #b45309;">
-                        <h4 class="text-lg font-bold text-[#181d17] mb-1">How Selling Works — Producer & Exporter Flow</h4>
+                    <section id="selling-journey" class="wp-guide-card wp-guide-card--accent">
+                        <h4 class="text-lg font-bold text-[#181d17] mb-1">How Selling Works: Producer & Exporter Flow</h4>
                         <p class="text-sm text-[#6b7568] mb-3">Direct international liquidation with zero payment default risks:</p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
                             <div v-for="s in sellingSteps" :key="s.n" class="bg-white border border-[#e2e8e0] rounded-lg p-3">
@@ -418,10 +405,10 @@ onBeforeUnmount(() => {
                     <section id="step-7-order" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="wp-step-badge">7</span>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 7 — Turn Trades Into Binding Orders</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 7: Turn Trades Into Binding Orders</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">Once an agreement is formed across any trading channel, Bean Origin automatically generates an immutable commercial contract and master trade order.</p>
-                        <div class="border border-[#e2e8e0] rounded-lg p-3 bg-[#f7fbf0] mb-4">
+                        <div class="rounded-lg p-3 bg-[#f7fbf0] mb-4">
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 font-mono text-xs text-[#181d17]">
                                 <div><strong>Contract ID:</strong> #ORD-2026-0941</div>
                                 <div><strong>Buyer:</strong> Nordic Roasters ApS</div>
@@ -436,7 +423,7 @@ onBeforeUnmount(() => {
                     <section id="step-8-payment" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="wp-step-badge">8</span>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 8 — Financial Settlement & Escrow</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 8: Financial Settlement & Escrow</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">Zero default risk for producers; zero non-delivery risk for international buyers. Capital is held in audited Tier-1 Stanbic Bank custody until delivery milestones are met.</p>
                         <div class="border border-[#e2e8e0] rounded-lg p-3 mb-4">
@@ -458,10 +445,10 @@ onBeforeUnmount(() => {
                     <section id="step-9-fulfilment" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="wp-step-badge">9</span>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 9 — Fulfilment & Trans-Continental Logistics</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 9: Fulfilment & Trans-Continental Logistics</h3>
                         </div>
-                        <p class="text-sm text-[#40493d] mb-3">Seamlessly move coffee from East African dry mills via bonded rail corridors directly into ocean carriers at Port of Mombasa.</p>
-                        <div class="border border-[#e2e8e0] rounded-lg p-3 bg-[#f7fbf0] mb-4">
+                        <p class="text-sm text-[#40493d] mb-3">Move coffee from East African dry mills via bonded rail corridors directly into ocean carriers at Port of Mombasa.</p>
+                        <div class="rounded-lg p-3 bg-[#f7fbf0] mb-4">
                             <div class="text-xs font-semibold text-[#181d17] mb-2">Live Corridor Milestone Tracking</div>
                             <div class="h-1.5 rounded-full bg-[#e2e8e0] overflow-hidden mb-2">
                                 <div class="h-full bg-[#0d631b] rounded-full" style="width: 75%;"></div>
@@ -480,7 +467,7 @@ onBeforeUnmount(() => {
                     <section id="step-10-completed" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="wp-step-badge">10</span>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 10 — Trade Completion & Permanent Master Ledger</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Step 10: Trade Completion & Permanent Master Ledger</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">When physical cargo discharge and financial releases conclude, the transaction is codified into the Bean Origin permanent archive with cryptographic proof.</p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -504,10 +491,10 @@ onBeforeUnmount(() => {
                     <section id="traceability" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <el-icon :size="20" class="text-[#0d631b]"><MapLocation /></el-icon>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Follow the Coffee — Traceability Architecture</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Follow the Coffee: How Traceability Works</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">Bean Origin connects commercial coffee products directly back to the physical farms and trees behind them. Traceability is never retrofitted; it is established at the cherry scale.</p>
-                        <div class="bg-[#f7fbf0] border border-[#e2e8e0] rounded-lg p-3 mb-3 flex items-center justify-center flex-wrap gap-2 font-mono text-xs font-semibold text-[#181d17]">
+                        <div class="bg-[#f7fbf0] rounded-lg p-3 mb-3 flex items-center justify-center flex-wrap gap-2 font-mono text-xs font-semibold text-[#181d17]">
                             <span class="bg-white border border-[#e2e8e0] rounded px-2.5 py-1.5">Farm</span>
                             <el-icon :size="12" class="text-[#94a3b8]"><Right /></el-icon>
                             <span class="bg-white border border-[#e2e8e0] rounded px-2.5 py-1.5">Collection</span>
@@ -527,7 +514,7 @@ onBeforeUnmount(() => {
                     <section id="verification" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <el-icon :size="20" class="text-[#1e40af]"><Medal /></el-icon>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Know Who You Are Trading With — Verification Standards</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Know Who You're Trading With: Verification Standards</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">To maintain institutional integrity, Bean Origin verifies credentials across participants, agricultural assets, and legal documents:</p>
                         <div class="flex flex-wrap gap-2 mb-3">
@@ -537,10 +524,10 @@ onBeforeUnmount(() => {
                     </section>
 
                     <!-- TRUST & ONE CONNECTED RECORD -->
-                    <section id="trust-and-data" class="wp-guide-card" style="border-color: #0d631b;">
+                    <section id="trust-and-data" class="wp-guide-card">
                         <h3 class="text-base font-bold text-[#181d17] mb-2">One Coffee Record, Connected Throughout the Journey</h3>
                         <p class="text-sm text-[#40493d] mb-3">Physical commodity integrity relies on a strict single-source-of-truth data model:</p>
-                        <div class="border border-[#e2e8e0] rounded-lg p-3 bg-[#f7fbf0] mb-3">
+                        <div class="rounded-lg p-3 bg-[#f7fbf0] mb-3">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                                 <div class="md:border-r border-[#e2e8e0] md:pr-3">
                                     <strong class="text-[#181d17]">Farm Collection:</strong>
@@ -552,7 +539,7 @@ onBeforeUnmount(() => {
                                 </div>
                                 <div>
                                     <strong class="text-[#181d17]">Product & Trade:</strong>
-                                    <div class="text-[#6b7568] mt-0.5">Liquidates exact lot volume — impossible to double-sell.</div>
+                                    <div class="text-[#6b7568] mt-0.5">Liquidates exact lot volume, so double-selling is impossible.</div>
                                 </div>
                             </div>
                         </div>
@@ -563,11 +550,11 @@ onBeforeUnmount(() => {
                     <section id="ai-commerce" class="wp-guide-card">
                         <div class="flex items-center gap-2 mb-3">
                             <el-icon :size="20" class="text-[#0d631b]"><Cpu /></el-icon>
-                            <h3 class="text-base font-bold text-[#181d17] m-0">Trade With AI — Conversational Sourcing Copilot</h3>
+                            <h3 class="text-base font-bold text-[#181d17] m-0">Trade With AI: A Conversational Sourcing Copilot</h3>
                         </div>
                         <p class="text-sm text-[#40493d] mb-3">Instead of manual navigation through nested filter tables, institutional buyers can execute complex natural-language sourcing directly through the Bean Origin AI Trading Copilot.</p>
 
-                        <div class="border border-[#e2e8e0] rounded-lg p-3 bg-[#f7fbf0] mb-4">
+                        <div class="rounded-lg p-3 bg-[#f7fbf0] mb-4">
                             <div class="mb-3 text-right">
                                 <span class="block text-[11px] text-[#94a3b8] mb-1">Trader</span>
                                 <div class="wp-ai-bubble wp-ai-bubble--user">"Find me 10 tonnes of Ugandan Robusta Screen 18+ under $4.10/kg FOB Mombasa with EUDR compliance."</div>
@@ -584,28 +571,20 @@ onBeforeUnmount(() => {
                                 </div>
                             </div>
                         </div>
-
-                        <div class="flex items-center justify-between p-2.5 bg-white border border-[#e2e8e0] rounded-lg text-xs text-[#94a3b8] flex-wrap gap-2">
-                            <template v-for="(stage, i) in aiPipeline" :key="stage">
-                                <span class="font-semibold" :class="i === aiPipeline.length - 1 ? 'text-[#0d631b]' : 'text-[#181d17]'">{{ stage }}</span>
-                                <el-icon v-if="i < aiPipeline.length - 1" :size="11"><Right /></el-icon>
-                            </template>
-                        </div>
                     </section>
 
                     <!-- FINAL CTA -->
-                    <section class="p-6 bg-[#f7fbf0] border border-[#e2e8e0] rounded-xl text-center my-10">
+                    <section class="p-6 bg-[#f7fbf0] rounded-xl text-center my-10">
                         <h3 class="text-xl font-bold text-[#181d17] mb-2">Ready to Explore Bean Origin?</h3>
                         <p class="text-sm text-[#6b7568] max-w-lg mx-auto mb-4">Whether you are an international roaster seeking verified single origins or an East African producer preparing export lots, the digital exchange is open for trade.</p>
                         <div class="flex justify-center gap-2 flex-wrap">
-                            <Link :href="route('exchange.index')" class="wp-btn-guide-primary"><el-icon :size="12"><Shop /></el-icon> Explore Coffee Exchange</Link>
+                            <Link :href="route('exchange-snapshot.index')" class="wp-btn-guide-primary"><el-icon :size="12"><Shop /></el-icon> Explore Coffee Exchange</Link>
                             <Link :href="route('market.live')" class="wp-btn-guide-outline"><el-icon :size="12"><Operation /></el-icon> Start Trading</Link>
                             <a href="#ai-commerce" class="wp-btn-guide-ai"><el-icon :size="12"><Cpu /></el-icon> Try AI Commerce</a>
                         </div>
                     </section>
 
-                    <footer class="pt-4 mt-6 border-t border-[#e2e8e0] flex flex-col sm:flex-row justify-between items-center gap-2 text-[#94a3b8] text-xs">
-                        <div>© 2026 Bean Origin Physical Commodity Exchange. All documentation verified by UCDA Charter.</div>
+                    <footer class="pt-4 mt-6 border-t border-[#e2e8e0] flex justify-end items-center text-[#94a3b8] text-xs">
                         <a href="#overview" class="text-[#94a3b8] hover:text-[#0d631b] no-underline">Back to top ↑</a>
                     </footer>
                 </main>
@@ -650,14 +629,11 @@ onBeforeUnmount(() => {
 
 .wp-guide-card {
     background: #ffffff;
-    border: 1px solid #e2e8e0;
     border-radius: 10px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    transition: border-color 0.2s ease;
 }
-.wp-guide-card:hover { border-color: #bfcaba; }
-.wp-guide-card--accent { border-left: 4px solid var(--accent-color, #0d631b); background: #f7fbf0; }
+.wp-guide-card--accent { background: #f7fbf0; }
 
 .wp-step-badge {
     display: inline-flex;

@@ -27,12 +27,10 @@ const props = defineProps({
     gradeOptions: { type: Array, default: () => [] },
 });
 
-// Offers/My Trades have no real count wired through yet, so those two tabs
-// stay static — Market/RFQs/Auctions already receive real data via props.
+// My Trades has no real count wired through yet, so it stays static —
+// RFQs/Auctions already receive real data via props.
 const tabs = computed(() => [
-    { key: 'market', label: 'Market', icon: 'storefront', count: props.marketCount, route: 'trade.index' },
     { key: 'rfqs', label: 'RFQs', icon: 'description', count: props.requestCount, route: 'rfq.index' },
-    { key: 'offers', label: 'Offers', icon: 'forum', count: 8, route: 'trade.offer' },
     { key: 'auctions', label: 'Auctions', icon: 'gavel', count: props.auctionCount, route: 'auction.index' },
     { key: 'my-trades', label: 'My Trades', icon: 'receipt_long', count: 16, route: 'orders.index' },
 ]);

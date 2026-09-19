@@ -10,12 +10,12 @@ import {
     Document,
     FirstAidKit,
     Grid,
+    Histogram,
     House,
     MagicStick,
     Picture,
     Postcard,
     School,
-    Sell,
     Shop,
     ShoppingBag,
     Sunny,
@@ -58,7 +58,7 @@ const sideSections = computed(() => [
         items: [
             { label: 'Browse Coffee', href: route('market.index'), active: route().current('market.index'), icon: Compass },
             { label: 'Live Market', href: route('market.active'), active: route().current('market.active'), icon: TrendCharts },
-            { label: 'Trade', href: route('trade.index'), active: route().current('trade.*'), icon: Sell },
+            { label: 'Exchange', href: route('exchange.index'), active: route().current('exchange.*'), icon: Histogram },
             { label: 'Auctions', href: route('auction.index'), active: route().current('auction.*'), icon: Trophy },
             { label: 'My Store', href: route('store.show'), active: route().current('store.*'), icon: Shop },
         ],
@@ -155,11 +155,11 @@ function go(item) {
                 </div>
                 <div
                     class="app-nav-item"
-                    :class="{ 'app-nav-item--active': route().current('trade.*') }"
-                    @click="router.visit(route('trade.index'))"
+                    :class="{ 'app-nav-item--active': route().current('exchange.*') }"
+                    @click="router.visit(route('exchange.index'))"
                 >
-                    <el-icon :size="18"><Sell /></el-icon>
-                    <span class="app-nav-item__label">Trade</span>
+                    <el-icon :size="18"><Histogram /></el-icon>
+                    <span class="app-nav-item__label">Exchange</span>
                 </div>
                 <div
                     class="app-nav-item"

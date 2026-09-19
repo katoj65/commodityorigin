@@ -1,640 +1,615 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
 import { ElMessage } from 'element-plus';
 import {
-    Grid,
-    List,
-    CircleCheckFilled,
-    LocationFilled,
-    Shop,
-    Tickets,
-    Files,
-    Notebook,
-    SwitchButton,
-    Coin,
-    Lock,
-    StarFilled,
-    ArrowRight,
-    OfficeBuilding,
+    CirclePlus, DocumentAdd, Shop, Connection, DocumentChecked, Trophy, Refresh,
+    CircleCheckFilled, Tickets, Box, Wallet,
+    CircleCheck, Cherry, Document, Lock, Timer, TrendCharts, Notification, Plus,
+    Check, Promotion, Coin, Medal, MapLocation, ArrowRight,
 } from '@element-plus/icons-vue';
-import OuterLayout from '@/Layouts/OuterLayout.vue';
+import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 
-defineProps({
-    analysis: { type: Object, default: () => ({}) },
-    demand: { type: Object, default: () => ({}) },
+const props = defineProps({
+    lots: {
+        type: Object,
+        default: () => ({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 } }),
+    },
 });
 
-/* ── Dummy exchange dataset ─────────────────────────────────────────── */
-const lots = [
-    { id: 'LOT-000124', name: 'Uganda Robusta', origin: 'Uganda', region: 'Mukono Basin', grade: 'Screen 18', processing: 'Natural', qtyKg: 5000, pricePerKg: 4.20, seller: 'Uganda Coffee Traders', sellerType: 'Licensed Exporter', cupScore: 83.5, moisture: '11.8%', incoterm: 'FOB Mombasa', eudr: true, actionType: 'trade' },
-    { id: 'LOT-000231', name: 'Ethiopia Arabica', origin: 'Ethiopia', region: 'Sidama / Yirgacheffe', grade: 'Grade 1', processing: 'Washed', qtyKg: 2000, pricePerKg: 6.80, seller: 'Ethiopian Coffee Exporters', sellerType: 'Direct Cooperative', cupScore: 88.0, moisture: '10.9%', incoterm: 'FOB Djibouti', eudr: true, actionType: 'trade' },
-    { id: 'LOT-000315', name: 'Mt. Elgon Arabica AA', origin: 'Uganda', region: 'Mt. Elgon / Bugisu', grade: 'Grade AA', processing: 'Washed', qtyKg: 19200, pricePerKg: 5.15, seller: 'Bugisu High Altitude Coop', sellerType: 'Cooperative Alliance', cupScore: 86.5, moisture: '11.2%', incoterm: 'FOB Mombasa', eudr: true, actionType: 'trade' },
-    { id: 'LOT-000412', name: 'Mukono Fine Robusta', origin: 'Uganda', region: 'Mukono Basin', grade: 'Screen 18', processing: 'Natural', qtyKg: 38400, pricePerKg: 3.95, seller: 'Kyagalanyi Central Mill', sellerType: 'Dry Mill Processor', cupScore: 82.0, moisture: '11.8%', incoterm: 'FOB Mombasa', eudr: true, actionType: 'trade' },
-    { id: 'LOT-000508', name: 'Rwenzori Snowpeaks', origin: 'Uganda', region: 'Rwenzori', grade: 'Grade 1', processing: 'Natural', qtyKg: 9600, pricePerKg: 4.70, seller: 'Kasese Agronomy Union', sellerType: 'Producer Group', cupScore: 85.0, moisture: '11.4%', incoterm: 'EXW Kampala Mill', eudr: true, actionType: 'trade' },
-    { id: 'LOT-000624', name: 'Kenya Nyeri AA Microlot', origin: 'Kenya', region: 'Mt. Kenya Highlands', grade: 'Grade AA', processing: 'Washed', qtyKg: 2400, pricePerKg: 7.90, seller: 'Nyeri Farmers Union', sellerType: 'Cooperative', cupScore: 89.2, moisture: '10.8%', incoterm: 'FOB Mombasa', eudr: true, actionType: 'auction' },
-    { id: 'LOT-000780', name: 'Kibale Screen 15 Robusta', origin: 'Uganda', region: 'Mukono Basin', grade: 'Screen 15', processing: 'Natural', qtyKg: 12000, pricePerKg: 3.85, seller: 'Mubende Origin Shippers', sellerType: 'Exporter', cupScore: 80.5, moisture: '12.0%', incoterm: 'FOB Mombasa', eudr: false, actionType: 'trade' },
-    { id: 'LOT-000845', name: 'Rwanda Gisenyi Bourbon', origin: 'Rwanda', region: 'Lake Kivu', grade: 'Grade 1', processing: 'Honey', qtyKg: 3600, pricePerKg: 6.25, seller: 'Kivu Specialty Exporters', sellerType: 'Certified Exporter', cupScore: 87.0, moisture: '11.1%', incoterm: 'FOB Mombasa', eudr: true, actionType: 'trade' },
-];
-
-const marketMonitor = [
-    { code: 'LOT-000315', label: 'Bugisu AA', tag: 'Offer', value: '$5.05' },
-    { code: 'LOT-000624', label: 'Nyeri AA', tag: 'Bid', value: '$7.90' },
-    { code: 'ESC-892', label: 'Contract', tag: '', value: '' },
-];
-
-const tabs = [
-    { key: 'market', label: 'Market', icon: Shop, count: 128 },
-    { key: 'offers', label: 'Offers', icon: Tickets, count: 46 },
-    { key: 'rfqs', label: 'RFQs', icon: Files, count: 18 },
-    { key: 'auctions', label: 'Auctions', icon: Notebook, count: 12 },
-    { key: 'mytrades', label: 'My Trades', icon: SwitchButton, count: 5 },
-];
-
-const incotermOptions = [
-    { label: 'FOB Port of Mombasa (Standard)', modifier: 0 },
-    { label: 'CIF Jebel Ali (Dubai) +$0.12/kg', modifier: 0.12 },
-    { label: 'CIF Rotterdam (EU) +$0.18/kg', modifier: 0.18 },
-    { label: 'EXW Jinja Dry Mill -$0.08/kg', modifier: -0.08 },
-];
-const sortOptions = ['Relevance', 'Price: Low to High', 'Price: High to Low', 'Quantity', 'Origin'];
-
-const activeTab = ref('market');
-const viewMode = ref('grid');
-const sortBy = ref(sortOptions[0]);
-
-const filteredLots = computed(() => {
-    const result = [...lots];
-
-    if (sortBy.value === 'Price: Low to High') result.sort((a, b) => a.pricePerKg - b.pricePerKg);
-    else if (sortBy.value === 'Price: High to Low') result.sort((a, b) => b.pricePerKg - a.pricePerKg);
-    else if (sortBy.value === 'Quantity') result.sort((a, b) => b.qtyKg - a.qtyKg);
-    else if (sortBy.value === 'Origin') result.sort((a, b) => a.origin.localeCompare(b.origin));
-
-    return result;
+const visibleLotPages = computed(() => {
+    const cur = props.lots.meta.current_page || 1;
+    const last = props.lots.meta.last_page || 1;
+    const pages = [];
+    for (let p = Math.max(1, cur - 1); p <= Math.min(last, cur + 1); p++) pages.push(p);
+    return pages;
+});
+const lotRangeSummary = computed(() => {
+    const { from = 0, to = 0, total = 0 } = props.lots.meta;
+    return total > 0 ? `Showing ${from}-${to} of ${total} live physical lots` : 'No live listings yet.';
 });
 
-/* ── Order Execution Desk ──────────────────────────────────────────── */
-const deskModes = [
-    { key: 'buy', label: 'Quick Buy', priceLabel: 'Spot Execution Price', action: 'Execute Escrow Spot Order', multiplier: 1 },
-    { key: 'offer', label: 'Offer', priceLabel: 'Counter-Offer Limit ($/kg)', action: 'Submit Binding Counter-Offer', multiplier: 0.96 },
-    { key: 'bid', label: 'Auction Bid', priceLabel: 'Auction Bid Ceiling ($/kg)', action: 'Place Competitive Bid', multiplier: 1.02 },
+function formatQty(quantity, unit) {
+    const value = Number(quantity) || 0;
+    return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${unit || 'kg'}`;
+}
+
+function formatMoney(amount, currency) {
+    const value = Number(amount) || 0;
+    return `${currency || 'USD'} ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
+function pricingLabel(pricingType) {
+    return pricingType === 'auction' ? 'Live Auction' : pricingType === 'negotiable' ? 'Negotiable' : 'Fixed Price';
+}
+
+function pricingTone(pricingType) {
+    return pricingType === 'auction' ? 'secondary' : pricingType === 'negotiable' ? 'neutral' : 'primary';
+}
+
+/* ── Dummy trading-floor content — illustrative only ────────────────── */
+const headerActions = [
+    { icon: CirclePlus, label: 'Sell Coffee', tone: 'muted', accent: 'secondary' },
+    { icon: DocumentAdd, label: 'Create RFQ', tone: 'muted', accent: 'primary' },
 ];
 
-const selectedLot = ref(lots[0]);
-const deskMode = ref('buy');
-const deskQty = ref(selectedLot.value.qtyKg);
-const deskPrice = ref(selectedLot.value.pricePerKg);
-const deskIncoterm = ref(incotermOptions[0]);
+const exchangeTabs = [
+    { key: 'market', icon: Shop, label: 'Market', count: '86 Lots', routeName: 'exchange.index' },
+    { key: 'offers', icon: Connection, label: 'Offers', count: '6 Active', routeName: 'exchange.offers' },
+    { key: 'rfqs', icon: DocumentChecked, label: 'RFQs', count: '18 Requests', routeName: 'rfq.index' },
+    { key: 'auctions', icon: Trophy, label: 'Auctions', count: '4 Live', routeName: 'auction.index' },
+    { key: 'trades', icon: Refresh, label: 'My Trades', count: '3 In-Flight', routeName: 'orders.index' },
+];
 
-const currentDeskMode = computed(() => deskModes.find((m) => m.key === deskMode.value));
-
-function selectLot(lot) {
-    selectedLot.value = lot;
-    deskQty.value = lot.qtyKg;
-    applyDeskModePrice();
+function goToTab(tab) {
+    if (route().current(tab.routeName)) {
+        return;
+    }
+    router.visit(route(tab.routeName));
 }
 
-function setDeskMode(modeKey) {
-    deskMode.value = modeKey;
-    applyDeskModePrice();
-}
+const kpiStats = [
+    { icon: Box, label: 'Available Volume', value: '1,284', unit: 'MT', note: 'Physical inventory verified in warehouse' },
+    { icon: Tickets, label: 'Active Lots', value: '86', unit: 'Lots', note: 'Ready for immediate contract allocation' },
+    { icon: Coin, label: 'Open Spot Offers', value: '24', unit: 'Tranches', note: 'Avg pricing: $4.15/kg FOB Mombasa' },
+    { icon: DocumentChecked, label: 'Active Buyer RFQs', value: '18', unit: 'Demand Orders', note: 'Aggregated bid volume: 540 MT', strong: true },
+];
 
-function applyDeskModePrice() {
-    const mode = deskModes.find((m) => m.key === deskMode.value);
-    deskPrice.value = Number((selectedLot.value.pricePerKg * mode.multiplier).toFixed(2));
-}
+const provenanceChain = [
+    { n: '1', title: 'Origin Farm Clusters', value: 'Mukono Co-op', note: '342 smallholder plots', pill: 'GPS Poly Validated', tone: 'primary' },
+    { n: '2', title: 'Collection Center', value: 'COL-0124 (Mukono)', note: 'Cherry intake: 18.2% Brix', pill: 'Batch Sealed Oct 12', tone: 'neutral' },
+    { n: '3', title: 'Dry Milling Facility', value: 'BAT-0082 Hulling', note: 'Screen 18 graded', pill: 'Gravity Separated', tone: 'neutral' },
+    { n: '4', title: 'Export Lot Bond', value: 'LOT-UG-8821', note: '120 MT containerized', pill: 'UCDA Stamp #UG-998', tone: 'primary' },
+];
 
-function setDeskQty(qty) {
-    deskQty.value = qty;
-}
+const cuppingStats = [
+    { label: 'Moisture', value: '11.2%', note: 'Standard <12.5%' },
+    { label: 'Screen 18', value: '92.4%', note: 'High retention' },
+    { label: 'Defects', value: '0 Primary', note: '3 secondary/350g' },
+];
 
-const bagCount = computed(() => Math.round(deskQty.value / 60));
-const coffeeSubtotal = computed(() => deskQty.value * deskPrice.value);
-const escrowFee = computed(() => coffeeSubtotal.value * 0.0075);
-const freightTotal = computed(() => deskQty.value * deskIncoterm.value.modifier);
-const grandTotal = computed(() => Math.max(0, coffeeSubtotal.value + escrowFee.value + freightTotal.value));
+const sensoryBars = [
+    { label: 'Fragrance / Aroma (Cocoa, Cedar)', value: '8.50', pct: 85, tone: 'primary' },
+    { label: 'Clean Cup / Uniformity', value: '9.00', pct: 90, tone: 'primary' },
+    { label: 'Body & Mouthfeel', value: '8.75', pct: 87.5, tone: 'secondary' },
+];
 
-const usd = (value) => `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const landedCostRows = [
+    { label: 'Base FOB Price (Mombasa)', value: '$4.200 / kg', strong: true },
+    { label: 'Inland Transit (Kampala to Mombasa)', value: '$0.080 / kg' },
+    { label: 'Ocean Freight (Mombasa to Jebel Ali)', value: '$0.140 / kg' },
+    { label: 'Cargo Marine Insurance (0.45%)', value: '$0.020 / kg' },
+    { label: 'Destination Terminal & Handling', value: '$0.040 / kg' },
+];
 
-function executeDeskOrder() {
-    ElMessage.success(`${currentDeskMode.value.action} — Lot #${selectedLot.value.id}, ${deskQty.value.toLocaleString()} kg @ $${deskPrice.value.toFixed(2)}/kg (dummy preview).`);
-}
+const negotiationCards = [
+    { icon: Refresh, tone: 'primary', title: 'Pending Offers (6)', tag: '2 Needing Action', body: 'Counter-offer from Hamburg Roasters on LOT-UG-8821 ($4.12/kg for 60 MT).', actions: [{ label: 'Accept $4.12', tone: 'primary' }, { label: 'Counter', tone: 'muted' }] },
+    { icon: Tickets, tone: 'secondary', title: 'Active RFQs (18)', tag: 'High Match', body: 'Dubai institutional buyer seeking 180 MT Screen 18 Fine Robusta for Q1 2025 delivery.', actions: [{ label: 'Submit Tender Quote', tone: 'secondary' }] },
+    { icon: Timer, tone: 'error', title: 'Live Auction #42', tag: '42m Remaining', body: 'Bugisu AA Washed (45 MT). Leading bid: $5.25/kg by Nordic Coffee Importers.', actions: [{ label: 'Enter Auction Room', tone: 'muted' }] },
+];
 
-/* ── Lot dossier / offer dialogs (dummy) ───────────────────────────── */
-const dossierOpen = ref(false);
-const dossierLot = ref(null);
-const offerOpen = ref(false);
-const offerLot = ref(null);
-const offerPrice = ref(0);
-const offerQty = ref(0);
-const rfqOpen = ref(false);
-const aiOpen = ref(false);
-const aiDraft = ref('Prepare purchase contract for #LOT-000124');
+const benchmarks = [
+    { label: 'Robusta Benchmark (FOB MBA)', change: '+1.8%', value: '$4,150', unit: '/MT', note: '$4.15/kg' },
+    { label: 'Arabica Benchmark (FOB MBA)', change: '+2.9%', value: '$5,620', unit: '/MT', note: '$5.62/kg' },
+];
 
-function openDossier(lot) {
-    dossierLot.value = lot;
-    dossierOpen.value = true;
-}
+const depthStats = [
+    { label: 'Buyer Demand', value: '540 MT', note: '18 Active RFQs', tone: 'primary' },
+    { label: 'Floor Supply', value: '1,284 MT', note: '86 Physical Lots', tone: 'secondary' },
+];
 
-function openOffer(lot) {
-    offerLot.value = lot;
-    offerPrice.value = Number((lot.pricePerKg * 0.96).toFixed(2));
-    offerQty.value = lot.qtyKg;
-    offerOpen.value = true;
-}
+const activityFeed = [
+    { icon: Plus, tone: 'primary', title: 'New Uganda Robusta lot listed (120 MT)', meta: 'Mukono Union', time: '3m ago' },
+    { icon: Check, tone: 'neutral', title: 'Offer accepted on LOT-ET-902 ($6.70/kg)', meta: 'Rotterdam Buyer', time: '12m ago' },
+    { icon: Promotion, tone: 'neutral', title: 'New RFQ: Dubai Roaster 40 MT Arabica', meta: 'FOB Mombasa', time: '24m ago' },
+    { icon: Trophy, tone: 'secondary', title: 'Auction ending: Bugisu AA (Bid: $5.25/kg)', meta: 'Mt Elgon', time: '42m remaining' },
+];
 
-function submitOffer() {
-    offerOpen.value = false;
-    ElMessage.success(`Counter-offer of $${offerPrice.value}/kg for ${offerQty.value.toLocaleString()} kg submitted (dummy preview).`);
-}
+const trustItems = [
+    { icon: CircleCheckFilled, label: '100% KYC & AML Screened Traders' },
+    { icon: Coin, label: 'Immutable Polygon Chain Custody' },
+    { icon: Medal, label: 'SCAA & Q-Robusta Graded Lots' },
+    { icon: MapLocation, label: 'EUDR Polygon Geolocation Included' },
+    { icon: Wallet, label: 'Stanbic Tier-1 Bank Escrow Custody' },
+];
 
-function handleBid(lot) {
-    selectLot(lot);
-    setDeskMode('bid');
-    ElMessage.info(`Lot #${lot.id} loaded into the Auction Bid desk.`);
-}
-
-function handleInstantBuy(lot) {
-    selectLot(lot);
-    setDeskMode('buy');
-}
-
-function broadcastRfq() {
-    rfqOpen.value = false;
-    ElMessage.success('RFQ broadcast to 128 registered mills and exporters (dummy preview).');
+function placeholderAction(label) {
+    ElMessage.info(`${label} (dummy preview).`);
 }
 </script>
 
 <template>
-    <OuterLayout title="Coffee Exchange">
-        <div class="wp-exchange bg-white min-h-screen">
-            <!-- Sub-navigation tabs & trade actions -->
-            <div class="border-b border-slate-200 bg-white">
-                <div class="max-w-7xl mx-auto px-4 md:px-8 flex flex-wrap items-center justify-between gap-2">
-                    <nav class="flex items-center gap-1 -mb-px overflow-x-auto py-1">
-                        <button
-                            v-for="tab in tabs"
-                            :key="tab.key"
-                            type="button"
-                            class="inline-flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold border-b-2 whitespace-nowrap transition"
-                            :class="activeTab === tab.key ? 'border-slate-950 text-slate-950' : 'border-transparent text-slate-500 hover:text-slate-900 font-medium'"
-                            @click="activeTab = tab.key"
-                        >
-                            <el-icon :size="13"><component :is="tab.icon" /></el-icon>
-                            {{ tab.label }}
-                            <span class="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-[10px] font-semibold border border-slate-200">{{ tab.count }}</span>
-                        </button>
-                    </nav>
-                    <div class="hidden sm:flex items-center gap-2 py-2">
-                        <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition" @click="rfqOpen = true">
-                            <el-icon :size="12"><Files /></el-icon> Create RFQ
-                        </button>
-                        <button type="button" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-950 hover:bg-slate-800 rounded-lg shadow-sm transition" @click="ElMessage.info('Seller lot submission is available after sign in.')">
-                            <el-icon :size="12"><ArrowRight /></el-icon> Sell Coffee
-                        </button>
+    <DesignPreviewLayout title="Coffee Exchange">
+        <!-- 1. STATUS STRIP -->
+        <section class="ex-status-line">
+            <div class="ex-flex-icon">
+                <span class="ex-strong ex-icon--primary">Trading Floor</span>
+                <span class="ex-sep">/</span>
+                <span class="ex-strong">Physical Spot &amp; Forward Exchange</span>
+                <span class="ex-sep">/</span>
+                <span class="ex-tag-mini ex-tag-mini--primary">Market Open</span>
+            </div>
+            <div class="ex-flex-icon">
+                <span class="ex-flex-icon"><span class="ex-dot ex-dot--pulse"></span> <span class="dp-caption dp-mono ex-strong">UTC 11:42:08</span></span>
+                <span class="dp-caption dp-mono ex-muted ex-hide-sm">Escrow Protocol v4.2 Active</span>
+                <span class="dp-caption dp-mono ex-icon--primary ex-strong ex-hide-sm">100% EUDR Cleared Lots Available</span>
+            </div>
+        </section>
+
+        <!-- 2. HEADER & QUICK ACTIONS -->
+        <section class="ex-card ex-hero">
+            <div class="ex-hero__top">
+                <div>
+                    <div class="ex-title-row">
+                        <h1 class="dp-display-md">Coffee Exchange</h1>
+                        <span class="ex-tag-mini">Physical Spot &amp; Forward</span>
                     </div>
+                    <p class="dp-body-md ex-muted">Discover authenticated coffee lots, connect directly with licensed origin aggregators, and turn institutional market interest into legally binding escrow trades.</p>
+                </div>
+                <div class="ex-hero__actions">
+                    <button v-for="a in headerActions" :key="a.label" type="button" class="ex-btn" :class="`ex-btn--${a.tone}`" @click="placeholderAction(a.label)">
+                        <el-icon :size="16"><component :is="a.icon" /></el-icon>
+                        <span>{{ a.label }}</span>
+                    </button>
                 </div>
             </div>
 
-            <main class="max-w-7xl mx-auto px-4 md:px-8 py-6">
-                <div v-if="activeTab !== 'market'" class="rounded-2xl border border-slate-200 bg-white py-16 px-6 text-center text-slate-500 shadow-sm">
-                    <p class="text-sm">The <span class="font-semibold text-slate-950">{{ tabs.find(t => t.key === activeTab)?.label }}</span> workspace opens once you're signed in to the Exchange terminal.</p>
-                    <a href="#top" class="inline-block mt-3 text-sm font-semibold text-slate-950 hover:text-slate-700">Back to Market</a>
+            <div class="ex-tabs">
+                <button v-for="tab in exchangeTabs" :key="tab.key" type="button" class="ex-tab" :class="{ 'ex-tab--active': route().current(tab.routeName) }" @click="goToTab(tab)">
+                    <el-icon :size="16"><component :is="tab.icon" /></el-icon>
+                    <span>{{ tab.label }}</span>
+                    <span class="ex-tab__count">{{ tab.count }}</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 3. KEY METRICS -->
+        <section class="ex-kpi-grid">
+            <div v-for="kpi in kpiStats" :key="kpi.label" class="ex-kpi">
+                <div class="ex-kpi__head">
+                    <span class="dp-label-md ex-strong">{{ kpi.label }}</span>
+                    <el-icon :size="18" class="ex-muted"><component :is="kpi.icon" /></el-icon>
+                </div>
+                <div class="ex-kpi__value">
+                    <span class="ex-kpi__num">{{ kpi.value }}</span>
+                    <span class="dp-body-md ex-muted">{{ kpi.unit }}</span>
+                </div>
+                <p class="dp-caption" :class="kpi.strong ? 'ex-strong' : 'ex-muted'">{{ kpi.note }}</p>
+            </div>
+        </section>
+
+        <!-- 4. MAIN TWO-COLUMN LAYOUT -->
+        <section class="ex-grid-12">
+            <div class="ex-col-main">
+                <!-- Lots table -->
+                <div class="ex-card">
+                    <div class="ex-card__head">
+                        <div>
+                            <h2 class="dp-headline-md">Available Physical Coffee Lots</h2>
+                            <p class="dp-caption ex-muted">Real-time verified origin inventory backed by phytosanitary &amp; cupping documentation.</p>
+                        </div>
+                    </div>
+                    <div class="ex-table-wrap">
+                        <table class="ex-table">
+                            <thead>
+                                <tr><th>Coffee &amp; Lot</th><th>Origin &amp; Quality</th><th>Volume &amp; Price</th><th>Seller &amp; Corridor</th><th class="ex-right">Actions</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr v-if="!lots.data.length">
+                                    <td colspan="5" class="ex-center dp-caption ex-muted">No live listings yet.</td>
+                                </tr>
+                                <tr v-for="lot in lots.data" :key="lot.id">
+                                    <td>
+                                        <div class="ex-strong">{{ lot.name }}</div>
+                                        <div class="ex-flex-icon"><span class="dp-mono ex-icon--primary ex-caption-sm">{{ lot.lot_code || `#${lot.id}` }}</span><span class="ex-tag-mini" :class="`ex-tag-mini--${pricingTone(lot.pricing_type)}`">{{ pricingLabel(lot.pricing_type) }}</span></div>
+                                    </td>
+                                    <td>
+                                        <div class="ex-strong">{{ lot.origin || 'Origin unverified' }}</div>
+                                        <div class="dp-caption ex-muted">{{ [lot.region, lot.process].filter(Boolean).join(' · ') || '—' }}</div>
+                                        <div v-if="lot.quality_score || lot.grade" class="dp-caption ex-icon--primary dp-mono">
+                                            <template v-if="lot.quality_score">{{ lot.quality_score }} CQI</template>
+                                            <template v-if="lot.quality_score && lot.grade"> &middot; </template>
+                                            <template v-if="lot.grade">{{ lot.grade }}</template>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="ex-strong dp-mono">{{ formatQty(lot.quantity, lot.unit) }}</div>
+                                        <div v-if="lot.quantity_bags" class="dp-caption ex-muted dp-mono">{{ lot.quantity_bags }} bags</div>
+                                        <div class="dp-caption ex-strong dp-mono">{{ formatMoney(lot.price_per_kg, lot.currency) }}/kg <span class="ex-muted">&middot; {{ formatMoney(lot.total_price, lot.currency) }}</span></div>
+                                    </td>
+                                    <td>
+                                        <div class="ex-flex-icon"><el-icon :size="13" class="ex-icon--primary"><component :is="lot.is_traceable ? CircleCheck : Cherry" /></el-icon><span class="ex-strong">{{ lot.seller_name || 'Verified Seller' }}</span></div>
+                                        <div v-if="lot.highest_bid" class="dp-caption ex-icon--primary">Highest bid {{ formatMoney(lot.highest_bid, lot.currency) }}</div>
+                                        <span class="ex-tag-mini ex-tag-mini--corridor">{{ lot.delivery_location || 'Corridor TBC' }}</span>
+                                    </td>
+                                    <td class="ex-right">
+                                        <div class="ex-actions-inline ex-actions-inline--end">
+                                            <button type="button" class="ex-btn ex-btn--muted ex-btn--sm" @click="router.visit(route('market.show', lot.id))">Inspect</button>
+                                            <button type="button" class="ex-btn ex-btn--sm" :class="lot.pricing_type === 'auction' ? 'ex-btn--secondary' : lot.pricing_type === 'negotiable' ? 'ex-btn--muted' : 'ex-btn--primary'" @click="router.visit(route('market.show', lot.id))">{{ lot.pricing_type === 'auction' ? 'Place Bid' : 'Buy Now' }}</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="ex-footline">
+                        <span class="dp-caption ex-muted">{{ lotRangeSummary }}</span>
+                        <div v-if="lots.meta.last_page > 1" class="ex-actions-inline">
+                            <Link
+                                :href="route('exchange.index', { page: Math.max(1, lots.meta.current_page - 1) })"
+                                class="ex-btn ex-btn--muted ex-btn--sm"
+                                :class="{ 'ex-btn--disabled': lots.meta.current_page <= 1 }"
+                            >Prev</Link>
+                            <Link
+                                v-for="page in visibleLotPages"
+                                :key="page"
+                                :href="route('exchange.index', { page })"
+                                class="ex-btn ex-btn--sm"
+                                :class="page === lots.meta.current_page ? 'ex-btn--primary' : 'ex-btn--muted'"
+                            >{{ page }}</Link>
+                            <Link
+                                :href="route('exchange.index', { page: Math.min(lots.meta.last_page, lots.meta.current_page + 1) })"
+                                class="ex-btn ex-btn--muted ex-btn--sm"
+                                :class="{ 'ex-btn--disabled': lots.meta.current_page >= lots.meta.last_page }"
+                            >Next</Link>
+                        </div>
+                    </div>
                 </div>
 
-                <template v-else>
-                    <!-- Main layout -->
-                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-                        <!-- Listings -->
-                        <div class="xl:col-span-9">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                                <div>
-                                    <h2 class="text-base font-bold text-slate-950">Coffee Available for Trade</h2>
-                                    <span class="text-xs font-mono text-slate-500">Showing {{ filteredLots.length }} verified trade lots ({{ lots.length }} total on exchange)</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="flex items-center gap-2 wp-filter-fields wp-sort-select">
-                                        <span class="text-xs text-slate-500 whitespace-nowrap">Sort by:</span>
-                                        <el-select v-model="sortBy" style="width: 170px;">
-                                            <el-option v-for="o in sortOptions" :key="o" :label="o" :value="o" />
-                                        </el-select>
-                                    </div>
-                                    <div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5">
-                                        <button type="button" class="p-1.5 px-2.5 text-xs font-medium rounded-md transition" :class="viewMode === 'grid' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'" @click="viewMode = 'grid'">
-                                            <el-icon :size="13"><Grid /></el-icon>
-                                        </button>
-                                        <button type="button" class="p-1.5 px-2.5 text-xs font-medium rounded-md transition" :class="viewMode === 'list' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'" @click="viewMode = 'list'">
-                                            <el-icon :size="13"><List /></el-icon>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Grid view -->
-                            <div v-if="viewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                                <div v-for="lot in filteredLots" :key="lot.id" class="wp-lot-card bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                                    <div class="wp-lot-card__art relative h-32 flex items-center justify-center">
-                                        <el-icon :size="28" class="text-slate-300"><Coin /></el-icon>
-                                        <div class="absolute top-2 left-2 flex flex-col gap-1">
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-white text-slate-900 border border-slate-200 shadow-xs"><el-icon :size="9"><CircleCheckFilled /></el-icon> Verified</span>
-                                            <span v-if="lot.eudr" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-white text-slate-600 border border-slate-200 shadow-xs"><el-icon :size="9"><LocationFilled /></el-icon> EUDR</span>
-                                        </div>
-                                        <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-950/80 text-white backdrop-blur-sm">{{ lot.cupScore }} pts</span>
-                                    </div>
-                                    <div class="p-3.5 flex-1 flex flex-col bg-white">
-                                        <div class="flex items-center justify-between text-[11px] font-mono mb-1">
-                                            <span class="text-slate-400">#{{ lot.id }}</span>
-                                            <span class="text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[10px]">{{ lot.incoterm }}</span>
-                                        </div>
-                                        <h3 class="text-xs font-bold text-slate-950 truncate">{{ lot.name }}</h3>
-                                        <div class="text-[11px] text-slate-500 mt-0.5">{{ lot.origin }} · {{ lot.grade }} · {{ lot.processing }}</div>
-                                        <div class="mt-auto pt-3 border-t border-slate-100">
-                                            <div class="flex items-baseline justify-between mb-2">
-                                                <div>
-                                                    <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Available</span>
-                                                    <span class="text-xs font-mono font-bold text-slate-900">{{ lot.qtyKg.toLocaleString() }} kg</span>
-                                                </div>
-                                                <div class="text-right">
-                                                    <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Spot Price</span>
-                                                    <span class="text-sm font-mono font-extrabold text-slate-950">${{ lot.pricePerKg.toFixed(2) }} <span class="text-[10px] font-normal text-slate-500">/kg</span></span>
-                                                </div>
-                                            </div>
-                                            <div class="text-[10px] text-slate-500 truncate mb-3 flex items-center gap-1">
-                                                <el-icon :size="10" class="text-slate-400"><OfficeBuilding /></el-icon> {{ lot.seller }}
-                                            </div>
-                                            <div class="flex items-center gap-1.5">
-                                                <button type="button" class="flex-1 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition" @click="openDossier(lot)">View</button>
-                                                <button v-if="lot.actionType === 'auction'" type="button" class="flex-1 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition" @click="handleBid(lot)">Bid Live</button>
-                                                <template v-else>
-                                                    <button type="button" class="flex-1 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition" @click="openOffer(lot)">Offer</button>
-                                                    <button type="button" class="flex-1 py-1.5 text-xs font-bold text-white bg-slate-950 hover:bg-slate-800 rounded-lg transition" @click="handleInstantBuy(lot)">Buy</button>
-                                                </template>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- List view -->
-                            <div v-else class="mb-6 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm overflow-x-auto">
-                                <table class="w-full text-left text-xs border-collapse min-w-[760px]">
-                                    <thead>
-                                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-mono text-[11px] uppercase tracking-wider">
-                                            <th class="p-3.5 pl-4">Coffee & Lot #</th>
-                                            <th class="p-3.5">Origin & Basin</th>
-                                            <th class="p-3.5">Grade & Process</th>
-                                            <th class="p-3.5 text-right">Available Qty</th>
-                                            <th class="p-3.5 text-right">Spot Price</th>
-                                            <th class="p-3.5">Seller</th>
-                                            <th class="p-3.5 pr-4 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100 text-slate-700">
-                                        <tr v-for="lot in filteredLots" :key="lot.id" class="hover:bg-slate-50/70 transition">
-                                            <td class="p-3.5 pl-4">
-                                                <div class="font-bold text-slate-950">{{ lot.name }}</div>
-                                                <div class="text-[11px] font-mono text-slate-400">#{{ lot.id }}</div>
-                                            </td>
-                                            <td class="p-3.5">
-                                                <div class="text-slate-900 font-medium">{{ lot.origin }}</div>
-                                                <div class="text-[11px] text-slate-500">{{ lot.region }}</div>
-                                            </td>
-                                            <td class="p-3.5">
-                                                <span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-[10px] border border-slate-200">{{ lot.grade }}</span>
-                                                <div class="text-[11px] text-slate-500 mt-0.5">{{ lot.processing }}</div>
-                                            </td>
-                                            <td class="p-3.5 text-right font-mono">
-                                                <div class="font-bold text-slate-900">{{ lot.qtyKg.toLocaleString() }} kg</div>
-                                                <div class="text-[10px] text-slate-400">{{ (lot.qtyKg / 1000).toFixed(1) }} MT</div>
-                                            </td>
-                                            <td class="p-3.5 text-right font-mono">
-                                                <div class="font-bold text-slate-950 text-sm">${{ lot.pricePerKg.toFixed(2) }}</div>
-                                                <div class="text-[10px] text-slate-400">{{ lot.incoterm }}</div>
-                                            </td>
-                                            <td class="p-3.5">
-                                                <div class="font-medium text-slate-900">{{ lot.seller }}</div>
-                                                <div class="text-[10px] font-mono text-slate-400">{{ lot.sellerType }}</div>
-                                            </td>
-                                            <td class="p-3.5 pr-4 text-right">
-                                                <div class="inline-flex rounded-lg border border-slate-200 overflow-hidden shadow-xs">
-                                                    <button type="button" class="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border-r border-slate-200" @click="openDossier(lot)">View</button>
-                                                    <button v-if="lot.actionType === 'auction'" type="button" class="px-3 py-1 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700" @click="handleBid(lot)">Bid</button>
-                                                    <template v-else>
-                                                        <button type="button" class="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border-r border-slate-200" @click="openOffer(lot)">Offer</button>
-                                                        <button type="button" class="px-3 py-1 text-xs font-bold text-white bg-slate-950 hover:bg-slate-800" @click="handleInstantBuy(lot)">Buy</button>
-                                                    </template>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <!-- Pagination -->
-                            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
-                                <div class="text-xs font-mono text-slate-500">Showing <strong class="text-slate-900">1 - {{ filteredLots.length }}</strong> of <strong class="text-slate-900">128</strong> lots</div>
-                                <div class="flex items-center gap-1 font-mono text-xs">
-                                    <button type="button" class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-400 bg-white disabled:opacity-50" disabled>‹</button>
-                                    <button type="button" class="w-8 h-8 flex items-center justify-center rounded bg-slate-950 text-white font-bold">1</button>
-                                    <button type="button" class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50">2</button>
-                                    <button type="button" class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50">3</button>
-                                    <span class="px-1 text-slate-400">...</span>
-                                    <button type="button" class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50">16</button>
-                                    <button type="button" class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-700 bg-white hover:bg-slate-50">›</button>
-                                </div>
-                            </div>
+                <!-- Selected lot quick view -->
+                <div class="ex-card">
+                    <div class="ex-card__head">
+                        <div>
+                            <div class="ex-flex-icon"><span class="ex-tag-mini ex-tag-mini--primary">Selected Inspection</span><h3 class="dp-headline-sm">Uganda Fine Robusta Screen 18 (LOT-UG-8821)</h3></div>
+                            <p class="dp-caption ex-muted">Origin custody verification &amp; live landed cost simulator</p>
                         </div>
+                        <button type="button" class="ex-btn ex-btn--muted" @click="placeholderAction('Download CQI Lab PDF')">
+                            <el-icon :size="15"><Document /></el-icon> Download CQI Lab PDF
+                        </button>
+                    </div>
 
-                        <!-- Order Execution Desk -->
-                        <div class="xl:col-span-3 sticky top-24">
-                            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div class="p-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <span class="w-5 h-5 rounded-md bg-slate-950 text-white flex items-center justify-center font-bold text-[10px]">T</span>
-                                        <h3 class="text-xs font-bold text-slate-950 uppercase tracking-wide">Execution Desk</h3>
-                                    </div>
-                                    <span class="inline-flex items-center gap-1 text-[10px] font-mono text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded"><el-icon :size="10"><Lock /></el-icon> Stanbic Custody</span>
-                                </div>
-
-                                <div class="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between font-mono text-xs">
-                                    <div>
-                                        <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Escrow Liquidity</span>
-                                        <span class="font-bold text-slate-950">$284,720.00 <span class="text-[10px] font-normal text-slate-500">USD</span></span>
-                                    </div>
-                                    <button type="button" class="text-slate-900 hover:text-slate-700 font-bold text-[11px] underline underline-offset-2" @click="ElMessage.info('Escrow top-up is available after sign in.')">+ Deposit</button>
-                                </div>
-
-                                <div class="p-2 border-b border-slate-100 bg-slate-50/50">
-                                    <div class="grid grid-cols-3 gap-1 bg-slate-200/70 p-1 rounded-lg">
-                                        <button
-                                            v-for="mode in deskModes" :key="mode.key" type="button"
-                                            class="py-1 px-1 text-[11px] rounded-md text-center transition"
-                                            :class="deskMode === mode.key ? 'font-bold bg-slate-950 text-white shadow-xs' : 'font-semibold text-slate-600 hover:text-slate-950'"
-                                            @click="setDeskMode(mode.key)"
-                                        >{{ mode.label }}</button>
-                                    </div>
-                                </div>
-
-                                <div class="p-3.5 border-b border-slate-100 bg-white">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">#{{ selectedLot.id }}</span>
-                                        <span class="text-xs font-extrabold font-mono text-slate-950">${{ deskPrice.toFixed(2) }} / kg</span>
-                                    </div>
-                                    <div class="text-xs font-bold text-slate-900 truncate">{{ selectedLot.name }} ({{ selectedLot.grade }})</div>
-                                    <div class="flex items-center justify-between text-[11px] font-mono text-slate-500 mt-1">
-                                        <span>Avail: <strong class="text-slate-900">{{ selectedLot.qtyKg.toLocaleString() }} kg</strong></span>
-                                        <span>{{ selectedLot.incoterm }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="p-3.5 space-y-3.5 wp-filter-fields">
-                                    <div>
-                                        <div class="flex items-center justify-between mb-1">
-                                            <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Order Volume</label>
-                                            <span class="text-[10px] font-mono text-slate-400">≈ {{ bagCount }} jute bags (60kg)</span>
-                                        </div>
-                                        <el-input v-model.number="deskQty" type="number">
-                                            <template #append>kg</template>
-                                        </el-input>
-                                        <div class="grid grid-cols-3 gap-1 mt-1.5">
-                                            <button type="button" class="py-0.5 text-[10px] font-mono font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 transition" @click="setDeskQty(1000)">1,000</button>
-                                            <button type="button" class="py-0.5 text-[10px] font-mono font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 transition" @click="setDeskQty(2500)">2,500</button>
-                                            <button type="button" class="py-0.5 text-[10px] font-mono font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 transition" @click="setDeskQty(selectedLot.qtyKg)">Max</button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div class="flex items-center justify-between mb-1">
-                                            <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">{{ currentDeskMode.priceLabel }}</label>
-                                            <span class="text-[10px] font-mono text-slate-400">USD Floor</span>
-                                        </div>
-                                        <el-input v-model.number="deskPrice" type="number" :step="0.01">
-                                            <template #prepend>$</template>
-                                            <template #append>/kg</template>
-                                        </el-input>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Delivery Term & Custody</label>
-                                        <el-select v-model="deskIncoterm" value-key="label" style="width: 100%;">
-                                            <el-option v-for="opt in incotermOptions" :key="opt.label" :label="opt.label" :value="opt" />
-                                        </el-select>
-                                    </div>
-
-                                    <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 font-mono text-xs space-y-1.5">
-                                        <div class="flex justify-between text-slate-500"><span>Coffee Subtotal:</span><span class="text-slate-900 font-semibold">{{ usd(coffeeSubtotal) }}</span></div>
-                                        <div class="flex justify-between text-slate-500"><span>Stanbic Escrow Fee (0.75%):</span><span class="text-slate-900">{{ usd(escrowFee) }}</span></div>
-                                        <div class="flex justify-between text-slate-500"><span>Freight & Inspection:</span><span class="text-slate-900">{{ freightTotal === 0 ? 'Included (FOB)' : (freightTotal > 0 ? '+' : '-') + usd(Math.abs(freightTotal)) }}</span></div>
-                                        <div class="pt-1.5 mt-1 border-t border-slate-200 flex justify-between font-bold text-slate-950 text-xs">
-                                            <span>Total Settlement:</span><span class="font-bold text-slate-950">{{ usd(grandTotal) }}</span>
-                                        </div>
-                                    </div>
-
-                                    <el-button class="wp-btn-primary w-full" @click="executeDeskOrder">
-                                        <el-icon :size="14" class="mr-1"><Lock /></el-icon> {{ currentDeskMode.action }}
-                                    </el-button>
-                                    <div class="text-center font-mono text-[10px] text-slate-400">24-Hour Settlement Guarantee · Tier-1 Escrow</div>
-                                </div>
-
-                                <div class="border-t border-slate-200 bg-slate-50 p-3 space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">Live Trade Monitor</span>
-                                        <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 font-bold">Active</span>
-                                    </div>
-                                    <div class="space-y-1.5 font-mono text-[11px]">
-                                        <div v-for="row in marketMonitor" :key="row.code" class="flex items-center justify-between p-1.5 bg-white border border-slate-200 rounded-lg">
-                                            <span class="truncate text-slate-700">#{{ row.code }} {{ row.label }}</span>
-                                            <span v-if="row.tag" class="text-[10px] font-semibold text-slate-900 bg-slate-100 border border-slate-200 px-1 rounded">{{ row.tag }}: {{ row.value }}</span>
-                                            <span v-else class="text-[10px] text-slate-500">Vessel Sailing</span>
-                                        </div>
-                                    </div>
-                                </div>
+                    <div class="ex-provenance">
+                        <div class="ex-flex-icon dp-label-md ex-muted ex-mb-sm"><el-icon :size="16" class="ex-icon--primary"><Connection /></el-icon> Immutable Custody Provenance Pipeline</div>
+                        <div class="ex-provenance-grid">
+                            <div v-for="p in provenanceChain" :key="p.n" class="ex-provenance-item">
+                                <span class="dp-caption ex-muted">{{ p.n }}. {{ p.title }}</span>
+                                <span class="ex-strong" :class="p.tone === 'primary' ? 'ex-icon--primary' : ''">{{ p.value }}</span>
+                                <span class="dp-caption ex-muted">{{ p.note }}</span>
+                                <span class="ex-tag-mini" :class="p.tone === 'primary' ? 'ex-tag-mini--primary' : ''">{{ p.pill }}</span>
                             </div>
                         </div>
                     </div>
-                </template>
-            </main>
-        </div>
 
-        <!-- Lot dossier dialog -->
-        <el-dialog v-model="dossierOpen" width="600px" class="wp-exchange-dialog">
-            <template #header>
-                <div>
-                    <div class="text-sm font-bold text-slate-950">{{ dossierLot?.name }} <span v-if="dossierLot">({{ dossierLot.grade }})</span></div>
-                    <div class="text-xs font-mono text-slate-500">#{{ dossierLot?.id }} · Verified Sourcing Record · Stanbic Escrow Backed</div>
+                    <div class="ex-specs-grid">
+                        <div class="ex-specs-col">
+                            <div class="ex-flex-icon-between">
+                                <span class="dp-label-md ex-strong">Physical Cupping &amp; Lab Parameters</span>
+                                <span class="dp-caption ex-icon--primary dp-mono">Lab Verified: Kampala Central</span>
+                            </div>
+                            <div class="ex-mini-stat-grid">
+                                <div v-for="s in cuppingStats" :key="s.label" class="ex-mini-stat">
+                                    <span class="dp-caption ex-muted">{{ s.label }}</span>
+                                    <span class="dp-body-lg ex-strong dp-mono">{{ s.value }}</span>
+                                    <span class="dp-caption ex-icon--primary">{{ s.note }}</span>
+                                </div>
+                            </div>
+                            <div class="ex-sensory">
+                                <span class="dp-label-md ex-strong">Sensory Attribute Breakdown (SCAA Protocol)</span>
+                                <div v-for="b in sensoryBars" :key="b.label" class="ex-sensory-row">
+                                    <div class="ex-flex-icon-between"><span class="dp-caption ex-muted">{{ b.label }}</span><span class="dp-caption dp-mono ex-strong">{{ b.value }}</span></div>
+                                    <div class="ex-bar"><div class="ex-bar__fill" :class="`ex-bar__fill--${b.tone}`" :style="{ width: b.pct + '%' }"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ex-specs-col">
+                            <div class="ex-cost-box">
+                                <div class="ex-flex-icon-between">
+                                    <span class="dp-label-md ex-strong">Live Landed Cost Simulator</span>
+                                    <span class="ex-tag-mini">Destination: Jebel Ali (UAE)</span>
+                                </div>
+                                <div class="ex-cost-rows">
+                                    <div v-for="r in landedCostRows" :key="r.label" class="ex-cost-row">
+                                        <span class="dp-caption ex-muted">{{ r.label }}</span>
+                                        <span class="dp-caption dp-mono" :class="r.strong ? 'ex-strong' : 'ex-on'">{{ r.value }}</span>
+                                    </div>
+                                </div>
+                                <div class="ex-cost-total">
+                                    <div><span class="dp-caption ex-muted">Estimated Landed Cost CIF</span><div class="dp-headline-sm ex-icon--primary">$4.480 <span class="dp-caption ex-muted">/kg</span></div></div>
+                                    <div class="ex-right"><span class="dp-caption ex-muted">Total Consignment</span><div class="dp-body-lg ex-strong">$537,600 USD</div></div>
+                                </div>
+                            </div>
+                            <div class="ex-actions-inline">
+                                <button type="button" class="ex-btn ex-btn--primary ex-btn--grow" @click="placeholderAction('Proceed to Purchase Review')">Proceed to Purchase Review</button>
+                                <button type="button" class="ex-btn ex-btn--muted" @click="placeholderAction('Make Bilateral Counter-Offer')">Make Bilateral Counter-Offer</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </template>
-            <div v-if="dossierLot" class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div class="md:col-span-5">
-                    <div class="h-36 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-2">
-                        <el-icon :size="30" class="text-slate-300"><Coin /></el-icon>
-                    </div>
-                    <div class="p-2.5 bg-slate-50 rounded-lg text-[11px] font-mono text-slate-600 border border-slate-200 space-y-1">
-                        <div><strong class="text-slate-900">GPS Polygon:</strong> 0.3476° N, 32.5825° E</div>
-                        <div><strong class="text-slate-900">Crop Season:</strong> 2025/2026 Main Crop</div>
-                        <div><strong class="text-slate-900">Dry Mill:</strong> {{ dossierLot.seller }}</div>
-                    </div>
-                </div>
-                <div class="md:col-span-7 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-mono font-bold px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-800">UCDA Verified {{ dossierLot.grade }}</span>
-                        <span class="text-base font-extrabold font-mono text-slate-950">${{ dossierLot.pricePerKg.toFixed(2) }}/kg</span>
-                    </div>
-                    <div class="text-xs space-y-1.5 border-y border-slate-100 py-2">
-                        <div class="flex justify-between"><span class="text-slate-500">Origin Basin:</span><span class="font-bold text-slate-900">{{ dossierLot.region }}, {{ dossierLot.origin }}</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Grade / Process:</span><span class="font-semibold text-slate-900">{{ dossierLot.grade }} / {{ dossierLot.processing }}</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Moisture Content:</span><span class="font-mono text-slate-900">{{ dossierLot.moisture }}</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Available Volume:</span><span class="font-mono font-bold text-slate-900">{{ dossierLot.qtyKg.toLocaleString() }} kg ({{ (dossierLot.qtyKg/1000).toFixed(1) }} MT)</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Seller Entity:</span><span class="font-medium text-slate-900">{{ dossierLot.seller }}</span></div>
-                    </div>
-                    <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-600 flex items-start gap-1.5">
-                        <el-icon :size="13" class="mt-0.5 flex-shrink-0"><Lock /></el-icon>
-                        Tier-1 Stanbic Escrow: funds released following independent SGS verification and ocean B/L issuance.
-                    </div>
-                </div>
-            </div>
-            <template #footer>
-                <el-button @click="dossierOpen = false">Close</el-button>
-                <el-button class="wp-btn-primary" @click="dossierOpen = false; ElMessage.info('Full product profile is available after sign in.')">Open Product Profile</el-button>
-            </template>
-        </el-dialog>
 
-        <!-- Make offer dialog -->
-        <el-dialog v-model="offerOpen" title="Make Counter Offer" width="420px" class="wp-exchange-dialog">
-            <div v-if="offerLot">
-                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-3">
-                    <div class="text-xs font-bold text-slate-950">{{ offerLot.name }} ({{ offerLot.grade }})</div>
-                    <div class="text-[11px] font-mono text-slate-500 mt-0.5">Asking: ${{ offerLot.pricePerKg.toFixed(2) }}/kg · Available: {{ offerLot.qtyKg.toLocaleString() }} kg</div>
-                </div>
-                <div class="wp-filter-fields space-y-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Proposed Price (USD / kg)</label>
-                        <el-input v-model.number="offerPrice" type="number" :step="0.01"><template #prepend>$</template></el-input>
+                <!-- Escrow guarantee banner -->
+                <div class="ex-card ex-escrow-banner">
+                    <div class="ex-flex-icon">
+                        <el-icon :size="24" class="ex-icon--primary"><Lock /></el-icon>
+                        <div>
+                            <div class="dp-label-md ex-strong">Institutional Escrow Settlement Guarantee</div>
+                            <p class="dp-caption ex-muted">All transactions execute via Stanbic Bank custody escrow. Funds stay secured until an independent SGS port inspection confirms volume, moisture, and grading at the Mombasa terminal.</p>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity (kg)</label>
-                        <el-input v-model.number="offerQty" type="number" />
-                        <span class="text-[10px] font-mono text-slate-400 mt-1 block">Min export order: 1,000 kg</span>
+                    <div class="ex-actions-inline">
+                        <span class="dp-caption dp-mono ex-icon--primary ex-strong ex-hide-sm">2-Step Dual Authorization</span>
+                        <button type="button" class="ex-btn ex-btn--primary" @click="placeholderAction('View Legal Terms')">View Legal Terms</button>
                     </div>
                 </div>
-                <div class="p-2.5 mt-3 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-600">
-                    <el-icon :size="12" class="text-slate-900 mr-1"><Lock /></el-icon> Funds secured via Stanbic Escrow upon offer acceptance.
-                </div>
-            </div>
-            <template #footer>
-                <el-button @click="offerOpen = false">Cancel</el-button>
-                <el-button class="wp-btn-primary" @click="submitOffer">Submit Binding Offer</el-button>
-            </template>
-        </el-dialog>
 
-        <!-- Create RFQ dialog -->
-        <el-dialog v-model="rfqOpen" title="Broadcast Sourcing RFQ" width="420px" class="wp-exchange-dialog">
-            <p class="text-xs text-slate-500 mb-3">Post your commercial coffee requirements directly to verified dry mills and exporters.</p>
-            <div class="wp-filter-fields space-y-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Coffee Type & Screen</label>
-                    <el-input model-value="Uganda Robusta Screen 18+" />
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Target Volume (MT)</label>
-                        <el-input model-value="20" type="number" />
+                <!-- Negotiation hub -->
+                <div class="ex-card">
+                    <div class="ex-card__head">
+                        <div>
+                            <h3 class="dp-headline-sm">Bilateral Negotiation &amp; Mechanism Hub</h3>
+                            <p class="dp-caption ex-muted">Toggle active commercial workflows across RFQs, live bidding rooms, and offer counters.</p>
+                        </div>
+                        <span class="ex-tag-mini">3 Workspaces Active</span>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Max Price ($/kg)</label>
-                        <el-input model-value="4.10" type="number" />
+                    <div class="ex-negotiation-grid">
+                        <div v-for="card in negotiationCards" :key="card.title" class="ex-negotiation-card">
+                            <div>
+                                <div class="ex-flex-icon-between">
+                                    <span class="ex-flex-icon ex-strong"><el-icon :size="16" :class="`ex-icon--${card.tone}`"><component :is="card.icon" /></el-icon> {{ card.title }}</span>
+                                    <span class="dp-caption dp-mono ex-strong" :class="`ex-icon--${card.tone}`">{{ card.tag }}</span>
+                                </div>
+                                <p class="dp-caption ex-muted">{{ card.body }}</p>
+                            </div>
+                            <div class="ex-actions-inline">
+                                <button v-for="a in card.actions" :key="a.label" type="button" class="ex-btn ex-btn--sm" :class="`ex-btn--${a.tone}`" @click="placeholderAction(a.label)">{{ a.label }}</button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Delivery Port</label>
-                    <el-input model-value="Port of Jebel Ali, Dubai" />
                 </div>
             </div>
-            <template #footer>
-                <el-button class="wp-btn-primary w-full" @click="broadcastRfq">Broadcast RFQ to Network</el-button>
-            </template>
-        </el-dialog>
 
-        <!-- AI copilot dialog -->
-        <el-dialog v-model="aiOpen" width="440px" class="wp-exchange-dialog">
-            <template #header>
-                <div class="flex items-center gap-2">
-                    <el-icon :size="17" class="text-slate-950"><StarFilled /></el-icon>
-                    <span class="font-bold text-sm text-slate-950">Bean Origin AI Copilot</span>
+            <!-- SIDEBAR -->
+            <div class="ex-col-side">
+                <div class="ex-card">
+                    <div class="ex-flex-icon-between">
+                        <span class="ex-flex-icon dp-label-md ex-strong"><el-icon :size="16" class="ex-icon--primary"><TrendCharts /></el-icon> Live Physical Benchmarks</span>
+                        <span class="dp-caption dp-mono ex-icon--primary ex-strong">Live Feed</span>
+                    </div>
+                    <div class="ex-benchmark-list">
+                        <div v-for="b in benchmarks" :key="b.label" class="ex-benchmark">
+                            <div class="ex-flex-icon-between"><span class="dp-caption ex-strong">{{ b.label }}</span><span class="dp-caption ex-icon--primary ex-strong">{{ b.change }}</span></div>
+                            <div class="ex-flex-icon-between"><span class="dp-headline-sm dp-mono">{{ b.value }}<span class="dp-caption ex-muted">{{ b.unit }}</span></span><span class="dp-caption ex-muted dp-mono">{{ b.note }}</span></div>
+                        </div>
+                    </div>
+                    <div class="ex-depth-grid">
+                        <div v-for="d in depthStats" :key="d.label" class="ex-depth-stat">
+                            <span class="dp-caption ex-muted">{{ d.label }}</span>
+                            <span class="dp-body-lg ex-strong dp-mono">{{ d.value }}</span>
+                            <span class="dp-caption" :class="`ex-icon--${d.tone}`">{{ d.note }}</span>
+                        </div>
+                    </div>
+                    <button type="button" class="ex-link" @click="router.visit(route('market.active'))">
+                        <span>Open Coffee Market Terminal</span>
+                        <el-icon :size="15"><ArrowRight /></el-icon>
+                    </button>
                 </div>
-            </template>
-            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2 mb-3">
-                <p class="text-slate-800 font-medium m-0"><strong>AI Assistant:</strong> "Hello Kato, I am connected to the live physical order book. What are you looking to source today?"</p>
-                <div class="p-2 bg-white border border-slate-200 rounded font-mono text-[11px] text-slate-700">Matched 3 active lots meeting: <em>Robusta, Screen 18, under $4.20/kg</em></div>
-                <p class="text-[11px] font-mono text-slate-400 m-0">1. #LOT-000124 (5,000 kg @ $4.20) · 2. #LOT-000412 (12,000 kg @ $4.10) · 3. #LOT-000388 (20,000 kg @ $4.15)</p>
+
+                <div class="ex-card">
+                    <div class="ex-flex-icon-between">
+                        <span class="ex-flex-icon dp-label-md ex-strong"><el-icon :size="16" class="ex-icon--primary"><Notification /></el-icon> Exchange Activity Stream</span>
+                        <span class="ex-dot ex-dot--pulse"></span>
+                    </div>
+                    <div class="ex-activity-list">
+                        <div v-for="a in activityFeed" :key="a.title" class="ex-activity-item">
+                            <span class="ex-activity-icon" :class="`ex-activity-icon--${a.tone}`"><el-icon :size="13"><component :is="a.icon" /></el-icon></span>
+                            <div>
+                                <div class="dp-caption ex-strong">{{ a.title }}</div>
+                                <div class="ex-flex-icon dp-caption ex-muted dp-mono"><span>{{ a.meta }}</span><span>&middot;</span><span>{{ a.time }}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ex-card ex-sell-banner">
+                    <div class="ex-flex-icon"><el-icon :size="18"><Shop /></el-icon><span class="dp-label-md">Producer &amp; Miller Gateway</span></div>
+                    <h4 class="dp-headline-sm">Have Physical Coffee to Sell?</h4>
+                    <p class="dp-caption">Bring your lots directly to the exchange floor. Connect with verified importers, access escrow settlement, and skip the intermediary discounts.</p>
+                    <button type="button" class="ex-btn ex-btn--onprimary ex-btn--full" @click="placeholderAction('List Coffee on Exchange')">List Coffee on Exchange</button>
+                </div>
+
+                <div class="ex-card">
+                    <span class="dp-label-md ex-strong">Institutional Trust Guarantees</span>
+                    <div class="ex-trust-list">
+                        <div v-for="t in trustItems" :key="t.label" class="ex-flex-icon">
+                            <el-icon :size="16" class="ex-icon--primary"><component :is="t.icon" /></el-icon>
+                            <span class="dp-caption ex-strong">{{ t.label }}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="flex gap-2 wp-filter-fields">
-                <el-input v-model="aiDraft" placeholder="e.g. Draft purchase bid on #LOT-000124..." />
-                <el-button class="wp-btn-primary flex-shrink-0" @click="aiOpen = false; ElMessage.success('Redirecting to Agentic Commerce order execution session (dummy preview).')">Send</el-button>
-            </div>
-        </el-dialog>
-    </OuterLayout>
+        </section>
+    </DesignPreviewLayout>
 </template>
 
 <style scoped>
-.wp-lot-card__art {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+.ex-card {
+    background: var(--dp-surface-container-lowest);
+    border: 1px solid var(--dp-outline-variant);
+    border-radius: var(--dp-card-radius);
+    box-shadow: var(--dp-card-shadow);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
 }
-.wp-lot-card {
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-.wp-lot-card:hover {
-    border-color: #94a3b8;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-    transform: translateY(-2px);
-}
+.ex-muted { color: var(--dp-on-surface-variant); }
+.ex-strong { color: var(--dp-on-surface); font-weight: 700; }
+.ex-on { color: var(--dp-on-surface); }
+.ex-mb-sm { margin-bottom: 8px; }
+.ex-caption-sm { font-size: 11px; }
+.ex-hide-sm { display: none; }
+@media (min-width: 640px) { .ex-hide-sm { display: inline; } }
+.ex-flex-icon { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ex-flex-icon-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.ex-sep { color: var(--dp-outline-variant); }
 
-/* Element Plus field overrides — slate palette to match the mockup exactly */
-.wp-filter-fields :deep(.el-input__wrapper),
-.wp-filter-fields :deep(.el-select__wrapper) {
-    background: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 0 0 1px #e2e8f0 inset;
-    padding: 1px 11px;
-}
-.wp-filter-fields :deep(.el-input__wrapper.is-focus),
-.wp-filter-fields :deep(.el-select__wrapper.is-focused) {
-    background: #ffffff;
-    box-shadow: 0 0 0 1px #0f172a inset;
-}
-.wp-filter-fields :deep(.el-input__inner),
-.wp-filter-fields :deep(.el-select__selected-item) {
-    font-size: 12px;
-    color: #0f172a;
-}
-.wp-filter-fields :deep(.el-input__inner::placeholder) {
-    color: #94a3b8;
-}
-.wp-filter-fields :deep(.el-input-group__prepend),
-.wp-filter-fields :deep(.el-input-group__append) {
-    background: #f1f5f9;
-    color: #64748b;
-    font-size: 11px;
-    box-shadow: 0 0 0 1px #e2e8f0 inset;
-}
-.wp-sort-select :deep(.el-select__wrapper) { padding: 1px 8px; min-height: 30px; }
+.ex-icon--primary { color: var(--dp-primary); }
+.ex-icon--secondary { color: var(--dp-secondary); }
+.ex-icon--error { color: var(--dp-error); }
+.ex-icon--neutral { color: var(--dp-on-surface-variant); }
 
-:deep(.wp-btn-primary.el-button) {
-    background: #020617;
-    border-color: #020617;
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 13px;
-    border-radius: 10px;
-}
-:deep(.wp-btn-primary.el-button:hover),
-:deep(.wp-btn-primary.el-button:focus) {
-    background: #1e293b;
-    border-color: #1e293b;
-    color: #ffffff;
-}
+.ex-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--dp-primary); flex-shrink: 0; }
+.ex-dot--pulse { animation: ex-pulse 1.6s ease-in-out infinite; }
+@keyframes ex-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-:deep(.wp-exchange-dialog.el-dialog) {
-    border-radius: 16px;
+.ex-status-line { display: flex; flex-direction: column; gap: 8px; padding: 10px 20px; background: var(--dp-surface-container-low); border-radius: 8px; font-size: 12px; margin-top: -24px; margin-bottom: 4px; }
+@media (min-width: 1024px) { .ex-status-line { flex-direction: row; align-items: center; justify-content: space-between; } }
+
+.ex-tag-mini { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 9px; border-radius: 6px; background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); white-space: nowrap; }
+.ex-tag-mini--primary { background: var(--dp-primary-fixed); color: var(--dp-on-primary-fixed); }
+.ex-tag-mini--secondary { background: var(--dp-secondary-fixed); color: var(--dp-on-secondary-fixed); }
+.ex-tag-mini--neutral { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
+
+.ex-hero {
+    border: none;
+    border-bottom: 1px solid var(--dp-outline-variant);
+    border-radius: 0;
+    margin-top: -16px;
+    padding-bottom: 24px;
+    box-shadow: none;
 }
+.ex-hero__top { display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 1024px) { .ex-hero__top { flex-direction: row; align-items: center; justify-content: space-between; } }
+.ex-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ex-hero__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+
+.ex-tabs { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding-top: 4px; }
+.ex-tab { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; border: none; background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0; font-family: var(--dp-font-sans); }
+.ex-tab--active { background: var(--dp-primary); color: var(--dp-on-primary); }
+.ex-tab__count { padding: 2px 6px; border-radius: 6px; background: var(--dp-surface-container-high); color: var(--dp-on-surface); font-size: 10px; font-family: var(--dp-font-mono); }
+.ex-tab--active .ex-tab__count { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
+
+.ex-kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (min-width: 1024px) { .ex-kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+.ex-kpi { background: var(--dp-surface-container-low); border-radius: var(--dp-card-radius); padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.ex-kpi__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ex-kpi__value { display: flex; align-items: baseline; gap: 6px; }
+.ex-kpi__num { font-size: 26px; font-weight: 700; color: var(--dp-on-surface); font-family: var(--dp-font-sans); line-height: 1; }
+
+.ex-grid-12 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 1200px) { .ex-grid-12 { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; } }
+.ex-col-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ex-col-side { display: flex; flex-direction: column; gap: 16px; }
+
+
+.ex-card__head { display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 640px) { .ex-card__head { flex-direction: row; align-items: flex-start; justify-content: space-between; } }
+
+.ex-table-wrap { overflow-x: auto; }
+.ex-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+.ex-table thead tr { background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; font-weight: 700; }
+.ex-table th { padding: 10px 12px; white-space: nowrap; }
+.ex-table th:first-child { border-radius: 6px 0 0 6px; }
+.ex-table th:last-child { border-radius: 0 6px 6px 0; }
+.ex-table tbody tr { border-bottom: 1px solid var(--dp-outline-variant); transition: background 0.15s ease; }
+.ex-table tbody tr:last-child { border-bottom: none; }
+.ex-table tbody tr:hover { background: var(--dp-surface-container-low); }
+.ex-table td { padding: 12px; vertical-align: middle; }
+.ex-tag-mini--corridor { margin-top: 6px; }
+.ex-row--selected { background: var(--dp-primary-fixed); }
+.ex-row--selected:hover { background: var(--dp-primary-fixed); }
+.ex-center { text-align: center; }
+.ex-right { text-align: right; }
+
+.ex-footline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--dp-outline-variant); }
+.ex-actions-inline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ex-actions-inline--end { justify-content: flex-end; }
+
+.ex-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; border-radius: 8px; border: none;
+    font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; font-family: var(--dp-font-sans); white-space: nowrap;
+    text-decoration: none;
+}
+.ex-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
+.ex-btn--primary:hover { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
+.ex-btn--secondary { background: var(--dp-secondary-fixed); color: var(--dp-on-secondary-fixed); }
+.ex-btn--secondary:hover { background: var(--dp-secondary); color: var(--dp-on-secondary-container); }
+.ex-btn--muted { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
+.ex-btn--muted:hover { background: var(--dp-surface-dim); }
+.ex-btn--onprimary { background: var(--dp-on-primary); color: var(--dp-primary); }
+.ex-btn--onprimary:hover { background: var(--dp-surface-container-lowest); }
+.ex-btn--sm { padding: 6px 10px; }
+.ex-btn--full { width: 100%; }
+.ex-btn--grow { flex: 1; }
+.ex-btn--disabled { opacity: 0.45; pointer-events: none; }
+
+.ex-link { display: inline-flex; align-items: center; justify-content: space-between; gap: 6px; font-weight: 700; color: var(--dp-primary); text-decoration: none; background: none; border: none; cursor: pointer; font-size: 12px; font-family: var(--dp-font-sans); padding: 4px 0; }
+.ex-link:hover { text-decoration: underline; }
+
+.ex-provenance { background: var(--dp-surface-container-low); border-radius: 8px; padding: 14px; }
+.ex-provenance-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 640px) { .ex-provenance-grid { grid-template-columns: repeat(4, 1fr); } }
+.ex-provenance-item { background: var(--dp-surface-container-lowest); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+
+.ex-specs-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 900px) { .ex-specs-grid { grid-template-columns: 1fr 1fr; } }
+.ex-specs-col { display: flex; flex-direction: column; gap: 12px; }
+.ex-mini-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ex-mini-stat { background: var(--dp-surface-container-low); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.ex-sensory { background: var(--dp-surface-container-low); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.ex-sensory-row { display: flex; flex-direction: column; gap: 4px; }
+.ex-bar { width: 100%; height: 6px; border-radius: 999px; background: var(--dp-surface-container-high); overflow: hidden; }
+.ex-bar__fill { height: 100%; border-radius: 999px; }
+.ex-bar__fill--primary { background: var(--dp-primary); }
+.ex-bar__fill--secondary { background: var(--dp-secondary); }
+
+.ex-cost-box { background: var(--dp-surface-container-low); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.ex-cost-rows { display: flex; flex-direction: column; gap: 6px; }
+.ex-cost-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ex-cost-total { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--dp-surface-container-lowest); border-radius: 8px; padding: 10px 12px; }
+
+.ex-escrow-banner { flex-direction: column; }
+@media (min-width: 900px) { .ex-escrow-banner { flex-direction: row; align-items: center; } }
+.ex-escrow-banner .ex-flex-icon { align-items: flex-start; }
+
+.ex-negotiation-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 900px) { .ex-negotiation-grid { grid-template-columns: repeat(3, 1fr); } }
+.ex-negotiation-card { background: var(--dp-surface-container-low); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+
+.ex-benchmark-list { display: flex; flex-direction: column; gap: 10px; }
+.ex-benchmark { background: var(--dp-surface-container-low); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+.ex-depth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ex-depth-stat { background: var(--dp-surface-container-low); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+
+.ex-activity-list { display: flex; flex-direction: column; gap: 12px; }
+.ex-activity-item { display: flex; align-items: flex-start; gap: 10px; }
+.ex-activity-icon { width: 24px; height: 24px; border-radius: 999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; color: var(--dp-on-primary-fixed); }
+.ex-activity-icon--primary { background: var(--dp-primary-fixed); }
+.ex-activity-icon--secondary { background: var(--dp-secondary-fixed); color: var(--dp-on-secondary-fixed); }
+.ex-activity-icon--neutral { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
+
+.ex-sell-banner { background: linear-gradient(135deg, var(--dp-primary), var(--dp-primary-container)); color: var(--dp-on-primary); }
+.ex-sell-banner p { color: var(--dp-on-primary); opacity: 0.85; }
+
+.ex-trust-list { display: flex; flex-direction: column; gap: 10px; }
 </style>

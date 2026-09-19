@@ -87,6 +87,8 @@ const typeLabels = {
     escrow_fund: 'Transfer to Escrow',
     escrow_hold: 'Escrow Hold',
     escrow_release: 'Escrow Payment',
+    transfer_in: 'Wallet Transfer',
+    transfer_out: 'Wallet Transfer',
 };
 
 function typeLabel(type) {
@@ -269,27 +271,25 @@ function openWithdraw() {
                                     </span>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="Description" width="210">
+                            <el-table-column label="Description" min-width="220">
                                 <template #default="{ row }">
                                     <div class="wal-cell-desc">
                                         <span class="wal-cell-desc__text">{{ row.description || typeLabel(row.type) }}</span>
-                                        <span class="wal-cell-desc__meta">
-                                            {{ typeLabel(row.type) }}<template v-if="row.counterparty_name"> · {{ row.counterparty_name }}</template>
-                                        </span>
+                                        <span v-if="row.counterparty_name" class="wal-cell-desc__meta">{{ row.counterparty_name }}</span>
                                     </div>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="Status" width="130">
+                            <el-table-column label="Status" width="120">
                                 <template #default="{ row }">
                                     <span class="wal-badge" :class="statusTone[row.status] ?? 'wal-badge--muted'">
                                         <i></i> {{ row.status }}
                                     </span>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="Date" width="170">
+                            <el-table-column label="Date" width="175">
                                 <template #default="{ row }"><span class="wal-cell-date">{{ formatDate(row.created_at) }}</span></template>
                             </el-table-column>
-                            <el-table-column label="Amount" width="130" align="right">
+                            <el-table-column label="Amount" width="140" align="right">
                                 <template #default="{ row }">
                                     <span class="wal-amount" :class="row.is_credit ? 'wal-text-green' : 'wal-text-red'">
                                         {{ row.is_credit ? '+' : '−' }}{{ formatMoney(row.amount, row.currency) }}

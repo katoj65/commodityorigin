@@ -15,7 +15,8 @@ const mobileNavOpen = ref(false);
 const scrolled = ref(false);
 
 const navLinks = [
-    { label: 'Exchange', route: 'exchange.index' },
+    { label: 'About', route: 'about.index' },
+    { label: 'Exchange', route: 'exchange-snapshot.index' },
     { label: 'Marketplace', route: 'market.live' },
     { label: 'Market Intelligence', route: 'market-intelligence.index' },
     { label: 'How It Works', route: 'how-it-works.index' },
@@ -135,7 +136,8 @@ onBeforeUnmount(() => {
 
             <Transition name="wp-mobile-nav">
                 <div v-if="mobileNavOpen" class="lg:hidden bg-[#121611] border-t border-[#bfcaba]/10 px-4 py-4 flex flex-col gap-1 origin-top">
-                    <Link :href="route('exchange.index')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">Exchange</Link>
+                    <Link :href="route('about.index')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">About</Link>
+                    <Link :href="route('exchange-snapshot.index')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">Exchange</Link>
                     <Link :href="route('market.live')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">Marketplace</Link>
                     <Link :href="route('market-intelligence.index')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">Market Intelligence</Link>
                     <Link :href="route('how-it-works.index')" class="text-sm text-[#bfcaba] hover:text-[#a3f69c] no-underline py-2.5 transition-colors" @click="mobileNavOpen = false">How It Works</Link>

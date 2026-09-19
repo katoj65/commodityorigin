@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\About\AboutController;
 use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\AI\AiChatController;
 use App\Http\Controllers\Analysis\AnalysisController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Currency\CurrencyController;
 use App\Http\Controllers\Documentation\DocumentationController;
 use App\Http\Controllers\Escrow\EscrowController;
 use App\Http\Controllers\Exchange\ExchangeController;
+use App\Http\Controllers\Exchange\ExchangeSnapshotController;
 use App\Http\Controllers\Farm\FarmController;
 use App\Http\Controllers\Farm\GeocodeController;
 use App\Http\Controllers\FarmCollection\FarmCollectionController;
@@ -43,7 +45,6 @@ use App\Http\Controllers\Sell\SellController;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Store\StoreController;
 use App\Http\Controllers\Task\TaskController;
-use App\Http\Controllers\Trade\TradeController;
 use App\Http\Controllers\Wallet\WalletController;
 use App\Http\Controllers\Weather\WeatherForecastController;
 use Illuminate\Support\Facades\Route;
@@ -63,9 +64,14 @@ Route::prefix('how-it-works')->name('how-it-works.')->group(function () {
     Route::get('/', [HowItWorksController::class, 'index'])->name('index');
 });
 
-// Exchange — public live exchange snapshot, dedicated route prefix.
-Route::prefix('exchange')->name('exchange.')->group(function () {
-    Route::get('/', [ExchangeController::class, 'index'])->name('index');
+// About — public about page, dedicated route prefix.
+Route::prefix('about')->name('about.')->group(function () {
+    Route::get('/', [AboutController::class, 'index'])->name('index');
+});
+
+// Exchange snapshot — public live exchange preview, dedicated route prefix.
+Route::prefix('exchange-snapshot')->name('exchange-snapshot.')->group(function () {
+    Route::get('/', [ExchangeSnapshotController::class, 'index'])->name('index');
 });
 
 // Market Intelligence — public news/updates feed, dedicated route prefix.
@@ -88,23 +94,16 @@ Route::middleware([
     // Live Market overview — moved inside the app shell (was public).
     Route::get('/live-market', [MarketController::class, 'liveMarket'])->name('market.live');
 
+    // Exchange — institutional trading floor terminal, dedicated route prefix.
+    Route::prefix('exchange')->name('exchange.')->group(function () {
+        Route::get('/', [ExchangeController::class, 'index'])->name('index');
+        Route::get('/offers', [ExchangeController::class, 'offers'])->name('offers');
+    });
+
     // System settings.
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings/price-indexes', [SettingsController::class, 'storePriceIndex'])->name('settings.price-indexes.store');
     Route::delete('/settings/price-indexes/{priceIndex}', [SettingsController::class, 'destroyPriceIndex'])->name('settings.price-indexes.destroy');
-
-    // Trade hub.
-    Route::prefix('trade')->name('trade.')->group(function () {
-        Route::get('/', [TradeController::class, 'index'])->name('index');
-        Route::get('/offer', [TradeController::class, 'offer'])->name('offer');
-        Route::post('/offer', [TradeController::class, 'storeOffer'])->name('offer.store');
-        Route::patch('/offer/{offer}', [TradeController::class, 'updateOffer'])->name('offer.update');
-        Route::delete('/offer/{offer}', [TradeController::class, 'destroyOffer'])->name('offer.destroy');
-        Route::post('/offer/{offer}/respond', [TradeController::class, 'storeOfferResponse'])->name('offer.respond');
-        Route::patch('/offer/response/{offerResponse}', [TradeController::class, 'updateOfferResponse'])->name('offer.response.update');
-        Route::get('/offer/{offer}/payment', [TradeController::class, 'showOfferPayment'])->name('offer.payment');
-        Route::post('/offer/{offer}/payment', [TradeController::class, 'storeOfferPayment'])->name('offer.payment.store');
-    });
 
     // Request for Quote (RFQ).
     Route::prefix('rfq')->name('rfq.')->group(function () {

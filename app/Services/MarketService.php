@@ -8,6 +8,7 @@ use App\Models\Bid;
 use App\Models\FarmSustainabilityPractice;
 use App\Models\Market;
 use App\Models\SustainabilityPracticesMetadata;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -198,8 +199,9 @@ class MarketService
     }
 
     /**
-     * How many listings are currently live — the Trade hub's "Market" tab
-     * count, without paying for tradeListing()'s full shape/bid lookup.
+     * How many listings are currently live — used for market-count badges
+     * across pages, without paying for exchangeListing()'s full shape/bid
+     * lookup.
      */
     public function liveCount(): int
     {
@@ -207,38 +209,39 @@ class MarketService
     }
 
     /**
-     * Live listings shaped for the Trade hub's coffee listings table —
-     * richer than marketPageListing() (pulls in the underlying lot's grade
-     * and screen, real trust flags, and the highest real bid per lot so
-     * auction rows don't need a fabricated suggested amount).
-     *
-     * @return array<int, array<string, mixed>>
+     * Live listings shaped for the Exchange trading floor's coffee listings
+     * table, paginated newest first — richer than marketPageListing() (pulls
+     * in the underlying lot's grade and screen, the seller name, and the
+     * highest real bid per lot so auction rows don't need a fabricated
+     * suggested amount).
      */
-    public function tradeListing(): array
+    public function exchangeListing(int $perPage = 10): LengthAwarePaginator
     {
-        $markets = Market::query()
+        $paginator = Market::query()
             ->where('status', 'live')
-            ->with('lot')
+            ->with(['lot', 'user'])
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate($perPage);
+
+        $lotIds = collect($paginator->items())->pluck('lot_id')->filter()->unique();
 
         $highestBids = Bid::query()
-            ->whereIn('lot_id', $markets->pluck('lot_id')->filter()->unique())
+            ->whereIn('lot_id', $lotIds)
             ->selectRaw('lot_id, MAX(bid_amount) as highest')
             ->groupBy('lot_id')
             ->pluck('highest', 'lot_id');
 
-        return $markets
-            ->map(fn (Market $market): array => $this->shapeTradeListing($market, $highestBids->get($market->lot_id)))
-            ->all();
+        return $paginator->through(
+            fn (Market $market): array => $this->shapeExchangeListing($market, $highestBids->get($market->lot_id)),
+        );
     }
 
     /**
-     * Shape a single market listing for the Trade table row.
+     * Shape a single market listing for the Exchange table row.
      *
      * @return array<string, mixed>
      */
-    private function shapeTradeListing(Market $market, mixed $highestBid = null): array
+    private function shapeExchangeListing(Market $market, mixed $highestBid = null): array
     {
         $lot = $market->lot;
         $quantity = (float) ($market->available_quantity ?: $market->quantity ?? 0);
@@ -263,6 +266,8 @@ class MarketService
             'price_per_kg' => $price,
             'total_price' => round($price * $quantity, 2),
             'highest_bid' => $highestBid !== null ? (float) $highestBid : null,
+            'seller_name' => $market->user?->name,
+            'delivery_location' => $market->delivery_location,
             'is_traceable' => $market->lot_id !== null,
         ];
     }

@@ -17,16 +17,6 @@ const props = defineProps({
    OuterLayout brand palette already used for the header/footer chrome
    (#121611 dark, #a3f69c accent, #0d631b link green) instead of the
    mockup's own emerald/obsidian palette, for site-wide consistency. ────── */
-const tickerItems = [
-    { label: 'ARABICA (KC Spot)', value: '$5.18/kg', change: '▲ +2.4%' },
-    { label: 'ROBUSTA (RC Spot)', value: '$3.92/kg', change: '▲ +1.1%' },
-    { label: 'ICE COFFEE C', value: '248.65¢/lb', change: '▲ +0.8%' },
-    { label: 'UGANDA BUGISU AA (FOB MOMBASA)', value: '$5.10/kg', change: '▲ +1.8%' },
-    { label: 'LONDON ROBUSTA JAN', value: '$4,620/MT', change: '▲ +0.4%' },
-    { label: 'STANBIC ESCROW LIQUIDITY', value: '$14.2M ACTIVE', change: '● SECURE' },
-    { label: 'MUKONO BASIN FAQ NATURALS', value: '$3.88/kg', change: '▲ +1.2%' },
-];
-
 const heroMetrics = [
     { label: '24h Traded Volume', value: '142.8', unit: 'MT', note: '▲ +18.4% vs last week' },
     { label: 'Active Verified Lots', value: '312', unit: 'Lots', note: 'Export-ready inventory' },
@@ -109,32 +99,8 @@ const aiChatDraft = ref('');
 </script>
 
 <template>
-    <OuterLayout title="Bean Origin — The Digital Exchange for Physical Coffee">
+    <OuterLayout title="Bean Origin - The Digital Exchange for Physical Coffee">
         <div class="wp-exchange">
-            <!-- LIVE COMMODITY TICKER -->
-            <div class="bg-[#121611] text-[#a3f69c] border-b border-[#a3f69c]/10 py-2 overflow-hidden text-[11px] font-mono select-none">
-                <div class="flex items-center">
-                    <div class="px-3 bg-black/30 text-[#a3f69c] font-semibold border-r border-[#a3f69c]/15 uppercase tracking-widest flex items-center gap-1.5 shrink-0">
-                        <span class="w-2 h-2 rounded-full bg-[#a3f69c] animate-pulse" />
-                        EXCHANGE FEED
-                    </div>
-                    <div class="overflow-hidden whitespace-nowrap flex-1">
-                        <div class="wp-ticker-track flex items-center gap-8 pl-4">
-                            <template v-for="n in 2" :key="n">
-                                <template v-for="(item, i) in tickerItems" :key="`${n}-${i}`">
-                                    <span class="inline-flex items-center gap-2">
-                                        <span class="text-[#bfcaba]">{{ item.label }}</span>
-                                        <span class="text-white font-bold">{{ item.value }}</span>
-                                        <span class="text-[#a3f69c] font-semibold">{{ item.change }}</span>
-                                    </span>
-                                    <span class="text-[#3a4536]">|</span>
-                                </template>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- HERO -->
             <section class="relative bg-[#121611] text-white pt-16 pb-24 md:pt-20 md:pb-28 overflow-hidden">
                 <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-[#a3f69c]/10 rounded-full blur-3xl pointer-events-none" />
@@ -293,7 +259,7 @@ const aiChatDraft = ref('');
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-16 bg-[#f7fbf0] border border-[#e2e8e0] rounded-2xl p-6 sm:p-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-16 bg-[#f7fbf0] rounded-2xl p-6 sm:p-8">
                         <div class="lg:col-span-5 relative">
                             <div class="rounded-xl overflow-hidden border border-[#e2e8e0] relative aspect-[4/3] bg-[#121611] flex items-center justify-center">
                                 <span class="material-symbols-outlined text-[64px] text-[#a3f69c]/40">grain</span>
@@ -365,7 +331,7 @@ const aiChatDraft = ref('');
                         <div class="space-y-2.5 mb-6">
                             <div class="flex items-start gap-2 text-xs text-slate-700">
                                 <span class="material-symbols-outlined text-[16px] text-[#0d631b] mt-0.5">check_circle</span>
-                                <span>Broadcast a spec — say, 100 MT Bugisu Grade AA — as an RFQ or reverse auction straight to verified exporters.</span>
+                                <span>Broadcast a spec (say, 100 MT Bugisu Grade AA) as an RFQ or reverse auction straight to verified exporters.</span>
                             </div>
                             <div class="flex items-start gap-2 text-xs text-slate-700">
                                 <span class="material-symbols-outlined text-[16px] text-[#0d631b] mt-0.5">check_circle</span>
@@ -548,19 +514,6 @@ const aiChatDraft = ref('');
 </template>
 
 <style scoped>
-@keyframes wp-ticker-slide {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-}
-.wp-ticker-track {
-    display: inline-flex;
-    white-space: nowrap;
-    animation: wp-ticker-slide 42s linear infinite;
-}
-.wp-ticker-track:hover {
-    animation-play-state: paused;
-}
-
 /* Element Plus field overrides — match the page's slate/green Tailwind
    look (small text, slate-50 fill, green focus) instead of ElementPlus's
    own default theme. */
