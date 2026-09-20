@@ -8,13 +8,16 @@ import {
     Files, Close, Refresh,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import OfferModal from '@/Components/Modals/OfferModal.vue';
 
 const props = defineProps({
     originOptions: { type: Array, default: () => [] },
     coffeeTypeOptions: { type: Array, default: () => [] },
     offers: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
+    offerStats: { type: Object, default: () => ({}) },
 });
+
 
 /* ── Dummy Offers hub content — illustrative only ─────────────────── */
 const statusTabs = [
@@ -61,15 +64,28 @@ function applyFilters() {
     });
 }
 
-const kpis = [
-    { icon: Files, label: 'Offers Received', value: '8', note: '3 require response today', tone: 'primary' },
-    { icon: Promotion, label: 'Offers Sent', value: '5', note: '2 in active counter-turn' },
-    { icon: ChatDotRound, label: 'Active Negotiating', value: '3', note: 'Avg spread $0.09/kg' },
+const kpis = computed(() => [
+    { icon: Files, label: 'Offers Received', value: String(props.offerStats.offersReceived ?? 0), note: 'Available offers', tone: 'primary' },
+    { icon: Promotion, label: 'Offers Sent', value: String(props.offerStats.offersSent ?? 0), note: '2 in active counter-turn' },
+    { icon: ChatDotRound, label: 'Active Negotiating', value: String(props.offerStats.activeNegotiating ?? 0), note: 'Avg spread $0.09/kg' },
     { icon: CircleCheck, label: 'Accepted (YTD)', value: '12', note: '100% converted to escrow', tone: 'primary' },
-    { icon: Coin, label: 'Pipeline Offer Value', value: '$248,500', note: 'Volume: 58 MT (966 bags)', mono: true },
-];
+    { icon: Coin, label: 'Pipeline Offer Value', value: `$${Number(props.offerStats.pipelineValue ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, note: 'Volume: 58 MT (966 bags)', mono: true },
+]);
 
 const offers = computed(() => props.offers);
+
+/* ── Offer modal — triggered by the "Offer" button on open-status rows ── */
+const offerModalOpen = ref(false);
+const selectedOffer = ref(null);
+
+function openOfferModal(offer) {
+    selectedOffer.value = offer;
+    offerModalOpen.value = true;
+}
+
+function isOpenStatus(offer) {
+    return (offer.status ?? '').toLowerCase() === 'open';
+}
 
 /* ── Modal — inert dummy interactivity, nothing persisted ────────────── */
 const createOfferOpen = ref(false);
@@ -198,7 +214,8 @@ function submitCreateOffer() {
                                     <div class="dp-caption ex-muted dp-mono">{{ offer.validUntil }}</div>
                                 </td>
                                 <td class="ex-right">
-                                    <Link :href="route('exchange.offers.show', offer.recordId)" class="ex-btn ex-btn--sm" :class="`ex-btn--${offer.actionTone}`">{{ offer.action }}</Link>
+                                    <button v-if="isOpenStatus(offer)" type="button" class="ex-btn ex-btn--sm" :class="`ex-btn--${offer.actionTone}`" @click="openOfferModal(offer)">Offer</button>
+                                    <Link v-else :href="route('exchange.offers.show', offer.recordId)" class="ex-btn ex-btn--sm" :class="`ex-btn--${offer.actionTone}`">{{ offer.action }}</Link>
                                 </td>
                             </tr>
                         </tbody>
@@ -277,6 +294,8 @@ function submitCreateOffer() {
                 </div>
             </template>
         </el-dialog>
+
+        <OfferModal v-model="offerModalOpen" :offer="selectedOffer" />
     </DesignPreviewLayout>
 </template>
 

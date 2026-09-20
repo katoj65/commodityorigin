@@ -5,9 +5,16 @@ namespace App\Services;
 use App\Models\Offer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class OfferService
 {
+    public function __construct(
+        private readonly OfferOrderService $offerOrders,
+    ) {
+    }
+
     /**
      * Get a base query builder for offers.
      */
@@ -26,7 +33,7 @@ class OfferService
     public function allOrderedByStatus(): Collection
     {
         return $this->query()
-            ->with(['buyer', 'seller', 'market'])
+            ->with(['user', 'market.user'])
             ->orderByRaw("CASE WHEN status = 'open' THEN 0 ELSE 1 END")
             ->orderByDesc('status')
             ->latest()
@@ -43,18 +50,89 @@ class OfferService
     }
 
     /**
+     * KPI stats for the Offers hub header row: total value of open offers,
+     * how many are mid-negotiation or countered, and how many are open.
+     *
+     * @return array<string, mixed>
+     */
+    public function pipelineStats(): array
+    {
+        return [
+            'pipelineValue' => (float) ($this->query()
+                ->where('status', 'open')
+                ->selectRaw('COALESCE(SUM(quantity * unit_price), 0) as total')
+                ->value('total') ?? 0),
+            'activeNegotiating' => $this->query()->where('status', 'negotiation')->count(),
+            'offersSent' => $this->query()->where('status', 'counter_offer')->count(),
+            'offersReceived' => $this->query()->where('status', 'open')->count(),
+        ];
+    }
+
+    /**
+     * Validate and apply a buyer's terms against an open offer listing —
+     * the Offers hub's "Make an Offer" modal. Only offers still in `open`
+     * status are eligible, and the listing's own seller (the referenced
+     * market's owner) cannot make an offer on their own listing. On
+     * success the offer moves into `pending` review carrying the buyer's
+     * proposed quantity/price/notes.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function submitOffer(Offer $offer, int $userId, array $data): Offer
+    {
+        if ($offer->status !== 'open') {
+            throw ValidationException::withMessages([
+                'status' => 'This offer is no longer open for new terms.',
+            ]);
+        }
+
+        if ($offer->market && $offer->market->user_id === $userId) {
+            throw ValidationException::withMessages([
+                'status' => 'You cannot make an offer on your own listing.',
+            ]);
+        }
+
+        $quantity = (float) $data['quantity'];
+        $price = (float) $data['price'];
+        $incoterm = $data['incoterm'];
+        $notes = $data['message'] ?? null;
+
+        return DB::transaction(function () use ($offer, $userId, $quantity, $price, $incoterm, $notes) {
+            $offer->update([
+                'user_id' => $userId,
+                'quantity' => $quantity,
+                'unit_price' => $price,
+                'incoterm' => $incoterm,
+                'total_amount' => $quantity * $price,
+                'notes' => $notes,
+                'status' => 'pending',
+            ]);
+
+            $offer->refresh();
+
+            $this->offerOrders->createFromOffer($offer, $offer->incoterm);
+
+            return $offer;
+        });
+    }
+
+    /**
      * Shape an offer for the Offers hub table, from the perspective of the
-     * given user (whichever side of the deal they're on). Joined against
-     * its market listing (via the eager-loaded `market` relation) for the
-     * lot's real name/origin when the offer references one.
+     * given user (whichever side of the deal they're on). The seller is
+     * derived from the offer's market listing (the listing's own `user`),
+     * while the offer's own `user` is the buyer who placed it. Joined
+     * against the market listing (via the eager-loaded `market` relation)
+     * for the lot's real name/origin when the offer references one.
      *
      * @return array<string, mixed>
      */
     public function shapeForUser(Offer $offer, int $userId): array
     {
-        $isSeller = $offer->seller_id === $userId;
-        $counterparty = $isSeller ? $offer->buyer : $offer->seller;
         $market = $offer->market;
+        $seller = $market?->user;
+        $buyer = $offer->user;
+        $isSeller = $seller?->id === $userId;
+        $counterparty = $isSeller ? $buyer : $seller;
 
         return [
             'recordId' => $offer->id,
@@ -86,8 +164,10 @@ class OfferService
      */
     public function shapeProfile(Offer $offer, int $userId): array
     {
-        $isSeller = $offer->seller_id === $userId;
         $market = $offer->market;
+        $seller = $market?->user;
+        $buyer = $offer->user;
+        $isSeller = $seller?->id === $userId;
 
         return [
             'commodity' => trim("{$offer->crop_type} {$offer->variety} {$offer->grade}"),
@@ -100,9 +180,9 @@ class OfferService
             'currency' => $offer->currency,
             'status' => ucfirst($offer->status),
             'createdAt' => $offer->created_at?->format('d M Y, H:i'),
-            'buyerName' => $offer->buyer?->name,
-            'sellerName' => $offer->seller?->name,
-            'counterpartyName' => $isSeller ? $offer->buyer?->name : $offer->seller?->name,
+            'buyerName' => $buyer?->name,
+            'sellerName' => $seller?->name,
+            'counterpartyName' => $isSeller ? $buyer?->name : $seller?->name,
             'isSeller' => $isSeller,
             'marketPricePerKg' => $market?->price_per_kg !== null ? (float) $market->price_per_kg : null,
         ];

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Offer extends Model
+class OfferOrder extends Model
 {
     use HasFactory;
 
@@ -16,19 +16,15 @@ class Offer extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'offer_number',
         'user_id',
+        'offer_id',
         'market_id',
-        'crop_type',
-        'variety',
-        'grade',
         'quantity',
         'unit_price',
         'incoterm',
-        'total_amount',
-        'currency',
         'notes',
         'status',
+        'executed_at',
     ];
 
     /**
@@ -39,11 +35,11 @@ class Offer extends Model
     protected $casts = [
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
-        'total_amount' => 'decimal:2',
+        'executed_at' => 'datetime',
     ];
 
     /**
-     * The user this offer belongs to.
+     * The user this order belongs to.
      */
     public function user(): BelongsTo
     {
@@ -51,8 +47,15 @@ class Offer extends Model
     }
 
     /**
-     * The market listing (lot) this offer is negotiating over, if any.
-     * The listing's own `user` is the seller side of the deal.
+     * The offer this order was executed from.
+     */
+    public function offer(): BelongsTo
+    {
+        return $this->belongsTo(Offer::class);
+    }
+
+    /**
+     * The market listing this order was executed against, if any.
      */
     public function market(): BelongsTo
     {

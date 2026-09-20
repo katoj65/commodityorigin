@@ -8,6 +8,7 @@ use App\Models\Offer;
 use App\Services\CommodityOriginMetadataService;
 use App\Services\MarketService;
 use App\Services\OfferService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -76,6 +77,7 @@ class ExchangeController extends Controller
                 ->pluck('name'),
             'offers' => $this->filterOffers($filters, $rows),
             'filters' => $filters,
+            'offerStats' => $this->offers->pipelineStats(),
         ]);
     }
 
@@ -86,12 +88,32 @@ class ExchangeController extends Controller
      */
     public function offerProfile(Request $request, Offer $offer): Response
     {
-        $offer->load(['buyer', 'seller', 'market']);
+        $offer->load(['user', 'market.user']);
 
         return Inertia::render('Exchange/OfferProfile', [
             'offerId' => $offer->offer_number,
             'offer' => $this->offers->shapeProfile($offer, $request->user()->id),
         ]);
+    }
+
+    /**
+     * Handle the Offers hub's "Make an Offer" modal: validate the buyer's
+     * proposed price, quantity, and Incoterms port against an open offer
+     * listing, then hand off to the service to apply and move it into
+     * pending review.
+     */
+    public function submitOffer(Request $request, Offer $offer): RedirectResponse
+    {
+        $validated = $request->validate([
+            'price' => ['required', 'numeric', 'min:0.01'],
+            'quantity' => ['required', 'numeric', 'min:1'],
+            'incoterm' => ['required', 'string', 'max:255'],
+            'message' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $this->offers->submitOffer($offer, $request->user()->id, $validated);
+
+        return redirect()->route('exchange.offers')->with('success', 'Offer submitted for review.');
     }
 
     /**

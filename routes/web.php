@@ -99,6 +99,7 @@ Route::middleware([
         Route::get('/', [ExchangeController::class, 'index'])->name('index');
         Route::get('/offers', [ExchangeController::class, 'offers'])->name('offers');
         Route::get('/offers/{offer}', [ExchangeController::class, 'offerProfile'])->name('offers.show');
+        Route::post('/offers/{offer}/submit', [ExchangeController::class, 'submitOffer'])->name('offers.submit');
     });
 
     // System settings.
