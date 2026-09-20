@@ -205,9 +205,8 @@ class Dashboard extends Controller
      */
     public function dashboard(Request $request)
     {
-        $user       = $request->user();
-        $hasProfile = ! is_null($this->profiles->forUser($user->id))
-            || ! is_null($this->businessProfiles->forUser($user->id));
+        $user = $request->user();
+        $hasProfile = ! is_null($this->profiles->forUser($user->id));
 
         $cropGrades = CropGradeMetadata::query()
             ->where('is_active', true)

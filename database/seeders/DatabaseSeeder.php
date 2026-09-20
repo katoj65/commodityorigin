@@ -90,6 +90,7 @@ class DatabaseSeeder extends Seeder
             AromaMetadataSeeder::class,
             OriginMetadataSeeder::class,
             CommodityOriginMetadataSeeder::class,
+            FobMetadataSeeder::class,
             AgentSeeder::class,
             AgentFunctionSeeder::class,
             ExchangeRateSeeder::class,

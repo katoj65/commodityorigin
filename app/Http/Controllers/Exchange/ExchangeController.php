@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Exchange;
 
 use App\Http\Controllers\Controller;
 use App\Models\CropVarietyMetadata;
+use App\Models\FobMetadata;
 use App\Models\Offer;
 use App\Services\CommodityOriginMetadataService;
 use App\Services\MarketService;
 use App\Services\OfferService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -75,6 +77,10 @@ class ExchangeController extends Controller
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->pluck('name'),
+            'fobOptions' => FobMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->pluck('name'),
             'offers' => $this->filterOffers($filters, $rows),
             'filters' => $filters,
             'offerStats' => $this->offers->pipelineStats(),
@@ -107,7 +113,7 @@ class ExchangeController extends Controller
         $validated = $request->validate([
             'price' => ['required', 'numeric', 'min:0.01'],
             'quantity' => ['required', 'numeric', 'min:1'],
-            'incoterm' => ['required', 'string', 'max:255'],
+            'incoterm' => ['required', 'string', Rule::in(FobMetadata::query()->where('is_active', true)->pluck('name'))],
             'message' => ['nullable', 'string', 'max:1000'],
         ]);
 

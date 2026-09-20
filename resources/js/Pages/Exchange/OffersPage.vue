@@ -1,11 +1,11 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { ElMessage } from 'element-plus';
 import {
-    CirclePlus, Histogram, Search, RefreshLeft, CircleCheck, ChatDotRound,
-    Right, Coin, Promotion,
-    Files, Close, Refresh,
+    Histogram, Search, RefreshLeft, CircleCheck, ChatDotRound,
+    Coin, Promotion,
+    Files, Refresh,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
 import OfferModal from '@/Components/Modals/OfferModal.vue';
@@ -13,6 +13,7 @@ import OfferModal from '@/Components/Modals/OfferModal.vue';
 const props = defineProps({
     originOptions: { type: Array, default: () => [] },
     coffeeTypeOptions: { type: Array, default: () => [] },
+    fobOptions: { type: Array, default: () => [] },
     offers: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
     offerStats: { type: Object, default: () => ({}) },
@@ -87,24 +88,8 @@ function isOpenStatus(offer) {
     return (offer.status ?? '').toLowerCase() === 'open';
 }
 
-/* ── Modal — inert dummy interactivity, nothing persisted ────────────── */
-const createOfferOpen = ref(false);
-
-const createForm = reactive({
-    lot: 'LOT-UG-8821 · Mukono Fine Robusta Screen 18 (120 MT available)',
-    volume: 20,
-    price: 4.18,
-    incoterm: 'FOB Mombasa',
-    scope: 'targeted',
-});
-
 function placeholderAction(label) {
     ElMessage.info(`${label} (dummy preview).`);
-}
-
-function submitCreateOffer() {
-    createOfferOpen.value = false;
-    ElMessage.success('Offer created and broadcast (dummy preview).');
 }
 </script>
 
@@ -122,9 +107,6 @@ function submitCreateOffer() {
                         <Link :href="route('exchange.index')" class="ex-btn ex-btn--muted">
                             <el-icon :size="16"><Histogram /></el-icon><span>View Exchange</span>
                         </Link>
-                        <button type="button" class="ex-btn ex-btn--primary" @click="createOfferOpen = true">
-                            <el-icon :size="16"><CirclePlus /></el-icon><span>Create Offer</span>
-                        </button>
                     </div>
                 </div>
             </section>
@@ -201,13 +183,13 @@ function submitCreateOffer() {
                                     <div class="dp-mono ex-icon--primary ex-caption-sm">{{ offer.id }}</div>
                                 </td>
                                 <td>
-                                    <div class="ex-strong">{{ offer.counterparty }}</div>
+                                    <div>{{ offer.counterparty }}</div>
                                     <div v-if="offer.verified" class="dp-caption ex-icon--primary ex-flex-icon"><el-icon :size="12"><CircleCheck /></el-icon>{{ offer.counterpartyNote }}</div>
                                     <div v-else class="dp-caption ex-muted">{{ offer.counterpartyNote }}</div>
                                 </td>
                                 <td>
-                                    <div class="ex-strong dp-mono">{{ offer.qty }}</div>
-                                    <div class="dp-caption ex-strong ex-icon--primary dp-mono">{{ offer.price }}</div>
+                                    <div class="dp-mono">{{ offer.qty }}</div>
+                                    <div class="dp-caption ex-icon--primary dp-mono">{{ offer.price }}</div>
                                 </td>
                                 <td>
                                     <span class="ex-tag-mini" :class="`ex-tag-mini--${offer.statusTone}`">{{ offer.status }}</span>
@@ -231,80 +213,9 @@ function submitCreateOffer() {
             </section>
         </div>
 
-        <!-- MODAL: Create Offer -->
-        <el-dialog v-model="createOfferOpen" width="min(640px, calc(100vw - 2rem))" align-center :show-close="false" class="ex-modal">
-            <template #header>
-                <div class="ex-modal-head">
-                    <div class="ex-modal-head__icon"><el-icon :size="18"><CirclePlus /></el-icon></div>
-                    <div>
-                        <div class="dp-caption ex-icon--primary ex-eyebrow">New Market Submission</div>
-                        <div class="dp-headline-sm ex-strong">Create New Coffee Offer</div>
-                    </div>
-                    <button type="button" class="ex-modal-close" @click="createOfferOpen = false"><el-icon :size="14"><Close /></el-icon></button>
-                </div>
-            </template>
-            <div class="ex-modal-body">
-                <div class="ex-flex-icon" style="margin-bottom: 8px;">
-                    <span class="ex-tag-mini ex-tag-mini--primary">1. Select Lot</span>
-                    <el-icon :size="12" class="ex-muted"><Right /></el-icon>
-                    <span class="ex-tag-mini">2. Set Commercials</span>
-                    <el-icon :size="12" class="ex-muted"><Right /></el-icon>
-                    <span class="ex-tag-mini">3. Target Buyer</span>
-                </div>
-                <div class="ex-field">
-                    <label>Select Coffee Lot from Verified Inventory</label>
-                    <select v-model="createForm.lot">
-                        <option>LOT-UG-8821 · Mukono Fine Robusta Screen 18 (120 MT available)</option>
-                        <option>LOT-UG-3112 · Bugisu Arabica AA Washed (45 MT available)</option>
-                        <option>LOT-UG-7719 · Masaka Robusta FAQ (80 MT available)</option>
-                    </select>
-                </div>
-                <div class="ex-field-grid ex-field-grid--3">
-                    <div class="ex-field">
-                        <label>Offer Volume (MT)</label>
-                        <input v-model.number="createForm.volume" type="number" />
-                    </div>
-                    <div class="ex-field">
-                        <label>Asking Price ($/kg)</label>
-                        <input v-model.number="createForm.price" type="number" step="0.01" />
-                    </div>
-                    <div class="ex-field">
-                        <label>Incoterms Port</label>
-                        <select v-model="createForm.incoterm"><option>FOB Mombasa</option><option>FOB Dar es Salaam</option><option>CIF European Main Port</option></select>
-                    </div>
-                </div>
-                <div class="ex-field">
-                    <label>Offer Broadcast Scope</label>
-                    <div class="ex-field-grid ex-field-grid--2">
-                        <label class="ex-radio-card" :class="{ 'ex-radio-card--active': createForm.scope === 'targeted' }">
-                            <input v-model="createForm.scope" type="radio" value="targeted" />
-                            <span><span class="ex-strong" style="display: block;">Target Specific Counterparty</span><span class="dp-caption ex-muted">Private negotiation chamber</span></span>
-                        </label>
-                        <label class="ex-radio-card" :class="{ 'ex-radio-card--active': createForm.scope === 'public' }">
-                            <input v-model="createForm.scope" type="radio" value="public" />
-                            <span><span class="ex-strong" style="display: block;">Public Exchange Broadcast</span><span class="dp-caption ex-muted">Visible to all registered buyers</span></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <template #footer>
-                <div class="ex-actions-inline ex-actions-inline--end">
-                    <button type="button" class="ex-btn ex-btn--muted" @click="createOfferOpen = false">Save Draft</button>
-                    <button type="button" class="ex-btn ex-btn--primary" @click="submitCreateOffer">Publish &amp; Open Negotiation</button>
-                </div>
-            </template>
-        </el-dialog>
-
-        <OfferModal v-model="offerModalOpen" :offer="selectedOffer" />
+        <OfferModal v-model="offerModalOpen" :offer="selectedOffer" :fob-options="fobOptions" />
     </DesignPreviewLayout>
 </template>
-
-<style>
-.el-dialog.ex-modal { border-radius: 12px; padding: 0; overflow: hidden; }
-.el-dialog.ex-modal .el-dialog__header { padding: 0; margin: 0; }
-.el-dialog.ex-modal .el-dialog__body { padding: 0; }
-.el-dialog.ex-modal .el-dialog__footer { padding: 0; }
-</style>
 
 <style scoped>
 .ex-page { display: flex; flex-direction: column; gap: 16px; }
@@ -404,8 +315,8 @@ function submitCreateOffer() {
 .ex-ft-clear.el-button:hover { background: var(--dp-surface-dim); }
 
 .ex-table-wrap { overflow-x: auto; }
-.ex-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
-.ex-table thead tr { background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; font-weight: 700; }
+.ex-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+.ex-table thead tr { background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; font-weight: 700; }
 .ex-table th { padding: 10px 12px; white-space: nowrap; }
 .ex-table th:first-child { border-radius: 6px 0 0 6px; }
 .ex-table th:last-child { border-radius: 0 6px 6px 0; }
@@ -433,27 +344,4 @@ function submitCreateOffer() {
 
 .ex-link { display: inline-flex; align-items: center; justify-content: space-between; gap: 6px; font-weight: 700; color: var(--dp-primary); text-decoration: none; background: none; border: none; cursor: pointer; font-size: 12px; font-family: var(--dp-font-sans); padding: 6px 4px; }
 .ex-link:hover { text-decoration: underline; }
-
-/* ── Modal internals ─────────────────────────────────────────────── */
-.ex-modal-head { display: flex; align-items: flex-start; gap: 12px; padding: 20px 24px; border-bottom: 1px solid var(--dp-outline-variant); }
-.ex-modal-head__icon { width: 36px; height: 36px; border-radius: 8px; background: var(--dp-surface-container-high); color: var(--dp-on-surface); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.ex-modal-head > div:nth-child(2) { flex: 1; min-width: 0; }
-.ex-modal-close { width: 28px; height: 28px; border-radius: 8px; border: none; background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
-.ex-modal-close:hover { background: var(--dp-surface-dim); color: var(--dp-on-surface); }
-
-.ex-modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; max-height: 60vh; overflow-y: auto; }
-.ex-field-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.ex-field-grid--3 { grid-template-columns: repeat(3, 1fr); }
-.ex-field-grid--2 { grid-template-columns: repeat(2, 1fr); }
-@media (max-width: 640px) { .ex-field-grid, .ex-field-grid--3, .ex-field-grid--2 { grid-template-columns: 1fr; } }
-.ex-field { display: flex; flex-direction: column; gap: 6px; }
-.ex-field label { font-size: 11px; font-weight: 700; color: var(--dp-on-surface-variant); }
-.ex-field input, .ex-field select, .ex-field textarea { background: var(--dp-surface-container-low); border: none; border-radius: 8px; padding: 9px 12px; font-size: 12px; color: var(--dp-on-surface); font-family: var(--dp-font-sans); outline: none; }
-.ex-field input:focus, .ex-field select:focus, .ex-field textarea:focus { background: var(--dp-surface-container-high); }
-.ex-field textarea { resize: vertical; font-family: var(--dp-font-sans); }
-
-.ex-radio-card { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 8px; background: var(--dp-surface-container-low); cursor: pointer; }
-.ex-radio-card--active { background: color-mix(in srgb, var(--dp-primary) 10%, var(--dp-surface-container-low)); }
-
-.ex-total-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border-radius: 8px; background: color-mix(in srgb, var(--dp-primary) 10%, transparent); }
 </style>

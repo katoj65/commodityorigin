@@ -9,8 +9,9 @@ import {
     Download, Sunny, Right, CircleCheckFilled, Refresh, Box,
 } from '@element-plus/icons-vue';
 import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import ProfileTypeModal from '@/Components/Modals/ProfileTypeModal.vue';
 
-defineProps({
+const props = defineProps({
     hasProfile: { type: Boolean, default: true },
     businessTypeOptions: { type: Array, default: () => [] },
     cropGrades: { type: Array, default: () => [] },
@@ -21,6 +22,8 @@ defineProps({
     orders: { type: Array, default: () => [] },
     markets: { type: Array, default: () => [] },
 });
+
+const profileModalOpen = ref(!props.hasProfile);
 
 /* ── Dummy dashboard content — illustrative only ────────────────────── */
 const quickActions = [
@@ -434,6 +437,8 @@ function placeholderAction(label) {
                 </p>
             </div>
         </section>
+
+        <ProfileTypeModal v-model="profileModalOpen" />
     </DesignPreviewLayout>
 </template>
 

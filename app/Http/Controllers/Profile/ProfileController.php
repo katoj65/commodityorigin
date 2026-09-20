@@ -37,22 +37,13 @@ class ProfileController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage — either a personal
-     * extended profile or a business profile, depending on the account
-     * type chosen on the onboarding form.
+     * Store a newly created resource in storage — the user's personal
+     * extended profile. The account type chosen on the onboarding form
+     * (personal or business) is recorded on the user's role; a business
+     * account fills in its full business details later from the Business
+     * Profile page, rather than during this onboarding step.
      */
     public function store(Request $request): RedirectResponse
-    {
-        $profileType = $request->string('profile_type')->value();
-
-        if ($profileType === 'business') {
-            return $this->storeBusinessProfile($request);
-        }
-
-        return $this->storePersonalProfile($request);
-    }
-
-    private function storePersonalProfile(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'profile_type' => ['required', 'in:personal,business'],
@@ -68,6 +59,7 @@ class ProfileController extends Controller
             'photo' => ImageUploadHelper::rules(),
         ]);
 
+        $profileType = $validated['profile_type'];
         unset($validated['profile_type']);
 
         $photoPath = ImageUploadHelper::store($request->file('photo'), 'profile-photos');
@@ -78,40 +70,9 @@ class ProfileController extends Controller
         }
 
         $this->profiles->save($request->user(), $validated);
-        $this->profiles->setAccountType($request->user(), 'personal');
+        $this->profiles->setAccountType($request->user(), $profileType);
 
         return redirect()->route('dashboard')->with('success', 'Profile saved successfully.');
-    }
-
-    private function storeBusinessProfile(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'profile_type' => ['required', 'in:personal,business'],
-            'business_name' => ['required', 'string', 'max:255'],
-            'business_type' => ['required', 'string', Rule::in($this->businessProfiles->businessTypeOptions())],
-            'industry' => ['nullable', 'string', 'max:255'],
-            'registration_number' => ['nullable', 'string', 'max:255'],
-            'tax_id' => ['nullable', 'string', 'max:255'],
-            'website' => ['nullable', 'string', 'max:255'],
-            'contact_email' => ['nullable', 'email', 'max:255'],
-            'contact_phone' => ['nullable', 'string', 'max:255'],
-            'employee_count' => ['nullable', 'integer', 'min:0'],
-            'year_established' => ['nullable', 'integer', 'min:1800', 'max:'.date('Y')],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'address_line_1' => ['required', 'string', 'max:255'],
-            'address_line_2' => ['nullable', 'string', 'max:255'],
-            'city' => ['required', 'string', 'max:255'],
-            'state' => ['required', 'string', 'max:255'],
-            'country' => ['required', 'string', 'max:255'],
-            'postal_code' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        unset($validated['profile_type']);
-
-        $this->businessProfiles->save($request->user(), $validated);
-        $this->profiles->setAccountType($request->user(), 'business');
-
-        return redirect()->route('dashboard')->with('success', 'Business profile saved successfully.');
     }
 
     /**

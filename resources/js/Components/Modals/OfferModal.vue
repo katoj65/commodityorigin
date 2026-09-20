@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import { ElMessage } from 'element-plus';
+import { ElNotification } from 'element-plus';
 import {
     Close, Promotion, Loading, LocationFilled,
     OfficeBuilding, Box, Coin, Clock, ChatDotRound, EditPen,
@@ -10,6 +10,7 @@ import {
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
     offer: { type: Object, default: () => ({}) },
+    fobOptions: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['update:modelValue', 'submitted']);
@@ -39,7 +40,13 @@ function submit() {
     form.post(route('exchange.offers.submit', props.offer?.recordId), {
         preserveScroll: true,
         onSuccess: () => {
-            ElMessage.success(`Offer sent for ${props.offer?.id ?? 'this listing'}.`);
+            ElNotification({
+                title: 'Offer Sent',
+                message: `Offer sent for ${props.offer?.id ?? 'this listing'}.`,
+                type: 'success',
+                duration: 3200,
+                offset: 84,
+            });
             emit('submitted');
             closeDialog();
         },
@@ -123,7 +130,9 @@ function submit() {
                 </div>
                 <div class="om-field om-field--span2">
                     <label class="om-field__label"><el-icon :size="13"><LocationFilled /></el-icon>Incoterms Port</label>
-                    <el-input v-model="form.incoterm" placeholder="e.g. FOB Mombasa" class="om-input" :class="{ 'om-input--error': form.errors.incoterm }" />
+                    <el-select v-model="form.incoterm" placeholder="Select a FOB port" class="om-input" :class="{ 'om-input--error': form.errors.incoterm }">
+                        <el-option v-for="opt in fobOptions" :key="opt" :label="opt" :value="opt" />
+                    </el-select>
                     <span v-if="form.errors.incoterm" class="om-field__error">{{ form.errors.incoterm }}</span>
                 </div>
                 <div class="om-field om-field--span2">
@@ -199,28 +208,33 @@ function submit() {
 
 .om-section-label { display: flex; align-items: center; gap: 5px; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dp-on-surface-variant); margin-bottom: 12px; }
 
-.om-alert { font-size: 0.75rem; font-weight: 600; color: var(--dp-error); background: var(--dp-error-container); border-radius: 8px; padding: 9px 12px; margin-bottom: 14px; }
+.om-alert { font-size: 0.875rem; font-weight: 600; color: var(--dp-error); background: var(--dp-error-container); border-radius: 8px; padding: 9px 12px; margin-bottom: 14px; }
 
 .om-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .om-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .om-field--span2 { grid-column: span 2; }
-.om-field__label { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 700; color: var(--dp-on-surface); }
+.om-field__label { display: flex; align-items: center; gap: 5px; font-size: 0.875rem; font-weight: 700; color: var(--dp-on-surface); }
 .om-field__label .el-icon { color: var(--dp-on-surface-variant); }
 .om-field__label small { font-weight: 500; color: var(--dp-on-surface-variant); text-transform: none; }
 
 .om-input { width: 100%; }
 .om-input :deep(.el-input__wrapper),
+.om-input :deep(.el-select__wrapper),
 .om-input :deep(.el-textarea__inner) { border-radius: 8px; box-shadow: 0 0 0 1px var(--dp-outline-variant) inset; background: var(--dp-surface-container-low); }
 .om-input :deep(.el-input__wrapper:hover),
+.om-input :deep(.el-select__wrapper:hover),
 .om-input :deep(.el-textarea__inner:hover) { box-shadow: 0 0 0 1px var(--dp-outline) inset; }
 .om-input :deep(.el-input__wrapper.is-focus),
+.om-input :deep(.el-select__wrapper.is-focused),
 .om-input :deep(.el-textarea__inner:focus) { box-shadow: 0 0 0 1.5px var(--dp-primary) inset; }
 .om-input :deep(.el-input__inner),
+.om-input :deep(.el-select__selected-item),
 .om-input :deep(.el-textarea__inner) { color: var(--dp-on-surface); font-family: var(--dp-font-sans); }
 .om-input :deep(.el-input__prefix) { margin-right: 4px; color: var(--dp-on-surface-variant); }
 .om-input--error :deep(.el-input__wrapper),
+.om-input--error :deep(.el-select__wrapper),
 .om-input--error :deep(.el-textarea__inner) { box-shadow: 0 0 0 1.5px var(--dp-error) inset; }
-.om-field__error { font-size: 0.6875rem; font-weight: 600; color: var(--dp-error); }
+.om-field__error { font-size: 0.8125rem; font-weight: 600; color: var(--dp-error); }
 
 .om-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: var(--dp-surface-container-low); border-top: 1px solid var(--dp-outline-variant); }
 .om-btn-primary { display: inline-flex; align-items: center; gap: 6px; background: var(--dp-primary); border: 1px solid transparent; color: var(--dp-on-primary); border-radius: 8px; font-size: 0.8125rem; font-weight: 700; padding: 9px 18px; cursor: pointer; transition: opacity 0.15s ease; font-family: var(--dp-font-sans); }
