@@ -634,7 +634,7 @@ function openOrder(order) {
 </template>
 
 <style scoped>
-/* Orders — app-wide theme. Tokens come from the shared DesignPreviewLayout
+/* Orders — app-wide theme. Tokens come from the shared MainLayout
    --dp-* palette (defined on .dp-shell); literal hex fallbacks are the same
    values so the page reads correctly on its own. Uses the same icon-tile
    KPI + section-card language as Calendar, Contacts, and Notifications. */

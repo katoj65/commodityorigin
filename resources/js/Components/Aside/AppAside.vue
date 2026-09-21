@@ -60,7 +60,7 @@ const sideSections = computed(() => [
             { label: 'Live Market', href: route('market.active'), active: route().current('market.active'), icon: TrendCharts },
             { label: 'Exchange', href: route('exchange.index'), active: route().current('exchange.*'), icon: Histogram },
             { label: 'Auctions', href: route('auction.index'), active: route().current('auction.*'), icon: Trophy },
-            { label: 'My Store', href: route('store.show'), active: route().current('store.*'), icon: Shop },
+            { label: 'Inventory', href: route('inventory.index'), active: route().current('inventory.*'), icon: Shop },
         ],
     },
     {
@@ -163,11 +163,11 @@ function go(item) {
                 </div>
                 <div
                     class="app-nav-item"
-                    :class="{ 'app-nav-item--active': route().current('store.*') }"
-                    @click="router.visit(route('store.show'))"
+                    :class="{ 'app-nav-item--active': route().current('inventory.*') }"
+                    @click="router.visit(route('inventory.index'))"
                 >
                     <el-icon :size="18"><Shop /></el-icon>
-                    <span class="app-nav-item__label">My Store</span>
+                    <span class="app-nav-item__label">Inventory</span>
                 </div>
                 <div
                     class="app-nav-item"

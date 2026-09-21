@@ -1,7 +1,7 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import { Files } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
@@ -32,7 +32,7 @@ const submit = () => {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Add Lot">
+    <MainLayout title="Add Lot">
         <Head title="Add Lot" />
 
         <div class="space-y-4">
@@ -151,5 +151,5 @@ const submit = () => {
                 </aside>
             </section>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>

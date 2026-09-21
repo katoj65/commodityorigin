@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ElMessage } from 'element-plus';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     Box,
     CircleCheck,
@@ -83,7 +83,7 @@ const submitBid = () => {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Auction">
+    <MainLayout title="Auction">
         <Head :title="lot.lot_name || 'Auction'" />
 
         <div class="as">
@@ -255,7 +255,7 @@ const submitBid = () => {
                 </aside>
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 <style scoped>
 .as { display: flex; flex-direction: column; gap: 16px; }

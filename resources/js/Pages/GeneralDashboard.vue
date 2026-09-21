@@ -8,7 +8,7 @@ import {
     Search, Promotion, Lock, Document, Tools, Coin, Calendar as CalendarIcon,
     Download, Sunny, Right, CircleCheckFilled, Refresh, Box,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import ProfileTypeModal from '@/Components/Modals/ProfileTypeModal.vue';
 
 const props = defineProps({
@@ -133,7 +133,7 @@ function placeholderAction(label) {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Coffee Intelligence Center">
+    <MainLayout title="Coffee Intelligence Center">
         <!-- 1. HERO HEADER & UNIVERSAL ACTION BAR -->
         <section class="gd-card gd-hero">
             <div class="gd-hero__top">
@@ -439,7 +439,7 @@ function placeholderAction(label) {
         </section>
 
         <ProfileTypeModal v-model="profileModalOpen" />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>
@@ -475,7 +475,7 @@ function placeholderAction(label) {
 .gd-hero {
     border: none;
     border-bottom: 1px solid var(--dp-outline-variant);
-    /* DesignPreviewLayout's .dp-main carries its own 48px top padding
+    /* MainLayout's .dp-main carries its own 48px top padding
        (shared by every page it wraps) — partially pulled back up here so
        the hero card keeps some breathing room under the header instead of
        sitting fully flush, same fix already applied on MarketPage.vue /

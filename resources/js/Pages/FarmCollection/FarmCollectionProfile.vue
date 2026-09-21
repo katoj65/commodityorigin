@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import EditFarmCollectionModal from '@/Components/Modals/EditFarmCollectionModal.vue';
 import AddFarmCollectionActivityModal from '@/Components/Modals/AddFarmCollectionActivityModal.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -267,7 +267,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
 </script>
 
 <template>
-    <DesignPreviewLayout title="Farm Collection">
+    <MainLayout title="Farm Collection">
         <div class="fcp-page">
 
 
@@ -649,7 +649,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
             :loading="deletingActivity"
             @confirm="confirmDeleteActivity"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

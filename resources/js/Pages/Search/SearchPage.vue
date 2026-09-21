@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import { Search, Close, Clock, Box, ArrowRight, Star, ShoppingCart } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -101,7 +101,7 @@ function addToCart(item) {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Search">
+    <MainLayout title="Search">
         <Head title="Search" />
 
         <div class="sch-page">
@@ -248,7 +248,7 @@ function addToCart(item) {
                 </div>
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

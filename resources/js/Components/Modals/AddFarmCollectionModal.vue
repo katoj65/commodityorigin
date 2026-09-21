@@ -79,6 +79,16 @@ async function findFarmByCode() {
     }
 }
 
+/* ── Open instantly, reveal the (heavier) form a frame later ───────────
+   The dialog itself must appear the moment the button is clicked — no
+   button-level delay — with a loader standing in for the field grid
+   until it's actually ready to paint. Two nested requestAnimationFrame
+   calls guarantee the loader gets at least one real frame on screen
+   before the field grid (with its option-list-driven selects) mounts,
+   instead of both happening in the same tick and the loader never
+   being visible at all. ─────────────────────────────────────────────── */
+const contentReady = ref(false);
+
 watch(() => props.modelValue, (open) => {
     if (!open) return;
     form.defaults(emptyForm());
@@ -87,6 +97,11 @@ watch(() => props.modelValue, (open) => {
     farmCode.value = '';
     farmLookupStatus.value = 'idle';
     foundFarmName.value = '';
+
+    contentReady.value = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        contentReady.value = true;
+    }));
 });
 
 function disableFutureDates(date) {
@@ -97,8 +112,22 @@ function closeDialog() {
     dialogVisible.value = false;
 }
 
-function submit() {
-    if (!form.farm_id) return;
+/* ── Guard against the silent no-op this used to be: clicking Save
+   before the Farm Code field had been blurred (so findFarmByCode()
+   never ran) left form.farm_id empty and submit() simply returned,
+   with no error shown anywhere — indistinguishable from "nothing
+   happens". Now Save itself runs the lookup first if it hasn't
+   resolved yet, and only bails with the existing visible "not found"
+   state if it genuinely fails. ─────────────────────────────────────── */
+async function submit() {
+    if (!form.farm_id && farmLookupStatus.value !== 'loading') {
+        await findFarmByCode();
+    }
+
+    if (!form.farm_id) {
+        farmLookupStatus.value = 'not-found';
+        return;
+    }
 
     const { farm_id, ...payload } = form.data();
     form.transform(() => payload).post(route('farm.collections.store', farm_id), {
@@ -137,6 +166,11 @@ function submit() {
         </template>
 
         <div class="afc-modal__body">
+            <div v-if="!contentReady" class="afc-loading">
+                <span class="afc-loading__spinner"></span>
+                <span>Preparing form…</span>
+            </div>
+            <template v-else>
                 <div class="afc-field afc-field--span2">
                     <label class="afc-field__label">Farm Code</label>
                     <el-input
@@ -240,12 +274,12 @@ function submit() {
                         <span v-if="form.errors.notes" class="afc-field__error">{{ form.errors.notes }}</span>
                     </div>
                 </div>
+            </template>
         </div>
 
         <template #footer>
             <div class="afc-modal__footer">
-                <button type="button" class="afc-btn-outline" @click="closeDialog">Cancel</button>
-                <button type="button" class="afc-btn-primary" :disabled="form.processing" @click="submit">
+                <button type="button" class="afc-btn-primary" :disabled="form.processing || !contentReady" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Save Collection' }}
                 </button>
             </div>
@@ -316,6 +350,10 @@ function submit() {
 
 .afc-modal__body { padding: 22px 24px 8px; max-height: 72vh; overflow-y: auto; }
 
+.afc-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 56px 24px; color: #6F7677; font-size: 13px; font-weight: 500; }
+.afc-loading__spinner { width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid #E5E7EB; border-top-color: #121516; animation: afc-spin 0.7s linear infinite; }
+@keyframes afc-spin { to { transform: rotate(360deg); } }
+
 .afc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .afc-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin-bottom: 16px; }
 .afc-field--span2 { grid-column: span 2; }
@@ -358,19 +396,6 @@ function submit() {
 }
 .afc-btn-primary:hover { opacity: 0.88; }
 .afc-btn-primary:disabled { opacity: 0.5; cursor: default; }
-.afc-btn-outline {
-    display: inline-flex; align-items: center; justify-content: center;
-    height: 36px; padding: 0 16px;
-    background: #fff;
-    border: 1px solid #E5E7EB;
-    color: #121516;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-.afc-btn-outline:hover { background: #F5F6F7; }
 
 @media (max-width: 640px) {
     .afc-grid { grid-template-columns: 1fr; }

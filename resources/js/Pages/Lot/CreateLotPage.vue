@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { Box, CollectionTag, Files, Tickets, Van } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 
@@ -169,7 +169,7 @@ const submit = (intent = 'create') => {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Create Lot">
+    <MainLayout title="Create Lot">
         <Head title="Create Lot" />
 
         <div class="create-lot-page">
@@ -575,7 +575,7 @@ const submit = (intent = 'create') => {
                 </aside>
             </form>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

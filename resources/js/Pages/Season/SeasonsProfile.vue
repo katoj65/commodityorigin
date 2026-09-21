@@ -8,7 +8,7 @@ import {
     EditPen, Files, Location,
     Opportunity, Promotion, Star, TrendCharts,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import EditSeasonModal from '@/Components/Modals/EditSeasonModal.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
@@ -145,7 +145,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 </script>
 
 <template>
-    <DesignPreviewLayout :title="seasonName">
+    <MainLayout :title="seasonName">
         <div class="sp-page">
 
             <!-- Page Header ─────────────────────────────────────── -->
@@ -579,7 +579,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
             @confirm="confirmDeleteSeason"
         />
 
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

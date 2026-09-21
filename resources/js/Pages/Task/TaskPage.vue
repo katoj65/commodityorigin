@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { Plus, Delete, CircleCheck, Warning, Clock, Calendar as CalendarIcon, Close, Files } from '@element-plus/icons-vue';
 
@@ -130,7 +130,7 @@ function confirmDeleteTask() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Tasks">
+    <MainLayout title="Tasks">
         <Head title="Tasks" />
 
         <div class="tp-page">
@@ -305,7 +305,7 @@ function confirmDeleteTask() {
             confirm-text="Delete"
             @confirm="confirmDeleteTask"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

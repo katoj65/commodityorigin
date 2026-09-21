@@ -306,7 +306,7 @@ watch(filteredOrders, () => { currentPage.value = 1; });
 
 <style scoped>
 /* The Order page's --dp-* palette is defined on the shared layout wrapper
-   (.dp-shell in DesignPreviewLayout), so it cascades here. We redeclare a
+   (.dp-shell in MainLayout), so it cascades here. We redeclare a
    few app-local aliases on .mkt-body for readability. */
 .mkt-body {
     --card-border: var(--dp-outline-variant, #E5E7EB);

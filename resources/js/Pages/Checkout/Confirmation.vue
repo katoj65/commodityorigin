@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import { HomeFilled, Lock, Headset, Box } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import PaymentMethodSection from '@/Components/PaymentMethodSection.vue';
 
 const props = defineProps({
@@ -89,7 +89,7 @@ function placeOrder() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Checkout">
+    <MainLayout title="Checkout">
         <div class="chk-page">
             <section class="chk-header">
                 <div class="chk-header__inner">
@@ -230,7 +230,7 @@ function placeOrder() {
                 </form>
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

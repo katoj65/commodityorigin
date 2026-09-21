@@ -3,9 +3,9 @@ import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import {
-    CircleCheck, Close, Connection, Download, Plus, Search, Setting, StarFilled,
+    CircleCheck, Close, Connection, Download, Plus, Setting, StarFilled,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import { resolveIcon } from '@/utils/icon';
 
 const props = defineProps({
@@ -30,37 +30,6 @@ function formatType(type) {
     if (!type) return 'General';
     return String(type).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
-
-/* ── Category pills — real, distinct agent_type values, not a fixed list ── */
-const categories = computed(() => {
-    const types = [...new Set(props.agents.map((a) => a.agent_type).filter(Boolean))];
-    return ['All', ...types];
-});
-const activeCategory = ref('All');
-const searchQuery = ref('');
-
-/* Real per-category counts, shown as small trailing badges on each pill. */
-const categoryCounts = computed(() => {
-    const counts = { All: props.agents.length };
-    for (const type of categories.value) {
-        if (type === 'All') continue;
-        counts[type] = props.agents.filter((a) => a.agent_type === type).length;
-    }
-    return counts;
-});
-
-/* ── All Apps directory (real agents) ─────────────────────────────────── */
-const filteredApps = computed(() => {
-    const q = searchQuery.value.trim().toLowerCase();
-    return props.agents.filter((agent) => {
-        const matchesCategory = activeCategory.value === 'All' || agent.agent_type === activeCategory.value;
-        const matchesQuery = !q
-            || agent.name?.toLowerCase().includes(q)
-            || agent.description?.toLowerCase().includes(q)
-            || agent.agent_type?.toLowerCase().includes(q);
-        return matchesCategory && matchesQuery;
-    });
-});
 
 /* ── My Apps table (real subscriptions) ───────────────────────────────── */
 const myApps = computed(() => props.agents.filter((a) => isSubscribed(a.id)));
@@ -138,7 +107,7 @@ function submitCreateAgent() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Apps">
+    <MainLayout title="Apps">
         <Head title="Apps" />
 
         <div class="ap-page">
@@ -156,33 +125,13 @@ function submitCreateAgent() {
                 </div>
             </div>
 
-            <!-- ── Search & Filters ────────────────────────────────────── -->
-            <div class="ap-search-box">
-                <div class="ap-search">
-                    <el-icon class="ap-search__icon"><Search /></el-icon>
-                    <input v-model="searchQuery" type="text" placeholder="Search apps by name, purpose, or capability…">
-                    <button v-if="searchQuery" type="button" class="ap-search__clear" aria-label="Clear search" @click="searchQuery = ''">
-                        <el-icon :size="11"><Close /></el-icon>
-                    </button>
-                </div>
-                <span class="ap-search-box__count">{{ filteredApps.length }} of {{ agents.length }} apps</span>
-            </div>
-
-            <div class="ap-pills">
-                <button v-for="cat in categories" :key="cat" type="button" class="ap-pill" :class="{ 'ap-pill--active': activeCategory === cat }" @click="activeCategory = cat">
-                    {{ cat === 'All' ? 'All' : formatType(cat) }}
-                    <span class="ap-pill__count">{{ categoryCounts[cat] ?? 0 }}</span>
-                </button>
-            </div>
-
             <!-- ── All Apps & Modules ──────────────────────────────────── -->
             <section class="ap-section">
                 <div class="ap-section__head">
-                    <h2 class="ap-section__title">All Apps &amp; Modules <span class="ap-section__badge">{{ filteredApps.length }} APPS</span></h2>
-                    <span class="ap-section__note">Showing filtered tools</span>
+                    <h2 class="ap-section__title">All Apps &amp; Modules <span class="ap-section__badge">{{ agents.length }} APPS</span></h2>
                 </div>
-                <div v-if="filteredApps.length" class="ap-grid">
-                    <div v-for="app in filteredApps" :key="app.id" class="ap-tile" @click="handleAppClick(app)">
+                <div v-if="agents.length" class="ap-grid">
+                    <div v-for="app in agents" :key="app.id" class="ap-tile" @click="handleAppClick(app)">
                         <div class="ap-tile__top">
                             <div class="ap-app-icon" :class="`ap-app-icon--${toneFor(app.id)}`"><el-icon><component :is="resolveIcon(app.icon)" /></el-icon></div>
                             <div class="ap-tile__id">
@@ -200,7 +149,7 @@ function submitCreateAgent() {
                         </div>
                     </div>
                 </div>
-                <p v-else class="ap-no-results">No apps match your search.</p>
+                <p v-else class="ap-no-results">No apps available yet.</p>
             </section>
 
             <!-- ── My Apps ─────────────────────────────────────────────── -->
@@ -412,7 +361,7 @@ function submitCreateAgent() {
                 </div>
             </form>
         </el-dialog>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>
@@ -424,55 +373,6 @@ function submitCreateAgent() {
 .ap-title { font-size: 24px; line-height: 30px; font-weight: 800; letter-spacing: -0.015em; color: var(--dp-on-surface); margin: 0 0 6px; }
 .ap-subtitle { font-size: 13.5px; line-height: 20px; color: var(--dp-on-surface-variant); margin: 0; max-width: 62ch; }
 .ap-header__actions { display: flex; gap: 10px; flex-shrink: 0; }
-
-/* ── Search & pills ──────────────────────────────────────────────────── */
-.ap-search-box {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant);
-    border-radius: 12px; padding: 4px 4px 4px 16px;
-    transition: border-color .15s ease, box-shadow .15s ease;
-}
-.ap-search-box:focus-within { border-color: var(--dp-outline); box-shadow: 0 0 0 3px var(--dp-surface-container-high); }
-.ap-search { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 0; }
-.ap-search__icon { color: var(--dp-outline); font-size: 16px; flex-shrink: 0; }
-.ap-search input {
-    flex: 1; min-width: 0; font-size: 13.5px; background: transparent; color: var(--dp-on-surface);
-    font-family: inherit; caret-color: var(--dp-on-surface);
-    border: none !important; outline: none !important; box-shadow: none !important; appearance: none;
-}
-.ap-search input:focus,
-.ap-search input:focus-visible {
-    border: none !important; outline: none !important; box-shadow: none !important;
-}
-.ap-search input::placeholder { color: var(--dp-outline); }
-.ap-search input::selection { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
-.ap-search__clear {
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    width: 20px; height: 20px; border-radius: 999px; border: none;
-    background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant);
-    cursor: pointer; transition: background .12s ease, color .12s ease;
-}
-.ap-search__clear:hover { background: var(--dp-outline-variant); color: var(--dp-on-surface); }
-.ap-search-box__count {
-    font-family: var(--dp-font-mono); font-size: 11px; font-weight: 600; color: var(--dp-on-surface-variant);
-    white-space: nowrap; flex-shrink: 0; background: var(--dp-surface-container-low); padding: 8px 12px; border-radius: 9px;
-}
-
-.ap-pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
-.ap-pill {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant);
-    padding: 6px 7px 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
-    color: var(--dp-on-surface-variant); white-space: nowrap; cursor: pointer; transition: all .15s ease; flex-shrink: 0;
-}
-.ap-pill:hover { border-color: var(--dp-outline); color: var(--dp-on-surface); }
-.ap-pill--active { background: var(--dp-primary); border-color: var(--dp-primary); color: var(--dp-on-primary); }
-.ap-pill__count {
-    font-family: var(--dp-font-mono); font-size: 10px; font-weight: 700; line-height: 1;
-    background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant);
-    padding: 3px 7px; border-radius: 999px; transition: background .15s ease, color .15s ease;
-}
-.ap-pill--active .ap-pill__count { background: rgba(255, 255, 255, .2); color: var(--dp-on-primary); }
 
 /* ── Sections ────────────────────────────────────────────────────────── */
 .ap-section { display: flex; flex-direction: column; gap: 16px; }
@@ -529,8 +429,6 @@ function submitCreateAgent() {
 /* Browser default focus rings render blue — replace with the app's own
    accent so keyboard focus stays visible without the mismatched color. */
 .ap-btn:focus-visible,
-.ap-pill:focus-visible,
-.ap-search__clear:focus-visible,
 .ap-details-head__close:focus-visible,
 .ap-tile:focus-visible {
     outline: 2px solid var(--dp-primary);
@@ -636,8 +534,6 @@ function submitCreateAgent() {
 @media (max-width: 767.98px) {
     .ap-field-row { grid-template-columns: 1fr; }
     .ap-header { flex-direction: column; align-items: stretch; }
-    .ap-search-box { flex-direction: column; align-items: stretch; padding: 4px 12px 10px; }
-    .ap-search-box__count { align-self: flex-start; }
     .ap-details__foot { flex-direction: column; }
     :deep(.el-dialog.ap-modal) { width: 92vw !important; }
 }

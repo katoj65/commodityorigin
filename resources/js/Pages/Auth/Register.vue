@@ -92,9 +92,8 @@ const corridorStats = [
                 </p>
 
                 <div class="auth-pulse-card mt-6">
-                    <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center mb-3">
                         <span class="font-mono text-[11px] uppercase text-white/50">Real-Time Corridor Depth</span>
-                        <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-[#a3f69c]/10 text-[#a3f69c] border border-[#a3f69c]/25">100% Geofenced</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <div v-for="(stat, i) in corridorStats" :key="stat.label" :class="i > 0 ? 'border-l border-white/10 pl-3' : ''">

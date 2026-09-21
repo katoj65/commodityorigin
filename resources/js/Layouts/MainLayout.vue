@@ -58,7 +58,7 @@ const adminNavSections = computed(() => [
             { index: 'market-live', label: 'Live Market', icon: TrendCharts, href: route('market.active'), active: route().current('market.active') },
             { index: 'exchange', label: 'Exchange', icon: Histogram, href: route('exchange.index'), active: route().current('exchange.*') },
             { index: 'auctions', label: 'Auctions', icon: Trophy, href: route('auction.index'), active: route().current('auction.*') },
-            { index: 'store', label: 'My Store', icon: Shop, href: route('store.show'), active: route().current('store.*') },
+            { index: 'inventory', label: 'Inventory', icon: Shop, href: route('inventory.index'), active: route().current('inventory.*') },
         ],
     },
     {
@@ -109,7 +109,7 @@ const nonAdminNavSections = computed(() => {
             items: [
                 { index: 'market', label: 'Market', icon: Compass, href: route('market.index'), active: route().current('market.*') },
                 { index: 'exchange', label: 'Exchange', icon: Histogram, href: route('exchange.index'), active: route().current('exchange.*') },
-                { index: 'store', label: 'My Store', icon: Shop, href: route('store.show'), active: route().current('store.*') },
+                { index: 'inventory', label: 'Inventory', icon: Shop, href: route('inventory.index'), active: route().current('inventory.*') },
                 { index: 'calendar', label: 'Calendar', icon: Calendar, href: route('calendar.index'), active: route().current('calendar.*') },
                 { index: 'contacts', label: 'Contacts', icon: Postcard, href: route('contact.index'), active: route().current('contact.*') },
             ],
@@ -362,8 +362,8 @@ function markAllNotificationsRead() {
 
                         <template #dropdown>
                             <div class="dp-account-menu__head">
-                                <p class="dp-label-md">Roaster Admin</p>
-                                <p class="dp-caption">Bean Origin</p>
+                                <p class="dp-label-md">{{ user?.name || 'Account' }}</p>
+                                <p class="dp-caption">{{ user?.role || 'Bean Origin' }}</p>
                             </div>
                             <el-dropdown-menu>
                                 <el-dropdown-item
@@ -736,7 +736,7 @@ function markAllNotificationsRead() {
 .dp-account-menu .el-dropdown-menu { padding: 6px; }
 .dp-account-menu__head { padding: 12px 14px 10px; border-bottom: 1px solid #eeeeee; margin-bottom: 4px; }
 .dp-account-menu__head p:first-child { color: #1a1c1c; margin: 0 0 2px; }
-.dp-account-menu__head p:last-child { color: #827472; margin: 0; }
+.dp-account-menu__head p:last-child { color: #827472; margin: 0; text-transform: capitalize; }
 .dp-account-menu .el-dropdown-menu__item {
     border-radius: 8px;
     font-size: 13px;

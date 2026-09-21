@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
@@ -133,7 +133,7 @@ const userInitials = computed(() => {
 </script>
 
 <template>
-    <DesignPreviewLayout :title="`Lot Request #${req.id}`">
+    <MainLayout :title="`Lot Request #${req.id}`">
 
         <div class="lr-root">
 
@@ -526,7 +526,7 @@ const userInitials = computed(() => {
             @confirm="confirmDelete"
         />
 
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

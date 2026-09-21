@@ -6,7 +6,7 @@ import {
     Plus, Search, Box, FirstAidKit, Goods, Coin, Edit, Delete,
     WarningFilled, CircleCheck, User, ShoppingCart,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import AddAgriculturalInputDialog from '@/Components/Modals/AddAgriculturalInputDialog.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -184,7 +184,7 @@ function onCreated() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Agricultural Inputs">
+    <MainLayout title="Agricultural Inputs">
         <div class="ain-page">
             <!-- ── Header ────────────────────────────────────────────────── -->
             <div class="ain-header">
@@ -427,7 +427,7 @@ function onCreated() {
         </div>
 
         <AddAgriculturalInputDialog v-if="canManage" v-model="addOpen" @created="onCreated" />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style>

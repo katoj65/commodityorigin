@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import AddFarmModal from '@/Components/Modals/AddFarmModal.vue';
@@ -206,7 +206,7 @@ function deleteFarm() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="My Farms">
+    <MainLayout title="My Farms">
         <div class="mf-page">
 
             <!-- ── Header ────────────────────────────────────────────────── -->
@@ -544,7 +544,7 @@ function deleteFarm() {
             />
 
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

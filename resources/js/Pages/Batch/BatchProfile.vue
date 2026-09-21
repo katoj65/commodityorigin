@@ -7,7 +7,7 @@ import {
     EditPen, Trophy, Operation, Plus, Ticket, Check, Collection,
     OfficeBuilding, LocationFilled, Download, Document, Clock, Delete,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import UpdateBatchModal from '@/Components/Modals/UpdateBatchModal.vue';
 import AttachFarmCollectionModal from '@/Components/Modals/AttachFarmCollectionModal.vue';
 import AddBatchActivityModal from '@/Components/Modals/AddBatchActivityModal.vue';
@@ -326,7 +326,7 @@ const reconciliationText = hasYieldPair
 </script>
 
 <template>
-    <DesignPreviewLayout title="Batch Profile">
+    <MainLayout title="Batch Profile">
         <div class="btp-page">
             <!-- ── Page header ───────────────────────────────────────────────────── -->
             <div class="btp-header">
@@ -640,7 +640,7 @@ const reconciliationText = hasYieldPair
             :show-cancel="false"
             @confirm="confirmDeleteActivity"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

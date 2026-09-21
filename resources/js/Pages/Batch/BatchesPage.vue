@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, CircleCheck, Clock,
     CollectionTag, DataLine, Download, Filter,
@@ -153,7 +153,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 
 <template>
     <Head title="Batches" />
-    <DesignPreviewLayout title="Batches">
+    <MainLayout title="Batches">
         <div class="bt-page">
 
             <!-- ① Page Header ─────────────────────────────────────── -->
@@ -735,7 +735,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
             </button>
         </div>
 
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

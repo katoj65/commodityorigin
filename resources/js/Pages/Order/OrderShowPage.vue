@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
     ArrowLeft, ShoppingCart, Box, Delete, Close, CircleCheck, CircleClose,
@@ -315,7 +315,7 @@ const noActionsMessage = computed(() => {
 </script>
 
 <template>
-    <DesignPreviewLayout :title="`Order ${order.order_number}`">
+    <MainLayout :title="`Order ${order.order_number}`">
         <Head :title="`Order ${order.order_number}`" />
 
         <div class="osh-page">
@@ -648,12 +648,12 @@ const noActionsMessage = computed(() => {
                 </div>
             </template>
         </el-dialog>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>
 /* Order profile — app-wide theme. Tokens come from the shared
-   DesignPreviewLayout --dp-* palette (defined on .dp-shell); literal hex
+   MainLayout --dp-* palette (defined on .dp-shell); literal hex
    fallbacks are the same values so the page reads correctly on its own.
    Black is the page's single accent: the total figure, the primary
    button, and active stepper indicators — everything else is grayscale. */

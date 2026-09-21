@@ -5,7 +5,7 @@ import {
     CircleCheck, InfoFilled, Location, Message,
     OfficeBuilding, Phone, Postcard, User,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import InputError from '@/Components/InputError.vue';
 
 const props = defineProps({
@@ -42,7 +42,7 @@ const submit = () => {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Register Farmer">
+    <MainLayout title="Register Farmer">
 
         <form class="fr-page" @submit.prevent="submit">
 
@@ -200,7 +200,7 @@ const submit = () => {
 
         </form>
 
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

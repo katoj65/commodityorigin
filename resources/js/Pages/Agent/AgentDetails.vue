@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import { ArrowLeft, Delete, Edit, Plus, Setting } from '@element-plus/icons-vue';
 import { resolveIcon } from '@/utils/icon';
 
@@ -129,7 +129,7 @@ function deleteFunction(fn) {
 </script>
 
 <template>
-    <DesignPreviewLayout :title="agent.name">
+    <MainLayout :title="agent.name">
         <Head :title="agent.name" />
 
         <div class="agd-page">
@@ -428,7 +428,7 @@ function deleteFunction(fn) {
             </el-dialog>
 
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

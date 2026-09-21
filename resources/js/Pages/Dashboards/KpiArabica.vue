@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import { Box, CoffeeCup, Goods, Location, PriceTag } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -14,7 +14,7 @@ const fmtNum = (n) => (n != null ? Number(n).toLocaleString() : '—');
 </script>
 
 <template>
-    <DesignPreviewLayout title="Arabica (KC)">
+    <MainLayout title="Arabica (KC)">
         <Head title="Arabica (KC)" />
 
         <div class="kpi-page">
@@ -80,7 +80,7 @@ const fmtNum = (n) => (n != null ? Number(n).toLocaleString() : '—');
                 <p v-else class="kpi-empty">No live Arabica listings right now.</p>
             </section>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

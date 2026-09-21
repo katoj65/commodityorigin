@@ -8,7 +8,7 @@ import {
     Warning, CircleCheck, CircleCheckFilled, Clock, Position,
     Lightning,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 
 const props = defineProps({
     markets: { type: Array, default: () => [] },
@@ -205,7 +205,7 @@ function placeholderAction(label) {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Coffee Market">
+    <MainLayout title="Coffee Market">
         <Head title="Coffee Market" />
 
         <!-- 1. PAGE HERO HEADER -->
@@ -645,7 +645,7 @@ function placeholderAction(label) {
             </div>
         </section>
 
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

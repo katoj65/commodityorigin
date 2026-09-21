@@ -6,7 +6,7 @@ import {
     CollectionTag, Delete, EditPen, Location, Medal, Message,
     OfficeBuilding, Phone, Postcard, UserFilled,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import AddFarmModal from '@/Components/Modals/AddFarmModal.vue';
 import EditFarmerDialog from '@/Components/Modals/EditFarmerDialog.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -91,7 +91,7 @@ function deleteFarmer() {
 </script>
 
 <template>
-    <DesignPreviewLayout :title="fullName">
+    <MainLayout :title="fullName">
         <Head :title="fullName" />
 
         <div class="fpr-page">
@@ -197,7 +197,7 @@ function deleteFarmer() {
             confirm-text="Delete Farmer"
             @confirm="deleteFarmer"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

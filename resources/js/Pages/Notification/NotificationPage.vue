@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     Check, Setting, ArrowRight, CircleCheck, CircleCheckFilled, Bell, Box, Wallet,
 } from '@element-plus/icons-vue';
@@ -97,7 +97,7 @@ function openAction(notification) {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Notifications">
+    <MainLayout title="Notifications">
         <div class="np-page">
             <div class="np-header">
                 <div class="np-header__text">
@@ -173,7 +173,7 @@ function openAction(notification) {
                 </div>
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

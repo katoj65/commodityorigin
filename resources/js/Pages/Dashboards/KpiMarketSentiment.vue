@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import { Goods, Opportunity, Trophy, User } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -22,7 +22,7 @@ const sentimentLabel = computed(() => {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Market Sentiment">
+    <MainLayout title="Market Sentiment">
         <Head title="Market Sentiment" />
 
         <div class="kpi-page">
@@ -95,7 +95,7 @@ const sentimentLabel = computed(() => {
                 </div>
             </section>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

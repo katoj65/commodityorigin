@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watchEffect } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     Plus, Star, StarFilled, Search, User, Message, Phone,
     OfficeBuilding, Location, Close, PhoneFilled, ChatDotRound,
@@ -166,7 +166,7 @@ function saveContact() {
 </script>
 
 <template>
-<DesignPreviewLayout title="Contacts">
+<MainLayout title="Contacts">
     <Head title="Contacts" />
 
     <div class="cp-page">
@@ -447,12 +447,12 @@ function saveContact() {
                 </div>
             </template>
         </el-dialog>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>
 /* Contacts — app-wide theme. Tokens source from the shared
-   DesignPreviewLayout --dp-* palette (defined on .dp-shell); literal hex
+   MainLayout --dp-* palette (defined on .dp-shell); literal hex
    fallbacks are the same values so the page reads correctly on its own.
    Spacing follows the 4px base grid used across the app. */
 .cp-page {

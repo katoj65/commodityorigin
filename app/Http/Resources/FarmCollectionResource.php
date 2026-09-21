@@ -43,6 +43,14 @@ class FarmCollectionResource extends JsonResource
                 'id' => $this->user->id,
                 'name' => $this->user->name,
             ]),
+            'batch' => $this->whenLoaded('batchFarmCollections', function (): ?array {
+                $batch = $this->batchFarmCollections->first()?->batch;
+
+                return $batch ? [
+                    'id' => $batch->id,
+                    'batch_number' => $batch->batch_number,
+                ] : null;
+            }),
         ];
     }
 }

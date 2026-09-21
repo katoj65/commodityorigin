@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import CreateEventModal from '@/Components/Modals/CreateEventModal.vue';
 import CreateTaskModal from '@/Components/Modals/CreateTaskModal.vue';
@@ -201,7 +201,7 @@ const typeLabel = (type) => {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Calendar" flush-header>
+    <MainLayout title="Calendar" flush-header>
         <Head title="Calendar" />
 
         <div class="clp-page">
@@ -395,7 +395,7 @@ const typeLabel = (type) => {
             confirm-text="Delete"
             @confirm="confirmDeleteEvent"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

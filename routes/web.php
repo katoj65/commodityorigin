@@ -43,6 +43,7 @@ use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\Season\SeasonController;
 use App\Http\Controllers\Sell\SellController;
 use App\Http\Controllers\Settings\SettingsController;
+use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\Store\StoreController;
 use App\Http\Controllers\Task\TaskController;
 use App\Http\Controllers\Wallet\WalletController;
@@ -83,6 +84,7 @@ Route::prefix('market-intelligence')->name('market-intelligence.')->group(functi
 Route::middleware([
     'auth',
     config('jetstream.auth_session'),
+    'profile.complete',
 ])->group(function () {
 
     // Main dashboard.
@@ -252,6 +254,7 @@ Route::middleware([
 
     // Farm Collection detail routes.
     Route::prefix('farm-collection')->name('farm-collection.')->group(function () {
+        Route::get('/', [FarmCollectionController::class, 'index'])->name('index');
         Route::get('/find-by-code', [FarmCollectionController::class, 'findByCode'])->name('find-by-code');
         Route::get('/{collection}', [FarmCollectionController::class, 'show'])->name('show');
         Route::post('/{collection}/activities', [FarmCollectionController::class, 'storeActivity'])->name('activities.store');
@@ -457,6 +460,12 @@ Route::middleware([
         Route::patch('/items/{storeItem}', [StoreController::class, 'updateItem'])->name('items.update');
         Route::patch('/items/{storeItem}/status', [StoreController::class, 'updateItemStatus'])->name('items.status');
         Route::delete('/items/{storeItem}', [StoreController::class, 'destroyItem'])->name('items.destroy');
+    });
+
+    // Inventory — new landing page the sidebar's "Inventory" link points
+    // to, separate from the store.* routes above.
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('/', [InventoryController::class, 'index'])->name('index');
     });
 
     // Currencies — every logged-in user may browse them to set their own

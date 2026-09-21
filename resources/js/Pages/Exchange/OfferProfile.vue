@@ -6,7 +6,7 @@ import {
     ArrowRight, Right, MoreFilled, CircleCheck, EditPen, Close,
     Lock, InfoFilled, TopRight, MagicStick, ChatDotRound,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 
 const props = defineProps({
     offerId: { type: String, default: 'OFF-1048' },
@@ -140,7 +140,7 @@ function placeholderAction(label) {
 </script>
 
 <template>
-    <DesignPreviewLayout :title="`Offer ${offerId}`">
+    <MainLayout :title="`Offer ${offerId}`">
         <div class="ex-page">
 
             <!-- HEADER -->
@@ -463,7 +463,7 @@ function placeholderAction(label) {
                 </div>
             </template>
         </el-dialog>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style>

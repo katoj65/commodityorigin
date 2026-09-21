@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, Checked, Clock,
     CollectionTag, DataLine, Download,
@@ -150,7 +150,7 @@ const badgeClass = (b) => {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Exporter Dashboard">
+    <MainLayout title="Exporter Dashboard">
         <Head title="Exporter Dashboard" />
 
         <div class="ex-page">
@@ -737,7 +737,7 @@ const badgeClass = (b) => {
             </div>
 
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

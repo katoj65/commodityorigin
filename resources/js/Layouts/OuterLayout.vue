@@ -216,7 +216,7 @@ onBeforeUnmount(() => {
     position: relative;
 }
 
-/* ── Logo mark — mirrors DesignPreviewLayout's .dp-aside__mark-wrap (same
+/* ── Logo mark — mirrors MainLayout's .dp-aside__mark-wrap (same
    white badge treatment) so the header reads as the same product. ──── */
 .wp-page .wp-mark-wrap {
     display: inline-flex;

@@ -1,7 +1,7 @@
 <script setup>
 import { router } from '@inertiajs/vue3';
 import StoreInventoryLayout from '@/Layouts/StoreInventoryLayout.vue';
-import { ArrowRight, FolderOpened, OfficeBuilding } from '@element-plus/icons-vue';
+import { CircleCheck, FolderOpened, OfficeBuilding } from '@element-plus/icons-vue';
 
 const props = defineProps({
     store: { type: Object, default: null },
@@ -45,11 +45,23 @@ function formatMoney(amount, currency) {
     return currency ? `${currency} ${value}` : `$${value}`;
 }
 
-/* ── Pipeline helpers — moved here from StoreInventoryLayout so the
-   "Sequential Custody Transformation Pipeline" strip lives only on the
-   Farm Collections tab, the natural entry point of the custody chain. ── */
-const fmtKg = (kg) => `${Number(kg || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} KG`;
-const fmtMt = (kg) => `${(Number(kg || 0) / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}`;
+const STATUS_LABELS = { pending: 'Pending', batched: 'Batched' };
+const STATUS_TONES = { pending: 'neutral', batched: 'positive' };
+function statusLabel(status) {
+    return STATUS_LABELS[status] || (status || '—');
+}
+function statusTone(status) {
+    return STATUS_TONES[status] || 'neutral';
+}
+
+/* ── Sort comparator for el-table's built-in client-side sorting on the
+   Date column — the only sortable column. collection_date is an ISO
+   "YYYY-MM-DD" string, so a plain lexicographic compare already sorts
+   it chronologically; this just keeps null/empty values from breaking
+   localeCompare. ────────────────────────────────────────────────────── */
+function stringSort(key) {
+    return (a, b) => String(a[key] || '').localeCompare(String(b[key] || ''));
+}
 </script>
 
 <template>
@@ -81,73 +93,68 @@ const fmtMt = (kg) => `${(Number(kg || 0) / 1000).toLocaleString(undefined, { ma
         :aftertaste-options="aftertasteOptions"
         :aroma-options="aromaOptions"
     >
-        <!-- ── Sequential custody transformation pipeline ───────────────
-             Restates the same four stage figures as a horizontal flow —
-             no new data, just a different read on it. Lives only on the
-             Farm Collections tab, the entry point of the custody chain. ── -->
-        <div class="st-pipeline">
-            <div class="st-pipeline__head">
-                <span class="material-symbols-outlined">account_tree</span>
-                <h2>Sequential Custody Transformation Pipeline</h2>
-            </div>
-            <p class="st-pipeline__sub">Origin volume conversion flow, farm to token</p>
-            <div class="st-pipeline__steps">
-                <div v-for="(stage, i) in stageProgress" :key="stage.key" class="st-pipeline__step">
-                    <div class="st-pipeline__step-head">
-                        <span>{{ i + 1 }}. {{ stage.label }}</span>
-                        <span class="st-pipeline__step-count">{{ stage.records }} Rec</span>
-                    </div>
-                    <div class="st-pipeline__step-value">{{ fmtMt(stage.volume_kg) }} MT <span>({{ fmtKg(stage.volume_kg) }})</span></div>
-                    <div v-if="stage.ready !== null" class="st-pipeline__step-tags">
-                        <span class="st-pipeline__tag">{{ stage.records - stage.ready }} Moved to Next Stage</span>
-                        <span v-if="stage.ready" class="st-pipeline__tag st-pipeline__tag--muted">{{ stage.ready }} {{ stage.ready_label }}</span>
-                    </div>
-                    <p v-if="stage.note" class="st-pipeline__step-note">{{ stage.note }}</p>
-                </div>
-            </div>
-            <div class="st-pipeline__notice">
-                <span class="material-symbols-outlined">info</span>
-                <p><strong>Lifecycle Accounting Notice:</strong> Stages represent sequential physical transformation and legal custody tokenisation states, not additive independent inventories. Totals reflect real gross throughput recorded so far.</p>
-            </div>
-        </div>
-
         <div class="st-table-card">
-            <div class="st-list">
-                <div
-                    v-for="row in farmCollections"
-                    :key="row.id"
-                    class="st-list-row st-list-row--link"
-                    tabindex="0"
-                    role="button"
-                    @click="goToCollection(row)"
-                    @keydown.enter="goToCollection(row)"
-                >
-                    <div class="st-list-row__icon"><el-icon><OfficeBuilding /></el-icon></div>
-                    <div class="st-list-row__main">
-                        <div class="st-list-row__title">{{ row.farm?.name || `Farm #${row.farm_id}` }}</div>
-                        <div class="st-list-row__sub">
-                            {{ row.coffee_type || '—' }}<span v-if="row.variety"> · {{ row.variety }}</span>
-                            <span v-if="row.collection_date"> · {{ formatDate(row.collection_date) }}</span>
+            <el-table
+                :data="farmCollections"
+                class="st-el-table"
+                stripe
+                :default-sort="{ prop: 'collection_date', order: 'descending' }"
+                @row-click="goToCollection"
+            >
+                <el-table-column min-width="180">
+                    <template #header><span class="st-el-table__head"><el-icon><OfficeBuilding /></el-icon>Farm</span></template>
+                    <template #default="{ row }">
+                        <div class="st-el-table__farm">
+                            <div class="st-list-row__icon"><el-icon><OfficeBuilding /></el-icon></div>
+                            <div class="st-el-table__farm-text">
+                                <div class="st-list-row__title">{{ row.farm?.name || `Farm #${row.farm_id}` }}</div>
+                                <div class="st-list-row__sub">
+                                    <span class="st-code">{{ row.collection_code || '—' }}</span>
+                                    {{ row.coffee_type || '—' }}<span v-if="row.variety"> · {{ row.variety }}</span>
+                                </div>
+                            </div>
                         </div>
+                    </template>
+                </el-table-column>
+                <el-table-column width="95" align="right">
+                    <template #header>Quantity</template>
+                    <template #default="{ row }">{{ Number(row.quantity || 0).toLocaleString() }} {{ row.unit || '' }}</template>
+                </el-table-column>
+                <el-table-column width="80" align="right">
+                    <template #header>Grade</template>
+                    <template #default="{ row }"><span class="st-pill st-pill--a">{{ row.initial_grade || '—' }}</span></template>
+                </el-table-column>
+                <el-table-column width="85" align="right">
+                    <template #header>Quality</template>
+                    <template #default="{ row }">{{ row.initial_quality_score != null ? Number(row.initial_quality_score).toFixed(1) : '—' }}</template>
+                </el-table-column>
+                <el-table-column width="90" align="right">
+                    <template #header>Moisture</template>
+                    <template #default="{ row }">{{ row.initial_moisture != null ? Number(row.initial_moisture).toFixed(1) + '%' : '—' }}</template>
+                </el-table-column>
+                <el-table-column width="140" align="right">
+                    <template #header>Price</template>
+                    <template #default="{ row }"><span class="st-pill st-pill--b">{{ formatMoney(row.collection_price, row.currency) }}</span></template>
+                </el-table-column>
+                <el-table-column width="100">
+                    <template #header><span class="st-el-table__head"><el-icon><CircleCheck /></el-icon>Status</span></template>
+                    <template #default="{ row }"><span class="st-tone" :class="`st-tone--${statusTone(row.status)}`">{{ statusLabel(row.status) }}</span></template>
+                </el-table-column>
+                <el-table-column width="105" align="right" prop="collection_date" sortable :sort-method="stringSort('collection_date')">
+                    <template #header>Date</template>
+                    <template #default="{ row }">{{ formatDate(row.collection_date) }}</template>
+                </el-table-column>
+                <template #empty>
+                    <div class="st-empty-cell">
+                        <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
+                        No farm collections recorded yet.
                     </div>
-                    <div class="st-list-row__stats">
-                        <div class="st-list-stat">
-                            <span class="st-list-stat__value">{{ Number(row.quantity || 0).toLocaleString() }} {{ row.unit || '' }}</span>
-                            <span class="st-list-stat__label">Quantity</span>
-                        </div>
-                        <span class="st-pill st-pill--a">{{ row.initial_grade || '—' }}</span>
-                        <span class="st-pill st-pill--b">{{ formatMoney(row.collection_price, row.currency) }}</span>
-                    </div>
-                    <el-icon class="st-list-row__chevron"><ArrowRight /></el-icon>
-                </div>
-                <div v-if="!farmCollections.length" class="st-empty-cell">
-                    <div class="st-empty-cell__icon"><el-icon :size="20"><FolderOpened /></el-icon></div>
-                    No farm collections recorded yet.
-                </div>
-            </div>
+                </template>
+            </el-table>
 
             <div class="st-pagination-foot">
                 <span class="st-pagination-foot__text">{{ farmCollections.length }} farm collection{{ farmCollections.length === 1 ? '' : 's' }}</span>
+                <span class="st-pagination-foot__hint">Click Date to sort</span>
             </div>
         </div>
     </StoreInventoryLayout>
@@ -158,38 +165,6 @@ const fmtMt = (kg) => `${(Number(kg || 0) / 1000).toLocaleString(undefined, { ma
    pages, so it's duplicated per-page rather than pulled into the layout
    (each page's body content is its own independent list markup). */
 
-/* ── Sequential custody transformation pipeline — ported from
-   StoreInventoryLayout.vue, now shown only on this tab. Slot content is
-   scoped to this component (not the layout), so the base icon rule is
-   duplicated here too. ─────────────────────────────────────────────── */
-.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; line-height: 1; }
-.st-pipeline { display: flex; flex-direction: column; gap: 14px; background: var(--surface-container-lowest); border: 1px solid var(--card-border); border-radius: var(--card-radius); padding: 20px; margin-bottom: 14px; }
-.st-pipeline__head { display: flex; align-items: center; gap: 8px; }
-.st-pipeline__head .material-symbols-outlined { font-size: 19px; color: var(--primary); }
-.st-pipeline__head h2 { font-size: .8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface); margin: 0; }
-.st-pipeline__sub { font-size: .8125rem; color: var(--on-surface-variant); margin: -8px 0 0; }
-.st-pipeline__steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.st-pipeline__step { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 10px; background: var(--surface-container-low); }
-.st-pipeline__step-head { display: flex; align-items: center; justify-content: space-between; font-size: .75rem; font-weight: 700; color: var(--on-surface); }
-.st-pipeline__step-count { font-family: monospace; font-size: .6875rem; color: var(--on-surface-variant); background: var(--surface-container-lowest); padding: 2px 6px; border-radius: 4px; }
-.st-pipeline__step-value { font-size: 1.0625rem; font-weight: 800; color: var(--on-surface); }
-.st-pipeline__step-value span { font-size: .75rem; font-weight: 500; color: var(--on-surface-variant); }
-.st-pipeline__step-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-.st-pipeline__tag { font-size: .625rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--secondary-container); color: var(--on-secondary-container); }
-.st-pipeline__tag--muted { background: var(--surface-container-high); color: var(--on-surface-variant); }
-.st-pipeline__step-note { font-size: .6875rem; color: var(--on-surface-variant); margin: 0; line-height: 1.4; }
-.st-pipeline__notice { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 8px; background: var(--surface-container-low); }
-.st-pipeline__notice .material-symbols-outlined { font-size: 18px; color: var(--primary); flex-shrink: 0; }
-.st-pipeline__notice p { font-size: .75rem; color: var(--on-surface-variant); margin: 0; line-height: 1.5; }
-.st-pipeline__notice strong { color: var(--on-surface); font-weight: 700; }
-
-@media (max-width: 1180px) {
-    .st-pipeline__steps { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 640px) {
-    .st-pipeline__steps { grid-template-columns: 1fr; }
-}
-
 .st-table-card {
     background: var(--surface-container-lowest);
     border: 1px solid var(--card-border);
@@ -197,17 +172,27 @@ const fmtMt = (kg) => `${(Number(kg || 0) / 1000).toLocaleString(undefined, { ma
     overflow: hidden;
 }
 
-.st-list { display: flex; flex-direction: column; padding: 4px 20px; }
-.st-list-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 4px;
-    border-bottom: 1px solid var(--card-border);
-    transition: background .15s ease;
-}
-.st-list-row:last-child { border-bottom: none; }
-.st-list-row:hover { background: color-mix(in srgb, var(--surface-container-low) 60%, transparent); margin: 0 -12px; padding: 14px 16px; border-radius: 10px; }
+/* ── Element Plus table — restyled with this page's own tokens instead
+   of Element Plus's defaults (same --el-table-* override approach as
+   Batch/BatchesPage.vue's .bt-el-table). ─────────────────────────────── */
+.st-el-table { width: 100%; font-family: var(--sans); font-size: 13px; --el-table-border-color: var(--card-border); --el-table-header-bg-color: var(--surface-container-lowest); --el-table-header-text-color: var(--on-surface-variant); --el-table-row-hover-bg-color: var(--surface-container-low); --el-table-text-color: var(--on-surface); }
+.st-el-table :deep(.el-table__header th.el-table__cell) { padding: 10px 0; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.st-el-table :deep(.el-table__body td.el-table__cell) { padding: 10px 0; vertical-align: middle; }
+.st-el-table :deep(.el-table__inner-wrapper::before) { display: none; }
+.st-el-table :deep(.el-table__row) { cursor: pointer; }
+.st-el-table :deep(.el-table__column-filter-trigger),
+.st-el-table :deep(.caret-wrapper) { cursor: pointer; }
+.st-el-table :deep(.sort-caret.ascending),
+.st-el-table :deep(.sort-caret.descending) { border-bottom-color: var(--outline-variant); border-top-color: var(--outline-variant); }
+.st-el-table :deep(th.el-table__cell.ascending .sort-caret.ascending),
+.st-el-table :deep(th.el-table__cell.descending .sort-caret.descending) { border-bottom-color: var(--primary); border-top-color: var(--primary); }
+
+.st-el-table__head { display: inline-flex; align-items: center; gap: 4px; flex-wrap: nowrap; white-space: nowrap; }
+.st-el-table__head .el-icon { font-size: 12px; color: var(--on-surface-variant); flex-shrink: 0; }
+
+.st-el-table__farm { display: flex; align-items: center; gap: 14px; }
+.st-el-table__farm-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+
 .st-list-row__icon {
     width: 40px;
     height: 40px;
@@ -220,19 +205,8 @@ const fmtMt = (kg) => `${(Number(kg || 0) / 1000).toLocaleString(undefined, { ma
     flex-shrink: 0;
     font-size: 16px;
 }
-.st-list-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .st-list-row__title { font-size: 14px; font-weight: 700; color: var(--on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-list-row__sub { font-size: 12.5px; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.st-list-row__stats { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
-.st-list-stat { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 76px; }
-.st-list-stat__value { font-size: 13.5px; font-weight: 700; color: var(--on-surface); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.st-list-stat__label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-variant); white-space: nowrap; }
-
-.st-list-row--link { cursor: pointer; }
-.st-list-row--link:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 10px; }
-.st-list-row__chevron { flex-shrink: 0; font-size: 14px; color: var(--on-surface-variant); opacity: 0; transform: translateX(-4px); transition: opacity .15s ease, transform .15s ease; }
-.st-list-row--link:hover .st-list-row__chevron,
-.st-list-row--link:focus-visible .st-list-row__chevron { opacity: 1; transform: translateX(0); }
 
 .st-empty-cell {
     display: flex;
@@ -266,6 +240,12 @@ const fmtMt = (kg) => `${(Number(kg || 0) / 1000).toLocaleString(undefined, { ma
 .st-pill--a { background: var(--surface-container); color: var(--on-surface-variant); border: 1px solid color-mix(in srgb, var(--outline-variant) 50%, transparent); }
 .st-pill--b { background: color-mix(in srgb, var(--secondary-container) 35%, transparent); color: var(--on-secondary-container); border: 1px solid color-mix(in srgb, var(--secondary-container) 60%, transparent); }
 
+.st-code { font-family: monospace; font-size: 10.5px; font-weight: 700; color: var(--on-surface-variant); background: var(--surface-container-low); padding: 2px 6px; border-radius: 5px; margin-right: 6px; }
+
+.st-tone { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.st-tone--neutral { background: var(--surface-container); color: var(--on-surface-variant); }
+.st-tone--positive { background: var(--secondary-container); color: var(--on-secondary-container); }
+
 .st-pagination-foot {
     display: flex;
     align-items: center;
@@ -276,11 +256,9 @@ const fmtMt = (kg) => `${(Number(kg || 0) / 1000).toLocaleString(undefined, { ma
     background: color-mix(in srgb, var(--surface-container-low) 25%, transparent);
 }
 .st-pagination-foot__text { font-size: 12px; color: var(--on-surface-variant); }
+.st-pagination-foot__hint { font-size: 11px; color: var(--on-surface-variant); opacity: .75; }
 
 @media (max-width: 640px) {
-    .st-list { padding: 4px 12px; }
-    .st-list-row { flex-wrap: wrap; }
-    .st-list-row:hover { margin: 0; padding: 14px 4px; border-radius: 0; }
-    .st-list-row__stats { width: 100%; justify-content: flex-start; padding-left: 54px; gap: 16px; }
+    .st-table-card { overflow-x: auto; }
 }
 </style>

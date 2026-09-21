@@ -1,5 +1,5 @@
 <script setup>
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 
 /* Design-system preview — built strictly to the token values in UI.md
    (dark, compact, developer-console aesthetic). Scoped locally to this
@@ -32,7 +32,7 @@ const activity = [
 </script>
 
 <template>
-<DesignPreviewLayout title="Design Preview">
+<MainLayout title="Design Preview">
     <div class="dpv-page">
 
         <header class="dpv-header">
@@ -118,7 +118,7 @@ const activity = [
         </section>
 
     </div>
-</DesignPreviewLayout>
+</MainLayout>
 </template>
 
 <style scoped>
@@ -142,7 +142,7 @@ const activity = [
     --font-sans: Inter, system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
-    /* Offsets DesignPreviewLayout's .dp-main padding (48px 64px desktop,
+    /* Offsets MainLayout's .dp-main padding (48px 64px desktop,
        stepping down at its own breakpoints below) so the visible margin
        around this page's content is a generous, centered-looking 48px
        on every side (UI.md's own "5xl" spacing token), without touching

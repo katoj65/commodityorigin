@@ -8,7 +8,7 @@ import {
     LocationFilled, MapLocation, Shop, Link, Files, Clock, Cpu, WarningFilled,
     Right, TopRight, Download, Delete, Plus,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import EditLotModal from '@/Components/Modals/EditLotModal.vue';
 import AttachBatchModal from '@/Components/Modals/AttachBatchModal.vue';
 import AddSustainabilityVerificationModal from '@/Components/Modals/AddSustainabilityVerificationModal.vue';
@@ -399,7 +399,7 @@ const aiInsight = {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Lot Profile">
+    <MainLayout title="Lot Profile">
         <div class="lp-page">
             <!-- ── Page header ───────────────────────────────────────────────────── -->
             <div class="lp-header">
@@ -842,7 +842,7 @@ const aiInsight = {
             :show-cancel="false"
             @confirm="confirmDeleteVerification"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

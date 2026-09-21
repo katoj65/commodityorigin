@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     OfficeBuilding, Search, Location, Link as LinkIcon, Phone, Message,
     UserFilled, Calendar, FolderOpened,
@@ -30,7 +30,7 @@ function locationLabel(b) {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Businesses">
+    <MainLayout title="Businesses">
         <Head title="Businesses" />
 
         <div class="biz-page">
@@ -90,7 +90,7 @@ function locationLabel(b) {
                 </div>
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

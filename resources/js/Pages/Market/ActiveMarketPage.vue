@@ -9,7 +9,7 @@ import {
     Document, Calendar as CalendarIcon, MagicStick, Promotion, Search,
     WarningFilled, ArrowRight,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 
 defineProps({
     lots: { type: Array, default: () => [] },
@@ -153,7 +153,7 @@ function placeholderAction(label) {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Active Market">
+    <MainLayout title="Active Market">
         <Head title="Active Market" />
 
         <!-- 1. QUICK TRADE ACTION RIBBON -->
@@ -560,7 +560,7 @@ function placeholderAction(label) {
                 </p>
             </div>
         </section>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

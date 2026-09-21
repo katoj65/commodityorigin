@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     ArrowRight,
     Box,
@@ -135,7 +135,7 @@ function printPage() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Lot Traceability">
+    <MainLayout title="Lot Traceability">
         <div class="lt-page">
             <!-- ── Page header ──────────────────────────────────────────── -->
             <div class="lt-page-header">
@@ -356,7 +356,7 @@ function printPage() {
                 </a>
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

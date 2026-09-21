@@ -6,7 +6,7 @@ import {
     TopRight, Document, Notebook, Setting, Stamp, Download, Lightning, Box,
     Lock, Van, Message, Right,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 
 /* ── Real Market/Lot data, field by field, with dummy fallbacks ported
    from the "Uganda Robusta — Batch #BTH-2026-0048" reference mockup
@@ -282,7 +282,7 @@ function scrollToOrder() {
 </script>
 
 <template>
-    <DesignPreviewLayout :title="batch.title">
+    <MainLayout :title="batch.title">
         <Head :title="batch.title" />
 
         <div class="mp-page">
@@ -663,7 +663,7 @@ function scrollToOrder() {
                 </div>
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

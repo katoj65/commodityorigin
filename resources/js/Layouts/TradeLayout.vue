@@ -2,7 +2,7 @@
 /* Trade hub — structural/visual port of the uploaded "Institutional
    Commodity Exchange" Trade mockup (code.html / DESIGN.md), restyled
    with this app's own --dp-* design tokens instead of the mockup's own
-   literal emerald/slate palette + Manrope font (see DesignPreviewLayout
+   literal emerald/slate palette + Manrope font (see MainLayout
    .vue's token-block comment for why literal hex/tailwind.config.js
    extension is avoided app-wide). The real dark sidebar/header shell is
    unchanged — only this page's content area is rebuilt.
@@ -14,7 +14,7 @@
 import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Close, Tickets } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 
 const props = defineProps({
     title: { type: String, default: 'Trade' },
@@ -66,7 +66,7 @@ function submitRfq() {
 </script>
 
 <template>
-    <DesignPreviewLayout :title="title">
+    <MainLayout :title="title">
         <Head :title="title">
             <link rel="preconnect" href="https://fonts.googleapis.com" />
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
@@ -186,7 +186,7 @@ function submitRfq() {
                 </div>
             </template>
         </el-dialog>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style>

@@ -1,6 +1,6 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import RequestStoreDialog from '@/Components/Modals/RequestStoreDialog.vue';
 
 const props = defineProps({
@@ -23,7 +23,7 @@ if (props.importResult) importResultVisible.value = true;
 </script>
 
 <template>
-    <DesignPreviewLayout :title="title">
+    <MainLayout :title="title">
         <Head :title="title" />
 
         <div class="stl-page">
@@ -31,7 +31,7 @@ if (props.importResult) importResultVisible.value = true;
         </div>
 
         <RequestStoreDialog v-model="storeDialogOpen" :rejected="store?.verification_status === 'rejected'" />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

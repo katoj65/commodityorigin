@@ -397,7 +397,7 @@ function submitReject() {
 <style>
 /* Dialog teleports to <body>, outside .dp-shell, so --dp-* custom
    properties don't cascade in — literal hex from the same palette is
-   used here instead, matching DesignPreviewLayout's own teleported
+   used here instead, matching MainLayout's own teleported
    popovers/dropdowns. */
 .el-dialog.st-reject-modal { border-radius: 6px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
 .st-reject-modal__title { font-size: 16px; font-weight: 800; color: #000000; }

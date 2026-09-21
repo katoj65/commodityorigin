@@ -50,17 +50,10 @@ const props = defineProps({
     aromaOptions: { type: Array, default: () => [] },
 });
 
-/* ── A stage's real weight is shown in whichever unit keeps it legible —
-   a small real value (e.g. a single 40kg lot) rounds down to "0.0" in
-   metric tons and reads as if nothing were there, so anything under
-   1 MT is shown in KG instead of being silently truncated to zero. ── */
-function fmtVolume(kg) {
-    const value = Number(kg || 0);
-    if (value > 0 && value < 1000) {
-        return { value: value.toLocaleString(undefined, { maximumFractionDigits: 0 }), unit: 'KG' };
-    }
-    return { value: (value / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }), unit: 'MT' };
-}
+/* ── Pipeline helpers — a stage's real weight is shown in both units so
+   it reads clearly whether the figure is a few bags or several tons. ── */
+const fmtKg = (kg) => `${Number(kg || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} KG`;
+const fmtMt = (kg) => `${(Number(kg || 0) / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}`;
 
 const currentTab = computed(() => props.stageProgress.find((tab) => tab.key === props.activeTab));
 
@@ -171,34 +164,46 @@ const importResultVisible = ref(Boolean(props.importResult));
                     </div>
                 </div>
 
-                <!-- ── Stage cards — every tab page is always linked here. ── -->
-                <nav class="st-nav-cards">
-                    <Link
-                        v-for="stage in stageProgress"
-                        :key="stage.key"
-                        :href="route(stage.route)"
-                        class="st-nav-card"
-                    >
-                        <div class="st-nav-card__top">
-                            <div class="st-nav-card__icon"><span class="material-symbols-outlined">{{ stage.icon }}</span></div>
-                            <span class="st-nav-card__records">{{ stage.records }} Record{{ stage.records === 1 ? '' : 's' }}</span>
-                        </div>
-                        <div class="st-nav-card__value">{{ fmtVolume(stage.volume_kg).value }} <span class="st-nav-card__unit">{{ fmtVolume(stage.volume_kg).unit }}</span></div>
-                        <div class="st-nav-card__label">{{ stage.label }}</div>
-                        <div v-if="stage.ready !== null" class="st-nav-card__bar"><div class="st-nav-card__bar-fill" :style="{ width: stage.progress + '%' }" /></div>
-                        <div v-if="stage.ready !== null" class="st-nav-card__ready">
-                            <span>{{ stage.ready_label }}:</span>
-                            <strong>{{ stage.ready }}</strong>
-                        </div>
-                        <p v-if="stage.note" class="st-nav-card__note">{{ stage.note }}</p>
-                        <span class="st-nav-card__link">View {{ stage.label }} <span class="material-symbols-outlined">arrow_forward</span></span>
-                    </Link>
-                </nav>
+                <div class="st-divider"></div>
+
+                <!-- ── Sequential custody transformation pipeline — the page's
+                     one KPI surface, shared across every tab. Each step is
+                     also the nav link to that stage, so it replaces the old
+                     standalone KPI row instead of duplicating it. ────────── -->
+                <div class="st-pipeline">
+                    <nav class="st-pipeline__steps">
+                        <Link
+                            v-for="(stage, i) in stageProgress"
+                            :key="stage.key"
+                            :href="route(stage.route)"
+                            class="st-pipeline__step"
+                        >
+                            <div class="st-pipeline__step-head">
+                                <span>{{ i + 1 }}. {{ stage.label }}</span>
+                                <span class="st-pipeline__step-count">{{ stage.records }} Rec</span>
+                            </div>
+                            <div class="st-pipeline__step-value">{{ fmtMt(stage.volume_kg) }} MT <span>({{ fmtKg(stage.volume_kg) }})</span></div>
+                            <div v-if="stage.ready !== null" class="st-pipeline__step-bar"><div class="st-pipeline__step-bar-fill" :style="{ width: stage.progress + '%' }" /></div>
+                            <div v-if="stage.ready !== null" class="st-pipeline__step-tags">
+                                <span class="st-pipeline__tag">{{ stage.records - stage.ready }} Moved to Next Stage</span>
+                                <span v-if="stage.ready" class="st-pipeline__tag st-pipeline__tag--muted">{{ stage.ready }} {{ stage.ready_label }}</span>
+                            </div>
+                            <p v-if="stage.note" class="st-pipeline__step-note">{{ stage.note }}</p>
+                        </Link>
+                    </nav>
+                    <div class="st-pipeline__notice">
+                        <span class="material-symbols-outlined">info</span>
+                        <p><strong>Lifecycle Accounting Notice:</strong> Stages represent sequential physical transformation and legal custody tokenisation states, not additive independent inventories. Totals reflect real gross throughput recorded so far.</p>
+                    </div>
+                </div>
 
                 <!-- ── Active tab's content ─────────────────────────────── -->
                 <div class="st-body">
                     <div class="st-list-toolbar">
-                        <h2 class="st-list-toolbar__title">{{ currentTab?.label }}</h2>
+                        <h2 class="st-list-toolbar__title">
+                            <span v-if="currentTab?.icon" class="material-symbols-outlined">{{ currentTab.icon }}</span>
+                            {{ currentTab?.label }}
+                        </h2>
                     </div>
 
                     <slot />
@@ -444,49 +449,52 @@ const importResultVisible = ref(Boolean(props.importResult));
 }
 .st-import-panel__close:hover { background: rgba(0, 0, 0, 0.06); }
 
-/* ── Stage cards — real per-stage volume/records/progress, each also the
-   nav link to that tab. ────────────────────────────────────────────────── */
-.st-nav-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-.st-nav-card {
-    position: relative;
+/* ── Sequential custody transformation pipeline — the page's one KPI
+   surface (real per-stage volume/records/progress), each step also the
+   nav link to that tab. Ported from FarmCollections.vue, which used to
+   duplicate this data in a standalone top KPI row. ────────────────────── */
+.st-pipeline { display: flex; flex-direction: column; gap: 14px; background: var(--surface-container-lowest); border-radius: var(--card-radius); padding: 0; }
+.st-pipeline__steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.st-pipeline__step {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 18px 20px;
-    background: var(--surface-container-lowest);
-    border: 1px solid var(--card-border);
-    border-radius: var(--card-radius);
+    padding: 14px;
+    border-radius: 10px;
+    background: var(--surface-container-low);
     text-decoration: none;
     color: inherit;
-    overflow: hidden;
-    transition: box-shadow .15s ease, border-color .15s ease;
+    transition: box-shadow .15s ease;
 }
-.st-nav-card:hover { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06); }
-.st-nav-card__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.st-nav-card__icon {
-    width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
-    background: var(--surface-container-high); color: var(--on-surface-variant); flex-shrink: 0;
+.st-pipeline__step:hover { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06); }
+.st-pipeline__step-head { display: flex; align-items: center; justify-content: space-between; font-size: .75rem; font-weight: 700; color: var(--on-surface); }
+.st-pipeline__step-count { font-family: monospace; font-size: .6875rem; color: var(--on-surface-variant); background: var(--surface-container-lowest); padding: 2px 6px; border-radius: 4px; }
+.st-pipeline__step-value { font-size: 1.0625rem; font-weight: 800; color: var(--on-surface); }
+.st-pipeline__step-value span { font-size: .75rem; font-weight: 500; color: var(--on-surface-variant); }
+.st-pipeline__step-bar { width: 100%; height: 5px; border-radius: 999px; background: var(--surface-container-high); overflow: hidden; }
+.st-pipeline__step-bar-fill { height: 100%; border-radius: 999px; background: var(--primary); }
+.st-pipeline__step-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.st-pipeline__tag { font-size: .625rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--secondary-container); color: var(--on-secondary-container); }
+.st-pipeline__tag--muted { background: var(--surface-container-high); color: var(--on-surface-variant); }
+.st-pipeline__step-note { font-size: .6875rem; color: var(--on-surface-variant); margin: 0; line-height: 1.4; }
+.st-pipeline__notice { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 8px; background: var(--surface-container-low); }
+.st-pipeline__notice .material-symbols-outlined { font-size: 18px; color: var(--primary); flex-shrink: 0; }
+.st-pipeline__notice p { font-size: .75rem; color: var(--on-surface-variant); margin: 0; line-height: 1.5; }
+.st-pipeline__notice strong { color: var(--on-surface); font-weight: 700; }
+
+@media (max-width: 1180px) {
+    .st-pipeline__steps { grid-template-columns: repeat(2, 1fr); }
 }
-.st-nav-card__icon .material-symbols-outlined { font-size: 17px; }
-.st-nav-card__records { font-family: monospace; font-size: 11px; font-weight: 600; color: var(--on-surface-variant); background: var(--surface-container); padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
-.st-nav-card__value { font-size: 1.375rem; font-weight: 800; letter-spacing: -.01em; color: var(--on-surface); line-height: 1.2; font-variant-numeric: tabular-nums; }
-.st-nav-card__unit { font-size: .75rem; font-weight: 700; color: var(--on-surface-variant); }
-.st-nav-card__label { font-size: .8125rem; font-weight: 700; color: var(--on-surface-variant); }
-.st-nav-card__bar { width: 100%; height: 5px; border-radius: 999px; background: var(--surface-container-high); overflow: hidden; margin-top: 4px; }
-.st-nav-card__bar-fill { height: 100%; border-radius: 999px; background: var(--primary); }
-.st-nav-card__ready { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: .75rem; color: var(--on-surface-variant); }
-.st-nav-card__ready strong { color: var(--on-surface); font-weight: 700; }
-.st-nav-card__note { font-size: .6875rem; color: var(--on-surface-variant); margin: 0; line-height: 1.4; }
-.st-nav-card__link {
-    display: inline-flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--card-border);
-    font-size: .75rem; font-weight: 700; color: var(--primary);
+@media (max-width: 640px) {
+    .st-pipeline__steps { grid-template-columns: 1fr; }
 }
-.st-nav-card__link .material-symbols-outlined { font-size: 14px; }
 
 /* ── Active tab content ───────────────────────────────────────────────── */
-.st-body { display: flex; flex-direction: column; gap: 14px; padding-top: 12px; border-top: 1px solid var(--card-border); }
+.st-body { display: flex; flex-direction: column; gap: 14px; }
+.st-divider { border-top: 1px solid var(--card-border); }
 .st-list-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.st-list-toolbar__title { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.005em; color: var(--on-surface); margin: 0; }
+.st-list-toolbar__title { display: flex; align-items: center; gap: 8px; font-size: 1.0625rem; font-weight: 800; letter-spacing: -.005em; color: var(--on-surface); margin: 0; }
+.st-list-toolbar__title .material-symbols-outlined { font-size: 19px; color: var(--primary); }
 
 /* ── Bottom triptych ──────────────────────────────────────────────────── */
 .st-triptych { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
@@ -517,12 +525,8 @@ const importResultVisible = ref(Boolean(props.importResult));
 .st-health-box__value { font-size: 1.0625rem; font-weight: 800; color: var(--on-surface); margin-top: 3px; font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: reduce) {
-    .st-nav-card,
+    .st-pipeline__step,
     .st-btn-primary { transition: none; animation: none; }
-}
-
-@media (max-width: 1180px) {
-    .st-nav-cards { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 640px) {
@@ -531,7 +535,6 @@ const importResultVisible = ref(Boolean(props.importResult));
     .st-hero { flex-direction: column; align-items: stretch; }
     .st-hero__actions .st-btn-primary,
     .st-hero__actions .st-btn-outline { justify-content: center; }
-    .st-nav-cards { grid-template-columns: 1fr; gap: 10px; }
     .st-health-grid { grid-template-columns: 1fr; }
 }
 </style>

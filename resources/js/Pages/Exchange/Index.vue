@@ -8,7 +8,7 @@ import {
     CircleCheck, Cherry, Document, Lock, Timer, TrendCharts, Notification, Plus,
     Check, Promotion, Coin, Medal, MapLocation, ArrowRight,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 
 const props = defineProps({
     lots: {
@@ -140,7 +140,7 @@ function placeholderAction(label) {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Coffee Exchange">
+    <MainLayout title="Coffee Exchange">
         <!-- 1. STATUS STRIP -->
         <section class="ex-status-line">
             <div class="ex-flex-icon">
@@ -448,7 +448,7 @@ function placeholderAction(label) {
                 </div>
             </div>
         </section>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

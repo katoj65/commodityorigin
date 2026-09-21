@@ -35,6 +35,39 @@ class FarmCollectionController extends Controller
     }
 
     /**
+     * Display the Farm Collections index page. The ledger table is real
+     * farm collection data for the authenticated user; the KPI row and
+     * custody dossier are still illustrative dummy data.
+     */
+    public function index(Request $request): Response
+    {
+        $farmCollections = FarmCollection::query()
+            ->where('user_id', $request->user()->id)
+            ->with(['farm.user', 'batchFarmCollections.batch'])
+            ->latest('collection_date')
+            ->get();
+
+        return Inertia::render('FarmCollection/FarmCollectionIndex', [
+            'coffeeTypeOptions' => CropVarietyMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'harvestSeasonOptions' => SeasonMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'currencyOptions' => Currency::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('code')
+                ->pluck('code'),
+            'farmCollections' => FarmCollectionResource::collection($farmCollections)->resolve(),
+        ]);
+    }
+
+    /**
      * Display a single farm collection's details.
      */
     public function show(FarmCollection $collection): Response

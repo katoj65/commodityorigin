@@ -6,7 +6,7 @@ import {
     CollectionTag, Star, Filter, DataLine, User,
     ArrowUp, Warning,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 
 const activeFilter = ref('Arabica');
 const filters = ['Arabica', 'Robusta', 'Micro-lots', 'Ending Soon'];
@@ -129,7 +129,7 @@ const footerStats = [
 </script>
 
 <template>
-    <DesignPreviewLayout title="Bid Board">
+    <MainLayout title="Bid Board">
         <Head title="Bid Board" />
 
         <div class="bp-root">
@@ -379,7 +379,7 @@ const footerStats = [
                 </div>
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

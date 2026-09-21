@@ -5,7 +5,7 @@ import {
     CircleCheckFilled, Close, Edit, Location, Lock, MagicStick,
     Message, Monitor, Phone, User,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import EditProfileDialog from '@/Components/Modals/EditProfileDialog.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { resolveIcon } from '@/utils/icon';
@@ -102,7 +102,7 @@ const extraSessionsCount = computed(() => Math.max(props.sessions.length - sessi
 </script>
 
 <template>
-    <DesignPreviewLayout title="Profile">
+    <MainLayout title="Profile">
         <Head title="Profile" />
 
         <div class="pp-page">
@@ -268,7 +268,7 @@ const extraSessionsCount = computed(() => Math.max(props.sessions.length - sessi
             :loading="unsubscribingId === agentToUnsubscribe?.id"
             @confirm="confirmUnsubscribe"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

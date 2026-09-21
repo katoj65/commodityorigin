@@ -1,6 +1,6 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 
 defineProps({
     lots: { type: Array, default: () => [] },
@@ -11,9 +11,9 @@ defineProps({
 </script>
 
 <template>
-    <DesignPreviewLayout title="Live Market">
+    <MainLayout title="Live Market">
         <Head title="Live Market" />
 
         <div></div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>

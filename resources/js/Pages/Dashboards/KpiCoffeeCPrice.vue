@@ -1,6 +1,6 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import { CircleCheck, Files, PriceTag, TrendCharts } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -13,7 +13,7 @@ const fmtMoney = (n) => (n != null ? Number(n).toLocaleString('en-US', { minimum
 </script>
 
 <template>
-    <DesignPreviewLayout title="Coffee C Price">
+    <MainLayout title="Coffee C Price">
         <Head title="Coffee C Price" />
 
         <div class="kpi-page">
@@ -70,7 +70,7 @@ const fmtMoney = (n) => (n != null ? Number(n).toLocaleString('en-US', { minimum
                 <p v-else class="kpi-empty">No price index entries have been recorded yet.</p>
             </section>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

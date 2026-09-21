@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, Checked, Clock,
     Coffee, CollectionTag, DataLine, Download, Location,
@@ -129,7 +129,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 </script>
 
 <template>
-    <DesignPreviewLayout :title="cooperativeName">
+    <MainLayout :title="cooperativeName">
         <Head :title="cooperativeName" />
 
         <div class="co-page">
@@ -656,7 +656,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
             </div>
 
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

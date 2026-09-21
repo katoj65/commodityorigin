@@ -1,6 +1,6 @@
 <script setup>
 import { reactive, ref } from 'vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     MagicStick, Search, DataAnalysis, Finished, Checked,
     Download, Service, Lock, Coin, Link, Tickets, ShoppingCart, Sell,
@@ -36,7 +36,7 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
 </script>
 
 <template>
-    <DesignPreviewLayout title="AI Assistant">
+    <MainLayout title="AI Assistant">
         <div class="chat-page">
             <div class="chat-workspace">
                 <!-- CENTER PANEL: chat workspace -->
@@ -352,7 +352,7 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
                 </div>
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

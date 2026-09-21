@@ -8,7 +8,7 @@ import {
     ChatDotRound, Promotion, ArrowRight, Share,
     Monitor, DataLine, Warning, Sunny, Cloudy,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 
 const activeSideLink = ref('Market Data');
 const sideLinks = [

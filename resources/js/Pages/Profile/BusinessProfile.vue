@@ -8,7 +8,7 @@ import {
     CoffeeCup, Tickets, Lock, Download, Medal, MapLocation, Ship,
     PieChart, Files, DocumentChecked, Promotion, ArrowRight, Grid,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import EditBusinessProfileDialog from '@/Components/Modals/EditBusinessProfileDialog.vue';
 import AddBusinessMemberDialog from '@/Components/Modals/AddBusinessMemberDialog.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -202,7 +202,7 @@ const documents = [
 </script>
 
 <template>
-    <DesignPreviewLayout :title="businessName">
+    <MainLayout :title="businessName">
         <Head :title="businessName" />
 
         <div class="bp-page">
@@ -648,7 +648,7 @@ const documents = [
             :loading="removingMemberId === memberToRemove?.id"
             @confirm="removeMember"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

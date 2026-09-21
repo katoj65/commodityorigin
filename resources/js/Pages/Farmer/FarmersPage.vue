@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     CirclePlus, Location, Message, Refresh,
     Search, UserFilled, View, Warning,
@@ -48,7 +48,7 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
 </script>
 
 <template>
-    <DesignPreviewLayout title="Farmers Directory">
+    <MainLayout title="Farmers Directory">
         <Head title="Farmers Directory" />
 
         <div class="fd-page">
@@ -150,7 +150,7 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
             </div>
 
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

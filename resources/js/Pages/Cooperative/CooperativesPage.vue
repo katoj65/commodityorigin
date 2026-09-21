@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, Checked, Clock,
     CollectionTag, DataLine, Download, House, Location,
@@ -145,7 +145,7 @@ const badgeClass = (b) => {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Cooperative Directory">
+    <MainLayout title="Cooperative Directory">
         <Head title="Cooperative Directory" />
 
         <div class="cp-page">
@@ -684,7 +684,7 @@ const badgeClass = (b) => {
             </div>
 
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

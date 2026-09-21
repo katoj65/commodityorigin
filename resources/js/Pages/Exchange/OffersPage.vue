@@ -7,7 +7,7 @@ import {
     Coin, Promotion,
     Files, Refresh,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import OfferModal from '@/Components/Modals/OfferModal.vue';
 
 const props = defineProps({
@@ -94,7 +94,7 @@ function placeholderAction(label) {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Offers">
+    <MainLayout title="Offers">
         <div class="ex-page">
             <!-- 1. HEADER -->
             <section class="ex-card ex-hero">
@@ -214,7 +214,7 @@ function placeholderAction(label) {
         </div>
 
         <OfferModal v-model="offerModalOpen" :offer="selectedOffer" :fob-options="fobOptions" />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     Bell, Box, ChatDotRound, Check, Clock,
     CollectionTag, DataLine, Download,
@@ -139,7 +139,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 </script>
 
 <template>
-    <DesignPreviewLayout title="Farmer Dashboard">
+    <MainLayout title="Farmer Dashboard">
         <Head title="Farmer Dashboard" />
 
         <div class="fr-page">
@@ -707,7 +707,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
             </div>
 
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

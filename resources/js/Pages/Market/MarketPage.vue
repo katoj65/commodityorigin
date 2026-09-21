@@ -4,7 +4,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import {
     Search, List, ShoppingCart, Sell, DataAnalysis, TrendCharts, Trophy, Filter,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import MarketFilterDialog from '@/Components/Market/MarketFilterDialog.vue';
 
 const props = defineProps({
@@ -49,7 +49,7 @@ function closeSearch() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Coffee Market">
+    <MainLayout title="Coffee Market">
         <Head title="Coffee Market" />
 
         <div class="mkt-page">
@@ -107,7 +107,7 @@ function closeSearch() {
         </div>
 
         <MarketFilterDialog v-model="filterDialogOpen" />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>
@@ -131,7 +131,7 @@ function closeSearch() {
     background: #f9f9f9;
     color: var(--on-surface);
     min-height: 100%;
-    /* DesignPreviewLayout's .dp-main carries its own 48px top padding
+    /* MainLayout's .dp-main carries its own 48px top padding
        (shared by every page it wraps) — pulled back up here so the
        sticky topbar sits flush under the header instead of leaving a
        dead gap, same fix already applied to GeneralDashboard's .cp-page. */

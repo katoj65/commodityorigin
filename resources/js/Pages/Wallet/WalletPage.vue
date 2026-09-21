@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import DepositModal from '@/Components/DepositModal.vue';
 import WithdrawModal from '@/Components/WithdrawModal.vue';
 import EscrowTransferModal from '@/Components/EscrowTransferModal.vue';
@@ -124,7 +124,7 @@ function openWithdraw() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Wallet">
+    <MainLayout title="Wallet">
         <Head title="Wallet" />
 
         <div class="wal-page">
@@ -310,7 +310,7 @@ function openWithdraw() {
 
         <!-- ── Withdraw modal ───────────────────────────────────────────── -->
         <WithdrawModal v-model="withdrawOpen" :currency="wallet.currency" :available-balance="wallet.available_balance" />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

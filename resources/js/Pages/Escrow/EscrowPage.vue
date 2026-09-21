@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import { View, Lock, Unlock, CircleCheck, Clock, Warning, ShoppingBag } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -123,7 +123,7 @@ function openOrder(escrow) {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Escrow">
+    <MainLayout title="Escrow">
         <Head title="Escrow" />
 
         <div class="esc-page">
@@ -331,7 +331,7 @@ function openOrder(escrow) {
                 </div>
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

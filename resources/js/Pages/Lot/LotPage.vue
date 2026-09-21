@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import {
     Box, Check, CollectionTag, DataLine, Download,
     Location, Opportunity, Promotion, ShoppingCart,
@@ -185,7 +185,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 </script>
 
 <template>
-    <DesignPreviewLayout title="Lots">
+    <MainLayout title="Lots">
         <Head title="Lots" />
 
         <div class="lt-page">
@@ -741,7 +741,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
             </div>
 
         </div><!-- /lt-page -->
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

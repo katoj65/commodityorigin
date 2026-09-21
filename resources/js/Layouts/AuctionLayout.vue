@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import { Coin, Grid, Trophy, User } from '@element-plus/icons-vue';
 
 /* ── The shell every auction-section page (overview, Live, My Bids,
@@ -50,7 +50,7 @@ const kpis = computed(() => [
 </script>
 
 <template>
-    <DesignPreviewLayout :title="title">
+    <MainLayout :title="title">
         <Head :title="title" />
 
         <div class="al-page">
@@ -79,7 +79,7 @@ const kpis = computed(() => [
                 <slot />
             </div>
         </div>
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

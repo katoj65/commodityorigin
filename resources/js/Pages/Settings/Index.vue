@@ -6,7 +6,7 @@ import {
     Lock, Monitor, OfficeBuilding, Operation, Plus, PriceTag, QuestionFilled,
     Right, User, Van, Wallet,
 } from '@element-plus/icons-vue';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import EditProfileDialog from '@/Components/Modals/EditProfileDialog.vue';
 import ChangePasswordModal from '@/Components/Modals/ChangePasswordModal.vue';
@@ -184,7 +184,7 @@ function confirmDeleteIndex() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Settings">
+    <MainLayout title="Settings">
         <Head title="Settings" />
 
         <div class="set-page">
@@ -707,7 +707,7 @@ function confirmDeleteIndex() {
             confirm-text="Delete"
             @confirm="confirmDeleteIndex"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style>

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import AddFarmSustainabilityPracticeModal from '@/Components/Modals/AddFarmSustainabilityPracticeModal.vue';
@@ -646,7 +646,7 @@ function formatEventDate(value) {
 </script>
 
 <template>
-    <DesignPreviewLayout :title="farmName">
+    <MainLayout :title="farmName">
         <Head :title="farmName" />
 
         <div class="fp-page">
@@ -1627,7 +1627,7 @@ function formatEventDate(value) {
             :loading="deletingSoilProfile"
             @confirm="confirmDeleteSoilProfile"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

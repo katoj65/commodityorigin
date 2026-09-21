@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
-import DesignPreviewLayout from '@/Layouts/DesignPreviewLayout.vue';
+import MainLayout from '@/Layouts/MainLayout.vue';
 import AddBusinessMemberDialog from '@/Components/Modals/AddBusinessMemberDialog.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import {
@@ -126,7 +126,7 @@ function confirmRemove() {
 </script>
 
 <template>
-    <DesignPreviewLayout title="Business Membership">
+    <MainLayout title="Business Membership">
         <Head title="Business Membership" />
 
         <div class="bm-page">
@@ -243,7 +243,7 @@ function confirmRemove() {
             confirm-text="Remove"
             @confirm="confirmRemove"
         />
-    </DesignPreviewLayout>
+    </MainLayout>
 </template>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import { Box, Close } from '@element-plus/icons-vue';
@@ -43,11 +43,21 @@ function emptyForm() {
 
 const form = useForm(emptyForm());
 
+/* ── Open instantly, reveal the field grid a frame later — see the
+   identical comment in AddFarmCollectionModal.vue for why two nested
+   requestAnimationFrame calls are used. ────────────────────────────── */
+const contentReady = ref(false);
+
 watch(() => props.modelValue, (open) => {
     if (!open) return;
     form.defaults(emptyForm());
     form.reset();
     form.clearErrors();
+
+    contentReady.value = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        contentReady.value = true;
+    }));
 });
 
 function disableFutureDates(date) {
@@ -95,7 +105,11 @@ function submit() {
         </template>
 
         <div class="abm-modal__body">
-            <div class="abm-grid">
+            <div v-if="!contentReady" class="abm-loading">
+                <span class="abm-loading__spinner"></span>
+                <span>Preparing form…</span>
+            </div>
+            <div v-else class="abm-grid">
                 <div class="abm-field abm-field--span2">
                     <label class="abm-field__label">Variety</label>
                     <el-select v-model="form.variety" placeholder="Select variety" filterable class="abm-input w-100" :class="{ 'abm-input--error': form.errors.variety }">
@@ -191,8 +205,7 @@ function submit() {
 
         <template #footer>
             <div class="abm-modal__footer">
-                <button type="button" class="abm-btn-outline" @click="closeDialog">Cancel</button>
-                <button type="button" class="abm-btn-primary" :disabled="form.processing" @click="submit">
+                <button type="button" class="abm-btn-primary" :disabled="form.processing || !contentReady" @click="submit">
                     {{ form.processing ? 'Saving…' : 'Save Batch' }}
                 </button>
             </div>
@@ -262,6 +275,10 @@ function submit() {
 
 .abm-modal__body { padding: 22px 24px 8px; max-height: 72vh; overflow-y: auto; }
 
+.abm-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 56px 24px; color: #6F7677; font-size: 13px; font-weight: 500; }
+.abm-loading__spinner { width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid #E5E7EB; border-top-color: #121516; animation: abm-spin 0.7s linear infinite; }
+@keyframes abm-spin { to { transform: rotate(360deg); } }
+
 .abm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .abm-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin-bottom: 16px; }
 .abm-field--span2 { grid-column: span 2; }
@@ -300,19 +317,6 @@ function submit() {
 }
 .abm-btn-primary:hover { opacity: 0.88; }
 .abm-btn-primary:disabled { opacity: 0.5; cursor: default; }
-.abm-btn-outline {
-    display: inline-flex; align-items: center; justify-content: center;
-    height: 36px; padding: 0 16px;
-    background: #fff;
-    border: 1px solid #E5E7EB;
-    color: #121516;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-.abm-btn-outline:hover { background: #F5F6F7; }
 
 @media (max-width: 640px) {
     .abm-grid { grid-template-columns: 1fr; }
