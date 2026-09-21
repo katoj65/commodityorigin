@@ -59,13 +59,11 @@ const addLotOpen = ref(false);
    has no real "24 Wet/Dry Mills" or "22 Commercial" style metric to
    report.
 
-   Each card also links to that entity's real index page — Collection
-   has none pre-existing (FarmCollectionController::index, a new blank
-   page), Batch/Lot use the app's existing standalone pages. Batch's
-   route is farmer/admin-only while this Inventory page itself has no
-   role restriction, so a plain buyer/user clicking that one card can
-   hit a 403 — an accepted tradeoff (explicitly chosen over keeping
-   navigation self-contained on this page) rather than a bug. ───────── */
+   Each card also links to that stage's inventory workspace page — the
+   same Store/* tab pages the store's "Register New ▾" flow uses,
+   relocated to the inventory.* routes. Those pages require a verified
+   store (StoreController::renderInventoryTab redirects to store.show
+   otherwise), same as before the move. ───────────────────────────── */
 const dummyLifecycleStages = [
     {
         num: 1, label: 'Collection', value: '1,284 MT', icon: 'agriculture', statKey: 'collection',
@@ -77,19 +75,19 @@ const dummyLifecycleStages = [
         num: 2, label: 'Batch', value: '842 MT', icon: 'precision_manufacturing', statKey: 'batch',
         desc: 'Aggregated coffee undergoing processing, milling, and grading.',
         metaLabel: 'Active Operations', metaValue: '24 Wet/Dry Mills',
-        href: route('batch.index'),
+        href: route('inventory.batches'),
     },
     {
         num: 3, label: 'Lot', value: '412 MT', icon: 'inventory_2', statKey: 'lot',
         desc: 'Defined commercial consignment prepared for trading & export.',
         metaLabel: 'Export-Grade', metaValue: '22 Commercial',
-        href: route('lot.index'),
+        href: route('inventory.lots'),
     },
     {
         num: 4, label: 'Tokenised', value: '180 MT', icon: 'token', statKey: 'tokenised',
         desc: 'Commercial Lot registered as a digital asset with on-chain provenance.',
         metaLabel: 'Digital Twin', metaValue: '8 Lots Collateral', tone: 'secondary',
-        href: route('store.tokenised'),
+        href: route('inventory.tokenised'),
     },
 ];
 

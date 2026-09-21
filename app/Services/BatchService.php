@@ -22,11 +22,13 @@ class BatchService
     }
 
     /**
-     * Paginate batches, optionally filtered by a search term.
+     * Paginate batches, optionally filtered by a free-text search term and
+     * always scoped to their creator — the batch directory shows a user
+     * their own batches, not every user's.
      */
-    public function paginate(string $search, int $perPage = 10): LengthAwarePaginator
+    public function paginate(string $search, int $userId, int $perPage = 10): LengthAwarePaginator
     {
-        return $this->search($search)
+        return $this->search($search, $userId)
             ->latest('created_at')
             ->latest('id')
             ->paginate($perPage)
@@ -34,16 +36,18 @@ class BatchService
     }
 
     /**
-     * Build a batch query filtered by a free-text search term.
+     * Build a batch query filtered by a free-text search term, scoped to
+     * the given creator's own batches.
      *
      * Matches against batch number, warehouse location, notes, price,
      * quantity, weight, and the associated season's name.
      */
-    public function search(string $term): Builder
+    public function search(string $term, int $userId): Builder
     {
         $term = trim($term);
 
         return Batch::query()
+            ->where('user_id', $userId)
             ->when($term !== '', function (Builder $query) use ($term): void {
                 $query->where(function (Builder $query) use ($term): void {
                     $query
@@ -58,16 +62,17 @@ class BatchService
     }
 
     /**
-     * Aggregate batch stats for the directory page.
+     * Aggregate batch stats for the directory page, scoped to the given
+     * creator's own batches.
      *
      * @return array<string, int|float>
      */
-    public function stats(): array
+    public function stats(int $userId): array
     {
         return [
-            'total_batches' => Batch::query()->count(),
-            'received_batches' => Batch::query()->where('status', 'received')->count(),
-            'total_weight' => (float) Batch::query()->sum('weight'),
+            'total_batches' => Batch::query()->where('user_id', $userId)->count(),
+            'received_batches' => Batch::query()->where('user_id', $userId)->where('status', 'received')->count(),
+            'total_weight' => (float) Batch::query()->where('user_id', $userId)->sum('weight'),
         ];
     }
 

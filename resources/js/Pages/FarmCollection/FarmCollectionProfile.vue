@@ -107,7 +107,7 @@ function deleteCollection() {
             if (response.type !== 'opaqueredirect' && !response.ok) {
                 throw new Error(`Unexpected response: ${response.status}`);
             }
-            router.visit(route('store.collections'));
+            router.visit(route('farm-collection.index'));
             ElNotification({ title: 'Collection Deleted', message: 'The farm collection was removed.', type: 'success', duration: 3200, offset: 84 });
         })
         .catch(() => {

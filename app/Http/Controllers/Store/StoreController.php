@@ -57,7 +57,7 @@ class StoreController extends Controller
         $store = $this->stores->forUser($request->user()->id);
 
         if ($store?->isVerified()) {
-            return redirect()->route('store.collections');
+            return redirect()->route('farm-collection.index');
         }
 
         return Inertia::render('Store/StorePage', [
@@ -159,7 +159,7 @@ class StoreController extends Controller
 
         $stageProgress = [
             [
-                'key' => 'collections', 'label' => 'Farm Collection', 'route' => 'store.collections', 'icon' => 'agriculture',
+                'key' => 'collections', 'label' => 'Farm Collection', 'route' => 'farm-collection.index', 'icon' => 'agriculture',
                 'volume_kg' => (float) $kgCollections->sum('quantity'),
                 'records' => $kgCollections->count(),
                 'ready' => $kgCollections->count() - $batchedCollections,
@@ -170,7 +170,7 @@ class StoreController extends Controller
                     : null,
             ],
             [
-                'key' => 'batches', 'label' => 'Batch Assembly', 'route' => 'store.batches', 'icon' => 'science',
+                'key' => 'batches', 'label' => 'Batch Assembly', 'route' => 'inventory.batches', 'icon' => 'science',
                 'volume_kg' => (float) $batches->sum('weight'),
                 'records' => $batches->count(),
                 'ready' => $batches->count() - $batchesLinkedToLot,
@@ -179,7 +179,7 @@ class StoreController extends Controller
                 'note' => null,
             ],
             [
-                'key' => 'lots', 'label' => 'Certified Lot', 'route' => 'store.lots', 'icon' => 'verified',
+                'key' => 'lots', 'label' => 'Certified Lot', 'route' => 'inventory.lots', 'icon' => 'verified',
                 'volume_kg' => (float) $lots->sum('net_weight_kg'),
                 'records' => $lots->count(),
                 'ready' => $lots->count() - $tokenisedLots->count(),
@@ -188,7 +188,7 @@ class StoreController extends Controller
                 'note' => null,
             ],
             [
-                'key' => 'tokenised', 'label' => 'Tokenised RWA', 'route' => 'store.tokenised', 'icon' => 'token',
+                'key' => 'tokenised', 'label' => 'Tokenised RWA', 'route' => 'inventory.tokenised', 'icon' => 'token',
                 'volume_kg' => $tokenisedVolumeKg,
                 'records' => $tokenisedLots->count(),
                 'ready' => null,

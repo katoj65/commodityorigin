@@ -253,7 +253,7 @@ Route::middleware([
     });
 
     // Farm Collection detail routes.
-    Route::prefix('farm-collection')->name('farm-collection.')->group(function () {
+    Route::prefix('inventory/farm-collections')->name('farm-collection.')->group(function () {
         Route::get('/', [FarmCollectionController::class, 'index'])->name('index');
         Route::get('/find-by-code', [FarmCollectionController::class, 'findByCode'])->name('find-by-code');
         Route::get('/{collection}', [FarmCollectionController::class, 'show'])->name('show');
@@ -294,18 +294,21 @@ Route::middleware([
         Route::delete('/{lot}/sustainability-verifications/{sustainabilityVerification}', [LotController::class, 'destroySustainabilityVerification'])->name('sustainability-verifications.destroy');
     });
 
-    // Batch workspace routes.
+    // Batch workspace routes: creating a lot from a batch stays a
+    // production-side action (farmer/admin only).
     Route::prefix('batch')->name('batch.')->middleware('role:farmer,admin')->group(function () {
-        Route::get('/', [BatchController::class, 'index'])->name('index');
-        Route::get('/create', [BatchController::class, 'create'])->name('create');
         Route::get('/{batch}/create-lot', [LotController::class, 'createLot'])->name('create-lot');
         Route::post('/{batch}/create-lot', [LotController::class, 'storeFromBatch'])->name('store-lot');
     });
 
     // Batch create/view/update/delete: open to any authenticated user —
     // ownership (or admin) is enforced by BatchPolicy, not by role, since a
-    // batch's own owner needs to reach and edit it regardless of role.
+    // batch's own owner needs to reach and edit it regardless of role. The
+    // directory (index) is scoped to the creator's own batches in
+    // BatchService, so it's safe to open the same way.
     Route::prefix('batch')->name('batch.')->group(function () {
+        Route::get('/', [BatchController::class, 'index'])->name('index');
+        Route::get('/create', [BatchController::class, 'create'])->name('create');
         Route::post('/', [BatchController::class, 'store'])->name('store');
         Route::get('/find-by-number', [BatchController::class, 'findByNumber'])->name('find-by-number');
         Route::patch('/{batch}', [BatchController::class, 'update'])->name('update');
@@ -445,10 +448,6 @@ Route::middleware([
     Route::prefix('store')->name('store.')->group(function () {
         Route::get('/', [StoreController::class, 'show'])->name('show');
         Route::get('/market', [StoreController::class, 'market'])->name('market');
-        Route::get('/collections', [StoreController::class, 'collections'])->name('collections');
-        Route::get('/batches', [StoreController::class, 'batches'])->name('batches');
-        Route::get('/lots', [StoreController::class, 'lots'])->name('lots');
-        Route::get('/tokenised', [StoreController::class, 'tokenised'])->name('tokenised');
         // Re-checks the caller's own account password, so it's throttled
         // the same way the real login form is.
         Route::post('/', [StoreController::class, 'save'])->middleware('throttle:6,1')->name('save');
@@ -466,6 +465,9 @@ Route::middleware([
     // to, separate from the store.* routes above.
     Route::prefix('inventory')->name('inventory.')->group(function () {
         Route::get('/', [InventoryController::class, 'index'])->name('index');
+        Route::get('/batches', [StoreController::class, 'batches'])->name('batches');
+        Route::get('/lots', [StoreController::class, 'lots'])->name('lots');
+        Route::get('/tokenised', [StoreController::class, 'tokenised'])->name('tokenised');
     });
 
     // Currencies — every logged-in user may browse them to set their own

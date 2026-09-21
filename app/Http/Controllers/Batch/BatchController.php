@@ -51,14 +51,17 @@ class BatchController extends Controller
     }
 
     /**
-     * Display the batch directory.
+     * Display the batch directory — a user's own created batches, not
+     * every user's. Open to any authenticated user (no role gate); the
+     * scoping to `user_id` is what keeps this private per creator.
      */
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search')->value());
+        $userId = $request->user()->id;
 
         $paginator = $this->batches
-            ->paginate($search)
+            ->paginate($search, $userId)
             ->through(fn (Batch $batch): array => [
                 ...BatchResource::make($batch)->resolve(),
                 'show_url' => route('batch.show', $batch),
@@ -76,7 +79,7 @@ class BatchController extends Controller
                     'to' => $paginator->lastItem(),
                 ],
             ],
-            'stats' => $this->batches->stats(),
+            'stats' => $this->batches->stats($userId),
             'filters' => [
                 'search' => $search,
             ],
