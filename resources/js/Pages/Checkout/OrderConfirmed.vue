@@ -138,7 +138,7 @@ const statusTone = {
 }
 
 .ordc-kicker { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 6px; }
-.ordc-title { font-size: 1.75rem; font-weight: 800; letter-spacing: -.025em; margin: 0 0 .625rem; }
+.ordc-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.025em; margin: 0 0 .625rem; }
 .ordc-subtitle { font-size: .9375rem; color: var(--on-surface-var); line-height: 1.6; max-width: 440px; margin: 0; }
 .ordc-subtitle strong { color: var(--on-surface); font-variant-numeric: tabular-nums; }
 

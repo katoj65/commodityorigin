@@ -269,7 +269,7 @@ function confirmCancel() {
 
 .prf-title {
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
-    font-size: 1.625rem;
+    font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.01em;
     line-height: 1.2;

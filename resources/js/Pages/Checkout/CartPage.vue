@@ -192,7 +192,7 @@ function confirmRemove() {
 
 /* ── Header ──────────────────────────────────────────────────────────── */
 .cart-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
-.cart-title { font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--dp-on-surface); margin: 0 0 6px; }
+.cart-title { font-size: 1.5rem; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--dp-on-surface); margin: 0 0 6px; }
 .cart-subtitle { font-size: 13.5px; color: var(--dp-on-surface-variant); margin: 0; }
 
 .cart-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 16px; font-size: 13px; font-weight: 600; text-decoration: none; border-radius: 6px; border: 1px solid transparent; cursor: pointer; white-space: nowrap; transition: opacity 120ms ease, background 120ms ease; }

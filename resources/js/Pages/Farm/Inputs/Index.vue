@@ -475,7 +475,7 @@ function onCreated() {
 /* ── Header ────────────────────────────────────────────────────────────── */
 .ain-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
 .ain-header__text { min-width: 0; }
-.ain-title { font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
+.ain-title { font-size: 1.5rem; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
 .ain-subtitle { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; max-width: 60ch; }
 
 .ain-btn {

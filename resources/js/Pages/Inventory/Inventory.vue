@@ -501,7 +501,7 @@ const readyLots = [
 .inv-hero__eyebrow-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
 .inv-hero__eyebrow { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 4px; background: var(--dp-surface-container); color: var(--dp-on-surface-variant); }
 .inv-hero__eyebrow-mono { font-family: var(--dp-font-mono); font-size: 11px; font-weight: 500; color: var(--dp-on-surface-variant); }
-.inv-title { font-size: 1.75rem; line-height: 2.1rem; font-weight: 800; letter-spacing: -.015em; color: var(--dp-on-surface); margin: 0; }
+.inv-title { font-size: 1.5rem; line-height: 2.1rem; font-weight: 800; letter-spacing: -.015em; color: var(--dp-on-surface); margin: 0; }
 .inv-subtitle { font-size: 13.5px; color: var(--dp-on-surface-variant); margin: 4px 0 0; }
 .inv-hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; flex-shrink: 0; }
 

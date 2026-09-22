@@ -577,7 +577,7 @@ function deleteFarm() {
 /* ── Header ────────────────────────────────────────────────────────────── */
 .mf-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: nowrap; }
 .mf-header__text { min-width: 0; flex: 1 1 auto; }
-.mf-title { font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
+.mf-title { font-size: 1.5rem; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
 .mf-subtitle { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mf-header__actions { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; flex-shrink: 0; }
 

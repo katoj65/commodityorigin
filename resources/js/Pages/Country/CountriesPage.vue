@@ -158,7 +158,7 @@ const kpis = computed(() => {
 /* ── Header ──────────────────────────────────────────────────────────── */
 .cty-header { background: #fff; border-bottom: 1px solid var(--border); }
 .cty-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
-.cty-title { font-size: 1.125rem; font-weight: 800; letter-spacing: -.02em; }
+.cty-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
 .cty-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
 
 /* ── KPI ─────────────────────────────────────────────────────────────── */

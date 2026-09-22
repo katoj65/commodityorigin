@@ -708,7 +708,7 @@ const badgeClass = (b) => {
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .cp-header   { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
 .cp-kicker   { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 4px; line-height: 1.4; }
-.cp-title    { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
+.cp-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
 .cp-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); margin-top: 2px; }
 
 /* ── Filter bar ────────────────────────────────────────────────────────────── */

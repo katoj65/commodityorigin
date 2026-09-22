@@ -175,7 +175,7 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
     font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
     color: var(--dp-secondary); margin-bottom: 4px;
 }
-.fd-title { font-size: clamp(1.375rem, 1.05rem + 1.2vw, 1.75rem); font-weight: 700; letter-spacing: -0.02em; color: var(--dp-on-surface); margin: 0 0 4px; }
+.fd-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--dp-on-surface); margin: 0 0 4px; }
 .fd-subtitle { font-size: 0.9375rem; color: var(--dp-on-surface-variant); margin: 0; line-height: 1.5; }
 
 .fd-btn-primary {

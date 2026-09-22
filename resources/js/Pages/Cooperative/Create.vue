@@ -337,7 +337,7 @@ const submit = () => {
     letter-spacing: .16em; text-transform: uppercase;
     color: #94a1b2; margin-bottom: 4px;
 }
-.cr-title   { font-size: 18px; font-weight: 800; color: #003f2c; margin: 0 0 3px; line-height: 1.15; }
+.cr-title   { font-size: 1.5rem; font-weight: 800; color: #003f2c; margin: 0 0 3px; line-height: 1.15; }
 .cr-subtitle { font-size: 12px; color: #657386; margin: 0 0 8px; line-height: 1.5; }
 .cr-badge-row { display: flex; gap: 5px; flex-wrap: wrap; }
 .cr-header-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }

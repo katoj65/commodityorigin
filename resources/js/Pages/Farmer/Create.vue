@@ -231,7 +231,7 @@ const submit = () => {
     gap: 24px; margin-bottom: 32px; flex-wrap: wrap;
 }
 .fr-title {
-    font-size: 2rem; font-weight: 800; letter-spacing: -.015em;
+    font-size: 1.5rem; font-weight: 800; letter-spacing: -.015em;
     line-height: 1.2; color: var(--dp-primary); margin: 0 0 8px !important;
 }
 .fr-subtitle {

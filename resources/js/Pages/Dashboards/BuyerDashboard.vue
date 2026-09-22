@@ -622,7 +622,7 @@ const badgeClass = (b) => {
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .db-header { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
-.db-title    { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; }
+.db-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
 .db-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */

@@ -103,7 +103,7 @@ const timeline = [
                     <span class="material-symbols-outlined btc-stepper__arrow">arrow_forward</span>
                     <div class="btc-stepper__node"><span class="btc-stepper__dot"></span><span>Trade</span></div>
                 </div>
-                <p class="btc-stepper__rule"><strong>Institutional Rule:</strong> A Batch groups coffee from one or more Farm Collections for processing, quality grading, and preparation into commercial Lots. Milling outturns and physical losses are recorded to eliminate double-counting.</p>
+                <el-text size="small"> A Batch groups coffee from one or more Farm Collections for processing, quality grading, and preparation into commercial Lots. Milling outturns and physical losses are recorded to eliminate double-counting.</el-text>
             </div>
 
             <!-- ── KPI summary row ───────────────────────────────────────── -->

@@ -681,7 +681,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-header   { background: #fff; border-bottom: 1px solid var(--border); }
 .co-flash    { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px 12px; color: #166534; font-size: .8125rem; font-weight: 600; margin-top: 8px; }
 .co-kicker   { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
-.co-title    { font-size: 1.1875rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; margin-top: 6px !important; margin-bottom: 6px !important; }
+.co-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; margin-top: 6px !important; margin-bottom: 6px !important; }
 .co-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
 .co-badge    { display: inline-flex; align-items: center; border-radius: 999px; font-size: .6875rem; font-weight: 700; padding: 3px 10px; }
 .co-badge--green { background: rgba(0,69,50,.08); color: var(--green); }

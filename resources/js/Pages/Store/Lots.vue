@@ -139,10 +139,9 @@ const activity = [
                     <span class="material-symbols-outlined ltc-stepper__arrow">trending_flat</span>
                     <div class="ltc-stepper__node"><span>Trade</span></div>
                 </div>
-                <div class="ltc-stepper__rule">
-                    <span class="material-symbols-outlined">verified</span>
-                    <span><strong>Institutional Rule:</strong> Available, Reserved, and Sold quantities reflect non-overlapping states of the same physical consignment.</span>
-                </div>
+                <el-text size="small">
+                   Available, Reserved, and Sold quantities reflect non-overlapping states of the same physical consignment.
+                </el-text>
             </div>
 
             <!-- ── KPI summary row ───────────────────────────────────────── -->
@@ -458,6 +457,11 @@ const activity = [
 .ltc-stepper__rule { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--dp-on-surface-variant); line-height: 1.5; background: var(--dp-surface-container-lowest); padding: 8px 12px; border-radius: 8px; max-width: 72ch; }
 .ltc-stepper__rule .material-symbols-outlined { font-size: 16px; color: var(--dp-primary); flex-shrink: 0; }
 .ltc-stepper__rule strong { color: var(--dp-on-surface); font-weight: 700; }
+
+/* Element Plus's .el-text sets align-self: center by default, which
+   centers it as a flex item inside .ltc-stepper's column layout — that's
+   what reads as "centered" here, not a text-align issue. */
+.ltc-stepper :deep(.el-text) { align-self: stretch; text-align: left; }
 
 /* KPI row */
 .ltc-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }

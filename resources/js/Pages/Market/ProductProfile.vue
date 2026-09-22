@@ -720,7 +720,7 @@ function scrollToOrder() {
 .mp-topbar__meta { display: flex; align-items: center; gap: 12px; }
 .mp-topbar__title-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .mp-topbar__title-line { display: flex; align-items: center; gap: 8px; }
-.mp-topbar__title { font-size: 1.625rem; font-weight: 800; letter-spacing: -.015em; color: var(--dp-on-surface); margin: 0 !important; }
+.mp-topbar__title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.015em; color: var(--dp-on-surface); margin: 0 !important; }
 .mp-bookmark-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--dp-on-surface-variant); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .mp-bookmark-btn:hover { background: var(--dp-surface-container-low); color: var(--dp-primary); }
 

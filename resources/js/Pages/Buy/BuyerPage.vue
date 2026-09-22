@@ -270,7 +270,7 @@ const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
 
 .byr-header { background: #fff; border-bottom: 1px solid var(--border); }
 .byr-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
-.byr-title { font-size: 1.125rem; font-weight: 800; letter-spacing: -.02em; }
+.byr-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
 .byr-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
 
 .byr-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }

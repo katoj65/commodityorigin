@@ -609,7 +609,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     letter-spacing: .16em; text-transform: uppercase;
     color: #94a1b2; margin-bottom: 2px;
 }
-.sp-title   { font-size: 18px; font-weight: 800; color: #003f2c; margin: 0 0 2px; line-height: 1.15; }
+.sp-title   { font-size: 1.5rem; font-weight: 800; color: #003f2c; margin: 0 0 2px; line-height: 1.15; }
 .sp-subtitle { font-size: 12px; color: #657386; margin: 0 0 7px; line-height: 1.5; }
 .sp-badge-row { display: flex; gap: 5px; flex-wrap: wrap; }
 .sp-header-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }

@@ -12,7 +12,7 @@ import AddFarmCollectionModal from '@/Components/Modals/AddFarmCollectionModal.v
    data. "Record Collection" opens the same real AddFarmCollectionModal
    already used on the Inventory page (reused, not rebuilt), wired to
    real option lists from the controller. ─────────────────────────────── */
-   
+
 const props = defineProps({
     coffeeTypeOptions: { type: Array, default: () => [] },
     harvestSeasonOptions: { type: Array, default: () => [] },
@@ -105,6 +105,12 @@ function goToCollection(row) {
                     <div class="fc-stepper__node"><span class="fc-stepper__dot"></span><span>Lot</span></div>
                     <span class="material-symbols-outlined fc-stepper__arrow">arrow_forward</span>
                     <div class="fc-stepper__node"><span class="fc-stepper__dot"></span><span>Exchange</span></div>
+                </div>
+                <div>
+
+                   <el-text size="small">
+                     Farm Collection records the physical collection event, quantity, condition, source farm, and verified documentary evidence before coffee moves into a Batch.
+                   </el-text>
                 </div>
 
             </div>

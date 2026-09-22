@@ -261,7 +261,7 @@ function placeOrder() {
 
 /* ── Header ──────────────────────────────────────────────────────────── */
 .chk-header__inner { max-width: 1400px; margin: 0 auto; }
-.chk-title { font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--on-surface); margin: 0 0 6px; }
+.chk-title { font-size: 1.5rem; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--on-surface); margin: 0 0 6px; }
 .chk-subtitle { font-size: 13.5px; color: var(--on-surface-var); margin: 0; }
 
 .chk-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 1.5rem; align-items: start; }

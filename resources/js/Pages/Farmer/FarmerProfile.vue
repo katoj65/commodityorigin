@@ -273,7 +273,7 @@ function deleteFarmer() {
 }
 .fpr-pill--green { background: var(--dp-secondary-container); color: var(--dp-on-secondary-container); }
 
-.fpr-name { font-size: 1.375rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; color: var(--dp-on-surface); margin: 0 !important; }
+.fpr-name { font-size: 1.5rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; color: var(--dp-on-surface); margin: 0 !important; }
 .fpr-pin { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: .8125rem; color: var(--dp-on-surface-variant); margin-top: 6px; margin-bottom: 20px; }
 .fpr-pin :deep(.el-icon) { color: var(--dp-primary); font-size: .75rem; }
 

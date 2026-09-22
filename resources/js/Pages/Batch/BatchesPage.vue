@@ -769,7 +769,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     margin-bottom: 3px;
 }
 .bt-title {
-    font-size: 18px;
+    font-size: 1.5rem;
     font-weight: 800;
     color: #003f2c;
     margin: 0 0 2px;

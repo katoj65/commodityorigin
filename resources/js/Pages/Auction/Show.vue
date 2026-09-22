@@ -264,7 +264,7 @@ const submitBid = () => {
 .as-hero { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: flex-end; }
 .as-hero__main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .as-hero__badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.as-hero__name { font-size: 1.6rem; line-height: 1.15; font-weight: 800; letter-spacing: -0.015em; color: var(--dp-on-surface); margin: 0; }
+.as-hero__name { font-size: 1.5rem; line-height: 1.15; font-weight: 800; letter-spacing: -0.015em; color: var(--dp-on-surface); margin: 0; }
 .as-hero__lot { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--dp-on-surface-variant); margin: 0; }
 .as-hero__meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; color: var(--dp-on-surface-variant); margin: 0; }
 .as-hero__sep { opacity: .5; }

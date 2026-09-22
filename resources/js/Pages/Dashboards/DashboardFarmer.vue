@@ -730,7 +730,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .fr-header   { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
-.fr-title    { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; }
+.fr-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
 .fr-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); }
 .fr-hbadge   { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
 .fr-hbadge--soft    { background: #dcfce7; color: #166534; }

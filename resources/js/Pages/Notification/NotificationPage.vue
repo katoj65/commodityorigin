@@ -196,7 +196,7 @@ function openAction(notification) {
 }
 .np-title {
     margin: 0;
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--dp-on-surface);
     letter-spacing: -0.01em;

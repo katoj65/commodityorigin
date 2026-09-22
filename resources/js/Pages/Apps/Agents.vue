@@ -370,7 +370,7 @@ function submitCreateAgent() {
 /* ── Header ──────────────────────────────────────────────────────────── */
 .ap-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .ap-header__text { min-width: 0; }
-.ap-title { font-size: 24px; line-height: 30px; font-weight: 800; letter-spacing: -0.015em; color: var(--dp-on-surface); margin: 0 0 6px; }
+.ap-title { font-size: 1.5rem; line-height: 30px; font-weight: 800; letter-spacing: -0.015em; color: var(--dp-on-surface); margin: 0 0 6px; }
 .ap-subtitle { font-size: 13.5px; line-height: 20px; color: var(--dp-on-surface-variant); margin: 0; max-width: 62ch; }
 .ap-header__actions { display: flex; gap: 10px; flex-shrink: 0; }
 

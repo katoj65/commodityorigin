@@ -400,7 +400,7 @@ const fabOpen = ref(false);
     display: flex; align-items: center; justify-content: center;
 }
 .bs-hero-title {
-    font-size: 1.625rem; font-weight: 800;
+    font-size: 1.5rem; font-weight: 800;
     letter-spacing: -0.02em; color: var(--on-surface); margin: 0 0 0.5rem;
 }
 .bs-hero-sub {

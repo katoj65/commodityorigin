@@ -423,7 +423,7 @@ const footerStats = [
     flex-wrap: wrap;
 }
 .bp-hero__title {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     color: var(--on-surface);

@@ -449,7 +449,7 @@ function deleteFunction(fn) {
 .agd-back-link { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 600; color: var(--on-surface-var); text-decoration: none; }
 .agd-back-link:hover { color: var(--green); }
 .agd-icon { width: 44px; height: 44px; border-radius: 10px; background: rgba(0,69,50,0.08); color: var(--green); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.agd-title { font-size: 1.125rem; font-weight: 800; letter-spacing: -.02em; }
+.agd-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
 .agd-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
 
 .agd-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem; }
