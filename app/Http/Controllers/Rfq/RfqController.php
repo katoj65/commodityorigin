@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Rfq;
 
 use App\Http\Controllers\Controller;
 use App\Models\Auction;
+use App\Models\CommodityOriginMetadata;
 use App\Models\CropGradeMetadata;
 use App\Models\CropVarietyMetadata;
+use App\Models\IncotermMetadata;
 use App\Models\LotRequest;
 use App\Services\LotService;
 use App\Services\MarketService;
@@ -43,6 +45,16 @@ class RfqController extends Controller
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->pluck('name'),
+            'origins' => CommodityOriginMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'incoterms' => IncotermMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
             'marketCount' => $this->market->liveCount(),
             'auctionCount' => Auction::query()->count(),
             'requestCount' => LotRequest::query()->count(),
@@ -59,6 +71,9 @@ class RfqController extends Controller
             'crop_type' => ['required', 'string', 'max:255', Rule::exists('crop_variety_metadata', 'name')->where('is_active', true)],
             'variety' => ['nullable', 'string', 'max:255'],
             'grade' => ['required', 'string', 'max:255', Rule::exists('crop_grade_metadata', 'name')->where('is_active', true)],
+            'origin' => ['nullable', 'string', 'max:255'],
+            'incoterm' => ['nullable', 'string', 'max:255'],
+            'port' => ['nullable', 'string', 'max:255'],
             'amount' => ['nullable', 'numeric', 'min:0'],
             'quantity' => ['required', 'numeric', 'min:0.01'],
             'notes' => ['nullable', 'string', 'max:2000'],
