@@ -795,7 +795,7 @@ const currencyChartData = computed(() => ({
 
 /* ── Hero header ─────────────────────────────────────────────────────── */
 .man-hero { padding-bottom: 1.25rem; }
-.man-hero-title { font-family: 'IBM Plex Mono', monospace; }
+.man-hero-title { font-family: var(--dp-font-mono); }
 .man-kicker-live { display: inline-flex; align-items: center; }
 .man-live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; margin-right: 6px; box-shadow: 0 0 0 0 rgba(16,185,129,.5); animation: man-pulse 2s infinite; }
 @keyframes man-pulse {
@@ -834,7 +834,7 @@ const currencyChartData = computed(() => ({
 .man-kpi-col:first-child { border-left: none; }
 .man-kpi-col__label { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-var); margin-bottom: 8px; white-space: nowrap; }
 .man-kpi-col__label :deep(.el-icon) { font-size: 13px; color: var(--green); opacity: .85; }
-.man-kpi-col__value { font-family: 'IBM Plex Mono', monospace; font-size: 1.1875rem; font-weight: 700; color: var(--on-surface); letter-spacing: -.01em; }
+.man-kpi-col__value { font-family: var(--dp-font-mono); font-size: 1.1875rem; font-weight: 700; color: var(--on-surface); letter-spacing: -.01em; }
 @media (max-width: 767.98px) {
     .man-kpi-row { flex-direction: column; }
     .man-kpi-col { border-left: none; border-top: 1px solid var(--border); }
@@ -868,7 +868,7 @@ const currencyChartData = computed(() => ({
 
 /* ── Price range labels ──────────────────────────────────────────────── */
 .man-range__label { font-size: .625rem; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); font-weight: 700; }
-.man-range__value { font-family: 'IBM Plex Mono', monospace; font-size: .9375rem; font-weight: 700; color: var(--on-surface); }
+.man-range__value { font-family: var(--dp-font-mono); font-size: .9375rem; font-weight: 700; color: var(--on-surface); }
 
 /* ── Breakdown rows ──────────────────────────────────────────────────── */
 .man-breakdown-row__label { font-size: .875rem; font-weight: 700; color: var(--on-surface); }
@@ -903,7 +903,7 @@ const currencyChartData = computed(() => ({
 .man-rate-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
 .man-rate-card { text-align: center; }
 .man-rate-card__pair { font-size: .75rem; font-weight: 700; color: var(--on-surface-var); margin-bottom: 6px; }
-.man-rate-card__value { font-family: 'IBM Plex Mono', monospace; font-size: 1.25rem; font-weight: 700; color: var(--on-surface); margin-bottom: 8px; }
+.man-rate-card__value { font-family: var(--dp-font-mono); font-size: 1.25rem; font-weight: 700; color: var(--on-surface); margin-bottom: 8px; }
 
 /* ── Element Plus table, reskinned to match the market design system ──── */
 .mkt-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }

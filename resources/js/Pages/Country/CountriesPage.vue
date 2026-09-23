@@ -125,7 +125,7 @@ const kpis = computed(() => {
                                     <td><span class="cty-muted">{{ c.region }}</span></td>
                                     <td><span class="cty-muted">{{ c.subregion ?? '—' }}</span></td>
                                     <td>
-                                        <span v-if="c.currency_code" style="font-size:.8125rem;font-weight:700;color:#111827;">{{ c.currency_code }}</span>
+                                        <span v-if="c.currency_code" style="font-size:var(--dp-content-font-size);font-weight:700;color:#111827;">{{ c.currency_code }}</span>
                                         <span v-if="c.currency_name" class="cty-tbl-country__sub d-block">{{ c.currency_name }}</span>
                                     </td>
                                     <td><span class="cty-muted" style="white-space:nowrap;">{{ c.phone_code ?? '—' }}</span></td>
@@ -147,19 +147,19 @@ const kpis = computed(() => {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
-.cty-muted { color: var(--on-surface-var); font-size: .8125rem; }
-.cty-item-name { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
+.cty-muted { color: var(--on-surface-var); font-size: var(--dp-content-font-size); }
+.cty-item-name { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); }
 
 /* ── Header ──────────────────────────────────────────────────────────── */
 .cty-header { background: #fff; border-bottom: 1px solid var(--border); }
 .cty-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 .cty-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
-.cty-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
+.cty-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
 /* ── KPI ─────────────────────────────────────────────────────────────── */
 .cty-kpi { border: 1px solid var(--border); border-radius: 8px; padding: .875rem; background: #fff; }
@@ -171,22 +171,22 @@ const kpis = computed(() => {
 .cty-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .cty-search-wrap { position: relative; display: flex; align-items: center; }
 .cty-search-icon { position: absolute; left: 8px; font-size: 12px; color: var(--on-surface-var); pointer-events: none; }
-.cty-search-input { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px 0 28px; font-size: .8125rem; outline: none; width: 220px; color: var(--on-surface); }
+.cty-search-input { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px 0 28px; font-size: var(--dp-content-font-size); outline: none; width: 220px; color: var(--on-surface); }
 .cty-search-input:focus { border-color: var(--green); }
-.cty-select { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: .8125rem; color: var(--on-surface); background: #fff; outline: none; cursor: pointer; }
+.cty-select { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: var(--dp-content-font-size); color: var(--on-surface); background: #fff; outline: none; cursor: pointer; }
 .cty-select:focus { border-color: var(--green); }
 
-.cty-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.cty-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .cty-btn-primary:hover { background: #065f46; color: #fff; }
-.cty-btn-ghost { background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.cty-btn-ghost { background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 
 /* ── Section / table ─────────────────────────────────────────────────── */
 .cty-section { background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.cty-count-label { font-size: .8125rem; color: var(--on-surface-var); }
+.cty-count-label { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 .cty-count-num { font-weight: 700; color: var(--on-surface); }
 
 .cty-table thead th { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.cty-table tbody td { padding: 9px 12px; font-size: .8125rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.cty-table tbody td { padding: 9px 12px; font-size: var(--dp-content-font-size); border-bottom: 1px solid var(--border); vertical-align: middle; }
 .cty-table-row:last-child td { border-bottom: none; }
 .cty-table-row:hover { background: var(--surface-low); }
 
@@ -194,7 +194,7 @@ const kpis = computed(() => {
 .cty-flag { font-size: 1.25rem; line-height: 1; }
 .cty-tbl-country__sub { font-size: .6875rem; color: var(--on-surface-var); margin-top: 1px; }
 
-.cty-code-pill { display: inline-flex; border-radius: 4px; font-size: .6875rem; font-weight: 700; padding: 2px 8px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; letter-spacing: .04em; }
+.cty-code-pill { display: inline-flex; border-radius: 4px; font-size: var(--dp-content-font-size); font-weight: 700; padding: 2px 8px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; letter-spacing: .04em; }
 
 @media (max-width: 767.98px) {
     .cty-search-input { width: 160px; }

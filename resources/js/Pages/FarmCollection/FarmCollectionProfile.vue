@@ -726,7 +726,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
     text-transform: capitalize;
 }
 .fcp-pill--grade { background: var(--surface-container); color: var(--on-surface-variant); border: 1px solid color-mix(in srgb, var(--card-border) 80%, transparent); }
-.fcp-pill--status { background: var(--secondary-container); color: var(--on-secondary-container); }
+.fcp-pill--status { background: var(--secondary-container); color: var(--on-secondary-container); font-size: var(--dp-content-font-size); }
 .fcp-pill--pending { background: #fef3c7; color: #92400e; }
 .fcp-pill--cancelled { background: var(--error-container); color: var(--on-error-container); }
 
@@ -806,7 +806,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
 }
 .fcp-card__title--lg { font-size: 14px; color: var(--on-surface); margin: 0; }
 .fcp-card__title--lg .el-icon { color: var(--primary); }
-.fcp-card__desc { font-size: 12.5px; color: var(--on-surface-variant); margin: 6px 0 18px; }
+.fcp-card__desc { font-size: var(--dp-content-font-size); color: var(--on-surface-variant); margin: 6px 0 18px; }
 
 .fcp-dl { margin: 0; display: flex; flex-direction: column; }
 .fcp-dl__row {
@@ -816,7 +816,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
     gap: 12px;
     padding: 10px 0;
     border-bottom: 1px dashed var(--card-border);
-    font-size: 13.5px;
+    font-size: var(--dp-content-font-size);
 }
 .fcp-dl__row:last-child { border-bottom: none; padding-bottom: 0; }
 .fcp-dl__row dt { display: inline-flex; align-items: center; gap: 5px; color: var(--on-surface-variant); }
@@ -824,9 +824,9 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
 .fcp-dl__row dd { margin: 0; font-weight: 600; color: var(--on-surface); text-align: right; }
 .fcp-dl__capitalize { text-transform: capitalize; }
 
-.fcp-notes { font-size: 13.5px; line-height: 1.6; color: var(--on-surface); margin: 0; white-space: pre-wrap; }
+.fcp-notes { font-size: var(--dp-content-font-size); line-height: 1.6; color: var(--on-surface); margin: 0; white-space: pre-wrap; }
 
-.fcp-empty { font-size: 13px; color: var(--on-surface-variant); margin: 0; }
+.fcp-empty { font-size: var(--dp-content-font-size); color: var(--on-surface-variant); margin: 0; }
 
 /* ── Traceability Lineage & Custody Journey ───────────────────────────── */
 .fcp-chain { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 8px 0 4px; }
@@ -854,9 +854,9 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .fcp-chain-banner__body { flex: 1; min-width: 0; }
-.fcp-chain-banner__title { font-size: 13px; font-weight: 700; color: var(--on-surface); }
+.fcp-chain-banner__title { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); }
 .fcp-chain-banner__meta { font-size: 11.5px; color: var(--on-surface-variant); margin-top: 2px; }
-.fcp-chain-banner__link { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--primary); text-decoration: none; flex-shrink: 0; }
+.fcp-chain-banner__link { display: inline-flex; align-items: center; gap: 6px; font-size: var(--dp-content-font-size); font-weight: 700; color: var(--primary); text-decoration: none; flex-shrink: 0; }
 .fcp-chain-banner__link:hover .fcp-farm-link__arrow { transform: translateX(2px); }
 
 /* ── Metric grid (Quality & Intake) ───────────────────────────────────── */
@@ -889,7 +889,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
 .fcp-eco-gauge__value { font-size: 12.5px; font-weight: 800; color: var(--on-surface); line-height: 1.2; }
 .fcp-eco-gauge__label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-variant); }
 
-.fcp-eco-soil { font-size: 12.5px; color: var(--on-surface-variant); margin-bottom: 14px; }
+.fcp-eco-soil { font-size: var(--dp-content-font-size); color: var(--on-surface-variant); margin-bottom: 14px; }
 .fcp-eco-soil strong { color: var(--on-surface); font-weight: 600; }
 
 .fcp-eco-block { padding-top: 14px; border-top: 1px dashed var(--card-border); }
@@ -900,18 +900,18 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
 .fcp-eco-more { display: block; margin-top: 8px; font-size: 11.5px; color: var(--on-surface-variant); }
 
 .fcp-cert-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.fcp-practice-list { margin: 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--on-surface); display: flex; flex-direction: column; gap: 6px; }
+.fcp-practice-list { margin: 0; padding: 0; list-style: none; font-size: var(--dp-content-font-size); color: var(--on-surface); display: flex; flex-direction: column; gap: 6px; }
 .fcp-practice-list li { display: flex; align-items: flex-start; gap: 6px; }
 .fcp-practice-list li .el-icon { color: var(--on-secondary-container); margin-top: 1px; flex-shrink: 0; }
 
 .fcp-card-link-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 16px;
     height: 36px; border-radius: 6px; background: var(--surface-container-low); color: var(--primary);
-    font-size: 12.5px; font-weight: 700; text-decoration: none; transition: background .15s ease;
+    font-size: var(--dp-content-font-size); font-weight: 700; text-decoration: none; transition: background .15s ease;
 }
 .fcp-card-link-btn:hover { background: var(--surface-container); }
 
-.fcp-empty { font-size: 13px; color: var(--on-surface-variant); margin: 0; }
+.fcp-empty { font-size: var(--dp-content-font-size); color: var(--on-surface-variant); margin: 0; }
 
 /* ── Farm summary (Source Farm Dossier) ───────────────────────────────── */
 .fcp-farm-summary { margin-bottom: 16px; }
@@ -938,7 +938,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
 .fcp-map-tile { position: relative; border-radius: 10px; overflow: hidden; background: var(--surface-container-low); min-height: 260px; }
 .fcp-map-canvas { width: 100%; height: 260px; }
 .fcp-map-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--on-surface-variant); }
-.fcp-map-facts { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; font-size: 12.5px; color: var(--on-surface-variant); }
+.fcp-map-facts { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; font-size: var(--dp-content-font-size); color: var(--on-surface-variant); }
 .fcp-map-fact { display: inline-flex; align-items: center; gap: 5px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
 /* ── Buttons ───────────────────────────────────────────────────────────── */
@@ -953,7 +953,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
     border-radius: 6px;
     background: var(--surface-container);
     color: var(--on-surface);
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
@@ -962,7 +962,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
 .fcp-btn-outline:hover { background: color-mix(in srgb, var(--card-border) 60%, transparent); }
 .fcp-btn-primary {
     display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px; border: none; border-radius: 6px;
-    background: var(--primary); color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; transition: opacity .15s ease;
+    background: var(--primary); color: #fff; font-size: var(--dp-content-font-size); font-weight: 700; text-decoration: none; transition: opacity .15s ease;
 }
 .fcp-btn-primary:hover { opacity: .88; }
 
@@ -973,7 +973,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
 .fcp-timeline__item:last-child { padding-bottom: 0; }
 .fcp-timeline__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .fcp-timeline__date { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; color: var(--on-surface-variant); white-space: nowrap; }
-.fcp-timeline__desc { font-size: 12.5px; color: var(--on-surface-variant); margin: 6px 0 0; line-height: 1.5; }
+.fcp-timeline__desc { font-size: var(--dp-content-font-size); color: var(--on-surface-variant); margin: 6px 0 0; line-height: 1.5; }
 .fcp-timeline__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; font-size: 11.5px; color: var(--on-surface-variant); }
 
 .fcp-event-pill {
@@ -1084,7 +1084,7 @@ watch(() => [props.collection.farm?.latitude, props.collection.farm?.longitude],
     align-items: center;
     gap: 8px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 0.8125rem;
     font-weight: 500;
     color: #121516;
     padding: 8px 12px;

@@ -218,7 +218,7 @@ function placeholderAction(label) {
                         <div class="ex-spec-grid">
                             <div v-for="spec in commercialSpecs" :key="spec.label" class="ex-panel ex-spec-box">
                                 <span class="ex-ft-label">{{ spec.label }}</span>
-                                <span class="ex-strong" :class="{ 'ex-icon--primary dp-mono': spec.accent }" style="font-size: 13px;">{{ spec.value }}</span>
+                                <span class="ex-strong" :class="{ 'ex-icon--primary dp-mono': spec.accent }" style="font-size: var(--dp-content-font-size);">{{ spec.value }}</span>
                                 <span class="dp-caption ex-muted" :class="{ 'dp-mono': spec.accent }">{{ spec.sub }}</span>
                             </div>
                         </div>
@@ -259,7 +259,7 @@ function placeholderAction(label) {
                                         </div>
                                         <span class="dp-caption ex-muted dp-mono">{{ round.timestamp }}</span>
                                     </div>
-                                    <div class="dp-mono ex-strong" :class="{ 'ex-icon--primary': round.latest }" style="font-size: 13px; margin-bottom: 8px;">{{ round.priceLine }}</div>
+                                    <div class="dp-mono ex-strong" :class="{ 'ex-icon--primary': round.latest }" style="font-size: var(--dp-content-font-size); margin-bottom: 8px;">{{ round.priceLine }}</div>
                                     <p class="dp-caption ex-muted" style="line-height: 1.6;">&ldquo;{{ round.message }}&rdquo;</p>
                                     <div v-if="round.note" class="dp-caption ex-icon--primary ex-flex-icon" style="margin-top: 8px;"><el-icon :size="13"><CircleCheck /></el-icon>{{ round.note }}</div>
                                 </div>
@@ -514,7 +514,7 @@ function placeholderAction(label) {
 
 .ex-ft-label { font-size: 10px; font-weight: 700; color: var(--dp-on-surface-variant); text-transform: uppercase; letter-spacing: 0.04em; }
 
-.ex-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; font-family: var(--dp-font-sans); white-space: nowrap; text-decoration: none; }
+.ex-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; border-radius: 8px; border: none; font-size: var(--dp-content-font-size); font-weight: 700; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; font-family: var(--dp-font-sans); white-space: nowrap; text-decoration: none; }
 .ex-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
 .ex-btn--primary:hover { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
 .ex-btn--muted { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
@@ -530,7 +530,7 @@ function placeholderAction(label) {
 .ex-actions-inline--end { justify-content: flex-end; }
 
 .ex-table-wrap { overflow-x: auto; }
-.ex-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+.ex-table { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--dp-content-font-size); }
 .ex-table thead tr { background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; font-weight: 700; }
 .ex-table th { padding: 10px 12px; white-space: nowrap; }
 .ex-table th:first-child { border-radius: 6px 0 0 6px; }
@@ -600,7 +600,7 @@ function placeholderAction(label) {
 .ex-provenance-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 
 /* ── Market parity rows ──────────────────────────────────────────────── */
-.ex-parity-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; padding-bottom: 6px; }
+.ex-parity-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--dp-content-font-size); padding-bottom: 6px; }
 
 /* ── AI copilot suggestion buttons ───────────────────────────────────── */
 .ex-ai-suggestion { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 8px 10px; border-radius: 6px; border: none; background: var(--dp-surface-container-lowest); color: var(--dp-on-surface); font-size: 11px; font-weight: 600; cursor: pointer; text-align: left; font-family: var(--dp-font-sans); }
@@ -620,7 +620,7 @@ function placeholderAction(label) {
 @media (max-width: 640px) { .ex-field-grid { grid-template-columns: 1fr; } }
 .ex-field { display: flex; flex-direction: column; gap: 6px; }
 .ex-field label { font-size: 11px; font-weight: 700; color: var(--dp-on-surface-variant); }
-.ex-field input, .ex-field select, .ex-field textarea { background: var(--dp-surface-container-low); border: none; border-radius: 8px; padding: 9px 12px; font-size: 12px; color: var(--dp-on-surface); font-family: var(--dp-font-sans); outline: none; }
+.ex-field input, .ex-field select, .ex-field textarea { background: var(--dp-surface-container-low); border: none; border-radius: 8px; padding: 9px 12px; font-size: var(--dp-content-font-size); color: var(--dp-on-surface); font-family: var(--dp-font-sans); outline: none; }
 .ex-field input:focus, .ex-field select:focus, .ex-field textarea:focus { background: var(--dp-surface-container-high); }
 .ex-field textarea { resize: vertical; font-family: var(--dp-font-sans); }
 

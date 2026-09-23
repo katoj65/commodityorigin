@@ -161,7 +161,7 @@ const confidenceCls = (c) => (c >= 80 ? 'fcp-conf--high' : c >= 65 ? 'fcp-conf--
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface-low);
     color: var(--on-surface);
     min-height: 100%;
@@ -171,13 +171,13 @@ const confidenceCls = (c) => (c >= 80 ? 'fcp-conf--high' : c >= 65 ? 'fcp-conf--
 .fcp-header { background: #fff; border-bottom: 1px solid var(--border); }
 .fcp-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 .fcp-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
-.fcp-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
+.fcp-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
-.fcp-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+.fcp-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
 .fcp-btn-outline:hover { background: var(--surface-low); }
 
 .fcp-crop-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-.fcp-crop-tab { border: 1px solid var(--border); background: #fff; color: var(--on-surface-var); font-size: .75rem; font-weight: 700; padding: 6px 14px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+.fcp-crop-tab { border: 1px solid var(--border); background: #fff; color: var(--on-surface-var); font-size: var(--dp-content-font-size); font-weight: 700; padding: 6px 14px; border-radius: 999px; cursor: pointer; transition: all .15s; }
 .fcp-crop-tab:hover { border-color: var(--green); color: var(--green); }
 .fcp-crop-tab--active { background: var(--green); border-color: var(--green); color: #fff; }
 
@@ -186,7 +186,7 @@ const confidenceCls = (c) => (c >= 80 ? 'fcp-conf--high' : c >= 65 ? 'fcp-conf--
 .fcp-section-icon { width: 28px; height: 28px; border-radius: 8px; background: rgba(0,69,50,0.08); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
 .fcp-section-title { font-size: 1rem; font-weight: 800; color: var(--on-surface); margin: 0; }
 .fcp-count { margin-left: auto; font-size: .75rem; font-weight: 600; color: var(--on-surface-var); }
-.fcp-empty { font-size: .8125rem; color: var(--on-surface-var); text-align: center; padding: 2rem 0; background: #fff; border: 1px solid var(--border); border-radius: 12px; }
+.fcp-empty { font-size: var(--dp-content-font-size); color: var(--on-surface-var); text-align: center; padding: 2rem 0; background: #fff; border: 1px solid var(--border); border-radius: 12px; }
 
 /* ── Direction ───────────────────────────────────────────────────────── */
 .fcp-dir { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }

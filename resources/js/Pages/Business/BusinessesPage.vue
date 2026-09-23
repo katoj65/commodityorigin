@@ -100,7 +100,7 @@ function locationLabel(b) {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -162,7 +162,7 @@ function locationLabel(b) {
     border: none;
     outline: none;
     background: transparent;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     color: var(--on-surface);
     width: 100%;
     font-family: inherit;
@@ -228,7 +228,7 @@ function locationLabel(b) {
 
 .biz-card__desc {
     margin: 14px 0 0;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     color: var(--on-surface-var);
     line-height: 1.6;
     display: -webkit-box;
@@ -248,7 +248,7 @@ function locationLabel(b) {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.75rem;
+    font-size: var(--dp-content-font-size);
     color: var(--on-surface-var);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -304,7 +304,7 @@ function locationLabel(b) {
 }
 
 .biz-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
-.biz-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0 auto; max-width: 320px; line-height: 1.5; }
+.biz-empty__text { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0 auto; max-width: 320px; line-height: 1.5; }
 
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 640px) {

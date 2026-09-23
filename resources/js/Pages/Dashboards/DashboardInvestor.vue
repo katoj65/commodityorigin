@@ -272,7 +272,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                                 <td class="iv-td-muted">{{ asset.tokens }}</td>
                                                 <td class="fw-semibold">{{ asset.value }}</td>
                                                 <td>
-                                                    <span :class="asset.roiUp ? 'iv-up' : 'iv-down'" style="font-size:.8125rem;font-weight:700;">{{ asset.roi }}</span>
+                                                    <span :class="asset.roiUp ? 'iv-up' : 'iv-down'" style="font-size:var(--dp-content-font-size);font-weight:700;">{{ asset.roi }}</span>
                                                 </td>
                                                 <td>
                                                     <span class="badge rounded-pill" style="font-size:.65rem;"
@@ -534,7 +534,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     --surface-low:    #f8fafc;
     --surface-mid:    #f1f5f9;
     --surface-high:   #eef2f0;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -543,17 +543,17 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .iv-header { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
 .iv-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
-.iv-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); }
+.iv-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 .iv-hbadge   { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
 .iv-hbadge--soft    { background: #dcfce7; color: #166534; }
 .iv-hbadge--outline { background: transparent; border: 1px solid var(--surface-high); color: var(--on-surface-var); }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.iv-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.iv-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .iv-btn-primary:hover { background: var(--green-grad); border-color: var(--green-grad); color: #fff; }
-.iv-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.iv-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .iv-btn-outline:hover { background: var(--surface-low); }
-.iv-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.iv-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .iv-btn-ghost:hover { background: var(--surface-high); }
 
 /* ── KPI Cards ─────────────────────────────────────────────────────────────── */
@@ -595,19 +595,19 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 /* ── Allocation ────────────────────────────────────────────────────────────── */
 .iv-alloc-block { background: var(--surface-low); border-radius: 8px; padding: 0.875rem; height: 100%; }
 .iv-alloc-title { font-size: 0.75rem; font-weight: 700; color: var(--on-surface); }
-.iv-alloc-label { font-size: 0.75rem; color: var(--on-surface-var); }
-.iv-alloc-pct   { font-size: 0.75rem; font-weight: 700; color: var(--green); }
+.iv-alloc-label { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
+.iv-alloc-pct   { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--green); }
 .iv-bar-track   { height: 6px; background: var(--surface-high); border-radius: 999px; overflow: hidden; }
 .iv-bar-fill    { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .iv-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
-.iv-table tbody td { padding: 9px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
+.iv-table tbody td { padding: 9px 12px; font-size: var(--dp-content-font-size); border-color: var(--surface-low); vertical-align: middle; }
 .iv-table-row { transition: background 0.1s; }
 .iv-table-row:hover { background: var(--surface-low); }
-.iv-asset-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
+.iv-asset-name { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
 .iv-asset-id   { font-size: 0.6875rem; color: var(--on-surface-var); }
-.iv-td-muted   { color: var(--on-surface-var); font-size: 0.8125rem; }
+.iv-td-muted   { color: var(--on-surface-var); font-size: var(--dp-content-font-size); }
 .iv-type-badge { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
 .iv-type-badge--amber { background: #fef3c7; color: #92400e; }
 .iv-type-badge--blue  { background: #dbeafe; color: #1e40af; }
@@ -627,17 +627,17 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 /* Market intelligence */
 .iv-mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 60px; background: var(--surface-low); border-radius: 8px; padding: 6px; }
 .iv-mini-bar   { flex: 1; background: var(--green); border-radius: 2px 2px 0 0; opacity: 0.7; }
-.iv-intel-row  { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 5px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; }
+.iv-intel-row  { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 5px 0; border-bottom: 1px solid var(--surface-low); font-size: var(--dp-content-font-size); }
 .iv-intel-row:last-child { border-bottom: none; }
 
 /* Risk */
-.iv-risk-label { font-size: 0.8125rem; color: var(--on-surface); font-weight: 600; }
+.iv-risk-label { font-size: var(--dp-content-font-size); color: var(--on-surface); font-weight: 600; }
 .iv-risk-level { font-size: 0.6875rem; font-weight: 700; border-radius: 999px; padding: 2px 8px; }
 .iv-risk-level--success { background: #dcfce7; color: #166534; }
 .iv-risk-level--warning { background: #fef3c7; color: #92400e; }
 
 /* Alerts */
-.iv-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; }
+.iv-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: var(--dp-content-font-size); }
 .iv-alert-row:last-child { border-bottom: none; }
 .iv-toggle { width: 32px; height: 18px; border-radius: 999px; border: none; padding: 2px; background: var(--surface-high); cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
 .iv-toggle i { display: block; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
@@ -650,7 +650,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .iv-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .iv-insight-card--warning { background: #fffbeb; border-color: #fde68a; }
 .iv-insight-icon { font-size: 14px; color: var(--green); flex-shrink: 0; margin-top: 1px; }
-.iv-insight-text { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
+.iv-insight-text { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
 
 /* ── Chatbot ───────────────────────────────────────────────────────────────── */
 .iv-fab-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 300; display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; }
@@ -665,14 +665,14 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .iv-chatbot__status i { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
 .iv-chatbot__close { border: none; background: none; color: rgba(255,255,255,0.8); font-size: 20px; line-height: 1; cursor: pointer; }
 .iv-chatbot__body { padding: 10px; background: var(--surface-low); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.iv-chat-msg { font-size: 0.8125rem; padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
+.iv-chat-msg { font-size: var(--dp-content-font-size); padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
 .iv-chat-msg--bot  { background: #fff; color: var(--on-surface); border-radius: 10px 10px 10px 2px; }
 .iv-chat-msg--user { background: var(--green); color: #fff; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
 .iv-chatbot__prompts { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
 .iv-prompt-chip { font-size: 0.6875rem; padding: 3px 9px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--surface-high); color: var(--on-surface); cursor: pointer; white-space: nowrap; }
 .iv-prompt-chip:hover { background: var(--surface-mid); }
 .iv-chatbot__input { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
-.iv-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: 0.8125rem; outline: none; }
+.iv-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: var(--dp-content-font-size); outline: none; }
 .iv-chatbot__input input:focus { border-color: var(--green); }
 .iv-chatbot__input button { border: none; background: var(--green); color: #fff; border-radius: 7px; width: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
 .iv-chat-enter-active, .iv-chat-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }

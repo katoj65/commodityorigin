@@ -91,7 +91,7 @@ const fmtNum = (n) => (n != null ? Number(n).toLocaleString() : '—');
     --on-surface: #121516;
     --on-surface-var: #4B5457;
     --surface-low: #F5F6F7;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     color: var(--on-surface);
     min-height: 100%;
     display: flex;
@@ -100,7 +100,7 @@ const fmtNum = (n) => (n != null ? Number(n).toLocaleString() : '—');
 }
 
 .kpi-hero__title { display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.015em; color: var(--on-surface); margin: 0; }
-.kpi-hero__subtitle { font-size: 13.5px; line-height: 1.5; color: var(--on-surface-var); margin: 6px 0 0; max-width: 640px; }
+.kpi-hero__subtitle { font-size: var(--dp-content-font-size); line-height: 1.5; color: var(--on-surface-var); margin: 6px 0 0; max-width: 640px; }
 
 .kpi-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .kpi-stat { display: flex; flex-direction: column; gap: 4px; background: #fff; border: 1px solid var(--card-border); border-radius: var(--card-radius); padding: 14px 16px; }
@@ -116,7 +116,7 @@ const fmtNum = (n) => (n != null ? Number(n).toLocaleString() : '—');
 .kpi-section__count { font-size: 11px; font-weight: 700; color: var(--on-surface-var); background: var(--surface-low); padding: 1px 8px; border-radius: 999px; }
 
 .kpi-table-wrap { overflow-x: auto; }
-.kpi-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.kpi-table { width: 100%; border-collapse: collapse; font-size: var(--dp-content-font-size); }
 .kpi-table th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-var); padding: 8px 12px; border-bottom: 1px solid var(--card-border); white-space: nowrap; }
 .kpi-th { display: inline-flex; align-items: center; gap: 5px; }
 .kpi-th .el-icon { font-size: 13px; }
@@ -126,7 +126,7 @@ const fmtNum = (n) => (n != null ? Number(n).toLocaleString() : '—');
 .kpi-table-link { color: var(--on-surface); font-weight: 600; text-decoration: none; }
 .kpi-table-link:hover { color: var(--green); text-decoration: underline; }
 .kpi-badge { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--on-surface-var); background: var(--surface-low); padding: 2px 8px; border-radius: 999px; }
-.kpi-empty { font-size: 13px; color: var(--on-surface-var); margin: 0; padding: 8px 0; }
+.kpi-empty { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0; padding: 8px 0; }
 
 @media (max-width: 900px) {
     .kpi-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }

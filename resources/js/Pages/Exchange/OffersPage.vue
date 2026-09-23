@@ -290,14 +290,14 @@ function placeholderAction(label) {
 
 .ex-ft-field :deep(.el-input__wrapper) { background: var(--dp-surface-container-low); border-radius: 8px; box-shadow: none; }
 .ex-ft-field :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1.5px var(--dp-primary) inset; background: var(--dp-surface-container-lowest); }
-.ex-ft-field :deep(.el-input__inner) { font-family: var(--dp-font-sans); font-size: 12px !important; color: var(--dp-on-surface); }
+.ex-ft-field :deep(.el-input__inner) { font-family: var(--dp-font-sans); font-size: var(--dp-content-font-size) !important; color: var(--dp-on-surface); }
 .ex-ft-field :deep(.el-input__prefix) { color: var(--dp-on-surface-variant); }
 
 .ex-ft-control { width: 100%; }
 .ex-ft-control :deep(.el-select__wrapper) { background: var(--dp-surface-container-low); border-radius: 8px; box-shadow: none; }
 .ex-ft-control :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 1.5px var(--dp-primary) inset; background: var(--dp-surface-container-lowest); }
-.ex-ft-control :deep(.el-select__selected-item) { font-family: var(--dp-font-sans); font-size: 12px !important; color: var(--dp-on-surface); }
-.ex-ft-control :deep(.el-select__placeholder) { font-size: 12px !important; }
+.ex-ft-control :deep(.el-select__selected-item) { font-family: var(--dp-font-sans); font-size: var(--dp-content-font-size) !important; color: var(--dp-on-surface); }
+.ex-ft-control :deep(.el-select__placeholder) { font-size: var(--dp-content-font-size) !important; }
 
 .ex-ft-clear.el-button {
     height: 48px;
@@ -333,7 +333,7 @@ function placeholderAction(label) {
 .ex-actions-inline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ex-actions-inline--end { justify-content: flex-end; }
 
-.ex-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; font-family: var(--dp-font-sans); white-space: nowrap; text-decoration: none; }
+.ex-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; border-radius: 8px; border: none; font-size: var(--dp-content-font-size); font-weight: 700; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; font-family: var(--dp-font-sans); white-space: nowrap; text-decoration: none; }
 .ex-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
 .ex-btn--primary:hover { background: var(--dp-primary-container); color: var(--dp-on-primary-container); }
 .ex-btn--secondary { background: var(--dp-secondary-fixed); color: var(--dp-on-secondary-fixed); }

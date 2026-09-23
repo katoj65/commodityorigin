@@ -552,7 +552,7 @@ const userInitials = computed(() => {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface);
     color: var(--on-surface);
     min-height: 100%;
@@ -608,11 +608,11 @@ const userInitials = computed(() => {
 .lr-ref {
     font-size: 1.25rem; font-weight: 400;
     color: var(--on-surface-var);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     margin-left: 4px;
 }
 .lr-mono {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 0.8125rem;
     color: var(--on-surface);
 }
@@ -646,7 +646,7 @@ const userInitials = computed(() => {
 }
 .lr-hero-email {
     font-size: 0.6875rem; color: var(--on-surface-var);
-    font-family: 'IBM Plex Mono', monospace; margin: 0;
+    font-family: var(--dp-font-mono); margin: 0;
     max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .lr-hero-status-pill { margin-top: 4px; }
@@ -681,7 +681,7 @@ const userInitials = computed(() => {
 .lp-zone-kv-list { display: grid; gap: 0; }
 .lp-zone-kv {
     display: flex; justify-content: space-between; align-items: center;
-    gap: 12px; font-size: 0.8125rem;
+    gap: 12px; font-size: var(--dp-content-font-size);
     padding: 7px 0; border-bottom: 1px solid var(--surface-low);
 }
 .lp-zone-kv:last-child { border-bottom: none; padding-bottom: 0; }
@@ -708,8 +708,8 @@ const userInitials = computed(() => {
 
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
 .lp-btn {
-    font-family: 'Manrope', system-ui, sans-serif;
-    font-size: 0.8125rem; font-weight: 700; border-radius: 0.375rem;
+    font-family: var(--dp-font-sans);
+    font-size: var(--dp-content-font-size); font-weight: 700; border-radius: 0.375rem;
     padding: 9px 18px; border: none; cursor: pointer;
     transition: background 0.15s ease, opacity 0.15s ease;
     display: inline-flex; align-items: center; justify-content: center;
@@ -794,7 +794,7 @@ const userInitials = computed(() => {
     background: var(--surface-low); border: 1px solid var(--surface-high);
     border-radius: 4px; padding: 1px 8px;
     font-size: 11px; font-weight: 800;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     color: var(--on-surface);
 }
 
@@ -806,7 +806,7 @@ const userInitials = computed(() => {
     padding: 12px 16px; border-radius: 0 6px 6px 0;
 }
 .lr-notes-empty {
-    font-size: 0.8125rem; color: var(--on-surface-var); margin: 0;
+    font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0;
 }
 
 /* ── Timeline ─────────────────────────────────────────────────────────────── */
@@ -913,7 +913,7 @@ const userInitials = computed(() => {
 .lr-action-row--reject  { background: #fffafa; }
 .lr-action-row__info    { min-width: 0; }
 .lr-action-row__label {
-    font-size: 0.8125rem; font-weight: 600; color: var(--on-surface);
+    font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface);
 }
 .lr-action-row__label--danger { color: #C0392B; }
 .lr-action-row__desc {
@@ -968,7 +968,7 @@ const userInitials = computed(() => {
     display: inline-flex; align-items: center; gap: 6px;
     border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 600;
     padding: 0.5rem 1.125rem; cursor: pointer; border: none;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     transition: background 0.15s, opacity 0.15s;
 }
 .lr-btn--ghost {

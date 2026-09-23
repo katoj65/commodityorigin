@@ -274,26 +274,26 @@ const visiblePages = computed(() => {
     --on-surface:     #111827;
     --on-surface-var: #6b7280;
     --surface-low:    #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
 .lr-muted { color: var(--on-surface-var); }
-.lr-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }
+.lr-item-name { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
 .lr-header   { background: #fff; border-bottom: 1px solid var(--border); }
 .lr-kicker   { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 .lr-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
-.lr-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
+.lr-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
-.lr-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+.lr-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
 .lr-btn-primary:hover { background: #065f46; color: #fff; }
-.lr-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+.lr-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
 .lr-btn-outline:hover { background: var(--surface-low); }
-.lr-btn-ghost { background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.lr-btn-ghost { background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .lr-act-btn { font-size: .75rem !important; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 
 /* ── KPI ──────────────────────────────────────────────────────────────────── */
@@ -309,9 +309,9 @@ const visiblePages = computed(() => {
 .lr-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .lr-search-wrap  { position: relative; display: flex; align-items: center; }
 .lr-search-icon  { position: absolute; left: 8px; font-size: 12px; color: var(--on-surface-var); pointer-events: none; }
-.lr-search-input { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px 0 28px; font-size: .8125rem; outline: none; width: 200px; color: var(--on-surface); }
+.lr-search-input { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px 0 28px; font-size: var(--dp-content-font-size); outline: none; width: 200px; color: var(--on-surface); }
 .lr-search-input:focus { border-color: var(--green); }
-.lr-select { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: .8125rem; color: var(--on-surface); background: #fff; outline: none; cursor: pointer; }
+.lr-select { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: var(--dp-content-font-size); color: var(--on-surface); background: #fff; outline: none; cursor: pointer; }
 .lr-select:focus { border-color: var(--green); }
 
 /* ── Section ──────────────────────────────────────────────────────────────── */

@@ -589,7 +589,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     background: var(--surface, #f7f9fb);
     color: #1f2a2a;
     padding: 0 0 48px;
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--dp-font-sans);
 }
 
 /* ── Header ─────────────────────────────────────────────────────── */
@@ -604,7 +604,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     flex-wrap: wrap;
 }
 .sp-kicker {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px; font-weight: 800;
     letter-spacing: .16em; text-transform: uppercase;
     color: #94a1b2; margin-bottom: 2px;
@@ -637,7 +637,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-badge {
     display: inline-flex; align-items: center;
     padding: 3px 7px; border-radius: 4px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
 }
 .sp-badge--green  { background: #eef5f1; color: #004532; border: 1px solid #c3ddd2; }
@@ -657,7 +657,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 @media (max-width: 900px) { .sp-ov-block { border-right: none; border-bottom: 1px solid #e8ecec; } }
 
 .sp-ov-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px; font-weight: 800; letter-spacing: .14em;
     text-transform: uppercase; color: #94a1b2; margin-bottom: 5px;
 }
@@ -687,7 +687,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 /* ── Status dots ─────────────────────────────────────────────────── */
 .sp-status {
     display: inline-flex; align-items: center; gap: 5px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #657386;
 }
 .sp-status::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #cbd5df; }
@@ -722,7 +722,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     display: flex; align-items: center; gap: 5px;
     font-size: 11px; font-weight: 800; color: #1f2a2a;
     letter-spacing: .04em; text-transform: uppercase;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
 }
 .sp-card-body { padding: 12px 14px; }
 .sp-card-body--pipe { padding: 16px 12px; }
@@ -745,7 +745,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-pipe-item__date--current { color: #d97706; }
 .sp-pipe-item__sub {
     font-size: 9px; color: #94a1b2; margin-top: 2px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     letter-spacing: .06em; text-transform: uppercase;
 }
 .sp-pipe-item__mid { display: flex; align-items: center; width: 100%; }
@@ -764,12 +764,12 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-pipe-item__bot { text-align: center; padding-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .sp-pipe-item__label {
     font-size: 10px; font-weight: 800; color: #1f2a2a;
-    font-family: 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase;
+    font-family: var(--dp-font-mono); letter-spacing: .06em; text-transform: uppercase;
 }
 .sp-pipe-item__label--current { color: #d97706; }
 .sp-pipe-item__verify {
     font-size: 9px; color: #b8c0cc;
-    font-family: 'IBM Plex Mono', monospace; letter-spacing: .04em;
+    font-family: var(--dp-font-mono); letter-spacing: .04em;
     padding: 2px 6px; border-radius: 3px;
     border: 1px solid #e8ecec; background: #fafbfb; white-space: nowrap;
 }
@@ -782,7 +782,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-table thead th {
     padding: 7px 12px; background: #f6f8f8;
     border-bottom: 1px solid #eef2f0;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px; font-weight: 800; letter-spacing: .12em;
     text-transform: uppercase; color: #7b8796; white-space: nowrap;
 }
@@ -801,7 +801,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .sp-code {
     display: inline-flex; align-items: center; padding: 2px 7px;
     border-radius: 4px; background: #eef5f1; color: #003f2c;
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 800;
+    font-family: var(--dp-font-mono); font-size: 10px; font-weight: 800;
 }
 .sp-score {
     display: inline-flex; align-items: center; justify-content: center;

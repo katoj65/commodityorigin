@@ -119,7 +119,7 @@ const statusTone = {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -152,7 +152,7 @@ const statusTone = {
     padding: 1rem 1.25rem; background: var(--surface-low); border-bottom: 1px solid var(--border);
 }
 
-.ordc-card__number { font-size: .875rem; font-weight: 800; font-family: 'IBM Plex Mono', monospace; letter-spacing: -.01em; }
+.ordc-card__number { font-size: .875rem; font-weight: 800; font-family: var(--dp-font-mono); letter-spacing: -.01em; }
 .ordc-card__meta { display: flex; align-items: center; gap: 4px; font-size: .6875rem; color: var(--on-surface-var); margin-top: 2px; }
 
 .ordc-badge {
@@ -169,23 +169,23 @@ const statusTone = {
 
 .ordc-card__product { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .ordc-card__product-name { font-size: .875rem; font-weight: 700; color: var(--on-surface); }
-.ordc-card__product-meta { font-size: .75rem; color: var(--on-surface-var); }
+.ordc-card__product-meta { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
 .ordc-card__qty { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; text-align: right; }
-.ordc-card__qty span { font-size: .75rem; color: var(--on-surface-var); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ordc-card__qty strong { font-size: .9375rem; font-weight: 800; color: var(--green); font-family: 'IBM Plex Mono', monospace; }
+.ordc-card__qty span { font-size: var(--dp-content-font-size); color: var(--on-surface-var); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ordc-card__qty strong { font-size: .9375rem; font-weight: 800; color: var(--green); font-family: var(--dp-font-mono); }
 
 .ordc-card__foot {
     display: flex; align-items: center; justify-content: space-between; gap: .75rem;
     padding: .75rem 1.25rem; border-top: 1px dashed var(--border);
 }
 
-.ordc-card__pay { display: flex; align-items: center; gap: 5px; font-size: .75rem; color: var(--on-surface-var); }
+.ordc-card__pay { display: flex; align-items: center; gap: 5px; font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 .ordc-card__pay .el-icon { color: var(--green); }
 
 .ordc-card__track {
     display: inline-flex; align-items: center; gap: 4px;
-    font-size: .75rem; font-weight: 700; color: var(--green); text-decoration: none;
+    font-size: var(--dp-content-font-size); font-weight: 700; color: var(--green); text-decoration: none;
 }
 .ordc-card__track:hover { text-decoration: underline; }
 
@@ -194,7 +194,7 @@ const statusTone = {
 
 .ordc-btn {
     display: inline-flex; align-items: center; gap: 7px;
-    border-radius: 9px; font-size: .8125rem; font-weight: 600; letter-spacing: .01em;
+    border-radius: 9px; font-size: var(--dp-content-font-size); font-weight: 600; letter-spacing: .01em;
     padding: 10px 20px; cursor: pointer; border: 1px solid var(--border);
     background: #fff; color: var(--on-surface); text-decoration: none;
     transition: opacity .15s ease, background .15s ease;

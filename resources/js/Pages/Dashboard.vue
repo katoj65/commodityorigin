@@ -629,11 +629,11 @@ const filteredLots = computed(() => {
 
 <style scoped>
 .font-display {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--dp-font-sans);
 }
 
 .font-mono {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
 }
 
 .dashboard-secondary-btn {
@@ -646,7 +646,7 @@ const filteredLots = computed(() => {
     color: #6b7280;
     border-radius: 0.5rem;
     padding: 0.425rem 0.75rem;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     font-weight: 500;
     transition: all 0.15s ease;
 }
@@ -667,7 +667,7 @@ const filteredLots = computed(() => {
     color: #fff;
     border-radius: 0.5rem;
     padding: 0.425rem 0.875rem;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     font-weight: 500;
     transition: all 0.15s ease;
 }
@@ -690,7 +690,7 @@ const filteredLots = computed(() => {
     background: #fff;
     border-radius: 0.5rem;
     padding: 0.3rem 0.625rem;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -723,7 +723,7 @@ const filteredLots = computed(() => {
     border-bottom: 1px solid #e5e7eb;
     padding: 0.55rem 1rem;
     text-align: left;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 8px;
     font-weight: 400;
     text-transform: uppercase;
@@ -746,7 +746,7 @@ const filteredLots = computed(() => {
     color: #6b7280;
     border-radius: 0.5rem;
     padding: 0.3rem 0.625rem;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.08em;

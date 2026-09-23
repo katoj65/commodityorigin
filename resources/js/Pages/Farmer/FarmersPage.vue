@@ -181,7 +181,7 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
 .fd-btn-primary {
     position: relative; z-index: 1;
     display: inline-flex; align-items: center; gap: 6px; height: 36px; background: var(--dp-primary); color: var(--dp-on-primary);
-    border: none; border-radius: 6px; font-size: 13px; font-weight: 600; padding: 0 16px;
+    border: none; border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 0 16px;
     text-decoration: none; white-space: nowrap; transition: opacity .15s ease;
 }
 .fd-btn-primary:hover { opacity: 0.88; color: var(--dp-on-primary); }
@@ -224,7 +224,7 @@ const resetFilters = () => { search.value = ''; districtF.value = 'All'; verific
 
 .fd-btn-outline {
     display: inline-flex; align-items: center; gap: 6px; height: 36px; border-radius: 6px;
-    font-size: 13px; font-weight: 600; padding: 0 16px; white-space: nowrap; text-decoration: none;
+    font-size: var(--dp-content-font-size); font-weight: 600; padding: 0 16px; white-space: nowrap; text-decoration: none;
     cursor: pointer; transition: background .15s ease;
     background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); color: var(--dp-on-surface);
 }

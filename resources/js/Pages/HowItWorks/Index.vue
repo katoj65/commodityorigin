@@ -619,7 +619,7 @@ onBeforeUnmount(() => {
     padding: 0.5rem;
     border: 1px solid #e2e8e0;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 0.8125rem;
     font-weight: 600;
     color: #181d17;
     text-decoration: none;
@@ -669,7 +669,7 @@ onBeforeUnmount(() => {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    font-size: 12.5px;
+    font-size: 0.8125rem;
     font-weight: 600;
     padding: 0.5rem 0.9rem;
     border-radius: 6px;
@@ -689,7 +689,7 @@ onBeforeUnmount(() => {
 .wp-btn-guide-mini {
     display: block;
     text-align: center;
-    font-size: 11.5px;
+    font-size: 0.8125rem;
     font-weight: 600;
     color: #181d17;
     border: 1px solid #e2e8e0;
@@ -753,7 +753,7 @@ onBeforeUnmount(() => {
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.55rem 0.75rem;
-    font-size: 12px;
+    font-size: 0.8125rem;
     color: #181d17;
     border-bottom: 1px solid #f1f5eb;
 }

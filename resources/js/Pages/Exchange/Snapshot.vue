@@ -604,7 +604,7 @@ function broadcastRfq() {
 }
 .wp-filter-fields :deep(.el-input__inner),
 .wp-filter-fields :deep(.el-select__selected-item) {
-    font-size: 12px;
+    font-size: 0.8125rem;
     color: #0f172a;
 }
 .wp-filter-fields :deep(.el-input__inner::placeholder) {

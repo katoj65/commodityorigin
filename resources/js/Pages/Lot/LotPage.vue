@@ -366,7 +366,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                             </td>
                                             <!-- Origin -->
                                             <td>
-                                                <div style="font-size:.8125rem;color:#374151;">{{ lot.origin }}</div>
+                                                <div style="font-size:var(--dp-content-font-size);color:#374151;">{{ lot.origin }}</div>
                                             </td>
                                             <!-- Season -->
                                             <td>
@@ -383,13 +383,13 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                             </td>
                                             <!-- Moisture -->
                                             <td class="text-center">
-                                                <span style="font-size:.8125rem;font-weight:600;" :style="{ color: lot.moisture > 13 ? '#b45309' : '#374151' }">
+                                                <span style="font-size:var(--dp-content-font-size);font-weight:600;" :style="{ color: lot.moisture > 13 ? '#b45309' : '#374151' }">
                                                     {{ lot.moisture }}%
                                                 </span>
                                             </td>
                                             <!-- Quantity -->
                                             <td class="text-end">
-                                                <span style="font-size:.8125rem;font-weight:700;color:#111827;">{{ lot.quantity?.toLocaleString() }}</span>
+                                                <span style="font-size:var(--dp-content-font-size);font-weight:700;color:#111827;">{{ lot.quantity?.toLocaleString() }}</span>
                                                 <span style="font-size:.6875rem;color:#6b7280;"> kg</span>
                                             </td>
                                             <!-- Price -->
@@ -437,7 +437,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 
                         <!-- Pagination -->
                         <div class="lt-pagination-bar lt-section">
-                            <span class="lt-muted" style="font-size:.8125rem;">
+                            <span class="lt-muted" style="font-size:var(--dp-content-font-size);">
                                 Showing {{ displayLots.length }} of {{ totalLots || displayLots.length }} lots
                             </span>
                             <div class="d-flex gap-1">
@@ -621,11 +621,11 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                             @click="quickBuyLotId = lot.id"
                                         >
                                             <div class="flex-fill min-width-0">
-                                                <div style="font-size:.8125rem;font-weight:700;color:#111827;">{{ lot.lot_name }}</div>
+                                                <div style="font-size:var(--dp-content-font-size);font-weight:700;color:#111827;">{{ lot.lot_name }}</div>
                                                 <div style="font-size:.6875rem;color:#6b7280;">{{ lot.origin }}</div>
                                             </div>
                                             <div class="text-end flex-shrink-0">
-                                                <div style="font-size:.8125rem;font-weight:800;color:#004532;">${{ lot.price?.toFixed(2) }}</div>
+                                                <div style="font-size:var(--dp-content-font-size);font-weight:800;color:#004532;">${{ lot.price?.toFixed(2) }}</div>
                                                 <div style="font-size:.6rem;" :style="{ color: qualityColour(lot.quality_score) }">{{ lot.quality_score }} SCA</div>
                                             </div>
                                         </div>
@@ -645,7 +645,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                         <div class="lt-intel-heading mb-2">Market Demand</div>
                                         <div v-for="d in marketDemand" :key="d.label" class="mb-2">
                                             <div class="d-flex justify-content-between mb-1">
-                                                <span style="font-size:.8125rem;color:#374151;">{{ d.label }}</span>
+                                                <span style="font-size:var(--dp-content-font-size);color:#374151;">{{ d.label }}</span>
                                                 <span style="font-size:.75rem;font-weight:700;" :style="{ color: d.colour }">{{ d.pct }}%</span>
                                             </div>
                                             <div class="lt-bar-track">
@@ -666,7 +666,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                     <div>
                                         <div class="lt-intel-heading mb-2">Buyer Activity</div>
                                         <div v-for="b in buyerActivity" :key="b.label" class="d-flex align-items-center gap-2 mb-1">
-                                            <span style="font-size:.8125rem;color:#374151;width:56px;">{{ b.label }}</span>
+                                            <span style="font-size:var(--dp-content-font-size);color:#374151;width:56px;">{{ b.label }}</span>
                                             <div class="lt-bar-track flex-fill">
                                                 <div class="lt-bar-fill" :style="{ width: b.pct + '%' }"></div>
                                             </div>
@@ -753,7 +753,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     --on-surface:     #111827;
     --on-surface-var: #6b7280;
     --surface-low:    #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -762,20 +762,20 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .lt-blue  { color: var(--blue); font-weight: 700; }
 .lt-muted { color: var(--on-surface-var); }
 .lt-sep   { margin: 0 4px; color: var(--on-surface-var); }
-.lt-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }
+.lt-item-name { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .lt-header   { background: #fff; border-bottom: 1px solid var(--border); }
 .lt-kicker   { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 .lt-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
-.lt-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
+.lt-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.lt-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+.lt-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
 .lt-btn-primary:hover { background: #065f46; color: #fff; }
-.lt-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+.lt-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
 .lt-btn-outline:hover { background: var(--surface-low); }
-.lt-btn-ghost { background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.lt-btn-ghost { background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .lt-act-btn { font-size: .75rem !important; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 
 /* ── KPI ───────────────────────────────────────────────────────────────────── */
@@ -788,9 +788,9 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .lt-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .lt-search-wrap  { position: relative; display: flex; align-items: center; }
 .lt-search-icon  { position: absolute; left: 8px; font-size: 12px; color: var(--on-surface-var); pointer-events: none; }
-.lt-search-input { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px 0 26px; font-size: .8125rem; outline: none; width: 180px; color: var(--on-surface); }
+.lt-search-input { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px 0 26px; font-size: var(--dp-content-font-size); outline: none; width: 180px; color: var(--on-surface); }
 .lt-search-input:focus { border-color: var(--green); }
-.lt-select { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: .8125rem; color: var(--on-surface); background: #fff; outline: none; cursor: pointer; }
+.lt-select { height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: var(--dp-content-font-size); color: var(--on-surface); background: #fff; outline: none; cursor: pointer; }
 .lt-select:focus { border-color: var(--green); }
 
 /* ── Sections ──────────────────────────────────────────────────────────────── */
@@ -801,7 +801,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .lt-section-body { padding: 1rem; }
 
 /* ── Count label ───────────────────────────────────────────────────────────── */
-.lt-count-label { font-size: .8125rem; color: var(--on-surface-var); }
+.lt-count-label { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 .lt-count-num   { font-weight: 700; color: var(--on-surface); }
 
 /* ── Table lot cell ────────────────────────────────────────────────────────── */
@@ -843,8 +843,8 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .lt-qb-snapshot { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; background: var(--surface-low); display: flex; flex-direction: column; gap: 5px; }
 .lt-qb-snapshot__row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .lt-qb-snapshot__label { font-size: .6875rem; color: var(--on-surface-var); white-space: nowrap; }
-.lt-qb-snapshot__value { font-size: .8125rem; font-weight: 600; color: var(--on-surface); text-align: right; }
-.lt-qb-total { font-size: .8125rem; color: var(--on-surface-var); margin-top: 4px; }
+.lt-qb-snapshot__value { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); text-align: right; }
+.lt-qb-total { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin-top: 4px; }
 .lt-qb-total strong { color: var(--green); }
 .lt-qb-divider { text-align: center; font-size: .6875rem; color: var(--on-surface-var); position: relative; }
 .lt-qb-divider::before,
@@ -858,7 +858,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .lt-table thead th { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.lt-table tbody td { padding: 9px 12px; font-size: .8125rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.lt-table tbody td { padding: 9px 12px; font-size: var(--dp-content-font-size); border-bottom: 1px solid var(--border); vertical-align: middle; }
 .lt-table-row:last-child td { border-bottom: none; }
 .lt-table-row:hover { background: var(--surface-low); }
 
@@ -917,14 +917,14 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .lt-chatbot__status i { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
 .lt-chatbot__close { border: none; background: none; color: rgba(255,255,255,.8); font-size: 20px; line-height: 1; cursor: pointer; }
 .lt-chatbot__body { padding: 10px; background: var(--surface-low); max-height: 190px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.lt-chat-msg { font-size: .8125rem; padding: 8px 10px; border-radius: 8px; line-height: 1.5; max-width: 90%; }
+.lt-chat-msg { font-size: var(--dp-content-font-size); padding: 8px 10px; border-radius: 8px; line-height: 1.5; max-width: 90%; }
 .lt-chat-msg--bot  { background: #fff; color: var(--on-surface); border: 1px solid var(--border); border-radius: 8px 8px 8px 2px; }
 .lt-chat-msg--user { background: var(--green); color: #fff; align-self: flex-end; border-radius: 8px 8px 2px 8px; }
 .lt-chatbot__prompts { display: flex; flex-wrap: wrap; gap: 4px; padding: 7px 10px; border-top: 1px solid var(--border); }
 .lt-prompt-chip { font-size: .6rem; padding: 3px 8px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); cursor: pointer; white-space: nowrap; }
 .lt-prompt-chip:hover { background: #dcfce7; }
 .lt-chatbot__input { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--border); }
-.lt-chatbot__input input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font-size: .8125rem; outline: none; }
+.lt-chatbot__input input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font-size: var(--dp-content-font-size); outline: none; }
 .lt-chatbot__input input:focus { border-color: var(--green); }
 .lt-chatbot__input button { border: none; background: var(--green); color: #fff; border-radius: 6px; width: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
 .lt-chat-enter-active, .lt-chat-leave-active { transition: opacity .2s ease, transform .2s ease; }

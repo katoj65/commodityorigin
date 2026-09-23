@@ -392,7 +392,7 @@ const badgeClass = (b) => {
                         </table>
                     </div>
                     <div class="cp-table-footer">
-                        <span class="cp-td-muted" style="font-size:.75rem;">Showing {{ filteredRows.length }} of {{ directoryRows.length }} cooperatives</span>
+                        <span class="cp-td-muted" style="font-size:var(--dp-content-font-size);">Showing {{ filteredRows.length }} of {{ directoryRows.length }} cooperatives</span>
                         <button class="btn cp-btn-outline btn-sm ms-auto">Load More</button>
                     </div>
                 </div>
@@ -410,7 +410,7 @@ const badgeClass = (b) => {
                                 <div class="cp-featured-name">{{ feat.name }}</div>
                                 <div class="d-flex align-items-center gap-1 mb-2">
                                     <el-icon style="font-size:11px; color:var(--on-surface-var);"><Location /></el-icon>
-                                    <span class="cp-td-muted" style="font-size:.75rem;">{{ feat.region }}</span>
+                                    <span class="cp-td-muted" style="font-size:var(--dp-content-font-size);">{{ feat.region }}</span>
                                 </div>
                                 <div class="d-flex align-items-center justify-content-between mb-3">
                                     <span class="cp-type-chip">{{ feat.type }}</span>
@@ -495,7 +495,7 @@ const badgeClass = (b) => {
                                                 <td class="cp-item-name">{{ lot.coop }}</td>
                                                 <td>
                                                     <span class="cp-lots-count">{{ lot.lots }}</span>
-                                                    <span class="cp-td-muted ms-1" style="font-size:.75rem;">lots</span>
+                                                    <span class="cp-td-muted ms-1" style="font-size:var(--dp-content-font-size);">lots</span>
                                                 </td>
                                                 <td class="fw-semibold">{{ lot.price }}</td>
                                                 <td>
@@ -604,7 +604,7 @@ const badgeClass = (b) => {
                                     <div v-for="cert in certifications" :key="cert.label">
                                         <div class="d-flex justify-content-between mb-1">
                                             <span class="cp-cert-label">{{ cert.label }}</span>
-                                            <span class="fw-700" :class="cert.pct >= 80 ? 'cp-up' : cert.pct >= 40 ? 'cp-warn' : 'cp-down'" style="font-size:.8125rem;">{{ cert.pct }}%</span>
+                                            <span class="fw-700" :class="cert.pct >= 80 ? 'cp-up' : cert.pct >= 40 ? 'cp-warn' : 'cp-down'" style="font-size:var(--dp-content-font-size);">{{ cert.pct }}%</span>
                                         </div>
                                         <div class="cp-bar-track">
                                             <div class="cp-bar-fill"
@@ -699,7 +699,7 @@ const badgeClass = (b) => {
     --surface-low:    #f8fafc;
     --surface-mid:    #f1f5f9;
     --surface-high:   #eef2f0;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -709,23 +709,23 @@ const badgeClass = (b) => {
 .cp-header   { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
 .cp-kicker   { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 4px; line-height: 1.4; }
 .cp-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
-.cp-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); margin-top: 2px; }
+.cp-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin-top: 2px; }
 
 /* ── Filter bar ────────────────────────────────────────────────────────────── */
 .cp-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .cp-search-wrap  { position: relative; display: flex; align-items: center; }
 .cp-search-icon  { position: absolute; left: 8px; font-size: 13px; color: var(--on-surface-var); pointer-events: none; }
-.cp-search-input { height: 32px; border: 1px solid var(--surface-high); border-radius: 7px; padding: 0 10px 0 28px; font-size: 0.8125rem; outline: none; color: var(--on-surface); background: var(--surface-white); width: 180px; }
+.cp-search-input { height: 32px; border: 1px solid var(--surface-high); border-radius: 7px; padding: 0 10px 0 28px; font-size: var(--dp-content-font-size); outline: none; color: var(--on-surface); background: var(--surface-white); width: 180px; }
 .cp-search-input:focus { border-color: var(--green); }
-.cp-select { height: 32px; border: 1px solid var(--surface-high); border-radius: 7px; padding: 0 10px; font-size: 0.8125rem; color: var(--on-surface); background: var(--surface-white); outline: none; cursor: pointer; }
+.cp-select { height: 32px; border: 1px solid var(--surface-high); border-radius: 7px; padding: 0 10px; font-size: var(--dp-content-font-size); color: var(--on-surface); background: var(--surface-white); outline: none; cursor: pointer; }
 .cp-select:focus { border-color: var(--green); }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.cp-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+.cp-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
 .cp-btn-primary:hover { background: var(--green-grad); border-color: var(--green-grad); color: #fff; }
-.cp-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.cp-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .cp-btn-outline:hover { background: var(--surface-low); }
-.cp-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.cp-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 
 /* ── Insight strip ─────────────────────────────────────────────────────────── */
 .cp-insight { background: linear-gradient(135deg, var(--green), var(--green-grad)); color: #fff; border-radius: 10px; padding: 12px 16px; }
@@ -754,7 +754,7 @@ const badgeClass = (b) => {
 .cp-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 20px; background: var(--surface-low); border-radius: 12px; border: 1px solid var(--surface-high); }
 .cp-empty__icon { width: 52px; height: 52px; border-radius: 50%; background: var(--surface-white); border: 1px solid var(--surface-high); color: var(--on-surface-var); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
 .cp-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
-.cp-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0; max-width: 320px; line-height: 1.5; }
+.cp-empty__text { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0; max-width: 320px; line-height: 1.5; }
 
 /* ── Cooperative card (grid) ───────────────────────────────────────────────── */
 .cp-coop-card { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; flex-direction: column; transition: box-shadow 0.15s; }
@@ -762,13 +762,13 @@ const badgeClass = (b) => {
 .cp-coop-avatar { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #6ee7b7); color: #065f46; font-weight: 800; font-size: 0.9375rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .cp-coop-avatar--sm { width: 32px; height: 32px; border-radius: 8px; font-size: 0.8125rem; }
 .cp-coop-name { font-size: 0.9375rem; font-weight: 700; color: var(--on-surface); line-height: 1.3; }
-.cp-coop-location { font-size: 0.75rem; color: var(--on-surface-var); }
-.cp-score-badge { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6875rem; font-weight: 800; flex-shrink: 0; }
+.cp-coop-location { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
+.cp-score-badge { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--dp-content-font-size); font-weight: 800; flex-shrink: 0; }
 .cp-score-badge--high { background: #dcfce7; color: #166534; }
 .cp-score-badge--mid  { background: #fef3c7; color: #92400e; }
 .cp-stat-cell { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 5px 8px; }
 .cp-stat-cell span   { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; }
-.cp-stat-cell strong { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); display: block; }
+.cp-stat-cell strong { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); display: block; }
 .cp-type-chip { display: inline-flex; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
@@ -788,17 +788,17 @@ const badgeClass = (b) => {
 /* ── Regional cards ────────────────────────────────────────────────────────── */
 .cp-region-card { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 0.875rem; }
 .cp-region-name  { font-size: 0.9375rem; font-weight: 800; color: var(--on-surface); margin-bottom: 2px; }
-.cp-region-coops { font-size: 0.75rem; color: var(--on-surface-var); margin-bottom: 4px; }
+.cp-region-coops { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin-bottom: 4px; }
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .cp-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
-.cp-table tbody td { padding: 9px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
+.cp-table tbody td { padding: 9px 12px; font-size: var(--dp-content-font-size); border-color: var(--surface-low); vertical-align: middle; }
 .cp-table-row { transition: background 0.1s; }
 .cp-table-row:hover { background: var(--surface-low); }
-.cp-item-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
-.cp-td-muted  { color: var(--on-surface-var); font-size: 0.8125rem; }
+.cp-item-name { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
+.cp-td-muted  { color: var(--on-surface-var); font-size: var(--dp-content-font-size); }
 .cp-table-footer { display: flex; align-items: center; padding: 10px 16px; border-top: 1px solid var(--surface-low); background: var(--surface-low); }
-.cp-score-pill { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 800; padding: 2px 8px; }
+.cp-score-pill { display: inline-flex; border-radius: 999px; font-size: var(--dp-content-font-size); font-weight: 800; padding: 2px 8px; }
 .cp-score-pill--high { background: #dcfce7; color: #166534; }
 .cp-score-pill--mid  { background: #fef3c7; color: #92400e; }
 .cp-lots-count { font-size: 1rem; font-weight: 800; color: var(--green); }
@@ -829,7 +829,7 @@ const badgeClass = (b) => {
 .cp-chart-label-row { display: flex; }
 
 /* ── Certification bars ────────────────────────────────────────────────────── */
-.cp-cert-label { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
+.cp-cert-label { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
 .cp-bar-track  { height: 6px; background: var(--surface-high); border-radius: 999px; overflow: hidden; }
 .cp-bar-fill   { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
 
@@ -839,10 +839,10 @@ const badgeClass = (b) => {
 .cp-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .cp-insight-card--warning { background: #fffbeb; border-color: #fde68a; }
 .cp-insight-icon { font-size: 14px; color: var(--green); flex-shrink: 0; margin-top: 1px; }
-.cp-insight-text { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
+.cp-insight-text { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
 
 /* ── Alerts ────────────────────────────────────────────────────────────────── */
-.cp-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; }
+.cp-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: var(--dp-content-font-size); }
 .cp-alert-row:last-child { border-bottom: none; }
 .cp-toggle { width: 32px; height: 18px; border-radius: 999px; border: none; padding: 2px; background: var(--surface-high); cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
 .cp-toggle i { display: block; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
@@ -865,14 +865,14 @@ const badgeClass = (b) => {
 .cp-chatbot__status i { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
 .cp-chatbot__close { border: none; background: none; color: rgba(255,255,255,0.8); font-size: 20px; line-height: 1; cursor: pointer; }
 .cp-chatbot__body { padding: 10px; background: var(--surface-low); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.cp-chat-msg { font-size: 0.8125rem; padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
+.cp-chat-msg { font-size: var(--dp-content-font-size); padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
 .cp-chat-msg--bot  { background: #fff; color: var(--on-surface); border-radius: 10px 10px 10px 2px; }
 .cp-chat-msg--user { background: var(--green); color: #fff; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
 .cp-chatbot__prompts { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
 .cp-prompt-chip { font-size: 0.6875rem; padding: 3px 9px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--surface-high); color: var(--on-surface); cursor: pointer; white-space: nowrap; }
 .cp-prompt-chip:hover { background: var(--surface-mid); }
 .cp-chatbot__input { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
-.cp-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: 0.8125rem; outline: none; }
+.cp-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: var(--dp-content-font-size); outline: none; }
 .cp-chatbot__input input:focus { border-color: var(--green); }
 .cp-chatbot__input button { border: none; background: var(--green); color: #fff; border-radius: 7px; width: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
 .cp-chat-enter-active, .cp-chat-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }

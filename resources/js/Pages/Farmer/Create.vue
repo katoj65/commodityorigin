@@ -243,7 +243,7 @@ const submit = () => {
 /* ── Buttons ─────────────────────────────────────────────────────── */
 .fr-btn {
     display: inline-flex; align-items: center; justify-content: center;
-    height: 36px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    height: 36px; border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600;
     letter-spacing: .01em; cursor: pointer; border: 1px solid transparent;
     text-decoration: none; white-space: nowrap; font-family: var(--dp-font-sans);
     transition: transform .16s ease, box-shadow .16s ease, background .16s ease;

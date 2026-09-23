@@ -403,7 +403,7 @@ const footerStats = [
     --info:             #1e40af;
     --info-bg:          #dbeafe;
     --inner-pad:        2rem;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -431,7 +431,7 @@ const footerStats = [
     line-height: 1.2;
 }
 .bp-hero__sub {
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     color: var(--on-surface-var);
     margin: 0;
     line-height: 1.5;
@@ -447,7 +447,7 @@ const footerStats = [
     border-radius: 999px;
     background: var(--surface-white);
     padding: 5px 14px;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--on-surface-var);
@@ -505,7 +505,7 @@ const footerStats = [
     line-height: 1.3;
 }
 .bp-card-sub {
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     color: var(--on-surface-var);
     margin: 4px 0 0;
     line-height: 1.5;
@@ -559,7 +559,7 @@ const footerStats = [
     text-transform: uppercase;
 }
 .bp-featured__title { font-size: 1.0625rem; font-weight: 700; color: var(--on-surface); margin: 6px 0 2px; }
-.bp-featured__sub   { font-size: 0.8125rem; color: var(--on-surface-var); }
+.bp-featured__sub   { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 .bp-featured__stats { display: flex; gap: 0.75rem; flex-shrink: 0; flex-wrap: wrap; }
 .bp-fstat {
     background: var(--surface-low);
@@ -614,7 +614,7 @@ const footerStats = [
 .bp-status-dot--ok     { background: #86efac; }
 
 .bp-estate   { font-size: 0.875rem; font-weight: 600; color: var(--on-surface); margin: 4px 0 2px; }
-.bp-location { font-size: 0.75rem; color: var(--on-surface-var); }
+.bp-location { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
 .bp-type-badge {
     display: inline-flex; align-items: center;
@@ -649,7 +649,7 @@ const footerStats = [
 
 .bp-time {
     display: inline-flex; align-items: center; gap: 5px;
-    font-size: 0.8125rem; font-weight: 600; color: var(--on-surface-var);
+    font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface-var);
 }
 .bp-time--urgent { color: var(--danger); }
 
@@ -657,7 +657,7 @@ const footerStats = [
     display: inline-flex; align-items: center; gap: 5px;
     background: var(--primary); color: var(--on-primary);
     border: none; border-radius: 6px;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     font-size: 0.75rem; font-weight: 700;
     padding: 6px 12px; cursor: pointer;
     transition: opacity 0.15s ease;
@@ -724,8 +724,8 @@ const footerStats = [
 .bp-manage-btn {
     width: 100%; background: var(--primary); color: var(--on-primary);
     border: none; border-radius: 6px;
-    font-family: 'Manrope', system-ui, sans-serif;
-    font-size: 0.8125rem; font-weight: 700;
+    font-family: var(--dp-font-sans);
+    font-size: var(--dp-content-font-size); font-weight: 700;
     padding: 10px 0; cursor: pointer;
     transition: opacity 0.15s ease;
 }
@@ -762,7 +762,7 @@ const footerStats = [
     padding: 12px;
 }
 .bp-watch-name  { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
-.bp-watch-note  { font-size: 0.75rem; color: var(--on-surface-var); line-height: 1.5; margin: 0; }
+.bp-watch-note  { font-size: var(--dp-content-font-size); color: var(--on-surface-var); line-height: 1.5; margin: 0; }
 .bp-watch-badge {
     display: inline-flex; align-items: center; gap: 4px;
     border-radius: 999px; font-size: 0.625rem; font-weight: 700;

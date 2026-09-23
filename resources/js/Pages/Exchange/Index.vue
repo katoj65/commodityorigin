@@ -527,7 +527,7 @@ function placeholderAction(label) {
 @media (min-width: 640px) { .ex-card__head { flex-direction: row; align-items: flex-start; justify-content: space-between; } }
 
 .ex-table-wrap { overflow-x: auto; }
-.ex-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+.ex-table { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--dp-content-font-size); }
 .ex-table thead tr { background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; font-weight: 700; }
 .ex-table th { padding: 10px 12px; white-space: nowrap; }
 .ex-table th:first-child { border-radius: 6px 0 0 6px; }
@@ -548,7 +548,7 @@ function placeholderAction(label) {
 
 .ex-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; border-radius: 8px; border: none;
-    font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; font-family: var(--dp-font-sans); white-space: nowrap;
+    font-size: var(--dp-content-font-size); font-weight: 700; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; font-family: var(--dp-font-sans); white-space: nowrap;
     text-decoration: none;
 }
 .ex-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }

@@ -299,7 +299,7 @@ const submit = () => form.post(route('season.store'));
     background: var(--surface, #f7f9fb);
     color: #1f2a2a;
     padding-bottom: 60px;
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--dp-font-sans);
 }
 
 /* ── Header ─────────────────────────────────────────────────────── */
@@ -310,7 +310,7 @@ const submit = () => form.post(route('season.store'));
     background: #fff; flex-wrap: wrap;
 }
 .sc-kicker {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px; font-weight: 800;
     letter-spacing: .16em; text-transform: uppercase;
     color: #94a1b2; margin-bottom: 4px;
@@ -324,7 +324,7 @@ const submit = () => form.post(route('season.store'));
 .sc-badge {
     display: inline-flex; align-items: center;
     padding: 3px 7px; border-radius: 4px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px; font-weight: 700;
     letter-spacing: .1em; text-transform: uppercase;
 }
@@ -339,7 +339,7 @@ const submit = () => form.post(route('season.store'));
     font-size: 11px; font-weight: 700; letter-spacing: .03em;
     cursor: pointer; border: 1px solid transparent;
     text-decoration: none; white-space: nowrap;
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--dp-font-sans);
     transition: background .14s, color .14s, border-color .14s;
 }
 .sc-btn--primary { background: #003f2c; color: #fff; border-color: #003f2c; }
@@ -376,7 +376,7 @@ const submit = () => form.post(route('season.store'));
     display: flex; align-items: center; gap: 5px;
     font-size: 11px; font-weight: 800; color: #1f2a2a;
     letter-spacing: .04em; text-transform: uppercase;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
 }
 .sc-card-body      { padding: 14px; }
 .sc-card-body--pipe { padding: 16px 14px; }
@@ -404,7 +404,7 @@ const submit = () => form.post(route('season.store'));
     background: #fff; border-radius: 6px !important;
     box-shadow: 0 0 0 1px #e6e8ea inset;
     min-height: 34px;
-    font-family: 'Manrope', sans-serif; font-size: 12px;
+    font-family: var(--dp-font-sans); font-size: 12px;
 }
 :deep(.sc-input .el-input__wrapper.is-focus),
 :deep(.sc-input .el-select__wrapper.is-focused),
@@ -414,7 +414,7 @@ const submit = () => form.post(route('season.store'));
 :deep(.sc-input .el-textarea__inner) {
     background: #fff; border-radius: 6px !important;
     box-shadow: 0 0 0 1px #e6e8ea inset;
-    font-family: 'Manrope', sans-serif; font-size: 12px;
+    font-family: var(--dp-font-sans); font-size: 12px;
     padding: 8px 12px; resize: vertical;
 }
 :deep(.sc-input .el-textarea__inner:focus) {
@@ -445,7 +445,7 @@ const submit = () => form.post(route('season.store'));
 }
 .sc-tl-dot--on  { background: #004532; border-color: #004532; }
 .sc-tl-dot--mid { background: #f0f2f2; border-color: #c3ddd2; }
-.sc-tl-name { font-size: 10px; font-weight: 700; color: #1f2a2a; font-family: 'IBM Plex Mono', monospace; letter-spacing: .04em; text-align: center; }
+.sc-tl-name { font-size: 10px; font-weight: 700; color: #1f2a2a; font-family: var(--dp-font-mono); letter-spacing: .04em; text-align: center; }
 .sc-tl-date { font-size: 9px; color: #94a1b2; text-align: center; }
 
 /* ── Form actions ────────────────────────────────────────────────── */
@@ -457,7 +457,7 @@ const submit = () => form.post(route('season.store'));
 
 /* ── Summary rail ────────────────────────────────────────────────── */
 .sc-completion-pill {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 11px; font-weight: 800;
     color: #004532; background: #eef5f1;
     border: 1px solid #c3ddd2; padding: 3px 8px; border-radius: 5px;
@@ -500,7 +500,7 @@ const submit = () => form.post(route('season.store'));
 .sc-table thead th {
     padding: 7px 10px; background: #f6f8f8;
     border-bottom: 1px solid #eef2f0;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px; font-weight: 800;
     letter-spacing: .12em; text-transform: uppercase;
     color: #7b8796; white-space: nowrap;
@@ -510,7 +510,7 @@ const submit = () => form.post(route('season.store'));
 .sc-pill {
     display: inline-flex; padding: 2px 7px; border-radius: 4px;
     background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
-    font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+    font-family: var(--dp-font-mono); font-size: 9px;
     font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
 }
 .sc-remove-btn {
@@ -531,7 +531,7 @@ const submit = () => form.post(route('season.store'));
 .sc-pipe { display: flex; align-items: stretch; overflow-x: auto; }
 .sc-pipe-item { flex: 1; min-width: 70px; display: flex; flex-direction: column; align-items: center; }
 .sc-pipe-item__top { text-align: center; padding-bottom: 8px; min-height: 24px; display: flex; align-items: flex-end; justify-content: center; }
-.sc-pipe-item__sub { font-size: 9px; color: #94a1b2; font-family: 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
+.sc-pipe-item__sub { font-size: 9px; color: #94a1b2; font-family: var(--dp-font-mono); letter-spacing: .06em; text-transform: uppercase; }
 .sc-pipe-item__mid { display: flex; align-items: center; width: 100%; }
 .sc-pipe-item__seg { flex: 1; height: 2px; background: #eef2f0; }
 .sc-pipe-item__seg--done   { background: #004532; }
@@ -545,9 +545,9 @@ const submit = () => form.post(route('season.store'));
 .sc-pipe-item__dot--done    { border-color: #004532; background: #004532; }
 .sc-pipe-item__dot--current { border-color: #d97706; background: #d97706; outline: 4px solid rgba(217,119,6,.15); outline-offset: 1px; }
 .sc-pipe-item__bot { text-align: center; padding-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.sc-pipe-item__label { font-size: 10px; font-weight: 800; color: #1f2a2a; font-family: 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
+.sc-pipe-item__label { font-size: 10px; font-weight: 800; color: #1f2a2a; font-family: var(--dp-font-mono); letter-spacing: .06em; text-transform: uppercase; }
 .sc-pipe-item__label--current { color: #d97706; }
-.sc-pipe-item__verify { font-size: 9px; color: #b8c0cc; font-family: 'IBM Plex Mono', monospace; padding: 2px 6px; border-radius: 3px; border: 1px solid #e8ecec; background: #fafbfb; white-space: nowrap; }
+.sc-pipe-item__verify { font-size: 9px; color: #b8c0cc; font-family: var(--dp-font-mono); padding: 2px 6px; border-radius: 3px; border: 1px solid #e8ecec; background: #fafbfb; white-space: nowrap; }
 .sc-pipe-item__verify--done    { color: #004532; border-color: #c3ddd2; background: #eef5f1; }
 .sc-pipe-item__verify--current { color: #92400e; border-color: #fde68a; background: #fffbeb; }
 
@@ -573,10 +573,10 @@ const submit = () => form.post(route('season.store'));
 .sc-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid #e8ecec; background: #f8f9f9; }
 .sc-chat-close { font-size: 18px; line-height: 1; background: none; border: none; color: #94a1b2; cursor: pointer; padding: 0; }
 .sc-chat-prompts { padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f0f2f2; }
-.sc-chat-prompt { text-align: left; background: #f8f9f9; border: 1px solid #eef2f0; border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer; font-family: 'Manrope', sans-serif; transition: background .14s; }
+.sc-chat-prompt { text-align: left; background: #f8f9f9; border: 1px solid #eef2f0; border-radius: 5px; padding: 6px 9px; font-size: 11px; color: #263232; cursor: pointer; font-family: var(--dp-font-sans); transition: background .14s; }
 .sc-chat-prompt:hover { background: #eef5f1; border-color: #c3ddd2; color: #004532; }
 .sc-chat-input-row { display: flex; align-items: center; padding: 8px 12px; gap: 6px; }
-.sc-chat-input { flex: 1; height: 30px; padding: 0 9px; border: 1px solid #d4d8d8; border-radius: 5px; font-size: 11px; outline: none; font-family: 'Manrope', sans-serif; }
+.sc-chat-input { flex: 1; height: 30px; padding: 0 9px; border: 1px solid #d4d8d8; border-radius: 5px; font-size: 11px; outline: none; font-family: var(--dp-font-sans); }
 .sc-chat-input:focus { border-color: #003f2c; }
 .sc-chat-send { width: 30px; height: 30px; border-radius: 5px; background: #003f2c; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; }
 

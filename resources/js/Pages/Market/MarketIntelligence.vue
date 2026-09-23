@@ -457,7 +457,7 @@ const sendChat = () => {
     --surface-low:    #f8fafc;
     --surface-mid:    #f1f5f9;
     --surface-high:   #eef2f0;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -487,7 +487,7 @@ const sendChat = () => {
 .mi-nav-link {
     display: flex; align-items: center; gap: 10px;
     padding: 9px 10px; border-radius: 8px; border: none;
-    background: transparent; font-family: 'Manrope', sans-serif;
+    background: transparent; font-family: var(--dp-font-sans);
     font-size: 0.875rem; font-weight: 500; color: var(--on-surface-var);
     cursor: pointer; text-align: left; transition: background 0.12s ease, color 0.12s ease;
 }
@@ -500,7 +500,7 @@ const sendChat = () => {
     display: flex; align-items: center; justify-content: center; gap: 7px;
     width: 100%; padding: 10px; border-radius: 8px; border: none;
     background: var(--primary); color: var(--on-primary);
-    font-family: 'Manrope', sans-serif; font-size: 0.8125rem; font-weight: 700;
+    font-family: var(--dp-font-sans); font-size: 0.8125rem; font-weight: 700;
     cursor: pointer; transition: opacity 0.15s ease;
 }
 .mi-live-btn:hover { opacity: 0.88; }
@@ -509,7 +509,7 @@ const sendChat = () => {
 .mi-meta-link {
     display: flex; align-items: center; gap: 8px;
     border: none; background: none; padding: 4px 6px;
-    font-family: 'Manrope', sans-serif; font-size: 0.75rem;
+    font-family: var(--dp-font-sans); font-size: 0.75rem;
     color: var(--on-surface-var); cursor: pointer;
 }
 .mi-meta-link:hover { color: var(--on-surface); }
@@ -597,7 +597,7 @@ const sendChat = () => {
 .mi-btn {
     display: inline-flex; align-items: center; gap: 6px;
     border-radius: 6px; border: none; padding: 7px 14px;
-    font-family: 'Manrope', sans-serif; font-size: 0.8125rem; font-weight: 700;
+    font-family: var(--dp-font-sans); font-size: 0.8125rem; font-weight: 700;
     cursor: pointer; transition: opacity 0.15s ease;
 }
 .mi-btn--primary { background: var(--primary); color: var(--on-primary); }
@@ -641,7 +641,7 @@ const sendChat = () => {
 .mi-link-btn {
     display: inline-flex; align-items: center; gap: 5px;
     border: none; background: none; padding: 0;
-    font-family: 'Manrope', sans-serif; font-size: 0.8125rem;
+    font-family: var(--dp-font-sans); font-size: 0.8125rem;
     font-weight: 700; color: var(--primary); cursor: pointer;
     white-space: nowrap;
 }
@@ -699,7 +699,7 @@ const sendChat = () => {
 .mi-recommendation__btn {
     width: 100%; border: none; border-radius: 6px;
     background: rgba(255,255,255,0.92); color: var(--on-surface);
-    font-family: 'Manrope', sans-serif; font-size: 0.8125rem; font-weight: 700;
+    font-family: var(--dp-font-sans); font-size: 0.8125rem; font-weight: 700;
     padding: 8px; cursor: pointer; transition: background 0.15s ease;
 }
 .mi-recommendation__btn:hover { background: #fff; }
@@ -711,7 +711,7 @@ const sendChat = () => {
 .mi-tab-switch { display: inline-flex; gap: 3px; padding: 3px; border-radius: 8px; background: var(--surface-mid); }
 .mi-tab-switch__btn {
     min-height: 24px; padding: 0 10px; border: none; border-radius: 6px;
-    background: transparent; font-family: 'Manrope', sans-serif; font-size: 0.75rem; font-weight: 700;
+    background: transparent; font-family: var(--dp-font-sans); font-size: 0.75rem; font-weight: 700;
     color: var(--on-surface-var); cursor: pointer; transition: background 0.12s ease;
 }
 .mi-tab-switch__btn--active { background: var(--surface-white); color: var(--on-surface); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
@@ -819,14 +819,14 @@ const sendChat = () => {
 .mi-advisor__chips { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; }
 .mi-chip {
     border: 1px solid rgba(0,69,50,0.4); border-radius: 999px; background: #fff;
-    font-family: 'Manrope', sans-serif; font-size: 0.625rem; font-weight: 700;
+    font-family: var(--dp-font-sans); font-size: 0.625rem; font-weight: 700;
     color: var(--primary); padding: 3px 10px; cursor: pointer; white-space: nowrap;
 }
 .mi-chip:hover { background: var(--primary-faint); }
 .mi-advisor__input { display: flex; gap: 6px; }
 .mi-advisor__input input {
     flex: 1; border: 1px solid var(--surface-high); border-radius: 8px;
-    padding: 7px 10px; font-family: 'Manrope', sans-serif; font-size: 0.8125rem;
+    padding: 7px 10px; font-family: var(--dp-font-sans); font-size: 0.8125rem;
     color: var(--on-surface); outline: none;
 }
 .mi-advisor__input input:focus { border-color: var(--primary); }

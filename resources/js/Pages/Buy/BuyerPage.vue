@@ -148,23 +148,23 @@ const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
                                             </td>
                                             <!-- Quantity -->
                                             <td class="text-end">
-                                                <span style="font-size:.8125rem;font-weight:700;color:#111827;">{{ fmtQty(r.quantity) }}</span>
+                                                <span style="font-size:var(--dp-content-font-size);font-weight:700;color:#111827;">{{ fmtQty(r.quantity) }}</span>
                                             </td>
                                             <!-- Budget -->
                                             <td class="text-end">
-                                                <span v-if="r.amount" style="font-size:.8125rem;font-weight:800;color:#004532;">{{ fmtAmt(r.amount) }}</span>
+                                                <span v-if="r.amount" style="font-size:var(--dp-content-font-size);font-weight:800;color:#004532;">{{ fmtAmt(r.amount) }}</span>
                                                 <span v-else class="byr-muted">—</span>
                                             </td>
                                             <!-- Requester -->
                                             <td>
                                                 <div v-if="r.user" class="byr-requester">
                                                     <div class="byr-requester__avatar">{{ (r.user.name ?? '?').charAt(0).toUpperCase() }}</div>
-                                                    <div style="font-size:.8125rem;font-weight:600;color:#111827;">{{ r.user.name }}</div>
+                                                    <div style="font-size:var(--dp-content-font-size);font-weight:600;color:#111827;">{{ r.user.name }}</div>
                                                 </div>
                                                 <span v-else class="byr-muted">—</span>
                                             </td>
                                             <!-- Date -->
-                                            <td><span style="font-size:.8125rem;color:#6b7280;white-space:nowrap;">{{ fmtDate(r.created_at) }}</span></td>
+                                            <td><span style="font-size:var(--dp-content-font-size);color:#6b7280;white-space:nowrap;">{{ fmtDate(r.created_at) }}</span></td>
                                             <!-- Status -->
                                             <td><span class="byr-badge" :class="statusCls(r.status)">{{ statusLabel(r.status) }}</span></td>
                                             <!-- Actions -->
@@ -260,18 +260,18 @@ const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
-.byr-muted { color: var(--on-surface-var); font-size: .8125rem; }
-.byr-item-name { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
+.byr-muted { color: var(--on-surface-var); font-size: var(--dp-content-font-size); }
+.byr-item-name { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); }
 
 .byr-header { background: #fff; border-bottom: 1px solid var(--border); }
 .byr-kicker { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 .byr-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
-.byr-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
+.byr-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
 .byr-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .byr-card-title { display: inline-flex; align-items: center; gap: 7px; font-size: .875rem; font-weight: 700; color: var(--on-surface); }
@@ -280,30 +280,30 @@ const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
 .byr-field { margin-bottom: 12px; }
 .byr-field label { display: block; font-size: .75rem; font-weight: 600; color: var(--on-surface-var); margin-bottom: 4px; }
 
-.byr-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 8px; font-size: .8125rem; font-weight: 700; padding: 9px 16px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.byr-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 8px; font-size: var(--dp-content-font-size); font-weight: 700; padding: 9px 16px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .byr-btn-primary:hover { background: var(--green-dark); }
 .byr-btn-primary:disabled { opacity: .6; }
 
-.byr-empty { font-size: .8125rem; color: var(--on-surface-var); text-align: center; padding: .75rem 0; }
+.byr-empty { font-size: var(--dp-content-font-size); color: var(--on-surface-var); text-align: center; padding: .75rem 0; }
 
 .byr-my-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--surface-low); }
 .byr-my-row:last-child { border-bottom: none; }
 
 /* ── Section / table ─────────────────────────────────────────────────── */
 .byr-section { background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.byr-count-label { font-size: .8125rem; color: var(--on-surface-var); }
+.byr-count-label { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 .byr-count-num { font-weight: 700; color: var(--on-surface); }
 
 .byr-table thead th { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.byr-table tbody td { padding: 9px 12px; font-size: .8125rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.byr-table tbody td { padding: 9px 12px; font-size: var(--dp-content-font-size); border-bottom: 1px solid var(--border); vertical-align: middle; }
 .byr-table-row:last-child td { border-bottom: none; }
 .byr-table-row:hover { background: var(--surface-low); }
 
 .byr-tbl-crop { display: flex; align-items: center; gap: 10px; }
 .byr-tbl-crop__avatar { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-low); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--green); }
-.byr-tbl-crop__sub { font-size: .6875rem; color: var(--on-surface-var); margin-top: 1px; }
+.byr-tbl-crop__sub { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin-top: 1px; }
 
-.byr-grade-pill { display: inline-flex; border-radius: 4px; font-size: .6875rem; font-weight: 700; padding: 2px 8px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.byr-grade-pill { display: inline-flex; border-radius: 4px; font-size: var(--dp-content-font-size); font-weight: 700; padding: 2px 8px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
 
 .byr-requester { display: flex; align-items: center; gap: 8px; }
 .byr-requester__avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--green); color: #fff; font-size: .6875rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }

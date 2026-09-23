@@ -174,9 +174,9 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                             <div class="co-identity-name">{{ cooperativeName }}</div>
                             <div class="d-flex align-items-center gap-1 mb-1">
                                 <el-icon style="font-size:11px; color:var(--on-surface-var);"><Location /></el-icon>
-                                <span class="co-muted" style="font-size:.8125rem;">{{ locationLabel }}</span>
+                                <span class="co-muted" style="font-size:var(--dp-content-font-size);">{{ locationLabel }}</span>
                             </div>
-                            <div class="co-muted mb-2" style="font-size:.8125rem;">
+                            <div class="co-muted mb-2" style="font-size:var(--dp-content-font-size);">
                                 Reg: <strong>{{ registrationNumber }}</strong> · Est. {{ establishedYear }}
                             </div>
                             <div class="d-flex flex-wrap gap-1">
@@ -239,7 +239,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                                 <div class="co-map-pin"></div>
                                                 <div class="co-map-info">
                                                     <div class="fw-semibold" style="font-size:.875rem;">{{ locationLabel }}</div>
-                                                    <div class="co-muted" style="font-size:.75rem;">Uganda · East Africa Coffee Belt · 1,200–2,100m ASL</div>
+                                                    <div class="co-muted" style="font-size:var(--dp-content-font-size);">Uganda · East Africa Coffee Belt · 1,200–2,100m ASL</div>
                                                 </div>
                                                 <div class="co-map-tags">
                                                     <span class="co-map-tag">Highland Zone</span>
@@ -434,9 +434,9 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                     <div class="d-flex flex-column gap-3">
                                         <div v-for="m in markets" :key="m.region">
                                             <div class="d-flex align-items-center justify-content-between mb-1">
-                                                <span class="fw-semibold" style="font-size:.8125rem;">{{ m.region }}</span>
+                                                <span class="fw-semibold" style="font-size:var(--dp-content-font-size);">{{ m.region }}</span>
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <span class="co-muted" style="font-size:.75rem;">{{ m.price }}</span>
+                                                    <span class="co-muted" style="font-size:var(--dp-content-font-size);">{{ m.price }}</span>
                                                     <span class="badge rounded-pill" style="font-size:.65rem;"
                                                         :class="m.demand === 'Extreme' ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle'
                                                               : m.demand === 'High' ? 'bg-success-subtle text-success-emphasis border border-success-subtle'
@@ -516,8 +516,8 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                     <div class="d-flex flex-column gap-2">
                                         <div v-for="q in qualityProfile" :key="q.attribute">
                                             <div class="d-flex justify-content-between mb-1">
-                                                <span style="font-size:.8125rem; font-weight:600;">{{ q.attribute }}</span>
-                                                <span class="co-green" style="font-size:.8125rem; font-weight:700;">{{ q.display }}</span>
+                                                <span style="font-size:var(--dp-content-font-size); font-weight:600;">{{ q.attribute }}</span>
+                                                <span class="co-green" style="font-size:var(--dp-content-font-size); font-weight:700;">{{ q.display }}</span>
                                             </div>
                                             <div class="co-bar-track">
                                                 <div class="co-bar-fill" :style="{ width: `${q.score}%` }"></div>
@@ -537,8 +537,8 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                     <div class="d-flex flex-column gap-2">
                                         <div v-for="s in sustainability" :key="s.label" class="co-sus-row">
                                             <el-icon style="font-size:13px; color:var(--green);"><component :is="s.icon" /></el-icon>
-                                            <span class="flex-fill" style="font-size:.8125rem;">{{ s.label }}</span>
-                                            <strong class="co-green" style="font-size:.8125rem;">{{ s.value }}</strong>
+                                            <span class="flex-fill" style="font-size:var(--dp-content-font-size);">{{ s.label }}</span>
+                                            <strong class="co-green" style="font-size:var(--dp-content-font-size);">{{ s.value }}</strong>
                                         </div>
                                     </div>
                                 </div>
@@ -555,7 +555,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                         <div v-for="f in facilities" :key="f.name" class="co-facility-row">
                                             <div class="flex-fill">
                                                 <div class="co-item-name">{{ f.name }}</div>
-                                                <div class="co-muted" style="font-size:.75rem;">{{ f.count }}</div>
+                                                <div class="co-muted" style="font-size:var(--dp-content-font-size);">{{ f.count }}</div>
                                             </div>
                                             <span class="badge rounded-pill" style="font-size:.65rem;"
                                                 :class="f.tone === 'success' ? 'bg-success-subtle text-success-emphasis border border-success-subtle' : 'bg-primary-subtle text-primary-emphasis border border-primary-subtle'">
@@ -575,7 +575,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                 <div class="co-section-body">
                                     <div class="d-flex flex-column gap-2">
                                         <div v-for="doc in documents" :key="doc.name" class="co-doc-row">
-                                            <span class="flex-fill" style="font-size:.8125rem;">{{ doc.name }}</span>
+                                            <span class="flex-fill" style="font-size:var(--dp-content-font-size);">{{ doc.name }}</span>
                                             <span class="badge rounded-pill" style="font-size:.65rem; flex-shrink:0;"
                                                 :class="doc.tone === 'success' ? 'bg-success-subtle text-success-emphasis border border-success-subtle'
                                                       : doc.tone === 'warning' ? 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
@@ -610,7 +610,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                 <div class="co-section-body">
                                     <div class="d-flex flex-column gap-2">
                                         <div v-for="(val, key) in alerts" :key="key" class="co-alert-row">
-                                            <span style="font-size:.8125rem;">{{ { newLots: 'New Lots Available', exportReady: 'Export Readiness Changes', qualityAlerts: 'Quality Alerts', buyerInterest: 'Buyer Interest', certExpiry: 'Certification Expiry' }[key] }}</span>
+                                            <span style="font-size:var(--dp-content-font-size);">{{ { newLots: 'New Lots Available', exportReady: 'Export Readiness Changes', qualityAlerts: 'Quality Alerts', buyerInterest: 'Buyer Interest', certExpiry: 'Certification Expiry' }[key] }}</span>
                                             <button class="co-toggle" :class="{ 'co-toggle--on': alerts[key] }" @click="alerts[key] = !alerts[key]"><i></i></button>
                                         </div>
                                     </div>
@@ -668,21 +668,21 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     --on-surface:     #111827;
     --on-surface-var: #6b7280;
     --surface-low:    #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
 }
 .co-green  { color: #166534; font-weight: 700; }
 .co-muted  { color: var(--on-surface-var); }
-.co-item-name { font-size: .8125rem; font-weight: 600; color: var(--on-surface); }
+.co-item-name { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .co-header   { background: #fff; border-bottom: 1px solid var(--border); }
 .co-flash    { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px 12px; color: #166534; font-size: .8125rem; font-weight: 600; margin-top: 8px; }
 .co-kicker   { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--green); margin-bottom: 2px; }
 .co-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; margin-top: 6px !important; margin-bottom: 6px !important; }
-.co-subtitle { font-size: .8125rem; color: var(--on-surface-var); }
+.co-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 .co-badge    { display: inline-flex; align-items: center; border-radius: 999px; font-size: .6875rem; font-weight: 700; padding: 3px 10px; }
 .co-badge--green { background: rgba(0,69,50,.08); color: var(--green); }
 .co-badge--blue  { background: #dbeafe; color: #1e40af; }
@@ -690,9 +690,9 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-badge--soft  { background: #dcfce7; color: #166534; }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.co-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.co-btn-primary { background: var(--green); border-color: var(--green); color: #fff; border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .co-btn-primary:hover { background: #065f46; color: #fff; }
-.co-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: .8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.co-btn-outline { background: #fff; border: 1px solid var(--border); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .co-btn-outline:hover { background: var(--surface-low); }
 .co-act-btn { font-size: .75rem !important; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 
@@ -725,7 +725,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-identity-name { font-size: 1rem; font-weight: 800; color: var(--on-surface); margin-bottom: 4px; }
 .co-col-label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); margin-bottom: 10px; }
 .co-kpi-list { display: flex; flex-direction: column; }
-.co-kpi-row  { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: .8125rem; }
+.co-kpi-row  { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: var(--dp-content-font-size); }
 .co-kpi-row:last-child { border-bottom: none; }
 .co-kpi-row span { color: var(--on-surface-var); }
 .co-kpi-row strong { color: var(--on-surface); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -745,17 +745,17 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .co-info-cell { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
 .co-info-cell span   { font-size: .5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); display: block; margin-bottom: 2px; }
-.co-info-cell strong { font-size: .8125rem; font-weight: 700; color: var(--on-surface); display: block; font-variant-numeric: tabular-nums; }
+.co-info-cell strong { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); display: block; font-variant-numeric: tabular-nums; }
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .co-table thead th { background: var(--surface-low); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.co-table tbody td { padding: 9px 12px; font-size: .8125rem; border-bottom: 1px solid var(--border); vertical-align: middle; font-variant-numeric: tabular-nums; }
+.co-table tbody td { padding: 9px 12px; font-size: var(--dp-content-font-size); border-bottom: 1px solid var(--border); vertical-align: middle; font-variant-numeric: tabular-nums; }
 .co-table-row:last-child td { border-bottom: none; }
 .co-table-row:hover { background: var(--surface-low); }
 .co-th { display: inline-flex; align-items: center; gap: 5px; }
 .co-th :deep(.el-icon) { font-size: 13px; color: #9ca3af; }
 .co-farmer-dot { width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface-low); color: var(--on-surface-var); font-weight: 700; font-size: .75rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.co-score-pill { display: inline-flex; border-radius: 999px; font-size: .6875rem; font-weight: 800; padding: 2px 8px; font-variant-numeric: tabular-nums; }
+.co-score-pill { display: inline-flex; border-radius: 999px; font-size: var(--dp-content-font-size); font-weight: 800; padding: 2px 8px; font-variant-numeric: tabular-nums; }
 .co-score-pill--high { background: #dcfce7; color: #166534; }
 .co-score-pill--mid  { background: #fef3c7; color: #92400e; }
 
@@ -785,10 +785,10 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-score-circle { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #16a34a; background: #f0fdf4; color: #166534; font-size: 1rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
 /* ── Contact ───────────────────────────────────────────────────────────────── */
-.co-contact-row { display: flex; align-items: flex-start; gap: 8px; font-size: .8125rem; color: var(--on-surface-var); padding: 4px 0; }
+.co-contact-row { display: flex; align-items: flex-start; gap: 8px; font-size: var(--dp-content-font-size); color: var(--on-surface-var); padding: 4px 0; }
 
 /* ── Sustainability ────────────────────────────────────────────────────────── */
-.co-sus-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: .8125rem; }
+.co-sus-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: var(--dp-content-font-size); }
 .co-sus-row:last-child { border-bottom: none; }
 
 /* ── Facilities ────────────────────────────────────────────────────────────── */
@@ -816,7 +816,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-insight-card--primary { background: #eff6ff; border-color: #bfdbfe; }
 .co-insight-card--warning { background: #fffbeb; border-color: #fde68a; }
 .co-insight-icon { font-size: 13px; color: var(--green); flex-shrink: 0; margin-top: 1px; }
-.co-insight-text { font-size: .8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
+.co-insight-text { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
 
 /* ── Alerts ────────────────────────────────────────────────────────────────── */
 .co-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--border); }
@@ -842,14 +842,14 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .co-chatbot__status i { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
 .co-chatbot__close { border: none; background: none; color: rgba(255,255,255,.8); font-size: 20px; line-height: 1; cursor: pointer; }
 .co-chatbot__body { padding: 10px; background: var(--surface-low); max-height: 190px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.co-chat-msg { font-size: .8125rem; padding: 8px 10px; border-radius: 8px; line-height: 1.5; max-width: 90%; }
+.co-chat-msg { font-size: var(--dp-content-font-size); padding: 8px 10px; border-radius: 8px; line-height: 1.5; max-width: 90%; }
 .co-chat-msg--bot  { background: #fff; color: var(--on-surface); border: 1px solid var(--border); border-radius: 8px 8px 8px 2px; }
 .co-chat-msg--user { background: var(--green); color: #fff; align-self: flex-end; border-radius: 8px 8px 2px 8px; }
 .co-chatbot__prompts { display: flex; flex-wrap: wrap; gap: 4px; padding: 7px 10px; border-top: 1px solid var(--border); }
 .co-prompt-chip { font-size: .6rem; padding: 3px 8px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--border); color: var(--on-surface); cursor: pointer; white-space: nowrap; }
 .co-prompt-chip:hover { background: #dcfce7; }
 .co-chatbot__input { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--border); }
-.co-chatbot__input input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font-size: .8125rem; outline: none; }
+.co-chatbot__input input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font-size: var(--dp-content-font-size); outline: none; }
 .co-chatbot__input input:focus { border-color: var(--green); }
 .co-chatbot__input button { border: none; background: var(--green); color: #fff; border-radius: 6px; width: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
 .co-chat-enter-active, .co-chat-leave-active { transition: opacity .2s ease, transform .2s ease; }

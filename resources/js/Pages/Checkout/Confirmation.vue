@@ -249,7 +249,7 @@ function placeOrder() {
     --surface-low: #F5F6F7;
     --surface-container: #F1F2F3;
     --error: #B91C1C;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--dp-font-sans);
     color: var(--on-surface);
     min-height: 100%;
 }
@@ -262,7 +262,7 @@ function placeOrder() {
 /* ── Header ──────────────────────────────────────────────────────────── */
 .chk-header__inner { max-width: 1400px; margin: 0 auto; }
 .chk-title { font-size: 1.5rem; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--on-surface); margin: 0 0 6px; }
-.chk-subtitle { font-size: 13.5px; color: var(--on-surface-var); margin: 0; }
+.chk-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0; }
 
 .chk-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 1.5rem; align-items: start; }
 .chk-main { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
@@ -286,7 +286,7 @@ function placeOrder() {
 .chk-billing__summary, .chk-billing__form { flex: 1; min-width: 0; }
 .chk-billing__label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-var); margin: 0 0 4px; }
 .chk-billing__text { font-size: .9375rem; font-weight: 500; color: var(--on-surface); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chk-billing__edit { flex-shrink: 0; border: none; background: none; color: var(--primary); font-size: .8125rem; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
+.chk-billing__edit { flex-shrink: 0; border: none; background: none; color: var(--primary); font-size: var(--dp-content-font-size); font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
 
 .chk-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
 .chk-field { display: flex; flex-direction: column; gap: 5px; font-size: .75rem; font-weight: 700; color: var(--on-surface-var); }
@@ -296,7 +296,7 @@ function placeOrder() {
 .chk-field textarea {
     border: 1px solid var(--border); border-radius: 6px; padding: 9px 11px;
     font-family: inherit;
-    font-size: .8125rem; font-weight: 500; color: var(--on-surface);
+    font-size: var(--dp-content-font-size); font-weight: 500; color: var(--on-surface);
     background: var(--surface); resize: vertical;
 }
 .chk-field input:focus,
@@ -318,9 +318,9 @@ function placeOrder() {
 }
 .chk-summary__thumb img { width: 100%; height: 100%; object-fit: cover; }
 .chk-summary__item-body { min-width: 0; flex: 1; }
-.chk-summary__item-name { margin: 0; font-size: .8125rem; font-weight: 700; color: var(--on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chk-summary__item-name { margin: 0; font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chk-summary__item-sub { margin: 3px 0 0; font-size: .6875rem; color: var(--on-surface-var); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chk-summary__item-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: .75rem; font-variant-numeric: tabular-nums; }
+.chk-summary__item-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: var(--dp-content-font-size); font-variant-numeric: tabular-nums; }
 .chk-summary__item-row span:last-child { font-weight: 700; color: var(--on-surface); }
 
 .chk-summary__divider { border-top: 1px solid var(--card-border); margin: 16px 0; }
@@ -330,7 +330,7 @@ function placeOrder() {
 .chk-summary__total-label { display: block; font-size: 15px; font-weight: 700; color: var(--on-surface); }
 .chk-summary__total-amount { font-family: ui-monospace, monospace; font-size: 26px; font-weight: 800; color: var(--primary); letter-spacing: -.01em; line-height: 1; }
 
-.chk-support { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: .75rem; color: var(--on-surface-var); }
+.chk-support { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 .chk-support :deep(a) { color: var(--primary); text-decoration: underline; }
 
 @media (max-width: 991.98px) {

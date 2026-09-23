@@ -504,7 +504,7 @@ const typeLabel = (type) => {
 
 /* ── Body ────────────────────────────────────────────────────────────── */
 .clp-empty {
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     color: var(--dp-on-surface-variant);
     padding: 1rem 0;
     text-align: center;
@@ -586,7 +586,7 @@ const typeLabel = (type) => {
 .clp-inspector__item:hover { border-color: var(--dp-outline); }
 .clp-inspector__item-top { display: flex; align-items: center; gap: 8px; }
 .clp-inspector__item-top .clp-dot { margin-top: 0; flex-shrink: 0; }
-.clp-inspector__item-title { flex: 1; min-width: 0; font-size: 0.8125rem; font-weight: 700; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clp-inspector__item-title { flex: 1; min-width: 0; font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .clp-inspector__item-del {
     flex-shrink: 0; width: 22px; height: 22px; border-radius: 6px; border: none;
     background: transparent; color: var(--dp-on-surface-variant); display: flex; align-items: center; justify-content: center;
@@ -594,15 +594,15 @@ const typeLabel = (type) => {
 }
 .clp-inspector__item:hover .clp-inspector__item-del { opacity: 1; }
 .clp-inspector__item-del:hover { background: var(--dp-error-container); color: var(--dp-error); }
-.clp-inspector__item-desc { font-size: 0.75rem; color: var(--dp-on-surface-variant); margin: 6px 0 8px; }
-.clp-inspector__empty { font-size: 0.8125rem; color: var(--dp-on-surface-variant); margin: 0 0 12px; }
+.clp-inspector__item-desc { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); margin: 6px 0 8px; }
+.clp-inspector__empty { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); margin: 0 0 12px; }
 
 .clp-add-btn {
     width: 100%;
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     padding: 9px 14px; border-radius: 10px; border: 1px solid var(--dp-outline-variant);
     background: var(--dp-surface-container-low); color: var(--dp-on-surface);
-    font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: background 0.15s ease;
+    font-size: var(--dp-content-font-size); font-weight: 700; cursor: pointer; transition: background 0.15s ease;
 }
 .clp-add-btn:hover { background: var(--dp-surface-container-high); }
 
@@ -616,10 +616,10 @@ const typeLabel = (type) => {
 .clp-simple-row:last-child { border-bottom: none; }
 .clp-simple-row:hover { background: var(--dp-surface-container-low); }
 .clp-simple-row__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.clp-simple-row__title { font-size: 0.8125rem; font-weight: 700; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clp-simple-row__title { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .clp-simple-row__sub { font-size: 0.6875rem; color: var(--dp-on-surface-variant); }
 .clp-simple-row__side { flex-shrink: 0; text-align: right; }
-.clp-simple-row__date { font-size: 0.75rem; font-weight: 600; color: var(--dp-on-surface-variant); white-space: nowrap; }
+.clp-simple-row__date { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--dp-on-surface-variant); white-space: nowrap; }
 
 .clp-mini-btn {
     display: inline-flex;
@@ -687,7 +687,7 @@ const typeLabel = (type) => {
 }
 
 .clp-task-row__title {
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     font-weight: 700;
     color: var(--dp-on-surface);
     white-space: nowrap;
@@ -703,7 +703,7 @@ const typeLabel = (type) => {
 }
 
 .clp-task-row__date {
-    font-size: 0.6875rem;
+    font-size: var(--dp-content-font-size);
     color: var(--dp-on-surface-variant);
     margin-top: 1px;
 }
@@ -773,7 +773,7 @@ const typeLabel = (type) => {
     border: none;
     color: var(--dp-on-primary);
     border-radius: 999px;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     padding: 10px 18px;
     display: inline-flex;
@@ -804,7 +804,7 @@ const typeLabel = (type) => {
     border: 1px solid var(--dp-outline-variant);
     color: var(--dp-on-surface);
     border-radius: 10px;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     padding: 10px 16px;
     display: inline-flex;

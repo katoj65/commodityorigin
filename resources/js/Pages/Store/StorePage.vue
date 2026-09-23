@@ -399,7 +399,7 @@ function submitReject() {
    properties don't cascade in — literal hex from the same palette is
    used here instead, matching MainLayout's own teleported
    popovers/dropdowns. */
-.el-dialog.st-reject-modal { border-radius: 6px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+.el-dialog.st-reject-modal { border-radius: 6px; font-family: var(--dp-font-sans); }
 .st-reject-modal__title { font-size: 16px; font-weight: 800; color: #000000; }
 .el-dialog.st-reject-modal .el-dialog__footer { display: flex; justify-content: flex-end; gap: 10px; }
 </style>

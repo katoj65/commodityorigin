@@ -521,7 +521,7 @@ function saveContact() {
     color: var(--on-primary);
     border-radius: 6px;
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -541,7 +541,7 @@ function saveContact() {
     color: var(--text);
     border-radius: 6px;
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -596,7 +596,7 @@ function saveContact() {
     box-shadow: 0 0 0 1px var(--border) inset !important;
     transition: box-shadow 120ms ease;
 }
-.cp-search :deep(.el-input__inner) { font-size: 13px; color: var(--text); }
+.cp-search :deep(.el-input__inner) { font-size: var(--dp-content-font-size); color: var(--text); }
 .cp-search :deep(.el-input__inner::placeholder) { color: var(--text-muted); }
 .cp-search :deep(.el-input__prefix .el-icon) { color: var(--text-muted); }
 .cp-search :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px var(--primary) inset !important; }
@@ -607,7 +607,7 @@ function saveContact() {
     background: var(--surface-muted);
     border-radius: 6px;
     box-shadow: none !important;
-    font-size: 12.5px;
+    font-size: var(--dp-content-font-size);
     color: var(--text-2);
 }
 .cp-select :deep(.el-select__wrapper.is-hovering) { background: var(--surface-elevated); }
@@ -619,7 +619,7 @@ function saveContact() {
     border: none;
     background: transparent;
     color: var(--text-muted);
-    font-size: 12.5px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     border-radius: 6px;
     cursor: pointer;
@@ -638,7 +638,7 @@ function saveContact() {
     border-radius: 6px;
     color: var(--text-2);
     font-family: inherit;
-    font-size: 12.5px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     cursor: pointer;
     flex-shrink: 0;
@@ -731,8 +731,8 @@ function saveContact() {
 
 .cp-roster-row__body { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 2px; }
 .cp-roster-row__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.cp-roster-row__name { font-size: 13.5px; font-weight: 700; color: var(--text); }
-.cp-roster-row__sub { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+.cp-roster-row__name { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--text); }
+.cp-roster-row__sub { display: flex; align-items: center; gap: 6px; font-size: var(--dp-content-font-size); color: var(--text-muted); flex-wrap: wrap; }
 .cp-roster-row__org { max-width: 220px; }
 .cp-roster-row__loc { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
 
@@ -758,7 +758,7 @@ function saveContact() {
     border-radius: 6px;
     background: var(--surface-elevated);
     color: var(--text-2);
-    font-size: 11px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -787,7 +787,7 @@ function saveContact() {
     border: 1px solid var(--card-border);
     border-radius: 10px;
 }
-.cp-roster-empty p { margin: 0; font-size: 12.5px; }
+.cp-roster-empty p { margin: 0; font-size: var(--dp-content-font-size); }
 
 /* ── Right profile preview panel ─────────────────────────────────────── */
 .cp-preview-card {
@@ -819,7 +819,7 @@ function saveContact() {
 .cp-preview__name-row { display: flex; align-items: center; gap: 6px; }
 .cp-preview__name { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
 .cp-preview__verified { color: #B45309; flex-shrink: 0; }
-.cp-preview__org { margin: 2px 0 0; font-size: 12.5px; color: var(--text-muted); }
+.cp-preview__org { margin: 2px 0 0; font-size: var(--dp-content-font-size); color: var(--text-muted); }
 .cp-preview__badges { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 
 .cp-preview__quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -835,7 +835,7 @@ function saveContact() {
     border-radius: 8px;
     color: var(--text);
     font-family: inherit;
-    font-size: 12px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     text-decoration: none;
     text-align: center;
@@ -855,7 +855,7 @@ function saveContact() {
     margin-bottom: 6px;
 }
 
-.cp-info-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 12.5px; }
+.cp-info-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: var(--dp-content-font-size); }
 .cp-info-row__label { color: var(--text-muted); flex-shrink: 0; }
 .cp-info-row__value { color: var(--text); font-weight: 600; min-width: 0; text-align: right; overflow-wrap: anywhere; }
 
@@ -879,7 +879,7 @@ function saveContact() {
     background: var(--surface);
     border-radius: 8px;
     color: var(--text);
-    font-size: 12px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
 }
 .cp-pill .el-icon { color: var(--primary); }
@@ -892,7 +892,7 @@ function saveContact() {
     padding: 10px;
     background: var(--surface);
     border-radius: 8px;
-    font-size: 12.5px;
+    font-size: var(--dp-content-font-size);
     line-height: 1.5;
 }
 .cp-activity-row__icon { color: var(--primary); margin-top: 1px; flex-shrink: 0; }
@@ -904,7 +904,7 @@ function saveContact() {
     border-radius: 10px;
     box-shadow: none;
     padding: 12px;
-    font-size: 12.5px;
+    font-size: var(--dp-content-font-size);
     color: var(--text);
     resize: none;
 }
@@ -915,7 +915,7 @@ function saveContact() {
     border: none;
     background: var(--surface-elevated);
     color: var(--text);
-    font-size: 12px;
+    font-size: var(--dp-content-font-size);
     font-weight: 700;
     border-radius: 8px;
     cursor: pointer;
@@ -1088,7 +1088,7 @@ function saveContact() {
 }
 
 .cp-field__hint {
-    font-size: 12px;
+    font-size: var(--dp-content-font-size);
     line-height: 16px;
     color: #6F7677;
 }

@@ -425,7 +425,7 @@ const badgeClass = (b) => {
                                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
                                             <div>
                                                 <div class="ex-item-name">{{ shp.id }} — {{ shp.lot }}</div>
-                                                <div class="ex-td-muted" style="font-size:.75rem;">
+                                                <div class="ex-td-muted" style="font-size:var(--dp-content-font-size);">
                                                     {{ shp.from }} <span style="color:var(--on-surface-var);">→</span> {{ shp.to }}
                                                     &nbsp;·&nbsp; Now: <strong>{{ shp.location }}</strong>
                                                 </div>
@@ -484,7 +484,7 @@ const badgeClass = (b) => {
                                                         <div class="ex-bar-track" style="width:60px;">
                                                             <div class="ex-bar-fill" :style="{ width: `${m.pctVal * 4}%`, background: '#004532' }"></div>
                                                         </div>
-                                                        <span class="ex-up" style="font-size:.8125rem; font-weight:700;">{{ m.pct }}</span>
+                                                        <span class="ex-up" style="font-size:var(--dp-content-font-size); font-weight:700;">{{ m.pct }}</span>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -557,7 +557,7 @@ const badgeClass = (b) => {
                                                             :class="opp.scoreTone === 'danger' ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle'">
                                                             {{ opp.demand }}
                                                         </span>
-                                                        <span class="ex-td-muted" style="font-size:.75rem;">{{ opp.price }}</span>
+                                                        <span class="ex-td-muted" style="font-size:var(--dp-content-font-size);">{{ opp.price }}</span>
                                                         <span class="ex-opp-score">Score: {{ opp.score }}</span>
                                                     </div>
                                                 </div>
@@ -618,7 +618,7 @@ const badgeClass = (b) => {
                                         <div class="ex-readiness-msg">
                                             {{ readinessScore >= 80 ? 'Almost export ready!' : 'Action required' }}
                                         </div>
-                                        <div class="ex-td-muted" style="font-size:.75rem;">
+                                        <div class="ex-td-muted" style="font-size:var(--dp-content-font-size);">
                                             {{ checklist.filter(c => c.done).length }}/{{ checklist.length }} items complete
                                         </div>
                                     </div>
@@ -648,7 +648,7 @@ const badgeClass = (b) => {
                                     <div v-for="m in markets" :key="m.country" class="ex-market-row">
                                         <div>
                                             <div class="ex-market-name">{{ m.country }}</div>
-                                            <div class="ex-td-muted" style="font-size:.75rem;">{{ m.price }}</div>
+                                            <div class="ex-td-muted" style="font-size:var(--dp-content-font-size);">{{ m.price }}</div>
                                         </div>
                                         <span class="badge rounded-pill" style="font-size:.65rem;"
                                             :class="m.tone === 'danger'  ? 'bg-danger-subtle text-danger-emphasis border border-danger-subtle'
@@ -752,7 +752,7 @@ const badgeClass = (b) => {
     --surface-low:    #f8fafc;
     --surface-mid:    #f1f5f9;
     --surface-high:   #eef2f0;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -761,17 +761,17 @@ const badgeClass = (b) => {
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .ex-header   { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
 .ex-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
-.ex-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); }
+.ex-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 .ex-hbadge   { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
 .ex-hbadge--soft    { background: #dcfce7; color: #166534; }
 .ex-hbadge--outline { background: transparent; border: 1px solid var(--surface-high); color: var(--on-surface-var); }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.ex-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.ex-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .ex-btn-primary:hover { background: var(--green-grad); border-color: var(--green-grad); color: #fff; }
-.ex-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.ex-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .ex-btn-outline:hover { background: var(--surface-low); }
-.ex-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.ex-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .ex-btn-ghost:hover { background: var(--surface-high); }
 
 /* ── Insight strip ─────────────────────────────────────────────────────────── */
@@ -804,11 +804,11 @@ const badgeClass = (b) => {
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .ex-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
-.ex-table tbody td { padding: 9px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
+.ex-table tbody td { padding: 9px 12px; font-size: var(--dp-content-font-size); border-color: var(--surface-low); vertical-align: middle; }
 .ex-table-row { transition: background 0.1s; }
 .ex-table-row:hover { background: var(--surface-low); }
-.ex-item-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
-.ex-td-muted  { color: var(--on-surface-var); font-size: 0.8125rem; }
+.ex-item-name { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
+.ex-td-muted  { color: var(--on-surface-var); font-size: var(--dp-content-font-size); }
 .ex-type-badge { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
 .ex-type-badge--amber { background: #fef3c7; color: #92400e; }
 .ex-type-badge--blue  { background: #dbeafe; color: #1e40af; }
@@ -829,13 +829,13 @@ const badgeClass = (b) => {
 .ex-filter-btn--active { background: var(--surface-white); color: var(--green); box-shadow: 0 1px 3px rgba(0,0,0,.08); font-weight: 700; }
 .ex-search-wrap { position: relative; display: flex; align-items: center; }
 .ex-search-icon { position: absolute; left: 8px; font-size: 13px; color: var(--on-surface-var); pointer-events: none; }
-.ex-search-input { height: 30px; border: 1px solid var(--surface-high); border-radius: 7px; padding: 0 10px 0 28px; font-size: 0.8125rem; outline: none; color: var(--on-surface); background: var(--surface-white); width: 160px; }
+.ex-search-input { height: 30px; border: 1px solid var(--surface-high); border-radius: 7px; padding: 0 10px 0 28px; font-size: var(--dp-content-font-size); outline: none; color: var(--on-surface); background: var(--surface-white); width: 160px; }
 .ex-search-input:focus { border-color: var(--green); }
 .ex-lot-avatar { width: 34px; height: 34px; border-radius: 8px; font-weight: 800; font-size: 0.9375rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .ex-lot-avatar--amber { background: #fef3c7; color: #92400e; }
 .ex-lot-avatar--blue  { background: #dbeafe; color: #1e40af; }
 .ex-lot-id { font-size: 0.6875rem; color: var(--on-surface-var); margin-top: 1px; }
-.ex-score-bubble { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6875rem; font-weight: 800; flex-shrink: 0; }
+.ex-score-bubble { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--dp-content-font-size); font-weight: 800; flex-shrink: 0; }
 .ex-score-bubble--high { background: #dcfce7; color: #166534; }
 .ex-score-bubble--mid  { background: #fef3c7; color: #92400e; }
 .ex-price-val { font-size: 1rem; font-weight: 800; color: var(--on-surface); }
@@ -845,7 +845,7 @@ const badgeClass = (b) => {
 .ex-ready-dot--no      { background: #dc2626; }
 .ex-action-btn { font-size: 0.75rem !important; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .ex-table-footer { display: flex; align-items: center; gap: 1rem; padding: 10px 16px; border-top: 1px solid var(--surface-low); background: var(--surface-low); flex-wrap: wrap; }
-.ex-footer-stat { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; color: var(--on-surface-var); }
+.ex-footer-stat { display: flex; align-items: center; gap: 6px; font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface-var); }
 .ex-footer-dot { width: 8px; height: 8px; border-radius: 50%; }
 .ex-footer-dot--green  { background: #16a34a; }
 .ex-footer-dot--yellow { background: #f59e0b; }
@@ -879,33 +879,33 @@ const badgeClass = (b) => {
 .ex-readiness-inner { position: absolute; text-align: center; }
 .ex-readiness-pct { font-size: 1.125rem; font-weight: 800; color: var(--green); line-height: 1; }
 .ex-readiness-lbl { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); }
-.ex-readiness-msg { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
+.ex-readiness-msg { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); }
 .ex-check-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--surface-low); }
 .ex-check-row:last-child { border-bottom: none; }
 .ex-check-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
 .ex-check-icon--done { background: #dcfce7; color: #166534; }
 .ex-check-icon--miss { background: #fee2e2; color: #b91c1c; }
-.ex-check-label { font-size: 0.8125rem; color: var(--on-surface); }
+.ex-check-label { font-size: var(--dp-content-font-size); color: var(--on-surface); }
 .ex-check-label--miss { color: #b91c1c; }
 
 /* ── Market rows ───────────────────────────────────────────────────────────── */
 .ex-market-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); }
 .ex-market-row:last-child { border-bottom: none; }
-.ex-market-name { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
+.ex-market-name { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); }
 
 /* ── Buyers ────────────────────────────────────────────────────────────────── */
 .ex-buyer-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
 .ex-buyer-row:last-child { border-bottom: none; }
 .ex-buyer-avatar { width: 34px; height: 34px; border-radius: 8px; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9375rem; flex-shrink: 0; }
 .ex-buyer-name   { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
-.ex-buyer-rating { font-size: 0.75rem; font-weight: 700; color: var(--on-surface); white-space: nowrap; }
+.ex-buyer-rating { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); white-space: nowrap; }
 .ex-cert-chip { display: inline-flex; background: rgba(0,69,50,0.07); color: var(--green); border-radius: 999px; font-size: 0.6rem; font-weight: 700; padding: 1px 7px; }
 
 /* ── Opportunities ─────────────────────────────────────────────────────────── */
 .ex-opp-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--surface-low); }
 .ex-opp-row:last-child { border-bottom: none; }
 .ex-opp-route { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
-.ex-opp-score { font-size: 0.75rem; font-weight: 700; color: var(--green); }
+.ex-opp-score { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--green); }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
 .ex-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 6px; border: 1px solid; }
@@ -913,10 +913,10 @@ const badgeClass = (b) => {
 .ex-insight-card--primary { background: #f0f9ff; border-color: #bae6fd; }
 .ex-insight-card--warning { background: #fffbeb; border-color: #fde68a; }
 .ex-insight-icon { font-size: 14px; color: var(--green); flex-shrink: 0; margin-top: 1px; }
-.ex-insight-text { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
+.ex-insight-text { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
 
 /* ── Alerts ────────────────────────────────────────────────────────────────── */
-.ex-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; }
+.ex-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: var(--dp-content-font-size); }
 .ex-alert-row:last-child { border-bottom: none; }
 .ex-toggle { width: 32px; height: 18px; border-radius: 999px; border: none; padding: 2px; background: var(--surface-high); cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
 .ex-toggle i { display: block; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
@@ -939,14 +939,14 @@ const badgeClass = (b) => {
 .ex-chatbot__status i { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
 .ex-chatbot__close { border: none; background: none; color: rgba(255,255,255,0.8); font-size: 20px; line-height: 1; cursor: pointer; }
 .ex-chatbot__body { padding: 10px; background: var(--surface-low); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.ex-chat-msg { font-size: 0.8125rem; padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
+.ex-chat-msg { font-size: var(--dp-content-font-size); padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
 .ex-chat-msg--bot  { background: #fff; color: var(--on-surface); border-radius: 10px 10px 10px 2px; }
 .ex-chat-msg--user { background: var(--green); color: #fff; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
 .ex-chatbot__prompts { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
 .ex-prompt-chip { font-size: 0.6875rem; padding: 3px 9px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--surface-high); color: var(--on-surface); cursor: pointer; white-space: nowrap; }
 .ex-prompt-chip:hover { background: var(--surface-mid); }
 .ex-chatbot__input { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
-.ex-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: 0.8125rem; outline: none; }
+.ex-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: var(--dp-content-font-size); outline: none; }
 .ex-chatbot__input input:focus { border-color: var(--green); }
 .ex-chatbot__input button { border: none; background: var(--green); color: #fff; border-radius: 7px; width: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
 .ex-chat-enter-active, .ex-chat-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }

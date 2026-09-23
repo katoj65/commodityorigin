@@ -578,7 +578,7 @@ function deleteFarm() {
 .mf-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: nowrap; }
 .mf-header__text { min-width: 0; flex: 1 1 auto; }
 .mf-title { font-size: 1.5rem; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
-.mf-subtitle { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-subtitle { font-size: var(--dp-content-font-size); line-height: 20px; color: var(--text-2); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mf-header__actions { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; flex-shrink: 0; }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────
@@ -588,7 +588,7 @@ function deleteFarm() {
 .mf-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     height: 36px; padding: 0 16px; border-radius: 6px;
-    font-size: 13px; font-weight: 600; border: 1px solid transparent;
+    font-size: var(--dp-content-font-size); font-weight: 600; border: 1px solid transparent;
     text-decoration: none; cursor: pointer; transition: opacity 120ms ease, background 120ms ease;
 }
 .mf-btn--primary { background: #000000; color: #fff; }
@@ -627,7 +627,7 @@ function deleteFarm() {
     background: var(--surface-muted) !important;
 }
 .mf-search-input :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px var(--text) inset !important; background: var(--surface) !important; }
-.mf-search-input :deep(.el-input__inner) { font-size: 12.5px !important; color: var(--text); height: 30px !important; line-height: 30px !important; }
+.mf-search-input :deep(.el-input__inner) { font-size: var(--dp-content-font-size) !important; color: var(--text); height: 30px !important; line-height: 30px !important; }
 .mf-search-input :deep(.el-input__prefix) { color: var(--text-muted); font-size: 13px; }
 
 .mf-toolbar-controls { display: flex; align-items: center; gap: 12px; flex-shrink: 0; flex-wrap: wrap; }
@@ -643,7 +643,7 @@ function deleteFarm() {
     background: var(--surface-muted) !important;
 }
 .mf-sort-select :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 1px var(--text) inset !important; }
-.mf-sort-select :deep(.el-select__selected-item) { font-size: 12.5px !important; font-weight: 600; color: var(--text); }
+.mf-sort-select :deep(.el-select__selected-item) { font-size: var(--dp-content-font-size) !important; font-weight: 600; color: var(--text); }
 .mf-view-switch { display: inline-flex; background: var(--surface-muted); padding: 3px; border-radius: 8px; gap: 2px; }
 .mf-view-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; border: none; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; }
 .mf-view-btn--active { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
@@ -674,28 +674,28 @@ function deleteFarm() {
     white-space: normal;
     line-height: 1.3;
 }
-.mf-table tbody td { padding: 10px 10px; font-size: 12px; border-color: var(--border); vertical-align: middle; overflow: hidden; }
+.mf-table tbody td { padding: 10px 10px; font-size: var(--dp-content-font-size); border-color: var(--border); vertical-align: middle; overflow: hidden; }
 .mf-table-row { cursor: pointer; transition: background .12s ease; }
 .mf-table-row:hover { background: var(--surface-muted); }
 .mf-table-row:last-child td { border-bottom: none; }
 .mf-table-strong { font-weight: 700; color: var(--text); }
-.mf-muted { font-size: 11px; color: var(--text-muted); }
+.mf-muted { font-size: var(--dp-content-font-size); color: var(--text-muted); }
 .mf-mt-2 { margin-top: 3px; }
 .mf-cell-truncate { min-width: 0; }
 .mf-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 
 .mf-farm-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .mf-farm-cell__avatar { width: 26px; height: 26px; border-radius: 7px; background: var(--surface-elevated); color: var(--text-2); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; }
-.mf-farm-cell__name { font-size: 12.5px; font-weight: 700; color: var(--text); }
+.mf-farm-cell__name { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--text); }
 .mf-farm-cell__code { font-size: 10px; color: var(--text-muted); }
 
-.mf-loc-cell__main { font-weight: 600; font-size: 12px; color: var(--text); }
+.mf-loc-cell__main { font-weight: 600; font-size: var(--dp-content-font-size); color: var(--text); }
 .mf-loc-cell__gps { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
 .mf-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--surface-elevated); color: var(--text-2); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .mf-pipeline-cell__top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.mf-pipeline-cell__vol { font-size: 12px; font-weight: 700; color: var(--text); flex-shrink: 0; }
+.mf-pipeline-cell__vol { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--text); flex-shrink: 0; }
 .mf-pipeline-cell__nodes { display: block; margin-top: 4px; font-size: 10px; font-weight: 600; color: var(--text-muted); }
 
 .mf-trace-dots { display: inline-flex; gap: 3px; flex-shrink: 0; }
@@ -729,8 +729,8 @@ function deleteFarm() {
 .mf-grid-card__sub { font-size: 11.5px; color: var(--text-muted); margin: 2px 0 0; }
 .mf-grid-card__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--surface-muted); padding: 10px; border-radius: 8px; text-align: center; }
 .mf-grid-card__stat-label { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
-.mf-grid-card__stat-value { display: block; font-size: 12.5px; font-weight: 700; color: var(--text); margin-top: 2px; }
-.mf-grid-card__row { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); }
+.mf-grid-card__stat-value { display: block; font-size: var(--dp-content-font-size); font-weight: 700; color: var(--text); margin-top: 2px; }
+.mf-grid-card__row { display: flex; align-items: center; justify-content: space-between; font-size: var(--dp-content-font-size); color: var(--text-muted); }
 .mf-grid-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
 .mf-grid-empty { grid-column: 1 / -1; border: 1px solid var(--border); border-radius: 6px; }
 
@@ -738,7 +738,7 @@ function deleteFarm() {
 .mf-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 20px; }
 .mf-empty__icon { color: var(--text-muted); margin-bottom: 12px; }
 .mf-empty__title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-.mf-empty__text { font-size: 13px; color: var(--text-muted); margin: 0 0 16px; max-width: 360px; }
+.mf-empty__text { font-size: var(--dp-content-font-size); color: var(--text-muted); margin: 0 0 16px; max-width: 360px; }
 .mf-empty .mf-btn--primary { display: inline-flex; }
 
 /* ── Modal — same header/body/footer structure and literal hex palette as
@@ -750,7 +750,7 @@ function deleteFarm() {
     padding: 0;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
 }
 :deep(.el-dialog.fp-modal .el-dialog__header) { padding: 0; margin: 0; }
 :deep(.el-dialog.fp-modal .el-dialog__body) { padding: 0; }

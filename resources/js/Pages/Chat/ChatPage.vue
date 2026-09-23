@@ -381,11 +381,11 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
 .chat-canvas__name-row { display: flex; align-items: center; gap: 8px; }
 .chat-canvas__name { font-size: 13px; font-weight: 800; color: var(--dp-on-surface); }
 .chat-canvas__agent-badge { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: var(--dp-on-secondary-container); background: var(--dp-secondary-container); padding: 2px 9px; border-radius: 999px; }
-.chat-canvas__desc { font-size: 11px; color: var(--dp-on-surface-variant); font-weight: 600; }
+.chat-canvas__desc { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); font-weight: 600; }
 .chat-canvas__actions { display: flex; align-items: center; gap: 8px; }
-.chat-text-btn { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 8px; border: none; background: transparent; color: var(--dp-on-surface-variant); font-size: 12px; font-weight: 600; cursor: pointer; }
+.chat-text-btn { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 8px; border: none; background: transparent; color: var(--dp-on-surface-variant); font-size: var(--dp-content-font-size); font-weight: 600; cursor: pointer; }
 .chat-text-btn:hover { background: var(--dp-surface-container-low); }
-.chat-specialist-btn { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px; border: none; background: var(--dp-primary-container); color: var(--dp-on-primary-container); font-size: 12px; font-weight: 700; cursor: pointer; }
+.chat-specialist-btn { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px; border: none; background: var(--dp-primary-container); color: var(--dp-on-primary-container); font-size: var(--dp-content-font-size); font-weight: 700; cursor: pointer; }
 .chat-specialist-btn:hover { opacity: 0.9; }
 
 .chat-stream { padding: 4px 20px 20px; display: flex; flex-direction: column; gap: 22px; }
@@ -398,12 +398,12 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
 
 .chat-bubble { max-width: 34rem; }
 .chat-bubble--user { background: var(--dp-primary); color: var(--dp-on-primary); border-radius: 12px 12px 0 12px; padding: 11px 14px; }
-.chat-bubble--user p { margin: 0; font-size: 12.5px; line-height: 1.55; font-weight: 500; }
+.chat-bubble--user p { margin: 0; font-size: var(--dp-content-font-size); line-height: 1.55; font-weight: 500; }
 .chat-bubble__meta { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 6px; font-size: 10px; font-family: var(--dp-font-mono); opacity: 0.75; }
 
 .chat-turn { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
 .chat-reasoning-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: var(--dp-surface-container-low); font-size: 11px; font-weight: 500; color: var(--dp-on-surface-variant); width: fit-content; }
-.chat-narrative { margin: 0; font-size: 12px; line-height: 1.6; color: var(--dp-on-surface); }
+.chat-narrative { margin: 0; font-size: var(--dp-content-font-size); line-height: 1.6; color: var(--dp-on-surface); }
 .chat-narrative strong { color: var(--dp-primary); }
 
 .chat-lot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -420,11 +420,11 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
 .chat-lot-card__detail { display: flex; align-items: center; gap: 10px; background: var(--dp-surface-container-low); padding: 8px; border-radius: 8px; }
 .chat-lot-thumb { width: 44px; height: 44px; border-radius: 8px; background: var(--dp-surface-container-high); color: var(--dp-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .chat-lot-card__detail-text { display: flex; flex-direction: column; font-size: 11px; line-height: 1.35; }
-.chat-lot-card__spec { font-weight: 700; color: var(--dp-on-surface); }
+.chat-lot-card__spec { font-weight: 700; color: var(--dp-on-surface); font-size: var(--dp-content-font-size); }
 .chat-lot-card__coop { color: var(--dp-on-surface-variant); font-size: 10px; }
 .chat-lot-card__stats { display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 10px; color: var(--dp-on-surface-variant); }
 .chat-lot-card__score { color: var(--dp-primary); font-weight: 700; }
-.chat-lot-card__seller { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--dp-on-surface-variant); font-weight: 600; }
+.chat-lot-card__seller { display: flex; align-items: center; justify-content: space-between; font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); font-weight: 600; }
 .chat-lot-card__trust { display: flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; color: var(--dp-primary); }
 .chat-lot-card__trust--muted { color: var(--dp-on-surface-variant); }
 .chat-lot-card__actions { display: flex; align-items: center; gap: 6px; }
@@ -443,7 +443,7 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
 .chat-table thead { background: var(--dp-surface-container-low); }
 .chat-table th { text-align: left; padding: 9px 12px; font-size: 11px; font-weight: 700; color: var(--dp-on-surface); }
 .chat-table__selected-head { color: var(--dp-primary); }
-.chat-table td { padding: 8px 12px; color: var(--dp-on-surface-variant); font-weight: 500; }
+.chat-table td { padding: 8px 12px; color: var(--dp-on-surface-variant); font-weight: 500; font-size: var(--dp-content-font-size); }
 .chat-table td:first-child { color: var(--dp-on-surface-variant); }
 .chat-table td:nth-child(2) { color: var(--dp-on-surface); font-weight: 600; }
 .chat-table__accent { color: var(--dp-primary) !important; font-weight: 700 !important; display: flex; align-items: center; gap: 4px; }
@@ -454,12 +454,12 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
 .chat-po-card__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .chat-po-card__title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: var(--dp-on-surface); }
 .chat-po-breakdown { background: var(--dp-surface-container-lowest); padding: 13px; border-radius: 10px; display: flex; flex-direction: column; gap: 7px; }
-.chat-po-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 11.5px; }
+.chat-po-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: var(--dp-content-font-size); }
 .chat-po-row span:first-child { color: var(--dp-on-surface-variant); }
 .chat-po-row strong { color: var(--dp-on-surface); font-weight: 700; }
 .chat-po-row__price { display: flex; align-items: center; gap: 7px; }
 .chat-po-row__strike { font-size: 11px; text-decoration: line-through; color: var(--dp-on-surface-variant); }
-.chat-po-row__price strong { color: var(--dp-primary); font-size: 13px; }
+.chat-po-row__price strong { color: var(--dp-primary); font-size: var(--dp-content-font-size); }
 .chat-po-row--total { padding-top: 8px; margin-top: 2px; border-top: 1px solid var(--dp-outline-variant); }
 .chat-po-row--total strong { font-size: 14px; color: var(--dp-primary); font-weight: 800; }
 .chat-po-row--footnote { font-size: 10.5px; }
@@ -471,7 +471,7 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
 .chat-source-link { display: inline-flex; align-items: center; gap: 4px; color: var(--dp-on-surface-variant); cursor: pointer; text-decoration: underline; }
 .chat-source-link:hover { color: var(--dp-primary); }
 
-.chat-workflow-status { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 8px; background: var(--dp-surface-container-low); font-size: 11px; color: var(--dp-on-surface-variant); }
+.chat-workflow-status { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 8px; background: var(--dp-surface-container-low); font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); }
 .chat-workflow-status__pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--dp-primary); animation: chat-pulse 1.6s ease-in-out infinite; flex-shrink: 0; }
 .chat-workflow-status__step { font-weight: 700; color: var(--dp-on-surface); }
 
@@ -498,7 +498,7 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
 .chat-input-wrap__left, .chat-input-wrap__right { display: flex; align-items: center; gap: 2px; }
 .chat-icon-btn { width: 30px; height: 30px; border-radius: 8px; border: none; background: transparent; color: var(--dp-on-surface-variant); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .chat-icon-btn:hover { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
-.chat-input { flex: 1; min-width: 0; background: transparent; border: none !important; padding: 0 8px; font-size: 12px; color: var(--dp-on-surface); font-family: var(--dp-font-sans); }
+.chat-input { flex: 1; min-width: 0; background: transparent; border: none !important; padding: 0 8px; font-size: var(--dp-content-font-size); color: var(--dp-on-surface); font-family: var(--dp-font-sans); }
 .chat-input:focus, .chat-input:focus-visible { outline: none !important; box-shadow: none !important; border: none !important; }
 .chat-send-btn { width: 34px; height: 34px; border-radius: 9px; border: none; background: var(--dp-primary); color: var(--dp-on-primary); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
 .chat-send-btn:hover { opacity: 0.9; }
@@ -510,13 +510,13 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
 
 .chat-search { position: relative; display: flex; align-items: center; }
 .chat-search__icon { position: absolute; left: 10px; color: var(--dp-outline); }
-.chat-search__input { width: 100%; height: 34px; padding: 0 10px 0 30px; border-radius: 8px; border: none; background: var(--dp-surface-container-low); font-size: 12px; color: var(--dp-on-surface); font-family: var(--dp-font-sans); }
+.chat-search__input { width: 100%; height: 34px; padding: 0 10px 0 30px; border-radius: 8px; border: none; background: var(--dp-surface-container-low); font-size: var(--dp-content-font-size); color: var(--dp-on-surface); font-family: var(--dp-font-sans); }
 .chat-search__input:focus { outline: none; background: var(--dp-surface-container-high); }
 
 .chat-right__section { display: flex; flex-direction: column; gap: 8px; }
 .chat-right__section-head { display: flex; align-items: center; justify-content: space-between; }
 .chat-spec-box { background: var(--dp-surface-container-low); padding: 11px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px; }
-.chat-spec-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; font-size: 11px; }
+.chat-spec-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; font-size: var(--dp-content-font-size); }
 .chat-spec-row span { color: var(--dp-on-surface-variant); }
 .chat-spec-row strong { text-align: right; color: var(--dp-on-surface); font-weight: 600; }
 .chat-spec-row__accent { color: var(--dp-primary) !important; }
@@ -536,14 +536,14 @@ const chatInput = ref('Offer $3.80/kg for 5 tonnes of Lot #LOT-00124 on CIF Jebe
 
 .chat-agent-list { display: flex; flex-direction: column; gap: 6px; }
 .chat-agent-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; border-radius: 7px; background: var(--dp-surface-container-low); }
-.chat-agent-row__left { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; color: var(--dp-on-surface); }
+.chat-agent-row__left { display: flex; align-items: center; gap: 8px; font-size: var(--dp-content-font-size); font-weight: 600; color: var(--dp-on-surface); }
 .chat-agent-row__status { font-size: 10px; font-weight: 700; }
 .chat-agent-row__status--positive { color: var(--dp-primary); }
 .chat-agent-row__status--pending { color: var(--dp-on-surface-variant); }
 .chat-agent-row__status--neutral { color: var(--dp-on-surface-variant); font-weight: 500; }
 
 .chat-quick-actions { display: flex; flex-direction: column; gap: 7px; }
-.chat-quick-action { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 11px; border-radius: 8px; border: none; background: var(--dp-surface-container-low); color: var(--dp-on-surface); font-size: 11.5px; font-weight: 700; cursor: pointer; }
+.chat-quick-action { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 11px; border-radius: 8px; border: none; background: var(--dp-surface-container-low); color: var(--dp-on-surface); font-size: var(--dp-content-font-size); font-weight: 700; cursor: pointer; }
 .chat-quick-action:hover { background: var(--dp-surface-container-high); }
 .chat-quick-action span { display: flex; align-items: center; gap: 8px; }
 .chat-quick-action--specialist { background: var(--dp-primary-container); color: var(--dp-on-primary-container); justify-content: center; }

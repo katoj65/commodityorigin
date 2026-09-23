@@ -227,7 +227,7 @@ function completeInspection(inspection) {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -327,7 +327,7 @@ function completeInspection(inspection) {
 .insp-tabs :deep(.el-tabs__nav-wrap::after) { background-color: var(--border); }
 .insp-tabs :deep(.el-tabs__item) {
     font-weight: 700;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     color: var(--on-surface-var);
     height: 44px;
 }
@@ -359,7 +359,7 @@ function completeInspection(inspection) {
     --el-table-border-color: var(--border);
     --el-table-header-bg-color: var(--surface-low);
     --el-table-header-text-color: var(--on-surface-var);
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
 }
 
 .insp-table :deep(.el-table__header) th {
@@ -383,10 +383,10 @@ function completeInspection(inspection) {
 }
 
 .insp-cell-order__num {
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     color: var(--on-surface);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
 }
 
 .insp-cell-order__crop {
@@ -398,7 +398,7 @@ function completeInspection(inspection) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     color: var(--on-surface);
 }
 
@@ -433,7 +433,7 @@ function completeInspection(inspection) {
     border: 1px solid transparent;
     color: #fff;
     border-radius: 8px;
-    font-size: 0.75rem;
+    font-size: var(--dp-content-font-size);
     font-weight: 700;
     padding: 6px 10px;
     cursor: pointer;

@@ -605,7 +605,7 @@ const submit = (intent = 'create') => {
 
 .lot-page-topbar__copy p {
     color: #75808f;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     margin: 6px 0 0;
 }
 
@@ -638,7 +638,7 @@ const submit = (intent = 'create') => {
 .lot-page-action {
     border-radius: 8px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     padding: 11px 16px;
     transition: 0.2s ease;
@@ -779,7 +779,7 @@ const submit = (intent = 'create') => {
 
 .lot-section-head__copy p {
     color: #5f6d79;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     line-height: 1.6;
     margin: 0;
 }
@@ -789,7 +789,7 @@ const submit = (intent = 'create') => {
     border: 1px solid #b4dfc4;
     border-radius: 999px;
     color: #0d6a3f;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -814,7 +814,7 @@ const submit = (intent = 'create') => {
 .lot-allocation-card__left label,
 .lot-slider-field label {
     color: #334155;
-    font-family: 'Source Sans 3', sans-serif;
+    font-family: var(--dp-font-sans);
     font-size: 14px;
     font-style: normal;
     font-weight: 400;
@@ -826,7 +826,7 @@ const submit = (intent = 'create') => {
 .lot-static-select,
 .lot-stat-card span {
     color: #94a3b8;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.16em;
@@ -840,7 +840,7 @@ const submit = (intent = 'create') => {
     border-radius: 14px;
     color: #111827;
     display: flex;
-    font-family: 'Source Sans 3', sans-serif;
+    font-family: var(--dp-font-sans);
     font-size: 15px;
     font-weight: 600;
     justify-content: space-between;
@@ -910,7 +910,7 @@ const submit = (intent = 'create') => {
 
 .lot-source-meta-item span {
     color: #8090a0;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -918,14 +918,14 @@ const submit = (intent = 'create') => {
 
 .lot-source-meta-item strong {
     color: #152432;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     line-height: 1.35;
 }
 
 .lot-source-warning {
     color: #9b5d27;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     margin: 14px 0 0;
 }
 
@@ -951,7 +951,7 @@ const submit = (intent = 'create') => {
 
 .lot-content-section__title span {
     color: #6d7786;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
 }
 
 .lot-content-section__title--compact h2 {
@@ -1135,7 +1135,7 @@ const submit = (intent = 'create') => {
     border-radius: 14px;
     color: #111827;
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     min-height: 48px;
     padding: 12px 14px;
     width: 100%;

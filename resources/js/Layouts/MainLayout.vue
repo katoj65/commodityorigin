@@ -442,6 +442,16 @@ function markAllNotificationsRead() {
     --dp-card-radius: 6px;
     --dp-card-shadow: none;
 
+    /* Standard body/content text size — matches Market/MarketIntelligence.vue's
+       own body copy (.mi-story-card__body, .mi-analytics-sub, etc. are all
+       0.8125rem), which is the app's reference page for typography. Use this
+       for a page's primary readable content (paragraphs, table cell values,
+       descriptions, form inputs, button labels) on every page built or
+       edited going forward — keep smaller sizes only for genuinely
+       secondary text (labels, eyebrows, captions, badges), matching
+       --dp-label-md/--dp-caption above. */
+    --dp-content-font-size: 0.8125rem;
+
     display: flex;
     min-height: 100vh;
     background: var(--dp-surface);

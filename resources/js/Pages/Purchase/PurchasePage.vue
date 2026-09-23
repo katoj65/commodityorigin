@@ -161,7 +161,7 @@ function confirmCancel() {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -211,7 +211,7 @@ function confirmCancel() {
     --el-table-border-color: var(--border);
     --el-table-header-bg-color: var(--surface-low);
     --el-table-header-text-color: var(--on-surface-var);
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
 }
 
 .pur-table :deep(.el-table__header) th {
@@ -242,7 +242,7 @@ function confirmCancel() {
 }
 
 .pur-cell-order__num {
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: var(--dp-font-mono);
     font-size: 0.8125rem;
     font-weight: 800;
     color: var(--on-surface);
@@ -275,7 +275,7 @@ function confirmCancel() {
 }
 
 .pur-amount {
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: var(--dp-font-mono);
     font-size: 0.875rem;
     font-weight: 800;
     color: var(--on-surface);

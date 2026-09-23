@@ -239,7 +239,7 @@ const submit = () => {
     --primary-fixed:    #a6f2d1;
     --on-primary-fixed: #002116;
     --outline-variant:  #bec9c2;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -314,7 +314,7 @@ const submit = () => {
     letter-spacing: -0.01em;
 }
 .pb-lot-sub {
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     color: var(--on-surface-var);
     display: flex;
     align-items: center;
@@ -360,7 +360,7 @@ const submit = () => {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     color: var(--on-surface-var);
     padding: 0.875rem 1.25rem;
     border-top: 1px solid var(--surface-high);
@@ -400,7 +400,7 @@ const submit = () => {
     border-radius: 0.5rem;
     color: var(--on-surface);
     font-size: 0.9375rem;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     padding: 11px 14px;
     outline: none;
     transition: border-color 0.15s ease, background 0.15s ease;
@@ -414,7 +414,7 @@ const submit = () => {
 .pb-input--error { border-color: #dc2626; }
 .pb-textarea { resize: vertical; min-height: 80px; }
 .pb-hint  { font-size: 0.75rem; color: var(--on-surface-var); margin: 0; }
-.pb-error { font-size: 0.75rem; color: #dc2626; font-weight: 600; margin: 0; }
+.pb-error { font-size: var(--dp-content-font-size); color: #dc2626; font-weight: 600; margin: 0; }
 
 /* ── Summary ──────────────────────────────────────────────────────────────── */
 .pb-summary {
@@ -447,7 +447,7 @@ const submit = () => {
     background: #ffffff;
 }
 .pb-btn {
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     font-size: 0.875rem;
     font-weight: 700;
     border-radius: 0.5rem;

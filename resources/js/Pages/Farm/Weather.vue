@@ -184,11 +184,11 @@ const regionGroups = computed(() => props.regionOptions
 .wf-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
 .wf-header__text { min-width: 0; }
 .wf-title { font-size: 1.5rem; line-height: 30px; font-weight: 700; letter-spacing: -0.015em; color: var(--text); margin: 0 0 6px; }
-.wf-subtitle { font-size: 13.5px; line-height: 20px; color: var(--text-2); margin: 0; max-width: 60ch; }
+.wf-subtitle { font-size: var(--dp-content-font-size); line-height: 20px; color: var(--text-2); margin: 0; max-width: 60ch; }
 .wf-header__meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
 .wf-header__badge {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 12px; font-weight: 600; color: var(--text-2);
+    font-size: var(--dp-content-font-size); font-weight: 600; color: var(--text-2);
     background: var(--surface-muted); border: 1px solid var(--border);
     border-radius: 999px; padding: 5px 12px;
 }
@@ -217,7 +217,7 @@ const regionGroups = computed(() => props.regionOptions
 .wf-hero__day { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
 .wf-hero__temp { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--text); }
 .wf-hero__stats { display: flex; flex-direction: column; gap: 6px; margin-left: auto; flex-shrink: 0; }
-.wf-stat { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wf-stat { display: inline-flex; align-items: center; gap: 6px; font-size: var(--dp-content-font-size); font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .wf-stat :deep(.el-icon) { font-size: 13px; color: var(--text-muted); }
 
 /* ── Condition badge ───────────────────────────────────────────────────── */
@@ -250,7 +250,7 @@ const regionGroups = computed(() => props.regionOptions
 .wf-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 48px 20px; background: var(--surface-muted); border: 1px solid var(--border); border-radius: 6px; }
 .wf-empty__icon { color: var(--text-muted); }
 .wf-empty__title { font-size: 14px; font-weight: 700; color: var(--text); }
-.wf-empty__text { font-size: 13px; color: var(--text-muted); margin: 0; max-width: 360px; }
+.wf-empty__text { font-size: var(--dp-content-font-size); color: var(--text-muted); margin: 0; max-width: 360px; }
 
 @media (max-width: 640px) {
     .wf-header { flex-direction: column; align-items: stretch; }

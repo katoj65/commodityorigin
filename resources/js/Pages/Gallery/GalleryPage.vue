@@ -398,7 +398,7 @@ function confirmDelete() {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -566,7 +566,7 @@ function confirmDelete() {
 
 .gal-card__title {
     color: var(--on-surface);
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     font-weight: 700;
     line-height: 1.3;
     white-space: nowrap;
@@ -619,7 +619,7 @@ function confirmDelete() {
 }
 
 .gal-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
-.gal-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0 auto 16px; max-width: 320px; line-height: 1.5; }
+.gal-empty__text { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0 auto 16px; max-width: 320px; line-height: 1.5; }
 
 /* ── Lightbox ────────────────────────────────────────────────────────── */
 .gal-lightbox {
@@ -739,7 +739,7 @@ function confirmDelete() {
     padding: 0;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
 }
 
 :deep(.el-dialog.gal-modal .el-dialog__header) { padding: 0; margin: 0; }

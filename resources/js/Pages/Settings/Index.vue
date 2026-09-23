@@ -717,7 +717,7 @@ function confirmDeleteIndex() {
     padding: 0;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
 }
 .el-dialog.pim-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.pim-modal .el-dialog__body { padding: 0; }

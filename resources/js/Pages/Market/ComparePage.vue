@@ -247,7 +247,7 @@ watch(selectedProducers, () => { currentPage.value = 1; });
 .mkt-kpi-col:last-child { padding-right: 1.5rem; }
 .mkt-kpi-col__label { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--on-surface-var); margin-bottom: 8px; white-space: nowrap; }
 .mkt-kpi-col__label :deep(.el-icon) { font-size: 13px; color: var(--green); opacity: .85; }
-.mkt-kpi-col__value { font-family: 'IBM Plex Mono', monospace; font-size: 1.1875rem; font-weight: 700; color: var(--on-surface); letter-spacing: -.01em; }
+.mkt-kpi-col__value { font-family: var(--dp-font-mono); font-size: 1.1875rem; font-weight: 700; color: var(--on-surface); letter-spacing: -.01em; }
 @media (max-width: 767.98px) {
     .mkt-kpi-col:first-child { padding-left: 1.25rem; }
     .mkt-kpi-col:last-child { padding-right: 1.25rem; }

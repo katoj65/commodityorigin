@@ -502,11 +502,11 @@ const readyLots = [
 .inv-hero__eyebrow { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 4px; background: var(--dp-surface-container); color: var(--dp-on-surface-variant); }
 .inv-hero__eyebrow-mono { font-family: var(--dp-font-mono); font-size: 11px; font-weight: 500; color: var(--dp-on-surface-variant); }
 .inv-title { font-size: 1.5rem; line-height: 2.1rem; font-weight: 800; letter-spacing: -.015em; color: var(--dp-on-surface); margin: 0; }
-.inv-subtitle { font-size: 13.5px; color: var(--dp-on-surface-variant); margin: 4px 0 0; }
+.inv-subtitle { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); margin: 4px 0 0; }
 .inv-hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; flex-shrink: 0; }
 
 /* ── Buttons ─────────────────────────────────────────────────────────── */
-.inv-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 6px; border: none; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity .12s ease, background .12s ease; font-family: var(--dp-font-sans); }
+.inv-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 6px; border: none; font-size: var(--dp-content-font-size); font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity .12s ease, background .12s ease; font-family: var(--dp-font-sans); }
 .inv-btn .material-symbols-outlined { font-size: 16px; }
 .inv-btn--ghost { background: var(--dp-surface-container-low); color: var(--dp-on-surface); }
 .inv-btn--ghost .material-symbols-outlined { color: var(--dp-primary); }
@@ -537,11 +537,11 @@ const readyLots = [
 .inv-stage__icon { font-size: 15px; color: var(--dp-on-surface-variant); flex-shrink: 0; }
 .inv-stage__icon--pulse { color: var(--dp-primary); animation: inv-pulse 1.8s ease-in-out infinite; }
 .inv-stage__icon--tone { color: var(--dp-on-secondary-container); }
-.inv-stage__desc { font-size: 11px; color: var(--dp-on-surface-variant); line-height: 1.5; margin: 0 0 10px; min-height: 32px; }
+.inv-stage__desc { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); line-height: 1.5; margin: 0 0 10px; min-height: 32px; }
 .inv-stage__meta { display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-family: var(--dp-font-mono); color: var(--dp-on-surface-variant); }
 @keyframes inv-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 
-.inv-stepper__notice { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 10px 12px; background: var(--dp-surface-container-high); border-radius: 8px; font-size: 11px; color: var(--dp-on-surface-variant); }
+.inv-stepper__notice { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 10px 12px; background: var(--dp-surface-container-high); border-radius: 8px; font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); }
 .inv-stepper__notice .material-symbols-outlined { color: var(--dp-primary); font-size: 16px; flex-shrink: 0; }
 
 @media (max-width: 1180px) {
@@ -565,7 +565,7 @@ const readyLots = [
 /* Tab bar */
 .inv-tabbar { background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); border-radius: var(--dp-card-radius); padding: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .inv-tabbar__tabs { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.inv-tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 6px; border: none; background: transparent; color: var(--dp-on-surface-variant); font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--dp-font-sans); transition: background .12s ease, color .12s ease; }
+.inv-tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 6px; border: none; background: transparent; color: var(--dp-on-surface-variant); font-size: var(--dp-content-font-size); font-weight: 700; cursor: pointer; font-family: var(--dp-font-sans); transition: background .12s ease, color .12s ease; }
 .inv-tab:hover { background: var(--dp-surface-container-low); }
 .inv-tab--active { background: var(--dp-surface-container); color: var(--dp-primary); }
 .inv-tab__count { font-family: var(--dp-font-mono); font-size: 10px; padding: 1px 6px; border-radius: 999px; background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
@@ -582,14 +582,14 @@ const readyLots = [
 .inv-table-card__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; background: var(--dp-surface-container-low); flex-wrap: wrap; }
 .inv-table-card__title { display: flex; align-items: center; gap: 8px; font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--dp-on-surface); }
 .inv-table-wrap { overflow-x: auto; }
-.inv-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+.inv-table { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--dp-content-font-size); }
 .inv-table thead tr { background: var(--dp-surface-container-low); }
 .inv-table th { padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--dp-on-surface-variant); white-space: nowrap; }
 .inv-table td { padding: 12px 14px; border-top: 1px solid var(--dp-outline-variant); vertical-align: middle; }
 .inv-table tbody tr:hover { background: var(--dp-surface-container-low); }
 .inv-table__row--link { cursor: pointer; }
 .inv-table__row--link:focus-visible { outline: 2px solid var(--dp-primary); outline-offset: -2px; }
-.inv-table__empty { text-align: center; padding: 32px 14px; color: var(--dp-on-surface-variant); font-size: 12px; }
+.inv-table__empty { text-align: center; padding: 32px 14px; color: var(--dp-on-surface-variant); font-size: var(--dp-content-font-size); }
 .inv-table-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; background: var(--dp-surface-container-low); flex-wrap: wrap; }
 
 /* Chips / flags */
@@ -609,7 +609,7 @@ const readyLots = [
 
 .inv-mini-list { display: flex; flex-direction: column; gap: 10px; }
 .inv-mini-row { padding: 12px; background: var(--dp-surface-container-low); border-radius: 8px; }
-.inv-mini-row__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+.inv-mini-row__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--dp-content-font-size); }
 .inv-mini-row__meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; font-size: 11px; color: var(--dp-on-surface-variant); }
 .inv-mini-row__tags { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
 .inv-bar { width: 100%; height: 6px; border-radius: 999px; background: var(--dp-surface-container-high); overflow: hidden; margin-top: 8px; }
@@ -624,9 +624,9 @@ const readyLots = [
 .inv-dossier__panel { background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .inv-dossier__panel--tight { gap: 6px; padding: 10px; }
 .inv-dossier__section { display: flex; flex-direction: column; gap: 8px; }
-.inv-kv { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+.inv-kv { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: var(--dp-content-font-size); }
 .inv-kv--sm { font-size: 11px; }
-.inv-kv--divider { padding-top: 8px; border-top: 1px solid var(--dp-outline-variant); font-size: 12px; }
+.inv-kv--divider { padding-top: 8px; border-top: 1px solid var(--dp-outline-variant); font-size: var(--dp-content-font-size); }
 .inv-dossier__market { flex-direction: row; align-items: center; justify-content: space-between; }
 .inv-dossier__token { background: var(--dp-surface-container-low); border: none; }
 .inv-dossier__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

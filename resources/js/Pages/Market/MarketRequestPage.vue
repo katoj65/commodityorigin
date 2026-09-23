@@ -364,7 +364,7 @@ watch(filteredOrders, () => { currentPage.value = 1; });
     padding: 0;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
 }
 
 :deep(.el-dialog.ord-modal .el-dialog__header) {
@@ -420,7 +420,7 @@ watch(filteredOrders, () => { currentPage.value = 1; });
     font-weight: 800;
     color: #111827;
     letter-spacing: -0.01em;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
 }
 
 .ord-modal__close {

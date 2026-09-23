@@ -316,7 +316,7 @@ function confirmDeleteTask() {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -437,7 +437,7 @@ function confirmDeleteTask() {
     --el-table-border-color: var(--border);
     --el-table-header-bg-color: var(--surface-low);
     --el-table-header-text-color: var(--on-surface-var);
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
 }
 .tp-table :deep(.el-table__header) th {
     font-size: 0.6875rem;
@@ -489,7 +489,7 @@ function confirmDeleteTask() {
     padding: 0;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
 }
 
 :deep(.el-dialog.tp-modal .el-dialog__header) {

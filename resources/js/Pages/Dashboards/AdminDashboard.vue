@@ -345,7 +345,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                                                 :style="{ width: `${u.activity}%`,
                                                                           background: u.activity > 60 ? '#004532' : u.activity > 20 ? '#f59e0b' : '#ef4444' }"></div>
                                                         </div>
-                                                        <span style="font-size:.75rem; font-weight:700;"
+                                                        <span style="font-size:var(--dp-content-font-size); font-weight:700;"
                                                             :class="u.activity > 60 ? 'ad-up' : u.activity > 20 ? 'ad-warn' : 'ad-down'">{{ u.activity }}%</span>
                                                     </div>
                                                 </td>
@@ -471,7 +471,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                                 <td>
                                                     <div class="d-flex align-items-center gap-1">
                                                         <span class="ad-participants">{{ auc.participants }}</span>
-                                                        <span class="ad-td-muted" style="font-size:.75rem;">bidders</span>
+                                                        <span class="ad-td-muted" style="font-size:var(--dp-content-font-size);">bidders</span>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -677,7 +677,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
                                     <div v-for="a in anomalies" :key="a.label" class="ad-anomaly-row">
                                         <div class="ad-anomaly-dot" :class="`ad-anomaly-dot--${a.tone}`"></div>
                                         <div class="flex-fill">
-                                            <div style="font-size:.8125rem; font-weight:600; color:var(--on-surface);">{{ a.label }}</div>
+                                            <div style="font-size:var(--dp-content-font-size); font-weight:600; color:var(--on-surface);">{{ a.label }}</div>
                                             <div class="ad-td-muted" style="font-size:.7rem;">{{ a.type }}</div>
                                         </div>
                                         <button class="btn btn-sm ad-btn-outline" style="font-size:.7rem; padding:3px 8px;">View</button>
@@ -790,7 +790,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
     --surface-low:    #f8fafc;
     --surface-mid:    #f1f5f9;
     --surface-high:   #eef2f0;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -799,19 +799,19 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .ad-header   { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
 .ad-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
-.ad-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); }
+.ad-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 .ad-hbadge   { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,69,50,0.08); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 3px 10px; }
 .ad-hbadge--soft    { background: #dcfce7; color: #166534; }
 .ad-hbadge--outline { background: transparent; border: 1px solid var(--surface-high); color: var(--on-surface-var); }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.ad-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.ad-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .ad-btn-primary:hover { background: var(--green-grad); border-color: var(--green-grad); color: #fff; }
-.ad-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.ad-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .ad-btn-outline:hover { background: var(--surface-low); }
-.ad-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.ad-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .ad-btn-ghost:hover { background: var(--surface-high); }
-.ad-btn-danger  { background: #fee2e2; border-color: #fecaca; color: #b91c1c; border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.ad-btn-danger  { background: #fee2e2; border-color: #fecaca; color: #b91c1c; border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .ad-btn-danger:hover { background: #fecaca; }
 
 /* ── KPI Cards ─────────────────────────────────────────────────────────────── */
@@ -858,18 +858,18 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .ad-filter-btn--active { background: var(--surface-white); color: var(--green); box-shadow: 0 1px 3px rgba(0,0,0,.08); font-weight: 700; }
 .ad-search-wrap  { position: relative; display: flex; align-items: center; }
 .ad-search-icon  { position: absolute; left: 8px; font-size: 13px; color: var(--on-surface-var); pointer-events: none; }
-.ad-search-input { height: 30px; border: 1px solid var(--surface-high); border-radius: 7px; padding: 0 10px 0 28px; font-size: 0.8125rem; outline: none; color: var(--on-surface); width: 160px; }
+.ad-search-input { height: 30px; border: 1px solid var(--surface-high); border-radius: 7px; padding: 0 10px 0 28px; font-size: var(--dp-content-font-size); outline: none; color: var(--on-surface); width: 160px; }
 .ad-search-input:focus { border-color: var(--green); }
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .ad-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
-.ad-table tbody td { padding: 9px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
+.ad-table tbody td { padding: 9px 12px; font-size: var(--dp-content-font-size); border-color: var(--surface-low); vertical-align: middle; }
 .ad-table-row { transition: background 0.1s; }
 .ad-table-row:hover { background: var(--surface-low); }
 .ad-table-row--alert    { background: #fff7f7; }
 .ad-table-row--critical { background: #fff1f1; }
-.ad-item-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
-.ad-td-muted  { color: var(--on-surface-var); font-size: 0.8125rem; }
+.ad-item-name { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
+.ad-td-muted  { color: var(--on-surface-var); font-size: var(--dp-content-font-size); }
 .ad-act-btn   { font-size: 0.75rem !important; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .ad-up   { color: #166534; font-weight: 700; }
 .ad-warn { color: #92400e; font-weight: 700; }
@@ -893,7 +893,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .ad-bar-fill  { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
 
 /* ── Score bubble ──────────────────────────────────────────────────────────── */
-.ad-score-dot { display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 0.75rem; font-weight: 800; padding: 3px 8px; }
+.ad-score-dot { display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 800; padding: 3px 8px; }
 .ad-score-dot--high { background: #dcfce7; color: #166534; }
 .ad-score-dot--mid  { background: #fef3c7; color: #92400e; }
 
@@ -901,7 +901,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .ad-alert-pulse { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; animation: adPulse 1.4s ease-in-out infinite; flex-shrink: 0; }
 @keyframes adPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
 .ad-participants { font-size: 0.9375rem; font-weight: 800; color: var(--on-surface); }
-.ad-closing-badge { font-size: 0.8125rem; font-weight: 700; color: #b91c1c; }
+.ad-closing-badge { font-size: var(--dp-content-font-size); font-weight: 700; color: #b91c1c; }
 
 /* ── Transactions ──────────────────────────────────────────────────────────── */
 .ad-tx-type { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
@@ -917,8 +917,8 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .ad-severity-badge--critical { background: #b91c1c; color: #fff; }
 
 /* ── Compliance ────────────────────────────────────────────────────────────── */
-.ad-compliance-label { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
-.ad-compliance-pct   { font-size: 0.8125rem; font-weight: 800; }
+.ad-compliance-label { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
+.ad-compliance-pct   { font-size: var(--dp-content-font-size); font-weight: 800; }
 
 /* ── Market overview ───────────────────────────────────────────────────────── */
 .ad-mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 52px; background: var(--surface-low); border-radius: 8px; padding: 6px; }
@@ -936,7 +936,7 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .ad-health-indicator--success { background: #16a34a; }
 .ad-health-indicator--warning { background: #f59e0b; }
 .ad-health-indicator--danger  { background: #ef4444; }
-.ad-health-label { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
+.ad-health-label { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
 
 /* ── AI Insights ───────────────────────────────────────────────────────────── */
 .ad-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 6px; border: 1px solid; }
@@ -945,10 +945,10 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .ad-insight-card--warning { background: #fffbeb; border-color: #fde68a; }
 .ad-insight-card--danger  { background: #fff1f2; border-color: #fecdd3; }
 .ad-insight-icon { font-size: 14px; color: var(--green); flex-shrink: 0; margin-top: 1px; }
-.ad-insight-text { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
+.ad-insight-text { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); line-height: 1.5; margin: 0; }
 
 /* ── Smart alerts ──────────────────────────────────────────────────────────── */
-.ad-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; }
+.ad-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: var(--dp-content-font-size); }
 .ad-alert-row:last-child { border-bottom: none; }
 .ad-toggle { width: 32px; height: 18px; border-radius: 999px; border: none; padding: 2px; background: var(--surface-high); cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
 .ad-toggle i { display: block; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
@@ -971,14 +971,14 @@ const usePrompt = (p) => { chatInput.value = p; sendChat(); };
 .ad-chatbot__status i { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
 .ad-chatbot__close { border: none; background: none; color: rgba(255,255,255,0.8); font-size: 20px; line-height: 1; cursor: pointer; }
 .ad-chatbot__body { padding: 10px; background: var(--surface-low); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.ad-chat-msg { font-size: 0.8125rem; padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
+.ad-chat-msg { font-size: var(--dp-content-font-size); padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
 .ad-chat-msg--bot  { background: #fff; color: var(--on-surface); border-radius: 10px 10px 10px 2px; }
 .ad-chat-msg--user { background: var(--green); color: #fff; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
 .ad-chatbot__prompts { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
 .ad-prompt-chip { font-size: 0.6875rem; padding: 3px 9px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--surface-high); color: var(--on-surface); cursor: pointer; white-space: nowrap; }
 .ad-prompt-chip:hover { background: var(--surface-mid); }
 .ad-chatbot__input { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
-.ad-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: 0.8125rem; outline: none; }
+.ad-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: var(--dp-content-font-size); outline: none; }
 .ad-chatbot__input input:focus { border-color: var(--green); }
 .ad-chatbot__input button { border: none; background: var(--green); color: #fff; border-radius: 7px; width: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
 .ad-chat-enter-active, .ad-chat-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }

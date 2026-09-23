@@ -462,7 +462,7 @@ function submitCreateAgent() {
    properties are defined), so those tokens don't cascade in here.
    Literal hex from the app's default palette is used instead, matching
    every other teleported dialog in this app. */
-:deep(.el-dialog.ap-modal) { border-radius: 6px; padding: 0; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18); font-family: 'Inter', system-ui, sans-serif; }
+:deep(.el-dialog.ap-modal) { border-radius: 6px; padding: 0; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18); font-family: var(--dp-font-sans); }
 :deep(.el-dialog.ap-modal .el-dialog__header) { padding: 0; margin: 0; }
 :deep(.el-dialog.ap-modal .el-dialog__body) { padding: 0; }
 :deep(.el-dialog.ap-modal .el-dialog__footer) { padding: 0; }
@@ -490,7 +490,7 @@ function submitCreateAgent() {
 .ap-details { padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 22px; max-height: 68vh; overflow-y: auto; }
 .ap-details__section { display: flex; flex-direction: column; gap: 10px; }
 .ap-details__label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #6F7677; margin: 0; }
-.ap-details__count { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; background: #F1F2F3; color: #6F7677; padding: 1px 7px; border-radius: 999px; }
+.ap-details__count { font-family: var(--dp-font-mono); font-size: 10px; font-weight: 700; background: #F1F2F3; color: #6F7677; padding: 1px 7px; border-radius: 999px; }
 .ap-details__desc { font-size: 13.5px; color: #4B5457; line-height: 1.6; margin: 0; }
 .ap-details__empty { font-size: 12.5px; color: #6F7677; background: #F5F6F7; border-radius: 10px; padding: 14px; text-align: center; margin: 0; }
 
@@ -508,7 +508,7 @@ function submitCreateAgent() {
 .ap-install { padding: 22px 24px; display: flex; flex-direction: column; gap: 4px; }
 .ap-install__id { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
 .ap-install__name { font-weight: 800; font-size: 15px; color: #121516; }
-.ap-install__cat { font-size: 11.5px; color: #6F7677; font-family: 'JetBrains Mono', monospace; }
+.ap-install__cat { font-size: 11.5px; color: #6F7677; font-family: var(--dp-font-mono); }
 .ap-install__summary { font-size: 13px; color: #4B5457; line-height: 1.45; margin: 0 0 4px; }
 .ap-install__note { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #4B5457; background: #F5F6F7; border: 1px solid #E5E7EB; border-radius: 8px; padding: 9px 12px; margin-top: 10px; }
 .ap-install__note .el-icon { color: #065F46; }

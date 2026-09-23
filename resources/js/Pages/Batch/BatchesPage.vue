@@ -458,14 +458,14 @@ const fillPrompt = (p) => { chatInput.value = p; };
                         <div class="bt-card-title"><el-icon><Location /></el-icon> Batch Composition</div>
                     </div>
                     <div class="bt-card-body">
-                        <div class="bt-muted" style="margin-bottom:12px; font-size:11px;">
+                        <div class="bt-muted" style="margin-bottom:12px; font-size:var(--dp-content-font-size);">
                             Source distribution — farms &amp; harvests included
                         </div>
                         <div class="bt-comp-rows">
                             <div v-for="row in compositionRows" :key="row.farm" class="bt-comp-row">
                                 <div class="bt-comp-label">
-                                    <span class="bt-primary" style="font-size:12px;">{{ row.farm }}</span>
-                                    <span class="bt-muted" style="font-size:11px;">{{ row.harvests }} harvests · {{ row.qty }}</span>
+                                    <span class="bt-primary" style="font-size:var(--dp-content-font-size);">{{ row.farm }}</span>
+                                    <span class="bt-muted" style="font-size:var(--dp-content-font-size);">{{ row.harvests }} harvests · {{ row.qty }}</span>
                                 </div>
                                 <div class="bt-comp-bar-wrap">
                                     <div class="bt-comp-bar" :style="{ width: row.pct + '%' }" />
@@ -503,8 +503,8 @@ const fillPrompt = (p) => { chatInput.value = p; };
                         <div class="bt-quality-bars">
                             <div v-for="m in qualityBars" :key="m.label" class="bt-quality-row">
                                 <div class="bt-quality-label">
-                                    <span class="bt-primary" style="font-size:12px;">{{ m.label }}</span>
-                                    <span class="bt-primary" style="font-size:12px; font-weight:700;">{{ m.value }}{{ m.suffix }}</span>
+                                    <span class="bt-primary" style="font-size:var(--dp-content-font-size);">{{ m.label }}</span>
+                                    <span class="bt-primary" style="font-size:var(--dp-content-font-size); font-weight:700;">{{ m.value }}{{ m.suffix }}</span>
                                 </div>
                                 <div class="bt-quality-bar-wrap">
                                     <div class="bt-quality-bar" :style="{ width: m.value + '%' }" />
@@ -514,7 +514,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
                         <div class="bt-quality-score-card">
                             <div style="font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#6b7280;">Avg Cupping Score</div>
                             <div style="font-size:32px; font-weight:800; color:#004532; line-height:1.1;">{{ avgQualityScore }}</div>
-                            <div style="font-size:11px; color:#94a1b2;">Specialty grade threshold: 80.0</div>
+                            <div style="font-size:var(--dp-content-font-size); color:#94a1b2;">Specialty grade threshold: 80.0</div>
                         </div>
                     </div>
                 </div>
@@ -526,7 +526,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
                         <div class="bt-completion-ring">{{ completionPct }}%</div>
                     </div>
                     <div class="bt-card-body">
-                        <div class="bt-muted" style="margin-bottom:12px; font-size:11px;">Processing readiness checklist</div>
+                        <div class="bt-muted" style="margin-bottom:12px; font-size:var(--dp-content-font-size);">Processing readiness checklist</div>
                         <div class="bt-steps">
                             <div v-for="step in processingSteps" :key="step.label" class="bt-step">
                                 <div class="bt-step-dot" :class="step.done ? 'bt-step-dot--done' : 'bt-step-dot--todo'">
@@ -536,7 +536,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
                             </div>
                         </div>
                         <div class="bt-progress-wrap">
-                            <div class="bt-muted" style="font-size:11px; margin-bottom:6px;">Completion: {{ completionPct }}%</div>
+                            <div class="bt-muted" style="font-size:var(--dp-content-font-size); margin-bottom:6px;">Completion: {{ completionPct }}%</div>
                             <div class="bt-progress-track">
                                 <div class="bt-progress-fill" :style="{ width: completionPct + '%' }" />
                             </div>
@@ -586,7 +586,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
                             <span class="bt-badge bt-badge--green">Active</span>
                         </div>
                         <div class="bt-progress-wrap" style="margin-top:12px;">
-                            <div class="bt-muted" style="font-size:11px; margin-bottom:6px;">Season Progress — 68% complete</div>
+                            <div class="bt-muted" style="font-size:var(--dp-content-font-size); margin-bottom:6px;">Season Progress — 68% complete</div>
                             <div class="bt-progress-track"><div class="bt-progress-fill" style="width:68%;" /></div>
                         </div>
                         <div class="bt-season-stats">
@@ -637,7 +637,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
                                 <div class="bt-quality-bar-wrap" style="flex:1;">
                                     <div class="bt-quality-bar bt-quality-bar--amber" :style="{ width: m.pct + '%' }" />
                                 </div>
-                                <span class="bt-muted" style="font-size:11px; min-width:30px; text-align:right;">{{ m.pct }}%</span>
+                                <span class="bt-muted" style="font-size:var(--dp-content-font-size); min-width:30px; text-align:right;">{{ m.pct }}%</span>
                             </div>
                         </div>
                     </div>
@@ -658,7 +658,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
                             <div v-for="entry in activityLog" :key="entry.label" class="bt-tl-item">
                                 <div class="bt-tl-dot" :class="`bt-tl-dot--${entry.dot}`" />
                                 <div class="bt-tl-body">
-                                    <div class="bt-primary" style="font-size:12px;">{{ entry.label }}</div>
+                                    <div class="bt-primary" style="font-size:var(--dp-content-font-size);">{{ entry.label }}</div>
                                     <div class="bt-muted">{{ entry.time }}</div>
                                 </div>
                             </div>
@@ -695,7 +695,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
                             <div v-for="alert in alerts" :key="alert.label" class="bt-alert" :class="`bt-alert--${alert.type}`">
                                 <div class="bt-alert-dot" />
                                 <div style="flex:1;">
-                                    <div class="bt-primary" style="font-size:12px;">{{ alert.label }}</div>
+                                    <div class="bt-primary" style="font-size:var(--dp-content-font-size);">{{ alert.label }}</div>
                                     <div class="bt-muted">{{ alert.time }}</div>
                                 </div>
                             </div>
@@ -745,7 +745,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     background: var(--surface, #f7f9fb);
     color: #1f2a2a;
     padding: 0 0 48px;
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--dp-font-sans);
 }
 
 /* ── Header ─────────────────────────────────────────────────────── */
@@ -760,7 +760,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     flex-wrap: wrap;
 }
 .bt-kicker {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px;
     font-weight: 800;
     letter-spacing: .16em;
@@ -776,7 +776,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     line-height: 1.15;
 }
 .bt-subtitle {
-    font-size: 12px;
+    font-size: var(--dp-content-font-size);
     color: #657386;
     margin: 0 0 7px;
     max-width: 560px;
@@ -793,7 +793,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     padding: 0 12px;
     height: 30px;
     border-radius: 5px;
-    font-size: 11px;
+    font-size: var(--dp-content-font-size);
     font-weight: 700;
     letter-spacing: .03em;
     cursor: pointer;
@@ -816,7 +816,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     align-items: center;
     padding: 3px 8px;
     border-radius: 4px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: .1em;
@@ -886,7 +886,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     border: 1px solid #d4d8d8;
     border-radius: 5px;
     background: #fff;
-    font-size: 11px;
+    font-size: var(--dp-content-font-size);
     color: #263232;
     outline: none;
     cursor: pointer;
@@ -899,7 +899,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     border: 1px solid #d4d8d8;
     border-radius: 5px;
     background: #fff;
-    font-size: 11px;
+    font-size: var(--dp-content-font-size);
     color: #263232;
     outline: none;
     width: 200px;
@@ -951,7 +951,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     color: #1f2a2a;
     letter-spacing: .04em;
     text-transform: uppercase;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
 }
 .bt-card-body { padding: 12px 14px; flex: 1; }
 
@@ -959,7 +959,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-table-wrap { overflow-x: auto; }
 .bt-el-table {
     width: 100%;
-    font-size: 12px;
+    font-size: var(--dp-content-font-size);
     --el-table-border-color: #eef2f0;
     --el-table-header-bg-color: #f6f8f8;
     --el-table-header-text-color: #7b8796;
@@ -968,7 +968,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 }
 .bt-el-table :deep(.el-table__header th.el-table__cell) {
     padding: 7px 0;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px;
     font-weight: 800;
     letter-spacing: .12em;
@@ -979,7 +979,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     padding: 8px 0;
     vertical-align: middle;
 }
-.bt-primary { font-size: 13px; font-weight: 700; color: #1f2a2a; }
+.bt-primary { font-size: var(--dp-content-font-size); font-weight: 700; color: #1f2a2a; }
 .bt-muted   { font-size: 11px; color: #94a1b2; }
 .bt-ok   { color: #16a05d; }
 .bt-warn { color: #d97706; }
@@ -991,8 +991,8 @@ const fillPrompt = (p) => { chatInput.value = p; };
     border-radius: 5px;
     background: #eef5f1;
     color: #003f2c;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-family: var(--dp-font-mono);
+    font-size: var(--dp-content-font-size);
     font-weight: 800;
 }
 .bt-score {
@@ -1005,14 +1005,14 @@ const fillPrompt = (p) => { chatInput.value = p; };
     border: 1px solid #c3ddd2;
     background: #eef5f1;
     color: #004532;
-    font-size: 12px;
+    font-size: var(--dp-content-font-size);
     font-weight: 800;
 }
 .bt-status {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 9px;
     font-weight: 800;
     letter-spacing: .1em;
@@ -1049,7 +1049,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-action:hover { background: #e0efe7; }
 .bt-action--lot { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
 .bt-action--lot:hover { background: #dbeafe; }
-.bt-empty { text-align: center; color: #94a1b2; font-size: 13px; padding: 40px 0; }
+.bt-empty { text-align: center; color: #94a1b2; font-size: var(--dp-content-font-size); padding: 40px 0; }
 .bt-foot {
     display: flex;
     align-items: center;
@@ -1060,7 +1060,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     flex-wrap: wrap;
 }
 .bt-summary {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: 10px;
     font-weight: 700;
     color: #94a1b2;
@@ -1148,7 +1148,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-comp-label { display: flex; flex-direction: column; }
 .bt-comp-bar-wrap { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
 .bt-comp-bar { height: 100%; background: #004532; border-radius: 3px; }
-.bt-comp-pct { font-size: 11px; font-weight: 700; color: #657386; text-align: right; }
+.bt-comp-pct { font-size: var(--dp-content-font-size); font-weight: 700; color: #657386; text-align: right; }
 .bt-comp-totals {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1193,14 +1193,14 @@ const fillPrompt = (p) => { chatInput.value = p; };
 }
 .bt-step-dot--done { border-color: #004532; background: #004532; }
 .bt-step-dot--todo { border-color: #d4d8d8; }
-.bt-step-label { font-size: 12px; color: #657386; }
+.bt-step-label { font-size: var(--dp-content-font-size); color: #657386; }
 .bt-step-label--done { color: #1f2a2a; font-weight: 600; }
 .bt-progress-wrap { margin-top: 10px; }
 .bt-progress-track { height: 5px; background: #f0f2f2; border-radius: 3px; overflow: hidden; border: 1px solid #eef2f0; }
 .bt-progress-fill { height: 100%; background: #004532; border-radius: 3px; transition: width .4s; }
 .bt-completion-ring {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
+    font-family: var(--dp-font-mono);
+    font-size: var(--dp-content-font-size);
     font-weight: 800;
     color: #004532;
     padding: 3px 8px;
@@ -1315,7 +1315,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
 .bt-insights { display: flex; flex-direction: column; gap: 9px; }
 .bt-insight { display: flex; align-items: flex-start; gap: 9px; }
 .bt-insight-dot { width: 8px; height: 8px; border-radius: 50%; background: #004532; flex-shrink: 0; margin-top: 4px; }
-.bt-insight-text { font-size: 12px; color: #1f2a2a; line-height: 1.55; margin: 0; }
+.bt-insight-text { font-size: var(--dp-content-font-size); color: #1f2a2a; line-height: 1.55; margin: 0; }
 .bt-insight-footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0f2f2; }
 
 /* Alerts */
@@ -1424,7 +1424,7 @@ const fillPrompt = (p) => { chatInput.value = p; };
     padding: 0 10px;
     border: 1px solid #d4d8d8;
     border-radius: 5px;
-    font-size: 11px;
+    font-size: var(--dp-content-font-size);
     outline: none;
 }
 .bt-chat-input:focus { border-color: #003f2c; }

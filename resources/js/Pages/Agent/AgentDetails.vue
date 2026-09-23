@@ -438,7 +438,7 @@ function deleteFunction(fn) {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -472,7 +472,7 @@ function deleteFunction(fn) {
     border-radius: 6px;
     background: var(--surface-low);
     color: var(--on-surface-var);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
     font-size: .6875rem;
     font-weight: 700;
     display: flex;
@@ -484,7 +484,7 @@ function deleteFunction(fn) {
 .agd-fn-row__text { flex: 1; min-width: 0; }
 .agd-fn-row__name { font-size: .8125rem; font-weight: 700; color: var(--on-surface); }
 .agd-fn-row__desc { font-size: .75rem; color: var(--on-surface-var); }
-.agd-fn-row__slug { font-family: 'IBM Plex Mono', monospace; font-size: .6875rem; color: var(--on-surface-var); background: var(--surface-low); border-radius: 5px; padding: 3px 8px; flex-shrink: 0; }
+.agd-fn-row__slug { font-family: var(--dp-font-mono); font-size: .6875rem; color: var(--on-surface-var); background: var(--surface-low); border-radius: 5px; padding: 3px 8px; flex-shrink: 0; }
 .agd-fn-row__actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .agd-fn-icon-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--on-surface-var); transition: all .12s ease; }
 .agd-fn-icon-btn:hover { background: var(--surface-low); color: var(--on-surface); }
@@ -514,7 +514,7 @@ function deleteFunction(fn) {
     padding: 0;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 20, 15, .22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
 }
 :deep(.el-dialog.agd-modal .el-dialog__header) { padding: 0; margin: 0; }
 :deep(.el-dialog.agd-modal .el-dialog__body) { padding: 0; }

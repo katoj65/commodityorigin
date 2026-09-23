@@ -278,7 +278,7 @@ function confirmRemove() {
     padding: 0 16px;
     border: none;
     border-radius: 999px;
-    font-size: 12.5px;
+    font-size: var(--dp-content-font-size);
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
@@ -325,8 +325,8 @@ function confirmRemove() {
 }
 .bm-import-panel--warn .bm-import-panel__icon { background: #fde68a; color: #92400e; }
 .bm-import-panel__body { flex: 1; min-width: 0; }
-.bm-import-panel__title { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
-.bm-import-panel__list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--dp-on-surface-variant); display: flex; flex-direction: column; gap: 3px; }
+.bm-import-panel__title { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); }
+.bm-import-panel__list { margin: 8px 0 0; padding-left: 18px; font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); display: flex; flex-direction: column; gap: 3px; }
 .bm-import-panel__close {
     display: inline-flex;
     align-items: center;
@@ -358,7 +358,7 @@ function confirmRemove() {
     box-shadow: var(--dp-card-shadow);
     color: var(--dp-outline);
 }
-.bm-search input { border: none; outline: none; background: transparent; font-size: 12.5px; color: var(--dp-on-surface); width: 100%; font-family: inherit; }
+.bm-search input { border: none; outline: none; background: transparent; font-size: var(--dp-content-font-size); color: var(--dp-on-surface); width: 100%; font-family: inherit; }
 
 /* ── Member grid ─────────────────────────────────────────────────────── */
 .bm-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
@@ -381,7 +381,7 @@ function confirmRemove() {
 }
 .bm-member__avatar img { width: 100%; height: 100%; object-fit: cover; }
 .bm-member__name { margin: 0; font-size: 14.5px; font-weight: 700; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bm-member__title { margin: 3px 0 0; font-size: 12px; color: var(--dp-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bm-member__title { margin: 3px 0 0; font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .bm-status-pill {
     display: inline-flex;
@@ -397,7 +397,7 @@ function confirmRemove() {
 .bm-status-pill--muted { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
 
 .bm-member__details { display: flex; flex-direction: column; gap: 8px; }
-.bm-member__detail { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--dp-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bm-member__detail { display: inline-flex; align-items: center; gap: 8px; font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bm-member__detail .el-icon { color: var(--dp-outline); flex-shrink: 0; }
 
 .bm-member__actions { display: flex; align-items: center; gap: 8px; margin-top: auto; }
@@ -413,7 +413,7 @@ function confirmRemove() {
     text-align: center;
     color: var(--dp-outline);
 }
-.bm-no-results { flex-direction: row; padding: 40px 20px; font-size: 13px; color: var(--dp-on-surface-variant); }
+.bm-no-results { flex-direction: row; padding: 40px 20px; font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); }
 .bm-empty__icon {
     width: 52px;
     height: 52px;
@@ -426,7 +426,7 @@ function confirmRemove() {
     margin-bottom: 6px;
 }
 .bm-empty__title { font-size: 15px; font-weight: 700; color: var(--dp-on-surface); }
-.bm-empty__text { font-size: 13px; color: var(--dp-on-surface-variant); margin: 0; max-width: 40ch; }
+.bm-empty__text { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); margin: 0; max-width: 40ch; }
 
 /* ── Pagination ──────────────────────────────────────────────────────── */
 .bm-pagination { display: flex; justify-content: flex-end; margin-top: 18px; }

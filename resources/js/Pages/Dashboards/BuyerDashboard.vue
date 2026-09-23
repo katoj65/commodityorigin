@@ -542,7 +542,7 @@ const badgeClass = (b) => {
                                             <button class="btn btn-sm db-btn-ghost px-2" @click="removeWatch(w.name)">×</button>
                                         </div>
                                     </div>
-                                    <div v-if="!watchlist.length" class="text-center py-3 text-muted" style="font-size:.8125rem;">Your watchlist is empty.</div>
+                                    <div v-if="!watchlist.length" class="text-center py-3 text-muted" style="font-size:var(--dp-content-font-size);">Your watchlist is empty.</div>
                                 </div>
                             </div>
 
@@ -614,7 +614,7 @@ const badgeClass = (b) => {
     --surface-low:    #f8fafc;
     --surface-mid:    #f1f5f9;
     --surface-high:   #eef2f0;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -623,14 +623,14 @@ const badgeClass = (b) => {
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .db-header { background: var(--surface-white); border-bottom: 1px solid var(--surface-high); }
 .db-title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
-.db-subtitle { font-size: 0.8125rem; color: var(--on-surface-var); }
+.db-subtitle { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.db-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.db-btn-primary { background: var(--green); border-color: var(--green); color: var(--on-green); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .db-btn-primary:hover { background: var(--green-grad); border-color: var(--green-grad); color: #fff; }
-.db-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.db-btn-outline { background: var(--surface-white); border-color: var(--surface-high); color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .db-btn-outline:hover { background: var(--surface-low); }
-.db-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
+.db-btn-ghost   { background: var(--surface-mid); border-color: transparent; color: var(--on-surface); border-radius: 6px; font-size: var(--dp-content-font-size); font-weight: 600; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; }
 .db-btn-ghost:hover { background: var(--surface-high); }
 
 /* ── Insight strip ─────────────────────────────────────────────────────────── */
@@ -671,13 +671,13 @@ const badgeClass = (b) => {
 .db-rec-scroll::-webkit-scrollbar-thumb { background: var(--surface-high); border-radius: 999px; }
 .db-rec-card   { background: var(--surface-low); border: 1px solid var(--surface-high); border-radius: 6px; padding: 0.875rem; min-width: 200px; flex-shrink: 0; display: flex; flex-direction: column; }
 .db-rec-name   { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
-.db-rec-origin { font-size: 0.75rem; color: var(--on-surface-var); margin-top: 2px; }
-.db-rec-score  { width: 38px; height: 38px; border-radius: 50%; background: var(--green); color: #fff; font-size: 0.6875rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.db-rec-origin { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin-top: 2px; }
+.db-rec-score  { width: 38px; height: 38px; border-radius: 50%; background: var(--green); color: #fff; font-size: var(--dp-content-font-size); font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .db-rec-badge  { font-size: 0.6rem; padding: 2px 7px; }
 .db-flavor-chip { display: inline-flex; align-items: center; background: rgba(0,69,50,0.07); color: var(--green); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
 .db-rec-price  { font-size: 1rem; font-weight: 800; color: var(--on-surface); }
 .db-rec-price small { font-size: 0.625rem; color: var(--on-surface-var); font-weight: 400; }
-.db-rec-qty    { font-size: 0.75rem; color: var(--on-surface-var); }
+.db-rec-qty    { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
 /* ── Chart ─────────────────────────────────────────────────────────────────── */
 .db-chart { height: 120px; display: flex; align-items: flex-end; background: var(--surface-low); border-radius: 8px; padding: 8px; gap: 6px; }
@@ -696,13 +696,13 @@ const badgeClass = (b) => {
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .db-table thead th { background: var(--surface-low); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); padding: 8px 12px; border-bottom-color: var(--surface-high); white-space: nowrap; }
-.db-table tbody td { padding: 9px 12px; font-size: 0.8125rem; border-color: var(--surface-low); vertical-align: middle; }
+.db-table tbody td { padding: 9px 12px; font-size: var(--dp-content-font-size); border-color: var(--surface-low); vertical-align: middle; }
 .db-table-row { cursor: pointer; transition: background 0.1s; }
 .db-table-row:hover { background: var(--surface-low); }
 .db-table-row--selected { background: #f0fdf4 !important; }
-.db-lot-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
+.db-lot-name { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
 .db-lot-id   { font-size: 0.6875rem; color: var(--on-surface-var); }
-.db-td-muted { color: var(--on-surface-var); font-size: 0.8125rem; }
+.db-td-muted { color: var(--on-surface-var); font-size: var(--dp-content-font-size); }
 .fw-700 { font-weight: 700; }
 .db-type-badge { display: inline-flex; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; }
 .db-type-badge--amber { background: #fef3c7; color: #92400e; }
@@ -714,15 +714,15 @@ const badgeClass = (b) => {
 /* Quick buy */
 .db-selected-lot { background: var(--surface-low); border-radius: 8px; padding: 10px; border: 1px solid var(--surface-high); }
 .db-selected-lot__name { font-size: 0.875rem; }
-.db-selected-lot__meta { font-size: 0.75rem; color: var(--on-surface-var); margin-top: 2px; }
+.db-selected-lot__meta { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin-top: 2px; }
 .db-detail-cell { background: var(--surface-white); border: 1px solid var(--surface-high); border-radius: 6px; padding: 5px 8px; }
 .db-detail-cell span   { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); display: block; }
 .db-detail-cell strong { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
 .db-field-label { font-size: 0.75rem; font-weight: 600; color: var(--on-surface-var); display: block; margin-bottom: 4px; }
-.db-input { font-size: 0.8125rem; border-color: var(--surface-high); border-radius: 6px; }
+.db-input { font-size: var(--dp-content-font-size); border-color: var(--surface-high); border-radius: 6px; }
 .db-input:focus { border-color: var(--green); box-shadow: 0 0 0 2px rgba(0,69,50,0.1); }
 .db-totals { background: var(--surface-low); border-radius: 8px; padding: 10px; }
-.db-total-row { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; font-size: 0.8125rem; }
+.db-total-row { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; font-size: var(--dp-content-font-size); }
 .db-total-row span { color: var(--on-surface-var); }
 .db-total-row strong { font-weight: 700; }
 .db-total-row--final { border-top: 1px solid var(--surface-high); margin-top: 4px; padding-top: 7px; }
@@ -736,12 +736,12 @@ const badgeClass = (b) => {
 /* Watchlist */
 .db-watch-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
 .db-watch-row:last-child { border-bottom: none; }
-.db-watch-name { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); }
-.db-watch-price { font-size: 0.75rem; font-weight: 700; color: var(--green); }
-.db-watch-score, .db-watch-demand { font-size: 0.75rem; color: var(--on-surface-var); }
+.db-watch-name { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--on-surface); }
+.db-watch-price { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--green); }
+.db-watch-score, .db-watch-demand { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
 /* Alerts */
-.db-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: 0.8125rem; }
+.db-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid var(--surface-low); font-size: var(--dp-content-font-size); }
 .db-alert-row:last-child { border-bottom: none; }
 .db-toggle { width: 32px; height: 18px; border-radius: 999px; border: none; padding: 2px; background: var(--surface-high); cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
 .db-toggle i { display: block; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
@@ -753,20 +753,20 @@ const badgeClass = (b) => {
 .db-supplier-row:last-child { border-bottom: none; }
 .db-supplier-avatar { width: 34px; height: 34px; border-radius: 8px; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9375rem; flex-shrink: 0; }
 .db-supplier-name { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); }
-.db-supplier-loc  { font-size: 0.75rem; color: var(--on-surface-var); }
-.db-supplier-rating { font-size: 0.75rem; font-weight: 700; color: var(--on-surface); flex-shrink: 0; }
+.db-supplier-loc  { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
+.db-supplier-rating { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); flex-shrink: 0; }
 .db-cert-chip { display: inline-flex; background: rgba(0,69,50,0.07); color: var(--green); border-radius: 999px; font-size: 0.6rem; font-weight: 700; padding: 1px 7px; }
 
 /* Opportunities */
 .db-opp-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface-low); }
 .db-opp-row:last-child { border-bottom: none; }
-.db-opp-route { font-size: 0.8125rem; font-weight: 700; color: var(--on-surface); }
+.db-opp-route { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); }
 .db-opp-arrow { color: var(--on-surface-var); }
 .db-opp-demand { display: inline-flex; border-radius: 999px; font-size: 0.625rem; font-weight: 700; padding: 2px 8px; }
 .db-opp-demand--danger  { background: #fee2e2; color: #b91c1c; }
 .db-opp-demand--warning { background: #fef3c7; color: #92400e; }
 .db-opp-demand--info    { background: #dbeafe; color: #1e40af; }
-.db-opp-price { font-size: 0.75rem; color: var(--on-surface-var); }
+.db-opp-price { font-size: var(--dp-content-font-size); color: var(--on-surface-var); }
 
 /* AI Insights */
 .db-insight-card { display: flex; align-items: flex-start; gap: 9px; padding: 0.875rem; border-radius: 6px; border: 1px solid; }
@@ -789,14 +789,14 @@ const badgeClass = (b) => {
 .db-chatbot__status i { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; display: inline-block; }
 .db-chatbot__close { border: none; background: none; color: rgba(255,255,255,0.8); font-size: 20px; line-height: 1; cursor: pointer; }
 .db-chatbot__body { padding: 10px; background: var(--surface-low); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.db-chat-msg { font-size: 0.8125rem; padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
+.db-chat-msg { font-size: var(--dp-content-font-size); padding: 8px 10px; border-radius: 10px; line-height: 1.5; max-width: 90%; }
 .db-chat-msg--bot  { background: #fff; color: var(--on-surface); border-radius: 10px 10px 10px 2px; }
 .db-chat-msg--user { background: var(--green); color: #fff; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
 .db-chatbot__prompts { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
 .db-prompt-chip { font-size: 0.6875rem; padding: 3px 9px; border-radius: 999px; background: var(--surface-low); border: 1px solid var(--surface-high); color: var(--on-surface); cursor: pointer; white-space: nowrap; }
 .db-prompt-chip:hover { background: var(--surface-mid); }
 .db-chatbot__input { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--surface-high); }
-.db-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: 0.8125rem; outline: none; }
+.db-chatbot__input input { flex: 1; border: 1px solid var(--surface-high); border-radius: 7px; padding: 6px 9px; font-size: var(--dp-content-font-size); outline: none; }
 .db-chatbot__input input:focus { border-color: var(--green); }
 .db-chatbot__input button { border: none; background: var(--green); color: #fff; border-radius: 7px; width: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
 .db-chat-enter-active, .db-chat-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }

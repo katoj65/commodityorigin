@@ -220,7 +220,7 @@ function confirmCancel() {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -268,7 +268,7 @@ function confirmCancel() {
 }
 
 .prf-title {
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: var(--dp-font-mono);
     font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.01em;
@@ -283,7 +283,7 @@ function confirmCancel() {
 }
 
 .prf-header__total {
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: var(--dp-font-mono);
     font-size: 1.25rem;
     font-weight: 800;
     color: var(--on-surface);
@@ -407,7 +407,7 @@ function confirmCancel() {
 
 .prf-item__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .prf-item__name { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); letter-spacing: -0.005em; }
-.prf-item__lot { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.6875rem; color: var(--on-surface-var); }
+.prf-item__lot { font-family: var(--dp-font-mono); font-size: 0.6875rem; color: var(--on-surface-var); }
 .prf-item__meta { font-size: 0.75rem; color: var(--on-surface-var); white-space: nowrap; }
 .prf-item__total { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); font-variant-numeric: tabular-nums; white-space: nowrap; }
 

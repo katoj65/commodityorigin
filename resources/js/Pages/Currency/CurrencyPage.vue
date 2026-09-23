@@ -284,7 +284,7 @@ function confirmDelete() {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -343,7 +343,7 @@ function confirmDelete() {
     border: 1px solid transparent;
     color: #fff;
     border-radius: 8px;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     font-weight: 700;
     padding: 8px 16px;
     display: inline-flex;
@@ -361,7 +361,7 @@ function confirmDelete() {
     border: 1px solid #e5e7eb;
     color: #111827;
     border-radius: 8px;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     font-weight: 700;
     padding: 8px 16px;
     display: inline-flex;
@@ -411,14 +411,14 @@ function confirmDelete() {
     border: none;
     outline: none;
     background: transparent;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     color: var(--on-surface);
     width: 100%;
     font-family: inherit;
 }
 
 .cur-count {
-    font-size: 0.75rem;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     color: var(--on-surface-var);
     white-space: nowrap;
@@ -450,7 +450,7 @@ function confirmDelete() {
 
 .cur-table td {
     padding: 12px 20px;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
 }
@@ -469,16 +469,16 @@ function confirmDelete() {
     border-radius: 7px;
     background: rgba(0, 69, 50, 0.08);
     color: var(--green);
-    font-size: 0.75rem;
+    font-size: var(--dp-content-font-size);
     font-weight: 800;
     letter-spacing: 0.02em;
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: var(--dp-font-mono);
 }
 
 .cur-identity__name { font-weight: 600; color: var(--on-surface); }
 
 .cur-symbol {
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: var(--dp-font-mono);
     font-size: 0.9375rem;
     font-weight: 700;
     color: var(--on-surface);
@@ -546,7 +546,7 @@ function confirmDelete() {
 }
 
 .cur-empty__title { font-size: 1rem; font-weight: 700; color: var(--on-surface); margin-bottom: 4px; }
-.cur-empty__text { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0 auto; max-width: 320px; line-height: 1.5; }
+.cur-empty__text { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0 auto; max-width: 320px; line-height: 1.5; }
 
 /* ── Modal ────────────────────────────────────────────────────────────────
    NOTE: <el-dialog> teleports its content to <body>, outside .cur-page's
@@ -557,7 +557,7 @@ function confirmDelete() {
     padding: 0;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 20, 15, 0.22);
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
 }
 
 :deep(.el-dialog.cur-modal .el-dialog__header) { padding: 0; margin: 0; }

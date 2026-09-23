@@ -296,10 +296,10 @@ function goToCollection(row) {
 /* Hero */
 .fc-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .fc-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.015em; color: var(--dp-on-surface); margin: 0; }
-.fc-subtitle { font-size: 12.5px; color: var(--dp-on-surface-variant); margin: 4px 0 0; line-height: 1.5; max-width: 60ch; }
+.fc-subtitle { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); margin: 4px 0 0; line-height: 1.5; max-width: 60ch; }
 .fc-hero__actions { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
 
-.fc-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 6px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: var(--dp-font-sans); transition: opacity .12s ease, background .12s ease; }
+.fc-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 6px; border: none; font-size: var(--dp-content-font-size); font-weight: 700; cursor: pointer; white-space: nowrap; font-family: var(--dp-font-sans); transition: opacity .12s ease, background .12s ease; }
 .fc-btn .material-symbols-outlined { font-size: 16px; }
 .fc-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
 .fc-btn--primary:hover { opacity: .9; }
@@ -340,7 +340,7 @@ function goToCollection(row) {
 /* Table */
 .fc-table-card { background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); border-radius: var(--dp-card-radius); overflow: hidden; }
 .fc-table-wrap { overflow-x: hidden; }
-.fc-table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 11.5px; }
+.fc-table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: var(--dp-content-font-size); }
 .fc-table thead tr { background: var(--dp-surface-container-low); }
 .fc-table th { padding: 9px 8px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface-variant); overflow-wrap: break-word; }
 .fc-table td { padding: 10px 8px; border-top: 1px solid var(--dp-outline-variant); vertical-align: middle; overflow-wrap: break-word; }
@@ -348,7 +348,7 @@ function goToCollection(row) {
 .fc-table__row:hover { background: var(--dp-surface-container-low); }
 .fc-table__row--active { background: color-mix(in srgb, var(--dp-primary) 6%, transparent); }
 .fc-table__dot { display: inline-block; width: 5px; height: 5px; border-radius: 999px; background: var(--dp-primary); margin-right: 5px; }
-.fc-table__empty { text-align: center; padding: 32px 12px; color: var(--dp-on-surface-variant); font-size: 12px; }
+.fc-table__empty { text-align: center; padding: 32px 12px; color: var(--dp-on-surface-variant); font-size: var(--dp-content-font-size); }
 .fc-table-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--dp-surface-container-low); flex-wrap: wrap; }
 
 .fc-pagination { display: flex; align-items: center; gap: 3px; }
@@ -377,7 +377,7 @@ function goToCollection(row) {
 .fc-card { background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); border-radius: var(--dp-card-radius); padding: 18px; display: flex; flex-direction: column; gap: 16px; }
 .fc-card__title-plain { font-size: .8125rem; font-weight: 800; color: var(--dp-on-surface); }
 .fc-eyebrow-sm { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--dp-on-surface-variant); margin-bottom: 2px; }
-.fc-field-value { font-size: 12.5px; font-weight: 700; color: var(--dp-on-surface); }
+.fc-field-value { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); }
 
 .fc-dossier__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .fc-dossier__title { display: flex; align-items: center; gap: 8px; font-size: 1.0625rem; font-weight: 800; color: var(--dp-on-surface); margin: 2px 0 0; }

@@ -253,7 +253,7 @@ const fabOpen = ref(false);
                                             <div v-for="ins in insights" :key="ins.text"
                                                 class="alert mb-2 py-2 px-3"
                                                 :class="`alert-${ins.variant}`"
-                                                style="font-size:.8125rem;border-radius:8px;">
+                                                style="font-size:var(--dp-content-font-size);border-radius:8px;">
                                                 {{ ins.text }}
                                             </div>
                                         </div>
@@ -372,7 +372,7 @@ const fabOpen = ref(false);
     --on-primary-fixed: #002116;
     --secondary-fixed:  #fedcbe;
     --on-secondary-fixed:#291806;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -436,7 +436,7 @@ const fabOpen = ref(false);
     font-size: 0.875rem; font-weight: 800;
     color: var(--on-surface); margin: 0 0 1.25rem; letter-spacing: -0.01em;
 }
-.bs-card-sub { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0; }
+.bs-card-sub { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0; }
 .bs-section-title {
     font-size: 0.875rem; font-weight: 800;
     color: var(--on-surface); letter-spacing: -0.01em; margin: 0;
@@ -445,7 +445,7 @@ const fabOpen = ref(false);
 /* ── Summary table ────────────────────────────────────────────────────────── */
 .bs-table { border-collapse: collapse; }
 .bs-table td {
-    font-size: 0.8125rem; padding: 8px 0;
+    font-size: var(--dp-content-font-size); padding: 8px 0;
     border-bottom: 1px solid var(--surface-high);
     vertical-align: middle;
 }
@@ -457,11 +457,11 @@ const fabOpen = ref(false);
 /* ── Lot snapshot ─────────────────────────────────────────────────────────── */
 .bs-lot-hero-img { width: 100%; height: 180px; object-fit: cover; display: block; }
 .bs-lot-name { font-size: 0.9375rem; font-weight: 800; color: var(--on-surface); margin: 0 0 4px; letter-spacing: -0.01em; }
-.bs-lot-meta { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0 0 1rem; }
+.bs-lot-meta { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0 0 1rem; }
 .bs-lot-kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid var(--surface-high); }
 .bs-lot-kv {
     padding: 10px 0; display: flex; flex-direction: column; gap: 3px;
-    font-size: 0.8125rem;
+    font-size: var(--dp-content-font-size);
 }
 .bs-lot-kv:first-child { padding-right: 12px; border-right: 1px solid var(--surface-high); }
 .bs-lot-kv:last-child  { padding-left: 12px; }
@@ -492,7 +492,7 @@ const fabOpen = ref(false);
 .bs-cd-num {
     display: block; font-size: 1.625rem; font-weight: 900;
     letter-spacing: -0.03em; color: var(--primary); line-height: 1;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--dp-font-mono);
 }
 .bs-cd-lbl {
     display: block; font-size: 0.625rem; font-weight: 700;
@@ -530,12 +530,12 @@ const fabOpen = ref(false);
     margin-top: 10px; text-align: center;
     display: flex; flex-direction: column; gap: 3px; padding: 0 4px;
 }
-.bs-tl-body strong { font-size: 0.75rem; font-weight: 700; color: var(--on-surface); }
-.bs-tl-body span   { font-size: 0.6875rem; color: var(--on-surface-var); line-height: 1.4; }
+.bs-tl-body strong { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--on-surface); }
+.bs-tl-body span   { font-size: var(--dp-content-font-size); color: var(--on-surface-var); line-height: 1.4; }
 
 /* ── Notifications ────────────────────────────────────────────────────────── */
 .bs-notif-list { display: flex; flex-direction: column; gap: 10px; }
-.bs-notif-row  { display: flex; align-items: center; gap: 10px; font-size: 0.8125rem; color: var(--on-surface); }
+.bs-notif-row  { display: flex; align-items: center; gap: 10px; font-size: var(--dp-content-font-size); color: var(--on-surface); }
 .bs-notif-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .bs-notif-dot--success { background: #16a34a; }
 .bs-notif-dot--warn    { background: #d97706; }
@@ -550,14 +550,14 @@ const fabOpen = ref(false);
 .bs-action-icon--amber { background: #fffbeb; color: #b45309; }
 .bs-action-icon--blue  { background: #eff6ff; color: #1d4ed8; }
 .bs-action-title { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); margin: 0 0 4px; }
-.bs-action-sub   { font-size: 0.8125rem; color: var(--on-surface-var); margin: 0; line-height: 1.5; }
+.bs-action-sub   { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0; line-height: 1.5; }
 
 /* ── CTA row ──────────────────────────────────────────────────────────────── */
 .bs-cta-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
 .bs-btn {
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     font-size: 0.875rem; font-weight: 700;
     border-radius: 0.5rem; padding: 10px 22px;
     cursor: pointer; border: none; text-decoration: none;
@@ -588,8 +588,8 @@ const fabOpen = ref(false);
 .bs-similar-img  { width: 100%; height: 120px; object-fit: cover; display: block; }
 .bs-similar-code { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary); margin: 0 0 3px; }
 .bs-similar-name { font-size: 0.875rem; font-weight: 700; color: var(--on-surface); margin: 0 0 3px; }
-.bs-similar-meta { font-size: 0.75rem; color: var(--on-surface-var); margin: 0 0 10px; }
-.bs-similar-stats { display: flex; justify-content: space-between; font-size: 0.8125rem; }
+.bs-similar-meta { font-size: var(--dp-content-font-size); color: var(--on-surface-var); margin: 0 0 10px; }
+.bs-similar-stats { display: flex; justify-content: space-between; font-size: var(--dp-content-font-size); }
 .bs-similar-stats span { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-surface-var); }
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -612,8 +612,8 @@ const fabOpen = ref(false);
 .bs-fab-item {
     background: #ffffff; color: var(--on-surface);
     border: 1px solid var(--surface-high); border-radius: 0.5rem;
-    font-family: 'Manrope', system-ui, sans-serif;
-    font-size: 0.8125rem; font-weight: 700;
+    font-family: var(--dp-font-sans);
+    font-size: var(--dp-content-font-size); font-weight: 700;
     padding: 9px 18px; cursor: pointer; white-space: nowrap;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     transition: background 0.12s ease;

@@ -1673,7 +1673,7 @@ function formatEventDate(value) {
     border-radius: 8px;
     background: var(--dp-surface-container-low);
     color: var(--dp-on-surface-variant);
-    font-size: 12px;
+    font-size: var(--dp-content-font-size);
 }
 .fp-identity__banner .el-icon { color: var(--dp-primary); flex-shrink: 0; }
 .fp-identity__banner strong { color: var(--dp-on-surface); }
@@ -1681,7 +1681,7 @@ function formatEventDate(value) {
 /* ── Traceability Pipeline ─────────────────────────────────────────────── */
 .fp-card-title--lg { font-size: 14px; text-transform: none; letter-spacing: 0; color: var(--dp-on-surface); }
 .fp-card-title--lg .el-icon { color: var(--dp-primary); }
-.fp-card-desc { font-size: 12.5px; color: var(--dp-on-surface-variant); margin: -8px 0 18px; }
+.fp-card-desc { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); margin: -8px 0 18px; }
 
 .fp-pipeline__nodes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .fp-pipeline__node {
@@ -1700,7 +1700,7 @@ function formatEventDate(value) {
 
 .fp-pipeline__balances { margin-top: 16px; padding: 14px 16px; border-radius: 8px; background: var(--dp-surface-container-low); }
 .fp-pipeline__balances-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dp-on-surface-variant); }
-.fp-pipeline__balances-row { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 8px; font-size: 12.5px; }
+.fp-pipeline__balances-row { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 8px; font-size: var(--dp-content-font-size); }
 .fp-pipeline__balances-row span { color: var(--dp-outline); }
 .fp-pipeline__balances-row strong { color: var(--dp-on-surface); font-family: var(--dp-font-mono); }
 .fp-pipeline__balances-hint { display: block; margin-top: 8px; font-size: 10.5px; color: var(--dp-outline); font-style: italic; }
@@ -1709,7 +1709,7 @@ function formatEventDate(value) {
 .fp-cert-list { display: flex; flex-direction: column; gap: 10px; }
 .fp-cert-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 8px; background: var(--dp-surface-container-low); }
 .fp-cert-item__body { min-width: 0; }
-.fp-cert-item__name { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
+.fp-cert-item__name { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); }
 
 /* ── Total-intake badge (Farm Collections card head) ──────────────────── */
 .fp-total-badge {
@@ -1719,7 +1719,7 @@ function formatEventDate(value) {
     border-radius: 6px;
     background: var(--dp-surface-container-low);
     color: var(--dp-on-surface-variant);
-    font-size: 11.5px;
+    font-size: var(--dp-content-font-size);
     font-weight: 700;
 }
 
@@ -1744,7 +1744,7 @@ function formatEventDate(value) {
     padding: 0 16px;
     border: 1px solid transparent;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
@@ -1803,7 +1803,7 @@ function formatEventDate(value) {
 .fp-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 .fp-card-head .fp-card-title { margin-bottom: 0; }
 
-.fp-muted { color: var(--dp-on-surface-variant); font-size: 12.5px; }
+.fp-muted { color: var(--dp-on-surface-variant); font-size: var(--dp-content-font-size); }
 .fp-muted--center { text-align: center; }
 
 /* ── Page layout ───────────────────────────────────────────────────────── */
@@ -1831,8 +1831,8 @@ function formatEventDate(value) {
 }
 .fp-import-panel--warn .fp-import-panel__icon { background: #fde68a; color: #92400e; }
 .fp-import-panel__body { flex: 1; min-width: 0; }
-.fp-import-panel__title { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); }
-.fp-import-panel__list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--dp-on-surface-variant); display: flex; flex-direction: column; gap: 3px; }
+.fp-import-panel__title { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); }
+.fp-import-panel__list { margin: 8px 0 0; padding-left: 18px; font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); display: flex; flex-direction: column; gap: 3px; }
 .fp-import-panel__close {
     width: 26px;
     height: 26px;
@@ -1949,7 +1949,7 @@ function formatEventDate(value) {
     border-bottom-color: transparent;
     white-space: nowrap;
 }
-.fp-table tbody td { padding: 14px 22px; font-size: 13px; border-color: color-mix(in srgb, var(--dp-outline-variant) 25%, transparent); vertical-align: middle; }
+.fp-table tbody td { padding: 14px 22px; font-size: var(--dp-content-font-size); border-color: color-mix(in srgb, var(--dp-outline-variant) 25%, transparent); vertical-align: middle; }
 .fp-table-row { cursor: pointer; transition: background 0.12s ease; }
 .fp-table-row:hover { background: var(--dp-surface-container-low); }
 .fp-table-row:last-child td { border-bottom: none; }
@@ -1971,7 +1971,7 @@ function formatEventDate(value) {
     font-weight: 800;
 }
 .fp-owner__name { font-size: 15px; font-weight: 700; color: var(--dp-on-surface); margin-bottom: 5px; }
-.fp-owner__share { font-size: 12px; font-weight: 600; color: var(--dp-on-surface-variant); }
+.fp-owner__share { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--dp-on-surface-variant); }
 
 .fp-owner__co-list {
     display: flex;
@@ -1986,7 +1986,7 @@ function formatEventDate(value) {
     align-items: center;
     justify-content: space-between;
     padding: 4px 6px;
-    font-size: 12.5px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     color: var(--dp-on-surface-variant);
 }
@@ -1999,7 +1999,7 @@ function formatEventDate(value) {
     gap: 10px;
     padding: 8px 6px;
     border-radius: 9px;
-    font-size: 12.5px;
+    font-size: var(--dp-content-font-size);
     font-weight: 600;
     color: var(--dp-on-surface-variant);
     text-decoration: none;
@@ -2041,7 +2041,7 @@ function formatEventDate(value) {
     flex-shrink: 0;
 }
 .fp-info-row__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dp-outline); width: 86px; flex-shrink: 0; }
-.fp-info-row__value { font-size: 13.5px; font-weight: 700; color: var(--dp-on-surface); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.fp-info-row__value { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
 /* ── Location card ───────────────────────────────────────────────────── */
 .fp-loc-coords {
@@ -2055,7 +2055,7 @@ function formatEventDate(value) {
 }
 .fp-loc-coords__icon { display: inline-flex; color: var(--dp-outline); flex-shrink: 0; }
 .fp-loc-coords__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dp-outline); }
-.fp-loc-coords__value { font-size: 12.5px; font-weight: 700; color: var(--dp-on-surface); margin-left: auto; }
+.fp-loc-coords__value { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); margin-left: auto; }
 
 /* ── Technical specs card ────────────────────────────────────────────── */
 .fp-spec-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
@@ -2088,7 +2088,7 @@ function formatEventDate(value) {
 .fp-stat-cell { display: flex; flex-direction: column; gap: 4px; }
 .fp-stat-cell span { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dp-outline); }
 .fp-stat-cell span .el-icon { color: var(--dp-primary); opacity: 0.6; flex-shrink: 0; }
-.fp-stat-cell strong { font-size: 13.5px; font-weight: 700; color: var(--dp-on-surface); }
+.fp-stat-cell strong { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); }
 
 /* ── Map ─────────────────────────────────────────────────────────────── */
 .fp-map-tile {
@@ -2121,10 +2121,10 @@ function formatEventDate(value) {
     text-align: center;
     color: var(--dp-outline);
 }
-.fp-empty p { font-size: 13px; color: var(--dp-on-surface-variant); margin: 0; }
+.fp-empty p { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); margin: 0; }
 
 /* ── Weather ─────────────────────────────────────────────────────────── */
-.fp-weather-intro { font-size: 12.5px; color: var(--dp-on-surface-variant); margin: 0 0 14px; }
+.fp-weather-intro { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); margin: 0 0 14px; }
 .fp-weather-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
 .fp-weather-card {
     display: flex;
@@ -2150,7 +2150,7 @@ function formatEventDate(value) {
 .fp-weather-card__month { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dp-on-surface-variant); }
 .fp-weather-card__temp { font-size: 19px; font-weight: 800; color: var(--dp-primary); font-family: var(--dp-font-mono); }
 .fp-weather-card__temp span { color: var(--dp-outline); font-weight: 600; font-size: 13px; margin: 0 1px; }
-.fp-weather-card__condition { font-size: 12px; font-weight: 600; color: var(--dp-on-surface); }
+.fp-weather-card__condition { font-size: var(--dp-content-font-size); font-weight: 600; color: var(--dp-on-surface); }
 .fp-weather-card__meta { display: flex; gap: 8px; font-size: 10.5px; color: var(--dp-outline); font-family: var(--dp-font-mono); }
 .fp-weather-card__tip { font-size: 11px; color: var(--dp-on-surface-variant); font-style: italic; line-height: 1.4; margin: 2px 0 0; }
 
@@ -2170,7 +2170,7 @@ function formatEventDate(value) {
     flex-shrink: 0;
 }
 .fp-doc-item__body { flex: 1; min-width: 0; }
-.fp-doc-item__title { font-size: 13px; font-weight: 700; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-doc-item__title { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fp-doc-item__actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
 .fp-table-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
@@ -2222,7 +2222,7 @@ function formatEventDate(value) {
 /* Modals teleport to <body>, outside .dp-shell, so --dp-* custom
    properties don't cascade in — literal hex from the same UI.md palette
    is used here, matching this app's other teleported dialogs. */
-.el-dialog.fp-modal { border-radius: 6px; padding: 0; overflow: hidden; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+.el-dialog.fp-modal { border-radius: 6px; padding: 0; overflow: hidden; font-family: var(--dp-font-sans); }
 .el-dialog.fp-modal .el-dialog__header { padding: 0; margin: 0; }
 .el-dialog.fp-modal .el-dialog__body { padding: 0; }
 .el-dialog.fp-modal .el-dialog__footer { padding: 0; }
@@ -2280,7 +2280,7 @@ function formatEventDate(value) {
 .fp-collection-hero__label .el-icon { color: #6F7677; }
 .fp-collection-hero__value { font-size: 26px; font-weight: 800; color: #121516; line-height: 1; }
 .fp-collection-hero__unit { font-size: 13px; font-weight: 700; color: #6F7677; margin-left: 4px; }
-.fp-collection-notes { margin: 0; padding: 12px 14px; border-radius: 6px; background: #F5F6F7; font-size: 13px; line-height: 1.55; color: #4B5457; white-space: pre-wrap; }
+.fp-collection-notes { margin: 0; padding: 12px 14px; border-radius: 6px; background: #F5F6F7; font-size: var(--dp-content-font-size); line-height: 1.55; color: #4B5457; white-space: pre-wrap; }
 
 .fp-dropzone {
     display: flex;
@@ -2301,7 +2301,7 @@ function formatEventDate(value) {
 .fp-dropzone--error { border-color: #B91C1C; }
 .fp-dropzone__input { display: none; }
 .fp-dropzone__hint { font-size: 0.75rem; }
-.fp-dropzone__filename { font-size: 0.8125rem; font-weight: 700; color: #121516; }
+.fp-dropzone__filename { font-size: var(--dp-content-font-size); font-weight: 700; color: #121516; }
 
 .fp-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; background: #F5F6F7; border-top: 1px solid #E5E7EB; }
 

@@ -207,7 +207,7 @@ function confirmRemove() {
     --on-surface: #111827;
     --on-surface-var: #6b7280;
     --surface-low: #f8fafc;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: var(--dp-font-sans);
     background: var(--surface, #f7f9fb);
     color: var(--on-surface);
     min-height: 100%;
@@ -251,7 +251,7 @@ function confirmRemove() {
 .sip-category { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-var); }
 .sip-hero__name { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 10px !important; color: var(--on-surface); }
 .sip-hero__price-row { display: flex; align-items: baseline; gap: 12px; }
-.sip-hero__price { font-family: 'IBM Plex Mono', monospace; font-size: 1.5rem; font-weight: 800; color: var(--on-surface); }
+.sip-hero__price { font-family: var(--dp-font-mono); font-size: 1.5rem; font-weight: 800; color: var(--on-surface); }
 .sip-hero__qty { font-size: 0.8125rem; color: var(--on-surface-var); }
 
 /* ── Detail grid — icon-tile facts, matches the spec-tile pattern used
