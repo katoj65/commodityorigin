@@ -7,6 +7,7 @@ use App\Http\Resources\FarmerResource;
 use App\Models\Cooperative;
 use App\Models\Farm;
 use App\Models\Farmer;
+use App\Models\RoleMetadata;
 use App\Services\FarmerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,14 +22,29 @@ class FarmerController extends Controller
     }
 
     /**
-     * Display the farmer directory.
+     * Display the farmer's home dashboard at /farmer — the farmer
+     * directory listing this used to render moved out; every
+     * authenticated user lands on their own dashboard here, matching
+     * the pattern the other role dashboards use (see
+     * Dashboard::farmerDashboard(), which this mirrors).
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        Gate::authorize('viewAny', Farmer::class);
+        $user = $request->user()->loadMissing('profile');
+        $roles = RoleMetadata::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get(['slug', 'name', 'description']);
 
-        return Inertia::render('Farmer/FarmersPage', [
-            'farmers' => FarmerResource::collection($this->farmers->all())->resolve(),
+        $hasProfile = ! is_null($user->profile);
+        $showSelectRoleModal = $hasProfile && $user->role === 'user';
+
+        return Inertia::render('Dashboards/DashboardFarmer', [
+            'title' => 'Farmer Dashboard',
+            'hasProfile' => $hasProfile,
+            'currentRole' => $user->role,
+            'roles' => $roles,
+            'showSelectRoleModal' => $showSelectRoleModal,
         ]);
     }
 
