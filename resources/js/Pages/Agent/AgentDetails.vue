@@ -35,6 +35,7 @@ const editForm = useForm({
     icon: props.agent.icon,
     agent_type: props.agent.agent_type,
     action: props.agent.action,
+    route: props.agent.route,
     status: props.agent.status,
     description: props.agent.description,
 });
@@ -187,6 +188,7 @@ function deleteFunction(fn) {
                             <div class="agd-card__title">Details</div>
                             <div class="agd-detail-row"><span>Agent Type</span><strong>{{ agent.agent_type }}</strong></div>
                             <div class="agd-detail-row"><span>Action</span><strong>{{ agent.action }}</strong></div>
+                            <div class="agd-detail-row"><span>Route</span><strong>{{ agent.route || '—' }}</strong></div>
                             <div class="agd-detail-row"><span>Status</span><strong>{{ statusLabel(agent.status) }}</strong></div>
                             <div class="agd-detail-row"><span>Created</span><strong>{{ agent.created_at }}</strong></div>
                             <div class="agd-detail-row"><span>Updated</span><strong>{{ agent.updated_at }}</strong></div>
@@ -288,6 +290,12 @@ function deleteFunction(fn) {
                             <el-input v-model="editForm.action" class="agd-input" :class="{ 'agd-input--error': editForm.errors.action }" />
                             <span v-if="editForm.errors.action" class="agd-field__error">{{ editForm.errors.action }}</span>
                         </div>
+                    </div>
+
+                    <div class="agd-field">
+                        <label class="agd-field__label">Route <span class="agd-field__optional">(optional — where the app opens, e.g. /lot or https://…)</span></label>
+                        <el-input v-model="editForm.route" class="agd-input" :class="{ 'agd-input--error': editForm.errors.route }" />
+                        <span v-if="editForm.errors.route" class="agd-field__error">{{ editForm.errors.route }}</span>
                     </div>
 
                     <div class="agd-field">

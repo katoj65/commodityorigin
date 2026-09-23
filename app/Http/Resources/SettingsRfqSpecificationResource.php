@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AgentResource extends JsonResource
+class SettingsRfqSpecificationResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,14 +16,15 @@ class AgentResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
-            'icon' => $this->icon,
-            'description' => $this->description,
-            'agent_type' => $this->agent_type,
-            'action' => $this->action,
-            'route' => $this->route,
-            'status' => $this->status,
-            'functions' => AgentFunctionResource::collection($this->whenLoaded('functions'))->resolve(),
+            'user_id' => $this->user_id,
+            'target_price' => $this->target_price,
+            'destination' => $this->destination,
+            'payment_terms' => $this->payment_terms,
+            'grade' => $this->grade,
+            'type' => $this->type,
+            'min_weight' => $this->min_weight,
+            'max_weight' => $this->max_weight,
+            'incoterms' => $this->incoterms,
             'created_at' => optional($this->created_at)?->toDateTimeString(),
             'updated_at' => optional($this->updated_at)?->toDateTimeString(),
         ];

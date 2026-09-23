@@ -44,9 +44,9 @@ defineProps({
     align-items: center;
     justify-content: center;
     gap: 10px;
-    border: 1px solid #c8862a;
-    background: #c8862a;
-    color: #0e0b07;
+    border: 1px solid #000000;
+    background: #000000;
+    color: #ffffff;
     border-radius: 6px;
     padding: 0.95rem 10px;
     font-family: 'IBM Plex Mono', monospace;
@@ -70,7 +70,7 @@ defineProps({
 }
 
 .submit-button.el-button .el-icon.is-loading {
-    color: #0e0b07;
+    color: #ffffff;
 }
 
 .submit-button.el-button.is-loading,
@@ -80,10 +80,10 @@ defineProps({
 
 .submit-button.el-button:hover,
 .submit-button.el-button:focus-visible {
-    background: #e09b3a;
-    border-color: #e09b3a;
+    background: #1c1c1c;
+    border-color: #1c1c1c;
     transform: translateY(-1px);
-    color: #0e0b07;
+    color: #ffffff;
 }
 
 .submit-button.el-button > span {

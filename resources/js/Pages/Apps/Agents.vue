@@ -57,12 +57,22 @@ function openDetails(app) {
     detailsOpen.value = true;
 }
 
-/* Admins have a real per-agent management page (agent.show — Gate-checked
-   admin-only, since it's an edit/delete/functions-CRUD screen, not a
-   general "app" view). Clicking an app tile takes them straight there.
-   Everyone else has no such page, so the details modal remains their
-   closest real equivalent (description + real functions + subscribe). */
+/* An agent's `route` column is where the app itself actually launches —
+   set by an admin when creating/editing it. If present, that takes
+   priority for every user. Admins with no route set fall back to the
+   per-agent management page (agent.show — Gate-checked admin-only,
+   since it's an edit/delete/functions-CRUD screen, not a general "app"
+   view). Everyone else with no route falls back to the details modal
+   (description + real functions + subscribe). */
 function handleAppClick(app) {
+    if (app.route) {
+        if (/^https?:\/\//i.test(app.route)) {
+            window.open(app.route, '_blank', 'noopener');
+        } else {
+            router.visit(app.route);
+        }
+        return;
+    }
     if (props.canCreateAgent) {
         router.visit(route('agent.show', app.id));
         return;
@@ -89,7 +99,7 @@ function confirmInstall() {
 const createDialogOpen = ref(false);
 
 const createForm = useForm({
-    name: '', icon: '', agent_type: '', action: '', status: 'pending', description: '',
+    name: '', icon: '', agent_type: '', action: '', route: '', status: 'pending', description: '',
 });
 
 function openCreateDialog() {
@@ -169,7 +179,7 @@ function submitCreateAgent() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="app in myApps" :key="app.id">
+                            <tr v-for="app in myApps" :key="app.id" class="ap-table__row" @click="handleAppClick(app)">
                                 <td>
                                     <div class="ap-table__app">
                                         <div class="ap-app-icon ap-app-icon--sm" :class="`ap-app-icon--${toneFor(app.id)}`"><el-icon><component :is="resolveIcon(app.icon)" /></el-icon></div>
@@ -183,8 +193,8 @@ function submitCreateAgent() {
                                 <td><span class="ap-badge ap-badge--active">Active</span></td>
                                 <td class="ap-mono">{{ app.functions?.length || 0 }} function{{ app.functions?.length === 1 ? '' : 's' }}</td>
                                 <td class="ap-table__end">
-                                    <button type="button" class="ap-btn ap-btn--outline ap-btn--sm" @click="openDetails(app)">Details</button>
-                                    <button type="button" class="ap-btn ap-btn--outline ap-btn--sm ap-btn--icon-only" title="Unsubscribe" :disabled="subscribing === app.id" @click="toggleSubscription(app)"><el-icon><Setting /></el-icon></button>
+                                    <button type="button" class="ap-btn ap-btn--outline ap-btn--sm" @click.stop="openDetails(app)">Details</button>
+                                    <button type="button" class="ap-btn ap-btn--outline ap-btn--sm ap-btn--icon-only" title="Unsubscribe" :disabled="subscribing === app.id" @click.stop="toggleSubscription(app)"><el-icon><Setting /></el-icon></button>
                                 </td>
                             </tr>
                         </tbody>
@@ -337,6 +347,12 @@ function submitCreateAgent() {
                 </div>
 
                 <div class="ap-field">
+                    <label class="ap-field__label">Route <span class="ap-field__optional">(optional — where the app opens, e.g. /lot or https://…)</span></label>
+                    <el-input v-model="createForm.route" placeholder="e.g. /lot" class="ap-input" :class="{ 'ap-input--error': createForm.errors.route }" />
+                    <span v-if="createForm.errors.route" class="ap-field__error">{{ createForm.errors.route }}</span>
+                </div>
+
+                <div class="ap-field">
                     <label class="ap-field__label">Status</label>
                     <el-select v-model="createForm.status" placeholder="Select" style="width:100%" class="ap-input">
                         <el-option label="Pending" value="pending" />
@@ -441,6 +457,8 @@ function submitCreateAgent() {
 .ap-table th { background: var(--dp-surface-container-low); border-bottom: 1px solid var(--dp-outline-variant); font-family: var(--dp-font-mono); font-size: 11px; font-weight: 600; color: var(--dp-on-surface-variant); text-transform: uppercase; letter-spacing: .5px; padding: 10px 18px; text-align: left; }
 .ap-table td { padding: 12px 18px; border-bottom: 1px solid var(--dp-outline-variant); vertical-align: middle; }
 .ap-table tr:last-child td { border-bottom: none; }
+.ap-table__row { cursor: pointer; transition: background .12s ease; }
+.ap-table__row:hover { background: var(--dp-surface-container-low); }
 .ap-table__end { text-align: right; }
 .ap-table__end .ap-btn { margin-left: 6px; }
 .ap-table__app { display: flex; align-items: center; gap: 12px; }

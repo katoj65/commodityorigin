@@ -13,9 +13,11 @@
    or fully inert rather than faking a result. ── */
 import { ref, computed, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { ElMessage } from 'element-plus';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import SubmitButton from '@/Components/Button/SubmitButton.vue';
+import RfqSpecsModal from '@/Components/Modals/RfqSpecsModal.vue';
 import { Coffee, LocationFilled, Box, PriceTag, DocumentChecked, Ship } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -24,9 +26,12 @@ const props = defineProps({
     grades: { type: Array, default: () => [] },
     origins: { type: Array, default: () => [] },
     incoterms: { type: Array, default: () => [] },
+    paymentTerms: { type: Array, default: () => [] },
+    destinations: { type: Array, default: () => [] },
     marketCount: { type: Number, default: 0 },
     auctionCount: { type: Number, default: 0 },
     requestCount: { type: Number, default: 0 },
+    latestSpecification: { type: Object, default: null },
     authUserId: { type: Number, default: null },
 });
 
@@ -41,19 +46,6 @@ const filterTabs = [
     { key: 'closed', label: 'Closed', count: 12 },
 ];
 const activeFilterTab = ref('mine');
-
-
-/* ── Lifecycle stepper ───────────────────────────────────────────────── */
-const lifecycleSteps = [
-    { code: '01 / DRAFT', title: 'Specification', state: 'Completed', done: true },
-    { code: '02 / PUBLISHED', title: 'Desk Distribution', state: 'Dispatched', done: true },
-    { code: '03 / OPEN', title: 'Seller Discovery', state: 'Active', done: true },
-    { code: '04 / RESPONSES', title: '5 Quotes Recv.', state: 'Evaluating', active: true },
-    { code: '05 / NEGOTIATE', title: 'Counter Terms', state: 'Next Phase' },
-    { code: '06 / AWARDED', title: 'Seller Selection', state: 'Pending' },
-    { code: '07 / TRADE MINT', title: 'Escrow Lock', state: 'Automated' },
-    { code: '08 / CLOSED', title: 'Bill of Lading', state: 'Fulfillment' },
-];
 
 /* ── Sourcing requests table — real data from `requests` (every
    LotRequest, system-wide), same source the page received before this
@@ -109,7 +101,7 @@ const kpis = computed(() => {
         { label: 'Approved', icon: 'handshake', value: String(approved.length), hint: `${fmt(sumQty(approved), 0)} kg queued`, foot: 'Awaiting fulfillment' },
         { label: 'Fulfilled', icon: 'verified', value: String(fulfilled.length), hint: `${fmt(sumQty(fulfilled), 0)} kg contracted`, foot: fulfillmentRate !== null ? `${fulfillmentRate}% fulfillment rate` : 'No decisions yet', footIcon: fulfillmentRate !== null ? 'trending_up' : undefined },
         { label: 'Rejected', icon: 'cancel', value: String(rejected.length), hint: `${fmt(sumQty(rejected), 0)} kg declined`, foot: 'Review notes for reissue' },
-        { label: 'Pipeline Value', icon: 'payments', value: `$${fmt(sumAmt(pipeline), 0)}`, hint: `${pipeline.length} active request${pipeline.length === 1 ? '' : 's'}`, foot: 'Target procurement value' },
+        { label: 'Pipeline Value', icon: 'payments', value: `$${fmt(sumAmt(pipeline), 0)}`, foot: 'Target procurement value' },
     ];
 });
 
@@ -140,7 +132,7 @@ const filteredRows = computed(() => {
     return [...rows].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 });
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 const currentPage = ref(1);
 watch([searchQuery, filterType, filterGrade, sortBy], () => { currentPage.value = 1; });
 const pagedRows = computed(() => {
@@ -160,19 +152,28 @@ function requestDelete(item) {
 }
 function confirmDelete() {
     if (!pendingDelete.value) return;
-    router.delete(route('lot.request.destroy', pendingDelete.value.id), { preserveScroll: true });
+    router.delete(route('rfq.destroy', pendingDelete.value.id), { preserveScroll: true });
     pendingDelete.value = null;
 }
 
-/* ── Focus workspace: RFQ-1048 spec header ───────────────────────────── */
-const specPills = [
-    { label: 'Target Price', value: '$4.10 / kg CIF', tone: 'primary' },
-    { label: 'Destination', value: 'Dubai (Jebel Ali)' },
-    { label: 'Delivery ETA', value: '30 Oct 2026' },
-    { label: 'Payment Terms', value: '30% Adv, 70% CAD' },
-    { label: 'Traceability', value: 'Farm Polygon Req.', tone: 'primary' },
-    { label: 'Certifications', value: 'UCDA & EUDR Comp.' },
-];
+/* ── Focus workspace: latest RFQ specification header — real data from
+   `latestSpecification` (the current user's most recent
+   SettingsRfqSpecification row, via the Add/Edit RFQ Specification
+   modal). No fabricated "RFQ-1048" identity or response counts since a
+   specification isn't itself a dispatched RFQ. ─────────────────────── */
+const specPills = computed(() => {
+    const spec = props.latestSpecification;
+    if (!spec) return [];
+    return [
+        { label: 'Type & Grade', value: [spec.type, spec.grade].filter(Boolean).join(' · ') || '—' },
+        { label: 'Target Price', value: spec.target_price !== null ? `$${fmt(spec.target_price)} / kg` : '—', tone: 'primary' },
+        { label: 'Destination', value: spec.destination || '—' },
+        { label: 'Payment Terms', value: spec.payment_terms || '—' },
+        { label: 'Min Weight', value: spec.min_weight !== null ? `${fmt(spec.min_weight, 0)} kg` : '—' },
+        { label: 'Max Weight', value: spec.max_weight !== null ? `${fmt(spec.max_weight, 0)} kg` : '—' },
+        { label: 'Incoterms', value: spec.incoterms || '—', tone: 'primary' },
+    ];
+});
 
 /* ── Seller quotations & decision matrix ─────────────────────────────── */
 const quotations = [
@@ -222,34 +223,14 @@ const matrixRows = [
     { metric: 'EUDR Deforestation', values: ['0.00% Fully Verified', '0.02% Negligible Risk', 'Verification in Review'], toneA: 'primary', toneB: 'primary', toneC: 'secondary' },
 ];
 
-/* ── Bilateral negotiation trail ─────────────────────────────────────── */
-const negotiationSteps = [
-    { num: 1, label: 'Buyer Target RFQ:', value: '$4.10 / kg (20 MT)', time: '18 Sep, 09:30' },
-    { num: 2, label: 'Seller Initial Quote:', value: '$4.08 / kg', time: '19 Sep, 14:15' },
-    { num: 3, label: 'Buyer Counter-Offer:', value: '$4.05 / kg (Quick payment terms offered)', time: '20 Sep, 11:00' },
-];
-const finalCounter = { num: 4, label: 'Seller Final Counter:', value: '$4.07 / kg ($81,400 Total Value)', time: 'Today, 08:45' };
-
-const provenanceChain = [
-    { label: 'Farm: Kato Smallholder (Masaka)' },
-    { label: 'Collection: COL-124' },
-    { label: 'Batch: BTH-048' },
-    { label: 'Export Lot: LOT-UG-001', highlight: true },
-    { label: 'RFQ-1048 Match', primary: true },
-];
-
 /* ── AI Sourcing Copilot ─────────────────────────────────────────────── */
 const copilotWorkflows = [
     { icon: 'inventory', label: 'Find matching lots in inventory' },
     { icon: 'calculate', label: 'Compare quotes by landed cost' },
     { icon: 'verified_user', label: 'Analyze seller fulfillment reliability' },
-    { icon: 'edit_note', label: 'Draft counter-offer message', scrollToNegotiation: true },
+    { icon: 'edit_note', label: 'Draft counter-offer message' },
 ];
-function runCopilotWorkflow(workflow) {
-    if (workflow.scrollToNegotiation) {
-        document.getElementById('negotiation-trail')?.scrollIntoView({ behavior: 'smooth' });
-        return;
-    }
+function runCopilotWorkflow() {
     aiCopilotOpen.value = true;
 }
 
@@ -287,6 +268,11 @@ function openCreateRfq() {
     createRfqOpen.value = true;
 }
 
+function closeCreateRfq() {
+    if (rfqForm.processing) return;
+    createRfqOpen.value = false;
+}
+
 function publishRfq() {
     rfqForm.clearErrors();
 
@@ -322,9 +308,14 @@ function publishRfq() {
             onSuccess: () => {
                 createRfqOpen.value = false;
                 rfqForm.reset();
+                ElMessage.success('Request for quote published to the sourcing desk.');
             },
         });
 }
+
+/* ── Edit RFQ Specification modal (real — posts to
+   rfq.specifications.store/update via RfqSpecsModal) ─────────────────── */
+const editSpecsOpen = ref(false);
 
 /* ── Award modal (visual only) ───────────────────────────────────────── */
 const awardOpen = ref(false);
@@ -372,8 +363,6 @@ function askCopilot() {
                         <button type="button" class="rq-btn rq-btn--primary" @click="openCreateRfq"><span class="material-symbols-outlined">add_circle</span> + Create RFQ</button>
                     </div>
                 </div>
-
-            
             </div>
 
             <!-- ── KPI strip ──────────────────────────────────────────────── -->
@@ -390,26 +379,6 @@ function askCopilot() {
                     <div class="rq-kpi__foot" :class="{ 'rq-tone-primary': kpi.footIcon }">
                         <span v-if="kpi.footIcon" class="material-symbols-outlined">{{ kpi.footIcon }}</span>
                         {{ kpi.foot }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Lifecycle stepper ─────────────────────────────────────── -->
-            <div class="rq-card">
-                <div class="rq-section-head">
-                    <span class="rq-eyebrow">Standard Requisition Progression</span>
-                    <span class="rq-mono-note rq-tone-primary"><span class="rq-dot"></span> Current Node: RESPONSES</span>
-                </div>
-                <div class="rq-stepper">
-                    <div
-                        v-for="step in lifecycleSteps"
-                        :key="step.code"
-                        class="rq-stepper__step"
-                        :class="{ 'rq-stepper__step--active': step.active, 'rq-stepper__step--dim': !step.done && !step.active }"
-                    >
-                        <span class="rq-stepper__code">{{ step.code }}</span>
-                        <span class="rq-stepper__title">{{ step.title }}</span>
-                        <span class="rq-stepper__state"><span v-if="step.done" class="material-symbols-outlined">check</span><span v-else-if="step.active" class="material-symbols-outlined">hourglass_top</span> {{ step.state }}</span>
                     </div>
                 </div>
             </div>
@@ -510,30 +479,41 @@ function askCopilot() {
                 @confirm="confirmDelete"
             />
 
+            <RfqSpecsModal
+                v-model="editSpecsOpen"
+                :crop-types="cropTypes"
+                :grades="grades"
+                :incoterms="incoterms"
+                :payment-terms="paymentTerms"
+                :destinations="destinations"
+            />
+
             <!-- ── Focus workspace ────────────────────────────────────────── -->
             <div id="focus-workspace" class="rq-focus">
                 <div class="rq-card">
                     <div class="rq-focus-head">
                         <div class="rq-focus-head__meta">
-                            <span class="rq-badge rq-badge--solid">RFQ-1048</span>
+                            <span v-if="latestSpecification" class="rq-badge rq-badge--solid">{{ latestSpecification.type }}</span>
                             <span class="rq-eyebrow">Active Sourcing Requisition</span>
-                            <span class="rq-badge rq-badge--fixed">Responses Received</span>
                         </div>
                         <div class="rq-head-actions">
-                            <button type="button" class="rq-btn rq-btn--muted rq-btn--sm"><span class="material-symbols-outlined">edit</span> Edit Specs</button>
+                            <button type="button" class="rq-btn rq-btn--muted rq-btn--sm" @click="editSpecsOpen = true"><span class="material-symbols-outlined">edit</span> {{ latestSpecification ? 'Edit Specs' : 'Add Specification' }}</button>
                             <button type="button" class="rq-btn rq-btn--muted rq-btn--sm" @click="inviteOpen = true"><span class="material-symbols-outlined">person_add</span> Invite Sellers</button>
                             <button type="button" class="rq-btn rq-btn--muted rq-btn--sm rq-tone-error"><span class="material-symbols-outlined">cancel</span> Close RFQ</button>
                             <button type="button" class="rq-btn rq-btn--primary rq-btn--sm" @click="aiCopilotOpen = true"><span class="material-symbols-outlined">psychology</span> AI Analysis</button>
                         </div>
                     </div>
-                    <h2 class="rq-h2" style="margin-top:12px;">Uganda Robusta Screen 18 — 20 Metric Tons Target</h2>
-                    <p class="rq-muted-text">Published 18 Sep 2026 • Closes 30 Sep 2026 • Verified Institutional Exporters Only</p>
-                    <div class="rq-spec-grid">
-                        <div v-for="pill in specPills" :key="pill.label" class="rq-spec-pill">
-                            <span class="rq-spec-pill__label">{{ pill.label }}</span>
-                            <span class="rq-spec-pill__value" :class="{ 'rq-tone-primary': pill.tone === 'primary' }">{{ pill.value }}</span>
+                    <template v-if="latestSpecification">
+                        <h2 class="rq-h2" style="margin-top:12px;">{{ latestSpecification.type }} — {{ latestSpecification.grade }}</h2>
+                        <p class="rq-muted-text">Saved {{ fmtDate(latestSpecification.created_at) }}<template v-if="latestSpecification.updated_at !== latestSpecification.created_at"> • Updated {{ fmtDate(latestSpecification.updated_at) }}</template></p>
+                        <div class="rq-spec-grid">
+                            <div v-for="pill in specPills" :key="pill.label" class="rq-spec-pill">
+                                <span class="rq-spec-pill__label">{{ pill.label }}</span>
+                                <span class="rq-spec-pill__value" :class="{ 'rq-tone-primary': pill.tone === 'primary' }">{{ pill.value }}</span>
+                            </div>
                         </div>
-                    </div>
+                    </template>
+                    <p v-else class="rq-muted-text" style="margin-top:12px;">No sourcing specification yet — click "Add Specification" to define your target coffee type, grade, price, and terms.</p>
                 </div>
 
                 <div class="rq-focus-columns">
@@ -578,7 +558,7 @@ function askCopilot() {
                                     </span>
                                     <div class="rq-head-actions">
                                         <button type="button" class="rq-btn rq-btn--muted rq-btn--sm">Review Quote</button>
-                                        <button type="button" class="rq-btn rq-btn--secondary rq-btn--sm" @click="document.getElementById('negotiation-trail')?.scrollIntoView({ behavior: 'smooth' })" v-if="q.best">Counter</button>
+                                        <button type="button" class="rq-btn rq-btn--secondary rq-btn--sm" @click="aiCopilotOpen = true" v-if="q.best">Counter</button>
                                         <button type="button" class="rq-btn rq-btn--primary rq-btn--sm" v-if="q.showAward" @click="awardOpen = true">Award &amp; Create Trade</button>
                                     </div>
                                 </div>
@@ -609,58 +589,6 @@ function askCopilot() {
                             </div>
                         </div>
 
-                        <!-- Negotiation trail -->
-                        <div id="negotiation-trail" class="rq-card">
-                            <div class="rq-section-head">
-                                <div>
-                                    <h3 class="rq-h3">Bilateral Negotiation Trail — Uganda Coffee Exporters</h3>
-                                    <p class="rq-muted-text">Live price counter sequence for LOT-UG-001 (20 MT)</p>
-                                </div>
-                                <span class="rq-badge rq-badge--solid">Active Stage 04</span>
-                            </div>
-                            <div class="rq-negotiation">
-                                <div v-for="step in negotiationSteps" :key="step.num" class="rq-negotiation__step">
-                                    <div class="rq-negotiation__left">
-                                        <span class="rq-negotiation__num">{{ step.num }}</span>
-                                        <span class="rq-muted-text">{{ step.label }}</span>
-                                        <span class="rq-mono rq-strong">{{ step.value }}</span>
-                                    </div>
-                                    <span class="rq-mono-note">{{ step.time }}</span>
-                                </div>
-                                <div class="rq-negotiation__step rq-negotiation__step--final">
-                                    <div class="rq-negotiation__left">
-                                        <span class="rq-negotiation__num rq-negotiation__num--final">{{ finalCounter.num }}</span>
-                                        <span class="rq-tone-primary rq-strong">{{ finalCounter.label }}</span>
-                                        <span class="rq-mono rq-tone-primary" style="font-weight:800;font-size:14px;">{{ finalCounter.value }}</span>
-                                    </div>
-                                    <span class="rq-mono-note">{{ finalCounter.time }}</span>
-                                </div>
-                                <div class="rq-negotiation__foot">
-                                    <span class="rq-muted-text">Seller note: "Can accept $4.07 CIF Dubai with 30% advance on confirmation."</span>
-                                    <div class="rq-head-actions">
-                                        <button type="button" class="rq-btn rq-btn--muted rq-btn--sm">Draft New Counter</button>
-                                        <button type="button" class="rq-btn rq-btn--primary rq-btn--sm" @click="awardOpen = true"><span class="material-symbols-outlined">check_circle</span> Accept $4.07 &amp; Execute Trade</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="rq-provenance">
-                                <div class="rq-section-head">
-                                    <span class="rq-eyebrow">Verified Provenance &amp; Lot Origin Chain</span>
-                                    <span class="rq-mono-note rq-tone-primary">Traceability Pass: 100%</span>
-                                </div>
-                                <div class="rq-provenance__chain">
-                                    <template v-for="(node, idx) in provenanceChain" :key="node.label">
-                                        <span class="rq-provenance__node" :class="{ 'rq-provenance__node--highlight': node.highlight, 'rq-provenance__node--primary': node.primary }">{{ node.label }}</span>
-                                        <span v-if="idx < provenanceChain.length - 1" class="rq-provenance__arrow">→</span>
-                                    </template>
-                                </div>
-                                <div class="rq-section-head" style="margin-top:8px;">
-                                    <span class="rq-mono-note">32 individual smallholder polygon coordinates linked to this lot</span>
-                                    <button type="button" class="rq-link-btn">View Lot Master Record <span class="material-symbols-outlined">open_in_new</span></button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Right: AI copilot + market context + activity -->
@@ -743,22 +671,21 @@ function askCopilot() {
             </div>
         </div>
 
-        <!-- ── Create RFQ modal (visual-only Step 1 preview) ───────────── -->
+        <!-- ── Create RFQ modal — single-step real submission (posts to
+             rfq.store). The mockup's original 6-step wizard chrome was
+             removed: every field here is the whole payload, so faking
+             "Step 1 of 6" navigation that goes nowhere would be
+             misleading. ─────────────────────────────────────────────── -->
         <Teleport to="body">
-            <div v-if="createRfqOpen" class="rq-modal-overlay" @click.self="createRfqOpen = false">
+            <div v-if="createRfqOpen" class="rq-modal-overlay" @click.self="closeCreateRfq">
                 <div class="rq-modal">
                     <div class="rq-modal__head">
                         <div>
                             <span class="rq-eyebrow rq-tone-primary">New Sourcing Requisition</span>
                             <h2 class="rq-h2" style="margin-top:4px;">Publish Request for Quotation (RFQ)</h2>
                         </div>
-                        <button type="button" class="rq-modal__close" @click="createRfqOpen = false"><span class="material-symbols-outlined">close</span></button>
+                        <button type="button" class="rq-modal__close" :disabled="rfqForm.processing" @click="closeCreateRfq"><span class="material-symbols-outlined">close</span></button>
                     </div>
-                    <div class="rq-wizard-steps">
-                        <span class="rq-wizard-steps__active">1 Specs</span>
-                        <span>›</span><span>2 Terms</span><span>›</span><span>3 Quality/EUDR</span><span>›</span><span>4 Reqmts</span><span>›</span><span>5 Visibility</span><span>›</span><span>6 Review</span>
-                    </div>
-                    <h3 class="rq-h3" style="margin:16px 0 2px;">Step 1: Physical Coffee Specifications</h3>
                     <p class="rq-modal__hint">These details are dispatched to every certified seller matching your species, origin, and volume criteria.</p>
                     <div class="rq-form-grid">
                         <div class="rq-form-field" :class="{ 'rq-form-field--error': rfqForm.errors.crop_type }">
@@ -797,16 +724,16 @@ function askCopilot() {
                             </el-select>
                             <span v-if="rfqForm.errors.origin" class="rq-form-field__error">{{ rfqForm.errors.origin }}</span>
                         </div>
-                        <div class="rq-form-field" :class="{ 'rq-form-field--error': rfqForm.errors.volume }">
+                        <div class="rq-form-field" :class="{ 'rq-form-field--error': rfqForm.errors.volume || rfqForm.errors.quantity }">
                             <label>Target Volume (Metric Tons)
                                 <el-tooltip content="Total physical volume you need — sellers can quote partial fills against this." placement="top">
                                     <span class="material-symbols-outlined rq-field-help">info</span>
                                 </el-tooltip>
                             </label>
                             <el-input-number v-model="rfqForm.volume" class="rq-el-input-number" :min="1" :max="500" controls-position="right" />
-                            <span v-if="rfqForm.errors.volume" class="rq-form-field__error">{{ rfqForm.errors.volume }}</span>
+                            <span v-if="rfqForm.errors.volume || rfqForm.errors.quantity" class="rq-form-field__error">{{ rfqForm.errors.volume || rfqForm.errors.quantity }}</span>
                         </div>
-                        <div class="rq-form-field" :class="{ 'rq-form-field--error': rfqForm.errors.price }">
+                        <div class="rq-form-field" :class="{ 'rq-form-field--error': rfqForm.errors.price || rfqForm.errors.amount }">
                             <label>Target Price (USD / kg)
                                 <el-tooltip content="Your ceiling price — quotes above this are flagged as over-budget." placement="top">
                                     <span class="material-symbols-outlined rq-field-help">info</span>
@@ -817,7 +744,7 @@ function askCopilot() {
                                 <template #suffix><span class="rq-input-suffix">/ kg</span></template>
                             </el-input>
                             <span class="rq-form-field__note">Current market benchmark: $4.05 / kg</span>
-                            <span v-if="rfqForm.errors.price" class="rq-form-field__error">{{ rfqForm.errors.price }}</span>
+                            <span v-if="rfqForm.errors.price || rfqForm.errors.amount" class="rq-form-field__error">{{ rfqForm.errors.price || rfqForm.errors.amount }}</span>
                         </div>
                         <div class="rq-form-field" :class="{ 'rq-form-field--error': rfqForm.errors.incoterm }">
                             <label>Incoterms 2020
@@ -844,7 +771,8 @@ function askCopilot() {
                         </div>
                     </div>
                     <div class="rq-modal__footer">
-                        <SubmitButton native-type="button" :loading="rfqForm.processing" :full-width="false" class="rq-submit min-w-[220px]" @click="publishRfq">
+                        <button type="button" class="rq-btn rq-btn--muted" :disabled="rfqForm.processing" @click="closeCreateRfq">Cancel</button>
+                        <SubmitButton native-type="button" :loading="rfqForm.processing" :full-width="false" class="min-w-[220px]" @click="publishRfq">
                             {{ rfqForm.processing ? 'Publishing…' : 'Publish' }}
                         </SubmitButton>
                     </div>
@@ -1009,26 +937,11 @@ function askCopilot() {
 .rq-btn--sm { padding: 5px 10px; font-size: 11px; }
 .rq-btn--muted { background: var(--rq-surface-container-low); color: var(--rq-on-surface); }
 .rq-btn--muted:hover { background: var(--rq-surface-container); }
+.rq-btn--muted:disabled { opacity: .5; cursor: default; }
+.rq-btn--muted:disabled:hover { background: var(--rq-surface-container-low); }
 .rq-btn--primary { background: var(--rq-primary); color: var(--rq-on-primary); }
 .rq-btn--primary:hover { background: var(--rq-primary-container); }
 .rq-btn--primary:disabled { opacity: .5; cursor: default; }
-
-/* ── Submit button — shared SubmitButton restyled black to match the
-   app's other RFQ submit button (TradeLayout's rfq-btn--primary). ── */
-.rq-modal__footer :deep(.rq-submit.el-button) {
-    background: #000000;
-    border-color: #000000;
-    color: #ffffff;
-}
-.rq-modal__footer :deep(.rq-submit.el-button:hover),
-.rq-modal__footer :deep(.rq-submit.el-button:focus-visible) {
-    background: #1c1c1c;
-    border-color: #1c1c1c;
-    color: #ffffff;
-}
-.rq-modal__footer :deep(.rq-submit.el-button .el-icon.is-loading) {
-    color: #ffffff;
-}
 .rq-btn--secondary { background: var(--rq-secondary-fixed); color: var(--rq-on-secondary-fixed); }
 .rq-link-btn { border: none; background: none; cursor: pointer; font-size: 11px; font-weight: 700; color: var(--rq-primary); display: inline-flex; align-items: center; gap: 4px; }
 .rq-link-btn .material-symbols-outlined { font-size: 13px; }
@@ -1051,28 +964,13 @@ function askCopilot() {
 .rq-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
 .rq-kpi { padding: 14px; }
 .rq-kpi__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.rq-kpi__label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--rq-on-surface-variant); }
+.rq-kpi__label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--rq-on-surface-variant); }
 .rq-kpi__head .material-symbols-outlined { font-size: 19px; }
 .rq-kpi__value-row { display: flex; align-items: baseline; gap: 6px; }
-.rq-kpi__value { font-size: 27px; font-weight: 800; color: var(--rq-on-surface); }
-.rq-kpi__hint { font-size: 13px; color: var(--rq-on-surface-variant); }
-.rq-kpi__foot { margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--rq-on-surface-variant); display: flex; align-items: center; gap: 3px; }
+.rq-kpi__value { font-size: 32px; font-weight: 800; color: var(--rq-on-surface); }
+.rq-kpi__hint { font-size: 14px; color: var(--rq-on-surface-variant); }
+.rq-kpi__foot { margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--rq-on-surface-variant); display: flex; align-items: center; gap: 3px; }
 .rq-kpi__foot .material-symbols-outlined { font-size: 14px; }
-
-/* Lifecycle stepper */
-.rq-stepper { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.rq-stepper__step { padding: 10px; border-radius: 8px; background: var(--rq-surface-container-low); display: flex; flex-direction: column; gap: 2px; opacity: .55; }
-.rq-stepper__step--active { background: var(--rq-primary-fixed); color: var(--rq-on-primary-fixed); opacity: 1; }
-.rq-stepper__step--dim { opacity: .75; }
-.rq-stepper__step:not(.rq-stepper__step--active):not(.rq-stepper__step--dim) { opacity: 1; }
-.rq-stepper__code { font-size: 9.5px; font-family: var(--dp-font-mono); color: var(--rq-on-surface-variant); }
-.rq-stepper__step--active .rq-stepper__code { color: var(--rq-on-primary-fixed); font-weight: 800; }
-.rq-stepper__title { font-size: 11.5px; font-weight: 700; color: var(--rq-on-surface); }
-.rq-stepper__step--active .rq-stepper__title { color: var(--rq-on-primary-fixed); }
-.rq-stepper__state { font-size: 10px; font-weight: 700; color: var(--rq-primary); display: flex; align-items: center; gap: 2px; }
-.rq-stepper__state .material-symbols-outlined { font-size: 12px; }
-.rq-stepper__step--active .rq-stepper__state { text-transform: uppercase; letter-spacing: .03em; }
-.rq-stepper__step--dim .rq-stepper__state { color: var(--rq-on-surface-variant); }
 
 /* Toolbar */
 .rq-toolbar { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
@@ -1156,22 +1054,6 @@ function askCopilot() {
 
 .rq-matrix { margin-top: 16px; padding: 14px; border-radius: 10px; background: rgba(230, 232, 234, .4); }
 
-/* Negotiation trail */
-.rq-negotiation { background: var(--rq-surface-container-low); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-.rq-negotiation__step { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 11.5px; }
-.rq-negotiation__left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.rq-negotiation__num { width: 22px; height: 22px; border-radius: 50%; background: var(--rq-surface-container-high); display: inline-flex; align-items: center; justify-content: center; font-family: var(--dp-font-mono); font-weight: 800; font-size: 10px; }
-.rq-negotiation__step--final { background: var(--rq-surface-container-lowest); border-radius: 8px; padding: 8px 10px; }
-.rq-negotiation__num--final { background: var(--rq-primary); color: var(--rq-on-primary); }
-.rq-negotiation__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-top: 4px; }
-
-.rq-provenance { margin-top: 16px; padding: 14px; border-radius: 10px; background: var(--rq-surface-container-low); }
-.rq-provenance__chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11px; font-family: var(--dp-font-mono); }
-.rq-provenance__node { padding: 5px 9px; border-radius: 6px; background: var(--rq-surface-container-lowest); font-weight: 700; color: var(--rq-on-surface); }
-.rq-provenance__node--highlight { background: var(--rq-primary-fixed); color: var(--rq-on-primary-fixed); }
-.rq-provenance__node--primary { background: var(--rq-primary); color: var(--rq-on-primary); }
-.rq-provenance__arrow { color: var(--rq-outline-variant); }
-
 /* AI copilot / benchmark / timeline */
 .rq-insight { background: var(--rq-surface-container-low); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .rq-insight__tag { display: flex; align-items: center; gap: 6px; font-size: 11px; }
@@ -1200,6 +1082,7 @@ function askCopilot() {
 .rq-modal--sm { max-width: 460px; }
 .rq-modal__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 .rq-modal__close { border: none; background: #f2f4f6; color: #3f4944; border-radius: 7px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.rq-modal__close:disabled { opacity: .5; cursor: default; }
 .rq-modal__summary { background: #f2f4f6; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px; font-size: var(--dp-content-font-size); }
 .rq-modal__row { display: flex; align-items: center; justify-content: space-between; color: #3f4944; }
 .rq-modal__row--total { padding-top: 8px; font-weight: 800; color: #191c1e; font-size: var(--dp-content-font-size); }
@@ -1212,8 +1095,6 @@ function askCopilot() {
 .rq-ai-input input { flex: 1; background: #f2f4f6; border: none; border-radius: 8px; padding: 10px 12px; font-size: var(--dp-content-font-size); outline: none; }
 .rq-ai-response { margin-top: 10px; background: #f2f4f6; border-radius: 8px; padding: 12px; font-size: 11.5px; line-height: 1.6; color: #3f4944; }
 
-.rq-wizard-steps { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #3f4944; overflow-x: auto; padding-bottom: 4px; }
-.rq-wizard-steps__active { font-weight: 800; color: var(--rq-primary, #004532); }
 .rq-modal__hint { margin: 0 0 12px; font-size: 12px; color: #3f4944; line-height: 1.5; }
 .rq-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .rq-form-field { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 700; color: #191c1e; }
@@ -1241,7 +1122,6 @@ function askCopilot() {
     .rq-focus-columns { grid-template-columns: 1fr; }
 }
 @media (max-width: 900px) {
-    .rq-stepper { grid-template-columns: repeat(2, 1fr); }
     .rq-toolbar { grid-template-columns: 1fr; }
     .rq-form-grid { grid-template-columns: 1fr; }
     .rq-form-field--span2 { grid-column: span 1; }

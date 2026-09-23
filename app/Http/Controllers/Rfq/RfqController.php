@@ -9,8 +9,12 @@ use App\Models\CropGradeMetadata;
 use App\Models\CropVarietyMetadata;
 use App\Models\IncotermMetadata;
 use App\Models\LotRequest;
+use App\Models\MarketMetadata;
+use App\Models\PaymentMetadata;
+use App\Models\SettingsRfqSpecification;
 use App\Services\LotService;
 use App\Services\MarketService;
+use App\Services\SettingsRfqSpecificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -22,6 +26,7 @@ class RfqController extends Controller
     public function __construct(
         private readonly LotService $lots,
         private readonly MarketService $market,
+        private readonly SettingsRfqSpecificationService $specifications,
     ) {
     }
 
@@ -55,9 +60,23 @@ class RfqController extends Controller
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->pluck('name'),
+            'paymentTerms' => PaymentMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
+            'destinations' => MarketMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name'),
             'marketCount' => $this->market->liveCount(),
             'auctionCount' => Auction::query()->count(),
             'requestCount' => LotRequest::query()->count(),
+            'latestSpecification' => SettingsRfqSpecification::query()
+                ->where('user_id', $request->user()->id)
+                ->latest()
+                ->first(),
             'authUserId' => $request->user()->id,
         ]);
     }
@@ -96,5 +115,46 @@ class RfqController extends Controller
         $this->lots->destroyRequest($lotRequest);
 
         return back()->with('success', 'Request for quote removed.');
+    }
+
+    /**
+     * Store a new RFQ specification from the sourcing desk.
+     */
+    public function storeSpecification(Request $request): RedirectResponse
+    {
+        $this->specifications->create($this->validateSpecification($request), $request->user()->id);
+
+        return back()->with('success', 'RFQ specification saved.');
+    }
+
+    /**
+     * Update an existing RFQ specification.
+     */
+    public function updateSpecification(Request $request, SettingsRfqSpecification $specification): RedirectResponse
+    {
+        abort_unless($specification->user_id === $request->user()->id || $request->user()->isAdmin(), 403);
+
+        $this->specifications->update($specification, $this->validateSpecification($request));
+
+        return back()->with('success', 'RFQ specification updated.');
+    }
+
+    /**
+     * Validate the shared RFQ specification payload.
+     *
+     * @return array<string, mixed>
+     */
+    private function validateSpecification(Request $request): array
+    {
+        return $request->validate([
+            'type' => ['required', 'string', 'max:255', Rule::exists('crop_variety_metadata', 'name')->where('is_active', true)],
+            'grade' => ['required', 'string', 'max:255', Rule::exists('crop_grade_metadata', 'name')->where('is_active', true)],
+            'target_price' => ['required', 'numeric', 'min:0'],
+            'destination' => ['required', 'string', 'max:255', Rule::exists('market_metadata', 'name')->where('is_active', true)],
+            'payment_terms' => ['required', 'string', 'max:255', Rule::exists('payment_metadata', 'name')->where('is_active', true)],
+            'min_weight' => ['required', 'numeric', 'min:0'],
+            'max_weight' => ['required', 'numeric', 'min:0'],
+            'incoterms' => ['required', 'string', 'max:255', Rule::exists('incoterm_metadata', 'name')->where('is_active', true)],
+        ]);
     }
 }

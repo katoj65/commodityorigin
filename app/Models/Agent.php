@@ -22,6 +22,7 @@ class Agent extends Model
         'description',
         'agent_type',
         'action',
+        'route',
         'status',
         'subject_type',
         'subject_id',

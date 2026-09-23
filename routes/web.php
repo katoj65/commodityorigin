@@ -114,6 +114,8 @@ Route::middleware([
         Route::get('/', [RfqController::class, 'index'])->name('index');
         Route::post('/', [RfqController::class, 'store'])->name('store');
         Route::delete('/{lotRequest}', [RfqController::class, 'destroy'])->name('destroy');
+        Route::post('/specifications', [RfqController::class, 'storeSpecification'])->name('specifications.store');
+        Route::put('/specifications/{specification}', [RfqController::class, 'updateSpecification'])->name('specifications.update');
     });
 
     // Apps (agents) directory.

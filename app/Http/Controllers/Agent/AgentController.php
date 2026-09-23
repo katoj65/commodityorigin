@@ -47,6 +47,7 @@ class AgentController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
             'agent_type' => ['required', 'string', 'max:255', 'unique:agents,agent_type'],
             'action' => ['required', 'string', 'max:255'],
+            'route' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'string', 'in:pending,active,success,failed'],
         ]);
 
@@ -82,6 +83,7 @@ class AgentController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
             'agent_type' => ['required', 'string', 'max:255', Rule::unique('agents', 'agent_type')->ignore($agent->id)],
             'action' => ['required', 'string', 'max:255'],
+            'route' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'string', 'in:pending,active,success,failed'],
         ]);
 
