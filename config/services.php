@@ -35,6 +35,15 @@ return [
         ],
     ],
 
+    'google' => [
+        // OAuth "Sign in with Google" credentials, consumed by Socialite
+        // via App\Http\Controllers\Auth\GoogleAuthController. Distinct
+        // from google_maps below — that's an unrelated Google API key.
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
     'google_maps' => [
         // Server-side key used for the Geocoding API. Keep this restricted
         // to your server's IP in Google Cloud Console — never expose it to

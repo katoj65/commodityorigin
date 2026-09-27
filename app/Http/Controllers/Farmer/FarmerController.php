@@ -4,11 +4,20 @@ namespace App\Http\Controllers\Farmer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FarmerResource;
+use App\Http\Resources\FarmResource;
+use App\Models\Batch;
+use App\Models\BatchFarmCollection;
 use App\Models\Cooperative;
+use App\Models\EscrowAccount;
 use App\Models\Farm;
+use App\Models\FarmCollection;
 use App\Models\Farmer;
+use App\Models\Lot;
+use App\Models\LotBatch;
+use App\Models\Market;
 use App\Models\RoleMetadata;
 use App\Services\FarmerService;
+use Illuminate\Support\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -39,13 +48,158 @@ class FarmerController extends Controller
         $hasProfile = ! is_null($user->profile);
         $showSelectRoleModal = $hasProfile && $user->role === 'user';
 
+        // My Registered Farms — real Farm rows owned by this user
+        // (user_id, same scoping FarmService::listForUser() uses for the
+        // "My Farms" list page).
+        $farms = Farm::query()
+            ->where('user_id', $user->id)
+            ->latest()
+            ->paginate(5)
+            ->withQueryString();
+
+        // KPI strip — derived from ALL of this user's farms (not just the
+        // current page of the table above) plus the farm collections
+        // recorded against them. FarmCollection.status is the
+        // batched/unbatched lifecycle flag set in BatchService::attach()
+        // ('pending' = still available stock, 'batched' = already
+        // consumed into a batch), which is what "available" means here.
+        $allFarms = Farm::query()->where('user_id', $user->id)->get(['id', 'status', 'total_area', 'coffee_area', 'latitude', 'longitude']);
+        $farmCount = $allFarms->count();
+        $pendingFarmCount = $allFarms->where('status', 'pending')->count();
+        $cultivatedAreaHa = $allFarms->sum(fn (Farm $farm) => $farm->coffee_area ?? $farm->total_area ?? 0);
+
+        $collections = FarmCollection::query()
+            ->whereIn('farm_id', $allFarms->pluck('id'))
+            ->get(['id', 'status', 'quantity', 'collection_price']);
+        $availableCollections = $collections->where('status', 'pending');
+        $availableQuantityKg = (float) $availableCollections->sum('quantity');
+        $portfolioValue = (float) $availableCollections->sum(fn (FarmCollection $c) => (float) ($c->collection_price ?? 0) * (float) $c->quantity);
+        $avgPricePerKg = $availableQuantityKg > 0 ? $portfolioValue / $availableQuantityKg : null;
+
+        $pipeline = $this->traceabilityPipeline($user->id, $allFarms, $collections);
+
         return Inertia::render('Dashboards/DashboardFarmer', [
             'title' => 'Farmer Dashboard',
             'hasProfile' => $hasProfile,
             'currentRole' => $user->role,
             'roles' => $roles,
             'showSelectRoleModal' => $showSelectRoleModal,
+            'myFarms' => [
+                'data' => FarmResource::collection($farms->items())->resolve(),
+                'meta' => [
+                    'current_page' => $farms->currentPage(),
+                    'last_page' => $farms->lastPage(),
+                    'per_page' => $farms->perPage(),
+                    'total' => $farms->total(),
+                    'from' => $farms->firstItem(),
+                    'to' => $farms->lastItem(),
+                ],
+            ],
+            'farmKpis' => [
+                'farm_count' => $farmCount,
+                'pending_farm_count' => $pendingFarmCount,
+                'cultivated_area_ha' => round($cultivatedAreaHa, 2),
+                'available_collection_count' => $availableCollections->count(),
+                'available_quantity_kg' => round($availableQuantityKg, 2),
+                'portfolio_value' => round($portfolioValue, 2),
+                'avg_price_per_kg' => $avgPricePerKg !== null ? round($avgPricePerKg, 2) : null,
+            ],
+            'pipeline' => $pipeline,
         ]);
+    }
+
+    /**
+     * Build the "Physical Coffee Traceability Flow" pipeline strip —
+     * real counts/volumes traced through the same collection → batch →
+     * lot → market → escrow chain FarmController::pipelineSummary()
+     * follows for a single farm, aggregated here across every farm this
+     * user owns. There is no Harvest step: the harvest tables were
+     * permanently dropped (see 2026_08_27_100000_drop_harvest_tables.php)
+     * and no replacement exists, so the chain goes straight from Farm to
+     * Collection.
+     *
+     * @param  \Illuminate\Support\Collection<int, Farm>  $farms
+     * @param  \Illuminate\Support\Collection<int, FarmCollection>  $collections
+     * @return array<int, array<string, mixed>>
+     */
+    private function traceabilityPipeline(int $userId, Collection $farms, Collection $collections): array
+    {
+        $gpsMappedFarmCount = $farms->filter(fn (Farm $f) => $f->latitude !== null && $f->longitude !== null)->count();
+        $activeFarmCount = $farms->where('status', 'active')->count();
+        $cultivatedAreaHa = round($farms->sum(fn (Farm $f) => $f->coffee_area ?? $f->total_area ?? 0), 2);
+
+        $collectionIds = $collections->pluck('id');
+        $batchedCollectionCount = BatchFarmCollection::query()
+            ->whereIn('farm_collection_id', $collectionIds)
+            ->pluck('farm_collection_id')
+            ->unique()
+            ->count();
+        $totalCollectionKg = (float) $collections->sum('quantity');
+
+        $batchIds = BatchFarmCollection::query()
+            ->whereIn('farm_collection_id', $collectionIds)
+            ->pluck('batch_id')
+            ->unique();
+        $batches = Batch::query()->whereIn('id', $batchIds)->latest()->get(['id', 'batch_number', 'weight', 'processing_method']);
+        $latestBatch = $batches->first();
+
+        $lotLinks = LotBatch::query()->whereIn('batch_id', $batchIds)->get(['lot_id']);
+        $lotIds = $lotLinks->pluck('lot_id')->unique();
+        $lots = Lot::query()->whereIn('id', $lotIds)->get(['id', 'grade', 'process', 'net_weight_kg']);
+        $tokenisedLotCount = Lot::query()
+            ->join('blockchains', 'blockchains.lot_id', '=', 'lots.id')
+            ->whereIn('lots.id', $lotIds)
+            ->count();
+
+        $liveMarkets = Market::query()->whereIn('lot_id', $lotIds)->where('status', 'live')->get(['id', 'price_per_unit', 'currency']);
+        $avgListedPrice = $liveMarkets->count() > 0 ? $liveMarkets->avg('price_per_unit') : null;
+
+        $escrowHolds = EscrowAccount::query()->where('seller_id', $userId)->where('status', 'held')->get(['id', 'amount']);
+
+        return [
+            'nodes' => [
+                [
+                    'step' => '1. Farm',
+                    'value' => "{$activeFarmCount} Active",
+                    'sub' => "{$cultivatedAreaHa} ha verified",
+                    'tag' => "GPS Polygons ({$gpsMappedFarmCount})",
+                ],
+                [
+                    'step' => '2. Collection',
+                    'value' => $totalCollectionKg,
+                    'value_unit' => 'kg',
+                    'sub' => 'Gate receipts',
+                    'tag' => "{$batchedCollectionCount} Batched",
+                    'tone' => 'secondary',
+                ],
+                [
+                    'step' => '3. Batch Mill',
+                    'value' => (float) $batches->sum('weight'),
+                    'value_unit' => 'kg',
+                    'sub' => $latestBatch?->processing_method ?? 'Awaiting milling',
+                    'tag' => $latestBatch?->batch_number ?? 'No Batches Yet',
+                ],
+                [
+                    'step' => '4. Export Lot',
+                    'value' => (float) $lots->sum('net_weight_kg'),
+                    'value_unit' => 'kg',
+                    'sub' => $lots->first()?->process ?? 'Not yet lotted',
+                    'tag' => "{$tokenisedLotCount} Tokenised",
+                    'tone' => 'tertiary',
+                ],
+                [
+                    'step' => '5. Exchange',
+                    'value' => $liveMarkets->count() > 0 ? 'Listed' : 'Not Listed',
+                    'sub' => $avgListedPrice !== null ? '$' . number_format((float) $avgListedPrice, 2) . ' / kg' : 'No active listings',
+                    'tag' => $liveMarkets->count() > 0 ? "{$liveMarkets->count()} Live in Marketplace" : 'No Listings',
+                ],
+            ],
+            'escrow' => [
+                'value' => (float) $escrowHolds->sum('amount'),
+                'sub' => 'Smart Escrow Hold',
+                'tag' => $escrowHolds->count() > 0 ? "{$escrowHolds->count()} Active Holds" : 'No Active Holds',
+            ],
+        ];
     }
 
     /**

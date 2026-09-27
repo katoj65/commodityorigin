@@ -60,7 +60,53 @@ function closeDialog() {
     dialogVisible.value = false;
 }
 
+function numericError(value, message) {
+    return value === '' || value === null ? message : null;
+}
+
 function submit() {
+    form.clearErrors();
+
+    // Every field on this form is now required — mirrors
+    // FarmController::store(), which was updated to require every farm
+    // field (and every owner field, when the owner isn't the current
+    // user) rather than treating most of them as optional.
+    if (!form.name) form.setError('name', 'Enter the farm name.');
+    if (!form.coffee_type) form.setError('coffee_type', 'Enter the coffee type.');
+    if (!form.tel) form.setError('tel', 'Enter a phone number.');
+    if (!form.email) form.setError('email', 'Enter an email address.');
+    if (!form.country) form.setError('country', 'Enter the country.');
+    if (!form.region) form.setError('region', 'Enter the region.');
+    if (!form.district) form.setError('district', 'Enter the district.');
+    if (!form.county) form.setError('county', 'Enter the county.');
+    if (!form.subcounty) form.setError('subcounty', 'Enter the sub-county.');
+    if (!form.parish) form.setError('parish', 'Enter the parish.');
+    if (!form.village) form.setError('village', 'Enter the village.');
+
+    const latError = numericError(form.latitude, 'Enter the latitude.');
+    if (latError) form.setError('latitude', latError);
+    const lngError = numericError(form.longitude, 'Enter the longitude.');
+    if (lngError) form.setError('longitude', lngError);
+    const elevError = numericError(form.elevation, 'Enter the elevation.');
+    if (elevError) form.setError('elevation', elevError);
+    const totalAreaError = numericError(form.total_area, 'Enter the total area.');
+    if (totalAreaError) form.setError('total_area', totalAreaError);
+    const coffeeAreaError = numericError(form.coffee_area, 'Enter the coffee area.');
+    if (coffeeAreaError) form.setError('coffee_area', coffeeAreaError);
+
+    if (!form.is_self_owner) {
+        if (!form.owner_first_name) form.setError('owner_first_name', "Enter the owner's first name.");
+        if (!form.owner_middle_name) form.setError('owner_middle_name', "Enter the owner's middle name.");
+        if (!form.owner_last_name) form.setError('owner_last_name', "Enter the owner's last name.");
+        if (!form.owner_national_id) form.setError('owner_national_id', "Enter the owner's national ID.");
+        if (!form.owner_tel) form.setError('owner_tel', "Enter the owner's phone number.");
+        if (!form.owner_email) form.setError('owner_email', "Enter the owner's email address.");
+        const ownershipError = numericError(form.owner_ownership_percentage, "Enter the owner's ownership percentage.");
+        if (ownershipError) form.setError('owner_ownership_percentage', ownershipError);
+    }
+
+    if (Object.keys(form.errors).length) return;
+
     form.post(route('farm.store'), {
         preserveScroll: true,
         onSuccess: () => {
@@ -111,61 +157,61 @@ function submit() {
                 </div>
 
                 <div class="afm-field">
-                    <label class="afm-field__label">Coffee Type</label>
+                    <label class="afm-field__label">Coffee Type <span class="afm-req">*</span></label>
                     <el-input v-model="form.coffee_type" placeholder="e.g. Arabica" class="afm-input" :class="{ 'afm-input--error': form.errors.coffee_type }" />
                     <span v-if="form.errors.coffee_type" class="afm-field__error">{{ form.errors.coffee_type }}</span>
                 </div>
 
                 <div class="afm-field">
-                    <label class="afm-field__label">Phone</label>
+                    <label class="afm-field__label">Phone <span class="afm-req">*</span></label>
                     <el-input v-model="form.tel" placeholder="e.g. +256 700 000000" class="afm-input" :class="{ 'afm-input--error': form.errors.tel }" />
                     <span v-if="form.errors.tel" class="afm-field__error">{{ form.errors.tel }}</span>
                 </div>
 
                 <div class="afm-field">
-                    <label class="afm-field__label">Email</label>
+                    <label class="afm-field__label">Email <span class="afm-req">*</span></label>
                     <el-input v-model="form.email" placeholder="e.g. farm@example.com" class="afm-input" :class="{ 'afm-input--error': form.errors.email }" />
                     <span v-if="form.errors.email" class="afm-field__error">{{ form.errors.email }}</span>
                 </div>
 
                 <div class="afm-field">
-                    <label class="afm-field__label">Country</label>
+                    <label class="afm-field__label">Country <span class="afm-req">*</span></label>
                     <el-input v-model="form.country" placeholder="e.g. Uganda" class="afm-input" :class="{ 'afm-input--error': form.errors.country }" />
                     <span v-if="form.errors.country" class="afm-field__error">{{ form.errors.country }}</span>
                 </div>
 
                 <div class="afm-field">
-                    <label class="afm-field__label">Region</label>
+                    <label class="afm-field__label">Region <span class="afm-req">*</span></label>
                     <el-input v-model="form.region" placeholder="e.g. Eastern" class="afm-input" :class="{ 'afm-input--error': form.errors.region }" />
                     <span v-if="form.errors.region" class="afm-field__error">{{ form.errors.region }}</span>
                 </div>
 
                 <div class="afm-field">
-                    <label class="afm-field__label">District</label>
+                    <label class="afm-field__label">District <span class="afm-req">*</span></label>
                     <el-input v-model="form.district" placeholder="e.g. Mbale" class="afm-input" :class="{ 'afm-input--error': form.errors.district }" />
                     <span v-if="form.errors.district" class="afm-field__error">{{ form.errors.district }}</span>
                 </div>
 
                 <div class="afm-field">
-                    <label class="afm-field__label">County</label>
+                    <label class="afm-field__label">County <span class="afm-req">*</span></label>
                     <el-input v-model="form.county" placeholder="e.g. Bungokho" class="afm-input" :class="{ 'afm-input--error': form.errors.county }" />
                     <span v-if="form.errors.county" class="afm-field__error">{{ form.errors.county }}</span>
                 </div>
 
                 <div class="afm-field">
-                    <label class="afm-field__label">Sub-county</label>
+                    <label class="afm-field__label">Sub-county <span class="afm-req">*</span></label>
                     <el-input v-model="form.subcounty" placeholder="e.g. Bungokho" class="afm-input" :class="{ 'afm-input--error': form.errors.subcounty }" />
                     <span v-if="form.errors.subcounty" class="afm-field__error">{{ form.errors.subcounty }}</span>
                 </div>
 
                 <div class="afm-field">
-                    <label class="afm-field__label">Parish</label>
+                    <label class="afm-field__label">Parish <span class="afm-req">*</span></label>
                     <el-input v-model="form.parish" placeholder="e.g. Bumwoni" class="afm-input" :class="{ 'afm-input--error': form.errors.parish }" />
                     <span v-if="form.errors.parish" class="afm-field__error">{{ form.errors.parish }}</span>
                 </div>
 
                 <div class="afm-field">
-                    <label class="afm-field__label">Village</label>
+                    <label class="afm-field__label">Village <span class="afm-req">*</span></label>
                     <el-input v-model="form.village" placeholder="e.g. Busamaga" class="afm-input" :class="{ 'afm-input--error': form.errors.village }" />
                     <span v-if="form.errors.village" class="afm-field__error">{{ form.errors.village }}</span>
                 </div>
@@ -173,35 +219,35 @@ function submit() {
 
             <div class="afm-section">
                 <div class="afm-section__title">Coordinates &amp; Size</div>
-                <p class="afm-section__hint">Optional, but improves traceability and mapping accuracy.</p>
+                <p class="afm-section__hint">Improves traceability and mapping accuracy.</p>
 
                 <div class="afm-grid">
                     <div class="afm-field">
-                        <label class="afm-field__label">Latitude</label>
+                        <label class="afm-field__label">Latitude <span class="afm-req">*</span></label>
                         <el-input v-model="form.latitude" type="number" step="0.0000001" placeholder="e.g. 1.0827" class="afm-input" :class="{ 'afm-input--error': form.errors.latitude }" />
                         <span v-if="form.errors.latitude" class="afm-field__error">{{ form.errors.latitude }}</span>
                     </div>
 
                     <div class="afm-field">
-                        <label class="afm-field__label">Longitude</label>
+                        <label class="afm-field__label">Longitude <span class="afm-req">*</span></label>
                         <el-input v-model="form.longitude" type="number" step="0.0000001" placeholder="e.g. 34.1751" class="afm-input" :class="{ 'afm-input--error': form.errors.longitude }" />
                         <span v-if="form.errors.longitude" class="afm-field__error">{{ form.errors.longitude }}</span>
                     </div>
 
                     <div class="afm-field">
-                        <label class="afm-field__label">Elevation (m)</label>
+                        <label class="afm-field__label">Elevation (m) <span class="afm-req">*</span></label>
                         <el-input v-model="form.elevation" type="number" step="0.01" placeholder="e.g. 1650" class="afm-input" :class="{ 'afm-input--error': form.errors.elevation }" />
                         <span v-if="form.errors.elevation" class="afm-field__error">{{ form.errors.elevation }}</span>
                     </div>
 
                     <div class="afm-field">
-                        <label class="afm-field__label">Total Area (ha)</label>
+                        <label class="afm-field__label">Total Area (ha) <span class="afm-req">*</span></label>
                         <el-input v-model="form.total_area" type="number" min="0" step="0.01" placeholder="e.g. 5.25" class="afm-input" :class="{ 'afm-input--error': form.errors.total_area }" />
                         <span v-if="form.errors.total_area" class="afm-field__error">{{ form.errors.total_area }}</span>
                     </div>
 
                     <div class="afm-field afm-field--span2">
-                        <label class="afm-field__label">Coffee Area (ha)</label>
+                        <label class="afm-field__label">Coffee Area (ha) <span class="afm-req">*</span></label>
                         <el-input v-model="form.coffee_area" type="number" min="0" step="0.01" placeholder="e.g. 3.75" class="afm-input" :class="{ 'afm-input--error': form.errors.coffee_area }" />
                         <span v-if="form.errors.coffee_area" class="afm-field__error">{{ form.errors.coffee_area }}</span>
                     </div>
@@ -232,8 +278,8 @@ function submit() {
                     </div>
 
                     <div class="afm-field">
-                        <label class="afm-field__label">Middle Name</label>
-                        <el-input v-model="form.owner_middle_name" placeholder="Optional" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_middle_name }" />
+                        <label class="afm-field__label">Middle Name <span class="afm-req">*</span></label>
+                        <el-input v-model="form.owner_middle_name" placeholder="e.g. Alice" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_middle_name }" />
                         <span v-if="form.errors.owner_middle_name" class="afm-field__error">{{ form.errors.owner_middle_name }}</span>
                     </div>
 
@@ -244,7 +290,7 @@ function submit() {
                     </div>
 
                     <div class="afm-field">
-                        <label class="afm-field__label">National ID</label>
+                        <label class="afm-field__label">National ID <span class="afm-req">*</span></label>
                         <el-input v-model="form.owner_national_id" placeholder="e.g. CM123456789ABC" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_national_id }" />
                         <span v-if="form.errors.owner_national_id" class="afm-field__error">{{ form.errors.owner_national_id }}</span>
                     </div>
@@ -263,7 +309,7 @@ function submit() {
                     </div>
 
                     <div class="afm-field afm-field--span2">
-                        <label class="afm-field__label">Ownership %</label>
+                        <label class="afm-field__label">Ownership % <span class="afm-req">*</span></label>
                         <el-input v-model="form.owner_ownership_percentage" type="number" min="0" max="100" step="0.01" placeholder="e.g. 100" class="afm-input" :class="{ 'afm-input--error': form.errors.owner_ownership_percentage }" />
                         <span v-if="form.errors.owner_ownership_percentage" class="afm-field__error">{{ form.errors.owner_ownership_percentage }}</span>
                     </div>
@@ -273,7 +319,6 @@ function submit() {
 
         <template #footer>
             <div class="afm-modal__footer">
-                <button type="button" class="afm-btn-outline" @click="closeDialog">Cancel</button>
                 <button type="button" class="afm-btn-primary" :disabled="form.processing" @click="submit">
                     <el-icon v-if="!form.processing"><Plus /></el-icon>
                     {{ form.processing ? 'Saving…' : 'Save Farm' }}
@@ -484,25 +529,6 @@ function submit() {
 
 .afm-btn-primary:hover:not(:disabled) { opacity: 0.88; }
 .afm-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.afm-btn-outline {
-    background: #fff;
-    border: 1px solid #E5E7EB;
-    color: #121516;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 0 16px;
-    height: 36px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-
-.afm-btn-outline:hover { background: #F5F6F7; }
 
 @media (max-width: 640px) {
     .afm-grid { grid-template-columns: 1fr; }

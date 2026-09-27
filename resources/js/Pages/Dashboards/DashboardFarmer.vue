@@ -11,8 +11,9 @@
    AI copilot box is a local-only canned-response demo, same pattern as
    the Documentation page's AI-ask box. ── */
 import { ref } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
+import AddFarmModal from '@/Components/Modals/AddFarmModal.vue';
 
 defineProps({
     title: { type: String, default: 'Farmer Dashboard' },
@@ -20,16 +21,48 @@ defineProps({
     currentRole: { type: String, default: null },
     roles: { type: Array, default: () => [] },
     showSelectRoleModal: { type: Boolean, default: false },
+    myFarms: {
+        type: Object,
+        default: () => ({ data: [], meta: { current_page: 1, last_page: 1, per_page: 5, total: 0 } }),
+    },
+    farmKpis: {
+        type: Object,
+        default: () => ({
+            farm_count: 0,
+            pending_farm_count: 0,
+            cultivated_area_ha: 0,
+            available_collection_count: 0,
+            available_quantity_kg: 0,
+            portfolio_value: 0,
+            avg_price_per_kg: null,
+        }),
+    },
+    pipeline: {
+        type: Object,
+        default: () => ({ nodes: [], escrow: { value: 0, sub: 'Smart Escrow Hold', tag: 'No Active Holds' } }),
+    },
 });
 
-/* ── Weather station select (dummy, local only) ──────────────────────── */
-const stations = [
-    'Kisoro Arabica Highland (2,000m)',
-    'Mubende Fine Robusta Estate (1,300m)',
-    'Mukono River Plot (1,150m)',
-    'Rwenzori Terraces (1,850m)',
-];
-const activeStation = ref(stations[0]);
+/* ── My Registered Farms — real Farm rows owned by the current user
+   (see FarmerController::index()). Pagination is a real server
+   round-trip, same pattern as Batch/BatchesPage.vue. ────────────────── */
+function goToPage(page) {
+    router.get(route('farmer.index'), { page }, { preserveState: true, preserveScroll: true, replace: true });
+}
+const FARM_STATUS_LABELS = { active: 'Active', inactive: 'Inactive', pending: 'Pending' };
+const farmStatusLabel = (status) => FARM_STATUS_LABELS[status] || status || 'Active';
+const farmStatusTone = (status) => (status === 'inactive' ? 'muted' : status === 'pending' ? 'secondary' : 'primary');
+const farmLocation = (farm) => [farm.district, farm.region].filter(Boolean).join(', ') || '—';
+const addFarmDialogOpen = ref(false);
+
+/* ── KPI strip — real, derived from Farm + FarmCollection data for the
+   current user (see FarmerController::index()'s $farmKpis block). ──── */
+const numberFmt = new Intl.NumberFormat('en-US');
+const moneyFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+function formatWeight(kg) {
+    const n = Number(kg) || 0;
+    return n >= 1000 ? `${numberFmt.format(Math.round((n / 1000) * 10) / 10)} MT` : `${numberFmt.format(Math.round(n))} kg`;
+}
 
 const forecastDays = [
     { day: 'MON', icon: 'rainy', temp: '21°', rain: '24mm', tone: 'default' },
@@ -41,22 +74,14 @@ const forecastDays = [
     { day: 'SUN', icon: 'cloud', temp: '24°', rain: '1mm', tone: 'default' },
 ];
 
-/* ── Traceability pipeline (dummy) ───────────────────────────────────── */
-const pipelineNodes = [
-    { step: '1. Farm', value: '4 Active', sub: '18.5 ha verified', tag: 'GPS Polygons (4)' },
-    { step: '2. Harvest', value: '7.2 MT', sub: 'Expected total', tag: '3 Active Cycles' },
-    { step: '3. Collection', value: '6.4 MT', sub: 'Gate receipts', tag: '2 Dispatched', tone: 'secondary' },
-    { step: '4. Batch Mill', value: '3.1 MT', sub: 'Wet fermentation', tag: 'BTH-2026-048' },
-    { step: '5. Export Lot', value: '1.8 MT', sub: 'Screen 18 Washed', tag: 'Dry Mill Stored', tone: 'tertiary' },
-    { step: '6. Exchange', value: 'Listed', sub: '$5.15 / kg CIF', tag: 'Live in Marketplace' },
-];
-
-/* ── Harvest cycles table (dummy) ────────────────────────────────────── */
-const harvestCycles = [
-    { block: 'Kisoro Main Crop', variety: 'Arabica (SL-14 / SL-28) • 6.5 ha', target: '2.4 MT', window: '25 Sep 2026', progress: 25, logged: '0.6 MT', status: 'In Progress', tone: 'primary', action: 'progress' },
-    { block: 'Mubende Robusta Block B', variety: 'Fine Robusta (Old clones) • 2.1 ha', target: '4.8 MT', window: '10 Sep 2026', logged: '4.5 MT (94%)', status: 'Completed', tone: 'muted', action: 'batch', batchCode: 'BTH-124' },
-    { block: 'Rwenzori High Terraces', variety: 'Arabica Natural (Nyasaland) • 5.9 ha', target: '3.2 MT', window: '15 Oct 2026', logged: '—', status: 'Planned', tone: 'secondary', action: 'schedule' },
-];
+/* ── Traceability pipeline node value display — nodes carry a raw kg
+   number plus value_unit: 'kg' for weight-based steps (see
+   FarmerController::traceabilityPipeline()); other steps (Farm counts,
+   the Exchange "Listed"/"Not Listed" state) already arrive pre-formatted
+   as strings. ─────────────────────────────────────────────────────── */
+function pipelineNodeValue(node) {
+    return node.value_unit === 'kg' ? formatWeight(node.value) : node.value;
+}
 
 /* ── My Farms portfolio (dummy) ──────────────────────────────────────── */
 const farms = [
@@ -139,7 +164,7 @@ function askCopilot(prompt) {
                         <p class="fd-subtitle">Here is your institutional agronomic overview, collection schedules, and EUDR traceability log today.</p>
                     </div>
                     <div class="fd-banner__actions">
-                        <button type="button" class="fd-btn fd-btn--muted"><span class="material-symbols-outlined">add</span> Add Farm</button>
+                        <button type="button" class="fd-btn fd-btn--muted" @click="addFarmDialogOpen = true"><span class="material-symbols-outlined">add</span> Add Farm</button>
                         <button type="button" class="fd-btn fd-btn--muted"><span class="material-symbols-outlined">local_shipping</span> Record Collection</button>
                         <button type="button" class="fd-btn fd-btn--primary"><span class="material-symbols-outlined">agriculture</span> Record Harvest</button>
                         <button type="button" class="fd-btn fd-btn--secondary"><span class="material-symbols-outlined">auto_awesome</span> Ask Bean Origin AI</button>
@@ -150,32 +175,34 @@ function askCopilot(prompt) {
             <div class="fd-body">
              
 
-                <!-- ── 2. KPI strip ──────────────────────────────────────── -->
+                <!-- ── 2. KPI strip — real Farm + FarmCollection data ────── -->
                 <div class="fd-kpi-grid">
                     <div class="fd-kpi">
                         <div class="fd-kpi__head"><span class="fd-kpi__label">My Managed Farms</span><span class="material-symbols-outlined fd-tone-primary">terrain</span></div>
-                        <div class="fd-kpi__value">4 <span class="fd-kpi__unit">Units</span></div>
-                        <p class="fd-kpi__sub"><span class="fd-strong">18.5 ha</span> cultivated canopy</p>
+                        <div class="fd-kpi__value">{{ farmKpis.farm_count }} <span class="fd-kpi__unit">{{ farmKpis.farm_count === 1 ? 'Unit' : 'Units' }}</span></div>
+                        <p class="fd-kpi__sub"><span class="fd-strong">{{ farmKpis.cultivated_area_ha }} ha</span> cultivated canopy</p>
                     </div>
                     <div class="fd-kpi">
-                        <div class="fd-kpi__head"><span class="fd-kpi__label">Upcoming Harvest</span><span class="material-symbols-outlined fd-tone-secondary">agriculture</span></div>
-                        <div class="fd-kpi__value fd-mono">2.4 <span class="fd-kpi__unit">MT</span></div>
-                        <p class="fd-kpi__sub fd-tone-primary">Starts in 3 days (Kisoro)</p>
+                        <div class="fd-kpi__head"><span class="fd-kpi__label">Farm Verification</span><span class="material-symbols-outlined fd-tone-secondary">verified</span></div>
+                        <div class="fd-kpi__value fd-mono">{{ farmKpis.farm_count - farmKpis.pending_farm_count }}<span class="fd-kpi__unit">/{{ farmKpis.farm_count }}</span></div>
+                        <p class="fd-kpi__sub" :class="farmKpis.pending_farm_count ? 'fd-tone-secondary' : 'fd-tone-primary'">
+                            {{ farmKpis.pending_farm_count ? `${farmKpis.pending_farm_count} pending review` : 'All farms verified' }}
+                        </p>
                     </div>
                     <div class="fd-kpi">
                         <div class="fd-kpi__head"><span class="fd-kpi__label">Coffee Available</span><span class="material-symbols-outlined fd-tone-primary">inventory_2</span></div>
-                        <div class="fd-kpi__value fd-mono">5.8 <span class="fd-kpi__unit">MT</span></div>
-                        <p class="fd-kpi__sub">Parchment &amp; dry green store</p>
+                        <div class="fd-kpi__value fd-mono">{{ formatWeight(farmKpis.available_quantity_kg) }}</div>
+                        <p class="fd-kpi__sub">Unbatched collection stock</p>
                     </div>
                     <div class="fd-kpi">
                         <div class="fd-kpi__head"><span class="fd-kpi__label">Active Collections</span><span class="material-symbols-outlined fd-tone-tertiary">local_shipping</span></div>
-                        <div class="fd-kpi__value fd-mono">2 <span class="fd-kpi__unit">Loads</span></div>
-                        <p class="fd-kpi__sub"><span class="fd-strong">6.4 MT</span> cumulative transit</p>
+                        <div class="fd-kpi__value fd-mono">{{ farmKpis.available_collection_count }} <span class="fd-kpi__unit">{{ farmKpis.available_collection_count === 1 ? 'Load' : 'Loads' }}</span></div>
+                        <p class="fd-kpi__sub"><span class="fd-strong">{{ formatWeight(farmKpis.available_quantity_kg) }}</span> awaiting batch assignment</p>
                     </div>
                     <div class="fd-kpi fd-kpi--solid">
                         <div class="fd-kpi__head"><span class="fd-kpi__label">Est. Portfolio Value</span><span class="material-symbols-outlined">payments</span></div>
-                        <div class="fd-kpi__value fd-mono">$24,070</div>
-                        <p class="fd-kpi__sub">Benchmark avg $4.62 / kg</p>
+                        <div class="fd-kpi__value fd-mono">${{ moneyFmt.format(farmKpis.portfolio_value) }}</div>
+                        <p class="fd-kpi__sub">{{ farmKpis.avg_price_per_kg !== null ? `Avg $${farmKpis.avg_price_per_kg.toFixed(2)} / kg` : 'No priced collections yet' }}</p>
                     </div>
                 </div>
 
@@ -188,12 +215,6 @@ function askCopilot(prompt) {
                                 <h2 class="fd-h2">Microclimate Telemetry &amp; Field Weather</h2>
                                 <p class="fd-muted-text">Hyperlocal precipitation, drying indices, and parabolic moisture risk advisory</p>
                             </div>
-                        </div>
-                        <div class="fd-weather-head__station">
-                            <span class="fd-muted-text">Monitoring Station:</span>
-                            <el-select v-model="activeStation" class="fd-el-select" size="small">
-                                <el-option v-for="s in stations" :key="s" :label="s" :value="s" />
-                            </el-select>
                         </div>
                     </div>
 
@@ -250,17 +271,17 @@ function askCopilot(prompt) {
                         <button type="button" class="fd-link-btn">Export Full Manifest (CSV)</button>
                     </div>
                     <div class="fd-pipeline">
-                        <div v-for="node in pipelineNodes" :key="node.step" class="fd-pipeline__node" :class="`fd-pipeline__node--${node.tone || 'primary'}`">
+                        <div v-for="node in pipeline.nodes" :key="node.step" class="fd-pipeline__node" :class="`fd-pipeline__node--${node.tone || 'primary'}`">
                             <span class="fd-pipeline__step">{{ node.step }}</span>
-                            <div class="fd-pipeline__value">{{ node.value }}</div>
+                            <div class="fd-pipeline__value fd-mono">{{ pipelineNodeValue(node) }}</div>
                             <p class="fd-pipeline__sub">{{ node.sub }}</p>
                             <span class="fd-pipeline__tag">{{ node.tag }}</span>
                         </div>
                         <div class="fd-pipeline__node fd-pipeline__node--solid">
-                            <span class="fd-pipeline__step">7. Escrow <span class="material-symbols-outlined">lock</span></span>
-                            <div class="fd-pipeline__value fd-mono">$7,470</div>
-                            <p class="fd-pipeline__sub">Smart Escrow Hold</p>
-                            <span class="fd-pipeline__tag">EUDR Certified Pay</span>
+                            <span class="fd-pipeline__step">6. Escrow <span class="material-symbols-outlined">lock</span></span>
+                            <div class="fd-pipeline__value fd-mono">${{ moneyFmt.format(pipeline.escrow.value) }}</div>
+                            <p class="fd-pipeline__sub">{{ pipeline.escrow.sub }}</p>
+                            <span class="fd-pipeline__tag">{{ pipeline.escrow.tag }}</span>
                         </div>
                     </div>
                 </div>
@@ -269,54 +290,42 @@ function askCopilot(prompt) {
                 <div class="fd-grid-columns">
                     <!-- LEFT -->
                     <div class="fd-grid-main">
-                        <!-- Harvest cycles -->
+                        <!-- My Registered Farms — real Farm rows owned by this user -->
                         <div class="fd-card">
                             <div class="fd-section-head">
                                 <div>
-                                    <div class="fd-section-head__title">
-                                        <h2 class="fd-h2">Harvest Cycles &amp; Production Outturn</h2>
-                                        <span class="fd-pill fd-pill--primary">7.2 MT Projected</span>
-                                    </div>
-                                    <p class="fd-muted-text">Real-time tracking of picking progress, daily cherry yields, and batch allocations</p>
+                                    <div class="fd-card-title-row"><span class="material-symbols-outlined fd-tone-primary">landscape</span><h2 class="fd-h2">My Registered Farms</h2></div>
+                                    <p class="fd-muted-text">All farms registered to your account, most recently added first</p>
                                 </div>
-                                <div class="fd-status-counts">
-                                    <span class="fd-status-count">Upcoming (2)</span>
-                                    <span class="fd-status-count fd-status-count--active">In Progress (1)</span>
-                                    <span class="fd-status-count fd-status-count--muted">Completed (8)</span>
-                                </div>
+                                <span class="fd-mono-note">{{ myFarms.meta.total }} total</span>
                             </div>
-                            <el-table :data="harvestCycles" class="fd-el-table">
-                                <el-table-column label="Block / Variety">
+                            <el-table :data="myFarms.data" class="fd-el-table" table-layout="fixed">
+                                <el-table-column label="Farm &amp; Location">
                                     <template #default="{ row }">
-                                        <div class="fd-strong">{{ row.block }}</div>
-                                        <div class="fd-table-sub">{{ row.variety }}</div>
+                                        <div class="fd-strong">{{ row.name }}</div>
+                                        <div class="fd-table-sub">{{ farmLocation(row) }}</div>
                                     </template>
                                 </el-table-column>
-                                <el-table-column label="Cycle Target" width="110"><template #default="{ row }"><span class="fd-mono fd-strong">{{ row.target }}</span></template></el-table-column>
-                                <el-table-column label="Harvest Window" width="130"><template #default="{ row }"><span class="fd-mono fd-muted-text">{{ row.window }}</span></template></el-table-column>
-                                <el-table-column label="Actual Logged" width="150">
-                                    <template #default="{ row }">
-                                        <div v-if="row.progress" class="fd-progress-cell">
-                                            <div class="fd-progress-track"><div class="fd-progress-fill" :style="{ width: row.progress + '%' }"></div></div>
-                                            <span class="fd-mono">{{ row.logged }}</span>
-                                        </div>
-                                        <span v-else class="fd-mono" :class="row.tone === 'primary' ? 'fd-tone-primary fd-strong' : 'fd-muted-text'">{{ row.logged }}</span>
-                                    </template>
+                                <el-table-column label="Coffee Type" width="120"><template #default="{ row }"><span class="fd-muted-text">{{ row.coffee_type || '—' }}</span></template></el-table-column>
+                                <el-table-column label="Area" width="110"><template #default="{ row }"><span class="fd-mono fd-strong">{{ row.coffee_area ?? row.total_area ?? '—' }} ha</span></template></el-table-column>
+                                <el-table-column label="Status" width="100">
+                                    <template #default="{ row }"><span class="fd-pill" :class="`fd-pill--${farmStatusTone(row.status)}`">{{ farmStatusLabel(row.status) }}</span></template>
                                 </el-table-column>
-                                <el-table-column label="Status" width="120">
-                                    <template #default="{ row }"><span class="fd-pill" :class="`fd-pill--${row.tone}`">{{ row.status }}</span></template>
+                                <el-table-column label="" width="70" align="right">
+                                    <template #default="{ row }"><Link :href="route('farm.show', row.id)" class="fd-link-btn">View</Link></template>
                                 </el-table-column>
-                                <el-table-column label="Actions" width="150" align="right">
-                                    <template #default="{ row }">
-                                        <button v-if="row.action === 'progress'" type="button" class="fd-btn fd-btn--sm fd-btn--primary">Daily Pick</button>
-                                        <button v-else-if="row.action === 'batch'" type="button" class="fd-btn fd-btn--sm fd-btn--muted">Batch {{ row.batchCode }}</button>
-                                        <button v-else type="button" class="fd-btn fd-btn--sm fd-btn--muted">Adjust Schedule</button>
-                                    </template>
-                                </el-table-column>
+                                <template #empty>
+                                    <span class="fd-muted-text">You haven't registered any farms yet.</span>
+                                </template>
                             </el-table>
-                            <div class="fd-card__foot">
-                                <button type="button" class="fd-link-btn"><span class="material-symbols-outlined">add_circle</span> Schedule New Harvest Cycle</button>
-                                <span class="fd-muted-text">Historical average yield: <strong class="fd-strong">1.18 MT/ha</strong></span>
+                            <div v-if="myFarms.meta.last_page > 1" class="fd-card__foot fd-card__foot--center">
+                                <el-pagination
+                                    :current-page="myFarms.meta.current_page"
+                                    :page-size="myFarms.meta.per_page"
+                                    :total="myFarms.meta.total"
+                                    layout="prev, pager, next"
+                                    @current-change="goToPage"
+                                />
                             </div>
                         </div>
 
@@ -324,7 +333,7 @@ function askCopilot(prompt) {
                         <div class="fd-card">
                             <div class="fd-section-head">
                                 <div>
-                                    <h2 class="fd-h2">My Farms Portfolio</h2>
+                                    <div class="fd-card-title-row"><span class="material-symbols-outlined fd-tone-primary">grid_view</span><h2 class="fd-h2">My Farms Portfolio</h2></div>
                                     <p class="fd-muted-text">Registered cadastral plots with satellite NDVI and micro-climate tags</p>
                                 </div>
                                 <div class="fd-toggle-group">
@@ -355,18 +364,18 @@ function askCopilot(prompt) {
                         <div class="fd-card">
                             <div class="fd-section-head">
                                 <div>
-                                    <h2 class="fd-h2">Farm Inputs, Nutrition &amp; IPM Stock</h2>
+                                    <div class="fd-card-title-row"><span class="material-symbols-outlined fd-tone-primary">eco</span><h2 class="fd-h2">Farm Inputs, Nutrition &amp; IPM Stock</h2></div>
                                     <p class="fd-muted-text">Organic certified soil conditioners, organic fungicides, and regenerative inputs</p>
                                 </div>
                                 <button type="button" class="fd-btn fd-btn--muted">Log Input Usage</button>
                             </div>
-                            <el-table :data="inputs" class="fd-el-table">
+                            <el-table :data="inputs" class="fd-el-table" table-layout="fixed">
                                 <el-table-column label="Input Item"><template #default="{ row }"><span class="fd-strong">{{ row.item }}</span></template></el-table-column>
-                                <el-table-column label="Assigned Farm" width="130"><template #default="{ row }"><span class="fd-muted-text">{{ row.farm }}</span></template></el-table-column>
-                                <el-table-column label="Total / Used" width="150"><template #default="{ row }"><span class="fd-mono">{{ row.total }}</span></template></el-table-column>
-                                <el-table-column label="Remaining" width="100"><template #default="{ row }"><span class="fd-mono fd-strong" :class="`fd-tone-${row.tone}`">{{ row.remaining }}</span></template></el-table-column>
-                                <el-table-column label="Target Date" width="120"><template #default="{ row }"><span class="fd-mono fd-muted-text">{{ row.date }}</span></template></el-table-column>
-                                <el-table-column label="Status" width="130" align="right"><template #default="{ row }"><span class="fd-pill" :class="`fd-pill--${row.tone}`">{{ row.status }}</span></template></el-table-column>
+                                <el-table-column label="Assigned Farm" width="120"><template #default="{ row }"><span class="fd-muted-text">{{ row.farm }}</span></template></el-table-column>
+                                <el-table-column label="Total / Used" width="110"><template #default="{ row }"><span class="fd-mono">{{ row.total }}</span></template></el-table-column>
+                                <el-table-column label="Remaining" width="90"><template #default="{ row }"><span class="fd-mono fd-strong" :class="`fd-tone-${row.tone}`">{{ row.remaining }}</span></template></el-table-column>
+                                <el-table-column label="Target Date" width="100"><template #default="{ row }"><span class="fd-mono fd-muted-text">{{ row.date }}</span></template></el-table-column>
+                                <el-table-column label="Status" width="110" align="right"><template #default="{ row }"><span class="fd-pill" :class="`fd-pill--${row.tone}`">{{ row.status }}</span></template></el-table-column>
                             </el-table>
                             <div class="fd-need-banner">
                                 <div class="fd-need-banner__text">
@@ -381,7 +390,7 @@ function askCopilot(prompt) {
                         <div class="fd-card">
                             <div class="fd-section-head">
                                 <div>
-                                    <h2 class="fd-h2">Farmgate Collection Receipts &amp; Milling Handover</h2>
+                                    <div class="fd-card-title-row"><span class="material-symbols-outlined fd-tone-primary">receipt_long</span><h2 class="fd-h2">Farmgate Collection Receipts &amp; Milling Handover</h2></div>
                                     <p class="fd-muted-text">Digital weighbridge certificates linked directly to downstream lot batches</p>
                                 </div>
                                 <button type="button" class="fd-link-btn">All Collections (48)</button>
@@ -414,7 +423,7 @@ function askCopilot(prompt) {
                         <!-- Today's tasks -->
                         <div class="fd-card">
                             <div class="fd-section-head fd-section-head--tight">
-                                <h2 class="fd-h3">Today's Field Tasks</h2>
+                                <div class="fd-card-title-row"><span class="material-symbols-outlined fd-tone-primary">checklist</span><h2 class="fd-h3">Today's Field Tasks</h2></div>
                                 <span class="fd-mono fd-tone-primary fd-strong">{{ tasks.filter(t => !t.done).length }} Remaining</span>
                             </div>
                             <div class="fd-task-list">
@@ -523,6 +532,9 @@ function askCopilot(prompt) {
                 </div>
             </div>
         </div>
+
+        <!-- ── Add Farm modal — same component/behavior as /farm/farm-list ── -->
+        <AddFarmModal v-model="addFarmDialogOpen" />
     </MainLayout>
 </template>
 
@@ -579,7 +591,8 @@ function askCopilot(prompt) {
 .fd-section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 14px; }
 .fd-section-head--tight { align-items: center; padding-bottom: 10px; }
 .fd-section-head__title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.fd-link-btn { border: none; background: none; cursor: pointer; font-size: 12px; font-weight: 700; color: var(--fd-primary); display: inline-flex; align-items: center; gap: 4px; padding: 0; }
+.fd-card-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.fd-link-btn { border: none; background: none; cursor: pointer; font-size: 12px; font-weight: 700; color: var(--fd-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 0; }
 .fd-link-btn .material-symbols-outlined { font-size: 15px; }
 .fd-link-btn--block { width: 100%; justify-content: center; padding: 8px; border-radius: 8px; }
 .fd-link-btn--block:hover { background: var(--fd-surface-container-low); }
@@ -599,7 +612,7 @@ function askCopilot(prompt) {
 .fd-btn--error:hover { opacity: .9; }
 
 /* Banner */
-.fd-banner { background: var(--fd-surface-container-lowest); padding: 0 0 20px; }
+.fd-banner { background: var(--fd-surface-container-lowest); padding: 0 0 20px; border-bottom: 1px solid var(--dp-outline-variant); }
 .fd-banner__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .fd-title { font-size: 1.75rem; font-weight: 800; letter-spacing: -.01em; margin: 4px 0 4px; color: var(--fd-on-surface); }
 .fd-subtitle { font-size: var(--dp-content-font-size); color: var(--fd-on-surface-variant); margin: 0; max-width: 640px; }
@@ -645,9 +658,6 @@ function askCopilot(prompt) {
 .fd-weather-head__title { display: flex; align-items: center; gap: 12px; }
 .fd-icon-box { width: 40px; height: 40px; border-radius: 10px; background: var(--fd-surface-container-low); color: var(--fd-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fd-icon-box .material-symbols-outlined { font-size: 22px; }
-.fd-weather-head__station { display: flex; align-items: center; gap: 8px; }
-.fd-el-select { width: 240px; }
-.fd-el-select :deep(.el-select__wrapper) { background: var(--fd-surface-container-low); box-shadow: none; border-radius: 8px; font-size: 12px; font-weight: 600; }
 .fd-weather-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 20px; }
 .fd-weather-current { background: var(--fd-surface-container-low); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; }
 .fd-weather-current__head { display: flex; align-items: center; justify-content: space-between; }
@@ -706,13 +716,9 @@ function askCopilot(prompt) {
 .fd-el-table :deep(.el-table__header th.el-table__cell) { padding: 9px 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
 .fd-el-table :deep(.el-table__body td.el-table__cell) { padding: 12px; border-bottom: 1px solid var(--fd-surface-container-low); }
 .fd-el-table :deep(.el-table__row:last-child td.el-table__cell) { border-bottom: none; }
-.fd-progress-cell { display: flex; align-items: center; gap: 8px; }
 .fd-progress-track { width: 50px; height: 6px; border-radius: 999px; background: var(--fd-surface-container-high); overflow: hidden; flex-shrink: 0; }
 .fd-progress-fill { height: 100%; background: var(--fd-primary); border-radius: 999px; }
-.fd-status-counts { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.fd-status-count { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 6px; background: var(--fd-surface-container-high); color: var(--fd-on-surface); }
-.fd-status-count--active { background: var(--fd-primary-fixed); color: var(--fd-on-primary-fixed); }
-.fd-status-count--muted { background: var(--fd-surface-container-low); color: var(--fd-on-surface-variant); }
+.fd-card__foot--center { justify-content: center; }
 
 /* Farm cards */
 .fd-toggle-group { display: flex; align-items: center; gap: 2px; background: var(--fd-surface-container-low); padding: 3px; border-radius: 8px; }

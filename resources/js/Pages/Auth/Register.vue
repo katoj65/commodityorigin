@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ElMessage } from 'element-plus';
 import { View, Hide, ArrowRight, CircleCheckFilled } from '@element-plus/icons-vue';
 import InputError from '@/Components/InputError.vue';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
@@ -27,7 +26,9 @@ const showPassword = ref(false);
 const showPasswordConfirmation = ref(false);
 
 function handleGoogleSignUp() {
-    ElMessage.info('Google Workspace sign-up is not configured yet.');
+    // A real, cross-origin browser redirect to Google's consent screen —
+    // not an Inertia visit, which can't follow a redirect off-origin.
+    window.location.href = route('auth.google.redirect');
 }
 
 const passwordStrength = computed(() => {

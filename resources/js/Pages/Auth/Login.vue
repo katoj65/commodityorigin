@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ElMessage } from 'element-plus';
 import { View, Hide, ArrowRight, Lock, CircleCheckFilled } from '@element-plus/icons-vue';
 import InputError from '@/Components/InputError.vue';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
@@ -30,7 +29,9 @@ const submit = () => {
 const showPassword = ref(false);
 
 function handleGoogleSignIn() {
-    ElMessage.info('Google Workspace sign-in is not configured yet.');
+    // A real, cross-origin browser redirect to Google's consent screen —
+    // not an Inertia visit, which can't follow a redirect off-origin.
+    window.location.href = route('auth.google.redirect');
 }
 
 const corridorStats = [

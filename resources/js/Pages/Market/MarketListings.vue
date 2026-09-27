@@ -677,7 +677,7 @@ function placeholderAction(label) {
 .mkt-dot--secondary { background: var(--dp-secondary); }
 .mkt-dot--neutral { background: var(--dp-on-surface-variant); }
 
-.mkt-hero { border: none; border-bottom: 1px solid var(--dp-outline-variant); margin-top: -24px; }
+.mkt-hero { border: none; border-bottom: 1px solid var(--dp-outline-variant); border-radius: 0; padding: 0 0 20px; margin-top: -24px; }
 .mkt-hero__top { display: flex; flex-direction: column; gap: 16px; }
 @media (min-width: 1024px) { .mkt-hero__top { flex-direction: row; align-items: center; justify-content: space-between; } }
 .mkt-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }

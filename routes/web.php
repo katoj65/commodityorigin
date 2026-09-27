@@ -5,6 +5,7 @@ use App\Http\Controllers\Agent\AgentController;
 use App\Http\Controllers\AI\AiChatController;
 use App\Http\Controllers\Analysis\AnalysisController;
 use App\Http\Controllers\Auction\AuctionController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Batch\BatchController;
 use App\Http\Controllers\Bid\BidController;
 use App\Http\Controllers\Business\BusinessController;
@@ -59,6 +60,14 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // pages. Not linked from anywhere; visit directly.
 Route::get('/test/design', fn () => Inertia::render('Test/DesignPreview'))->name('test.design');
 Route::get('/origins', [OriginController::class, 'index'])->name('origin.index');
+
+// "Continue with Google" — backs both the Login and Register pages'
+// Google buttons (see GoogleAuthController). Guest-only: a logged-in
+// user has no reason to run the OAuth handshake again.
+Route::middleware('guest')->prefix('auth/google')->name('auth.google.')->group(function () {
+    Route::get('/redirect', [GoogleAuthController::class, 'redirect'])->name('redirect');
+    Route::get('/callback', [GoogleAuthController::class, 'callback'])->name('callback');
+});
 
 // How It Works — public explainer page, dedicated route prefix.
 Route::prefix('how-it-works')->name('how-it-works.')->group(function () {
