@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import AddFarmCollectionModal from '@/Components/Modals/AddFarmCollectionModal.vue';
+import ImportFarmCollectionsModal from '@/Components/Modals/ImportFarmCollectionsModal.vue';
 
 /* ── Structural/visual port of the uploaded "My Farm Collection" mockup
    (code.html), restyled with this app's own --dp-* theme tokens rather
@@ -18,9 +19,15 @@ const props = defineProps({
     harvestSeasonOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
     farmCollections: { type: Array, default: () => [] },
+    collectionImportResult: { type: Object, default: null },
+    seasons: { type: Array, default: () => [] },
+    farms: { type: Array, default: () => [] },
+    weatherRegion: { type: String, default: null },
+    weatherOutlook: { type: Array, default: () => [] },
 });
 
 const addCollectionOpen = ref(false);
+const importCollectionsOpen = ref(false);
 
 const kpiCards = [
     { icon: 'receipt_long', label: 'Collections', value: '126', trailing: '+14 MoM', note: 'Total intake events' },
@@ -44,6 +51,22 @@ function producerName(farm) {
     return farm?.user?.full_name || farm?.user?.first_name || null;
 }
 
+function formatMonth(dateStr) {
+    if (!dateStr) return '—';
+    return new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+}
+
+/* Prefer the farm's real CropVarietyMetadata (Farm::cropVarieties(), eager-
+   loaded by FarmService::listForUser()) over the plain coffee_type string
+   — most farms only have the legacy string set and no linked metadata
+   rows yet, so this falls back to that string rather than showing "—". */
+function farmVarietyLabel(farm) {
+    if (farm.crop_varieties?.length) {
+        return farm.crop_varieties.map((v) => v.name).join(', ');
+    }
+    return farm.coffee_type || '—';
+}
+
 const STATUS_LABELS = { pending: 'Pending', batched: 'Batched' };
 const STATUS_TONE = { pending: 'secondary', batched: 'primary' };
 function statusLabel(status) {
@@ -53,10 +76,8 @@ function statusTone(status) {
     return STATUS_TONE[status] || 'neutral';
 }
 
-/* The active-row dot only marks the first row by default — the dossier
-   panel stays a static illustration of FC-UG-1048, deliberately decoupled
-   from the real row data above. Clicking a row navigates away entirely,
-   to that collection's real profile page. */
+/* The active-row dot only marks the first row by default. Clicking a
+   row navigates away entirely, to that collection's real profile page. */
 const selectedRowId = ref(props.farmCollections[0]?.id ?? null);
 
 function goToCollection(row) {
@@ -83,7 +104,7 @@ function goToCollection(row) {
                     <button type="button" class="fc-btn fc-btn--primary" @click="addCollectionOpen = true">
                         <span class="material-symbols-outlined">add_circle</span> Record Collection
                     </button>
-                    <button type="button" class="fc-btn fc-btn--muted">
+                    <button type="button" class="fc-btn fc-btn--muted" @click="importCollectionsOpen = true">
                         <span class="material-symbols-outlined">file_upload</span> Import Collections
                     </button>
                 </div>
@@ -206,62 +227,66 @@ function goToCollection(row) {
 
                 <!-- ── Right column: Physical Custody Dossier ───────────── -->
                 <div class="fc-col-side">
+                    <!-- ── Coffee Seasons — real SeasonMetadata rows
+                         (FarmCollectionController::index). ────────────── -->
                     <div class="fc-card">
-                        <div class="fc-dossier__head">
-                            <div>
-                                <span class="fc-eyebrow-sm">Physical Custody Dossier</span>
-                                <h2 class="fc-dossier__title">FC-UG-1048 <span class="fc-chip fc-chip--fixed">Verified</span></h2>
-                            </div>
-                            <div class="fc-dossier__head-actions">
-                                <button type="button" class="fc-icon-btn" title="Edit"><span class="material-symbols-outlined">edit</span></button>
-                                <button type="button" class="fc-icon-btn" title="Share / Export"><span class="material-symbols-outlined">share</span></button>
+                        <div class="fc-side-card__head">
+                            <span class="fc-card__title-plain">Coffee Seasons</span>
+                        </div>
+                        <div v-if="seasons.length" class="fc-season-list">
+                            <div v-for="season in seasons" :key="season.name" class="fc-season-row">
+                                <span class="fc-season-row__name">{{ season.name }}</span>
+                                <span v-if="season.description" class="fc-season-row__desc">{{ season.description }}</span>
                             </div>
                         </div>
+                        <p v-else class="fc-muted fc-small">No season data configured.</p>
+                    </div>
 
-                        <div class="fc-dossier__section">
-                            <span class="fc-eyebrow-sm">Custody Lineage Tree</span>
-                            <div class="fc-lineage">
-                                <span class="fc-tone-text fc-strong">Kawempe Farm</span>
-                                <span class="fc-muted">→</span>
-                                <span class="fc-chip fc-chip--fixed fc-mono">FC-1048</span>
-                                <span class="fc-muted">→</span>
-                                <span class="fc-mono">BAT-UG-2031</span>
-                                <span class="fc-muted">→</span>
-                                <span class="fc-mono">LOT-UG-001</span>
-                                <span class="fc-muted">→</span>
-                                <span class="fc-tone-text fc-strong">Exchange</span>
+                    <!-- ── Weather Outlook — real WeatherForecast rows for
+                         this user's most recently added farm's region
+                         (WeatherForecastService::matchRegionFor() /
+                         monthlyOutlookForRegion(), same lookup used by a
+                         single farm's own profile page). ───────────────── -->
+                    <div class="fc-card">
+                        <div class="fc-side-card__head">
+                            <span class="fc-card__title-plain">Weather Outlook</span>
+                            <span v-if="weatherRegion" class="fc-chip">{{ weatherRegion }}</span>
+                        </div>
+                        <div v-if="weatherOutlook.length" class="fc-weather-list">
+                            <div v-for="month in weatherOutlook.slice(0, 4)" :key="month.id" class="fc-weather-row">
+                                <span class="fc-weather-row__month">{{ formatMonth(month.forecast_date) }}</span>
+                                <span class="fc-weather-row__temp fc-mono">{{ month.temperature_min }}°–{{ month.temperature_max }}°</span>
+                                <span class="fc-weather-row__condition">{{ month.condition || '—' }}</span>
                             </div>
                         </div>
+                        <p v-else class="fc-muted fc-small">No weather outlook available for your farms yet.</p>
+                    </div>
 
-                        <div class="fc-dossier__section">
-                            <div class="fc-dossier__section-head">
-                                <span class="fc-card__title-plain">Physical Quantity Movement</span>
-                                <span class="fc-mono fc-tone-text fc-small fc-strong">96.0% Intake Yield</span>
-                            </div>
-                            <div class="fc-bar">
-                                <div class="fc-bar__seg fc-bar__seg--primary" style="width: 80%" title="Allocated to Batch: 2,000 kg"></div>
-                                <div class="fc-bar__seg fc-bar__seg--tone" style="width: 16%" title="Unallocated Buffer: 400 kg"></div>
-                                <div class="fc-bar__seg fc-bar__seg--error" style="width: 4%" title="Sorted Out / Float Defect: 100 kg"></div>
-                            </div>
-                            <div class="fc-stat-grid">
-                                <div class="fc-stat-box"><span class="fc-stat-box__label">Gross Collected</span><span class="fc-mono fc-strong">2,500 kg</span></div>
-                                <div class="fc-stat-box"><span class="fc-stat-box__label">Rejected (Floats)</span><span class="fc-mono fc-strong fc-error-text">100 kg</span></div>
-                                <div class="fc-stat-box"><span class="fc-stat-box__label">Allocated (BAT-2031)</span><span class="fc-mono fc-strong fc-tone-text">2,000 kg</span></div>
-                                <div class="fc-stat-box"><span class="fc-stat-box__label">Unallocated Buffer</span><span class="fc-mono fc-strong fc-tone-text--secondary">400 kg</span></div>
+                    <!-- ── My Farms — real farms for this user
+                         (FarmService::listForUser()). ─────────────────── -->
+                    <div class="fc-card">
+                        <div class="fc-side-card__head">
+                            <span class="fc-card__title-plain">My Farms</span>
+                            <span class="fc-chip">{{ farms.length }}</span>
+                        </div>
+                        <div v-if="farms.length" class="fc-farm-list">
+                            <div
+                                v-for="farm in farms"
+                                :key="farm.id"
+                                class="fc-farm-row"
+                                @click="router.visit(route('farm.show', farm.id))"
+                            >
+                                <div class="fc-farm-row__main">
+                                    <span class="fc-farm-row__name">{{ farm.name }}</span>
+                                    <span class="fc-muted fc-small">{{ farmVarietyLabel(farm) }} · {{ farm.district || farm.region || '—' }}</span>
+                                    <div v-if="farm.certifications?.length" class="fc-farm-row__certs">
+                                        <span v-for="cert in farm.certifications" :key="cert.id" class="fc-chip fc-chip--fixed">{{ cert.name }}</span>
+                                    </div>
+                                </div>
+                                <span class="material-symbols-outlined fc-farm-row__arrow">chevron_right</span>
                             </div>
                         </div>
-
-                        <div class="fc-dossier__section">
-                            <span class="fc-card__title-plain">Point-of-Intake Condition</span>
-                            <div class="fc-panel fc-panel--grid2">
-                                <div><span class="fc-eyebrow-sm">Variety</span><span class="fc-field-value">Uganda Robusta (Nganda)</span></div>
-                                <div><span class="fc-eyebrow-sm">Intake Form</span><span class="fc-field-value">Fresh Ripe Cherries (A1)</span></div>
-                                <div><span class="fc-eyebrow-sm">Refractometer Sugar</span><span class="fc-mono fc-strong fc-tone-text">21.4° Brix</span></div>
-                                <div><span class="fc-eyebrow-sm">Field Moisture</span><span class="fc-mono fc-strong">62% Wet Basis</span></div>
-                                <div><span class="fc-eyebrow-sm">Packaging Form</span><span class="fc-field-value">42 Sisal Bags</span></div>
-                                <div><span class="fc-eyebrow-sm">Defect Rate</span><span class="fc-field-value">4.0% sorted floaters</span></div>
-                            </div>
-                        </div>
+                        <p v-else class="fc-muted fc-small">You haven't added any farms yet.</p>
                     </div>
                 </div>
             </div>
@@ -274,6 +299,16 @@ function goToCollection(row) {
             :coffee-type-options="coffeeTypeOptions"
             :harvest-season-options="harvestSeasonOptions"
             :currency-options="currencyOptions"
+        />
+
+        <!-- ── "Import Collections" — reuses the same backend import path
+             (App\Helpers\ExcelImportHelper + FarmCollectionService::
+             importRows(), via FarmController::importCollections) that
+             already powers the Farm Profile page's own Excel importer,
+             rather than duplicating that logic. ─────────────────────── -->
+        <ImportFarmCollectionsModal
+            v-model="importCollectionsOpen"
+            :collection-import-result="collectionImportResult"
         />
     </MainLayout>
 </template>
@@ -291,7 +326,6 @@ function goToCollection(row) {
 .fc-italic { font-style: italic; }
 .fc-tone-text { color: var(--dp-primary); }
 .fc-tone-text--secondary { color: var(--dp-on-secondary-container); }
-.fc-error-text { color: var(--dp-error); }
 
 /* Hero */
 .fc-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -359,11 +393,6 @@ function goToCollection(row) {
 .fc-page-btn:disabled { opacity: .4; cursor: default; }
 .fc-page-btn--active { background: var(--dp-primary); color: var(--dp-on-primary); }
 
-/* Icon buttons */
-.fc-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; border: none; background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); cursor: pointer; transition: background .12s ease, color .12s ease; }
-.fc-icon-btn:hover { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
-.fc-icon-btn .material-symbols-outlined { font-size: 16px; }
-
 /* Chips / status / tags */
 .fc-chip { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-family: var(--dp-font-mono); font-weight: 700; background: var(--dp-surface-container); color: var(--dp-on-surface); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .fc-chip--fixed { background: var(--dp-primary-fixed); color: var(--dp-on-primary-fixed); }
@@ -373,34 +402,32 @@ function goToCollection(row) {
 .fc-status--secondary { background: var(--dp-secondary-fixed); color: var(--dp-on-secondary-fixed); }
 .fc-status--neutral { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
 
-/* Dossier card */
+/* Sidebar cards — Coffee Seasons / Weather Outlook / My Farms */
 .fc-card { background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); border-radius: var(--dp-card-radius); padding: 18px; display: flex; flex-direction: column; gap: 16px; }
 .fc-card__title-plain { font-size: .8125rem; font-weight: 800; color: var(--dp-on-surface); }
-.fc-eyebrow-sm { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--dp-on-surface-variant); margin-bottom: 2px; }
-.fc-field-value { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); }
+.fc-side-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 
-.fc-dossier__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.fc-dossier__title { display: flex; align-items: center; gap: 8px; font-size: 1.0625rem; font-weight: 800; color: var(--dp-on-surface); margin: 2px 0 0; }
-.fc-dossier__head-actions { display: flex; gap: 4px; flex-shrink: 0; }
-.fc-dossier__section { display: flex; flex-direction: column; gap: 8px; }
-.fc-dossier__section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fc-season-list { display: flex; flex-direction: column; gap: 10px; }
+.fc-season-row { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; background: var(--dp-surface-container-low); border-radius: 8px; }
+.fc-season-row__name { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); }
+.fc-season-row__desc { font-size: 11.5px; color: var(--dp-on-surface-variant); line-height: 1.4; }
 
-.fc-lineage { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--dp-surface-container-low); padding: 10px 12px; border-radius: 8px; font-size: 11px; }
+.fc-weather-list { display: flex; flex-direction: column; gap: 8px; }
+.fc-weather-row { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: var(--dp-surface-container-low); border-radius: 8px; }
+.fc-weather-row__month { font-size: 11.5px; font-weight: 700; color: var(--dp-on-surface); flex: 1; min-width: 0; }
+.fc-weather-row__temp { font-size: 12px; font-weight: 700; color: var(--dp-primary); flex-shrink: 0; }
+.fc-weather-row__condition { font-size: 11px; color: var(--dp-on-surface-variant); text-align: right; flex-shrink: 0; }
 
-.fc-bar { width: 100%; height: 10px; border-radius: 999px; background: var(--dp-surface-container-high); overflow: hidden; display: flex; }
-.fc-bar__seg--primary { background: var(--dp-primary); }
-.fc-bar__seg--tone { background: var(--dp-secondary); }
-.fc-bar__seg--error { background: color-mix(in srgb, var(--dp-error) 75%, transparent); }
-.fc-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 4px; }
-.fc-stat-box { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; background: var(--dp-surface-container-low); border-radius: 7px; }
-.fc-stat-box__label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface-variant); }
-
-.fc-panel { background: var(--dp-surface-container-low); border-radius: 8px; padding: 12px; }
-.fc-panel--grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 12px; }
+.fc-farm-list { display: flex; flex-direction: column; gap: 8px; }
+.fc-farm-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; background: var(--dp-surface-container-low); border-radius: 8px; cursor: pointer; transition: background .12s ease; }
+.fc-farm-row:hover { background: var(--dp-surface-container-high); }
+.fc-farm-row__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fc-farm-row__name { font-size: var(--dp-content-font-size); font-weight: 700; color: var(--dp-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fc-farm-row__certs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.fc-farm-row__arrow { font-size: 18px; color: var(--dp-on-surface-variant); flex-shrink: 0; }
 
 @media (max-width: 640px) {
     .fc-hero__actions { width: 100%; }
     .fc-hero__actions .fc-btn { flex: 1; justify-content: center; }
-    .fc-panel--grid2 { grid-template-columns: 1fr; }
 }
 </style>

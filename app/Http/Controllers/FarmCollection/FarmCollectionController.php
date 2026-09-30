@@ -5,8 +5,10 @@ namespace App\Http\Controllers\FarmCollection;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FarmCollectionActivityResource;
 use App\Http\Resources\FarmCollectionResource;
+use App\Http\Resources\FarmResource;
 use App\Http\Resources\FarmSustainabilityPracticeResource;
 use App\Http\Resources\UserFarmOwnershipResource;
+use App\Http\Resources\WeatherForecastResource;
 use App\Models\BatchFarmCollection;
 use App\Models\CropVarietyMetadata;
 use App\Models\Currency;
@@ -18,7 +20,9 @@ use App\Models\SeasonMetadata;
 use App\Models\SustainabilityPracticesMetadata;
 use App\Models\UserFarmOwnership;
 use App\Services\FarmCollectionActivityService;
+use App\Services\FarmService;
 use App\Services\FarmSustainabilityPracticeService;
+use App\Services\WeatherForecastService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -31,13 +35,16 @@ class FarmCollectionController extends Controller
     public function __construct(
         private readonly FarmCollectionActivityService $activities,
         private readonly FarmSustainabilityPracticeService $sustainabilityPractices,
+        private readonly FarmService $farms,
+        private readonly WeatherForecastService $weather,
     ) {
     }
 
     /**
-     * Display the Farm Collections index page. The ledger table is real
-     * farm collection data for the authenticated user; the KPI row and
-     * custody dossier are still illustrative dummy data.
+     * Display the Farm Collections index page. The ledger table, right-
+     * column farms list, seasons list, and weather outlook are all real
+     * data for the authenticated user; the KPI row is still illustrative
+     * dummy data.
      */
     public function index(Request $request): Response
     {
@@ -46,6 +53,15 @@ class FarmCollectionController extends Controller
             ->with(['farm.user', 'batchFarmCollections.batch'])
             ->latest('collection_date')
             ->get();
+
+        $farms = $this->farms->listForUser($request->user()->id);
+
+        /* Weather is regional, not per-farm, and this page isn't scoped
+           to one farm — so the outlook shown is for this user's most
+           recently added farm's district, the same matchRegionFor()
+           lookup FarmController::show() uses for a single farm. */
+        $weatherRegion = $farms->isNotEmpty() ? $this->weather->matchRegionFor($farms->first()->district) : null;
+        $weatherOutlook = $weatherRegion ? $this->weather->monthlyOutlookForRegion($weatherRegion) : collect();
 
         return Inertia::render('FarmCollection/FarmCollectionIndex', [
             'coffeeTypeOptions' => CropVarietyMetadata::query()
@@ -58,12 +74,21 @@ class FarmCollectionController extends Controller
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->pluck('name'),
+            'seasons' => SeasonMetadata::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['name', 'description']),
             'currencyOptions' => Currency::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('code')
                 ->pluck('code'),
+            'farms' => FarmResource::collection($farms)->resolve(),
+            'weatherRegion' => $weatherRegion,
+            'weatherOutlook' => WeatherForecastResource::collection($weatherOutlook)->resolve(),
             'farmCollections' => FarmCollectionResource::collection($farmCollections)->resolve(),
+            'collectionImportResult' => session('collection_import_result'),
         ]);
     }
 

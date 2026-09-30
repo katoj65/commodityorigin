@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ElNotification } from 'element-plus';
 import { Close, Coffee } from '@element-plus/icons-vue';
+import FarmCodeLookupField from '@/Components/FarmCodeLookupField.vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -49,35 +50,12 @@ const form = useForm(emptyForm());
 
 /* ── Farm-by-code lookup ────────────────────────────────────────────────
    The Farm field is a plain text input for the farm's code, not a
-   picker — findFarmByCode() resolves it to a real farm id (matched
+   picker — FarmCodeLookupField resolves it to a real farm id (matched
    strictly by farm_code, via GET farm.find-by-code — not scoped to
    ownership) before the id is used to build the farm.collections.store
    URL on submit. Ownership is still enforced server-side by
    FarmPolicy::update on that submit, independent of this lookup. */
-const farmCode = ref('');
-const farmLookupStatus = ref('idle'); // idle | loading | found | not-found
-const foundFarmName = ref('');
-
-async function findFarmByCode() {
-    const code = farmCode.value.trim();
-    form.farm_id = '';
-    foundFarmName.value = '';
-
-    if (!code) {
-        farmLookupStatus.value = 'idle';
-        return;
-    }
-
-    farmLookupStatus.value = 'loading';
-    try {
-        const { data } = await axios.get(route('farm.find-by-code'), { params: { farm_code: code } });
-        form.farm_id = data.id;
-        foundFarmName.value = data.name;
-        farmLookupStatus.value = 'found';
-    } catch (error) {
-        farmLookupStatus.value = 'not-found';
-    }
-}
+const farmCodeField = ref(null);
 
 /* ── Open instantly, reveal the (heavier) form a frame later ───────────
    The dialog itself must appear the moment the button is clicked — no
@@ -94,9 +72,7 @@ watch(() => props.modelValue, (open) => {
     form.defaults(emptyForm());
     form.reset();
     form.clearErrors();
-    farmCode.value = '';
-    farmLookupStatus.value = 'idle';
-    foundFarmName.value = '';
+    farmCodeField.value?.reset();
 
     contentReady.value = false;
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -113,19 +89,18 @@ function closeDialog() {
 }
 
 /* ── Guard against the silent no-op this used to be: clicking Save
-   before the Farm Code field had been blurred (so findFarmByCode()
-   never ran) left form.farm_id empty and submit() simply returned,
-   with no error shown anywhere — indistinguishable from "nothing
-   happens". Now Save itself runs the lookup first if it hasn't
-   resolved yet, and only bails with the existing visible "not found"
-   state if it genuinely fails. ─────────────────────────────────────── */
+   before the Farm Code field had been blurred (so its lookup never ran)
+   left form.farm_id empty and submit() simply returned, with no error
+   shown anywhere — indistinguishable from "nothing happens". Now Save
+   itself runs the lookup first if it hasn't resolved yet, and only
+   bails with the field's own visible "not found" state if it genuinely
+   fails. ──────────────────────────────────────────────────────────── */
 async function submit() {
-    if (!form.farm_id && farmLookupStatus.value !== 'loading') {
-        await findFarmByCode();
+    if (!form.farm_id) {
+        await farmCodeField.value?.lookup();
     }
 
     if (!form.farm_id) {
-        farmLookupStatus.value = 'not-found';
         return;
     }
 
@@ -171,21 +146,7 @@ async function submit() {
                 <span>Preparing form…</span>
             </div>
             <template v-else>
-                <div class="afc-field afc-field--span2">
-                    <label class="afc-field__label">Farm Code</label>
-                    <el-input
-                        v-model="farmCode"
-                        placeholder="e.g. FARM-0042"
-                        class="afc-input"
-                        :class="{ 'afc-input--error': farmLookupStatus === 'not-found' || form.errors.farm_id }"
-                        @blur="findFarmByCode"
-                        @keyup.enter="findFarmByCode"
-                    />
-                    <span v-if="farmLookupStatus === 'loading'" class="afc-field__hint">Looking up farm…</span>
-                    <span v-else-if="farmLookupStatus === 'found'" class="afc-field__hint afc-field__hint--ok">✓ {{ foundFarmName }}</span>
-                    <span v-else-if="farmLookupStatus === 'not-found'" class="afc-field__error">No farm with that code was found.</span>
-                    <span v-if="form.errors.farm_id" class="afc-field__error">{{ form.errors.farm_id }}</span>
-                </div>
+                <FarmCodeLookupField ref="farmCodeField" v-model="form.farm_id" :external-error="form.errors.farm_id" />
 
                 <div class="afc-grid">
                     <div class="afc-field">

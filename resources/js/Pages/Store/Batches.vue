@@ -1,25 +1,35 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import AddBatchModal from '@/Components/Modals/AddBatchModal.vue';
 
 /* ── Structural/visual port of the uploaded "My Batches" mockup
    (code.html), restyled with this app's own --dp-* theme tokens rather
-   than the mockup's own Tailwind palette. Everything below is
-   illustrative dummy data, not real batches — but "Create Batch" opens
-   the same real AddBatchModal already used on the Inventory page
-   (reused, not rebuilt), wired to real option lists already provided by
-   StoreController::inventoryContext(). ───────────────────────────────── */
+   than the mockup's own Tailwind palette. The Registered Batches table
+   is real batch data for the authenticated user (StoreController::
+   inventoryContext()'s `batches` prop, already resolved via
+   BatchResource — nothing new needed server-side); the KPI row and
+   right-column dossier are still illustrative dummy data. "Create
+   Batch" opens the same real AddBatchModal already used on the
+   Inventory page (reused, not rebuilt), wired to real option lists
+   already provided by StoreController::inventoryContext(). ──────────── */
 const props = defineProps({
     processOptions: { type: Array, default: () => [] },
     dryingMethodOptions: { type: Array, default: () => [] },
     millingOptions: { type: Array, default: () => [] },
     coffeeTypeOptions: { type: Array, default: () => [] },
     currencyOptions: { type: Array, default: () => [] },
+    batches: { type: Array, default: () => [] },
 });
 
 const addBatchOpen = ref(false);
+
+const searchQuery = ref('');
+const statusFilter = ref('');
+const coffeeFilter = ref('');
+const originFilter = ref('');
+const methodFilter = ref('');
 
 const kpiCards = [
     { icon: 'folder_open', label: 'Active Batches', value: '24', trailing: '+3 this mo', trailingIcon: 'arrow_upward', note: 'Across 4 processing stations' },
@@ -29,13 +39,88 @@ const kpiCards = [
     { icon: 'assignment_late', label: 'Quality Review', value: '4', trailing: 'Pending Audit', tone: 'error', note: 'Moisture & CQI cupping check' },
 ];
 
-const batches = [
-    { id: 'BAT-UG-2048', coffee: 'Uganda Robusta', origin: 'Nganda • Mukono Mill', coll: '4 Coll.', collNote: 'FC-1048, 1049...', net: '9.55 MT', netNote: '10.0 MT input', stage: 'Drying (Day 4)', stageNote: '11.4% H₂O', stageTone: 'secondary', status: 'Processing', statusTone: 'secondary', action: 'Inspect', actionTone: 'primary', active: true },
-    { id: 'BAT-UG-2047', coffee: 'Fine Robusta Screen 18', origin: 'Masaka Washing Station', coll: '7 Coll.', net: '24.0 MT', netNote: 'Graded & Polished', stage: '84.5 CQI', stageIcon: 'verified', stageNote: '11.2% H₂O', stageTone: 'primary', status: 'Ready for Lot', statusTone: 'primary', action: 'Create Lot', actionTone: 'container' },
-    { id: 'BAT-UG-2045', coffee: 'Bugisu Arabica AA Washed', origin: 'Mt. Elgon Wet Mill • Mbale', coll: '3 Coll.', net: '11.2 MT', netNote: '6 MT in LOT-UG-014', netTone: 'tertiary', stage: '86.8 SCAA', stageIcon: 'verified', stageNote: '10.8% H₂O', stageTone: 'primary', status: 'Allocated (6MT)', statusTone: 'tertiary', action: 'Allocate', actionTone: 'muted' },
-    { id: 'BAT-UG-2042', coffee: 'Rwenzori Natural Drugar', origin: 'Kasese Solar Dryers', coll: '5 Coll.', net: '15.8 MT', netNote: 'Hulling & Sizing', stage: 'Lab Pending', stageIcon: 'biotech', stageNote: 'Moisture audit req.', stageTone: 'error', status: 'Quality Review', statusTone: 'error', action: 'Review', actionTone: 'muted' },
-    { id: 'BAT-UG-2038', coffee: 'West Nile FAQ Robusta', origin: 'Nebbi Regional Mill', coll: '6 Coll.', net: '32.0 MT', netNote: 'Fully Milled', stage: '81.0 CQI', stageIcon: 'done_all', stageNote: '11.6% H₂O', stageTone: 'primary', status: 'Completed', statusTone: 'neutral', action: 'View Lots', actionTone: 'muted' },
-];
+/* Real batch → table row. Weight adapts kg/MT by size (most batches are
+   well under 1 MT, per the app's own formatWeight convention elsewhere
+   — see DashboardFarmer.vue); moisture_content is shown as-is since it's
+   already a plain percentage column on the batches table. `stage` (real
+   milling_status — see MillingMetadata) isn't its own table column, but
+   still backs the Method filter and search below. */
+function formatWeight(kg) {
+    const n = Number(kg) || 0;
+    return n >= 1000 ? `${(n / 1000).toFixed(1)} MT` : `${Math.round(n)} kg`;
+}
+
+const STATUS_TONES = { received: 'secondary', processing: 'secondary', ready: 'primary', completed: 'neutral' };
+
+function titleCase(value) {
+    return value ? value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, ' ') : '—';
+}
+
+const batchRows = computed(() => props.batches.map((batch, index) => ({
+    key: batch.id,
+    id: batch.batch_number,
+    coffee: batch.variety || 'Coffee Batch',
+    origin: batch.warehouse_location || '—',
+    weight: formatWeight(batch.net_weight_kg),
+    weightNote: batch.quantity_bags ? `${batch.quantity_bags} bags` : null,
+    moisture: batch.moisture_content !== null && batch.moisture_content !== undefined ? `${Number(batch.moisture_content).toFixed(1)}%` : '—',
+    stage: batch.milling_status || titleCase(batch.processing_method) || '—',
+    status: titleCase(batch.status),
+    statusTone: STATUS_TONES[batch.status] || 'neutral',
+    active: index === 0,
+    searchText: [batch.batch_number, batch.variety, batch.warehouse_location, batch.status, batch.milling_status, batch.processing_method]
+        .filter(Boolean).join(' ').toLowerCase(),
+})));
+
+/* Filter dropdown options are the real distinct values present in this
+   user's batches — not a guessed/fixed list — so a selection always
+   matches at least one row. */
+const statusOptions = computed(() => [...new Set(batchRows.value.map((r) => r.status))].sort());
+const coffeeOptions = computed(() => [...new Set(batchRows.value.map((r) => r.coffee).filter(Boolean))].sort());
+const originOptions = computed(() => [...new Set(batchRows.value.map((r) => r.origin).filter((v) => v && v !== '—'))].sort());
+const methodOptions = computed(() => [...new Set(batchRows.value.map((r) => r.stage).filter(Boolean))].sort());
+
+/* Search + the 4 filter selects operate on the real rows above.
+   statusFilter matches row.status exactly; coffee/origin/method are
+   free-text selects with no single normalized column to match 1:1
+   against, so each does a case-insensitive substring match against the
+   row's corresponding field — the same approach Store/Lots.vue uses. */
+const filteredBatches = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase();
+
+    return batchRows.value.filter((row) => {
+        if (statusFilter.value && row.status !== statusFilter.value) return false;
+        if (coffeeFilter.value && !row.coffee.toLowerCase().includes(coffeeFilter.value.toLowerCase())) return false;
+        if (originFilter.value && !row.origin.toLowerCase().includes(originFilter.value.toLowerCase())) return false;
+        if (methodFilter.value && !row.stage.toLowerCase().includes(methodFilter.value.toLowerCase())) return false;
+        if (q && !row.searchText.includes(q)) return false;
+        return true;
+    });
+});
+
+/* Reset to page 1 whenever the result set changes shape, so a filter
+   change never leaves the view stranded on a now-empty page. */
+watch([searchQuery, statusFilter, coffeeFilter, originFilter, methodFilter], () => {
+    currentPage.value = 1;
+});
+
+/* Client-side pagination, 10 rows per page — same pattern as
+   Store/Lots.vue — applied after filtering above. */
+const BATCHES_PAGE_SIZE = 10;
+const currentPage = ref(1);
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredBatches.value.length / BATCHES_PAGE_SIZE)));
+const pageNumbers = computed(() => Array.from({ length: totalPages.value }, (_, i) => i + 1));
+const pagedBatches = computed(() => {
+    const start = (currentPage.value - 1) * BATCHES_PAGE_SIZE;
+    return filteredBatches.value.slice(start, start + BATCHES_PAGE_SIZE);
+});
+const pageRangeStart = computed(() => (filteredBatches.value.length ? (currentPage.value - 1) * BATCHES_PAGE_SIZE + 1 : 0));
+const pageRangeEnd = computed(() => Math.min(currentPage.value * BATCHES_PAGE_SIZE, filteredBatches.value.length));
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages.value) return;
+    currentPage.value = page;
+}
 
 const collections = [
     { code: 'FC-UG-1048', farm: 'Kawempe Coffee Farm', weight: '2,500 kg' },
@@ -64,11 +149,6 @@ const timeline = [
             <!-- ── Top context bar ──────────────────────────────────────── -->
             <div class="btc-hero">
                 <div class="btc-hero__text">
-                    <nav class="btc-breadcrumb">
-                        <span>My Coffee</span>
-                        <span class="material-symbols-outlined">chevron_right</span>
-                        <span class="btc-breadcrumb__current">Batches</span>
-                    </nav>
                     <h1 class="btc-title">My Batches</h1>
                     <p class="btc-subtitle">Manage coffee aggregation, processing, quality, quantity transformations, and preparation for commercial Lots.</p>
                 </div>
@@ -79,9 +159,6 @@ const timeline = [
                     <Link :href="route('farm-collection.index')" class="btc-btn btc-btn--muted">
                         <span class="material-symbols-outlined">inventory_2</span> View Farm Collections
                     </Link>
-                    <button type="button" class="btc-btn btc-btn--secondary">
-                        <span class="material-symbols-outlined">auto_awesome</span> Ask Bean Origin AI
-                    </button>
                 </div>
             </div>
 
@@ -126,17 +203,26 @@ const timeline = [
 
             <!-- ── Search & filters ──────────────────────────────────────── -->
             <div class="btc-filters">
-                <div class="btc-search">
-                    <span class="material-symbols-outlined">search</span>
-                    <input type="text" placeholder="Search batch ID, coffee, farm, origin, or collection..." readonly />
-                    <span class="btc-search__badge">⌘K</span>
-                </div>
                 <div class="btc-filters__row">
-                    <select class="btc-select"><option>Status: All Statuses</option><option>Active</option><option selected>Processing</option><option>Quality Review</option><option>Ready for Lot</option><option>Partially Allocated</option><option>Completed</option></select>
-                    <select class="btc-select"><option>Coffee: All Types</option><option>Robusta Screen 18</option><option>Bugisu Arabica AA</option><option>Rwenzori Natural</option></select>
-                    <select class="btc-select"><option>Origin: All Regions</option><option>Central Uganda</option><option>Mt. Elgon</option><option>Rwenzori</option><option>West Nile</option></select>
-                    <select class="btc-select"><option>Method: All</option><option>Washed</option><option>Natural</option><option>Honey</option><option>Wet Mill Anaerobic</option></select>
-                    <select class="btc-select"><option>Hub: All Locations</option><option>Kampala Central Dry Mill</option><option>Mbale Processing Hub</option><option>Kasese Depot</option></select>
+                    <el-input v-model="searchQuery" size="small" class="btc-el-search" placeholder="Search batch ID, coffee, farm, origin, or collection...">
+                        <template #prefix><span class="material-symbols-outlined">search</span></template>
+                    </el-input>
+                    <el-select v-model="statusFilter" size="small" class="btc-el-select" placeholder="Status: All Statuses">
+                        <el-option label="Status: All Statuses" value="" />
+                        <el-option v-for="option in statusOptions" :key="option" :label="option" :value="option" />
+                    </el-select>
+                    <el-select v-model="coffeeFilter" size="small" class="btc-el-select" placeholder="Coffee: All Types">
+                        <el-option label="Coffee: All Types" value="" />
+                        <el-option v-for="option in coffeeOptions" :key="option" :label="option" :value="option" />
+                    </el-select>
+                    <el-select v-model="originFilter" size="small" class="btc-el-select" placeholder="Origin: All Regions">
+                        <el-option label="Origin: All Regions" value="" />
+                        <el-option v-for="option in originOptions" :key="option" :label="option" :value="option" />
+                    </el-select>
+                    <el-select v-model="methodFilter" size="small" class="btc-el-select" placeholder="Method: All">
+                        <el-option label="Method: All" value="" />
+                        <el-option v-for="option in methodOptions" :key="option" :label="option" :value="option" />
+                    </el-select>
                     <div class="btc-view-toggle">
                         <button type="button" class="btc-view-toggle__opt btc-view-toggle__opt--active"><span class="material-symbols-outlined">table_rows</span></button>
                         <button type="button" class="btc-view-toggle__opt"><span class="material-symbols-outlined">grid_view</span></button>
@@ -159,27 +245,23 @@ const timeline = [
                         <div class="btc-table-wrap">
                             <table class="btc-table">
                                 <colgroup>
-                                    <col style="width: 11%" />
-                                    <col style="width: 20%" />
-                                    <col style="width: 11%" />
-                                    <col style="width: 12%" />
-                                    <col style="width: 15%" />
+                                    <col style="width: 16%" />
+                                    <col style="width: 28%" />
+                                    <col style="width: 16%" />
                                     <col style="width: 14%" />
-                                    <col style="width: 17%" />
+                                    <col style="width: 26%" />
                                 </colgroup>
                                 <thead>
                                     <tr>
                                         <th>Batch ID</th>
                                         <th>Coffee &amp; Variety</th>
-                                        <th>Collections</th>
-                                        <th>Net / Input</th>
-                                        <th>Stage &amp; Moisture</th>
+                                        <th>Weight</th>
+                                        <th>Moisture</th>
                                         <th>Status</th>
-                                        <th class="btc-table__end">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="row in batches" :key="row.id" class="btc-table__row" :class="{ 'btc-table__row--active': row.active }">
+                                    <tr v-for="row in pagedBatches" :key="row.key" class="btc-table__row" :class="{ 'btc-table__row--active': row.active }">
                                         <td class="btc-mono btc-strong btc-tone-text">
                                             <span class="btc-table__dot" v-if="row.active"></span>{{ row.id }}
                                         </td>
@@ -188,54 +270,32 @@ const timeline = [
                                             <div class="btc-muted btc-small">{{ row.origin }}</div>
                                         </td>
                                         <td>
-                                            <span class="btc-chip">{{ row.coll }}</span>
-                                            <div v-if="row.collNote" class="btc-muted btc-small btc-mono">{{ row.collNote }}</div>
+                                            <div class="btc-strong btc-mono">{{ row.weight }}</div>
+                                            <div v-if="row.weightNote" class="btc-muted btc-small">{{ row.weightNote }}</div>
                                         </td>
-                                        <td>
-                                            <div class="btc-strong">{{ row.net }}</div>
-                                            <div class="btc-small" :class="row.netTone === 'tertiary' ? 'btc-tone-tertiary' : 'btc-muted'">{{ row.netNote }}</div>
-                                        </td>
-                                        <td>
-                                            <div class="btc-strong" :class="row.stageTone === 'error' ? 'btc-tone-error' : (row.stageTone === 'primary' ? 'btc-tone-text' : '')">
-                                                <span v-if="row.stageIcon" class="material-symbols-outlined">{{ row.stageIcon }}</span>{{ row.stage }}
-                                            </div>
-                                            <div class="btc-small" :class="row.stageTone === 'secondary' ? 'btc-tone-secondary' : 'btc-muted'">{{ row.stageNote }}</div>
-                                        </td>
+                                        <td class="btc-mono btc-strong">{{ row.moisture }}</td>
                                         <td>
                                             <span class="btc-status" :class="`btc-status--${row.statusTone}`">{{ row.status }}</span>
                                         </td>
-                                        <td class="btc-table__end">
-                                            <button type="button" class="btc-action-btn" :class="`btc-action-btn--${row.actionTone}`">{{ row.action }}</button>
+                                    </tr>
+                                    <tr v-if="!pagedBatches.length">
+                                        <td colspan="5" class="btc-muted btc-small" style="text-align: center; padding: 24px;">
+                                            {{ batchRows.length ? 'No batches match your search.' : "You haven't created any batches yet." }}
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         <div class="btc-table-card__foot">
-                            <span class="btc-muted btc-small">Showing <strong class="btc-strong">1–5</strong> of <strong class="btc-strong">24</strong> batches</span>
-                            <div class="btc-pagination">
-                                <button type="button" class="btc-page-btn" disabled><span class="material-symbols-outlined">chevron_left</span></button>
-                                <button type="button" class="btc-page-btn btc-page-btn--active">1</button>
-                                <button type="button" class="btc-page-btn">2</button>
-                                <button type="button" class="btc-page-btn">3</button>
-                                <button type="button" class="btc-page-btn">4</button>
-                                <button type="button" class="btc-page-btn">5</button>
-                                <button type="button" class="btc-page-btn"><span class="material-symbols-outlined">chevron_right</span></button>
+                            <span class="btc-muted btc-small">Showing <strong class="btc-strong">{{ pageRangeStart }}–{{ pageRangeEnd }}</strong> of <strong class="btc-strong">{{ filteredBatches.length }}</strong> batches</span>
+                            <div v-if="totalPages > 1" class="btc-pagination">
+                                <button type="button" class="btc-page-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)"><span class="material-symbols-outlined">chevron_left</span></button>
+                                <button v-for="p in pageNumbers" :key="p" type="button" class="btc-page-btn" :class="{ 'btc-page-btn--active': p === currentPage }" @click="goToPage(p)">{{ p }}</button>
+                                <button type="button" class="btc-page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)"><span class="material-symbols-outlined">chevron_right</span></button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Insight banner -->
-                    <div class="btc-insight">
-                        <div class="btc-insight__left">
-                            <span class="material-symbols-outlined">hub</span>
-                            <div>
-                                <div class="btc-strong btc-small">Decoupled Aggregation Architecture</div>
-                                <div class="btc-muted btc-small">Individual farmer payments remain anchored to intake weights while batch outturn governs commercial sales.</div>
-                            </div>
-                        </div>
-                        <span class="btc-mono btc-strong btc-tone-text btc-small">Avg Regional Yield: 94.2%</span>
-                    </div>
                 </div>
 
                 <!-- ── Right column: Batch Inspection Dossier ───────────── -->
@@ -351,18 +411,6 @@ const timeline = [
                             <button type="button" class="btc-btn btc-btn--primary btc-btn--block"><span class="material-symbols-outlined">check_circle</span> Create Commercial Lot from Batch</button>
                         </div>
 
-                        <div class="btc-ai-box">
-                            <div class="btc-ai-box__head">
-                                <span class="material-symbols-outlined btc-tone-text">auto_awesome</span>
-                                <span class="btc-strong btc-small">Bean Origin AI Insights</span>
-                            </div>
-                            <p class="btc-ai-box__text">Batch <strong class="btc-mono btc-strong">BAT-UG-2048</strong> has achieved <strong class="btc-tone-text">95.5% milling yield</strong>, outperforming the regional average (93.8%). Moisture level of 11.4% is within safe export transport window. Recommend completing destoning before final lot certification.</p>
-                            <div class="btc-ai-box__actions">
-                                <button type="button" class="btc-ai-chip">Check Moisture Compliance</button>
-                                <button type="button" class="btc-ai-chip">Estimate Commercial Lot Price</button>
-                                <button type="button" class="btc-ai-chip">Simulate Lot Split</button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -392,14 +440,10 @@ const timeline = [
 .btc-italic { font-style: italic; }
 .btc-tone-text { color: var(--dp-primary); }
 .btc-tone-secondary { color: var(--dp-on-secondary-container); }
-.btc-tone-tertiary { color: #4B5578; }
 .btc-tone-error { color: var(--dp-error); }
 
 /* Hero */
 .btc-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.btc-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--dp-on-surface-variant); margin-bottom: 4px; }
-.btc-breadcrumb .material-symbols-outlined { font-size: 14px; }
-.btc-breadcrumb__current { color: var(--dp-primary); font-weight: 700; }
 .btc-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.015em; color: var(--dp-on-surface); margin: 0; }
 .btc-subtitle { font-size: 12.5px; color: var(--dp-on-surface-variant); margin: 4px 0 0; line-height: 1.5; max-width: 62ch; }
 .btc-hero__actions { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
@@ -440,20 +484,33 @@ const timeline = [
 .btc-kpi__note { font-size: 10px; color: var(--dp-on-surface-variant); margin-top: 2px; }
 
 /* Filters */
-.btc-filters { background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); border-radius: var(--dp-card-radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-.btc-search { position: relative; display: flex; align-items: center; max-width: 420px; }
-.btc-search .material-symbols-outlined { position: absolute; left: 10px; font-size: 17px; color: var(--dp-on-surface-variant); }
-.btc-search input { width: 100%; padding: 8px 60px 8px 34px; background: var(--dp-surface-container-low); border: none; border-radius: 6px; font-size: 12px; color: var(--dp-on-surface); font-family: var(--dp-font-sans); outline: none; }
-.btc-search__badge { position: absolute; right: 10px; font-family: var(--dp-font-mono); font-size: 10px; padding: 2px 6px; background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); border-radius: 4px; }
-.btc-filters__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.btc-select { padding: 7px 10px; background: var(--dp-surface-container-low); color: var(--dp-on-surface); font-size: 11.5px; font-weight: 600; border: none; border-radius: 6px; font-family: var(--dp-font-sans); cursor: pointer; }
-.btc-view-toggle { display: flex; gap: 4px; background: var(--dp-surface-container-low); padding: 3px; border-radius: 6px; margin-left: auto; }
+.btc-filters { background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); border-radius: var(--dp-card-radius); padding: 14px; }
+.btc-filters__row { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto; }
+
+/* Search/filter fields are real Element Plus <el-input>/<el-select>
+   (size="small", overriding Element Plus's own default size). The app's
+   global .el-input__wrapper/.el-select__wrapper rule (resources/css/
+   element-overrides.css) forces min-height:48px and font-size:14px
+   app-wide with !important, which silences size="small" everywhere
+   unless a page-scoped override matches it back with !important of its
+   own — same fix already used on Store/Lots.vue and Rfq/Index.vue. */
+.btc-el-search { flex-shrink: 0; width: 180px; }
+.btc-el-search .material-symbols-outlined { font-size: 17px; color: var(--dp-on-surface-variant); }
+.btc-el-search :deep(.el-input__wrapper) { background: var(--dp-surface-container-low); box-shadow: none !important; border-radius: 6px; min-height: 30px !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+.btc-el-search :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1.5px var(--dp-primary) inset !important; }
+.btc-el-search :deep(.el-input__inner) { font-size: 12px !important; color: var(--dp-on-surface); font-family: var(--dp-font-sans); }
+.btc-el-select { width: 150px; flex-shrink: 0; }
+.btc-el-select :deep(.el-select__wrapper) { background: var(--dp-surface-container-low); box-shadow: none !important; border-radius: 6px; font-weight: 600; font-family: var(--dp-font-sans); color: var(--dp-on-surface); min-height: 30px !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+.btc-el-select :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 1.5px var(--dp-primary) inset !important; }
+.btc-el-select :deep(.el-select__selected-item),
+.btc-el-select :deep(.el-select__placeholder) { font-size: 11.5px !important; }
+.btc-view-toggle { display: flex; gap: 4px; background: var(--dp-surface-container-low); padding: 3px; border-radius: 6px; margin-left: auto; flex-shrink: 0; }
 .btc-view-toggle__opt { display: inline-flex; align-items: center; padding: 6px 8px; border-radius: 5px; border: none; background: transparent; color: var(--dp-on-surface-variant); cursor: pointer; }
 .btc-view-toggle__opt .material-symbols-outlined { font-size: 16px; }
 .btc-view-toggle__opt--active { background: var(--dp-surface-container-lowest); color: var(--dp-primary); box-shadow: 0 1px 2px rgba(18, 21, 22, 0.08); }
 
 /* Two-column grid */
-.btc-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(320px, 5fr); gap: 18px; align-items: start; }
+.btc-grid { display: grid; grid-template-columns: minmax(0, 8fr) minmax(280px, 4fr); gap: 18px; align-items: start; }
 .btc-col-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .btc-col-side { display: flex; flex-direction: column; gap: 16px; }
 @media (max-width: 1180px) { .btc-grid { grid-template-columns: 1fr; } }
@@ -465,15 +522,17 @@ const timeline = [
 .btc-sort { display: flex; align-items: center; gap: 6px; font-family: var(--dp-font-mono); font-size: 11px; color: var(--dp-on-surface-variant); }
 .btc-sort__value { font-weight: 700; color: var(--dp-on-surface); }
 .btc-table-wrap { overflow-x: hidden; }
-.btc-table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 11.5px; }
+.btc-table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 13px; }
 .btc-table thead tr { background: var(--dp-surface-container-low); }
-.btc-table th { padding: 9px 8px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface-variant); overflow-wrap: break-word; }
-.btc-table td { padding: 10px 8px; border-top: 1px solid var(--dp-outline-variant); vertical-align: middle; overflow-wrap: break-word; }
+.btc-table th { padding: 10px 8px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface-variant); overflow-wrap: break-word; }
+.btc-table td { padding: 11px 8px; border-top: 1px solid var(--dp-outline-variant); vertical-align: middle; overflow-wrap: break-word; }
+.btc-table .btc-small { font-size: 12px; }
+.btc-table .btc-chip { font-size: 11px; }
+.btc-table .btc-status { font-size: 11px; }
 .btc-table__row { transition: background .12s ease; }
 .btc-table__row:hover { background: var(--dp-surface-container-low); }
 .btc-table__row--active { background: color-mix(in srgb, var(--dp-primary) 6%, transparent); }
 .btc-table__dot { display: inline-block; width: 5px; height: 5px; border-radius: 999px; background: var(--dp-primary); margin-right: 5px; }
-.btc-table__end { text-align: right; }
 .btc-table-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--dp-surface-container-low); flex-wrap: wrap; }
 
 .btc-strong .material-symbols-outlined { font-size: 13px; vertical-align: -2px; margin-right: 2px; }
@@ -484,12 +543,6 @@ const timeline = [
 .btc-page-btn:hover:not(:disabled) { background: var(--dp-surface-container-high); }
 .btc-page-btn:disabled { opacity: .4; cursor: default; }
 .btc-page-btn--active { background: var(--dp-primary); color: var(--dp-on-primary); }
-
-.btc-action-btn { padding: 5px 8px; border-radius: 5px; border: none; font-size: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: var(--dp-font-sans); width: 100%; }
-.btc-action-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
-.btc-action-btn--container { background: var(--dp-primary-container); color: var(--dp-on-primary); }
-.btc-action-btn--muted { background: var(--dp-surface-container-low); color: var(--dp-on-surface); }
-.btc-action-btn--muted:hover { background: var(--dp-surface-container-high); }
 
 /* Icon buttons */
 .btc-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; border: none; background: var(--dp-surface-container-low); color: var(--dp-on-surface-variant); cursor: pointer; transition: background .12s ease, color .12s ease; }
@@ -505,11 +558,6 @@ const timeline = [
 .btc-status--tertiary { background: #DAE2FD; color: #333B54; }
 .btc-status--error { background: var(--dp-error-container); color: var(--dp-error); }
 .btc-status--neutral { background: var(--dp-surface-container-high); color: var(--dp-on-surface-variant); }
-
-/* Insight banner */
-.btc-insight { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--dp-surface-container-low); border-radius: 10px; padding: 14px 16px; }
-.btc-insight__left { display: flex; align-items: center; gap: 12px; }
-.btc-insight__left .material-symbols-outlined { width: 38px; height: 38px; border-radius: 8px; background: var(--dp-surface-container-lowest); color: var(--dp-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 
 /* Dossier card */
 .btc-card { background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); border-radius: var(--dp-card-radius); padding: 18px; display: flex; flex-direction: column; gap: 16px; }
@@ -573,13 +621,6 @@ const timeline = [
 .btc-allocation-box__head { display: flex; align-items: center; gap: 6px; }
 .btc-allocation-box__text { font-size: 11.5px; line-height: 1.5; margin: 0; }
 .btc-allocation-box .btc-btn--primary { margin-top: 2px; }
-
-.btc-ai-box { background: var(--dp-surface-container-low); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-.btc-ai-box__head { display: flex; align-items: center; gap: 6px; }
-.btc-ai-box__text { font-size: 12px; color: var(--dp-on-surface); line-height: 1.55; margin: 0; }
-.btc-ai-box__actions { display: flex; flex-wrap: wrap; gap: 6px; }
-.btc-ai-chip { padding: 6px 10px; border-radius: 6px; border: none; background: var(--dp-surface-container-lowest); color: var(--dp-primary); font-size: 10px; font-weight: 700; cursor: pointer; font-family: var(--dp-font-sans); }
-.btc-ai-chip:hover { background: var(--dp-surface-container-highest); }
 
 @media (max-width: 640px) {
     .btc-hero__actions { width: 100%; }
