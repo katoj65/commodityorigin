@@ -162,17 +162,10 @@ const readyLots = [
             <div class="inv-hero">
                 <div class="inv-hero__top">
                     <div class="inv-hero__text">
-                        <div class="inv-hero__eyebrow-row">
-                            <span class="inv-hero__eyebrow">Supply Operations</span>
-                            <span class="inv-hero__eyebrow-mono">Physical Custody System · ISO 22053</span>
-                        </div>
                         <h1 class="inv-title">Inventory</h1>
                         <p class="inv-subtitle">Track coffee from collection through processing, commercial lots, and tokenisation.</p>
                     </div>
                     <div class="inv-hero__actions">
-                        <button type="button" class="inv-btn inv-btn--ghost">
-                            <span class="material-symbols-outlined">auto_awesome</span> Ask Bean Origin AI
-                        </button>
                         <button type="button" class="inv-btn inv-btn--muted" @click="addBatchOpen = true">
                             <span class="material-symbols-outlined">layers</span> + Create Batch
                         </button>
@@ -498,9 +491,6 @@ const readyLots = [
 .inv-hero { background: var(--dp-surface-container-lowest); border-radius: var(--dp-card-radius); padding: 0; display: flex; flex-direction: column; gap: 20px; }
 .inv-hero__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .inv-hero__text { min-width: 0; }
-.inv-hero__eyebrow-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
-.inv-hero__eyebrow { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 4px; background: var(--dp-surface-container); color: var(--dp-on-surface-variant); }
-.inv-hero__eyebrow-mono { font-family: var(--dp-font-mono); font-size: 11px; font-weight: 500; color: var(--dp-on-surface-variant); }
 .inv-title { font-size: 1.5rem; line-height: 2.1rem; font-weight: 800; letter-spacing: -.015em; color: var(--dp-on-surface); margin: 0; }
 .inv-subtitle { font-size: var(--dp-content-font-size); color: var(--dp-on-surface-variant); margin: 4px 0 0; }
 .inv-hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; flex-shrink: 0; }
@@ -508,9 +498,6 @@ const readyLots = [
 /* ── Buttons ─────────────────────────────────────────────────────────── */
 .inv-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 6px; border: none; font-size: var(--dp-content-font-size); font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity .12s ease, background .12s ease; font-family: var(--dp-font-sans); }
 .inv-btn .material-symbols-outlined { font-size: 16px; }
-.inv-btn--ghost { background: var(--dp-surface-container-low); color: var(--dp-on-surface); }
-.inv-btn--ghost .material-symbols-outlined { color: var(--dp-primary); }
-.inv-btn--ghost:hover { background: var(--dp-surface-container); }
 .inv-btn--muted { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
 .inv-btn--muted:hover { background: var(--dp-surface-container-highest); }
 .inv-btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }

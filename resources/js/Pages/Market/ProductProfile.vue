@@ -12,11 +12,9 @@ import MainLayout from '@/Layouts/MainLayout.vue';
    from the "Uganda Robusta — Batch #BTH-2026-0048" reference mockup
    wherever the database has nothing to say. `item` is MarketService::show()
    for this listing (real market + lot + farm + blockchain + traceability
-   data); `similar` is a handful of other live listings of the same type.
-   The layout/markup below is unchanged — only the data feeding it. ─────── */
+   data). The layout/markup below is unchanged — only the data feeding it. ── */
 const props = defineProps({
     item: { type: Object, default: () => ({}) },
-    similar: { type: Array, default: () => [] },
 });
 const item = props.item ?? {};
 const specs = item.specs ?? {};
@@ -239,24 +237,6 @@ const seller = {
     trades: has(item.seller_active_listings) ? `${item.seller_active_listings} Active Listing${item.seller_active_listings === 1 ? '' : 's'} on Bean Origin` : '34 Completed Trades on Pulse',
     sla: '99.4% SLA',
 };
-
-const dummyRelated = [
-    { type: 'Arabica', style: 'primary', cup: '86.5 pts', cupAccent: true, name: 'Sipi Falls AA Arabica — Mount Elgon', desc: 'Bugisu Region, Fully Washed, Red Currant & Bergamot Notes. 2,400 kg Available.', price: 5.10 },
-    { type: 'Natural Arabica', style: 'secondary', cup: '85.0 pts', cupAccent: true, name: 'Rwenzori Natural Dry-Process Lot', desc: '1,650m ASL, Heavy dried mango, winey body, anaerobic 48h maceration. 1,800 kg Available.', price: 4.85 },
-    { type: 'Robusta', style: 'neutral', cup: '80.5 pts', cupAccent: false, name: 'West Nile FAQ Robusta Screen 17', desc: 'Natural Sun-Dried, dense chocolate cream profile, standard blending base. 4,500 kg Available.', price: 3.60 },
-];
-const relatedStyles = ['primary', 'secondary', 'neutral'];
-const related = props.similar?.length
-    ? props.similar.slice(0, 3).map((m, i) => ({
-        type: m.type || 'Coffee',
-        style: relatedStyles[i % relatedStyles.length],
-        cup: has(m.quality_score) && m.quality_score > 0 ? `${Number(m.quality_score).toFixed(1)} pts` : '—',
-        cupAccent: has(m.quality_score) && m.quality_score > 0,
-        name: m.name,
-        desc: [m.origin, m.process].filter(has).join(', ') + (has(m.available_quantity) ? `. ${fmtNum(m.available_quantity)} kg Available.` : '.'),
-        price: Number(m.price_per_kg ?? 0),
-    }))
-    : dummyRelated;
 
 /* ── Interactive ordering console — genuinely reactive local state, just
    not tied to a real cart/order yet. ───────────────────────────────────── */
@@ -546,20 +526,6 @@ function scrollToOrder() {
                         </div>
                     </div>
 
-                    <!-- ── Chronological batch timeline ───────────────────────────────── -->
-                    <div class="mp-card">
-                        <div>
-                            <span class="mp-eyebrow">Lifecycle Audit</span>
-                            <h2 class="mp-card__title">Batch Timeline</h2>
-                        </div>
-                        <div class="mp-lifecycle-grid">
-                            <div v-for="t in timeline" :key="t.title" class="mp-lifecycle-tile" :class="{ 'mp-lifecycle-tile--current': t.current }">
-                                <span>{{ t.date }}</span>
-                                <strong>{{ t.title }}</strong>
-                                <el-icon><component :is="t.current ? Lightning : CircleCheck" /></el-icon>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- ── Sticky sidebar: ordering console + seller profile ─────────────── -->
@@ -633,35 +599,24 @@ function scrollToOrder() {
                             <button type="button" class="mp-btn mp-btn--high"><el-icon><Message /></el-icon> Contact Seller</button>
                         </div>
                     </div>
+
+                    <!-- ── Chronological batch timeline ───────────────────────────────── -->
+                    <div class="mp-card">
+                        <div>
+                            <span class="mp-eyebrow">Lifecycle Audit</span>
+                            <h2 class="mp-card__title">Batch Timeline</h2>
+                        </div>
+                        <div class="mp-lifecycle-grid">
+                            <div v-for="t in timeline" :key="t.title" class="mp-lifecycle-tile" :class="{ 'mp-lifecycle-tile--current': t.current }">
+                                <span>{{ t.date }}</span>
+                                <strong>{{ t.title }}</strong>
+                                <el-icon><component :is="t.current ? Lightning : CircleCheck" /></el-icon>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- ── Related batches ────────────────────────────────────────────────── -->
-            <div class="mp-card mp-related">
-                <div class="mp-card__head">
-                    <div>
-                        <span class="mp-eyebrow">Related Offerings</span>
-                        <h2 class="mp-card__title mp-related__title">You May Also Like: Available Batches</h2>
-                    </div>
-                    <a href="#" class="mp-inline-link">Explore All 42 Live Batches <el-icon><Right /></el-icon></a>
-                </div>
-                <div class="mp-related-grid">
-                    <div v-for="r in related" :key="r.name" class="mp-related-tile">
-                        <div>
-                            <div class="mp-related-tile__top">
-                                <span class="mp-tag" :class="`mp-tag--${r.style}`">{{ r.type }}</span>
-                                <span class="mp-mono mp-strong" :class="{ 'mp-accent-text': r.cupAccent }">{{ r.cup }}</span>
-                            </div>
-                            <h3>{{ r.name }}</h3>
-                            <p>{{ r.desc }}</p>
-                        </div>
-                        <div class="mp-related-tile__foot">
-                            <span>${{ r.price.toFixed(2) }} <em>/ kg</em></span>
-                            <button type="button" class="mp-btn mp-btn--outline mp-btn--sm">Inspect Batch</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </MainLayout>
 </template>
@@ -875,6 +830,13 @@ function scrollToOrder() {
 
 /* ── Lifecycle timeline ──────────────────────────────────────────────── */
 .mp-lifecycle-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+/* Sidebar placement (.mp-side is a fixed 360px column) is too narrow for
+   the 6-across grid the main column uses — stack the tiles instead. The
+   extra `.mp-side` ancestor gives this higher specificity than the
+   responsive .mp-lifecycle-grid column-count rules below, so it wins at
+   every viewport width rather than just until the first breakpoint. */
+.mp-side .mp-lifecycle-grid { grid-template-columns: 1fr; }
+.mp-side .mp-lifecycle-tile { flex-direction: row; justify-content: space-between; text-align: left; }
 .mp-lifecycle-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; border-radius: 10px; background: var(--dp-surface-container-low); text-align: center; }
 .mp-lifecycle-tile--current { background: var(--dp-primary-fixed); color: var(--dp-on-primary-fixed); }
 .mp-lifecycle-tile span { font-size: .625rem; color: var(--dp-on-surface-variant); }
@@ -921,18 +883,6 @@ function scrollToOrder() {
 .mp-seller-card__trades { margin-top: 1px; }
 .mp-seller-card__ctas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-/* ── Related ─────────────────────────────────────────────────────────── */
-.mp-related { margin-top: 8px; }
-.mp-related__title { font-size: 1.25rem; }
-.mp-related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.mp-related-tile { display: flex; flex-direction: column; justify-content: space-between; gap: 14px; padding: 18px; border-radius: 12px; background: var(--dp-surface-container-low); }
-.mp-related-tile__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.mp-related-tile h3 { font-size: .875rem; font-weight: 700; color: var(--dp-on-surface); margin: 0 !important; }
-.mp-related-tile p { font-size: .75rem; color: var(--dp-on-surface-variant); margin: 6px 0 0 !important; line-height: 1.5; }
-.mp-related-tile__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.mp-related-tile__foot > span { font-size: .9375rem; font-weight: 700; color: var(--dp-on-surface); }
-.mp-related-tile__foot > span em { font-style: normal; font-size: .625rem; font-weight: 400; color: var(--dp-on-surface-variant); }
-
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
     .mp-side { width: 320px; }
@@ -942,12 +892,11 @@ function scrollToOrder() {
     .mp-side { width: 100%; }
     .mp-spotlight { flex-direction: column; }
     .mp-spotlight__media { width: 100%; }
-    .mp-related-grid { grid-template-columns: 1fr 1fr; }
     .mp-lifecycle-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 720px) {
     .mp-topbar__title-row { flex-direction: column; align-items: stretch; }
-    .mp-kv-grid, .mp-attr-grid, .mp-metric4-grid, .mp-origin-layout, .mp-origin-facts__grid, .mp-sustain-grid, .mp-legend3-grid, .mp-terms2-grid, .mp-related-grid { grid-template-columns: 1fr; }
+    .mp-kv-grid, .mp-attr-grid, .mp-metric4-grid, .mp-origin-layout, .mp-origin-facts__grid, .mp-sustain-grid, .mp-legend3-grid, .mp-terms2-grid { grid-template-columns: 1fr; }
     .mp-lifecycle-grid { grid-template-columns: 1fr 1fr; }
     .mp-spotlight__specs { grid-template-columns: 1fr; }
     .mp-order-card__ctas-row, .mp-seller-card__ctas { grid-template-columns: 1fr; }

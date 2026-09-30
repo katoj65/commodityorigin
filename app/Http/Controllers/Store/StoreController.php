@@ -10,6 +10,7 @@ use App\Http\Resources\LotResource;
 use App\Http\Resources\StoreItemResource;
 use App\Http\Resources\StoreResource;
 use App\Models\Batch;
+use App\Models\Bid;
 use App\Models\FarmCollection;
 use App\Models\Lot;
 use App\Models\CropVarietyMetadata;
@@ -81,22 +82,42 @@ class StoreController extends Controller
         return $this->renderInventoryTab($request, 'Store/FarmCollections');
     }
 
+    /**
+     * The "Batches" inventory tab.
+     */
     public function batches(Request $request): Response|RedirectResponse
     {
         return $this->renderInventoryTab($request, 'Store/Batches');
     }
 
+    /**
+     * The "My Lots" inventory tab — the only tab with its own extra
+     * props (the KPI strip and the draft-lots alert strip), since those
+     * are specific to lots rather than shared across all four tabs.
+     */
     public function lots(Request $request): Response|RedirectResponse
     {
-        return $this->renderInventoryTab($request, 'Store/Lots');
+        return $this->renderInventoryTab($request, 'Store/Lots', fn (int $userId) => [
+            'lotKpis' => $this->lotKpis($userId),
+            'actionAlerts' => $this->draftLotAlerts($userId),
+        ]);
     }
 
+    /**
+     * The "Tokenised Lots" inventory tab.
+     */
     public function tokenised(Request $request): Response|RedirectResponse
     {
         return $this->renderInventoryTab($request, 'Store/TokenisedLots');
     }
 
-    private function renderInventoryTab(Request $request, string $component): Response|RedirectResponse
+    /**
+     * Shared renderer behind every inventory tab (collections, batches,
+     * lots, tokenised) — gates on a verified store, then merges the
+     * common header/inventory context with whatever tab-specific extra
+     * props the caller supplies via `$extra` (see lots() above).
+     */
+    private function renderInventoryTab(Request $request, string $component, ?callable $extra = null): Response|RedirectResponse
     {
         $store = $this->stores->forUser($request->user()->id);
 
@@ -104,10 +125,95 @@ class StoreController extends Controller
             return redirect()->route('store.show');
         }
 
+        $userId = $request->user()->id;
+
         return Inertia::render($component, [
             ...$this->headerContext($request, $store),
-            ...$this->inventoryContext($request->user()->id),
+            ...$this->inventoryContext($userId),
+            ...($extra ? $extra($userId) : []),
         ]);
+    }
+
+    /**
+     * KPI strip for the "My Lots" page — every number is derived from
+     * this user's `lots` rows plus their directly related market listing
+     * (Market.lot_id) and incoming bids (Bid.lot_id); nothing here comes
+     * from batches or collections, since the page is scoped to lots.
+     * Lot.status only ever holds 'draft' | 'tokenisation_ready' |
+     * 'listing_ready' | 'ready' (see LotService::resolveLotStatus()) —
+     * there's no "sold"/"reserved" lot status, so "available" and
+     * "reserved" volumes come from the lot's Market listing instead
+     * (available_quantity / reserved_quantity), falling back to the
+     * lot's full net weight when it isn't listed at all.
+     *
+     * @return array<string, mixed>
+     */
+    private function lotKpis(int $userId): array
+    {
+        $lots = Lot::query()->where('user_id', $userId)->with('market')->get();
+
+        $preparingLots = $lots->whereNotIn('status', ['ready']);
+
+        $availableKg = 0.0;
+        $reservedKg = 0.0;
+        $reservedListingCount = 0;
+
+        foreach ($lots as $lot) {
+            $market = $lot->market;
+
+            if ($market) {
+                $availableKg += (float) $market->available_quantity;
+                $reserved = (float) ($market->reserved_quantity ?? 0);
+                $reservedKg += $reserved;
+                $reservedListingCount += $reserved > 0 ? 1 : 0;
+            } else {
+                $availableKg += (float) ($lot->net_weight_kg ?? 0);
+            }
+        }
+
+        $listedLots = $lots->filter(fn (Lot $lot) => $lot->market?->status === 'live');
+        $listedLotIds = $listedLots->pluck('id');
+
+        return [
+            'active_lots' => $lots->count(),
+            'new_this_month' => $lots->where('created_at', '>=', now()->startOfMonth())->count(),
+            'ready_lots' => $lots->where('status', 'ready')->count(),
+            'available_kg' => round($availableKg, 2),
+            'region_count' => $lots->pluck('region')->filter()->unique()->count(),
+            'listed_count' => $listedLots->count(),
+            'listed_volume_kg' => round((float) $listedLots->sum(fn (Lot $lot) => (float) $lot->market->quantity), 2),
+            'pending_bid_count' => Bid::query()->whereIn('lot_id', $listedLotIds)->where('status', 'pending')->count(),
+            'reserved_kg' => round($reservedKg, 2),
+            'reserved_listing_count' => $reservedListingCount,
+            'processing_kg' => round((float) $preparingLots->sum(fn (Lot $lot) => (float) ($lot->net_weight_kg ?? 0)), 2),
+            'processing_count' => $preparingLots->count(),
+        ];
+    }
+
+    /**
+     * "Action Required · Operational Prioritization" alert strip on the
+     * "My Lots" page — this user's oldest still-draft lots (the ones
+     * that have been sitting unfinished longest), capped at 3.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function draftLotAlerts(int $userId): array
+    {
+        return Lot::query()
+            ->where('user_id', $userId)
+            ->where('status', 'draft')
+            ->orderBy('created_at')
+            ->take(3)
+            ->get()
+            ->map(fn (Lot $lot) => [
+                'id' => $lot->id,
+                'title' => $lot->lot_name ?: $lot->lot_number,
+                'note' => 'Created ' . $lot->created_at->format('d M Y') . ' · still in draft, not yet market-ready',
+                'tone' => 'secondary',
+                'action' => 'Complete Lot',
+                'actionTone' => 'dark',
+            ])
+            ->all();
     }
 
     /**
@@ -199,7 +305,7 @@ class StoreController extends Controller
         ];
 
 
-        
+
         $movementLedger = collect()
             ->concat($collections->map(fn (FarmCollection $c) => [
                 'label' => "Collection recorded {$c->collection_code}",
@@ -287,7 +393,7 @@ class StoreController extends Controller
                 Batch::query()->where('user_id', $userId)->latest()->get()
             )->resolve(),
             'lots' => LotResource::collection(
-                Lot::query()->where('user_id', $userId)->with(['lotBatches.batch', 'blockchain'])->latest()->get()
+                Lot::query()->where('user_id', $userId)->with(['lotBatches.batch', 'blockchain', 'market'])->latest()->get()
             )->resolve(),
             'processOptions' => ProcessingMetadata::query()
                 ->where('is_active', true)

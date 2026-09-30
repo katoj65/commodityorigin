@@ -132,11 +132,6 @@ const news = [
                         <span class="gd-strong">Verified Member</span>
                         <span class="gd-tag gd-tag--fixed">Tier 1</span>
                     </div>
-                    <div class="gd-pill">
-                        <span class="material-symbols-outlined gd-muted">hub</span>
-                        <span class="gd-muted">Active Node:</span>
-                        <span class="gd-strong">Kampala / Mombasa Desk</span>
-                    </div>
                     <button type="button" class="gd-btn gd-btn--primary">
                         <span class="material-symbols-outlined">add_circle</span> Quick Post Lot
                     </button>

@@ -1,16 +1,18 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import AddLotModal from '@/Components/Modals/AddLotModal.vue';
 
 /* ── Structural/visual port of the uploaded "My Lots" mockup (code.html),
    restyled with this app's own --dp-* theme tokens rather than the
-   mockup's own Tailwind palette. Everything below is illustrative dummy
-   data, not real lots — but "Create Lot" opens the same real AddLotModal
-   already used on the Inventory page (reused, not rebuilt), wired to real
-   option lists already provided by StoreController::inventoryContext(). ── */
+   mockup's own Tailwind palette. The KPI strip and lots table are real
+   (StoreController::lotKpis() / inventoryContext()'s `lots` prop) — but
+   "Create Lot" opens the same real AddLotModal already used on the
+   Inventory page (reused, not rebuilt), wired to real option lists
+   already provided by StoreController::inventoryContext(). ─────────── */
 const props = defineProps({
+    lots: { type: Array, default: () => [] },
     processOptions: { type: Array, default: () => [] },
     coffeeGradeOptions: { type: Array, default: () => [] },
     packagingTypeOptions: { type: Array, default: () => [] },
@@ -23,63 +25,159 @@ const props = defineProps({
     acidityOptions: { type: Array, default: () => [] },
     aftertasteOptions: { type: Array, default: () => [] },
     aromaOptions: { type: Array, default: () => [] },
+    lotKpis: {
+        type: Object,
+        default: () => ({
+            active_lots: 0,
+            new_this_month: 0,
+            ready_lots: 0,
+            available_kg: 0,
+            region_count: 0,
+            listed_count: 0,
+            listed_volume_kg: 0,
+            pending_bid_count: 0,
+            reserved_kg: 0,
+            reserved_listing_count: 0,
+            processing_kg: 0,
+            processing_count: 0,
+        }),
+    },
+    actionAlerts: { type: Array, default: () => [] },
 });
 
 const addLotOpen = ref(false);
 
-const kpiCards = [
-    { icon: 'inventory_2', label: 'Active Lots', value: '24', trailing: '+2 this mo', trailingIcon: 'arrow_upward', tone: 'primary', note: '92% audit compliance' },
-    { icon: 'scale', label: 'Coffee Available', value: '428.0', unit: 'MT', tone: 'text', note: 'Unreserved trade stock · Across 4 regional hubs' },
-    { icon: 'storefront', label: 'Listed on Exchange', value: '16', trailing: '(320 MT)', tone: 'secondary', note: '6 active incoming bids' },
-    { icon: 'lock', label: 'Reserved', value: '82.0', unit: 'MT', tone: 'tertiary', note: 'Pending escrow & RFQs · 3 contracts binding' },
-    { icon: 'history', label: 'In Processing', value: '96.0', unit: 'MT', note: 'Upstream batch preparation · 5 batches nearing ready' },
-];
+const mt = (kg) => (Number(kg) / 1000).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-const alerts = [
-    { tone: 'error', title: 'Offer Requires Response', note: 'LOT-UG-001: Counter-offer $4.08/kg by Dubai Coffee Trading', action: 'Review Offer', actionTone: 'primary' },
-    { tone: 'primary', title: 'Batch Outturn Available', note: 'BAT-UG-2047 has 24.0 MT graded ready for commercialization', action: 'Create Lot', actionTone: 'muted' },
-    { tone: 'secondary', title: 'Listing Not Published', note: 'LOT-UG-002 (35 MT FAQ Masaka) verified and awaiting push', action: 'Publish', actionTone: 'secondary' },
-];
+const kpiCards = computed(() => {
+    const k = props.lotKpis;
+    return [
+        {
+            icon: 'inventory_2', label: 'Active Lots', value: String(k.active_lots), tone: 'primary',
+            ...(k.new_this_month > 0 ? { trailing: `+${k.new_this_month} this mo`, trailingIcon: 'arrow_upward' } : {}),
+            note: `${k.ready_lots} ready for market`,
+        },
+        {
+            icon: 'scale', label: 'Coffee Available', value: mt(k.available_kg), unit: 'MT', tone: 'text',
+            note: `Unreserved trade stock · Across ${k.region_count} region${k.region_count === 1 ? '' : 's'}`,
+        },
+        {
+            icon: 'storefront', label: 'Listed on Exchange', value: String(k.listed_count), trailing: `(${mt(k.listed_volume_kg)} MT)`, tone: 'secondary',
+            note: `${k.pending_bid_count} active incoming bid${k.pending_bid_count === 1 ? '' : 's'}`,
+        },
+        {
+            icon: 'lock', label: 'Reserved', value: mt(k.reserved_kg), unit: 'MT', tone: 'tertiary',
+            note: `Pending escrow & RFQs · ${k.reserved_listing_count} listing${k.reserved_listing_count === 1 ? '' : 's'} with reserved stock`,
+        },
+        {
+            icon: 'history', label: 'In Processing', value: mt(k.processing_kg), unit: 'MT',
+            note: `Upstream lot preparation · ${k.processing_count} lot${k.processing_count === 1 ? '' : 's'} pending grading`,
+        },
+    ];
+});
 
-const lots = [
-    {
-        id: 'LOT-UG-001', coffee: 'Uganda Robusta Screen 18', origin: 'Central Mukono · Wet Processed', batch: 'BAT-UG-2021',
-        quality: '84.5 CQI', qualityTone: 'primary', total: '20 MT Total', sub: '15 Avail / 5 Res',
-        segments: [{ pct: 75, tone: 'primary' }, { pct: 25, tone: 'secondary' }],
-        price: '$4.15', exchangeLabel: 'Listed', exchangeTone: 'primary', status: 'Active', statusTone: 'neutral', active: true,
-    },
-    {
-        id: 'LOT-UG-002', coffee: 'Uganda Robusta FAQ', origin: 'Masaka Basin · Sun Dried', batch: 'BAT-UG-2038',
-        quality: '80.5 CQI', qualityTone: 'neutral', total: '35 MT Total', sub: '35 Avail / 0 Res',
-        segments: [{ pct: 100, tone: 'primary' }],
-        price: '$3.98', exchangeLabel: 'Unlisted', exchangeTone: 'neutral', status: 'Ready', statusTone: 'secondary',
-    },
-    {
-        id: 'LOT-UG-003', coffee: 'Uganda Bugisu Arabica AA Washed', origin: 'Mt. Elgon High Slopes (1900m)', batch: 'BAT-UG-2045',
-        quality: '86.8 SCAA', qualityTone: 'primary', total: '12 MT Total', sub: '0 Avail / 12 Res',
-        segments: [{ pct: 100, tone: 'secondary' }],
-        price: '$5.40', exchangeLabel: 'Listed', exchangeTone: 'primary', status: 'Reserved', statusTone: 'secondary',
-    },
-    {
-        id: 'LOT-UG-004', coffee: 'Rwenzori Natural Drugar Arabica', origin: 'Kasese District · Natural Sun', batch: 'BAT-UG-2042',
-        quality: '85.0 CQI', qualityTone: 'primary', total: '15 MT Total', sub: '10 Avail / 5 Sold',
-        segments: [{ pct: 66.6, tone: 'primary' }, { pct: 33.4, tone: 'tertiary' }],
-        price: '$4.90', exchangeLabel: 'Listed', exchangeTone: 'primary', status: 'Part. Sold', statusTone: 'neutral',
-    },
-    {
-        id: 'LOT-UG-005', coffee: 'West Nile FAQ Robusta', origin: 'Nebbi District · Dry Milled', batch: 'BAT-UG-2038',
-        quality: '79.8 CQI', qualityTone: 'neutral', total: '25 MT Total', sub: '25 Avail / 0 Res',
-        segments: [{ pct: 100, tone: 'primary' }],
-        price: '$3.85', exchangeLabel: 'Draft', exchangeTone: 'neutral', status: 'QC Pending', statusTone: 'neutral',
-    },
-];
 
-const qualitySpecs = [
-    { label: 'Screen Size', value: 'Screen 18+ Washed' },
-    { label: 'Moisture Content', value: '11.2% (Target < 12.5%)' },
-    { label: 'CQI Cup Score', value: '84.50 / 100 (Fine Robusta)', tone: 'text' },
-    { label: 'Defect Analysis', value: 'Grade 1 Clean (2 / 350g)' },
-];
+/* ── Real lot rows, mapped from the `lots` prop (LotResource, eager
+   loaded with lotBatches.batch/market/blockchain — see
+   StoreController::inventoryContext()) into this table's display
+   shape. `searchText` is the flattened, lowercased haystack the search
+   bar matches against. ──────────────────────────────────────────────── */
+const STATUS_LABELS = { draft: 'Draft', ready: 'Ready', listing_ready: 'Listing Ready', tokenisation_ready: 'Tokenisation Ready' };
+const STATUS_TONES = { draft: 'neutral', ready: 'secondary', listing_ready: 'secondary', tokenisation_ready: 'secondary' };
+
+const lotRows = computed(() => props.lots.map((lot) => {
+    const market = lot.market ?? null;
+    const batchNumbers = (lot.lot_batches ?? []).map((lb) => lb.batch_number).filter(Boolean);
+    const totalKg = market ? Number(market.quantity) : Number(lot.net_weight_kg || 0);
+    const availKg = market ? Number(market.available_quantity ?? 0) : Number(lot.net_weight_kg || 0);
+    const reservedKg = market ? Number(market.reserved_quantity ?? 0) : 0;
+
+    let statusBucket = 'ready';
+    if (lot.status === 'draft') {
+        statusBucket = 'draft';
+    } else if (market?.status === 'sold') {
+        statusBucket = 'sold';
+    } else if (market?.status === 'live') {
+        if (reservedKg > 0 && availKg <= 0) {
+            statusBucket = 'reserved';
+        } else if (availKg > 0 && availKg < totalKg) {
+            statusBucket = 'partially_sold';
+        } else {
+            statusBucket = 'listed';
+        }
+    }
+
+    return {
+        key: lot.id,
+        statusBucket,
+        id: lot.lot_number,
+        coffee: lot.variety || lot.lot_name || 'Coffee Lot',
+        origin: [lot.origin, lot.process].filter(Boolean).join(' · ') || '—',
+        quality: lot.quality_score ? `${Number(lot.quality_score).toFixed(1)} pts` : (lot.grade || '—'),
+        qualityTone: lot.quality_score ? 'primary' : 'neutral',
+        price: lot.price !== null && lot.price !== undefined ? `$${Number(lot.price).toFixed(2)}` : '—',
+        status: STATUS_LABELS[lot.status] || lot.status || '—',
+        statusTone: STATUS_TONES[lot.status] || 'neutral',
+        active: market?.status === 'live',
+        searchText: [lot.lot_number, lot.lot_name, lot.variety, lot.origin, lot.region, lot.grade, lot.process, ...batchNumbers]
+            .filter(Boolean).join(' ').toLowerCase(),
+    };
+}));
+
+const searchQuery = ref('');
+const originFilter = ref('');
+const coffeeFilter = ref('');
+const tradingFilter = ref('');
+const statusFilter = ref('all');
+
+/* Tab buckets are derived only from real Lot/Market fields (Lot.status,
+   Market.status/available_quantity/reserved_quantity) — there is no
+   "Completed" state anywhere in the schema for a lot's listing, so that
+   tab from the original mockup was dropped rather than faked. */
+const statusTabs = computed(() => {
+    const rows = lotRows.value;
+    const count = (bucket) => rows.filter((row) => row.statusBucket === bucket).length;
+    return [
+        { value: 'all', label: 'All', count: rows.length },
+        { value: 'draft', label: 'Draft', count: count('draft') },
+        { value: 'ready', label: 'Ready', count: count('ready') },
+        { value: 'listed', label: 'Listed', count: count('listed') },
+        { value: 'partially_sold', label: 'Partially Sold', count: count('partially_sold') },
+        { value: 'reserved', label: 'Reserved', count: count('reserved') },
+        { value: 'sold', label: 'Sold', count: count('sold') },
+    ];
+});
+
+const filteredLots = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase();
+    return lotRows.value.filter((row) => {
+        if (statusFilter.value !== 'all' && row.statusBucket !== statusFilter.value) return false;
+        if (q && !row.searchText.includes(q)) return false;
+        return true;
+    });
+});
+
+/* Every lot for this user (StoreController::inventoryContext()'s `lots`
+   prop, ordered `->latest()` i.e. by created_at desc) is passed down and
+   filtered client-side above — pagination below just slices that already-
+   ordered, already-filtered list, 10 rows per page. */
+const LOTS_PAGE_SIZE = 10;
+const currentPage = ref(1);
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredLots.value.length / LOTS_PAGE_SIZE)));
+const pageNumbers = computed(() => Array.from({ length: totalPages.value }, (_, i) => i + 1));
+const pagedLots = computed(() => {
+    const start = (currentPage.value - 1) * LOTS_PAGE_SIZE;
+    return filteredLots.value.slice(start, start + LOTS_PAGE_SIZE);
+});
+const pageRangeStart = computed(() => (filteredLots.value.length ? (currentPage.value - 1) * LOTS_PAGE_SIZE + 1 : 0));
+const pageRangeEnd = computed(() => Math.min(currentPage.value * LOTS_PAGE_SIZE, filteredLots.value.length));
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages.value) return;
+    currentPage.value = page;
+}
+
+watch([searchQuery, statusFilter], () => { currentPage.value = 1; });
 
 const activity = [
     { icon: 'currency_exchange', tone: 'error', title: 'Counter-Offer Received', time: '11:05 AM', note: 'Dubai Coffee Trading bid $4.08/kg for 20 MT FOB' },
@@ -100,11 +198,6 @@ const activity = [
             <!-- ── Top context bar ──────────────────────────────────────── -->
             <div class="ltc-hero">
                 <div class="ltc-hero__text">
-                    <nav class="ltc-breadcrumb">
-                        <span>My Coffee</span>
-                        <span class="material-symbols-outlined">chevron_right</span>
-                        <span class="ltc-breadcrumb__current">Lots</span>
-                    </nav>
                     <h1 class="ltc-title">My Lots</h1>
                     <p class="ltc-subtitle">Manage export-ready coffee consignments prepared for commercial trading, exchange publishing, and institutional bilateral execution.</p>
                 </div>
@@ -161,46 +254,54 @@ const activity = [
                 </div>
             </div>
 
-            <!-- ── Action required alert strip ───────────────────────────── -->
-            <div class="ltc-alerts">
+            <!-- ── Action required alert strip — this user's oldest still-draft
+                 lots (StoreController::draftLotAlerts()), capped at 3 ────── -->
+            <div v-if="actionAlerts.length" class="ltc-alerts">
                 <div class="ltc-alerts__head">
                     <span class="material-symbols-outlined">notification_important</span>
-                    <span>Action Required · Operational Prioritization ({{ alerts.length }})</span>
+                    <span>Action Required · Operational Prioritization ({{ actionAlerts.length }})</span>
                 </div>
                 <div class="ltc-alerts__grid">
-                    <div v-for="alert in alerts" :key="alert.title" class="ltc-alert">
+                    <div v-for="alert in actionAlerts" :key="alert.id" class="ltc-alert">
                         <div class="ltc-alert__text">
                             <div class="ltc-alert__title"><span class="ltc-alert__dot" :class="`ltc-alert__dot--${alert.tone}`"></span>{{ alert.title }}</div>
                             <p class="ltc-alert__note">{{ alert.note }}</p>
                         </div>
-                        <button type="button" class="ltc-alert__btn" :class="`ltc-alert__btn--${alert.actionTone}`">{{ alert.action }}</button>
+                        <Link :href="route('lot.show', alert.id)" class="ltc-alert__btn" :class="`ltc-alert__btn--${alert.actionTone}`">{{ alert.action }}</Link>
                     </div>
                 </div>
             </div>
 
             <!-- ── Filter & search toolbar ───────────────────────────────── -->
             <div class="ltc-filters">
-                <div class="ltc-tabs">
-                    <button type="button" class="ltc-tab ltc-tab--active">All (24)</button>
-                    <button type="button" class="ltc-tab">Draft (2)</button>
-                    <button type="button" class="ltc-tab">Ready (4)</button>
-                    <button type="button" class="ltc-tab">Listed (16)</button>
-                    <button type="button" class="ltc-tab">Partially Sold (5)</button>
-                    <button type="button" class="ltc-tab">Reserved (3)</button>
-                    <button type="button" class="ltc-tab">Sold (12)</button>
-                    <button type="button" class="ltc-tab">Completed</button>
-                </div>
+                <el-radio-group v-model="statusFilter" size="small" class="ltc-tabs">
+                    <el-radio-button v-for="tab in statusTabs" :key="tab.value" :value="tab.value">
+                        {{ tab.label }} ({{ tab.count }})
+                    </el-radio-button>
+                </el-radio-group>
                 <div class="ltc-filters__row">
-                    <div class="ltc-search">
-                        <span class="material-symbols-outlined">search</span>
-                        <input type="text" placeholder="Search Lots by Lot ID, coffee, origin, grade, mill, or source batch..." readonly />
-                    </div>
-                    <select class="ltc-select"><option>Origin: All Regions</option><option>Central Mukono</option><option>Masaka Basin</option><option>Mt. Elgon</option></select>
-                    <select class="ltc-select"><option>Coffee: All Types</option><option>Robusta Screen 18</option><option>Arabica AA Washed</option></select>
-                    <select class="ltc-select"><option>Trading: All States</option><option>Listed on Exchange</option><option>Unlisted / Private</option></select>
-                    <button type="button" class="ltc-btn ltc-btn--muted">
+                    <el-input v-model="searchQuery" size="small" class="ltc-search" placeholder="Search Lots by Lot ID, coffee, origin, grade, mill, or source batch...">
+                        <template #prefix><span class="material-symbols-outlined">search</span></template>
+                    </el-input>
+                    <el-select v-model="originFilter" size="small" class="ltc-select" placeholder="Origin: All Regions">
+                        <el-option label="Origin: All Regions" value="" />
+                        <el-option label="Central Mukono" value="Central Mukono" />
+                        <el-option label="Masaka Basin" value="Masaka Basin" />
+                        <el-option label="Mt. Elgon" value="Mt. Elgon" />
+                    </el-select>
+                    <el-select v-model="coffeeFilter" size="small" class="ltc-select" placeholder="Coffee: All Types">
+                        <el-option label="Coffee: All Types" value="" />
+                        <el-option label="Robusta Screen 18" value="Robusta Screen 18" />
+                        <el-option label="Arabica AA Washed" value="Arabica AA Washed" />
+                    </el-select>
+                    <el-select v-model="tradingFilter" size="small" class="ltc-select" placeholder="Trading: All States">
+                        <el-option label="Trading: All States" value="" />
+                        <el-option label="Listed on Exchange" value="Listed on Exchange" />
+                        <el-option label="Unlisted / Private" value="Unlisted / Private" />
+                    </el-select>
+                    <el-button size="small" class="ltc-save-btn">
                         <span class="material-symbols-outlined">bookmark_add</span> Save View
-                    </button>
+                    </el-button>
                 </div>
             </div>
 
@@ -212,7 +313,7 @@ const activity = [
                         <div class="ltc-table-card__head">
                             <div class="ltc-table-card__title">
                                 <span>Coffee Lots Ledger</span>
-                                <span class="ltc-chip">Showing 5 of 24 Lots</span>
+                                <span class="ltc-chip">Showing {{ filteredLots.length }} of {{ lotRows.length }} Lots</span>
                             </div>
                             <div class="ltc-table-card__actions">
                                 <button type="button" class="ltc-icon-btn"><span class="material-symbols-outlined">download</span></button>
@@ -222,29 +323,23 @@ const activity = [
                         <div class="ltc-table-wrap">
                             <table class="ltc-table">
                                 <colgroup>
-                                    <col style="width: 10%" />
-                                    <col style="width: 20%" />
-                                    <col style="width: 9%" />
+                                    <col style="width: 22%" />
+                                    <col style="width: 26%" />
                                     <col style="width: 19%" />
-                                    <col style="width: 10%" />
-                                    <col style="width: 9%" />
-                                    <col style="width: 9%" />
-                                    <col style="width: 14%" />
+                                    <col style="width: 15%" />
+                                    <col style="width: 18%" />
                                 </colgroup>
                                 <thead>
                                     <tr>
                                         <th>Lot ID</th>
                                         <th>Coffee &amp; Origin</th>
-                                        <th>Batch</th>
-                                        <th>Breakdown (MT)</th>
-                                        <th>Ask Price</th>
-                                        <th>Exchange</th>
-                                        <th>Status</th>
                                         <th>Quality</th>
+                                        <th>Ask Price</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="row in lots" :key="row.id" class="ltc-table__row" :class="{ 'ltc-table__row--active': row.active }">
+                                    <tr v-for="row in pagedLots" :key="row.key" class="ltc-table__row" :class="{ 'ltc-table__row--active': row.active }">
                                         <td class="ltc-mono ltc-strong ltc-tone-text">
                                             <span class="ltc-table__dot" v-if="row.active"></span>{{ row.id }}
                                         </td>
@@ -252,119 +347,32 @@ const activity = [
                                             <div class="ltc-strong">{{ row.coffee }}</div>
                                             <div class="ltc-muted ltc-small">{{ row.origin }}</div>
                                         </td>
-                                        <td class="ltc-mono ltc-muted ltc-small">{{ row.batch }}</td>
-                                        <td>
-                                            <div class="ltc-breakdown__row">
-                                                <span class="ltc-strong ltc-small">{{ row.total }}</span>
-                                                <span class="ltc-muted ltc-small">{{ row.sub }}</span>
-                                            </div>
-                                            <div class="ltc-bar">
-                                                <div v-for="(seg, i) in row.segments" :key="i" class="ltc-bar__seg" :class="`ltc-bar__seg--${seg.tone}`" :style="{ width: seg.pct + '%' }"></div>
-                                            </div>
-                                        </td>
-                                        <td class="ltc-mono ltc-strong">{{ row.price }}<span class="ltc-muted ltc-small ltc-mono">/kg</span></td>
-                                        <td>
-                                            <span class="ltc-status" :class="`ltc-status--${row.exchangeTone}`">
-                                                <span v-if="row.exchangeTone === 'primary'" class="ltc-status__dot"></span>{{ row.exchangeLabel }}
-                                            </span>
-                                        </td>
-                                        <td><span class="ltc-status ltc-status--plain">{{ row.status }}</span></td>
                                         <td><span class="ltc-chip" :class="row.qualityTone === 'primary' ? 'ltc-chip--fixed' : ''">{{ row.quality }}</span></td>
+                                        <td class="ltc-mono ltc-strong">{{ row.price }}<span class="ltc-muted ltc-small ltc-mono">/kg</span></td>
+                                        <td><span class="ltc-status ltc-status--plain">{{ row.status }}</span></td>
+                                    </tr>
+                                    <tr v-if="!pagedLots.length">
+                                        <td colspan="5" class="ltc-muted ltc-small" style="text-align: center; padding: 24px;">
+                                            {{ lotRows.length ? 'No lots match your search.' : "You haven't created any lots yet." }}
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         <div class="ltc-table-card__foot">
-                            <span class="ltc-muted ltc-small">Showing Page 1 of 5</span>
-                            <div class="ltc-pagination">
-                                <button type="button" class="ltc-page-btn" disabled>Previous</button>
-                                <button type="button" class="ltc-page-btn ltc-page-btn--active">1</button>
-                                <button type="button" class="ltc-page-btn">2</button>
-                                <button type="button" class="ltc-page-btn">3</button>
-                                <button type="button" class="ltc-page-btn">Next</button>
+                            <span class="ltc-muted ltc-small">Showing {{ pageRangeStart }}–{{ pageRangeEnd }} of {{ filteredLots.length }} lots</span>
+                            <div v-if="totalPages > 1" class="ltc-pagination">
+                                <button type="button" class="ltc-page-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">Previous</button>
+                                <button v-for="p in pageNumbers" :key="p" type="button" class="ltc-page-btn" :class="{ 'ltc-page-btn--active': p === currentPage }" @click="goToPage(p)">{{ p }}</button>
+                                <button type="button" class="ltc-page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">Next</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ── Right column: Lot dossier (LOT-UG-001) ────────────── -->
+                <!-- ── Right column: Recent Trading Activity ──────────────── -->
                 <div class="ltc-col-side">
                     <div class="ltc-card">
-                        <div class="ltc-dossier__head">
-                            <div>
-                                <div class="ltc-dossier__title-row">
-                                    <span class="ltc-mono ltc-tone-text ltc-title-lg">LOT-UG-001</span>
-                                    <span class="ltc-status ltc-status--primary">Listed &amp; Active</span>
-                                </div>
-                                <p class="ltc-field-value">Uganda Robusta Screen 18 · Central Mukono</p>
-                            </div>
-                            <div class="ltc-dossier__head-actions">
-                                <button type="button" class="ltc-btn ltc-btn--muted ltc-btn--sm">Edit</button>
-                                <button type="button" class="ltc-btn ltc-btn--primary ltc-btn--sm">Listing</button>
-                            </div>
-                        </div>
-
-                        <div class="ltc-dossier__section">
-                            <div class="ltc-dossier__section-head">
-                                <span class="ltc-card__title-plain">Physical Lot Ledger</span>
-                                <span class="ltc-mono ltc-strong ltc-tone-text">20,000 kg (20 MT)</span>
-                            </div>
-                            <div class="ltc-panel">
-                                <div class="ltc-bar ltc-bar--lg">
-                                    <div class="ltc-bar__seg ltc-bar__seg--primary" style="width: 75%"></div>
-                                    <div class="ltc-bar__seg ltc-bar__seg--secondary" style="width: 25%"></div>
-                                </div>
-                                <div class="ltc-ledger-grid">
-                                    <div><span class="ltc-eyebrow-sm">Available</span><span class="ltc-strong ltc-tone-text ltc-mono">15,000 kg</span></div>
-                                    <div><span class="ltc-eyebrow-sm">Reserved</span><span class="ltc-strong ltc-tone-secondary ltc-mono">5,000 kg</span></div>
-                                    <div><span class="ltc-eyebrow-sm">Sold</span><span class="ltc-strong ltc-mono">0 kg</span></div>
-                                </div>
-                                <p class="ltc-ledger-note">* Active counter-offers reserve 5,000 kg in escrow until settlement or expiry.</p>
-                            </div>
-                        </div>
-
-                        <div class="ltc-dossier__section">
-                            <span class="ltc-card__title-plain">Traceability Lineage</span>
-                            <div class="ltc-panel ltc-lineage">
-                                <div class="ltc-lineage__row"><span class="material-symbols-outlined ltc-tone-text">park</span><span class="ltc-muted">Farm Origin:</span><span class="ltc-strong">Kawempe Estate (FARM-1048)</span></div>
-                                <div class="ltc-lineage__row"><span class="material-symbols-outlined ltc-tone-text">hub</span><span class="ltc-muted">Collection:</span><span class="ltc-strong">Mukono Central Wet Mill (4 Picks)</span></div>
-                                <div class="ltc-lineage__row"><span class="material-symbols-outlined ltc-tone-text">grain</span><span class="ltc-muted">Source Batch:</span><span class="ltc-mono ltc-strong ltc-tone-text">BAT-UG-2021</span></div>
-                                <div class="ltc-lineage__row"><span class="material-symbols-outlined ltc-tone-secondary">warehouse</span><span class="ltc-muted">Storage:</span><span class="ltc-strong">Stanbic Bonded Silo B-14</span></div>
-                            </div>
-                        </div>
-
-                        <div class="ltc-dossier__section">
-                            <span class="ltc-card__title-plain">Quality &amp; Cupping Specifications</span>
-                            <div class="ltc-panel--grid2">
-                                <div v-for="spec in qualitySpecs" :key="spec.label" class="ltc-field-box">
-                                    <span class="ltc-eyebrow-sm">{{ spec.label }}</span>
-                                    <span class="ltc-strong ltc-small" :class="spec.tone === 'text' ? 'ltc-tone-text' : ''">{{ spec.value }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="ltc-dossier__section">
-                            <span class="ltc-card__title-plain">Commercial &amp; Exchange Configuration</span>
-                            <div class="ltc-panel ltc-commercial">
-                                <div class="ltc-commercial__row"><span class="ltc-muted">Asking Price:</span><span class="ltc-mono ltc-strong ltc-tone-text">$4.15 / kg ($4,150/MT)</span></div>
-                                <div class="ltc-commercial__row"><span class="ltc-muted">Incoterm Delivery:</span><span class="ltc-strong">FOB Port of Mombasa</span></div>
-                                <div class="ltc-commercial__row"><span class="ltc-muted">Settlement Escrow:</span><span class="ltc-strong">Stanbic Bank Uganda PLC</span></div>
-                                <div class="ltc-commercial__row"><span class="ltc-muted">Active Inquiries:</span><span class="ltc-strong ltc-tone-secondary">1 Counter-offer · 2 RFQ Fits</span></div>
-                            </div>
-                        </div>
-
-                        <div class="ltc-ai-box">
-                            <div class="ltc-ai-box__head">
-                                <span class="material-symbols-outlined ltc-tone-secondary">auto_awesome</span>
-                                <span class="ltc-strong ltc-small">Commercial AI Copilot</span>
-                            </div>
-                            <p class="ltc-ai-box__text">Asking price is <strong>+2.8% above</strong> Mombasa 30-day baseline. High European demand for Screen 18+ washed Robusta creates favorable counter-negotiation leverage.</p>
-                            <div class="ltc-ai-box__actions">
-                                <button type="button" class="ltc-ai-chip">Benchmark Price</button>
-                                <button type="button" class="ltc-ai-chip ltc-ai-chip--strong">Match Active RFQs</button>
-                            </div>
-                        </div>
-
                         <div class="ltc-dossier__section">
                             <span class="ltc-card__title-plain">Recent Trading Activity</span>
                             <div class="ltc-activity">
@@ -375,15 +383,6 @@ const activity = [
                                         <p class="ltc-muted ltc-small">{{ entry.note }}</p>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="ltc-related">
-                            <span class="ltc-muted ltc-small">Related:</span>
-                            <div class="ltc-related__chips">
-                                <span class="ltc-chip">BAT-UG-2021</span>
-                                <span class="ltc-chip">PRD-UG-001</span>
-                                <span class="ltc-chip">OFF-1048</span>
                             </div>
                         </div>
                     </div>
@@ -428,9 +427,6 @@ const activity = [
 
 /* Hero */
 .ltc-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.ltc-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--dp-on-surface-variant); margin-bottom: 4px; }
-.ltc-breadcrumb .material-symbols-outlined { font-size: 14px; }
-.ltc-breadcrumb__current { color: var(--dp-primary); font-weight: 700; }
 .ltc-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -.015em; color: var(--dp-on-surface); margin: 0; }
 .ltc-subtitle { font-size: 12.5px; color: var(--dp-on-surface-variant); margin: 4px 0 0; line-height: 1.5; max-width: 62ch; }
 .ltc-hero__actions { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
@@ -490,22 +486,40 @@ const activity = [
 .ltc-alert__dot--primary { background: var(--dp-primary); }
 .ltc-alert__dot--secondary { background: var(--dp-secondary); }
 .ltc-alert__note { font-size: 10.5px; color: var(--dp-on-surface-variant); margin: 3px 0 0; }
-.ltc-alert__btn { flex-shrink: 0; padding: 6px 10px; border-radius: 6px; border: none; font-size: 10.5px; font-weight: 700; cursor: pointer; font-family: var(--dp-font-sans); white-space: nowrap; }
+.ltc-alert__btn { flex-shrink: 0; display: inline-block; padding: 6px 10px; border-radius: 6px; border: none; font-size: 10.5px; font-weight: 700; cursor: pointer; font-family: var(--dp-font-sans); white-space: nowrap; text-decoration: none; }
 .ltc-alert__btn--primary { background: var(--dp-primary); color: var(--dp-on-primary); }
 .ltc-alert__btn--muted { background: var(--dp-surface-container-high); color: var(--dp-on-surface); }
 .ltc-alert__btn--secondary { background: var(--dp-secondary-fixed); color: var(--dp-on-secondary-fixed); }
+.ltc-alert__btn--dark { background: #000; color: #fff; }
 
 /* Filters */
 .ltc-filters { background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); border-radius: var(--dp-card-radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-.ltc-tabs { display: flex; align-items: center; gap: 4px; overflow-x: auto; }
-.ltc-tab { padding: 7px 12px; border-radius: 6px; border: none; background: transparent; color: var(--dp-on-surface-variant); font-size: 11.5px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: var(--dp-font-sans); }
-.ltc-tab:hover { background: var(--dp-surface-container-low); }
-.ltc-tab--active { background: var(--dp-primary); color: var(--dp-on-primary); }
+.ltc-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.ltc-tabs :deep(.el-radio-button) { margin: 0; }
+.ltc-tabs :deep(.el-radio-button__inner) { padding: 7px 12px; border-radius: 6px !important; border: none; box-shadow: none; background: transparent; color: var(--dp-on-surface-variant); font-size: 11.5px; font-weight: 700; white-space: nowrap; font-family: var(--dp-font-sans); }
+.ltc-tabs :deep(.el-radio-button__inner:hover) { background: var(--dp-surface-container-low); }
+.ltc-tabs :deep(.el-radio-button.is-active .el-radio-button__inner) { background: var(--dp-primary); color: var(--dp-on-primary); box-shadow: none; }
 .ltc-filters__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ltc-search { position: relative; display: flex; align-items: center; flex: 1; min-width: 220px; }
-.ltc-search .material-symbols-outlined { position: absolute; left: 10px; font-size: 17px; color: var(--dp-on-surface-variant); }
-.ltc-search input { width: 100%; padding: 8px 12px 8px 34px; background: var(--dp-surface-container-low); border: none; border-radius: 6px; font-size: 12px; color: var(--dp-on-surface); font-family: var(--dp-font-sans); outline: none; }
-.ltc-select { padding: 7px 10px; background: var(--dp-surface-container-low); color: var(--dp-on-surface); font-size: 11.5px; font-weight: 600; border: none; border-radius: 6px; font-family: var(--dp-font-sans); cursor: pointer; }
+/* Search/filter fields are real Element Plus <el-input>/<el-select>
+   (size="small", overriding Element Plus's own default size) rather
+   than native inputs. The app's global .el-input__wrapper/.el-select__wrapper
+   rule (resources/css/element-overrides.css) forces min-height:48px and
+   font-size:14px app-wide with !important, which silences size="small"
+   everywhere unless a page-scoped override matches it back with !important
+   of its own — same fix already used in Rfq/Index.vue's toolbar. */
+.ltc-filters__row .ltc-search { flex: 1; min-width: 220px; }
+.ltc-search .material-symbols-outlined { font-size: 17px; color: var(--dp-on-surface-variant); }
+.ltc-filters__row .ltc-search :deep(.el-input__wrapper) { background: var(--dp-surface-container-low); box-shadow: none !important; border-radius: 6px; min-height: 30px !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+.ltc-filters__row .ltc-search :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1.5px var(--dp-primary) inset !important; }
+.ltc-filters__row .ltc-search :deep(.el-input__inner) { font-size: 12px !important; color: var(--dp-on-surface); font-family: var(--dp-font-sans); }
+.ltc-filters__row .ltc-select { width: 170px; flex-shrink: 0; }
+.ltc-filters__row .ltc-select :deep(.el-select__wrapper) { background: var(--dp-surface-container-low); box-shadow: none !important; border-radius: 6px; font-weight: 600; font-family: var(--dp-font-sans); color: var(--dp-on-surface); min-height: 30px !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+.ltc-filters__row .ltc-select :deep(.el-select__wrapper.is-focused) { box-shadow: 0 0 0 1.5px var(--dp-primary) inset !important; }
+.ltc-filters__row .ltc-select :deep(.el-select__selected-item),
+.ltc-filters__row .ltc-select :deep(.el-select__placeholder) { font-size: 11.5px !important; }
+.ltc-filters__row .ltc-save-btn.el-button { height: 30px; padding: 0 12px; margin: 0; border: none; border-radius: 6px !important; background: var(--dp-surface-container-high); color: var(--dp-on-surface); font-size: 11.5px; font-weight: 700; font-family: var(--dp-font-sans); gap: 6px; }
+.ltc-filters__row .ltc-save-btn.el-button:hover { background: var(--dp-surface-container-highest); color: var(--dp-on-surface); }
+.ltc-save-btn .material-symbols-outlined { font-size: 16px; }
 
 /* Two-column grid */
 .ltc-grid { display: grid; grid-template-columns: minmax(0, 8fr) minmax(320px, 4fr); gap: 18px; align-items: start; }
@@ -519,22 +533,19 @@ const activity = [
 .ltc-table-card__title { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: .8125rem; color: var(--dp-on-surface); }
 .ltc-table-card__actions { display: flex; gap: 4px; }
 .ltc-table-wrap { overflow-x: hidden; }
-.ltc-table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 11.5px; }
+.ltc-table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 13px; }
 .ltc-table thead tr { background: var(--dp-surface-container-low); }
-.ltc-table th { padding: 9px 8px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface-variant); overflow-wrap: break-word; }
-.ltc-table td { padding: 10px 8px; border-top: 1px solid var(--dp-outline-variant); vertical-align: middle; overflow-wrap: break-word; }
+.ltc-table th { padding: 10px 8px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--dp-on-surface-variant); overflow-wrap: break-word; }
+.ltc-table td { padding: 11px 8px; border-top: 1px solid var(--dp-outline-variant); vertical-align: middle; overflow-wrap: break-word; }
+.ltc-table .ltc-small { font-size: 12px; }
+.ltc-table .ltc-chip { font-size: 11px; }
+.ltc-table .ltc-status { font-size: 11px; }
 .ltc-table__row { transition: background .12s ease; }
 .ltc-table__row:hover { background: var(--dp-surface-container-low); }
 .ltc-table__row--active { background: color-mix(in srgb, var(--dp-primary) 6%, transparent); }
 .ltc-table__dot { display: inline-block; width: 5px; height: 5px; border-radius: 999px; background: var(--dp-primary); margin-right: 5px; }
 .ltc-table-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--dp-surface-container-low); flex-wrap: wrap; }
 
-.ltc-breakdown__row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 3px; }
-.ltc-bar { width: 100%; height: 6px; border-radius: 999px; background: var(--dp-surface-container-high); overflow: hidden; display: flex; }
-.ltc-bar--lg { height: 8px; }
-.ltc-bar__seg--primary { background: var(--dp-primary); }
-.ltc-bar__seg--secondary { background: var(--dp-secondary); }
-.ltc-bar__seg--tertiary { background: #7B87B8; }
 
 .ltc-pagination { display: flex; align-items: center; gap: 3px; }
 .ltc-page-btn { min-width: 24px; height: 24px; padding: 0 8px; border-radius: 5px; border: none; background: transparent; color: var(--dp-on-surface-variant); font-size: 11px; font-family: var(--dp-font-sans); font-weight: 700; cursor: pointer; }
@@ -561,36 +572,8 @@ const activity = [
 .ltc-card { background: var(--dp-surface-container-lowest); border: 1px solid var(--dp-outline-variant); border-radius: var(--dp-card-radius); padding: 18px; display: flex; flex-direction: column; gap: 16px; }
 .ltc-card__title-plain { font-size: .8125rem; font-weight: 800; color: var(--dp-on-surface); }
 .ltc-eyebrow-sm { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--dp-on-surface-variant); margin-bottom: 2px; }
-.ltc-field-value { font-size: 12.5px; font-weight: 600; color: var(--dp-on-surface); margin: 2px 0 0; }
 
-.ltc-dossier__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.ltc-dossier__title-row { display: flex; align-items: center; gap: 8px; }
-.ltc-title-lg { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.01em; }
-.ltc-dossier__head-actions { display: flex; gap: 4px; flex-shrink: 0; }
 .ltc-dossier__section { display: flex; flex-direction: column; gap: 8px; }
-.ltc-dossier__section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-
-.ltc-panel { background: var(--dp-surface-container-low); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-.ltc-ledger-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.ltc-ledger-grid > div { display: flex; flex-direction: column; gap: 2px; }
-.ltc-ledger-note { font-size: 10px; font-style: italic; color: var(--dp-on-surface-variant); margin: 0; }
-
-.ltc-lineage { gap: 8px; }
-.ltc-lineage__row { display: flex; align-items: center; gap: 8px; font-size: 11.5px; }
-.ltc-lineage__row .material-symbols-outlined { font-size: 16px; }
-
-.ltc-panel--grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-.ltc-field-box { background: var(--dp-surface-container-low); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
-
-.ltc-commercial__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; }
-
-.ltc-ai-box { background: color-mix(in srgb, var(--dp-secondary-fixed) 50%, var(--dp-surface-container-lowest)); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-.ltc-ai-box__head { display: flex; align-items: center; gap: 6px; }
-.ltc-ai-box__text { font-size: 12px; color: var(--dp-on-surface); line-height: 1.55; margin: 0; }
-.ltc-ai-box__actions { display: flex; flex-wrap: wrap; gap: 6px; }
-.ltc-ai-chip { padding: 6px 10px; border-radius: 6px; border: none; background: var(--dp-surface-container-lowest); color: var(--dp-on-surface); font-size: 10px; font-weight: 700; cursor: pointer; font-family: var(--dp-font-sans); }
-.ltc-ai-chip:hover { background: var(--dp-surface-container-highest); }
-.ltc-ai-chip--strong { background: var(--dp-secondary); color: var(--dp-on-secondary); }
 
 .ltc-activity { display: flex; flex-direction: column; gap: 6px; }
 .ltc-activity__item { display: flex; align-items: flex-start; gap: 10px; padding: 8px; background: var(--dp-surface-container-low); border-radius: 8px; }
@@ -599,14 +582,9 @@ const activity = [
 .ltc-activity__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .ltc-activity__body p { margin: 2px 0 0; }
 
-.ltc-related { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 2px; }
-.ltc-related__chips { display: flex; gap: 6px; }
-
 @media (max-width: 640px) {
     .ltc-hero__actions { width: 100%; }
     .ltc-hero__actions .ltc-btn { flex: 1; justify-content: center; }
-    .ltc-panel--grid2 { grid-template-columns: 1fr; }
-    .ltc-ledger-grid { grid-template-columns: 1fr; }
     .ltc-alerts__grid { grid-template-columns: 1fr; }
 }
 </style>

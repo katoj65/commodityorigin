@@ -136,149 +136,149 @@ function submit() {
                 <div v-else class="alm-grid">
                     <div class="alm-field alm-field--span2">
                         <label class="alm-field__label">Lot Name <small>(optional)</small></label>
-                        <el-input v-model="form.lot_name" placeholder="e.g. Yirgacheffe Reserve" class="alm-input" :class="{ 'alm-input--error': form.errors.lot_name }" />
+                        <el-input v-model="form.lot_name" size="small" placeholder="e.g. Yirgacheffe Reserve" class="alm-input" :class="{ 'alm-input--error': form.errors.lot_name }" />
                         <span v-if="form.errors.lot_name" class="alm-field__error">{{ form.errors.lot_name }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Variety</label>
-                        <el-select v-model="form.variety" placeholder="Select variety" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.variety }">
+                        <el-select v-model="form.variety" size="small" placeholder="Select variety" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.variety }">
                             <el-option v-for="option in varietyOptions" :key="option" :label="option" :value="option" />
                         </el-select>
                         <span v-if="form.errors.variety" class="alm-field__error">{{ form.errors.variety }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Grade</label>
-                        <el-select v-model="form.grade" placeholder="Select grade" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.grade }">
+                        <el-select v-model="form.grade" size="small" placeholder="Select grade" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.grade }">
                             <el-option v-for="option in coffeeGradeOptions" :key="option" :label="option" :value="option" />
                         </el-select>
                         <span v-if="form.errors.grade" class="alm-field__error">{{ form.errors.grade }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Screen</label>
-                        <el-input v-model="form.screen" placeholder="e.g. 16/18" class="alm-input" :class="{ 'alm-input--error': form.errors.screen }" />
+                        <el-input v-model="form.screen" size="small" placeholder="e.g. 16/18" class="alm-input" :class="{ 'alm-input--error': form.errors.screen }" />
                         <span v-if="form.errors.screen" class="alm-field__error">{{ form.errors.screen }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Origin</label>
-                        <el-select v-model="form.origin" placeholder="Select origin country" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.origin }">
+                        <el-select v-model="form.origin" size="small" placeholder="Select origin country" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.origin }">
                             <el-option v-for="option in originOptions" :key="option" :label="option" :value="option" />
                         </el-select>
                         <span v-if="form.errors.origin" class="alm-field__error">{{ form.errors.origin }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Year of Harvest</label>
-                        <el-input-number v-model="form.year_of_harvest" :min="2000" :max="2100" :controls="false" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.year_of_harvest }" />
+                        <el-input-number v-model="form.year_of_harvest" size="small" :min="2000" :max="2100" :controls="false" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.year_of_harvest }" />
                         <span v-if="form.errors.year_of_harvest" class="alm-field__error">{{ form.errors.year_of_harvest }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Region</label>
-                        <el-input v-model="form.region" placeholder="e.g. Sidama" class="alm-input" :class="{ 'alm-input--error': form.errors.region }" />
+                        <el-input v-model="form.region" size="small" placeholder="e.g. Sidama" class="alm-input" :class="{ 'alm-input--error': form.errors.region }" />
                         <span v-if="form.errors.region" class="alm-field__error">{{ form.errors.region }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Altitude (m) <small>(optional)</small></label>
-                        <el-input-number v-model="form.altitude" :min="0" :max="5000" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.altitude }" />
+                        <el-input-number v-model="form.altitude" size="small" :min="0" :max="5000" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.altitude }" />
                         <span v-if="form.errors.altitude" class="alm-field__error">{{ form.errors.altitude }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Process</label>
-                        <el-select v-model="form.process" placeholder="Select process" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.process }">
+                        <el-select v-model="form.process" size="small" placeholder="Select process" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.process }">
                             <el-option v-for="option in processOptions" :key="option" :label="option" :value="option" />
                         </el-select>
                         <span v-if="form.errors.process" class="alm-field__error">{{ form.errors.process }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Moisture %</label>
-                        <el-input-number v-model="form.moisture" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.moisture }" />
+                        <el-input-number v-model="form.moisture" size="small" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.moisture }" />
                         <span v-if="form.errors.moisture" class="alm-field__error">{{ form.errors.moisture }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Defects % <small>(optional)</small></label>
-                        <el-input-number v-model="form.defects_percentage" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.defects_percentage }" />
+                        <el-input-number v-model="form.defects_percentage" size="small" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.defects_percentage }" />
                         <span v-if="form.errors.defects_percentage" class="alm-field__error">{{ form.errors.defects_percentage }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Packaging Type <small>(optional)</small></label>
-                        <el-select v-model="form.packaging_type" placeholder="Select packaging type" clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.packaging_type }">
+                        <el-select v-model="form.packaging_type" size="small" placeholder="Select packaging type" clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.packaging_type }">
                             <el-option v-for="option in packagingTypeOptions" :key="option" :label="option" :value="option" />
                         </el-select>
                         <span v-if="form.errors.packaging_type" class="alm-field__error">{{ form.errors.packaging_type }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Quantity (bags)</label>
-                        <el-input-number v-model="form.quantity_bags" :min="1" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.quantity_bags }" />
+                        <el-input-number v-model="form.quantity_bags" size="small" :min="1" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.quantity_bags }" />
                         <span v-if="form.errors.quantity_bags" class="alm-field__error">{{ form.errors.quantity_bags }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Bag Weight (kg)</label>
-                        <el-input-number v-model="form.bag_weight_kg" :min="1" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.bag_weight_kg }" />
+                        <el-input-number v-model="form.bag_weight_kg" size="small" :min="1" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.bag_weight_kg }" />
                         <span v-if="form.errors.bag_weight_kg" class="alm-field__error">{{ form.errors.bag_weight_kg }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Price <small>(optional)</small></label>
-                        <el-input-number v-model="form.price" :min="0" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.price }" />
+                        <el-input-number v-model="form.price" size="small" :min="0" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.price }" />
                         <span v-if="form.errors.price" class="alm-field__error">{{ form.errors.price }}</span>
                     </div>
                     <div class="alm-field alm-field--span2">
                         <label class="alm-field__label">Currency</label>
-                        <el-select v-model="form.currency" placeholder="Select currency" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.currency }">
+                        <el-select v-model="form.currency" size="small" placeholder="Select currency" filterable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.currency }">
                             <el-option v-for="option in currencyOptions" :key="option" :label="currencyLabel(option)" :value="option" />
                         </el-select>
                         <span v-if="form.errors.currency" class="alm-field__error">{{ form.errors.currency }}</span>
                     </div>
                     <div class="alm-field alm-field--span2">
                         <label class="alm-field__label">Quality Score <small>(optional)</small></label>
-                        <el-input-number v-model="form.quality_score" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.quality_score }" />
+                        <el-input-number v-model="form.quality_score" size="small" :min="0" :max="100" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.quality_score }" />
                         <span v-if="form.errors.quality_score" class="alm-field__error">{{ form.errors.quality_score }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Acidity <small>(optional)</small></label>
-                        <el-select v-model="form.acidity" placeholder="Select an acidity" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.acidity }">
+                        <el-select v-model="form.acidity" size="small" placeholder="Select an acidity" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.acidity }">
                             <el-option v-for="option in acidityOptions" :key="option.slug" :label="option.name" :value="option.slug" />
                         </el-select>
                         <span v-if="form.errors.acidity" class="alm-field__error">{{ form.errors.acidity }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Body <small>(optional)</small></label>
-                        <el-select v-model="form.body" placeholder="Select a body" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.body }">
+                        <el-select v-model="form.body" size="small" placeholder="Select a body" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.body }">
                             <el-option v-for="option in bodyOptions" :key="option.slug" :label="option.name" :value="option.slug" />
                         </el-select>
                         <span v-if="form.errors.body" class="alm-field__error">{{ form.errors.body }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Flavor <small>(optional)</small></label>
-                        <el-select v-model="form.flavor" placeholder="Select a flavor" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.flavor }">
+                        <el-select v-model="form.flavor" size="small" placeholder="Select a flavor" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.flavor }">
                             <el-option v-for="option in flavorOptions" :key="option.slug" :label="option.name" :value="option.slug" />
                         </el-select>
                         <span v-if="form.errors.flavor" class="alm-field__error">{{ form.errors.flavor }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Aroma <small>(optional)</small></label>
-                        <el-select v-model="form.aroma" placeholder="Select an aroma" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aroma }">
+                        <el-select v-model="form.aroma" size="small" placeholder="Select an aroma" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aroma }">
                             <el-option v-for="option in aromaOptions" :key="option.slug" :label="option.name" :value="option.slug" />
                         </el-select>
                         <span v-if="form.errors.aroma" class="alm-field__error">{{ form.errors.aroma }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Balance <small>(optional)</small></label>
-                        <el-input-number v-model="form.balance" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.balance }" />
+                        <el-input-number v-model="form.balance" size="small" :min="0" :max="10" :precision="2" class="alm-input w-100" :class="{ 'alm-input--error': form.errors.balance }" />
                         <span v-if="form.errors.balance" class="alm-field__error">{{ form.errors.balance }}</span>
                     </div>
                     <div class="alm-field">
                         <label class="alm-field__label">Aftertaste <small>(optional)</small></label>
-                        <el-select v-model="form.aftertaste" placeholder="Select an aftertaste" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aftertaste }">
+                        <el-select v-model="form.aftertaste" size="small" placeholder="Select an aftertaste" filterable clearable class="alm-input w-100" :class="{ 'alm-input--error': form.errors.aftertaste }">
                             <el-option v-for="option in aftertasteOptions" :key="option.slug" :label="option.name" :value="option.slug" />
                         </el-select>
                         <span v-if="form.errors.aftertaste" class="alm-field__error">{{ form.errors.aftertaste }}</span>
                     </div>
                     <div class="alm-field alm-field--span2">
                         <label class="alm-field__label">Description <small>(optional)</small></label>
-                        <el-input v-model="form.description" type="textarea" :rows="2" class="alm-input" :class="{ 'alm-input--error': form.errors.description }" />
+                        <el-input v-model="form.description" size="small" type="textarea" :rows="2" class="alm-input" :class="{ 'alm-input--error': form.errors.description }" />
                         <span v-if="form.errors.description" class="alm-field__error">{{ form.errors.description }}</span>
                     </div>
                     <div class="alm-field alm-field--span2">
                         <label class="alm-field__label">Notes <small>(optional)</small></label>
-                        <el-input v-model="form.notes" type="textarea" :rows="2" class="alm-input" :class="{ 'alm-input--error': form.errors.notes }" />
+                        <el-input v-model="form.notes" size="small" type="textarea" :rows="2" class="alm-input" :class="{ 'alm-input--error': form.errors.notes }" />
                         <span v-if="form.errors.notes" class="alm-field__error">{{ form.errors.notes }}</span>
                     </div>
                     <div class="alm-field alm-field--span2">
